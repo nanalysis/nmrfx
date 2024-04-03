@@ -1,28 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.ButtonBar?>
-<?import javafx.scene.control.MenuButton?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.Slider?>
-
-<?import javafx.scene.control.TitledPane?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import org.controlsfx.control.*?>
-
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.MasterDetailPane?>
 <BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="750.0"
             styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -30,13 +10,13 @@
     <top>
         <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
             <items>
-                <MenuButton  mnemonicParsing="false" text="File">
+                <MenuButton mnemonicParsing="false" text="File">
                     <items>
-                        <MenuItem mnemonicParsing="false" onAction="#exportPDFAction" text="Export PDF..." />
-                        <MenuItem mnemonicParsing="false" onAction="#exportSVGAction" text="Export SVG..." />
+                        <MenuItem mnemonicParsing="false" onAction="#exportPDFAction" text="Export PDF..."/>
+                        <MenuItem mnemonicParsing="false" onAction="#exportSVGAction" text="Export SVG..."/>
                     </items>
                 </MenuButton>
-                <Pane HBox.hgrow="ALWAYS" />
+                <Pane HBox.hgrow="ALWAYS"/>
                 <CheckBox fx:id="detailsCheckBox" text="Details"/>
             </items>
         </ToolBar>
@@ -46,21 +26,21 @@
         </MasterDetailPane>
     </center>
     <bottom>
-        <HBox   HBox.hgrow="ALWAYS" prefHeight="25">
+        <HBox HBox.hgrow="ALWAYS" prefHeight="25">
             <children>
                 <Label text="Residues/Row" minWidth="80"/>
                 <Slider fx:id="nResiduesSlider" prefWidth="200"/>
                 <Label fx:id="nResiduesLabel" minWidth="35"/>
-                                                                                
+
                 <Pane minWidth="25"/>
-                                        
+
                 <Label text="Font Size" minWidth="80"/>
                 <Slider fx:id="fontSizeSlider" prefWidth="200"/>
                 <Label fx:id="fontSizeLabel" minWidth="35"/>
-                                        
+
                 <Pane minWidth="25"/>
 
-  
+
             </children>
         </HBox>
 

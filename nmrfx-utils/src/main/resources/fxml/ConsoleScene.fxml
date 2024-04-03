@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import org.nmrfx.console.*?>
 
-
-<BorderPane id="AnchorPane" prefHeight="200.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.console.ConsoleController">
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import java.net.URL?>
+<BorderPane id="AnchorPane" prefHeight="200.0" prefWidth="600.0" styleClass="mainFxmlClass"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.console.ConsoleController">
     <stylesheets>
         <URL value="@/styles/consolescene.css"/>
     </stylesheets>
     <top>
         <HBox>
             <children>
+                <Button fx:id="execButton" text="Exec File..." onAction="#execScript"/>
                 <Button fx:id="clearButton" text="Clear" onAction="#clearConsole"/>
             </children>
         </HBox>

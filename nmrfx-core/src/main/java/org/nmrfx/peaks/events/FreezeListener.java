@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@ package org.nmrfx.peaks.events;
 import org.nmrfx.peaks.Peak;
 
 /**
- *
  * @author Bruce Johnson
  */
 public interface FreezeListener {

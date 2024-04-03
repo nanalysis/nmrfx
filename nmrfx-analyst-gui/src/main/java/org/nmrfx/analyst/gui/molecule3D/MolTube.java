@@ -1,9 +1,6 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.ArrayList;
-import java.util.List;
 import javafx.geometry.Point3D;
-
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
@@ -14,8 +11,11 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
-import javax.vecmath.*;
 import org.nmrfx.chemistry.Atom;
+
+import javax.vecmath.Vector3d;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MolTube extends Group implements MolItem {
 
@@ -151,7 +151,6 @@ public class MolTube extends Group implements MolItem {
         TriangleMesh mesh = tesselation.makeTubeMesh(nodes.size());
         MeshView meshView = new MeshView(mesh);
         PhongMaterial material = new PhongMaterial();
-//        material.setDiffuseColor(Color.GREEN);
         material.setSpecularColor(Color.WHITE);
         meshView.setMaterial(material);
         Image image = makeTubeColors(nodes.size());

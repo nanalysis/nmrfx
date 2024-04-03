@@ -1,28 +1,32 @@
 package org.nmrfx.peaks;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
 import org.nmrfx.peaks.events.*;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utilities.Updater;
 import org.nmrfx.utilities.Util;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.Double.compare;
 import static java.util.Comparator.comparing;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.nmrfx.utilities.Updater;
 
+@PythonAPI({"dscript", "pscript"})
+@PluginAPI("ring")
 public class PeakList {
 
-    static ResonanceFactory resFactory = new ResonanceFactory();
     /**
      *
      */
@@ -30,7 +34,7 @@ public class PeakList {
     /**
      *
      */
-    static List<FreezeListener> freezeListeners = new ArrayList<>();
+    private static final List<FreezeListener> freezeListeners = new ArrayList<>();
     public int idLast;
     /**
      *
@@ -46,7 +50,6 @@ public class PeakList {
     protected final Map<Integer, Peak> indexMap = new HashMap<>();
     boolean slideable = false;
     boolean requireSliderCondition = false;
-    static boolean globalRequireSliderCondition = false;
     protected List<SearchDim> searchDims = new ArrayList<>();
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();
@@ -63,7 +66,6 @@ public class PeakList {
     Updater updater = null;
 
     /**
-     *
      * @param name
      * @param n
      * @param listNum
@@ -95,7 +97,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param name
      * @param n
      */
@@ -106,10 +107,6 @@ public class PeakList {
     @Override
     public String toString() {
         return listName;
-    }
-
-    public static ResonanceFactory resFactory() {
-        return resFactory;
     }
 
     /**
@@ -125,7 +122,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public static Collection<PeakList> peakLists() {
@@ -150,11 +146,10 @@ public class PeakList {
     /**
      *
      */
-    public double scale;
+    public double scale = 1.0;
     protected SpectralDim[] spectralDims = null;
 
     /**
-     *
      * @param peak
      */
     public static void unLinkPeak(Peak peak) {
@@ -177,7 +172,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      * @param iDim
      */
@@ -189,22 +183,25 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      * @return
      */
-    public static List getLinks(Peak peak) {
-        List peakDims = getLinkedPeakDims(peak, 0);
-        ArrayList peaks = new ArrayList(peakDims.size());
-        for (int i = 0; i < peakDims.size(); i++) {
-            PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add(peakDim.getPeak());
+    public static List<Peak> getLinks(Peak peak) {
+        List<Peak> peaks = new ArrayList<>();
+        for (int iDim = 0; iDim < peak.getNDim(); iDim++) {
+            List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
+            for (int i = 0; i < peakDims.size(); i++) {
+                PeakDim peakDim = peakDims.get(i);
+                Peak lPeak = peakDim.getPeak();
+                if (!peaks.contains(lPeak)) {
+                    peaks.add(lPeak);
+                }
+            }
         }
         return peaks;
     }
 
     /**
-     *
      * @param peak
      * @param iDim
      * @return
@@ -220,7 +217,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakA
      * @param dimA
      * @param peakB
@@ -235,7 +231,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakA
      * @param dimA
      * @param peakB
@@ -250,30 +245,28 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakDimA
      * @param peakDimB
      */
     public static void linkPeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        Resonance resonanceA = peakDimA.getResonance();
-        Resonance resonanceB = peakDimB.getResonance();
+        AtomResonance resonanceA = peakDimA.getResonance();
+        AtomResonance resonanceB = peakDimB.getResonance();
 
-        Resonance.merge(resonanceA, resonanceB);
+        AtomResonance.merge(resonanceA, resonanceB);
 
         peakDimA.peakDimUpdated();
         peakDimB.peakDimUpdated();
     }
 
     /**
-     *
      * @param peakDimA
      * @param peakDimB
      */
     public static void couplePeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        Resonance resonanceA = peakDimA.getResonance();
-        Resonance resonanceB = peakDimB.getResonance();
+        AtomResonance resonanceA = peakDimA.getResonance();
+        AtomResonance resonanceB = peakDimB.getResonance();
 
-        Resonance.merge(resonanceA, resonanceB);
+        AtomResonance.merge(resonanceA, resonanceB);
 
         Multiplet.merge(peakDimA, peakDimB);
         peakDimA.peakDimUpdated();
@@ -281,7 +274,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak1
      * @param dim1
      * @param peak2
@@ -300,7 +292,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param datasetName
      * @return
      */
@@ -314,7 +305,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param datasetName
      * @return
      */
@@ -329,7 +319,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakListNames
      * @return
      * @throws IllegalArgumentException
@@ -347,7 +336,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakLists
      * @return
      * @throws IllegalArgumentException
@@ -407,8 +395,6 @@ public class PeakList {
                     }
 
                     v[k] /= linkedPeaks.size();
-
-                    //datum.n = linkedPeaks.size();
                     tol[k] = sDim.getTol();
                 }
                 Clusters.ClusterItem clusterItem = new Clusters.ClusterItem(peak, v, iList);
@@ -445,7 +431,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getDatasetName() {
@@ -469,7 +454,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param sampleLabel
      */
     public void setSampleLabel(String sampleLabel) {
@@ -477,7 +461,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param datasetName
      */
     public void setDatasetName(String datasetName) {
@@ -487,8 +470,8 @@ public class PeakList {
     public List<SearchDim> getSearchDims() {
         return searchDims;
     }
+
     /**
-     *
      * @param oldListener
      */
     public void removePeakCountChangeListener(PeakListener oldListener) {
@@ -496,7 +479,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param newListener
      */
     public void registerPeakCountChangeListener(PeakListener newListener) {
@@ -510,8 +492,8 @@ public class PeakList {
             listener.peakListChanged(new PeakCountEvent(this, size()));
         }
     }
+
     /**
-     *
      * @param oldListener
      */
     public void removePeakListChangeListener(PeakListener oldListener) {
@@ -519,7 +501,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param newListener
      */
     public void registerPeakListChangeListener(PeakListener newListener) {
@@ -533,8 +514,8 @@ public class PeakList {
             listener.peakListChanged(new PeakListEvent(this));
         }
     }
+
     /**
-     *
      * @param oldListener
      */
     public void removePeakChangeListener(PeakListener oldListener) {
@@ -542,7 +523,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param newListener
      */
     public void registerPeakChangeListener(PeakListener newListener) {
@@ -568,14 +548,14 @@ public class PeakList {
     /**
      * Copies an existing peak list.
      *
-     * @param name a string with the name of the new peak list.  If merge is true
-     *             then this must be an existing peak list that will be merged.
+     * @param name     a string with the name of the new peak list.  If merge is true
+     *                 then this must be an existing peak list that will be merged.
      * @param allLinks a boolean specifying whether or not to link peak
-     * dimensions.
-     * @param merge a boolean specifying whether or not to merge peak labels.
+     *                 dimensions.
+     * @param merge    a boolean specifying whether or not to merge peak labels.
      * @return a list that is a copy of the peak list with the input name.
      * @throws IllegalArgumentException if a peak with the input name doesn't
-     * exist.
+     *                                  exist.
      */
     public PeakList copy(final String name, final boolean allLinks, boolean merge, boolean copyLabels) {
         PeakList newPeakList;
@@ -650,7 +630,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param freezeListener
      */
     public static void registerFreezeListener(FreezeListener freezeListener) {
@@ -661,7 +640,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      * @param state
      */
@@ -673,7 +651,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public static Iterator<PeakList> iterator() {
@@ -720,7 +697,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -733,7 +709,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param name
      * @return
      */
@@ -753,7 +728,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getSampleLabel() {
@@ -761,7 +735,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param sampleConditionLabel
      */
     public void setSampleConditionLabel(String sampleConditionLabel) {
@@ -769,7 +742,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getSampleConditionLabel() {
@@ -777,7 +749,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param details
      */
     public void setDetails(String details) {
@@ -785,14 +756,13 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getExperimentType() {
         return experimentType;
     }
+
     /**
-     *
      * @param type
      */
     public void setExperimentType(String type) {
@@ -801,7 +771,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getDetails() {
@@ -809,7 +778,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return the ID number of the peak list.
      */
     public int getId() {
@@ -817,7 +785,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return the name of the peak list.
      */
     public String getName() {
@@ -825,7 +792,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return a peak list object.
      */
     public List<Peak> peaks() {
@@ -833,7 +799,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param i
      * @return
      */
@@ -853,7 +818,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param newPeak
      */
     public void addPeakWithoutResonance(Peak newPeak) {
@@ -864,7 +828,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param newPeak
      */
     public Peak addPeak(Peak newPeak) {
@@ -877,7 +840,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param s
      * @return
      */
@@ -926,7 +888,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public int size() {
@@ -938,7 +899,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param dataset
      * @param looseMode
      * @return
@@ -977,14 +937,13 @@ public class PeakList {
             if (!ok) {
                 throw new IllegalArgumentException(
                         "Can't find match for peak dimension \""
-                        + getSpectralDim(j).getDimName() + "\"");
+                                + getSpectralDim(j).getDimName() + "\"");
             }
         }
         return pdim;
     }
 
     /**
-     *
      * @param dataset
      * @return
      */
@@ -1006,7 +965,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakSpecifier
      * @return
      */
@@ -1040,14 +998,13 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakSpecifier
      * @param iDimInt
      * @return
      * @throws IllegalArgumentException
      */
     public static Peak getAPeak(String peakSpecifier,
-            Integer iDimInt) throws IllegalArgumentException {
+                                Integer iDimInt) throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
 
         if (dot == -1) {
@@ -1082,7 +1039,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakSpecifier
      * @return
      * @throws IllegalArgumentException
@@ -1129,7 +1085,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param idNum
      * @return
      * @throws IllegalArgumentException
@@ -1143,7 +1098,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakSpecifier
      * @return
      */
@@ -1164,7 +1118,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peakSpecifier
      * @return
      * @throws IllegalArgumentException
@@ -1230,7 +1183,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public boolean hasSearchDims() {
@@ -1245,7 +1197,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param s
      * @throws IllegalArgumentException
      */
@@ -1263,7 +1214,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param dimName
      * @param tol
      */
@@ -1273,7 +1223,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @param tol
      */
@@ -1290,7 +1239,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param noiseLevel
      */
     public void setFOM(double noiseLevel) {
@@ -1324,7 +1272,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public boolean hasMeasures() {
@@ -1332,7 +1279,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param measure
      */
     public void setMeasures(Measures measure) {
@@ -1340,7 +1286,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public double[] getMeasureValues() {
@@ -1352,7 +1297,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param name
      * @return
      */
@@ -1365,7 +1309,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param name
      * @return
      */
@@ -1374,7 +1317,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param name
      * @param value
      */
@@ -1383,7 +1325,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public Map<String, String> getProperties() {
@@ -1413,7 +1354,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getSparkyHeader() {
@@ -1427,7 +1367,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getXPKHeader() {
@@ -1480,7 +1419,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public String getXPK2Header() {
@@ -1522,7 +1460,7 @@ public class PeakList {
      * @param ppms An array of chemical shifts to search
      * @return A list of matching peaks
      * @throws IllegalArgumentException thrown if ppm length not equal to search
-     * template length or if peak labels don't match search template
+     *                                  template length or if peak labels don't match search template
      */
     public List<Peak> findPeaks(double[] ppms)
             throws IllegalArgumentException {
@@ -1563,7 +1501,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param limits
      * @param dim
      * @return
@@ -1575,17 +1512,16 @@ public class PeakList {
     /**
      * Locate what peaks are contained within certain limits.
      *
-     * @param limits A multidimensional array of chemical shift plot limits to
-     * search.
-     * @param dim An array of which peak list dim corresponds to dim in the
-     * limit array.
+     * @param limits     A multidimensional array of chemical shift plot limits to
+     *                   search.
+     * @param dim        An array of which peak list dim corresponds to dim in the
+     *                   limit array.
      * @param foldLimits An optional multidimensional array of plot limits where
-     * folded peaks should appear. Can be null.
+     *                   folded peaks should appear. Can be null.
      * @return A list of matching peaks
      */
     public List<Peak> locatePeaks(double[][] limits, int[] dim, double[][] foldLimits) {
         List<org.nmrfx.peaks.PeakDistance> foundPeaks = new ArrayList<>();
-//        final Vector peakDistance = new Vector();
 
         int i;
         int j;
@@ -1661,7 +1597,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public boolean isChanged() {
@@ -1676,7 +1611,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public static boolean isAnyChanged() {
@@ -1703,7 +1637,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public boolean valid() {
@@ -1711,7 +1644,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param dim
      * @param ascending
      * @throws IllegalArgumentException
@@ -1723,7 +1655,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peaks
      * @param iDim
      * @param ascending
@@ -1737,7 +1668,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param listName
      */
     public static void remove(String listName) {
@@ -1770,7 +1700,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param matchStrings
      * @param useRegExp
      * @param useOrder
@@ -1843,7 +1772,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public Peak getNewPeak() {
@@ -1853,7 +1781,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public int addPeak() {
@@ -1863,7 +1790,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      */
     public void removePeak(Peak peak) {
@@ -1876,7 +1802,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      * @param requireSameList
      * @return
@@ -1893,7 +1818,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      * @return
      */
@@ -1902,7 +1826,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param peak
      * @param iDim
      * @return
@@ -1913,7 +1836,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public boolean isSlideable() {
@@ -1921,7 +1843,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param state
      */
     public void setSlideable(boolean state) {
@@ -1929,7 +1850,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public boolean requireSliderCondition() {
@@ -1937,7 +1857,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public Nuclei[] guessNuclei() {
@@ -1951,7 +1870,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -1961,7 +1879,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return
      */
     public int compress() {
@@ -2048,7 +1965,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @return @throws IllegalArgumentException
      */
     public int clusterPeaks() throws IllegalArgumentException {
@@ -2059,7 +1975,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2070,7 +1985,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2080,7 +1994,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2091,7 +2004,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2102,7 +2014,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2118,7 +2029,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @param value
      */
@@ -2132,7 +2042,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2142,7 +2051,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param iDim
      * @return
      */
@@ -2152,7 +2060,6 @@ public class PeakList {
     }
 
     /**
-     *
      * @param otherList
      * @param dims
      * @return

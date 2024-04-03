@@ -1,14 +1,12 @@
 package org.nmrfx.chemistry;
 
-import java.util.Arrays;
-import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.Sequence;
-import org.nmrfx.chemistry.Util;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class MoleculeTest {
 

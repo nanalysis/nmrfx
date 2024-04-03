@@ -8,21 +8,10 @@ package org.nmrfx.star;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
-import java.io.StreamTokenizer;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class STAR3Base {
@@ -460,7 +449,6 @@ public class STAR3Base {
         for (String loopString : loopStrings) {
             chan.write(category + "." + loopString + "\n");
         }
-        // chan.write("\n\n");
     }
 
     public static void writeString(Writer chan, String s, int maxLen) throws ParseException, IOException {

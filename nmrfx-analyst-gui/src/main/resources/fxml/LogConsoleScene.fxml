@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.MasterDetailPane?>
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0"
+            prefWidth="800.0" xmlns="http://javafx.com/javafx/17.0.2" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.processor.gui.log.LogConsoleController">
+    <top>
+        <HBox prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <children>
+                <ChoiceBox fx:id="logLevelChoice" prefHeight="25.0" prefWidth="150.0">
+                    <HBox.margin>
+                        <Insets left="5.0" right="5.0" top="7.5"/>
+                    </HBox.margin>
+                </ChoiceBox>
+                <ChoiceBox fx:id="sectionChoice" prefWidth="150.0">
+                    <HBox.margin>
+                        <Insets left="5.0" right="5.0" top="7.5"/>
+                    </HBox.margin>
+                </ChoiceBox>
+                <TextField fx:id="filterTextField" HBox.hgrow="ALWAYS">
+                    <HBox.margin>
+                        <Insets left="5.0" right="5.0" top="7.5"/>
+                    </HBox.margin>
+                </TextField>
+                <Button fx:id="changeLogLevelButton" mnemonicParsing="false" onAction="#changeLogLevelButtonClicked"
+                        text="...">
+                    <HBox.margin>
+                        <Insets left="5.0" right="5.0" top="7.5"/>
+                    </HBox.margin>
+                </Button>
+                <Button fx:id="clearButton" mnemonicParsing="false" onAction="#clearButtonClicked" text="Clear">
+                    <HBox.margin>
+                        <Insets left="5.0" right="5.0" top="7.5"/>
+                    </HBox.margin>
+                </Button>
+            </children>
+        </HBox>
+    </top>
+    <center>
+        <MasterDetailPane fx:id="logDisplayMasterDetail" detailSide="BOTTOM" dividerPosition="0.7"
+                          BorderPane.alignment="CENTER">
+            <BorderPane.margin>
+                <Insets bottom="5.0" left="5.0" right="5.0"/>
+            </BorderPane.margin>
+        </MasterDetailPane>
+    </center>
+</BorderPane>

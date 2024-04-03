@@ -1,19 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.MenuButton?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-
+<?import javafx.scene.layout.*?>
 <BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0"
             styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -27,8 +18,8 @@
             <top>
                 <HBox>
                     <children>
-                        <MenuButton fx:id="molFilterMenuButton" text="Filter" />
-                        <TextField fx:id="molFilterTextField" HBox.hgrow="ALWAYS" />
+                        <MenuButton fx:id="molFilterMenuButton" text="Filter"/>
+                        <TextField fx:id="molFilterTextField" HBox.hgrow="ALWAYS"/>
                     </children>
                 </HBox>
             </top>

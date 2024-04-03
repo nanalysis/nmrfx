@@ -1,14 +1,14 @@
 package org.nmrfx.structure.chemistry.miner;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.IAtom;
+import org.nmrfx.chemistry.IBond;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.nmrfx.chemistry.AtomContainer;
-import org.nmrfx.chemistry.IAtom;
-import org.nmrfx.chemistry.IBond;
-import org.nmrfx.chemistry.Atom;
 
 public class AtomTriplets {
 
@@ -77,6 +77,6 @@ public class AtomTriplets {
         }
 
         iValue++;
-        tripletMap.put(aTriplet, new Integer(iValue));
+        tripletMap.put(aTriplet,  Integer.valueOf(iValue));
     }
 }

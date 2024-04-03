@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,35 +17,37 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.io.*;
-import java.util.*;
-
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.protein.ProteinHelix;
+import org.nmrfx.chemistry.protein.Sheet;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.MMCIF;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.chemistry.protein.ProteinHelix;
-import org.nmrfx.chemistry.protein.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MMcifReader {
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
 
+@PluginAPI("ring")
+public class MMcifReader {
     private static final Logger log = LoggerFactory.getLogger(MMcifReader.class);
-    static boolean DEBUG = false;
+    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     final MMCIF mmcif;
     final File cifFile;
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
 
-    private static final String INVALID_ATOM_WARN_MSG_TEMPLATE = "invalid atom in chem comp atom saveframe \"{}.{}\"";
 
     public MMcifReader(final File cifFile, final MMCIF star3) {
         this.mmcif = star3;
@@ -53,7 +55,6 @@ public class MMcifReader {
         for (int i = 0; i <= 25; i++) {
             chainCodeMap.put(String.valueOf(i + 1), (char) ('A' + i));
         }
-//        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
     public static void read(String cifFileName) throws ParseException {
@@ -335,10 +336,8 @@ public class MMcifReader {
             Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
             if (i == 0) {
                 resPos = Residue.RES_POSITION.START;
-                //residue.capFirstResidue();
             } else if (i == entityIDColumn.size() - 1) {
                 resPos = Residue.RES_POSITION.END;
-                //residue.capLastResidue();
             }
 
             try {
@@ -365,43 +364,6 @@ public class MMcifReader {
         MoleculeBase.compoundMap().put(id, compound);
     }
 
-//    void buildChemComp(final Saveframe saveframe, Molecule molecule) throws ParseException {
-//        Loop loop = saveframe.getLoop("_chem_comp");
-//        if (loop == null) {
-//            throw new ParseException("No \"_chem_comp\" loop");
-//        } else {
-//            List<String> idColumn = loop.getColumnAsList("id");
-//            List<String> typeColumn = loop.getColumnAsList("type");
-//            List<String> nameColumn = loop.getColumnAsList("name");
-//            Iterator entityIterator = molecule.entityLabels.values().iterator();
-//            while (entityIterator.hasNext()) {
-//                Entity entity = (Entity) entityIterator.next();
-//                for (int i = 0; i < idColumn.size(); i++) {
-//                    if (entity instanceof Polymer) {
-//                        List<Residue> resList = ((Polymer) entity).getResidues();
-//                        for (Residue res : resList) {
-//                            String resName = idColumn.get(i);
-//                            String resFullName = nameColumn.get(i);
-//                            if (res.name.equals(resName)) {
-//                                res.label += "," + resFullName;
-//                            }
-//                        }
-//                    } else {
-//                        String ligandName = idColumn.get(i);
-//                        String type = typeColumn.get(i);
-//                        String ligandFullName = nameColumn.get(i);
-//                        if (type.equals("non-polymer")) {
-//                            Compound compound = (Compound) entity;
-//                            if (compound.label.contains(ligandFullName)) {
-//                                compound.label = ligandName + "," + ligandFullName;
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//
-//        }
-//    }
     MoleculeBase buildConformation(final Saveframe saveframe, MoleculeBase molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_conf");
         if (loop != null) {
@@ -520,8 +482,6 @@ public class MMcifReader {
         Loop loop = saveframe.getLoop("_atom_site");
         var compoundMap = MoleculeBase.compoundMap();
         if (loop != null) {
-//            List<String> groupPDBColumn = loop.getColumnAsList("group_PDB");
-//            List<String> idColumn = loop.getColumnAsList("id");
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> labelAtomIDColumn = loop.getColumnAsList("label_atom_id");
             List<String> labelAltIDColumn = loop.getColumnAsList("label_alt_id");
@@ -543,8 +503,6 @@ public class MMcifReader {
             List<Integer> pdbModelNumColumn = loop.getColumnAsIntegerList("pdbx_PDB_model_num", 0);
 
             for (int i = 0; i < typeSymbolColumn.size(); i++) {
-//                String groupPDB = (String) groupPDBColumn.get(i);
-//                String idCode = (String) idColumn.get(i);
                 String atomType = (String) typeSymbolColumn.get(i);
                 String atomName = (String) labelAtomIDColumn.get(i);
                 String atomAltName = (String) labelAltIDColumn.get(i);
@@ -631,8 +589,6 @@ public class MMcifReader {
         if (loop != null) {
             var compoundMap = MoleculeBase.compoundMap();
 
-//            List<String> groupPDBColumn = loop.getColumnAsList("group_PDB");
-//            List<String> idColumn = loop.getColumnAsList("id");
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> atomIDColumn = loop.getColumnAsList("atom_id");
             List<String> labelAltIDColumn = loop.getColumnAsList("alt_atom_id");
@@ -645,8 +601,6 @@ public class MMcifReader {
             List<String> cartnZIdealColumn = loop.getColumnAsList("pdbx_model_Cartn_z_ideal");
 
             for (int i = 0; i < typeSymbolColumn.size(); i++) {
-//                String groupPDB = (String) groupPDBColumn.get(i);
-//                String idCode = (String) idColumn.get(i);
                 String atomType = (String) typeSymbolColumn.get(i);
                 String atomName = (String) atomIDColumn.get(i);
                 String atomAltName = (String) labelAltIDColumn.get(i);

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
+import org.controlsfx.control.PropertySheet;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
- *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class ChoiceOperationItem extends OperationItem implements ObservableStringValue {
 
     String defaultValue;
@@ -40,8 +43,8 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
     ChangeListener<? super String> listener;
     private final Collection<?> choices;
 
-    public ChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(category, name, description);
+    public ChoiceOperationItem(PropertySheet propertySheet, ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;

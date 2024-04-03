@@ -1,8 +1,8 @@
 /*
  * MX - Essential Cheminformatics
- * 
+ *
  * Copyright (c) 2007-2009 Metamolecular, LLC
- * 
+ *
  * http://metamolecular.com/mx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,10 +25,10 @@
  */
 package org.nmrfx.structure.chemistry.ring;
 
-import org.nmrfx.chemistry.Ring;
-import java.util.Collection;
-
 import org.nmrfx.chemistry.ITree;
+import org.nmrfx.chemistry.Ring;
+
+import java.util.Collection;
 
 /**
  * @author Richard L. Apodaca <rapodaca at metamolecular.com>
@@ -40,6 +40,6 @@ public interface RingFinder {
     public int getMaximumRingSize();
 
     public Collection<Ring> findRings(ITree itree);
-    
+
     public Collection<Ring> findSmallestRings(ITree itree);
 }

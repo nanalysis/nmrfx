@@ -19,8 +19,11 @@ package org.nmrfx.chemistry.constraints;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
+
 import java.io.Serializable;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 enum DisTypes {
 
@@ -52,11 +55,11 @@ enum DisTypes {
 }
 
 public class Noe extends DistanceConstraint implements Serializable {
-
-    private static boolean useDistances = false;
-    private static int nStructures = 0;
+    public static final int PPM_SET = 0;
+    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
+    private static final DisTypes DISTANCE_TYPE = DisTypes.MINIMUM;
     private static double tolerance = 0.2;
-    private static DistanceStat defaultStat = new DistanceStat();
+
     private int idNum = 0;
     public SpatialSetGroup spg1;
     public SpatialSetGroup spg2;
@@ -65,9 +68,8 @@ public class Noe extends DistanceConstraint implements Serializable {
     private double volume = 0.0;
     private double scale = 1.0;
     public double atomScale = 1.0;
-    public DistanceStat disStat = defaultStat;
-    private DistanceStat disStatAvg = defaultStat;
-    public int dcClass = 0;
+    public DistanceStat disStat = DEFAULT_STAT;
+    private DistanceStat disStatAvg = DEFAULT_STAT;
     private double ppmError = 0.0;
     private short active = 1;
     public boolean symmetrical = false;
@@ -79,9 +81,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     private boolean filterSwapped = false;
     public Map resMap = null;
     public EnumSet<Flags> activeFlags = null;
-    private static DisTypes distanceType = DisTypes.MINIMUM;
     private GenTypes genType = GenTypes.MANUAL;
-    public static int ppmSet = 0;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
         super(sp1, sp2);
@@ -148,123 +148,6 @@ public class Noe extends DistanceConstraint implements Serializable {
         tolerance = value;
     }
 
-//    public void updateGenType(Map<String, NoeMatch> map, MatchCriteria[] matchCriteria) {
-//        if ((peak != null) && (peak.getStatus() >= 0)) {
-//            map.clear();
-//            PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
-//            double ppm = peakDim.getChemShift();
-//            matchCriteria[0].setPPM(ppm);
-//            ArrayList res1s = peakDim.getResonances();
-//
-//            peakDim = peak.getPeakDim(matchCriteria[1].getDim());
-//            ppm = peakDim.getChemShift();
-//            matchCriteria[1].setPPM(ppm);
-//            ArrayList res2s = peakDim.getResonances();
-//
-//            int nRes1 = res1s.size();
-//            int nRes2 = res2s.size();
-//            if ((nRes1 > 0) && (nRes2 > 0)) {
-//                if ((nRes1 != 1) && (nRes2 != 1) && (nRes1 != nRes2)) {
-//                    throw new IllegalArgumentException("Peak \"" + peak.getName() + "\" has unbalanced assignments");
-//                }
-//                int maxN = nRes1 > nRes2 ? nRes1 : nRes2;
-//
-//                for (int iRes = 0; iRes < maxN; iRes++) {
-//                    AtomResonance r1 = null;
-//                    if (iRes < nRes1) {
-//                        r1 = (AtomResonance) res1s.get(iRes);
-//                    } else {
-//                        r1 = (AtomResonance) res1s.get(0);
-//                    }
-//                    AtomResonance r2 = null;
-//                    if (iRes < nRes2) {
-//                        r2 = (AtomResonance) res2s.get(iRes);
-//                    } else {
-//                        r2 = (AtomResonance) res2s.get(0);
-//                    }
-//                    Atom r1Atom = r1.getAtom();
-//                    SpatialSet sp1 = null;
-//                    SpatialSet sp2 = null;
-//                    if ((r1Atom != null)) {
-//                        sp1 = r1Atom.spatialSet;
-//                    }
-//                    Atom r2Atom = r2.getAtom();
-//                    if ((r2Atom != null)) {
-//                        sp2 = r2Atom.spatialSet;
-//                    }
-//                    if ((sp1 != null) && (sp2 != null) && (sp1 != sp2)) {
-//                        String name = sp1.getFullName() + "_" + sp2.getFullName();
-//                        NoeMatch match = new NoeMatch(sp1, sp2, Constraint.GenTypes.MANUAL, 0.0);
-//                        map.put(name, match);
-//                    }
-//                }
-//            }
-//
-//            if (matchCriteria[2] != null) {
-//                peakDim = peak.getPeakDim(matchCriteria[2].getDim());
-//                ppm = peakDim.getChemShift();
-//                matchCriteria[2].setPPM(ppm);
-//            }
-//
-//            if (matchCriteria[3] != null) {
-//                peakDim = peak.getPeakDim(matchCriteria[3].getDim());
-//                ppm = peakDim.getChemShift();
-//                matchCriteria[3].setPPM(ppm);
-//            }
-//            Atom[][] atoms = getAtoms(peak);
-//            int pDim1 = matchCriteria[0].getDim();
-//            int pDim2 = matchCriteria[1].getDim();
-//            if ((atoms[pDim1] != null) && (atoms[pDim2] != null)) {
-//                int nProtons1 = atoms[pDim1].length;
-//                int nProtons2 = atoms[pDim2].length;
-//                if ((nProtons1 > 0) && (nProtons2 > 0)) {
-//                    if ((nProtons1 == nProtons2) || (nProtons1 == 1) || (nProtons2 == 1)) {
-//                        int maxN = nProtons1 > nProtons2 ? nProtons1 : nProtons2;
-//                        for (int iProton = 0; iProton < maxN; iProton++) {
-//                            SpatialSet sp1 = null;
-//                            SpatialSet sp2 = null;
-//                            int iProton1 = iProton;
-//                            int iProton2 = iProton;
-//                            if (iProton >= nProtons1) {
-//                                iProton1 = 0;
-//                            }
-//                            if (iProton >= nProtons2) {
-//                                iProton2 = 0;
-//                            }
-//                            if (atoms[pDim1][iProton1] != null) {
-//                                sp1 = atoms[pDim1][iProton1].spatialSet;
-//                            }
-//                            if ((atoms[pDim2][iProton2] != null)) {
-//                                sp2 = atoms[pDim2][iProton2].spatialSet;
-//                            }
-//                            if ((sp1 != null) && (sp2 != null) && (sp1 != sp2)) {
-//                                String name = sp1.getFullName() + "_" + sp2.getFullName();
-//                                NoeMatch match = new NoeMatch(sp1, sp2, Constraint.GenTypes.MANUAL, 0.0);
-//                                map.put(name, match);
-//                            }
-//                        }
-//
-//                    }
-//                }
-//            }
-//
-//            int nMan = map.size();
-//            Constraint.GenTypes type = Constraint.GenTypes.MANUAL;
-//
-//            String name = spg1.getFullName() + "_" + spg2.getFullName();
-//            if (!map.containsKey(name)) {
-//                type = Constraint.GenTypes.AUTOMATIC;
-//                if (nMan > 0) {
-//                    type = Constraint.GenTypes.AUTOPLUS;
-//                }
-//            }
-//            setGenType(type);
-//        }
-//    }
-//    public void updatePPMError() {
-//   //
-//
-//    }
     public SpatialSetGroup getSPG(int setNum, boolean getSwapped, boolean filterMode) {
         if (setNum == 0) {
             if ((filterMode && filterSwapped) || (!filterMode && swapped && getSwapped)) {
@@ -277,10 +160,6 @@ public class Noe extends DistanceConstraint implements Serializable {
         } else {
             return spg2;
         }
-    }
-
-    public static int getNStructures() {
-        return nStructures;
     }
 
     @Override
@@ -414,7 +293,7 @@ public class Noe extends DistanceConstraint implements Serializable {
      */
     public double getDistance() {
 
-        return distanceType.getDistance(this);
+        return DISTANCE_TYPE.getDistance(this);
     }
 
     @Override
@@ -425,11 +304,11 @@ public class Noe extends DistanceConstraint implements Serializable {
     @Override
     public String toSTARString() {
         if (peak != NoeSet.lastPeakWritten) {
-            NoeSet.ID++;
+            NoeSet.id++;
             NoeSet.lastPeakWritten = peak;
-            NoeSet.memberID = 1;
+            NoeSet.memberId = 1;
         } else {
-            NoeSet.memberID++;
+            NoeSet.memberId++;
         }
         String logic = ".";
         if (nPossible > 1) {
@@ -441,10 +320,10 @@ public class Noe extends DistanceConstraint implements Serializable {
         char stringQuote = '"';
 
         //        Gen_dist_constraint.ID
-        result.append(NoeSet.ID);
+        result.append(NoeSet.id);
         result.append(sep);
         //_Gen_dist_constraint.Member_ID
-        result.append(NoeSet.memberID);
+        result.append(NoeSet.memberId);
         result.append(sep);
         //_Gen_dist_constraint.Member_logic_code
         result.append(logic);

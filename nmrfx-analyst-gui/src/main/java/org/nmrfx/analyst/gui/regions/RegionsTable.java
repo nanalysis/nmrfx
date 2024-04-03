@@ -4,17 +4,16 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.control.Label;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import org.nmrfx.analyst.gui.tools.IntegralTool;
+import org.nmrfx.analyst.gui.utitlity.DoubleTableCell;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionListener;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,31 +39,6 @@ public class RegionsTable extends TableView<DatasetRegion> {
     private final ObservableList<DatasetRegion> datasetRegions;
     private final Comparator<DatasetRegion> startingComparator = Comparator.comparing(dr -> dr.getRegionStart(0));
     private final DatasetRegionListener regionListener;
-
-    /**
-     * Table cell formatter to format non-editable columns of doubles
-     */
-    private static class DoubleTableCell extends TableCell<DatasetRegion, Double> {
-        String formatString;
-
-        public DoubleTableCell() {
-            formatString = "%." + NUMBER_DECIMAL_PLACES_INTEGRAL + "f";
-        }
-
-        public DoubleTableCell(int decimalPlaces) {
-            formatString = "%." + decimalPlaces + "f";
-        }
-
-        @Override
-        protected void updateItem(Double value, boolean empty) {
-            super.updateItem(value, empty);
-            if (empty) {
-                setText(null);
-            } else {
-                setText(String.format(formatString, value));
-            }
-        }
-    }
 
     /**
      * Formatter to change between Double and Strings in editable columns of Doubles
@@ -97,34 +71,34 @@ public class RegionsTable extends TableView<DatasetRegion> {
         this.datasetRegions = FXCollections.observableList(new ArrayList<>());
         SortedList<DatasetRegion> sortedRegions = new SortedList<>(this.datasetRegions);
         sortedRegions.comparatorProperty().bind(comparatorProperty());
-        regionListener  = updateRegion -> {
+        regionListener = updateRegion -> {
             datasetRegions.sort(Comparator.comparing(dr -> dr.getRegionStart(0)));
             refresh();
         };
 
         setEditable(true);
-        TableColumn<DatasetRegion, String>  regionsLabelCol = new TableColumn<>("Region");
+        TableColumn<DatasetRegion, String> regionsLabelCol = new TableColumn<>("Region");
         regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>("Region " + (datasetRegions.indexOf(cellData.getValue()) + 1)));
         getColumns().add(regionsLabelCol);
 
 
         TableColumn<DatasetRegion, Double> startPosCol = new TableColumn<>(REGION_START_COLUMN_NAME);
         startPosCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getRegionStart(0)));
-        startPosCol.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
+        startPosCol.setCellFactory(TextFieldTableCell.forTableColumn(TableUtils.getDoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
         startPosCol.setEditable(true);
         startPosCol.setOnEditCommit(this::regionBoundChanged);
         getColumns().add(startPosCol);
 
         TableColumn<DatasetRegion, Double> endPosCol = new TableColumn<>(REGION_END_COLUMN_NAME);
         endPosCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getRegionEnd(0)));
-        endPosCol.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
+        endPosCol.setCellFactory(TextFieldTableCell.forTableColumn(TableUtils.getDoubleColumnFormatter(NUMBER_DECIMAL_PLACES_REGION_BOUNDS)));
         endPosCol.setEditable(true);
         endPosCol.setOnEditCommit(this::regionBoundChanged);
         getColumns().add(endPosCol);
 
         TableColumn<DatasetRegion, Double> integralCol = new TableColumn<>(INTEGRAL_COLUMN_NAME);
         integralCol.setCellValueFactory(new PropertyValueFactory<>("integral"));
-        integralCol.setCellFactory(column -> new DoubleTableCell(NUMBER_DECIMAL_PLACES_INTEGRAL));
+        integralCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_INTEGRAL));
         getColumns().add(integralCol);
 
         TableColumn<DatasetRegion, Double> normalizedIntegralCol = new TableColumn<>(NORMALIZED_INTEGRAL_COLUMN_NAME);
@@ -133,7 +107,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
             Double normProp = Math.abs(norm) > 1.0e-9 ? param.getValue().getIntegral() / norm : null;
             return new SimpleObjectProperty<>(normProp);
         });
-        normalizedIntegralCol.setCellFactory(column -> new DoubleTableCell());
+        normalizedIntegralCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_INTEGRAL));
         normalizedIntegralCol.setCellFactory(TextFieldTableCell.forTableColumn(new DoubleColumnFormatter(NUMBER_DECIMAL_PLACES_INTEGRAL)));
         normalizedIntegralCol.setEditable(true);
         normalizedIntegralCol.setOnEditCommit(this::normalizedIntegralChanged);
@@ -149,12 +123,13 @@ public class RegionsTable extends TableView<DatasetRegion> {
         getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         setItems(sortedRegions);
 
-        chart = PolyChart.getActiveChart();
-        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> chart = newValue);
+        chart = PolyChartManager.getInstance().getActiveChart();
+        PolyChartManager.getInstance().activeChartProperty().addListener((observable, oldValue, newValue) -> chart = newValue);
     }
 
     /**
      * Listener for edits of the normalized integral column that updates the norm in the dataset.
+     *
      * @param event The normalized integral column cell edit event
      */
     private void normalizedIntegralChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
@@ -166,6 +141,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
     /**
      * Listener for edits of the start or ending region bounds. The value is updated in the DatasetRegion for that
      * row and the new integral is measured.
+     *
      * @param event Edit event for the start or ending region bounds
      */
     private void regionBoundChanged(TableColumn.CellEditEvent<DatasetRegion, Double> event) {
@@ -188,6 +164,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Clears the current regions and updates the list with the new values.
+     *
      * @param regions The new regions to set
      */
     public void setRegions(List<DatasetRegion> regions) {
@@ -208,6 +185,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
     /**
      * Selects the row of the provided region in the table.
+     *
      * @param regionToSelect The region to select.
      */
     public void selectRegion(DatasetRegion regionToSelect) {

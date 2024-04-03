@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,9 @@
  */
 package org.nmrfx.structure.rdc;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math3.geometry.enclosing.EnclosingBall;
 import org.apache.commons.math3.geometry.enclosing.WelzlEncloser;
-import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
-import org.apache.commons.math3.geometry.euclidean.threed.SphereGenerator;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.threed.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.chemistry.Atom;
@@ -33,17 +27,19 @@ import org.nmrfx.chemistry.AtomEnergyProp;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author brucejohnson
  */
 public class AlignmentCalc {
 
     static Vector3D BVEC = new Vector3D(0.0, 0.0, 1.0);
     static Vector3D[] VECS = {
-        new Vector3D(1.0, 0.0, 0.0),
-        new Vector3D(0.0, 1.0, 0.0),
-        new Vector3D(0.0, 0.0, 1.0)};
+            new Vector3D(1.0, 0.0, 0.0),
+            new Vector3D(0.0, 1.0, 0.0),
+            new Vector3D(0.0, 0.0, 1.0)};
 
     List<Vector3D> vectors = new ArrayList<>();
     List<Double> masses = new ArrayList<>();
@@ -428,7 +424,6 @@ public class AlignmentCalc {
         globalScale = scale * constrainedSize / (constrainedSize + freeSize);
 
         nFreePositions = n - nAllOverlap - nConstrainedPositions;
-        // double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
         System.out.println("n " + n + " nPos " + nAllOverlap + " nFree "
                 + nFreePositions + " nConstr " + nConstrainedPositions
                 + " ggs " + globalScale);
@@ -446,7 +441,6 @@ public class AlignmentCalc {
         for (AngleMinimum aMin : angleMinimums) {
             double scale = (nConstrainedPositions - aMin.getCount()) / total;
             double scaleUniform = 1.0 / angleMinimums.size();
-            // scale = 1.0;
             double[] dots = new double[3];
             for (int i = 0; i < 3; i++) {
                 dots[i] = aMin.vecs[i].dotProduct(BVEC);// * aMin.scale;
@@ -461,14 +455,9 @@ public class AlignmentCalc {
             sumDots[0] += dots[0] * dots[0];
             sumDots[1] += dots[1] * dots[1];
             sumDots[2] += dots[2] * dots[2];
-//            for (int i = 0; i < 3; i++) {
-//                for (int j = i + 1; j < 3; j++) {
-//                    sMat[j][i] = sMat[i][j];
-//                }
-//            }
             totalScale += scale;
         }
-//        double globalScale = 0.5 * (double) nConstrainedPositions / (nConstrainedPositions + nFreePositions);
+
         RealMatrix saupeMat2 = new Array2DRowRealMatrix(sMat2);
         RealMatrix saupeMat = new Array2DRowRealMatrix(sMat);
         saupeMat = saupeMat.subtract(saupeMat2);

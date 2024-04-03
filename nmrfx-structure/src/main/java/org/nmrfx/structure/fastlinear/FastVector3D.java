@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathArrays;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class FastVector3D extends FastVector {
@@ -148,8 +147,8 @@ public class FastVector3D extends FastVector {
     public double norm() {
         return Math.sqrt(
                 data[0] * data[0]
-                + data[1] * data[1]
-                + data[2] * data[2]);
+                        + data[1] * data[1]
+                        + data[2] * data[2]);
     }
 
     public double dotProduct(FastVector3D v2) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,25 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * PeakListener.java
- *
- * Created on December 13, 2006, 11:47 AM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
- */
 package org.nmrfx.peaks.events;
-
-import org.nmrfx.peaks.events.PeakEvent;
 
 import java.util.EventListener;
 
-/**
- *
- * @author brucejohnson
- */
+@FunctionalInterface
 public interface PeakListener extends EventListener {
-
-    public void peakListChanged(PeakEvent peakEvent);
+    void peakListChanged(PeakEvent peakEvent);
 }

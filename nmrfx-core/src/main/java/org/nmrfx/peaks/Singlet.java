@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -26,13 +26,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class Singlet extends Coupling {
 
     public Singlet(Multiplet multiplet) {
         this.multiplet = multiplet;
+    }
+    @Override
+    Coupling copy(Multiplet multiplet) {
+        return new Singlet(multiplet);
     }
 
     Coupling update(double[] newValues, double[] newIntensities) {
@@ -51,6 +54,7 @@ public class Singlet extends Coupling {
     public boolean isCoupled() {
         return false;
     }
+
 
     @Override
     public String getMultiplicity() {

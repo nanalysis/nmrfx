@@ -1,9 +1,12 @@
 package org.nmrfx.peaks.types;
 
+import org.nmrfx.annotations.YamlEntity;
+
+@YamlEntity("peakpat")
 public class PeakListTypeDim {
-    String name;
-    String pattern;
-    String bonds;
+    private String name;
+    private String pattern;
+    private String bonds;
 
     public String getName() {
         return name;
@@ -13,7 +16,6 @@ public class PeakListTypeDim {
         this.name = name;
     }
 
-
     public String getPattern() {
         return pattern;
     }
@@ -22,7 +24,6 @@ public class PeakListTypeDim {
         this.pattern = pattern;
     }
 
-
     public String getBonds() {
         return bonds;
     }
@@ -30,5 +31,4 @@ public class PeakListTypeDim {
     public void setBonds(String bonds) {
         this.bonds = bonds;
     }
-
 }

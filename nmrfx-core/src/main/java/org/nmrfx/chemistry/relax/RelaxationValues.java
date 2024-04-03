@@ -1,5 +1,5 @@
 /*
- * NMRFx Analyst : 
+ * NMRFx Analyst :
  * Copyright (C) 2004-2021 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,12 @@
  */
 package org.nmrfx.chemistry.relax;
 
+import org.nmrfx.annotations.PluginAPI;
+
 /**
- *
  * @author brucejohnson
  */
+@PluginAPI("ring")
 public interface RelaxationValues {
 
     Double getValue();
@@ -29,26 +31,24 @@ public interface RelaxationValues {
 
     String[] getParNames();
 
-    String getName();
-
     Double getValue(String name);
 
     Double getError(String name);
 
     ResonanceSource getResonanceSource();
 
-    public  static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format) {
-        stringBuilder.append("\t");
+    public static void appendValueErrorWithSep(StringBuilder stringBuilder, Double val, Double err, String format, String sepChar) {
+        stringBuilder.append(sepChar);
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         }
-        stringBuilder.append("\t");
+        stringBuilder.append(sepChar);
         if (err != null) {
             stringBuilder.append(String.format(format, err));
         }
     }
 
-    public  static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue) {
+    public static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue) {
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         } else {
@@ -60,7 +60,8 @@ public interface RelaxationValues {
             stringBuilder.append(defaultValue);
         }
     }
-    public  static void appendValue(StringBuilder stringBuilder, Double val,  String format, String defaultValue) {
+
+    public static void appendValue(StringBuilder stringBuilder, Double val, String format, String defaultValue) {
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         } else {

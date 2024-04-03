@@ -5,12 +5,12 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.nmrfx.chemistry.Residue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author brucejohnson
  */
 public class ProteinResidueAnalysis {

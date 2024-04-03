@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="Swank">
+    <bannerLeft>
+        <name>Swank</name>
+        <src>images/swank.png</src>
+        <href>http://swank.kenai.com</href>
+    </bannerLeft>
+    <!--
+    <bannerRight>
+      <src>http://maven.apache.org/images/maven-small.gif</src>
+    </bannerRight>
+    -->
+    <body>
+        <links>
+            <item name="Tk" href="http://www.tcl.tk/"/>
+            <item name="Java" href="http://www.oracle.com/technetwork/java/index.html"/>
+        </links>
+
+        <menu name="Swank Links">
+            <item name="Download" href="http://kenai.com/projects/swank/downloads"/>
+            <item name="News" href="news.html"/>
+            <item name="Getting started" href="gettingstarted.html"/>
+            <item name="Documentation" href="docs/index.html"/>
+            <item name="FAQ" href="faq.html"/>
+            <item name="Bugs" href="http://kenai.com/jira/browse/SWANK"/>
+            <item name="Mailing Lists" href="http://kenai.com/projects/swank/lists"/>
+            <item name="Source Code" href="http://kenai.com/projects/swank/sources/swank-main/show"/>
+            <item name="Project Page" href="http://kenai.com/projects/swank"/>
+            <item name="License" href="licenses.html"/>
+        </menu>
+    </body>
+</project>

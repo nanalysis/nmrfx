@@ -1,8 +1,8 @@
 /*
  * MX - Essential Cheminformatics
- * 
+ *
  * Copyright (c) 2007-2009 Metamolecular, LLC
- * 
+ *
  * http://metamolecular.com/mx
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,15 +25,11 @@
  */
 package org.nmrfx.structure.chemistry.ring;
 
+import org.nmrfx.chemistry.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.ITree;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  * @author Richard L. Apodaca <rapodaca at metamolecular.com>

@@ -4,12 +4,12 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
-import java.util.ArrayList;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 
+import java.util.ArrayList;
+
 /**
- *
  * @author brucejohnson
  */
 public class HOSEStat {
@@ -73,7 +73,7 @@ public class HOSEStat {
         }
         return weights;
     }
-    
+
     public int getNValues() {
         return nValues;
     }
@@ -81,7 +81,7 @@ public class HOSEStat {
     public double getRange() {
         return range;
     }
-    
+
     public DescriptiveStatistics getDStat() {
         return dStat;
     }

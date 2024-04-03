@@ -1,71 +1,65 @@
-- 
-  name : JMedCh
-  solvent : canonical-iso
-  header : "<sup>${iso}</sup>${nuc} NMR (${sol}, ${frq} MHz): \u03B4<sub>${nuc}</sub> "
-  m : "${ppm1}-${ppm2} (${n}H, ${mul}), "
-  s : "${ppm} (${n}H, ${mul}), "
-  o : "${ppm} (${n}H, ${mul}, <i>J</i> = ${cpl} Hz), "
-  sep : ", "
-  jprec : 1
-  ppmprec : 2
-  broad : 20.0
+- name: JMedCh
+  solvent: canonical-iso
+  header: "<sup>${iso}</sup>${nuc} NMR (${sol}, ${frq} MHz): \u03B4<sub>${nuc}</sub> "
+  m: "${ppm1}-${ppm2} (${n}H, ${mul}), "
+  s: "${ppm} (${n}H, ${mul}), "
+  o: "${ppm} (${n}H, ${mul}, <i>J</i> = ${cpl} Hz), "
+  sep: ", "
+  jprec: 1
+  ppmprec: 2
+  broad: 20.0
 
--    
-  name : Perkin1
-  solvent : canonical-iso
-  header : "\u03B4${nuc}(${frq} MHz; ${sol}) "
-  m : "${ppm1}-${ppm2} (${n} H, ${mul}), "
-  s : "${ppm} (${n} H, ${mul}), "
-  o : "${ppm} (${n} H, ${mul}, J ${cpl}), "
-  sep : " and "
-  jprec : 2
-  ppmprec : 2
-  broad : 20.0
-    
--    
-  name : JOC
-  solvent : canonical
-  header : "${iso}${nuc} NMR (${frq} MHz, <i>${sol}</i>): \u03B4 "
-  m : " ${ppm1}-${ppm2} (${mul}; ${n} H); "
-  s : " ${ppm} (${mul}; ${n} H); "
-  o : " ${ppm} (${mul}; J = ${cpl} Hz; ${n} H); "
-  sep : "; "
-  jprec : 2
-  ppmprec : 2
-  broad : 20.0
-    
--    
-  name : Tetrahed
-  solvent : canonical
-  header : "${iso}${nuc}-NMR (${sol}) \u03B4: (ppm)) "
-  m : "${ppm1}-${ppm2} (${mul}, ${n}H), "
-  s : "${ppm} (${mul}, ${n}H), "
-  o : "${ppm} (${mul}, ${n}H, J = ${cpl} Hz), "
-  sep : ", "
-  jprec : 2
-  ppmprec : 2
-  broad : 20.0
-    
--    
-  name : Patent1
-  solvent : canonical-iso
-  header : "${iso}${nuc} NMR (${frq} MHz, ${sol}): \u03B4 "
-  m : " ${ppm1}-${ppm2} (${mul}, ${n} H), "
-  s : " ${ppm} (${mul}, ${n} H), "
-  o : " ${ppm} (${mul}, ${n} H), "
-  sep : ", "
-  jprec : 2
-  ppmprec : 2
-  broad : 20.0
-    
--    
-  name : Patent2
-  solvent : "dataset"
-  header : "${iso}${nuc} NMR (${frq} MHz, ${sol}): \u03B4 "
-  m : " ${ppm1}-${ppm2} (${mul}, ${n} H); "
-  s : " ${ppm} (${mul}, ${n} H); "
-  o : " ${ppm} (${mul}, J = ${cpl} Hz, ${n} H); "
-  sep : ", "
-  jprec : 1
-  ppmprec : 2
-  broad : 20.0
+- name: Perkin1
+  solvent: canonical-iso
+  header: "\u03B4${nuc}(${frq} MHz; ${sol}) "
+  m: "${ppm1}-${ppm2} (${n} H, ${mul}), "
+  s: "${ppm} (${n} H, ${mul}), "
+  o: "${ppm} (${n} H, ${mul}, J ${cpl}), "
+  sep: " and "
+  jprec: 2
+  ppmprec: 2
+  broad: 20.0
+
+- name: JOC
+  solvent: canonical
+  header: "${iso}${nuc} NMR (${frq} MHz, <i>${sol}</i>): \u03B4 "
+  m: " ${ppm1}-${ppm2} (${mul}; ${n} H); "
+  s: " ${ppm} (${mul}; ${n} H); "
+  o: " ${ppm} (${mul}; J = ${cpl} Hz; ${n} H); "
+  sep: "; "
+  jprec: 2
+  ppmprec: 2
+  broad: 20.0
+
+- name: Tetrahed
+  solvent: canonical
+  header: "${iso}${nuc}-NMR (${sol}) \u03B4: (ppm)) "
+  m: "${ppm1}-${ppm2} (${mul}, ${n}H), "
+  s: "${ppm} (${mul}, ${n}H), "
+  o: "${ppm} (${mul}, ${n}H, J = ${cpl} Hz), "
+  sep: ", "
+  jprec: 2
+  ppmprec: 2
+  broad: 20.0
+
+- name: Patent1
+  solvent: canonical-iso
+  header: "${iso}${nuc} NMR (${frq} MHz, ${sol}): \u03B4 "
+  m: " ${ppm1}-${ppm2} (${mul}, ${n} H), "
+  s: " ${ppm} (${mul}, ${n} H), "
+  o: " ${ppm} (${mul}, ${n} H), "
+  sep: ", "
+  jprec: 2
+  ppmprec: 2
+  broad: 20.0
+
+- name: Patent2
+  solvent: "dataset"
+  header: "${iso}${nuc} NMR (${frq} MHz, ${sol}): \u03B4 "
+  m: " ${ppm1}-${ppm2} (${mul}, ${n} H); "
+  s: " ${ppm} (${mul}, ${n} H); "
+  o: " ${ppm} (${mul}, J = ${cpl} Hz, ${n} H); "
+  sep: ", "
+  jprec: 1
+  ppmprec: 2
+  broad: 20.0

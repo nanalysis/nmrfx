@@ -20,9 +20,9 @@ package org.nmrfx.structure.chemistry;
 import org.nmrfx.chemistry.Entity;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class CouplingList {
@@ -33,6 +33,7 @@ public class CouplingList {
 
     public void generateCouplings(Entity entity, int nShells, int minShells,
                                   int tocsyShells, int hmbcShells) {
+        nShells = Math.max(nShells, Math.max(tocsyShells, hmbcShells));
         jCouplings.clear();
         tocsyLinks.clear();
         hmbcLinks.clear();
@@ -40,15 +41,15 @@ public class CouplingList {
                 nShells, minShells, tocsyShells, hmbcShells);
     }
 
-    public ArrayList<JCoupling> getJCouplings() {
+    public List<JCoupling> getJCouplings() {
         return jCouplings;
     }
 
-    public ArrayList<JCoupling> getTocsyLinks() {
+    public List<JCoupling> getTocsyLinks() {
         return tocsyLinks;
     }
 
-    public ArrayList<JCoupling> getHMBCLinks() {
+    public List<JCoupling> getHMBCLinks() {
         return hmbcLinks;
     }
 }

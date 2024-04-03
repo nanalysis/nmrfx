@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@ import org.nmrfx.chemistry.RDC;
 import org.nmrfx.chemistry.SpatialSet;
 
 /**
- *
  * @author brucejohnson
  */
 public class RDCConstraint extends RDC implements Constraint {
@@ -35,6 +34,7 @@ public class RDCConstraint extends RDC implements Constraint {
     public static DistanceStat getDefaultStat() {
         return defaultStat;
     }
+
     private final static double tolerance = 5.0;
     private int idNum = 0;
     private DistanceStat disStat = defaultStat;
@@ -99,7 +99,7 @@ public class RDCConstraint extends RDC implements Constraint {
     public String toSTARString() {
         StringBuilder result = new StringBuilder();
         char sep = ' ';
-        result.append(RDCConstraintSet.ID++);
+        result.append(RDCConstraintSet.id++);
         result.append(sep);
         getAtom1().getSpatialSet().addToSTARString(result);
         result.append(sep);

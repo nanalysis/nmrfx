@@ -1,152 +1,152 @@
-- name : D2O
-  synonyms: [deuteriumoxide, h2o, d2o, urine, water]
+- name: D2O
+  synonyms: [ deuteriumoxide, h2o, d2o, urine, water ]
   isocanon: H2O-d2
   h2oShift: 4.77
   Hshifts:
-    - {s: 4.77, n: 1, j: 0}
-- name : Acetone
-  synonyms: [cd3cocd3, acetone-d6, \(cd3\)2co, acetone, aceton]
+    - { s: 4.77, n: 1, j: 0 }
+- name: Acetone
+  synonyms: [ cd3cocd3, acetone-d6, \(cd3\)2co, acetone, aceton ]
   isocanon: Acetone-d6
   h2oShift: 2.83
   Hshifts:
-    - {s: 2.04, n: 5, j: 2.2}
+    - { s: 2.04, n: 5, j: 2.2 }
   Cshifts:
-    - {s: 29.8, n: 7, j: 20.0}
-    - {s: 206.0, n: 13, j: 0.9}
-- name : Benzene
-  synonyms: [benzene, c6d6, benzene-d6]
+    - { s: 29.8, n: 7, j: 20.0 }
+    - { s: 206.0, n: 13, j: 0.9 }
+- name: Benzene
+  synonyms: [ benzene, c6d6, benzene-d6 ]
   isocanon: Benzene-d6
   h2oShift: 0.40
   Hshifts:
-    - {s: 7.15, n: 1, j: 0}
+    - { s: 7.15, n: 1, j: 0 }
   Cshifts:
-    - {s: 128.0, n: 3, j: 24.0}
-- name : DMSO
-  synonyms: [dmso, cd3socd3, dmso-d6, dimethylsulfoxide-d6]
+    - { s: 128.0, n: 3, j: 24.0 }
+- name: DMSO
+  synonyms: [ dmso, cd3socd3, dmso-d6, dimethylsulfoxide-d6 ]
   isocanon: DMSO-d6
   h2oShift: 3.30
   Hshifts:
-    - {s: 2.49, n: 5, j: 1.7}
+    - { s: 2.49, n: 5, j: 1.7 }
   Cshifts:
-    - {s: 39.5, n: 7, j: 21.0}
-- name : CD2Cl2
-  synonyms: [methylenechloride, cd2cl2, methylenechloride-d2]
+    - { s: 39.5, n: 7, j: 21.0 }
+- name: CD2Cl2
+  synonyms: [ methylenechloride, cd2cl2, methylenechloride-d2 ]
   isocanon: CH2Cl2-d2
   h2oShift: 1.52
   Hshifts:
-    - {s: 5.32, n: 3, j: 1.1}
+    - { s: 5.32, n: 3, j: 1.1 }
   Cshifts:
-    - {s: 53.8, n: 5, j: 27.2}
-- name : CDCl3
-  synonyms: [chloroform, cdcl3, chloroform-d]
+    - { s: 53.8, n: 5, j: 27.2 }
+- name: CDCl3
+  synonyms: [ chloroform, cdcl3, chloroform-d ]
   isocanon: CHCl3-d
   h2oShift: 1.55
   Hshifts:
-    - {s: 7.26, n: 1, j: 0}
+    - { s: 7.26, n: 1, j: 0 }
   Cshifts:
-    - {s: 77.0, n: 3, j: 31.7}
-- name : Cyclohexane
-  synonyms: [cyclohexane, c6d12, cyclohexane-d12]
+    - { s: 77.0, n: 3, j: 31.7 }
+- name: Cyclohexane
+  synonyms: [ cyclohexane, c6d12, cyclohexane-d12 ]
   isocanon: Cyclohexane-d12
-  h2oShift: 
+  h2oShift:
   Hshifts:
-    - {s: 1.38, n: 1, j: 0}
+    - { s: 1.38, n: 1, j: 0 }
   Cshifts:
-    - {s: 26.4, n: 5, j: 19.0}
-- name : Toluene
-  synonyms: [tol, toluene, c6d5cd3, toluene-d8]
+    - { s: 26.4, n: 5, j: 19.0 }
+- name: Toluene
+  synonyms: [ tol, toluene, c6d5cd3, toluene-d8 ]
   isocanon: Toluene-d8
   h2oShift: 0.5
   Hshifts:
-    - {s: 7.09, n: 1, j: 0}
-    - {s: 7.00, n: 1, j: 0}
-    - {s: 6.98, n: 1, j: 0}
-    - {s: 2.09, n: 5, j: 2.3}
+    - { s: 7.09, n: 1, j: 0 }
+    - { s: 7.00, n: 1, j: 0 }
+    - { s: 6.98, n: 1, j: 0 }
+    - { s: 2.09, n: 5, j: 2.3 }
   Cshifts:
-    - {s: 137.5, n: 1, j: 0}
-    - {s: 128.9, n: 3, j: 23.0}
-    - {s: 128.0, n: 3, j: 24.0}
-    - {s: 125.2, n: 3, j: 24.0}
-    - {s: 20.4, n: 7, j: 19.0}
-- name : CD3COOD
-  synonyms: [cd3cood, acetic_acid, acetic_acid-d4, aceticacid, acetic]
+    - { s: 137.5, n: 1, j: 0 }
+    - { s: 128.9, n: 3, j: 23.0 }
+    - { s: 128.0, n: 3, j: 24.0 }
+    - { s: 125.2, n: 3, j: 24.0 }
+    - { s: 20.4, n: 7, j: 19.0 }
+- name: CD3COOD
+  synonyms: [ cd3cood, acetic_acid, acetic_acid-d4, aceticacid, acetic ]
   isocanon: CH3COOH-d4
   h2oShift: 11.5
   Hshifts:
-    - {s: 2.03, n: 5, j: 2.0}
-    - {s: 11.53, n: 1, j: 0.0}
+    - { s: 2.03, n: 5, j: 2.0 }
+    - { s: 11.53, n: 1, j: 0.0 }
   Cshifts:
-    - {s: 20.0, n: 7, j: 20.0}
-    - {s: 178.4, n: 1, j: 0.0}
-- name : CD3OD
-  synonyms: [meod, cd3od, methyl_alcohol, methanol, methyl_alcohol-d4, methanol-d4]
+    - { s: 20.0, n: 7, j: 20.0 }
+    - { s: 178.4, n: 1, j: 0.0 }
+- name: CD3OD
+  synonyms: [ meod, cd3od, methyl_alcohol, methanol, methyl_alcohol-d4, methanol-d4 ]
   isocanon: CH3OH-d4
   h2oShift: 4.85
   Hshifts:
-    - {s: 3.30, n: 5, j: 1.7}
-    - {s: 4.78, n: 1, j: 0}
+    - { s: 3.30, n: 5, j: 1.7 }
+    - { s: 4.78, n: 1, j: 0 }
   Cshifts:
-    - {s: 49.0, n: 7, j: 21.5}
-- name : CD3CN
-  synonyms: [cd3cn, acetonitrile, acetonitrile-d3]
+    - { s: 49.0, n: 7, j: 21.5 }
+- name: CD3CN
+  synonyms: [ cd3cn, acetonitrile, acetonitrile-d3 ]
   isocanon: CH3CN-d3
   h2oShift: 2.12
   Hshifts:
-    - {s: 1.93, n: 5, j: 2.5}
+    - { s: 1.93, n: 5, j: 2.5 }
   Cshifts:
-    - {s: 1.3, n: 7, j: 21.0}
-    - {s: 118.2, n: 1, j: 0.0}
-- name : Pyridine
-  synonyms: [pyr, pyridine, pyridine, pyrideine-d6, c6d5n]
+    - { s: 1.3, n: 7, j: 21.0 }
+    - { s: 118.2, n: 1, j: 0.0 }
+- name: Pyridine
+  synonyms: [ pyr, pyridine, pyridine, pyrideine-d6, c6d5n ]
   isocanon: Pyridine-d6
   h2oShift: 4.95
   Hshifts:
-    - {s: 7.25, n: 1, j: 0}
-    - {s: 8.73, n: 1, j: 0}
-    - {s: 7.63, n: 1, j: 0}
+    - { s: 7.25, n: 1, j: 0 }
+    - { s: 8.73, n: 1, j: 0 }
+    - { s: 7.63, n: 1, j: 0 }
   Cshifts:
-    - {s: 150.35, n: 3, j: 27.5}
-    - {s: 135.91, n: 3, j: 24.5}
-    - {s: 123.87, n: 3, j: 25.0}
-- name : THF
-  synonyms: [thf, tetrahydrofuran, tetrahydrofuran, thf-d8]
+    - { s: 150.35, n: 3, j: 27.5 }
+    - { s: 135.91, n: 3, j: 24.5 }
+    - { s: 123.87, n: 3, j: 25.0 }
+- name: THF
+  synonyms: [ thf, tetrahydrofuran, tetrahydrofuran, thf-d8 ]
   isocanon: THF-d8
   h2oShift: 2.45
   Hshifts:
-    - {s: 3.58, n: 1, j: 0}
-    - {s: 1.73, n: 1, j: 0}
+    - { s: 3.58, n: 1, j: 0 }
+    - { s: 1.73, n: 1, j: 0 }
   Cshifts:
-    - {s: 67.57, n: 5, j: 22.2}
-    - {s: 25.37, n: 5, j: 22.2}
-- name : DMF
-  synonyms: [dmf, dimethylformamide-d7]
+    - { s: 67.57, n: 5, j: 22.2 }
+    - { s: 25.37, n: 5, j: 22.2 }
+- name: DMF
+  synonyms: [ dmf, dimethylformamide-d7 ]
   isocanon: DMF-d7
   h2oShift: 3.45
   Hshifts:
-    - {s: 2.75, n: 5, j: 1.9}
-    - {s: 2.92, n: 5, j: 1.9}
-    - {s: 8.03, n: 1, j: 0}
+    - { s: 2.75, n: 5, j: 1.9 }
+    - { s: 2.92, n: 5, j: 1.9 }
+    - { s: 8.03, n: 1, j: 0 }
   Cshifts:
-    - {s: 163.15, n: 3, j: 29.4}
-    - {s: 34.89, n: 7, j: 21.0}
-    - {s: 29.76, n: 7, j: 21.0}
-- name : TFA
-  synonyms: [tfa, trifluoroaceticacid, trifluoroacetic_acid, tfa-d, tfa-d1]
+    - { s: 163.15, n: 3, j: 29.4 }
+    - { s: 34.89, n: 7, j: 21.0 }
+    - { s: 29.76, n: 7, j: 21.0 }
+- name: TFA
+  synonyms: [ tfa, trifluoroaceticacid, trifluoroacetic_acid, tfa-d, tfa-d1 ]
   isocanon: TFA-d
   h2oShift: 11.5
   Hshifts:
-    - {s: 11.50, n: 1, j: 0}
+    - { s: 11.50, n: 1, j: 0 }
   Cshifts:
-    - {s: 164.2, n: 4, j: 38.0}
-    - {s: 116.6, n: 4, j: 289.0}
-- name : Ethanol
-  synonyms: [etod, ethyl_alcohol, ethanol, ethyl_alcohol-d6, ethanol-d6, cd3cd2od]
+    - { s: 164.2, n: 4, j: 38.0 }
+    - { s: 116.6, n: 4, j: 289.0 }
+- name: Ethanol
+  synonyms: [ etod, ethyl_alcohol, ethanol, ethyl_alcohol-d6, ethanol-d6, cd3cd2od ]
   isocanon: Ethanol-d6
   h2oShift: 5.16
   Hshifts:
-    - {s: 1.11, n: 5, j: 2.0}
-    - {s: 5.29, n: 1, j: 0}
-    - {s: 3.56, n: 3, j: 2.0}
+    - { s: 1.11, n: 5, j: 2.0 }
+    - { s: 5.29, n: 1, j: 0 }
+    - { s: 3.56, n: 3, j: 2.0 }
   Cshifts:
-    - {s: 56.96, n: 5, j: 22.0}
-    - {s: 17.31, n: 7, j: 19.0}
+    - { s: 56.96, n: 5, j: 22.0 }
+    - { s: 17.31, n: 7, j: 19.0 }

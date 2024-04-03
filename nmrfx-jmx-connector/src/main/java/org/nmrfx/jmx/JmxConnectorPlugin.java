@@ -17,10 +17,10 @@
  */
 package org.nmrfx.jmx;
 
-import org.nmrfx.jmx.mbeans.AnalystMBean;
-import org.nmrfx.jmx.mbeans.ConsoleMBean;
 import org.nmrfx.jmx.mbeans.Analyst;
+import org.nmrfx.jmx.mbeans.AnalystMBean;
 import org.nmrfx.jmx.mbeans.Console;
+import org.nmrfx.jmx.mbeans.ConsoleMBean;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.plugin.api.NMRFxPlugin;
 import org.slf4j.Logger;
@@ -32,7 +32,6 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
-import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.ServerSocket;
@@ -69,7 +68,7 @@ public class JmxConnectorPlugin implements NMRFxPlugin {
     }
 
     private int findFreePort() throws IOException {
-        try(ServerSocket s = new ServerSocket(0)) {
+        try (ServerSocket s = new ServerSocket(0)) {
             return s.getLocalPort();
         }
     }

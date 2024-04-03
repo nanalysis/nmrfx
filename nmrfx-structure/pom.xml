@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.3.3-SNAPSHOT</version>
+        <version>11.4.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.3.3-SNAPSHOT</version>
+                <version>11.4.8-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -30,11 +30,15 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>11.3.3-SNAPSHOT</version>
+            <version>11.4.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>javax.vecmath</groupId>
             <artifactId>vecmath</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow-core-platform</artifactId>
         </dependency>
         <dependency>
             <groupId>tw.edu.ntu.csie</groupId>
@@ -70,18 +74,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-interpolation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-io</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacpp</artifactId>
         </dependency>
@@ -90,16 +82,8 @@
             <artifactId>openblas-platform</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>arpack-ng-platform</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.deeplearning4j</groupId>
-            <artifactId>deeplearning4j-nn</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.nd4j</groupId>
-            <artifactId>nd4j-api</artifactId>
+            <groupId>com.actelion.research</groupId>
+            <artifactId>openchemlib</artifactId>
         </dependency>
     </dependencies>
     <build>

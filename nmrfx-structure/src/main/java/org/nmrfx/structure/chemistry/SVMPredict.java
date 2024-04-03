@@ -17,9 +17,13 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import libsvm.*;
+import libsvm.svm;
+import libsvm.svm_model;
+import libsvm.svm_node;
+
 import java.io.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 
 public class SVMPredict {
 

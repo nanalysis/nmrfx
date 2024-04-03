@@ -22,9 +22,9 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.DistanceStat;
-import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.constraints.Flags;
 import org.nmrfx.chemistry.constraints.Noe;
+import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
@@ -32,7 +32,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.nmrfx.chemistry.constraints.Noe.*;
+import static org.nmrfx.chemistry.constraints.Noe.avgDistance;
+import static org.nmrfx.chemistry.constraints.Noe.getAtoms;
 
 /**
  * @author brucejohnson
@@ -76,6 +77,18 @@ public class NOECalibrator {
 
     public void setScale(PeakList peakList, NoeCalibration noeCal) {
         scaleMap.put(peakList, noeCal);
+    }
+
+    public void setScale(String mMode, double referenceDist, double expValue, double minBound, double maxBound, double fError) {
+        for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
+            PeakList peakList = entry.getKey().getPeakList();
+            HashMap<PeakList, List<Double>> medianMap = calcMedian(mMode, peakList);
+            List<Double> valueList = medianMap.get(peakList);
+            double referenceValue = valueList.get(2);
+            double lower = 1.8;
+            NoeCalibration noeCal = new NoeCalibrationExp(mMode, lower, referenceValue, referenceDist, expValue, minBound, maxBound, fError, true);
+            scaleMap.put(peakList, noeCal);
+        }
     }
 
     public void updateContributions(boolean useDistances, boolean requireActive) {
@@ -417,11 +430,12 @@ public class NOECalibrator {
 
     /**
      * Checks if the entity is a residue and returns it as a residue, if not a message is logged and null is returned.
+     *
      * @param entity The entity to check
      * @return The entity cast to a residue
      */
     private Residue checkEntityIsResidue(Entity entity) {
-        if (entity instanceof Residue ) {
+        if (entity instanceof Residue) {
             return (Residue) entity;
         } else {
             log.info("Entity is not a polymer: {}", entity.getName());
@@ -436,22 +450,7 @@ public class NOECalibrator {
             return;
         }
         Map<String, Map<String, Noe>> resMap1 = new TreeMap<>();
-//
-//        for (CoordSet cSet : mol.coordSets.values()) {
-//            for (Entity entity : cSet.entities.values()) {
-//                if (entity instanceof Polymer) {
-//                    Vector residues = ((Polymer) entity).getResidues();
-//                    for (int iRes = 0; iRes < residues.size(); iRes++) {
-//                        Residue residue = (Residue) residues.elementAt(iRes);
-//                        String cName = cSet.getName() + "." + entity.getName() + ":" + residue.getNumber();
-//                    }
-//                }
-//            }
-//        }
-//        ArrayList<String> aList = mol.getCompounds();
-//        for (String cmpdName: aList) {
-//
-//        }
+
         StringBuilder cName1 = new StringBuilder();
         StringBuilder cName2 = new StringBuilder();
         long start = System.currentTimeMillis();
@@ -735,29 +734,16 @@ public class NOECalibrator {
         if (!noeSet.isCalibratable()) {
             return;
         }
-        double maxBound = 5.5;
-        double minBound = 2.0;
-        double floor = 1.0e-16;
-        double fError = 0.125;
-        double lower = 1.8;
-        for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().getPeakList();
+        for (Noe noe : noeSet.getConstraints()) {
+            PeakList peakList = noe.getPeak().peakList;
             if ((whichList != null) && (whichList != peakList)) {
                 continue;
             }
-            List<Noe> noeList = entry.getValue();
             NoeCalibration noeCal = getCalibration(peakList);
             if (noeCal == null) {
                 noeCal = defaultCal(peakList);
             }
-            for (Noe noe : noeList) {
-                // fixme  what about negative NOE peaks?
-                if (!noe.isActive()) {
-
-                    continue;
-                }
-                noeCal.calibrate(noe);
-            }
+            noeCal.calibrate(noe);
         }
     }
 

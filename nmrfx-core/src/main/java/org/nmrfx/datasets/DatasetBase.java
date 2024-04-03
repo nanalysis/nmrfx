@@ -1,6 +1,7 @@
 package org.nmrfx.datasets;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import java.nio.ByteOrder;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@PluginAPI("ring")
 public class DatasetBase {
     private static final Logger log = LoggerFactory.getLogger(DatasetBase.class);
 
@@ -173,7 +175,6 @@ public class DatasetBase {
     /**
      * Will reset all reference fields so they are sized corresponding to
      * current dataset dimension.
-     *
      */
     public final void setNDim() {
         vsize = new int[nDim];
@@ -266,9 +267,6 @@ public class DatasetBase {
         rdims = nDim;
         posDrawOn = true;
         negDrawOn = false;
-
-        //rdims = 0;
-        //theFile.dataType = 0;
     }
 
     /**
@@ -287,9 +285,9 @@ public class DatasetBase {
      *
      * @param pt indices of point to read
      * @return the dataset value
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if point is outside the range of dataset
-     * ( less than 0 or greater than or equal to size)
+     *                                  ( less than 0 or greater than or equal to size)
      */
     public double readPointRaw(int[] pt) throws IOException, IllegalArgumentException {
         int i;
@@ -352,12 +350,12 @@ public class DatasetBase {
      * Get the value of the dataset at a specified point.  The point is specified
      * as a raw index, ignoring whether the dataset is real or complex.
      *
-     * @param pt indices of point to read
+     * @param pt  indices of point to read
      * @param dim dimension indices that used for the point values
      * @return the dataset value
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if point is outside range of dataset (
-     * less than 0 or greater than or equal to size)
+     *                                  less than 0 or greater than or equal to size)
      */
     public double readPointRaw(int[] pt, int[] dim) throws IOException, IllegalArgumentException {
         int i;
@@ -380,16 +378,17 @@ public class DatasetBase {
         }
         return dataFile.getFloat(rPt) / scale;
     }
+
     /**
      * Get the value of the dataset at a specified point.  The point index is specified in
      * complex points if the dataset is complex, and real points if it is real.
      *
-     * @param pt indices of point to read
+     * @param pt  indices of point to read
      * @param dim dimension indices that used for the point values
      * @return the dataset value
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if point is outside range of dataset (
-     * less than 0 or greater than or equal to size)
+     *                                  less than 0 or greater than or equal to size)
      */
     public double readPoint(int[] pt, int[] dim) throws IOException, IllegalArgumentException {
         int i;
@@ -419,14 +418,15 @@ public class DatasetBase {
         return dataFile.getFloat(rPt) / scale;
 
     }
+
     /**
      * Write a value into the dataset at the specified point
      *
-     * @param pt indices of point to write
+     * @param pt    indices of point to write
      * @param value to write
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if point is outside range of dataset (
-     * less than 0 or greater than or equal to size)
+     *                                  less than 0 or greater than or equal to size)
      */
     public void writePoint(int[] pt, double value) throws IOException, IllegalArgumentException {
         int i;
@@ -569,7 +569,7 @@ public class DatasetBase {
      * Convert width in points to width in PPM
      *
      * @param iDim dataset dimension index
-     * @param pt width to convert
+     * @param pt   width to convert
      * @return width in ppm
      */
     public double ptWidthToPPM(int iDim, double pt) {
@@ -580,7 +580,7 @@ public class DatasetBase {
      * Convert width in Hz to width in points
      *
      * @param iDim dataset dimension index
-     * @param hz width in Hz
+     * @param hz   width in Hz
      * @return width in points
      */
     public double hzWidthToPoints(int iDim, double hz) {
@@ -591,7 +591,7 @@ public class DatasetBase {
      * Convert width in points to width in Hz
      *
      * @param iDim dataset dimension index
-     * @param pts width in points
+     * @param pts  width in points
      * @return width in Hz
      */
     public double ptWidthToHz(int iDim, double pts) {
@@ -602,7 +602,7 @@ public class DatasetBase {
      * Convert dataset position in points to position in PPM
      *
      * @param iDim dataset dimension index
-     * @param pt position in points
+     * @param pt   position in points
      * @return position in PPM
      */
     public double pointToPPM(int iDim, double pt) {
@@ -630,7 +630,7 @@ public class DatasetBase {
      * Convert dataset position in PPM to rounded position in points
      *
      * @param iDim dataset dimension index
-     * @param ppm position in PPM
+     * @param ppm  position in PPM
      * @return position in points
      */
     public int ppmToPoint(int iDim, double ppm) {
@@ -661,7 +661,7 @@ public class DatasetBase {
      * so that it is within the size of the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param ppm position in PPM
+     * @param ppm  position in PPM
      * @return position in points
      */
     public int ppmToFoldedPoint(int iDim, double ppm) {
@@ -684,7 +684,7 @@ public class DatasetBase {
      * Convert dataset position in PPM to position in points.
      *
      * @param iDim dataset dimension index
-     * @param ppm position in PPM
+     * @param ppm  position in PPM
      * @return position in points
      */
     public double ppmToDPoint(int iDim, double ppm) {
@@ -704,7 +704,7 @@ public class DatasetBase {
      * Convert dataset position in points to position in Hz
      *
      * @param iDim dataset dimension index
-     * @param pt position in points
+     * @param pt   position in points
      * @return position in Hz
      */
     public double pointToHz(int iDim, double pt) {
@@ -836,10 +836,10 @@ public class DatasetBase {
 
     /**
      * Set the size of the dataset along the specified dimension.  If the data is real
-     *      * this is the number of points.  If the data is complex it is the number of
-     *      * real plus imaginary points (twice the number of complex points).
+     * * this is the number of points.  If the data is complex it is the number of
+     * * real plus imaginary points (twice the number of complex points).
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param newSize the size to set
      */
     public void setSizeTotal(final int iDim, final int newSize) {
@@ -855,19 +855,19 @@ public class DatasetBase {
      * @return the size
      */
     public int getSizeReal(int iDim) {
-        return getSizeTotal(iDim)/ (getComplex(iDim) ? 2 : 1);
+        return getSizeTotal(iDim) / (getComplex(iDim) ? 2 : 1);
     }
 
     /**
      * Set the size of the dataset along the specified dimension.  If the data is real
-     *      * this is the number of points.  If the data is complex it is the number of
-     *      * complex points).
+     * * this is the number of points.  If the data is complex it is the number of
+     * * complex points).
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param newSize the size to set
      */
     public void setSizeReal(final int iDim, final int newSize) {
-       setSizeTotal(iDim, newSize * (getComplex(iDim) ? 2 : 1));
+        setSizeTotal(iDim, newSize * (getComplex(iDim) ? 2 : 1));
     }
 
     /**
@@ -958,7 +958,7 @@ public class DatasetBase {
     /**
      * Set the first point extracted region.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param point the point to set
      */
     public void setExtFirst(final int iDim, final int point) {
@@ -968,7 +968,7 @@ public class DatasetBase {
     /**
      * Set the last point extracted region.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param point the point to set
      */
     public void setExtLast(final int iDim, final int point) {
@@ -1008,7 +1008,7 @@ public class DatasetBase {
      * Set the spectrometer frequency for the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param sf the sf to set
+     * @param sf   the sf to set
      */
     public void setSf(final int iDim, final double sf) {
         this.sf[iDim] = sf;
@@ -1037,7 +1037,7 @@ public class DatasetBase {
      * Set the sweep width for the specified dimension.
      *
      * @param iDim Dataset dimension index
-     * @param sw the sweep width to set
+     * @param sw   the sweep width to set
      */
     public void setSw(final int iDim, final double sw) {
         this.sw[iDim] = sw;
@@ -1067,7 +1067,7 @@ public class DatasetBase {
      * Set the dataset point at which the reference value is set for the
      * specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param refPt the reference point to set
      */
     public void setRefPt(final int iDim, final double refPt) {
@@ -1097,7 +1097,7 @@ public class DatasetBase {
     /**
      * Set the reference value for the specified dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim     Dataset dimension index
      * @param refValue the reference value to set
      */
     public void setRefValue(final int iDim, final double refValue) {
@@ -1129,7 +1129,7 @@ public class DatasetBase {
      * specified dimension
      *
      * @param iDim Dataset dimension index
-     * @param ph0 the phase value to set
+     * @param ph0  the phase value to set
      */
     public void setPh0(final int iDim, final double ph0) {
         this.ph0[iDim] = ph0;
@@ -1160,7 +1160,7 @@ public class DatasetBase {
      * specified dimension
      *
      * @param iDim Dataset dimension index
-     * @param ph1 the first order phase
+     * @param ph1  the first order phase
      */
     public void setPh1(final int iDim, final double ph1) {
         this.ph1[iDim] = ph1;
@@ -1219,7 +1219,7 @@ public class DatasetBase {
      * Set the dataset point at which the reference value is set for the
      * specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param refPt_r the reference point to set
      */
     public void setRefPt_r(final int iDim, final double refPt_r) {
@@ -1249,7 +1249,7 @@ public class DatasetBase {
     /**
      * Set the reference value for the specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim       Dataset dimension index
      * @param refValue_r the reference value to set
      */
     public void setRefValue_r(final int iDim, final double refValue_r) {
@@ -1262,7 +1262,7 @@ public class DatasetBase {
     /**
      * Set the folding up value for the specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param value the folding value to set
      */
     public void setFoldUp(final int iDim, final double value) {
@@ -1279,15 +1279,15 @@ public class DatasetBase {
 
     public double[] getLimits(int iDim) {
         return new double[]{
-            pointToPPM(iDim, size(iDim) - 1),
-            pointToPPM(iDim, 0)
+                pointToPPM(iDim, size(iDim) - 1),
+                pointToPPM(iDim, 0)
         };
     }
 
     /**
      * Set the folding down value for the specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param value the folding value to set
      */
     public void setFoldDown(final int iDim, final double value) {
@@ -1315,7 +1315,7 @@ public class DatasetBase {
      * Set the zero order phase parameter that was used in processing the
      * specified dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param ph0_r the zeroth order phase to set
      */
     public void setPh0_r(final int iDim, final double ph0_r) {
@@ -1346,7 +1346,7 @@ public class DatasetBase {
      * Set the first order phase parameter that was used in processing the
      * specified dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param ph1_r the first order phase to set
      */
     public void setPh1_r(final int iDim, final double ph1_r) {
@@ -1369,7 +1369,7 @@ public class DatasetBase {
     /**
      * Set the units used for the reference value
      *
-     * @param iDim Dataset dimension index
+     * @param iDim     Dataset dimension index
      * @param refUnits the refUnits to set
      */
     public void setRefUnits(final int iDim, final int refUnits) {
@@ -1395,7 +1395,7 @@ public class DatasetBase {
     /**
      * Set the complex mode for the specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param complex the complex to set
      */
     public void setComplex(final int iDim, final boolean complex) {
@@ -1421,7 +1421,7 @@ public class DatasetBase {
     /**
      * Set the complex mode for the specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim      Dataset dimension index
      * @param complex_r the complex_r to set
      */
     public void setComplex_r(final int iDim, final boolean complex_r) {
@@ -1441,7 +1441,7 @@ public class DatasetBase {
     /**
      * Set the axis reversed mode for the specified dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim         Dataset dimension index
      * @param axisReversed the value to set
      */
     public void setAxisReversed(final int iDim, final boolean axisReversed) {
@@ -1469,7 +1469,7 @@ public class DatasetBase {
     /**
      * Set the frequency domain mode of the specified dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim       Dataset dimension index
      * @param freqDomain value to set
      */
     public void setFreqDomain(final int iDim, final boolean freqDomain) {
@@ -1500,7 +1500,7 @@ public class DatasetBase {
     /**
      * Set the frequency domain mode of the specified dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim         Dataset dimension index
      * @param freqDomain_r the freqDomain_r to set
      */
     public void setFreqDomain_r(final int iDim, final boolean freqDomain_r) {
@@ -1524,7 +1524,7 @@ public class DatasetBase {
     /**
      * Set the display label to be used on the axis for this dataset dimension.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim   Dataset dimension index
      * @param dlabel the display label to set
      */
     public void setDlabel(final int iDim, final String dlabel) {
@@ -1547,17 +1547,9 @@ public class DatasetBase {
             } else if ((labelTest.charAt(0) == 'D') && (labelTest.length() == 2) && (Character.isDigit(labelTest.charAt(1)))) {
                 nucleus = Nuclei.findNuclei(sf);
             } else {
-                for (Nuclei nucValue : Nuclei.values()) {
-                    if (labelTest.contains(nucValue.getNameNumber())) {
-                        nucleus[iDim] = nucValue;
-                        break;
-                    } else if (labelTest.contains(nucValue.getNumberName())) {
-                        nucleus[iDim] = nucValue;
-                        break;
-                    } else if (labelTest.contains(nucValue.getName())) {
-                        nucleus[iDim] = nucValue;
-                        break;
-                    }
+                var foundNuc = Nuclei.findNucleusInLabel(labelTest);
+                if (foundNuc.isPresent()) {
+                    nucleus[iDim] = foundNuc.get();
                 }
             }
         }
@@ -1570,7 +1562,7 @@ public class DatasetBase {
     /**
      * Set the nucleus that was used for detection of this dataset dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param nucleus the name of the nucleus to set
      */
     public void setNucleus(final int iDim, final String nucleus) {
@@ -1580,7 +1572,7 @@ public class DatasetBase {
     /**
      * Set the nucleus that was used for detection of this dataset dimension
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param nucleus the nucleus to set
      */
     public void setNucleus(final int iDim, final Nuclei nucleus) {
@@ -1613,8 +1605,8 @@ public class DatasetBase {
      * @param posneg the posneg to set
      */
     public void setPosneg(int posneg) {
-        posDrawOn =  (posneg & 1) != 0;
-        negDrawOn =  (posneg & 2) != 0;
+        posDrawOn = (posneg & 1) != 0;
+        negDrawOn = (posneg & 2) != 0;
     }
 
     public boolean getPosDrawOn() {
@@ -1710,6 +1702,7 @@ public class DatasetBase {
     /**
      * Set the norm value used to divide intensity values in the dataset by finding the smallest
      * integral, without count very small integrals (less than 0.001 of max to avoid artifacts.
+     *
      * @param datasetRegions The regions to calculate the norm from.
      */
     public void setNormFromRegions(Collection<DatasetRegion> datasetRegions) {
@@ -1846,7 +1839,7 @@ public class DatasetBase {
      * Set valid size for specified dimension. Normally used to track number of
      * rows, columns etc. that have had valid data written to.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param newSize Valid size for dimension.
      */
     public void setVSize(int iDim, int newSize) {
@@ -1859,7 +1852,7 @@ public class DatasetBase {
      * Set valid size for specified dimension. Normally used to track number of
      * rows, columns etc. that have had valid data written to.
      *
-     * @param iDim Dataset dimension index
+     * @param iDim    Dataset dimension index
      * @param newSize Valid size for dimension
      */
     public void setVSize_r(int iDim, int newSize) {
@@ -1953,7 +1946,7 @@ public class DatasetBase {
     /**
      * Add a new property to this file
      *
-     * @param name The name of the property
+     * @param name  The name of the property
      * @param value The value for the property
      */
     public void addProperty(String name, String value) {
@@ -2009,7 +2002,7 @@ public class DatasetBase {
     /**
      * Set the label for the specified axis
      *
-     * @param iDim Dataset dimension index
+     * @param iDim  Dataset dimension index
      * @param label the display label to set
      */
     public void setLabel(final int iDim, final String label) {
@@ -2050,7 +2043,7 @@ public class DatasetBase {
     /**
      * Store a set of values for a dimension of dataset
      *
-     * @param iDim the dataset dimension
+     * @param iDim   the dataset dimension
      * @param values the values
      */
     public void setValues(int iDim, double[] values) {
@@ -2060,17 +2053,16 @@ public class DatasetBase {
         if (values == null) {
             this.values[iDim] = null;
         } else {
-            if (values.length != getSizeTotal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
+            if (values.length == getSizeTotal(iDim)) {
+                this.values[iDim] = values.clone();
             }
-            this.values[iDim] = values.clone();
         }
     }
 
     /**
      * Store a set of values for a dimension of dataset
      *
-     * @param iDim the dataset dimension
+     * @param iDim   the dataset dimension
      * @param values the values
      */
     public void setValues(int iDim, List<Double> values) {
@@ -2128,6 +2120,7 @@ public class DatasetBase {
 
     /**
      * Sets the regions with a new list of regions
+     *
      * @param regions
      */
     public void setRegions(List<DatasetRegion> regions) {
@@ -2145,6 +2138,7 @@ public class DatasetBase {
 
     /**
      * Gets a list of the regions that cannot be modified.
+     *
      * @return An unmodifiable list of regions
      */
     public List<DatasetRegion> getReadOnlyRegions() {
@@ -2157,6 +2151,7 @@ public class DatasetBase {
     /**
      * Adds a new region to the list of dataset regions and notifies all the listeners. If the region is already
      * present in the list of regions it will not be added.
+     *
      * @param region The DatasetRegion to add.
      */
     public void addRegion(DatasetRegion region) {
@@ -2168,6 +2163,7 @@ public class DatasetBase {
 
     /**
      * Removes the region from the list of regions.
+     *
      * @param region The DatasetRegion to remove
      */
     public void removeRegion(DatasetRegion region) {

@@ -11,7 +11,6 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 
 /**
- *
  * @author brucejohnson
  */
 public class MoleculeMenu extends ChartMenu {

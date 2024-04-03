@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,23 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
+import javafx.beans.InvalidationListener;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableObjectValue;
+import org.controlsfx.control.PropertySheet;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableObjectValue;
-
 /**
- *
  * @author johnsonb
  */
 public class ListOperationItem extends OperationItem implements ObservableObjectValue<String> {
@@ -46,7 +46,6 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     ChoiceOperationItem typeSelector;
 
     /**
-     *
      * @param listener
      * @param defaultValue optional default value for the List.
      * @param category
@@ -54,8 +53,8 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      * @param description
      * @param typeSelector
      */
-    public ListOperationItem(ChangeListener<? super String> listener, List<?> defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
-        super(category, name, description);
+    public ListOperationItem(PropertySheet propertySheet, ChangeListener<? super String> listener, List<?> defaultValue, String category, String name, String description, ChoiceOperationItem typeSelector) {
+        super(propertySheet, category, name, description);
         this.defaultValue = Objects.requireNonNullElseGet(defaultValue, ArrayList::new);
         this.value = this.defaultValue;
         this.listener = listener;
@@ -94,6 +93,7 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      * Value is set by giving a String of comma separated values or an ArrayList object.
      * Any other object types will not change value. The listener is only updated if the
      * new values from o are different from the old values.
+     *
      * @param o
      */
     @Override
@@ -198,7 +198,8 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      * Returns the string representation of all Number values in the format "[.,.,.]" without any extra white
      * space, if values contain non Numbers, those elements are not returned.
      * Example: if values = [1.0, 2.0, 3.0] -> "[1.0,2.0,3.0]"
-     *          if values = ["one", "two", "three"] -> "[]"
+     * if values = ["one", "two", "three"] -> "[]"
+     *
      * @return The string representation of values
      */
     @Override

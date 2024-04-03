@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,47 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import java.io.IOException;
-import java.net.URL;
-import java.text.DecimalFormat;
-import java.util.ResourceBundle;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToolBar;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import java.text.Format;
-import java.util.Optional;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.geometry.Side;
+import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.Callback;
-import javafx.util.StringConverter;
-import javafx.util.converter.DefaultStringConverter;
+import org.controlsfx.control.MasterDetailPane;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -65,41 +47,83 @@ import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.Noe;
 import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.Format;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
+
 /**
- *
  * @author johnsonb
  */
-public class NOETableController implements Initializable {
+public class NOETableController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
+    
+    private static final String CONSTRAINT_GENERATION_STRING = "Constraint Generation";
+    private static final String EXP_CALIBRATION_STRING = "Calibration-Exponential";
     private Stage stage;
     @FXML
     private ToolBar toolBar;
     @FXML
+    MasterDetailPane masterDetailPane;
+    @FXML
     private TableView<Noe> tableView;
     private NoeSet noeSet;
 
-    Button valueButton;
-    Button saveParButton;
-    Button closeButton;
     MenuButton noeSetMenuItem;
     MenuButton peakListMenuButton;
     ObservableMap<String, NoeSet> noeSetMap;
     MoleculeBase molecule = null;
     MolecularConstraints molConstr = null;
+    PropertySheet propertySheet;
+    CheckBox detailsCheckBox;
+    IntRangeOperationItem maxAmbigItem;
+    BooleanOperationItem strictItem;
+    BooleanOperationItem unambiguousItem;
+    BooleanOperationItem autoAssignItem;
+
+    BooleanOperationItem onlyFrozenItem;
+    DoubleRangeOperationItem refDistanceItem;
+    DoubleRangeOperationItem expItem;
+    DoubleRangeOperationItem minDisItem;
+    DoubleRangeOperationItem maxDisItem;
+    DoubleRangeOperationItem fErrorItem;
+    ChoiceOperationItem modeItem;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
+        tableView = new TableView<>();
+        masterDetailPane.setMasterNode(tableView);
+        propertySheet = new PropertySheet();
+        masterDetailPane.setDetailSide(Side.RIGHT);
+        masterDetailPane.setDetailNode(propertySheet);
+        masterDetailPane.setShowDetailNode(true);
+        masterDetailPane.setDividerPosition(0.7);
+        propertySheet.setPrefWidth(400);
+        propertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory());
+        propertySheet.setMode(PropertySheet.Mode.CATEGORY);
+        propertySheet.setModeSwitcherVisible(false);
+        propertySheet.setSearchBoxVisible(false);
+
         initTable();
         molecule = MoleculeFactory.getActive();
         if (molecule != null) {
@@ -107,57 +131,84 @@ public class NOETableController implements Initializable {
         }
 
         noeSetMap = FXCollections.observableMap(molConstr.noeSets);
-        MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> {
-            updateNoeSetMenu();
-        };
+        MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> updateNoeSetMenu();
 
         noeSetMap.addListener(mapChangeListener);
-        MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
-        Project.getActive().addPeakListListener(peakmapChangeListener);
+        MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
+        ProjectBase.getActive().addPeakListListener(peakmapChangeListener);
 
         updateNoeSetMenu();
         updatePeakListMenu();
+        masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
 
+        maxAmbigItem = new IntRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                20, 1,40, CONSTRAINT_GENERATION_STRING, "Maximum Ambiguity", "Maximum Ambiguity");
+
+        autoAssignItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Auto-Assign", "Autoassign unassigned peaks");
+
+        onlyFrozenItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Frozen", "Only extract from frozen peaks");
+
+        strictItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Strictly Assign", "Only extract assigned peaks");
+
+        unambiguousItem= new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Unambiguous", "Only extract unambiguous peaks");
+
+        List<String> intVolChoice = List.of("Intensity", "Volume");
+        modeItem = new ChoiceOperationItem(propertySheet, (a, b, c) -> refresh(), "intensity", intVolChoice, EXP_CALIBRATION_STRING, "Mode", "Reference Distance");
+        refDistanceItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                3.0, 1.0, 6.0, false, EXP_CALIBRATION_STRING, "Ref Distance", "Reference Distance");
+        expItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                6.0, 1.0, 6.0, false, EXP_CALIBRATION_STRING, "Exp Factor", "Exponent value");
+        minDisItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                2.0, 1.0, 3.0, false, EXP_CALIBRATION_STRING, "Min Distance", "Minimum bound");
+        maxDisItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                6.0, 3.0, 6.0, false, EXP_CALIBRATION_STRING, "Max Distance", "Maximum bound");
+        fErrorItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
+                0.125, 0.0, 0.2, false, EXP_CALIBRATION_STRING, "Tolerance", "Fractional additional bound");
+        propertySheet.getItems().addAll(
+                autoAssignItem, strictItem, onlyFrozenItem, unambiguousItem,maxAmbigItem,
+                modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem
+        );
+    }
+
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     public Stage getStage() {
         return stage;
     }
 
+    private void refresh() {
+        tableView.refresh();
+    }
+
     public static NOETableController create() {
         if (MoleculeFactory.getActive() == null) {
-            GUIUtils.warn("NOE Table", "No active molecule");        
+            GUIUtils.warn("NOE Table", "No active molecule");
             return null;
         }
 
-        
-        FXMLLoader loader = new FXMLLoader(NOETableController.class.getResource("/fxml/NoeTableScene.fxml"));
-        NOETableController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
-
-            controller = loader.<NOETableController>getController();
-            controller.stage = stage;
-            stage.setTitle("Peaks");
-            stage.show();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-
+        NOETableController controller = Fxml.load(NOETableController.class, "NoeTableScene.fxml")
+                .withNewStage("Peaks")
+                .getController();
+        controller.stage.show();
         return controller;
-
     }
 
     void initToolBar() {
-
+        Button exportButton = new Button("Export");
+        exportButton.setOnAction(e -> exportNMRFxFile());
+        Button clearButton = new Button("Clear");
+        clearButton.setOnAction(e -> clearNOESet());
+        Button calibrateButton = new Button("Calibrate");
+        calibrateButton.setOnAction(e -> calibrate());
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
-        toolBar.getItems().addAll(noeSetMenuItem, peakListMenuButton);
+        detailsCheckBox = new CheckBox("Options");
+
+        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton,
+                calibrateButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -166,12 +217,10 @@ public class NOETableController implements Initializable {
         MoleculeBase mol = MoleculeFactory.getActive();
 
         if (mol != null) {
-            MolecularConstraints molConstr = mol.getMolecularConstraints();
-            for (String noeSetName : molConstr.getNOESetNames()) {
+            MolecularConstraints molecularConstraints = mol.getMolecularConstraints();
+            for (String noeSetName : molecularConstraints.getNOESetNames()) {
                 MenuItem menuItem = new MenuItem(noeSetName);
-                menuItem.setOnAction(e -> {
-                    setNoeSet(molConstr.noeSets.get(noeSetName));
-                });
+                menuItem.setOnAction(e -> setNoeSet(molecularConstraints.noeSets.get(noeSetName)));
                 noeSetMenuItem.getItems().add(menuItem);
             }
         }
@@ -179,32 +228,27 @@ public class NOETableController implements Initializable {
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
-
-        for (String peakListName : Project.getActive().getPeakListNames()) {
+        for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                extractPeakList(PeakList.get(peakListName));
-            });
+            menuItem.setOnAction(e -> extractPeakList(PeakList.get(peakListName)));
             peakListMenuButton.getItems().add(menuItem);
         }
     }
 
-    public void refreshPeakView() {
-        tableView.refresh();
-    }
-
-    public NoeSet getNoeSet() {
-        return noeSet;
-    }
-
-    private class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        private Format format;
-
-        public ColumnFormatter(Format format) {
-            super();
-            this.format = format;
+    private void exportNMRFxFile() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                noeSet.writeNMRFxFile(file);
+            } catch (IOException ioE) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(ioE);
+                exceptionDialog.show();
+            }
         }
+    }
+
+    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
         @Override
         public TableCell<S, T> call(TableColumn<S, T> arg0) {
@@ -222,36 +266,22 @@ public class NOETableController implements Initializable {
         }
     }
 
-    class PeakStringFieldTableCell extends TextFieldTableCell<Peak, String> {
-
-        PeakStringFieldTableCell(StringConverter converter) {
-            super(converter);
-        }
-
-    }
-
     void initTable() {
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns();
-        ListChangeListener listener = (ListChangeListener) (ListChangeListener.Change c) -> {
-            int nSelected = tableView.getSelectionModel().getSelectedItems().size();
-            boolean state = nSelected == 1;
-        };
-        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
-//        tableView.setOnMouseClicked(e -> {
-//            if (e.getClickCount() == 2) {
-//                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
-//                    Noe peak = tableView.getSelectionModel().getSelectedItems().get(0);
-//                    showPeakInfo(peak);
-//                }
-//            }
-//        });
+        tableView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
+                    Noe noe = tableView.getSelectionModel().getSelectedItems().get(0);
+                    showPeakInfo(noe);
+                }
+            }
+        });
     }
 
     void updateColumns() {
         tableView.getColumns().clear();
-        StringConverter sConverter = new DefaultStringConverter();
 
         TableColumn<Noe, Integer> idNumCol = new TableColumn<>("id");
         idNumCol.setCellValueFactory(new PropertyValueFactory("ID"));
@@ -315,12 +345,16 @@ public class NOETableController implements Initializable {
         networkCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         networkCol.setPrefWidth(75);
 
-        tableView.getColumns().addAll(lowerCol, upperCol, ppmCol, contribCol, networkCol);
+        TableColumn<Noe, String> flagCol = new TableColumn<>("Flags");
+        flagCol.setCellValueFactory(new PropertyValueFactory("ActivityFlags"));
+        flagCol.setPrefWidth(75);
+
+        tableView.getColumns().addAll(lowerCol, upperCol, ppmCol, contribCol, networkCol, flagCol);
 
     }
 
     public void setNoeSet(NoeSet noeSet) {
-        log.info("set noes {}", noeSet);
+        log.info("set noes {}", noeSet != null ? noeSet.getName() : "empty");
         this.noeSet = noeSet;
         if (tableView == null) {
             log.warn("null table");
@@ -340,39 +374,81 @@ public class NOETableController implements Initializable {
 
     }
 
+    void calibrate() {
+        if (noeSet == null) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            noeSet = noeSetOpt.orElseGet(() -> molConstr.newNOESet("default"));
+        }
+        if (noeSet != null) {
+            log.info("Calibrate {} {}", noeSet.getName(), noeSet);
+            String intVolChoice = modeItem.getValue().toLowerCase();
+            double referenceDistance = refDistanceItem.doubleValue();
+            double expValue = expItem.doubleValue();
+            double minDistance = minDisItem.doubleValue();
+            double maxDistance = maxDisItem.doubleValue();
+            double fError = fErrorItem.doubleValue();
+            noeSet.setCalibratable(true);
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSet);
+            noeCalibrator.setScale(intVolChoice, referenceDistance, expValue, minDistance, maxDistance, fError);
+            noeCalibrator.calibrateExp(null);
+
+            setNoeSet(noeSet);
+            refresh();
+        }
+    }
+
     void extractPeakList(PeakList peakList) {
+        if (NOEAssign.getProtonDims(peakList).isEmpty()) {
+            GUIUtils.warn("Extract Peaks", "Peak list " + peakList.getName() + " doesn't have two proton dimensions");
+            return;
+        }
+        boolean onlyFrozen = onlyFrozenItem.getValue();
+        boolean autoAssign = autoAssignItem.getValue();
+        boolean unambiguous = unambiguousItem.getValue();
         int nDim = peakList.nDim;
         try {
-            for (int i = 0; i < nDim; i++) {
-                NOEAssign.findMax(peakList, i, 0);
+            if (autoAssign) {
+                for (int i = 0; i < nDim; i++) {
+                    NOEAssign.findMax(peakList, i, 0, onlyFrozen);
+                }
             }
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             if (noeSetOpt.isEmpty()) {
                 noeSet = molConstr.newNOESet("default");
                 noeSetOpt = Optional.of(noeSet);
+            }
+            if (!autoAssign) {
+                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguous, onlyFrozen );
             } else {
-                noeSet = noeSetOpt.get();
+                NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozen);
             }
-            NOEAssign.extractNoePeaks2(noeSetOpt, peakList, 2, false, 0);
-            if (noeSetOpt.isPresent()) {
-                NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
-                noeCalibrator.updateContributions(false, false);
-                noeSet = noeSetOpt.get();
-                log.info("active {}", noeSet.getName());
-            }
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+            noeCalibrator.updateContributions(false, false);
+            noeSet = noeSetOpt.get();
+            log.info("active {}", noeSet.getName());
+
             setNoeSet(noeSet);
             updateNoeSetMenu();
-        } catch (InvalidMoleculeException ex) {
+        } catch (InvalidMoleculeException | IllegalArgumentException ex) {
             ExceptionDialog exD = new ExceptionDialog(ex);
             exD.show();
         }
     }
 
-    void showPeakInfo(Noe noe) {
-
+    void clearNOESet() {
+        if (GUIUtils.affirm("Clear active set")) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            noeSetOpt.ifPresent(NoeSet::clear);
+            refresh();
+        }
     }
 
-    void closePeak() {
-
+    void showPeakInfo(Noe noe) {
+        Peak peak = noe.peak;
+        if (peak != null) {
+            FXMLController.showPeakAttr();
+            FXMLController.getPeakAttrController().gotoPeak(peak);
+            FXMLController.getPeakAttrController().getStage().toFront();
+        }
     }
 }

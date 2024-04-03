@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 package org.nmrfx.chemistry;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,22 +26,15 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.math3.util.FastMath;
-
 /**
- *
  * @author Bruce Johnson
  */
 public class Util {
 
-    static boolean strictlyNEF;
+    private static boolean strictlyNEF;
 
-    static public void setStrictlyNEF(boolean state) {
+    public static void setStrictlyNEF(boolean state) {
         strictlyNEF = state;
-    }
-
-    static public boolean isStrictlyNEF() {
-        return strictlyNEF;
     }
 
     public static boolean hasSameShift(Atom atom, Atom partnerAtom) {
@@ -64,7 +59,7 @@ public class Util {
         return result;
     }
 
-    public static final String getXYName(Atom atom) {
+    public static String getXYName(Atom atom) {
         Optional<Atom> partner = Optional.empty();
         String result;
         Atom atom1 = atom;
@@ -94,7 +89,7 @@ public class Util {
         return result;
     }
 
-    public static final boolean nefMatch(Atom atom, String pat) {
+    public static boolean nefMatch(Atom atom, String pat) {
         boolean result = nefMatch(atom.name.toLowerCase(), pat);
         if (result && ((pat.contains("x") && !pat.equals("oxt")) || pat.contains("y"))) {
             Optional<Atom> partner = Optional.empty();
@@ -148,22 +143,21 @@ public class Util {
     }
 
     /**
-     *
      * stringMatch --
-     *
+     * <p>
      * See if a particular string matches a particular pattern. The matching
      * operation permits the following special characters in the pattern: *?\[]
      * (see the manual entry for details on what these mean).
-     *
+     * <p>
      * Results: True if the string matches with the pattern.
-     *
+     * <p>
      * Side effects: None.
      *
      * @param str String to compare pattern against
      * @param pat Pattern which may contain special characters.
      * @return true if string matches within the pattern
      */
-    public static final boolean stringMatch(String str, String pat) {
+    public static boolean stringMatch(String str, String pat) {
         char[] strArr = str.toCharArray();
         char[] patArr = pat.toCharArray();
         int strLen = str.length(); // Cache the len of str.

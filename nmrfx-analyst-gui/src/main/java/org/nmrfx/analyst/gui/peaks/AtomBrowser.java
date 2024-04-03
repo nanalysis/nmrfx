@@ -7,36 +7,14 @@ package org.nmrfx.analyst.gui.peaks;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.Util;
@@ -48,16 +26,19 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class AtomBrowser {
@@ -105,7 +86,7 @@ public class AtomBrowser {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", MainApp.ICON_SIZE_STR, MainApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -247,29 +228,22 @@ public class AtomBrowser {
             double rMax = rangeItem.max;
             for (int i = 0; i < items.size(); i++) {
                 PolyChart chart = controller.getCharts().get(i);
-                chart.setActiveChart();
+                PolyChartManager.getInstance().setActiveChart(chart);
                 DrawItem item = items.get(i);
                 List<String> datasetList = new ArrayList<>();
                 datasetList.add(item.dataset.getName());
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
-                // fixme chart.setTitle(item.dataset.getTitle());
                 chart.updateDatasets(datasetList);
                 chart.updatePeakLists(peakListList);
-                // fixme
-//                chart.getChildrenUnmodifiable().stream().filter((node) -> (node instanceof Label)).forEachOrdered((node) -> {
-//                    node.setOnMouseClicked(e -> System.out.println("Clicked node " + item.dataset.getName()));
-//                });
 
                 Double ppm = item.getShift();
                 double delta = 0.1;
                 if (ppm != null) {
                     double cMin = ppm - delta;
                     double cMax = ppm + delta;
-                    chart.getAxis(centerDim).setLowerBound(cMin);
-                    chart.getAxis(centerDim).setUpperBound(cMax);
-                    chart.getAxis(rangeDim).setLowerBound(rMin);
-                    chart.getAxis(rangeDim).setUpperBound(rMax);
+                    chart.getAxes().setMinMax(centerDim, cMin, cMax);
+                    chart.getAxes().setMinMax(rangeDim, rMin, rMax);
                     chart.refresh();
                 }
             }
@@ -317,8 +291,8 @@ public class AtomBrowser {
             maxField.setText(String.format("%.1f", max));
 
             controller.getCharts().stream().forEach(chart -> {
-                chart.getAxis(rangeDim).setLowerBound(min);
-                chart.getAxis(rangeDim).setUpperBound(max);
+                chart.getAxes().get(rangeDim).setLowerBound(min);
+                chart.getAxes().get(rangeDim).setUpperBound(max);
             });
         }
     }
@@ -338,8 +312,8 @@ public class AtomBrowser {
             try {
                 double min = Double.parseDouble(minField.getText());
                 double max = Double.parseDouble(maxField.getText());
-                chart.getAxis(rangeDim).setLowerBound(min);
-                chart.getAxis(rangeDim).setUpperBound(max);
+                chart.getAxes().get(rangeDim).setLowerBound(min);
+                chart.getAxes().get(rangeDim).setUpperBound(max);
             } catch (NumberFormatException nfE) {
                 log.warn("Unable to update range value.", nfE);
             }
@@ -415,7 +389,7 @@ public class AtomBrowser {
         final boolean useOrder = true;
         List<Peak> peaks = new ArrayList<>();
 
-        Project.getActive().getPeakLists().stream().forEach(peakList -> {
+        ProjectBase.getActive().getPeakLists().stream().forEach(peakList -> {
             if (Util.stringMatch(peakList.getName(), listPattern)) {
                 List<Peak> listPeaks = peakList.matchPeaks(matchStrings, useRegexp, useOrder);
                 peaks.addAll(listPeaks);
@@ -475,7 +449,7 @@ public class AtomBrowser {
     }
 
     public static List<AtomDelta> getMatchingAtomNames(DatasetBase dataset,
-            SpectralDim sDim, double ppm, double tol) {
+                                                       SpectralDim sDim, double ppm, double tol) {
         double[] ppms = {ppm};
         Map<String, AtomDelta> atomDeltaMap = new HashMap<>();
         for (PeakList peakList : PeakList.peakLists()) {

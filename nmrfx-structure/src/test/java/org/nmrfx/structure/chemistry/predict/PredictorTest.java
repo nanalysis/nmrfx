@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +14,7 @@ import java.util.Map;
 public class PredictorTest {
 
     public Compound loadData(String fileName) throws IOException, MoleculeIOException {
-        Path path =  Path.of("src", "test", "data", "mol", fileName);
+        Path path = Path.of("src", "test", "data", "mol", fileName);
         String content = Files.readString(path);
         return SDFile.read("test", content, null, "A");
     }
@@ -26,7 +27,7 @@ public class PredictorTest {
         Compound compound = loadData("mol50044.sd");
         predictor.predictWithShells(compound, -1);
         var atoms = compound.atoms;
-        for (int i = 0;i< shifts.length;i++) {
+        for (int i = 0; i < shifts.length; i++) {
             Double ppm = atoms.get(i).getRefPPM();
             Assert.assertNotNull(ppm);
             Assert.assertEquals(shifts[i], ppm, 0.5);
@@ -59,13 +60,13 @@ public class PredictorTest {
 
     @Test
     public void predict15NWithShells() throws IOException, MoleculeIOException {
-        Map<Integer, Double> shiftMap = Map.of(19, 59.0, 2,104.0, 16,137.0, 18,138.0, 5,150.0);
+        Map<Integer, Double> shiftMap = Map.of(19, 59.0, 2, 104.0, 16, 137.0, 18, 138.0, 5, 150.0);
 
         Predictor predictor = new Predictor();
         Compound compound = loadData("mol31440.sd");
         predictor.predictWithShells(compound, -1);
         var atoms = compound.atoms;
-        for (int i = 0;i< atoms.size();i++) {
+        for (int i = 0; i < atoms.size(); i++) {
             if (shiftMap.containsKey(i)) {
                 Double ppm = atoms.get(i).getRefPPM();
                 Assert.assertNotNull(ppm);

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,24 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.graphicsio;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 /**
- *
  * @author brucejohnson
  */
 
@@ -94,21 +94,6 @@ public class SVGWriter implements GraphicsIO {
             throw new GraphicsIOException(ex.getMessage());
         }
 
-    }
-
-    @Override
-    public void drawText(String text, double x, double y) throws GraphicsIOException {
-        try {
-            writer.writeStartElement("text");
-            writer.writeAttribute("fill", "black");
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeCharacters(text);
-            writer.writeEndElement();
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
     }
 
     @Override
@@ -197,12 +182,6 @@ public class SVGWriter implements GraphicsIO {
     }
 
     @Override
-    public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException {
-        int n = x.length;
-        drawPolyLine(x, y, n);
-    }
-
-    @Override
     public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException {
         //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
         StringBuilder pointBuilder = new StringBuilder();
@@ -216,27 +195,6 @@ public class SVGWriter implements GraphicsIO {
             writer.writeEmptyElement("polyline");
             writer.writeAttribute("points", pointBuilder.toString());
             writer.writeAttribute("style", getStyle());
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
-    }
-
-    @Override
-    public void drawPolyLine(ArrayList<Double> values) throws GraphicsIOException {
-        //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
-        StringBuilder pointBuilder = new StringBuilder();
-        for (int i = 0; i < values.size(); i += 2) {
-            pointBuilder.append(format(values.get(i)));
-            pointBuilder.append(',');
-            pointBuilder.append(format(values.get(i + 1)));
-            pointBuilder.append(' ');
-        }
-        try {
-            writer.writeEmptyElement("polyline");
-            writer.writeAttribute("points", pointBuilder.toString());
-            writer.writeAttribute("style", getStyle());
-
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
             throw new GraphicsIOException(ex.getMessage());
@@ -291,27 +249,11 @@ public class SVGWriter implements GraphicsIO {
     }
 
     @Override
-    public void drawRect(double x, double y, double w, double h) throws GraphicsIOException {
-        try {
-            writer.writeEmptyElement("rect");
-            writer.writeAttribute("x", format(x));
-            writer.writeAttribute("y", format(y));
-            writer.writeAttribute("height", format(h));
-            writer.writeAttribute("width", format(w));
-            writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
-        }
-    }
-
-    @Override
     public void saveFile() throws GraphicsIOException {
         try {
             writer.writeEndDocument();
             writer.flush();
             writer.close();
-//            stream.flush();
-//            stream.close();
         } catch (XMLStreamException ex) {
             throw new GraphicsIOException(ex.getMessage());
         }
@@ -329,11 +271,8 @@ public class SVGWriter implements GraphicsIO {
             writer.writeAttribute("height", String.valueOf(h));
             writer.writeAttribute("width", String.valueOf(w));
             writer.writeEndElement();
-//            writer.writeCharacters("\n");
             writer.writeEndElement();
-//            writer.writeCharacters("\n");
             writer.writeEndElement();
-//            writer.writeCharacters("\n");
 
             clipPath = "clip-path: url(#clipPath1);";
         } catch (XMLStreamException ex) {

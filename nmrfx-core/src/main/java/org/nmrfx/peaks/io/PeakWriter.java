@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,90 +17,85 @@
  */
 package org.nmrfx.peaks.io;
 
+import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.peaks.*;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.Resonance;
-import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.datasets.DatasetBase;
+
+import static org.nmrfx.peaks.io.PeakWriter.PIPEDIMS.D;
 
 /**
- *
  * @author Bruce Johnson
  */
+@PythonAPI("pscript")
 public class PeakWriter {
 
-    static final String[] XPKDIMSTRINGS = {
-        "label",
-        "code",
-        "units",
-        "sf",
-        "sw",
-        "fp",
-        "idtol",
-        "pattern",
-        "bonded",
-        "spatial",
-        "folding",
-        "abspos",
-        "acqdim"};
-    static final String[] NEF_PEAK_DIM_STRINGS = {"_nef_spectrum_dimension.dimension_id",
-        "_nef_spectrum_dimension.axis_unit",
-        "_nef_spectrum_dimension.axis_code",
-        "_nef_spectrum_dimension.spectrometer_frequency",
-        "_nef_spectrum_dimension.spectral_width",
-        "_nef_spectrum_dimension.value_first_point",
-        "_nef_spectrum_dimension.folding",
-        "_nef_spectrum_dimension.absolute_peak_positions",
-        "_nef_spectrum_dimension.is_acquisition"};
+    private static final String[] XPKDIMSTRINGS = {
+            "label",
+            "code",
+            "units",
+            "sf",
+            "sw",
+            "fp",
+            "idtol",
+            "pattern",
+            "bonded",
+            "spatial",
+            "folding",
+            "abspos",
+            "acqdim"};
+    private static final String[] NEF_PEAK_DIM_STRINGS = {"_nef_spectrum_dimension.dimension_id",
+            "_nef_spectrum_dimension.axis_unit",
+            "_nef_spectrum_dimension.axis_code",
+            "_nef_spectrum_dimension.spectrometer_frequency",
+            "_nef_spectrum_dimension.spectral_width",
+            "_nef_spectrum_dimension.value_first_point",
+            "_nef_spectrum_dimension.folding",
+            "_nef_spectrum_dimension.absolute_peak_positions",
+            "_nef_spectrum_dimension.is_acquisition"};
 
     // //     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
-    static final String[] NEF_PEAK_ROW_STRINGS = {"_nef_peak.ordinal",
-        "_nef_peak.peak_id",
-        "_nef_peak.volume",
-        "_nef_peak.volume_uncertainty",
-        "_nef_peak.height",
-        "_nef_peak.height_uncertainty",
-        "_nef_peak.position_1",
-        "_nef_peak.position_uncertainty_1",
-        "_nef_peak.position_2",
-        "_nef_peak.position_uncertainty_2",
-        "_nef_peak.position_3",
-        "_nef_peak.position_uncertainty_3",
-        "_nef_peak.chain_code_1",
-        "_nef_peak.sequence_code_1",
-        "_nef_peak.residue_type_1",
-        "_nef_peak.atom_name_1",
-        "_nef_peak.chain_code_2",
-        "_nef_peak.sequence_code_2",
-        "_nef_peak.residue_type_2",
-        "_nef_peak.atom_name_2",
-        "_nef_peak.chain_code_3",
-        "_nef_peak.sequence_code_3",
-        "_nef_peak.residue_type_3",
-        "_nef_peak.atom_name_3"};
-    static String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
-        "_Assigned_peak_chem_shift.Peak_ID",
-        "_Assigned_peak_chem_shift.Spectral_dim_ID",
-        "_Assigned_peak_chem_shift.Val",
-        "_Assigned_peak_chem_shift.Resonance_ID",
-        "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
+    private static final String[] NEF_PEAK_ROW_STRINGS = {"_nef_peak.ordinal",
+            "_nef_peak.peak_id",
+            "_nef_peak.volume",
+            "_nef_peak.volume_uncertainty",
+            "_nef_peak.height",
+            "_nef_peak.height_uncertainty",
+            "_nef_peak.position_1",
+            "_nef_peak.position_uncertainty_1",
+            "_nef_peak.position_2",
+            "_nef_peak.position_uncertainty_2",
+            "_nef_peak.position_3",
+            "_nef_peak.position_uncertainty_3",
+            "_nef_peak.chain_code_1",
+            "_nef_peak.sequence_code_1",
+            "_nef_peak.residue_type_1",
+            "_nef_peak.atom_name_1",
+            "_nef_peak.chain_code_2",
+            "_nef_peak.sequence_code_2",
+            "_nef_peak.residue_type_2",
+            "_nef_peak.atom_name_2",
+            "_nef_peak.chain_code_3",
+            "_nef_peak.sequence_code_3",
+            "_nef_peak.residue_type_3",
+            "_nef_peak.atom_name_3"};
+    private static final String[] ASSIGNED_PEAK_CHEMSHIFT_STRINGS = {
+            "_Assigned_peak_chem_shift.Peak_ID",
+            "_Assigned_peak_chem_shift.Spectral_dim_ID",
+            "_Assigned_peak_chem_shift.Val",
+            "_Assigned_peak_chem_shift.Resonance_ID",
+            "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
     public static void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
         try (FileWriter writer = new FileWriter(fileName)) {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
-            writer.close();
         }
     }
 
@@ -111,7 +106,7 @@ public class PeakWriter {
         StringBuilder propBuilder = new StringBuilder();
         for (String propName : properties.keySet()) {
             String propValue = properties.get(propName);
-            if (propValue.length() > 0) {
+            if (!propValue.isEmpty()) {
                 chan.write('\t');
                 chan.write("prop:");
                 chan.write(propName);
@@ -128,8 +123,8 @@ public class PeakWriter {
         sBuilder.append(peakList.getNDim()).append(sep);
         sBuilder.append(peakList.getSampleConditionLabel()).append(sep);
         sBuilder.append(peakList.getScale());
-        if (propBuilder.length() > 0) {
-            sBuilder.append(propBuilder.toString());
+        if (!propBuilder.isEmpty()) {
+            sBuilder.append(propBuilder);
         }
         sBuilder.append('\n');
         chan.write(sBuilder.toString());
@@ -229,7 +224,6 @@ public class PeakWriter {
     }
 
     public void writePeaksNEF(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
-        char stringQuote = '"';
         chan.write("save_nef_nmr_spectrum_" + peakList.getName() + "\n");
         chan.write("_nef_nmr_spectrum.sf_category                 ");
         chan.write("nef_nmr_spectrum\n");
@@ -350,7 +344,7 @@ public class PeakWriter {
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
-                Resonance resonance = peakDim.getResonance();
+                AtomResonance resonance = peakDim.getResonance();
                 if (resonance != null) {
                     long resID = resonance.getID();
                     chan.write(peakDim.toSTAR3LoopAssignedPeakChemShiftString(iContrib++, resID) + "\n");
@@ -378,8 +372,7 @@ public class PeakWriter {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                    if ((coupling instanceof ComplexCoupling complexCoupling)) {
                         for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
                             String value = peak.toSTAR3LoopSpectralTransitionString(index++);
                             chan.write(value);
@@ -409,8 +402,7 @@ public class PeakWriter {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                    if ((coupling instanceof ComplexCoupling complexCoupling)) {
                         for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
                             String value = peakDim.toSTAR3LoopSpectralTransitionCharString(comp, index);
                             chan.write(value);
@@ -442,8 +434,7 @@ public class PeakWriter {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                    if ((coupling instanceof ComplexCoupling complexCoupling)) {
                         for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
                             String value = peakDim.toSTAR3LoopSpectralTransitionGeneralCharString(comp, index, true);
                             chan.write(value);
@@ -477,7 +468,7 @@ public class PeakWriter {
                 Multiplet multiplet = peakDim.getMultiplet();
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
-                    if ((coupling != null) && (coupling instanceof CouplingPattern)) {
+                    if ((coupling instanceof CouplingPattern)) {
                         List<String> values = peakDim.toSTAR3CouplingPatternString(index);
                         for (String value : values) {
                             chan.write(value);
@@ -531,4 +522,114 @@ public class PeakWriter {
             chan.write("\n");
         }
     }
+
+    public enum PIPEDIMS {
+        AXIS("_AXIS", "%9.3f"),
+        D("D", "%6.3f"),
+        PPM("_PPM", "%8.3f"),
+        HZ("_HZ", "%9.3f"),
+        W("W", "%7.3f"),
+        W_HZ("W_HZ", "%8.3f"),
+        ONE("1", "%4d"),
+        THREE("3", "%4d");
+        final String label;
+        final String format;
+
+        PIPEDIMS(String label, String format) {
+            this.label = label;
+            this.format = format;
+        }
+    }
+    public void writePeakstoNMRPipe(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
+        DatasetBase dataset = DatasetBase.getDataset(peakList.getDatasetName());
+        String[] labels = {"X", "Y", "Z", "A", "B", "C"};
+        int nDim = peakList.getNDim();
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            SpectralDim spectralDim = peakList.getSpectralDim(iDim);
+            int size = dataset.size(iDim);
+            double ppm0 = dataset.pointToPPM(iDim, 0);
+            double ppm1 = dataset.pointToPPM(iDim, size - 1.0);
+            String dataLine = String.format("DATA %s_AXIS %s %d %d %8.3fppm %8.3fppm",
+                    labels[iDim], spectralDim.getDimName(),  1, size, ppm0, ppm1);
+            chan.write(dataLine + "\n");
+        }
+
+
+        /*
+        DATA  X_AXIS HN           1   659   10.297ppm    5.798ppm
+DATA  Y_AXIS 15N          1  1024  129.088ppm  107.091ppm
+DATA  Z_AXIS CA           1   512   69.128ppm   41.069ppm
+
+         */
+
+
+        /*
+        VARS   INDEX X_AXIS Y_AXIS Z_AXIS DX DY DZ X_PPM Y_PPM Z_PPM X_HZ Y_HZ Z_HZ XW YW ZW XW_HZ YW_HZ ZW_HZ X1 X3 Y1 Y3 Z1 Z3 HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT
+FORMAT %5d %9.3f %9.3f %9.3f %6.3f %6.3f %6.3f %8.3f %8.3f %8.3f %9.3f %9.3f %9.3f %7.3f %7.3f %7.3f %8.3f %8.3f %8.3f %4d %4d %4d %4d %4d %4d %+e %+e %+e %.5f %d %s %4d %4d
+
+         */
+        StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder stringBuilderF = new StringBuilder();
+        stringBuilder.append("VARS  INDEX ");
+        stringBuilderF.append("FORMAT %5d ");
+        for (PIPEDIMS type: PIPEDIMS.values()) {
+            for (int i = 0; i < nDim; i++) {
+                if (type == D) {
+                    stringBuilder.append(type.label).append(labels[i]).append(" ");
+                } else {
+                    stringBuilder.append(labels[i]).append(type.label).append(" ");
+                }
+                stringBuilderF.append(type.format).append(" ");
+            }
+        }
+        stringBuilder.append("HEIGHT DHEIGHT VOL PCHI2 TYPE ASS CLUSTID MEMCNT");
+        stringBuilderF.append(" %+e %+e %+e %.5f %d %s %4d %4d");
+        chan.write(stringBuilder + "\n");
+        chan.write(stringBuilderF +"\n");
+        int nPeaks = peakList.size();
+        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            Peak peak = peakList.getPeak(iPeak);
+
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + iPeak);
+            }
+            StringBuilder sBuilderPeak = new StringBuilder();
+            sBuilderPeak.append(String.format("%d ", iPeak + 1));
+            for (PIPEDIMS type : PIPEDIMS.values()) {
+                for (int iDim = 0; iDim < nDim; iDim++) {
+                    PeakDim peakDim = peak.getPeakDim(iDim);
+                    double ppm = peakDim.getChemShiftValue();
+                    double pt = dataset.ppmToDPoint(iDim, ppm);
+                    double wHz = peakDim.getLineWidthHz();
+                    double wPt = dataset.hzWidthToPoints(iDim, wHz);
+                    double boundsHz = peakDim.getBoundsHz();
+                    double bWidth = dataset.hzWidthToPoints(iDim, boundsHz);
+                    double hz = dataset.pointToHz(iDim, pt);
+                    int one = (int) Math.floor(pt - bWidth / 2.0);
+                    int three = (int) Math.ceil(pt + bWidth / 2.0);
+                    String result = switch (type) {
+                        case AXIS -> String.format(type.format, pt);
+                        case D -> String.format(type.format, wPt);
+                        case PPM -> String.format(type.format, ppm);
+                        case HZ -> String.format(type.format, hz);
+                        case W -> String.format(type.format, wPt);
+                        case W_HZ -> String.format(type.format, wHz);
+                        case ONE -> String.format(type.format, one);
+                        case THREE -> String.format(type.format, three);
+                    };
+                    sBuilderPeak.append(result).append(" ");
+                }
+            }
+            sBuilderPeak.append(String.format("%+e ", peak.getIntensity()));
+            sBuilderPeak.append(String.format("%+e ", peak.getIntensity()));
+            sBuilderPeak.append(String.format("%+e ", peak.getVolume1()));
+            sBuilderPeak.append(String.format("%.5f ", 1.0));
+            sBuilderPeak.append(String.format("%d ", 1));
+            sBuilderPeak.append(String.format("%s ", "None"));
+            sBuilderPeak.append(String.format("%4d ", iPeak + 1));
+            sBuilderPeak.append(String.format("%4d", 1));
+            chan.write(sBuilderPeak + "\n");
+        }
+    }
+
 }

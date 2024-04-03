@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 package org.nmrfx.structure.chemistry;
 
-import java.util.*;
+import java.util.ArrayList;
 
 public class SmithWaterman {
 
@@ -104,23 +104,6 @@ public class SmithWaterman {
                 c2 = Math.max(c2, H[i - 1][j] - gapScore(1));
                 c3 = Math.max(c3, H[i][j - 1] - gapScore(1));
 
-                /*                k = i;
-                 c2 = 0;
-                 while (k >= 1) {
-                 c2 = Math.max(c2, H[i-k][j] - W(k));
-                 k--;
-                 }
-
-                 // case 3 (max of H[i][j-l] - W(l)), l >= 1
-
-                 // v2:
-                 l = j;
-                 c3 = 0;
-                 while (l >= 1) {
-                 c3 = Math.max(c3, H[i][j-l] - W(l));
-                 l--;
-                 }
-                 */
                 H[i][j] = Math.max(Math.max(c1, c2), Math.max(c3, c4));
             }
         }

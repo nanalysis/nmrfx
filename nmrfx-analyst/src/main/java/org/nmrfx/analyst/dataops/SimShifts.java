@@ -1,22 +1,23 @@
 package org.nmrfx.analyst.dataops;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
 import org.ejml.data.BMatrixRMaj;
 import org.ejml.data.Complex_F64;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.ZMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.CommonOps_ZDRM;
-import org.ejml.interfaces.decomposition.EigenDecomposition_F64;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
+import org.ejml.interfaces.decomposition.EigenDecomposition_F64;
 import org.ejml.simple.SimpleMatrix;
-import static org.nmrfx.analyst.dataops.KronProduct.kronProd;
 import org.nmrfx.processor.math.Vec;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
+import static org.nmrfx.analyst.dataops.KronProduct.kronProd;
+
 /**
- *
  * @author brucejohnson
  */
 public class SimShifts {
@@ -72,7 +73,6 @@ public class SimShifts {
         }
         getMatrices(shifts, couplings);
         EigenDecomposition_F64 eigDec = DecompositionFactory_DDRM.eig(ham.getNumCols(), true);
-        //dump(ham);
         eigDec.decompose(ham);
         int nEig = eigDec.getNumberOfEigenvalues();
         DMatrixRMaj eValues = new DMatrixRMaj(1, nEig);
@@ -95,7 +95,6 @@ public class SimShifts {
         double max = CommonOps_DDRM.elementMax(eVecs);
         double threshold = max * 0.01;
         absThreshold(eVecs, threshold);
-        //dump(eVecs);
         SimpleMatrix vS = SimpleMatrix.wrap(eVecs);
         SimpleMatrix obsS = SimpleMatrix.wrap(obs);
         SimpleMatrix stateS = SimpleMatrix.wrap(state);
@@ -104,7 +103,6 @@ public class SimShifts {
         threshold = max * 0.01;
         absThreshold(arS.getDDRM(), threshold);
 
-        //dump(arS.getDDRM());
         BMatrixRMaj bmat = CommonOps_DDRM.elementMoreThan(arS.getDDRM(), 1.0e-6, null);
         int nR = arS.getDDRM().getNumRows();
         int nC = arS.getDDRM().getNumCols();

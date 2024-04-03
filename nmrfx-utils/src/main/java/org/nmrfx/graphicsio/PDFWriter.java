@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,18 +17,19 @@
  */
 package org.nmrfx.graphicsio;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDFontDescriptor;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.util.Matrix;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * This is an example of how to create a page with a landscape orientation.
@@ -120,27 +121,12 @@ public class PDFWriter implements GraphicsIO {
         }
     }
 
-    public void drawText(String message, double startX, double startY) throws GraphicsIOException {
-        try {
-            startText();
-            showText(message, tX(startX), tY(startY));
-            endText();
-        } catch (Exception ioE) {
-            throw new GraphicsIOException(ioE.getMessage());
-        }
-    }
-
     public void setFont(Font fxfont) {
-        switch (fxfont.getFamily().toUpperCase()) {
-            case "HELVETICA":
-                font = PDType1Font.HELVETICA;
-                break;
-            case "COURIER":
-                font = PDType1Font.COURIER;
-                break;
-            default:
-                font = PDType1Font.HELVETICA;
-        }
+        font = switch (fxfont.getFamily().toUpperCase()) {
+            case "HELVETICA" -> PDType1Font.HELVETICA;
+            case "COURIER" -> PDType1Font.COURIER;
+            default -> PDType1Font.HELVETICA;
+        };
         fontSize = (float) fxfont.getSize();
 
     }
@@ -154,16 +140,6 @@ public class PDFWriter implements GraphicsIO {
         }
     }
 
-    public void showText(String message, float startX, float startY) throws GraphicsIOException {
-        try {
-            contentStream.newLineAtOffset(startX, startY);
-            contentStream.showText(message);
-        } catch (IOException ioE) {
-            throw new GraphicsIOException(ioE.getMessage());
-        }
-
-    }
-
     public void showCenteredText(String message, double startX, double startY, String anchor, double rotate) throws GraphicsIOException, IllegalArgumentException {
         try {
             int aLen = anchor.length();
@@ -171,40 +147,39 @@ public class PDFWriter implements GraphicsIO {
             double yFrac = 0.0;
             if (aLen > 0) {
                 switch (anchor) {
-                    case "nw":
+                    case "nw" -> {
                         xFrac = 0.0;
                         yFrac = 1.0;
-                        break;
-                    case "n":
+                    }
+                    case "n" -> {
                         xFrac = 0.5;
                         yFrac = 1.0;
-                        break;
-                    case "ne":
+                    }
+                    case "ne" -> {
                         xFrac = 1.0;
                         yFrac = 1.0;
-                        break;
-                    case "e":
+                    }
+                    case "e" -> {
                         xFrac = 1.0;
                         yFrac = 0.5;
-                        break;
-                    case "se":
+                    }
+                    case "se" -> {
                         xFrac = 1.0;
                         yFrac = 0.0;
-                        break;
-                    case "s":
+                    }
+                    case "s" -> {
                         xFrac = 0.5;
                         yFrac = 0.0;
-                        break;
-                    case "sw":
+                    }
+                    case "sw" -> {
                         xFrac = 0.0;
                         yFrac = 0.0;
-                        break;
-                    case "w":
+                    }
+                    case "w" -> {
                         xFrac = 0.0;
                         yFrac = 0.5;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid anchor \"" + anchor + "\"");
+                    }
+                    default -> throw new IllegalArgumentException("Invalid anchor \"" + anchor + "\"");
                 }
             }
             font = PDType1Font.HELVETICA;
@@ -258,44 +233,17 @@ public class PDFWriter implements GraphicsIO {
         }
     }
 
-    public void drawRect(double startX, double startY, double width, double height) throws GraphicsIOException {
-        try {
-            contentStream.addRect(tX(startX), tY(startY), (float) width, (float) height);
-            contentStream.stroke();
-        } catch (IOException ioE) {
-            throw new GraphicsIOException(ioE.getMessage());
-        }
-    }
-
-    public void drawPolyLine(ArrayList<Double> values) throws GraphicsIOException {
-        try {
-            int n = values.size();
-            contentStream.moveTo(tX(values.get(0).doubleValue()), tY(values.get(1).doubleValue()));
-            for (int i = 2; i < n; i += 2) {
-                contentStream.lineTo(tX(values.get(i).doubleValue()), tY(values.get(i + 1).doubleValue()));
-            }
-            contentStream.stroke();
-        } catch (IOException ioE) {
-            throw new GraphicsIOException(ioE.getMessage());
-        }
-    }
-
     public void drawPolyLines(ArrayList<Double> values) throws GraphicsIOException {
         try {
             int n = values.size();
             for (int i = 0; i < n; i += 4) {
-                contentStream.moveTo(tX(values.get(i).doubleValue()), tY(values.get(i + 1).doubleValue()));
-                contentStream.lineTo(tX(values.get(i + 2).doubleValue()), tY(values.get(i + 3).doubleValue()));
+                contentStream.moveTo(tX(values.get(i)), tY(values.get(i + 1)));
+                contentStream.lineTo(tX(values.get(i + 2)), tY(values.get(i + 3)));
             }
             contentStream.stroke();
         } catch (IOException ioE) {
             throw new GraphicsIOException(ioE.getMessage());
         }
-    }
-
-    public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException {
-        int n = x.length;
-        drawPolyLine(x, y, n);
     }
 
     public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException {

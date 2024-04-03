@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,8 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import java.util.ArrayList;
-import java.util.List;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -35,14 +28,16 @@ import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author brucejohnson
  */
 public class SequenceGUI {
+    private static Stage stage = null;
 
     AnalystApp analystApp;
-    static Stage stage = null;
     ChoiceBox<String> polymerType;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 900, 600);
@@ -90,6 +85,9 @@ public class SequenceGUI {
     }
 
     void addEntity() {
+        if (!MoleculeMenuActions.checkForExisting()) {
+            return;
+        }
         String type = polymerType.getValue();
         if ((type == null) || (type.equals(""))) {
             GUIUtils.warn("Polymer", "Please select a polymer type");

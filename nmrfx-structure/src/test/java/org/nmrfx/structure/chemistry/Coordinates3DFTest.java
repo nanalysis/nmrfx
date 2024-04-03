@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
- *
  * @author brucejohnson
  */
 public class Coordinates3DFTest {
@@ -42,7 +41,7 @@ public class Coordinates3DFTest {
     @Test
     public void testCoordinatesNew1() {
         double bondLength = 4.0;
-        double theta = Math.PI*0.9999999999;
+        double theta = Math.PI * 0.9999999999;
         double bndCos = bondLength * Math.cos(Math.PI - theta);
         double bndSin = bondLength * Math.sin(Math.PI - theta);
         double[] dihedrals = {0.0};

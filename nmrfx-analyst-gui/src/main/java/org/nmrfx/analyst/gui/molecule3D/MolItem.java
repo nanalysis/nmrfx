@@ -4,7 +4,6 @@ import javafx.geometry.Point3D;
 import javafx.scene.Node;
 
 /**
- *
  * @author brucejohnson
  */
 public interface MolItem {
@@ -14,5 +13,7 @@ public interface MolItem {
     public default Node getSelectorNode(Node node, Point3D point) {
         return null;
     }
+
+    public void refresh();
 
 }

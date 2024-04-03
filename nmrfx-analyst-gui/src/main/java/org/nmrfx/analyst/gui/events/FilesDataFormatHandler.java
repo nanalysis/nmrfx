@@ -8,6 +8,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,8 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
      * loaded)
      * If the file(s) are a dataset, then all the files will be copied to the chart in append mode.
      * If the file(s) are a FID, then only the first file will be copied to the chart.
-     * @param o List of Files to add.
+     *
+     * @param o     List of Files to add.
      * @param chart The chart to add the files to.
      */
     @Override
@@ -50,7 +52,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                     return false;
                 }
             }
-            chart.setActiveChart();
+            PolyChartManager.getInstance().setActiveChart(chart);
             // Only display the last added molecule if there is a dataset already displayed
             if (chart.getDataset() != null) {
                 MoleculeUtils.addActiveMoleculeToCanvas();
@@ -64,11 +66,12 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
     /**
      * Checks if first file in list is dataset is FID or processed. If it is an FID, the first file is opened, if
      * it is processed, all the files are opened in dataset append mode.
+     *
      * @param files The files to open.
      * @param chart The chart to display the files in.
      */
     private void openDataFiles(List<File> files, PolyChart chart) {
-        chart.setActiveChart();
+        PolyChartManager.getInstance().setActiveChart(chart);
         boolean isFID = false;
         try {
             isFID = NMRDataUtil.getFID(files.get(0).getAbsolutePath()).isFID();
@@ -80,12 +83,12 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
                 return;
             }
         }
-        FXMLController controller = chart.getController();
+        FXMLController controller = chart.getFXMLController();
         if (isFID) {
             controller.openFile(files.get(0).getAbsolutePath(), true, false);
         } else {
-            List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
-            Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr ->(Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
+            List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
+            Set<Integer> dimensions = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getNDim).collect(Collectors.toSet());
             Dataset dataset;
             List<Dataset> unaddedDatasets = new ArrayList<>();
             for (File file : files) {

@@ -1,7 +1,8 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.util.ArrayList;
 
 public class Tube {
 
@@ -43,7 +44,7 @@ public class Tube {
     }
 
     public void addNode(double x, double y, double z, double nx, double ny,
-            double nz) {
+                        double nz) {
         TubeNode node = new TubeNode(x, y, z, nx, ny, nz);
         nodes.add(node);
     }

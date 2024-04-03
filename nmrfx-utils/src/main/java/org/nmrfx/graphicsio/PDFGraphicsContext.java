@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,17 +18,11 @@
 package org.nmrfx.graphicsio;
 
 import javafx.geometry.VPos;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Effect;
-import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.FillRule;
 import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -44,11 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class PDFGraphicsContext implements GraphicsContextInterface {
@@ -60,7 +51,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     PDFont font = PDType1Font.HELVETICA;
     Font fxFont = Font.font("Helvetica");
     Color fill = Color.BLACK;
-    Color stroke = Color.BLACK;
     float fontSize = 12;
     TextAlignment textAlignment = TextAlignment.LEFT;
     VPos textBaseline = VPos.BASELINE;
@@ -72,57 +62,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     double scaleX;
     double scaleY;
     boolean landScape = false;
-    Matrix matrix = new Matrix();
-    GCCache cache = new GCCache();
     boolean nativeCoords = false;
-
-    class GCCache {
-
-        double fontSize = 12;
-        String fontFamilyName = "Helvetica";
-        Color fill = Color.BLACK;
-        Color stroke = Color.BLACK;
-        PDFont font;
-        double lineWidth = 1.0;
-        String clipPath = "";
-        TextAlignment textAlignment = TextAlignment.LEFT;
-        VPos textBaseline = VPos.BASELINE;
-        Matrix matrix = null;
-        List<Object> transforms = new ArrayList<>();
-
-        void save(PDFGraphicsContext pdfGC) {
-            this.fontSize = pdfGC.fontSize;
-            this.font = pdfGC.font;
-            this.fill = pdfGC.fill;
-            this.stroke = pdfGC.stroke;
-            //  this.clipPath = pdfGC.clipPath;
-            this.textAlignment = pdfGC.textAlignment;
-            this.textBaseline = pdfGC.textBaseline;
-            this.matrix = pdfGC.matrix == null ? null : pdfGC.matrix.clone();
-            //this.transforms.clear();
-            //this.transforms.addAll(pdfGC.transforms);
-        }
-
-        void restore(PDFGraphicsContext pdfGC) {
-            pdfGC.fontSize = (float) fontSize;
-            pdfGC.font = font;
-            pdfGC.fill = fill;
-            pdfGC.stroke = stroke;
-            //pdfGC.clipPath = clipPath;
-            pdfGC.textAlignment = textAlignment;
-            pdfGC.textBaseline = textBaseline;
-            pdfGC.matrix = matrix == null ? null : matrix.clone();
-            try {
-                pdfGC.contentStream.transform(matrix);
-            } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-            // pdfGC.transforms.clear();
-            // pdfGC.transforms.addAll(transforms);
-
-        }
-
-    }
 
     public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
         // the document
@@ -174,37 +114,23 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     private float getTextAnchor(String text) {
         try {
             float width = font.getStringWidth(text) / 1000.0f * fontSize;
-            switch (textAlignment) {
-                case CENTER:
-                    return width * 0.5f;
-                case LEFT:
-                    return 0.0f;
-                case RIGHT:
-                    return width;
-                default:
-                    return 0.0f;
-            }
+            return switch (textAlignment) {
+                case CENTER -> width * 0.5f;
+                case LEFT -> 0.0f;
+                case RIGHT -> width;
+                default -> 0.0f;
+            };
         } catch (IOException ex) {
             return 0.0f;
         }
     }
 
     private float getTextDY() {
-        double dYf = 0.0;
-        switch (textBaseline) {
-            case BASELINE:
-                dYf = 0.0;
-                break;
-            case BOTTOM:
-                dYf = 0.0;
-                break;
-            case TOP:
-                dYf = 1.0;
-                break;
-            case CENTER:
-                dYf = 0.5;
-                break;
-        }
+        double dYf = switch (textBaseline) {
+            case BASELINE, BOTTOM -> 0.0;
+            case TOP -> 1.0;
+            case CENTER -> 0.5;
+        };
         return (float) (dYf * fontSize);
     }
 
@@ -240,26 +166,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     private float tY(double y) {
         return nativeCoords ? (float) y : (float) (pageWidth - (scaleY * y)) - border;
-    }
-
-    @Override
-    public void appendSVGPath(String svgpath) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void applyEffect(Effect e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void arc(double centerX, double centerY, double radiusX, double radiusY, double startAngle, double length) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void arcTo(double x1, double y1, double x2, double y2, double radius) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -299,21 +205,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void drawImage(Image img, double x, double y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void drawImage(Image img, double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void drawImage(Image img, double sx, double sy, double sw, double sh, double dx, double dy, double dw, double dh) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void fill() {
         try {
             contentStream.fill();
@@ -323,13 +214,8 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void fillOval(double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        doOval(x, y, w, h, true);
     }
 
     @Override
@@ -360,11 +246,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void fillText(String text, double x, double y) {
         float dY = getTextDY();
         float dX = getTextAnchor(text);
@@ -378,23 +259,8 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillText(String text, double x, double y, double maxWidth) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Effect getEffect(Effect e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public Paint getFill() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public FillRule getFillRule() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return fill;
     }
 
     @Override
@@ -403,47 +269,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public FontSmoothingType getFontSmoothingType() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double getGlobalAlpha() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public BlendMode getGlobalBlendMode() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public StrokeLineCap getLineCap() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double[] getLineDashes() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double getLineDashOffset() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public StrokeLineJoin getLineJoin() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public double getLineWidth() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public double getMiterLimit() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -453,27 +279,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public TextAlignment getTextAlign() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public VPos getTextBaseline() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public Affine getTransform() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Affine getTransform(Affine xform) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean isPointInPath(double x, double y) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -490,15 +296,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     public void moveTo(double x0, double y0) {
         try {
             contentStream.moveTo(tX(x0), tY(y0));
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void quadraticCurveTo(double xc, double yc, double x1, double y1) {
-        try {
-            contentStream.curveTo1((float) xc, (float) yc, (float) x1, (float) y1);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
@@ -547,16 +344,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void scale(double x, double y) {
-        matrix.scale((float) x, (float) y);
-        try {
-            contentStream.transform(matrix);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
     public void setEffect(Effect e) {
     }
 
@@ -574,23 +361,8 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setFillRule(FillRule fillRule) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void setFont(Font fxfont) {
         this.fxFont = fxfont;
-//        switch (fxfont.getFamily().toUpperCase()) {
-//            case "HELVETICA":
-//                font = PDType1Font.HELVETICA;
-//                break;
-//            case "COURIER":
-//                font = PDType1Font.COURIER;
-//                break;
-//            default:
-//                font = PDType1Font.HELVETICA;
-//        }
         fontSize = (float) Math.round(fxfont.getSize() * scaleX);
         try {
             contentStream.setFont(font, fontSize);
@@ -600,17 +372,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setFontSmoothingType(FontSmoothingType fontsmoothing) {
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void setGlobalAlpha(double alpha) {
-    }
-
-    @Override
-    public void setGlobalBlendMode(BlendMode op) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -619,17 +381,11 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         if (null == cap) {
             pdCap = 0;
         } else {
-            switch (cap) {
-                case ROUND:
-                    pdCap = 1;
-                    break;
-                case SQUARE:
-                    pdCap = 2;
-                    break;
-                default:
-                    pdCap = 0;
-                    break;
-            }
+            pdCap = switch (cap) {
+                case ROUND -> 1;
+                case SQUARE -> 2;
+                default -> 0;
+            };
         }
         try {
             contentStream.setLineCapStyle(pdCap);
@@ -654,17 +410,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setLineDashOffset(double dashOffset) {
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setLineJoin(StrokeLineJoin join) {
-        //  throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -674,11 +419,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-    }
-
-    @Override
-    public void setMiterLimit(double ml) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -710,27 +450,12 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void setTransform(double mxx, double myx, double mxy, double myy, double mxt, double myt) {
-        Matrix m = new Matrix((float) mxx, (float) myx, (float) mxy, (float) myy, (float) mxt, (float) myt);
-        try {
-            contentStream.transform(m);
-        } catch (IOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
     public void stroke() {
         try {
             contentStream.stroke();
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-    }
-
-    @Override
-    public void strokeArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -744,19 +469,9 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
     }
 
-    public void strokeLineNoTrans(double x1, double y1, double x2, double y2) {
-        try {
-            contentStream.moveTo((float) x1, (float) y1);
-            contentStream.lineTo((float) x2, (float) y2);
-            contentStream.stroke();
-        } catch (IOException ioE) {
-            log.warn(ioE.getMessage(), ioE);
-        }
-    }
-
     @Override
     public void strokeOval(double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        doOval(x, y, w, h, false);
     }
 
     @Override
@@ -800,11 +515,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void strokeText(String text, double x, double y) {
         try {
             startText();
@@ -816,32 +526,9 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeText(String text, double x, double y, double maxWidth) {
-        // fixme not using maxWidth
-        try {
-            startText();
-            showText(text, tX(x), tY(y));
-            endText();
-        } catch (GraphicsIOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-    }
-
-    @Override
-    public void transform(Affine xform) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void transform(double mxx, double myx, double mxy, double myy, double mxt, double myt) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public void translate(double x, double y) {
         Matrix translate = new Matrix();
         translate.translate(tX(x), tY(y));
-        // translate.translate((float) (scaleX * x), pageWidth - border - (float) (scaleY * y));
         try {
             contentStream.transform(translate);
         } catch (IOException ex) {
@@ -864,4 +551,28 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
     }
 
+    void doOval(
+            double x, double y, double w, double h, boolean fill) {
+
+        final float k = 0.552284749831f;
+        float cx = tX(x + w / 2.0);
+        float cy = tY(y + h / 2.0);
+        float rx =  Math.abs(tX(x) - cx);
+        float ry =  Math.abs(tY(y) - cy);
+
+        try {
+            contentStream.moveTo(cx - rx, cy);
+            contentStream.curveTo(cx - rx, cy + k * ry, cx - k * rx, cy + ry, cx, cy + ry);
+            contentStream.curveTo(cx + k * rx, cy + ry, cx + rx, cy + k * ry, cx + rx, cy);
+            contentStream.curveTo(cx + rx, cy - k * ry, cx + k * rx, cy - ry, cx, cy - ry);
+            contentStream.curveTo(cx - k * rx, cy - ry, cx - rx, cy - k * ry, cx - rx, cy);
+            if (fill) {
+                contentStream.fill();
+            } else {
+                contentStream.stroke();
+            }
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+     }
 }

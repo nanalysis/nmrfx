@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,19 +31,20 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@PluginAPI("ring")
 public class PDBFile {
-
     private static final Logger log = LoggerFactory.getLogger(PDBFile.class);
 
-    static public boolean allowSequenceDiff = true;
-    static private boolean iupacMode = true;
-    static private String localReslibDir = "";
-    static private HashMap<String, String> reslibMap = new HashMap<String, String>();
+    private static final boolean ALLOW_SEQUENCE_DIFF = true;
+    private static final Map<String, String> reslibMap = new HashMap<String, String>();
+    private static boolean iupacMode = true;
+    private static String localReslibDir = "";
 
     static {
         reslibMap.put("IUPAC", "resource:/reslib_iu");
         reslibMap.put("XPLOR", "resource:/reslib");
     }
+
     Atom connectAtom = null;
 
     public PDBFile() {
@@ -61,9 +63,9 @@ public class PDBFile {
      * residues.
      *
      * @param localDir provides a path to the directory
-     *
-     * When specifying a sequence, if the residue name is not found within the
-     * standard library, this path will be parsed for the necessary file.
+     *                 <p>
+     *                 When specifying a sequence, if the residue name is not found within the
+     *                 standard library, this path will be parsed for the necessary file.
      */
     public static void setLocalResLibDir(final String dirName) {
         localReslibDir = dirName;
@@ -125,7 +127,7 @@ public class PDBFile {
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
                 LineNumberReader lineReader = new LineNumberReader(bf)
-        ){
+        ) {
             while (true) {
                 string = lineReader.readLine();
 
@@ -238,7 +240,7 @@ public class PDBFile {
         }
     }
 
-// fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
+    // fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
     public static void capPolymer(Polymer polymer) {
         polymer.getFirstResidue().capFirstResidue("");
         polymer.getLastResidue().capLastResidue("");
@@ -261,7 +263,7 @@ public class PDBFile {
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
                 LineNumberReader lineReader = new LineNumberReader(bf)
-        ){
+        ) {
             while (true) {
                 string = lineReader.readLine();
 
@@ -301,11 +303,8 @@ public class PDBFile {
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
                     // fixme should we do anything here with MODEL
-                    //} else if (string.startsWith("MODEL ")) {
                 } else if (string.startsWith("ENDMDL")) {
                     break;
-                } else if (string.startsWith("TER   ")) {
-                    //break;
                 }
             }
             if (!listMode) {
@@ -315,8 +314,7 @@ public class PDBFile {
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log.warn(e.getMessage(), e);
 
             return null;
@@ -340,7 +338,7 @@ public class PDBFile {
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
                 LineNumberReader lineReader = new LineNumberReader(bf)
-        ){
+        ) {
             while (true) {
                 String string = lineReader.readLine();
 
@@ -378,9 +376,8 @@ public class PDBFile {
 
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (Exception exc) {
-            log.warn(exc.getMessage(),exc);
+        } catch (Exception exc) {
+            log.warn(exc.getMessage(), exc);
             return -1;
         }
         return 0;
@@ -557,7 +554,7 @@ public class PDBFile {
                         }
                         if (!AtomParser.isResNameConsistant(residue.getName(), atomParse.resName)) {
                             String msg = "Residue " + polymerName + ":" + residue.getName() + " at " + atomParse.resNum + " is not same as in file " + atomParse.resName;
-                            if (allowSequenceDiff) {
+                            if (ALLOW_SEQUENCE_DIFF) {
                                 log.warn(msg);
                                 log.warn(string);
                                 continue;
@@ -633,8 +630,7 @@ public class PDBFile {
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (MoleculeIOException psE) {
+        } catch (MoleculeIOException psE) {
             throw psE;
         } catch (Exception exc) {
             log.warn(exc.getMessage(), exc);
@@ -954,7 +950,7 @@ public class PDBFile {
         Map<String, Atom> atomMap = new HashMap<>();
         boolean calcBonds = true;
 
-        try (Reader reader = fileContent == null ? new FileReader(fileName): new StringReader(fileContent);
+        try (Reader reader = fileContent == null ? new FileReader(fileName) : new StringReader(fileContent);
              BufferedReader bufReader = new BufferedReader(reader)) {
             while ((string = bufReader.readLine()) != null) {
 
@@ -1004,8 +1000,7 @@ public class PDBFile {
             }
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             log.warn(ioe.getMessage(), ioe);
             molecule.getAtomTypes();
             if (calcBonds && compound != null) {

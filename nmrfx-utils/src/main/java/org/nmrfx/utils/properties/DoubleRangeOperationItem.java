@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -24,41 +24,43 @@
 package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ChangeListener;
+import org.controlsfx.control.PropertySheet;
 
 /**
- *
  * @author brucejohnson
  */
+//TODO add annotations once core and utils are merged
+// @PluginAPI("ring")
 public class DoubleRangeOperationItem extends DoubleOperationItem {
 
     final boolean zoomable;
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, category, name, description);
         zoomable = true;
 
     }
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, boolean zoomable, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, boolean zoomable, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
         this.zoomable = zoomable;
     }
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, category, name, description);
         zoomable = true;
     }
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
-        super(listener, defaultValue, min, max, amin, amax, category, name, description);
+    public DoubleRangeOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        super(propertySheet, listener, defaultValue, min, max, amin, amax, category, name, description);
         zoomable = true;
     }
-    
+
     @Override
     public Class<?> getType() {
         return DoubleRangeOperationItem.class;
     }
-    
+
     public boolean getZoomable() {
         return zoomable;
     }
