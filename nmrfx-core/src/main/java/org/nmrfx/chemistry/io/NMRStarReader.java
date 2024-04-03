@@ -64,15 +64,24 @@ public class NMRStarReader {
         return read(file);
     }
 
-    public static STAR3 read(File starFile) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(starFile);
-        } catch (FileNotFoundException ex) {
-            throw new ParseException("Could not find file " + starFile);
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
+    public static void readFromString(String starData) throws ParseException {
+        StringReader stringReader;
+        stringReader = new StringReader(starData);
+        read(stringReader, null);
+    }
 
+
+    public static STAR3 read(File starFile) throws ParseException {
+        STAR3 star3;
+        try (FileReader fileReader = new FileReader(starFile)) {
+            star3 = read(fileReader, starFile);
+        } catch (IOException e) {
+            throw new ParseException(e.getMessage());
+        }
+        return star3;
+    }
+    public static STAR3 read(Reader reader, File starFile) throws ParseException {
+        BufferedReader bfR = new BufferedReader(reader);
         STAR3 star = new STAR3(bfR, "star3");
 
         try {
@@ -80,8 +89,8 @@ public class NMRStarReader {
         } catch (ParseException parseEx) {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
-        NMRStarReader reader = new NMRStarReader(starFile, star);
-        reader.process();
+        NMRStarReader nmrStarReader = new NMRStarReader(starFile, star);
+        nmrStarReader.process();
         return star;
     }
 

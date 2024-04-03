@@ -11,18 +11,23 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.NMRStarWriter;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.star.BMRBFetch;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,6 +60,10 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem showHistoryAction = new MenuItem("GIT Manager...");
         showHistoryAction.setOnAction(this::showHistory);
 
+        MenuItem fetchSTARMenuItem = new MenuItem("Fetch STAR3...");
+        fetchSTARMenuItem.setOnAction(this::fetchSTAR);
+
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -68,8 +77,8 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
-                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem, showHistoryAction);
+                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, showHistoryAction,
+                openSTARMenuItem, saveSTARMenuItem, fetchSTARMenuItem);
 
     }
 
@@ -81,7 +90,7 @@ public class ProjectMenuActions extends MenuActions {
     }
 
     private void loadProject(ActionEvent event) {
-        if (GUIProject.checkProjectActive()) {
+        if (GUIProject.checkProjectActive(true)) {
             GUIUtils.warn("Open Project", "Project content already present.  Close existing first");
             return;
         }
@@ -96,7 +105,7 @@ public class ProjectMenuActions extends MenuActions {
 
     private void loadProjectFromPath(Path path) {
         if (path != null) {
-            if (GUIProject.checkProjectActive()) {
+            if (GUIProject.checkProjectActive(true)) {
                 GUIUtils.warn("Open Project", "Project content already present.  Close existing first");
                 return;
             }
@@ -169,6 +178,36 @@ public class ProjectMenuActions extends MenuActions {
                 dialog.showAndWait();
             }
         }
+    }
+
+    @FXML
+    void fetchSTAR(ActionEvent event) {
+        if (GUIProject.checkProjectActive(false)) {
+            GUIUtils.warn("Fetch BMRB Entry", "Project content already present.  Close existing first");
+            return;
+        }
+
+        String entryStr = GUIUtils.input("BMRB Entry:");
+        CompletableFuture<HttpResponse<String>> futureResponse = null;
+        try {
+            futureResponse = BMRBFetch.fetchEntryASync(Integer.parseInt(entryStr));
+        } catch (Exception e) {
+            ExceptionDialog dialog = new ExceptionDialog(e);
+            dialog.showAndWait();
+            return;
+        }
+
+        futureResponse.thenApply(r -> {
+            Fx.runOnFxThread(() -> {
+                try {
+                    NMRStarReader.readFromString(r.body());
+                } catch (ParseException e) {
+                    ExceptionDialog dialog = new ExceptionDialog(e);
+                    dialog.showAndWait();
+                }
+            });
+            return true;
+        });
     }
 
     void writeSTAR(ActionEvent event) {
