@@ -186,9 +186,21 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         String entryStr = GUIUtils.input("BMRB Entry:");
+        if (entryStr.isBlank()) {
+            GUIUtils.warn("No entry", "Entry is blank");
+            return;
+        }
+        int entryId;
+        try {
+            entryId = Integer.parseInt(entryStr);
+        }
+        catch (NumberFormatException nfe) {
+            GUIUtils.warn("Invalid BMRB Entry", "Entry may only contain numbers");
+            return;
+        }
         CompletableFuture<HttpResponse<String>> futureResponse = null;
         try {
-            futureResponse = BMRBFetch.fetchEntryASync(Integer.parseInt(entryStr));
+            futureResponse = BMRBFetch.fetchEntryASync(entryId);
         } catch (Exception e) {
             ExceptionDialog dialog = new ExceptionDialog(e);
             dialog.showAndWait();
@@ -198,6 +210,10 @@ public class ProjectMenuActions extends MenuActions {
         futureResponse.thenApply(r -> {
             Fx.runOnFxThread(() -> {
                 try {
+                    if (r.statusCode() != 200) {
+                        GUIUtils.warn("Invalid BMRB Entry", "Entry not found");
+                        return;
+                    }
                     NMRStarReader.readFromString(r.body());
                 } catch (ParseException e) {
                     ExceptionDialog dialog = new ExceptionDialog(e);

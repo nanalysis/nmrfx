@@ -9,6 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
+import com.google.gson.Gson;
 
 public class BMRBFetch {
 
@@ -19,6 +20,7 @@ public class BMRBFetch {
     public static CompletableFuture<HttpResponse<String>> fetchEntryASync(int entryID) throws URISyntaxException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://api.bmrb.io/v2/entry/" + entryID + "?format=rawnmrstar"))
+                .setHeader("Application", "NMRFx")
                 .GET()
                 .build();
         HttpClient client = HttpClient.newHttpClient();
