@@ -7,8 +7,6 @@ import io.jenetics.internal.util.Requires;
 import io.jenetics.util.ISeq;
 import io.jenetics.util.IntRange;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,11 +16,8 @@ import static java.lang.String.format;
 
 public class AssignmentChromosome<T>
         extends AbstractChromosome<EnumGene<T>>
-        implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 2L;
-
-    private final ISeq<T> _validAlleles;
+         {
+    private final ISeq<T> validAlleles;
 
     // Private primary constructor.
     private AssignmentChromosome(
@@ -31,7 +26,7 @@ public class AssignmentChromosome<T>
     ) {
         super(genes);
         assert !genes.isEmpty();
-        _validAlleles = genes.get(0).validAlleles();
+        validAlleles = genes.get(0).validAlleles();
         _valid = valid;
     }
 
@@ -41,7 +36,7 @@ public class AssignmentChromosome<T>
 
     @Override
     public AssignmentChromosome<T> newInstance() {
-        return of(_validAlleles, length());
+        return of(validAlleles, length());
     }
 
     @Override
@@ -89,7 +84,7 @@ public class AssignmentChromosome<T>
     @Override
     public boolean isValid() {
         if (_valid == null) {
-            final byte[] check = Bits.newArray(_validAlleles.length());
+            final byte[] check = Bits.newArray(validAlleles.length());
             _valid = _genes.forAll(g -> !getAndSet(check, g.alleleIndex()));
         }
 

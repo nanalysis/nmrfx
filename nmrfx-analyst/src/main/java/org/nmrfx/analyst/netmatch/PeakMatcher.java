@@ -7,6 +7,8 @@ import io.jenetics.util.ISeq;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -27,9 +29,10 @@ import static java.util.function.Function.identity;
  * @author brucejohnson
  */
 public class PeakMatcher {
+    private static final Logger log = LoggerFactory.getLogger(PeakMatcher.class);
 
-    static final double weightPred = 1.0;
-    static final double weightMulti = 2.0;
+    static final double WEIGHT_PRED = 1.0;
+    static final double WEIGHT_MULTI = 2.0;
     String rootDir = "";
     private int populationSize = 100;
     private double mutationRate = 0.01;
@@ -264,7 +267,7 @@ public class PeakMatcher {
             for (AtomShifts atomShifts : aShifts.values()) {
                 long nValues = atomShifts.stats.getN();
                 double qTotal;
-                double norm = weightPred + weightMulti * nValues;
+                double norm = WEIGHT_PRED + WEIGHT_MULTI * nValues;
 
                 if (nValues == 0) {
                     // fixme should there be a penalty for no assignment, here we set it to -1.0
@@ -284,7 +287,7 @@ public class PeakMatcher {
                     // Calculate a value based on how similar the assigned shifts are to each other
                     double QMulti = atomShifts.getQMultiSum();
                     // A weighted sum of the above two values
-                    qTotal = weightPred * QPred + weightMulti * QMulti;
+                    qTotal = WEIGHT_PRED * QPred + WEIGHT_MULTI * QMulti;
                     if (Double.isInfinite(qTotal)) {
                         System.out.println("XXX " + QPred + " " + QMulti);
                     }
@@ -318,7 +321,7 @@ public class PeakMatcher {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error writing report", e);
         }
         return new GlobalScore(score, localScores);
     }
@@ -330,8 +333,7 @@ public class PeakMatcher {
      */
     public static void processPPMFile(String fileName) {
         File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
+        try (Scanner in = new Scanner(file)) {
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 String[] fields = line.split(" ");
@@ -349,7 +351,7 @@ public class PeakMatcher {
                 atomIndexMap.put(atom, atomShifts);
             }
         } catch (IOException ioE) {
-            System.out.println(ioE.getMessage());
+            log.error(ioE.getMessage(), ioE);
         }
     }
 
@@ -407,8 +409,7 @@ public class PeakMatcher {
      */
     public void processFile(String fileName) {
         File file = new File(fileName);
-        try {
-            Scanner in = new Scanner(file);
+        try (Scanner in = new Scanner(file)) {
             while (in.hasNextLine()) {
                 String line = in.nextLine();
                 processLine(line);
@@ -777,12 +778,10 @@ public class PeakMatcher {
     /**
      * Refine the results of the multimatch by s
      */
-    public static void refineMultiMatch(String typeName, List<ScoreConstrained> multiMatchList) {
-        List<List<ItemMatch>> firstMatches = null;
+    static void refineMultiMatch(String typeName, List<ScoreConstrained> multiMatchList) {
         int nAtoms = 0;
         int nPeaks = 0;
         for (PeakSets peakSets : peakSetsMap.values()) {
-            firstMatches = peakSets.atomMatches;
             nAtoms = peakSets.peakMatches.size();
             nPeaks = peakSets.atomMatches.size();
             break;
@@ -837,10 +836,8 @@ public class PeakMatcher {
                 bestRefined = matching.clone();
                 iPeakBest = iPeak;
                 jAtomBest = jAtom;
-//                System.out.printf("gscore2 try %d atom %d peak %d nUsed %d score %.3f\n", iTry, jAtom, iPeak, nUsed, score);
             } else {
                 skipPeakAtoms.add(iPeak + "." + jAtom);
-                //System.out.println("gscore2 skip " + score);
                 iTry--;
             }
 
@@ -921,7 +918,7 @@ public class PeakMatcher {
                 out.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error writing matches", e);
         }
     }
 
@@ -1099,7 +1096,6 @@ public class PeakMatcher {
         Map<Atom, AtomShifts> aShifts = getAtomShiftList();
         PeakSets peakSets = getFirstSet();
         assignMatches(peakSets, aShifts, true, firstMatching, iMatchFilename);
-        var mol = MoleculeFactory.getActive();
         GlobalScore gScore = globalScore(aShifts, true, iScoreFilename);
         double fitness = gScore.fitness;
         System.out.println("first bp value " + fitness);
@@ -1154,37 +1150,33 @@ public class PeakMatcher {
         System.out.println("run " + genotypes.size());
         // Create evolution statistics consumer.
         final EvolutionStatistics<Double, ?> statistics = EvolutionStatistics.ofNumber();
-        try {
-            final Phenotype<EnumGene<Integer>, Double> best
-                    = engine.stream(genotypes)
-                    // Truncate the evolution stream after n "steady"
-                    // generations.
-                    .limit(bySteadyFitness(steadyLimit))
-                    // The evolution will stop after maximal n
-                    // generations.
-                    .limit(nGenerations)
-                    // Update the evaluation statistics after
-                    // each generation
-                    .peek(statistics)
-                    .peek(PeakMatcher::update)
-                    // Collect (reduce) the evolution stream to
-                    // its best phenotype.
-                    .collect(toBestPhenotype());
+        final Phenotype<EnumGene<Integer>, Double> best
+                = engine.stream(genotypes)
+                // Truncate the evolution stream after n "steady"
+                // generations.
+                .limit(bySteadyFitness(steadyLimit))
+                // The evolution will stop after maximal n
+                // generations.
+                .limit(nGenerations)
+                // Update the evaluation statistics after
+                // each generation
+                .peek(statistics)
+                .peek(PeakMatcher::update)
+                // Collect (reduce) the evolution stream to
+                // its best phenotype.
+                .collect(toBestPhenotype());
 
-            System.out.println(statistics);
-            System.out.println(best);
-            int[] finalMatching = Codecs.ofPermutation(stops).decoder().apply(best.genotype());
-            aShifts = getAtomShiftList();
+        System.out.println(statistics);
+        System.out.println(best);
+        int[] finalMatching = Codecs.ofPermutation(stops).decoder().apply(best.genotype());
+        aShifts = getAtomShiftList();
 
-            assignMatches(peakSets, aShifts, true, finalMatching, fMatchFilename);
+        assignMatches(peakSets, aShifts, true, finalMatching, fMatchFilename);
 
-            gScore = globalScore(aShifts, true, fScoreFilename);
-            fitness = gScore.fitness;
-            System.out.println("final value " + fitness);
+        gScore = globalScore(aShifts, true, fScoreFilename);
+        fitness = gScore.fitness;
+        System.out.println("final value " + fitness);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return fitness;
 
     }
