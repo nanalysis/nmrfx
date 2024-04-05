@@ -398,12 +398,6 @@ public class PeakMatcher {
         return gScore.fitness;
     }
 
-    public void dumpHistory() {
-        for (HistoryValue value : history) {
-            System.out.println(value.toString());
-        }
-    }
-
     /**
      * @param fileName name of file to process
      */
@@ -1010,7 +1004,6 @@ public class PeakMatcher {
     }
 
     public void setupProtein() {
-        System.out.println(peakSetsMap);
         PeakSets localPeakSet = peakSetsMap.get("rbclust");
         var mol = MoleculeFactory.getActive();
         String[] cNames = {"CA", "CB", "C"};
@@ -1065,20 +1058,18 @@ public class PeakMatcher {
 
         return InvertibleCodec.of(
                 Genotype.of(chromosome),
-                gt -> {
-                    return gt.chromosome().stream()
-                            .mapToInt(EnumGene::allele)
-                            .toArray();
-                },
-                val -> {
-                    return Genotype.of(
-                            new AssignmentChromosome<>(
-                                    IntStream.of(val)
-                                            .mapToObj(genes::get)
-                                            .collect(ISeq.toISeq())
-                            )
-                    );
-                }
+                gt -> gt.chromosome().stream()
+                        .mapToInt(EnumGene::allele)
+                        .toArray()
+                ,
+                val ->
+                        Genotype.of(
+                                new AssignmentChromosome<>(
+                                        IntStream.of(val)
+                                                .mapToObj(genes::get)
+                                                .collect(ISeq.toISeq())
+                                )
+                        )
         );
     }
 
