@@ -1,6 +1,7 @@
 package org.nmrfx.analyst.netmatch;
 
 import io.jenetics.*;
+import io.jenetics.internal.util.Bits;
 import io.jenetics.util.ISeq;
 import io.jenetics.util.MSeq;
 import io.jenetics.util.Seq;
@@ -8,6 +9,8 @@ import org.apache.commons.math3.random.MersenneTwister;
 
 import java.util.*;
 import java.util.random.RandomGenerator;
+
+import static io.jenetics.internal.util.Bits.getAndSet;
 
 /**
  * @author Bruce Johnson
@@ -148,6 +151,7 @@ public class ConstrainedSwapMutator<
 
     @Override
     protected MutatorResult<Chromosome<G>> mutate(Chromosome<G> chromosome, double probability, RandomGenerator random) {
+
 //        double p = pow(probability, 1.0 / 3.0);
         double p = probability;
 //        System.out.println(probability + " " + _probability + " " + defP + " " + p);
@@ -163,16 +167,25 @@ public class ConstrainedSwapMutator<
         int nTotalPeaks = peakSets.valuesPeak.size();
         int nAtoms = peakSets.nAtoms;
         int[] peakUsage = new int[nTotalPeaks];
-        int[] atomUsage = new int[nAtoms];
+        int[] atomUsage = new int[nTotalPeaks];
         Arrays.fill(peakUsage, -1);
         Arrays.fill(atomUsage, -1);
-        for (int mutateSite : mutatable) {
-            int jCurrent = getIndex(chromosome.get(mutateSite));
-            peakUsage[jCurrent] = mutateSite;
-            atomUsage[mutateSite] = jCurrent;
+        for (int i = 0;i<chromosome.length();i++) {
+            int jCurrent = getIndex(chromosome.get(i));
+            peakUsage[jCurrent] = i;
+            atomUsage[i] = jCurrent;
         }
+//        for (int mutateSite : mutatable) {
+//            int jCurrent = getIndex(chromosome.get(mutateSite));
+//            peakUsage[jCurrent] = mutateSite;
+//            atomUsage[mutateSite] = jCurrent;
+//        }
         Collections.sort(sortedScores);
         int nSwap = 0;
+//        if (!AssignmentChromosome.checkChromosome((AssignmentChromosome) chromosome)) {
+//            System.out.println("premutate");
+//
+//        }
         MSeq genes = MSeq.of(chromosome);
         for (int iSite : mutatable) {
             int iCluster = atomUsage[iSite];
@@ -187,15 +200,36 @@ public class ConstrainedSwapMutator<
                 int jSite = peakUsage[jCluster];
                 if (jSite != -1) {
                     genes.swap(jSite, iSite);
+                    peakUsage[iCluster] = jSite;
+                    peakUsage[jCluster] = iSite;
+                    atomUsage[iSite] = jCluster;
+                    atomUsage[jSite] = iCluster;
                     nSwap++;
                 } else {
-//                    System.out.println(iSite + " " + iCluster + " " + jCluster);
-//                    EnumGene<Integer> enumGene1 = ((EnumGene<Integer>) genes.get(iSite));
-//                    System.out.println(enumGene1.validAlleles());
-//                    EnumGene<Integer> enumGene = enumGene1.newInstance(jCluster);
-//                    genes.set(iSite, enumGene);
+//                    if (!AssignmentChromosome.checkChromosome(genes)) {
+//                        System.out.println("genes before set");
+//                    }
+                    EnumGene<Integer> enumGene1 = ((EnumGene<Integer>) genes.get(iSite));
+/*
+                    if (!enumGene1.validAlleles().contains(Integer.valueOf(jCluster))) {
+                        System.out.println("no allele " + jCluster + " " + enumGene1.validAlleles());
+                    }
+*/
+                    EnumGene<Integer> enumGene = enumGene1.newInstance(jCluster);
+                    genes.set(iSite, enumGene);
+/*
+                    if (!AssignmentChromosome.checkChromosome(genes)) {
+                        System.out.println("genes after set " + iSite + " " + jCluster + " " + enumGene1.allele());
+                    }
+*/
+                    peakUsage[jCluster] = iSite;
+                    atomUsage[iSite] = jCluster;
+                    nSwap++;
                 }
             }
+//            if (!AssignmentChromosome.checkChromosome((AssignmentChromosome) chromosome)) {
+//                System.out.println("postmutate");
+//            }
         }
         final MutatorResult<Chromosome<G>> result;
         if (nSwap > 0) {

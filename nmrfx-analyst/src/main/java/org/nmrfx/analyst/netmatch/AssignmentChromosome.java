@@ -6,13 +6,12 @@ import io.jenetics.internal.util.Bits;
 import io.jenetics.internal.util.Requires;
 import io.jenetics.util.ISeq;
 import io.jenetics.util.IntRange;
-import io.jenetics.util.RandomRegistry;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.jenetics.internal.util.Bits.getAndSet;
 import static java.lang.String.format;
@@ -63,25 +62,22 @@ public class AssignmentChromosome<T>
             ));
         }
 
-       final var rnd = RandomRegistry.random();
-       // final int[] subset = Subset.next(rnd, alleles.size(), length);
+        List<Integer> alleleList = new ArrayList<>();
+        for (int i = 0; i < length; i++) {
+            alleleList.add(i);
+        }
+
+        final ISeq<Integer> alleleSeq = ISeq.of(alleleList);
+
         int[] subset = PeakMatcher.newValid(length);
-       // shuffle(subset, rnd);
         ArrayList<Integer> matchArray = new ArrayList<>();
         for (int i : subset) {
             matchArray.add(i);
         }
 
-        final ISeq<T> alleles2 = (ISeq<T>)ISeq.of(matchArray);
-
-        AssignmentChromosome permCh = new AssignmentChromosome<T>(IntStream.range(0, subset.length).mapToObj(i -> EnumGene.of(i, alleles2)).collect(ISeq.toISeq()));
-return permCh;
-//        final ISeq<EnumGene<T>> genes = IntStream.of(subset)
-//                .mapToObj(i -> EnumGene.<T>of(i, alleles))
-//                .collect(ISeq.toISeq());
-//
-//        return new AssignmentChromosome<>(genes, true);
+        return new AssignmentChromosome(matchArray.stream().map(i -> EnumGene.of(i, alleleSeq)).collect(ISeq.toISeq()));
     }
+
 
     @Override
     public String toString() {

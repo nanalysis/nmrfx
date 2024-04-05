@@ -19,21 +19,17 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.function.Function.identity;
 import static io.jenetics.engine.EvolutionResult.toBestPhenotype;
 import static io.jenetics.engine.Limits.bySteadyFitness;
+import static java.util.function.Function.identity;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakMatcher {
 
-    static final double ERRMUL = 1.0;
     static final double weightPred = 1.0;
     static final double weightMulti = 2.0;
-    int[][] bestMatches;
-    int nEvaluations = 0;
     String rootDir = "";
     private int populationSize = 100;
     private double mutationRate = 0.01;
@@ -49,38 +45,38 @@ public class PeakMatcher {
     }
 
     /**
-         * Used to store an item number (for a peak or atom) and the probability of that item matching
-         */
-        record ScoreConstrained(int peak, int atom, double score,
-                                int[] firstSetMatching) implements Comparable<ScoreConstrained> {
+     * Used to store an item number (for a peak or atom) and the probability of that item matching
+     */
+    record ScoreConstrained(int peak, int atom, double score,
+                            int[] firstSetMatching) implements Comparable<ScoreConstrained> {
 
-            ScoreConstrained(int peak, int atom, double score, int[] firstSetMatching) {
-                this.atom = atom;
-                this.peak = peak;
-                this.score = score;
-                this.firstSetMatching = firstSetMatching.clone();
-            }
-
-            @Override
-            public int compareTo(ScoreConstrained o) {
-                int result = 0;
-                if (o == null) {
-                    result = 1;
-                } else if (!this.equals(o)) {
-                    if (this.score > o.score) {
-                        result = 1;
-                    } else if (this.score < o.score) {
-                        result = -1;
-                    }
-                }
-                return result;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("atom %d peak %d best %d score %.3f", atom, peak, firstSetMatching[atom], score);
-            }
+        ScoreConstrained(int peak, int atom, double score, int[] firstSetMatching) {
+            this.atom = atom;
+            this.peak = peak;
+            this.score = score;
+            this.firstSetMatching = firstSetMatching.clone();
         }
+
+        @Override
+        public int compareTo(ScoreConstrained o) {
+            int result = 0;
+            if (o == null) {
+                result = 1;
+            } else if (!this.equals(o)) {
+                if (this.score > o.score) {
+                    result = 1;
+                } else if (this.score < o.score) {
+                    result = -1;
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("atom %d peak %d best %d score %.3f", atom, peak, firstSetMatching[atom], score);
+        }
+    }
 
     static class HistoryValue {
 
@@ -104,7 +100,6 @@ public class PeakMatcher {
     }
 
     ArrayList<HistoryValue> history = new ArrayList<>();
-    double[] tols = {2.0, 2.0};
     static HashMap<Atom, AtomShifts> atomIndexMap = new HashMap<>();
     static HashMap<String, PeakSets> peakSetsMap = new LinkedHashMap<>();
     PeakSets peakType;
@@ -228,7 +223,7 @@ public class PeakMatcher {
      *
      * @return a copy of the AtomShifts list
      */
-     static Map<Atom, AtomShifts> getAtomShiftList() {
+    static Map<Atom, AtomShifts> getAtomShiftList() {
         Map<Atom, AtomShifts> newList = new HashMap<>();
         for (var entry : atomIndexMap.entrySet()) {
             newList.put(entry.getKey(), entry.getValue().copy());
@@ -242,11 +237,11 @@ public class PeakMatcher {
      * @param dump If set then output print statistics to system.out
      * @return The global score
      */
-    public static GlobalScore globalScore(Map<Atom, AtomShifts> aShifts, boolean dump) {
+    static GlobalScore globalScore(Map<Atom, AtomShifts> aShifts, boolean dump) {
         return globalScore(aShifts, dump, "scores.txt");
     }
 
-    public static GlobalScore globalScore(Map<Atom, AtomShifts> aShifts, boolean dump, String fileName) {
+    static GlobalScore globalScore(Map<Atom, AtomShifts> aShifts, boolean dump, String fileName) {
         double scoreSum = 0.0;
         double normSum = 0.0;
         double score = 0.0;
@@ -345,18 +340,10 @@ public class PeakMatcher {
                 double value = Double.parseDouble(fields[1]);
                 double sigma = Double.parseDouble(fields[2]);
                 if (atom.getRefPPM() == null) {
-                    System.out.println("null " + atom.getShortName());
                     atom.setRefPPM(value);
                     atom.setRefError(sigma);
-                } else {
-                    if ((Math.abs(atom.getRefPPM() - value) / value) > 0.05) {
-                        System.out.println(atom.getShortName() + " " + atom.getRefPPM() + " " + atom.getSDevRefPPM() + " " + value + " " + sigma);
-                    }
-                    if ((Math.abs(atom.getSDevRefPPM() - sigma) / sigma) > 0.1) {
-                        System.out.println(atom.getShortName() + " " + atom.getRefPPM() + " " + atom.getSDevRefPPM() + " " + value + " " + sigma);
-                    }
                 }
-               // atom.setRefPPM(value);
+                atom.setRefPPM(value);
                 atom.setRefError(sigma);
                 AtomShifts atomShifts = new AtomShifts(atom);
                 atomIndexMap.put(atom, atomShifts);
@@ -367,8 +354,20 @@ public class PeakMatcher {
     }
 
     public static void processPPMs() {
+        List<String> useNames = List.of("H1", "H", "N", "C", "CA", "CB");
         var mol = MoleculeFactory.getActive();
-        for (var atom:mol.getAtomArray()) {
+        for (var atom : mol.getAtomArray()) {
+            if (!useNames.contains(atom.getName().toUpperCase())) {
+                continue;
+            }
+            if (atom.getName().equalsIgnoreCase("H1")) {
+                atom.setRefPPM(8.0);
+                atom.setRefError(0.5);
+            }
+            if (atom.getSDevRefPPM() != null) {
+                atom.setRefError(atom.getSDevRefPPM() * 1.3);
+            }
+
             AtomShifts atomShifts = new AtomShifts(atom);
             atomIndexMap.put(atom, atomShifts);
         }
@@ -376,11 +375,7 @@ public class PeakMatcher {
     }
 
     public static PeakSets getFirstSet() {
-        for (PeakSets peakSets : peakSetsMap.values()) {
-            return peakSets;
-        }
-        return null;
-
+        return peakSetsMap.values().stream().findFirst().orElse(null);
     }
 
     public double getValue(List list) {
@@ -393,7 +388,6 @@ public class PeakMatcher {
     }
 
     public static double getValue(int[] matching) {
-//        System.out.println("getvalue " + matching.length);
         Map<Atom, AtomShifts> aShifts = getAtomShiftList();
         PeakSets peakSets = getFirstSet();
 
@@ -409,8 +403,7 @@ public class PeakMatcher {
     }
 
     /**
-     *
-     * @param fileName
+     * @param fileName name of file to process
      */
     public void processFile(String fileName) {
         File file = new File(fileName);
@@ -465,7 +458,7 @@ public class PeakMatcher {
 
         int nPeaks = valuesPeak.size();
         int nAtoms = valuesAtom.size();
-        int nExtraPeaks = 0;
+        int nExtraPeaks;
         int nExtraAtoms = 0;
         if (nAtoms > nPeaks) {
             nExtraPeaks = nAtoms;
@@ -489,7 +482,6 @@ public class PeakMatcher {
         peakType.setNAtoms(nAtoms);
         nPeaks = valuesPeak.size();
         nAtoms = valuesAtom.size();
-        System.out.println("nOrigPeaks " + nOrigPeaks + " nPeaks " + nPeaks + " nOrigAtoms " + nOrigAtoms + " nAtoms " + nAtoms);
 
         peakSets.atomMatches.clear();
         peakSets.peakMatches.clear();
@@ -616,7 +608,6 @@ public class PeakMatcher {
                 }
             }
             if (!goodMatches.isEmpty()) {
-                System.out.println("setemp");
                 peakMatchList.set(iAtom, goodMatches);
             }
         }
@@ -654,7 +645,6 @@ public class PeakMatcher {
 
         int nPeaks = valuesPeak.size();
         int nAtoms = valuesAtom.size();
-//        System.out.println("nat " + nAtoms + " npeak " + nPeaks);
         boolean maxOpts = false;
         if (maxOpts) {
             int nTotal = nAtoms + nPeaks;
@@ -673,20 +663,20 @@ public class PeakMatcher {
             int nTotal = Math.max(nAtoms, nPeaks);
             matcher.reset(nTotal, true);
 //            int nTotal = nAtoms;
-//            int nExtra = nTotal - nPeaks;
+            int nExtra = nTotal - nPeaks;
 //            matcher.reset(nTotal, true);
-//            for (int j = 0; j < nAtoms; j++) {
-//                for (int i = 0; i < nExtra; i++) {
-//                    matcher.setWeight(j, nPeaks + i, -1.0);
-//                    matcher.setWeight(nPeaks + i, j, -1.0);
-//                }
-//            }
-
+            int n = nPeaks - nAtoms;
+            for (int j = 0; j < nAtoms; j++) {
+                matcher.setWeight(j, n + j, -1.0);
+            }
+            for (int j = 0; j < n; j++) {
+                for (int i = 0; i < nTotal; i++) {
+                    matcher.setWeight(nAtoms + j, i, -1.0);
+                }
+            }
         }
-        int[] bestMatch = new int[nAtoms];
 
         for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
-            bestMatch[iAtom] = -1;
             int nMatch = 0;
             List<ItemMatch> atomPeakMatch = peakSets.peakMatches.get(iAtom);
             for (ItemMatch peakAtomMatch : atomPeakMatch) {
@@ -703,17 +693,10 @@ public class PeakMatcher {
                     }
                 }
             }
-            if (nMatch < 2) {
-                bestMatch[iAtom] = -1;
-            }
         }
         // call the bipartite matcher and get optimal matching of peaks with atoms
-        int[] tempMatching = matcher.getMatching();
-        int[] matching = new int[nAtoms];
-        System.arraycopy(tempMatching, 0, matching, 0, nAtoms);
-        // store this matching in the peakSet
+        int[] matching = matcher.getMatching();
         peakSets.setMatching(matching);
-
         return matching;
     }
 
@@ -793,16 +776,13 @@ public class PeakMatcher {
 
     /**
      * Refine the results of the multimatch by s
-     *
      */
     public static void refineMultiMatch(String typeName, List<ScoreConstrained> multiMatchList) {
         List<List<ItemMatch>> firstMatches = null;
-        int[] bestMatching = null;
         int nAtoms = 0;
         int nPeaks = 0;
         for (PeakSets peakSets : peakSetsMap.values()) {
             firstMatches = peakSets.atomMatches;
-            bestMatching = peakSets.bestMatching;
             nAtoms = peakSets.peakMatches.size();
             nPeaks = peakSets.atomMatches.size();
             break;
@@ -838,7 +818,6 @@ public class PeakMatcher {
                 }
                 usedPeaks[iPeak] = true;
                 usedAtoms[jAtom] = true;
-//                System.out.println(jAtom + " " + iPeak);
                 require[jAtom] = iPeak;
                 nUsed++;
             }
@@ -873,7 +852,7 @@ public class PeakMatcher {
 
     }
 
-    static void assignMatches(PeakSets peakSets, Map<Atom,AtomShifts> aShifts, boolean dump, int[] matching) {
+    static void assignMatches(PeakSets peakSets, Map<Atom, AtomShifts> aShifts, boolean dump, int[] matching) {
         assignMatches(peakSets, aShifts, dump, matching, "tempmatch.txt");
     }
 
@@ -882,8 +861,8 @@ public class PeakMatcher {
      * the atoms in the group of atoms
      *
      * @param peakSets The set of peaks to be matched
-     * @param dump Whether to output statistics about the matches
-     * match modified from best set.
+     * @param dump     Whether to output statistics about the matches
+     *                 match modified from best set.
      */
     static void assignMatches(PeakSets peakSets, Map<Atom, AtomShifts> aShifts, boolean dump, int[] matching, String fileName) {
         List<AtomValue> valuesAtom = peakSets.getAtoms();
@@ -975,7 +954,7 @@ public class PeakMatcher {
                 String[] sArray = new String[nDim];
                 System.arraycopy(fields, 2, sArray, 0, nDim);
                 Atom[] atoms = new Atom[sArray.length];
-                for (int k=0;k<atoms.length;k++) {
+                for (int k = 0; k < atoms.length; k++) {
                     atoms[k] = MoleculeBase.getAtomByName(sArray[k]);
                 }
                 value = new AtomValue(index, atoms, this);
@@ -1025,7 +1004,7 @@ public class PeakMatcher {
         System.arraycopy(fields, 0, sArray, 0, nDim);
 
         Atom[] atoms = new Atom[sArray.length];
-        for (int k=0;k<atoms.length;k++) {
+        for (int k = 0; k < atoms.length; k++) {
             atoms[k] = MoleculeBase.getAtomByName(sArray[k]);
         }
 
@@ -1041,7 +1020,7 @@ public class PeakMatcher {
         int nAtoms = 2 + 2 * cNames.length;
         Atom[] atoms = new Atom[nAtoms];
         for (Polymer polymer : mol.getPolymers()) {
-            for (Residue residue: polymer.getResidues()) {
+            for (Residue residue : polymer.getResidues()) {
                 String hName = residue.previous == null ? hName = "H1" : "H";
                 atoms[0] = residue.getAtom(hName);
                 atoms[1] = residue.getAtom("N");
@@ -1059,11 +1038,6 @@ public class PeakMatcher {
                 localPeakSet.valuesAtom.add(value);
             }
         }
-    }
-
-    public void checkOverlaps(String type) {
-        PeakSets peakSets = peakSetsMap.get(type);
-        List<PeakValue> valuesPeak = peakSets.getPeaks();
     }
 
     private static void update(final EvolutionResult<EnumGene<Integer>, Double> result) {
@@ -1120,22 +1094,15 @@ public class PeakMatcher {
         String fScoreFilename = Paths.get(rootDir, "finalscore.txt").toString();
         dumpPeakMatchList(peakMatchFilename, null);
         int[] firstMatching = doBipartiteMatch(typeName, null);
-        for (int iv : firstMatching) {
-            System.out.print(iv + " ");
-        }
-        System.out.println();
         final int stops = firstMatching.length;
+        System.out.println("stops " + stops);
         Map<Atom, AtomShifts> aShifts = getAtomShiftList();
         PeakSets peakSets = getFirstSet();
         assignMatches(peakSets, aShifts, true, firstMatching, iMatchFilename);
         var mol = MoleculeFactory.getActive();
-        for (var atm:mol.getAtomArray()) {
-            System.out.println(atm.getFullName() + " " + atm.getRefPPM() + " " + atm.getSDevRefPPM());
-        }
         GlobalScore gScore = globalScore(aShifts, true, iScoreFilename);
         double fitness = gScore.fitness;
         System.out.println("first bp value " + fitness);
-        //globalScore(false);
         int eliteNumber = 100;
         int maximumPhenoTypeAge = 50;
         final Engine<EnumGene<Integer>, Double> engine = Engine
@@ -1148,12 +1115,10 @@ public class PeakMatcher {
                 .populationSize(populationSize)
                 .survivorsSelector(new EliteSelector<>(eliteNumber))
                 .offspringSelector(new TournamentSelector<>())
-                               // .constraint(MatchValidator::isValid)
                 .alterers(
                         new ConstrainedSwapMutator<>(this, peakSets, mutationRate),
                         new PartiallyMatchedCrossover<>(crossoverRate))
                 .build();
-//        List<AssignmentChromosome<EnumGene<Integer>>> genotypes = new ArrayList<>();
 
         List<Genotype<EnumGene<Integer>>> genotypes = new ArrayList<>();
 
@@ -1166,6 +1131,12 @@ public class PeakMatcher {
             multiMatchList.sort(Collections.reverseOrder());
             int nMulti = Math.min(multiMaxLimit, multiMatchList.size());
             System.out.println(" nMultiMatches " + multiMatchList.size() + " multiLimit " + multiMaxLimit + " nMulti " + nMulti);
+            List<Integer> alleleList = new ArrayList<>();
+            for (int i = 0; i < stops; i++) {
+                alleleList.add(i);
+            }
+            final ISeq<Integer> alleleSeq = ISeq.of(alleleList);
+
             for (ScoreConstrained sConstrained : multiMatchList.subList(0, nMulti)) {
                 System.out.println("multi value " + sConstrained.score);
                 ArrayList<Integer> matchArray = new ArrayList<>();
@@ -1174,7 +1145,8 @@ public class PeakMatcher {
                 }
                 final ISeq<Integer> alleles = ISeq.of(matchArray);
                 System.out.println(alleles);
-                AssignmentChromosome<EnumGene<Integer>> permCh = new AssignmentChromosome(IntStream.range(0, firstMatching.length).mapToObj(i -> EnumGene.of(i, alleles)).collect(ISeq.toISeq()));
+                AssignmentChromosome<EnumGene<Integer>> permCh = new AssignmentChromosome(matchArray.stream().map(i -> EnumGene.of(i, alleleSeq)).collect(ISeq.toISeq()));
+
                 Genotype gtype = Genotype.of(permCh);
                 genotypes.add(gtype);
             }
@@ -1185,19 +1157,19 @@ public class PeakMatcher {
         try {
             final Phenotype<EnumGene<Integer>, Double> best
                     = engine.stream(genotypes)
-                            // Truncate the evolution stream after n "steady"
-                            // generations.
-                            .limit(bySteadyFitness(steadyLimit))
-                            // The evolution will stop after maximal n
-                            // generations.
-                            .limit(nGenerations)
-                            // Update the evaluation statistics after
-                            // each generation
-                            .peek(statistics)
-                            .peek(PeakMatcher::update)
-                            // Collect (reduce) the evolution stream to
-                            // its best phenotype.
-                            .collect(toBestPhenotype());
+                    // Truncate the evolution stream after n "steady"
+                    // generations.
+                    .limit(bySteadyFitness(steadyLimit))
+                    // The evolution will stop after maximal n
+                    // generations.
+                    .limit(nGenerations)
+                    // Update the evaluation statistics after
+                    // each generation
+                    .peek(statistics)
+                    .peek(PeakMatcher::update)
+                    // Collect (reduce) the evolution stream to
+                    // its best phenotype.
+                    .collect(toBestPhenotype());
 
             System.out.println(statistics);
             System.out.println(best);
@@ -1216,31 +1188,28 @@ public class PeakMatcher {
         return fitness;
 
     }
+
     public static int[] newValid(int size) {
         PeakSets peakSets = getFirstSet();
-        List<PeakValue> valuesPeak = peakSets.getPeaks();
-        List<AtomValue> valuesAtom = peakSets.getAtoms();
-
-        int nPeaks = valuesPeak.size();
-        int nAtoms = valuesAtom.size();
         List<List<ItemMatch>> peakMatches = peakSets.peakMatches;
-        List<Integer> elements = new ArrayList<>(size);
-        for (int i=0;i<size;i++) {
+        List<Integer> elements = new ArrayList<>(peakMatches.size());
+        for (int i = 0; i < peakMatches.size(); i++) {
             elements.add(i);
         }
         int[] result = new int[size];
-        boolean[] used = new boolean[peakSets.atomMatches.size()];
+        boolean[] used = new boolean[size];
         Collections.shuffle(elements);
-        for (int i=0;i<size;i++) {
-            int index =elements.get(i);
-            List<ItemMatch> itemMatches = peakMatches.get(index);
+
+        for (int i = 0; i < peakMatches.size(); i++) {
+            int index = elements.get(i);
             int iPeak = -1;
+            List<ItemMatch> itemMatches = peakMatches.get(index);
             if (itemMatches.size() == 1) {
                 iPeak = itemMatches.get(0).itemNum;
             } else {
                 List<ItemMatch> sortedMatches = new ArrayList<>(itemMatches);
                 Collections.shuffle(sortedMatches);
-                for (int k=0;k<sortedMatches.size();k++) {
+                for (int k = 0; k < sortedMatches.size(); k++) {
                     int testPeak = itemMatches.get(k).itemNum;
                     if (!used[testPeak]) {
                         iPeak = testPeak;
@@ -1248,12 +1217,17 @@ public class PeakMatcher {
                     }
                 }
             }
-            result[i] = iPeak;
             if (iPeak != -1) {
+                result[index] = iPeak;
                 used[iPeak] = true;
+            }
+        }
+        int j = peakMatches.size();
+        for (int i = 0; i < used.length; i++) {
+            if (!used[i]) {
+                result[j++] = i;
             }
         }
         return result;
     }
-
 }

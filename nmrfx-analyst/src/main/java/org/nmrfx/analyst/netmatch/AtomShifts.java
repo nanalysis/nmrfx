@@ -43,11 +43,7 @@ class AtomShifts {
      *
      */
     Double getPredictedShift() {
-        Double ppm = atom.getRefPPM();
-        if (ppm == null) {
-            System.out.println("error " + atom.getFullName());
-        }
-        return ppm;
+        return atom.getRefPPM();
     }
 
     /**
@@ -76,11 +72,7 @@ class AtomShifts {
      * @return The quality factor.
      */
     double getQ(final double x) {
-        double q = Math.log(1.0 - Erf.erf(Math.abs(x) / SQRT2));
-                if (Double.isInfinite(q)) {
-                    System.out.println("YYY " + atom.getFullName() + " " + x + " " + Erf.erf(Math.abs(x)));
-                }
-        return q;
+        return Math.log(1.0 - Erf.erf(Math.abs(x) / SQRT2));
     }
 
     /**
@@ -91,7 +83,6 @@ class AtomShifts {
     double getQPred(final double ppm) {
         double x = (ppm - getPredictedShift()) / getSigma();
         double q = getQ(x);
-        //double x0 = 1.5;
         double x0 = 2.0;
         double q0 = getQ(x0);
         return 1.0 + (q / Math.abs(q0));
@@ -188,10 +179,14 @@ class AtomShifts {
         double deltaScaled;
         // fixme should we not use predictionError once we have an assignment from peak?
         //   that is should predictionError and errorValue below be swapped? (swapped in this version)
+        Double ppm = getPPM();
+        if (ppm == null) {
+            return 0.0;
+        }
         if (useList) {
-            deltaScaled = (value - getPPM()) / errorValue;
+            deltaScaled = (value - ppm) / errorValue;
         } else {
-            deltaScaled = (value - getPPM()) / getSigma();
+            deltaScaled = (value - ppm) / getSigma();
         }
         return 1.0 - Erf.erf(Math.abs(deltaScaled) / SQRT2);
     }
