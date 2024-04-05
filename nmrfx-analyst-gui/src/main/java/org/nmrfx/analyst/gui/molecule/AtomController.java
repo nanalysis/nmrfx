@@ -135,7 +135,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             }
         });
         PeakList.registerFreezeListener(this);
-        Molecule.getActive().registerAtomTableListener(this);
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol != null) {
+            activeMol.registerAtomTableListener(this);
+        }
         updateView();
     }
 
