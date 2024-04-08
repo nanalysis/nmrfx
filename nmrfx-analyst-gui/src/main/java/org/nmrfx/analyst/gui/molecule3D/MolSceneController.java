@@ -558,7 +558,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
         hideAll();
         for (Compound ligand : molecule.getLigands()) {
-            molecule.selectAtoms(ligand.getName() + ":*.*'");
+            molecule.selectAtoms(ligand.getName() + ":*.*");
             molecule.setAtomProperty(Atom.DISPLAY, true);
             molecule.selectBonds("atoms");
             molecule.setBondProperty(Bond.DISPLAY, true);
@@ -609,6 +609,14 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     public void drawSpheres() {
         molViewer.addSpheres(0, 0.8, "spheres " + getIndex());
+    }
+
+    public void drawCartoon() throws InvalidMoleculeException {
+        if (!molViewer.getCurrentMolecule().getPolymers().isEmpty()) {
+            molViewer.addTube(0, 0.7, "tubes " + getIndex());
+        }
+        selectLigand();
+        drawSticks();
     }
 
     public void drawTubes() throws InvalidMoleculeException {
@@ -1001,7 +1009,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     String genYaml(StructureCalculator.StructureMode mode) {
         Molecule molecule = Molecule.getActive();
-        boolean isRNA = molecule.getPolymers().get(0).isRNA();
+        boolean isRNA = false;
+        if (!molecule.getPolymers().isEmpty()) {
+             isRNA = molecule.getPolymers().get(0).isRNA();
+        }
         StringBuilder scriptB = new StringBuilder();
         if (isRNA & (mode == INIT || mode == ANNEAL)) {
             scriptB.append("rna:\n");
@@ -1111,7 +1122,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void updateView() {
         removeAll();
         try {
-            drawTubes();
+            drawCartoon();
             molViewer.centerOnSelection();
         } catch (InvalidMoleculeException ex) {
             log.error(ex.getMessage(), ex);
