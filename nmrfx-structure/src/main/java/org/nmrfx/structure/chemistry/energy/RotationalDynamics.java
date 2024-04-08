@@ -284,7 +284,11 @@ public class RotationalDynamics {
     }
 
     double getLambda(double temp0, double temp, double time_c) {
-        lambda = Math.sqrt(1.0 + (1.0 / time_c) * ((temp0 / temp) - 1.0));
+        if (temp < 1.0e-6) {
+            lambda = 4.0;
+        } else {
+            lambda = Math.sqrt(1.0 + (1.0 / time_c) * ((temp0 / temp) - 1.0));
+        }
         if (temp > (2.0 * temp0)) {
             lambda = Math.sqrt(0.01 + temp0 / temp);
         }
@@ -302,6 +306,9 @@ public class RotationalDynamics {
 
     void updateTimeStep(int iStep) {
         eRef = getPyEcon(1.0 * iStep / nSteps);
+        if (deltaEnergy < 1.0e-9) {
+            deltaEnergy = 1.0e-9;
+        }
 
         double lambda = Math.sqrt(1.0 + (eRef - Math.abs(deltaEnergy)) / (Math.abs(deltaEnergy) * tau));
         if (lambda > 1.025) {
@@ -500,7 +507,11 @@ public class RotationalDynamics {
         double potentialEnergy = eDeriv.getEnergy();
         double total = potentialEnergy + kineticEnergy;
 
-        deltaEnergy = Math.abs((total - lastTotalEnergy) / total);
+        deltaEnergy = Math.abs((total - lastTotalEnergy));
+        if (total != 0.0) {
+            deltaEnergy /= total;
+        }
+
         lastKineticEnergy = newKineticEnergy;
         lastPotentialEnergy = potentialEnergy;
         lastTotalEnergy = lastKineticEnergy + lastPotentialEnergy;
