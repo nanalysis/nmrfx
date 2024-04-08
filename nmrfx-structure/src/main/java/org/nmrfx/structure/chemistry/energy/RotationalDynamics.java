@@ -306,7 +306,7 @@ public class RotationalDynamics {
 
     void updateTimeStep(int iStep) {
         eRef = getPyEcon(1.0 * iStep / nSteps);
-        if (deltaEnergy < 1.0e-9) {
+        if (Math.abs(deltaEnergy) < 1.0e-9) {
             deltaEnergy = 1.0e-9;
         }
 
