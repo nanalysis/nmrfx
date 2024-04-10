@@ -299,6 +299,9 @@ public class STAR3Base {
     }
 
     public static String quote(String s) {
+        if (s.isBlank()) {
+            return ".";
+        }
         String result = s;
         char stringQuote = '"';
         if (s.indexOf(' ') != -1) {

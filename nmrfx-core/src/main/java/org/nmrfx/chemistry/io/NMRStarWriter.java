@@ -222,7 +222,7 @@ public class NMRStarWriter {
         chan.write("save_" + label + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
-        chan.write("_Entity.framecode                           ");
+        chan.write("_Entity.Sf_framecode                           ");
         chan.write(label + "\n");
         chan.write("_Entity.ID                           ");
         chan.write(entityID + "\n");
@@ -286,7 +286,7 @@ public class NMRStarWriter {
         chan.write("save_" + label + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
-        chan.write("_Entity.framecode                           ");
+        chan.write("_Entity.Sf_framecode                           ");
         chan.write(label + "\n");
         chan.write("_Entity.ID                           ");
         chan.write(entityID + "\n");
@@ -348,7 +348,7 @@ public class NMRStarWriter {
         chan.write("save_chem_comp_" + label + mode + "\n");
         chan.write("_Chem_comp.Sf_category                 ");
         chan.write("chem_comp\n");
-        chan.write("_Chem_comp.framecode                           ");
+        chan.write("_Chem_comp.Sf_framecode                           ");
         chan.write("chem_comp_" + label + mode + "\n");
         STAR3.writeLoopStrings(chan, chemCompAtomLoopStrings);
         int iAtom = 0;
@@ -686,7 +686,7 @@ public class NMRStarWriter {
         chan.write("_Assigned_chem_shift_list.Sf_category                 ");
         chan.write("assigned_chemical_shifts\n");
         chan.write("_Assigned_chem_shift_list.Sf_framecode                 ");
-        chan.write("assigned_chem_shift_list_1\n");
+        chan.write("assigned_chem_shift_list_" + ppmSet + "\n");
         chan.write("_Assigned_chem_shift_list.Sample_condition_list_ID      ");
         chan.write(".\n");
         chan.write("_Assigned_chem_shift_list.Sample_condition_list_label    ");
@@ -1265,14 +1265,41 @@ public class NMRStarWriter {
         }
     }
 
+    public static void writeSoftwareSTAR3(Writer chan) throws  IOException {
+        String softwareSf = """
+                save_software_1
+                  _Software.Sf_category  software
+                  _Software.Sf_framecode  software_1
+                  _Software.ID            1
+                  _Software.Name          NMRFx
+                  _Software.Version       11.4.7
+                  
+                  loop_
+                  _Task.Task
+                  
+                  'chemical shift assignment'
+                  'peak picking'
+                  
+                save_
+                
+                """;
+        chan.write(softwareSf);
+    }
+
     public static void writeAll(Writer chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
 
-        Date date = new Date(System.currentTimeMillis());
-        chan.write("    ######################################\n");
-        chan.write("    # Saved " + date + " #\n");
-        chan.write("    ######################################\n");
+        String projectName = "Project";
+        if (ProjectBase.getActive().getDirectory() != null) {
+            String filename = ProjectBase.getActive().getDirectory().getFileName().toString();
+            if (!filename.isBlank()) {
+                projectName = filename;
+            }
+        }
+        chan.write("data_" + projectName + "\n");
         ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         resFactory.clean();
+
+        writeSoftwareSTAR3(chan);
         
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {

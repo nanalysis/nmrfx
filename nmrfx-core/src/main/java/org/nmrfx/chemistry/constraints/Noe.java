@@ -317,7 +317,6 @@ public class Noe extends DistanceConstraint implements Serializable {
 
         StringBuilder result = new StringBuilder();
         char sep = ' ';
-        char stringQuote = '"';
 
         //        Gen_dist_constraint.ID
         result.append(NoeSet.id);
