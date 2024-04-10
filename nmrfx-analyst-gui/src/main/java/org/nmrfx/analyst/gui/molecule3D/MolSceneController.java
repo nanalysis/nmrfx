@@ -644,6 +644,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molViewer.addBox(0, 0.3, "box " + getIndex());
     }
 
+    public void drawConstraints() {
+        molViewer.deleteItems("delete", "constraints");
+        molViewer.addConstraintLines(0, "constraints " + getIndex());
+    }
+
+    public void drawTree() {
+        molViewer.deleteItems("delete", "tree");
+        molViewer.drawAtomTree();
+    }
     /**
      * Draws the original axes.
      *
@@ -949,6 +958,18 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
     }
 
+    public void addDistanceConstraint() {
+        Molecule molecule = Molecule.getActive();
+        if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
+            var molConstraints = molecule.getMolecularConstraints();
+            var disCon = molConstraints.getDistanceSet("noe_restraint_list", true);
+            Atom atom1 = molecule.globalSelected.get(0).getAtom();
+            Atom atom2 = molecule.globalSelected.get(1).getAtom();
+            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, 3.0);
+        }
+        drawConstraints();
+    }
+
     @FXML
     private void genPRF() {
         genAngleTree();
@@ -1001,8 +1022,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
             scriptB.append("refiner.init(save=False)\n");
         } else if (mode == REFINE) {
             scriptB.append("refiner.refine(refiner.dOpt)\n");
+            scriptB.append("refiner.dump(0.1,0.2, '')\n");
         } else if (mode == ANNEAL) {
             scriptB.append("refiner.anneal(refiner.dOpt)\n");
+            scriptB.append("refiner.dump(0.1,0.2, '')\n");
         }
         return scriptB.toString();
     }
@@ -1010,8 +1033,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
     String genYaml(StructureCalculator.StructureMode mode) {
         Molecule molecule = Molecule.getActive();
         boolean isRNA = false;
+        boolean isLigand = false;
         if (!molecule.getPolymers().isEmpty()) {
              isRNA = molecule.getPolymers().get(0).isRNA();
+        }
+        if (molecule.getPolymers().isEmpty()) {
+            isLigand = true;
         }
         StringBuilder scriptB = new StringBuilder();
         if (isRNA & (mode == INIT || mode == ANNEAL)) {
@@ -1034,6 +1061,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
                             lockloop: False
                             lockbulge: False
                     """);
+        }
+        if (isLigand) {
+            scriptB.append("tree:\n");
         }
         scriptB.append("""
                 anneal:
@@ -1170,5 +1200,4 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void moleculeChanged(MoleculeEvent e){
         Fx.runOnFxThread(ssViewer::drawSS);
     }
-
 }
