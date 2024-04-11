@@ -31,7 +31,6 @@ import javafx.geometry.Bounds;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
@@ -54,12 +53,14 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
+import org.nmrfx.plugin.api.PluginListener;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
 import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
+import org.nmrfx.processor.gui.spectra.PeakDisplayTool;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
@@ -242,7 +243,8 @@ public class AnalystApp extends Application {
 
         PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
-        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        PluginListener pluginListener = new PluginListener(pluginsMenu, (s) -> pluginCommand(s));
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginListener);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
@@ -263,6 +265,19 @@ public class AnalystApp extends Application {
             advanced(null);
         }
         return menuBar;
+    }
+
+    String pluginCommand(String s) {
+        String[] fields = s.split(" ");
+        if (fields.length == 2) {
+            if (fields[0].equalsIgnoreCase("showpeak")) {
+                Peak peak = PeakList.getAPeak(fields[1]);
+                if (peak != null) {
+                    PeakDisplayTool.gotoPeak(peak);
+                }
+            }
+        }
+        return "";
     }
 
     void pickedPeakAction(Peak peak) {
