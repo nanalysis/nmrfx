@@ -1163,13 +1163,13 @@ public class VarianData implements NMRData {
             if ((nblocks == 0) && (ntraces > 0)) {
                 nblocks = 1;
             }
-            checkPars(np, nblocks);
+            checkPars(np, nblocks, ntraces);
             if (ntraces > 1) {
                 log.info(">> number of traces {} more than one", ntraces);
                 np *= ntraces; // should read ntraces * nblocks into nvectors
             }
             if (badHeaderFormat()) {
-                throw new IOException("improper format for Varian header");
+                throw new IOException("improper format for Varian header " + dirFile);
             }
         } catch (IOException e) {
             log.warn(e.getMessage(), e);
@@ -1183,7 +1183,7 @@ public class VarianData implements NMRData {
         }
     }  // end readFileHeader
 
-    private void checkPars(int cKnp, int cKblocks) {
+    private void checkPars(int cKnp, int cKblocks, int cNtraces) {
         Integer ipar;
         ipar = getParInt("np");
         if (ipar != null && ipar != cKnp) {
@@ -1191,7 +1191,7 @@ public class VarianData implements NMRData {
         }
         ipar = getParInt("arraydim");
         if (ipar != null && ipar != cKblocks) {
-            log.info(">> arraydim in header {} and procpar differ {}", cKblocks, ipar);
+            log.info(">> arraydim in header {} and procpar {} differ traces {} file {}", cKblocks, ipar, cNtraces, dirFile.toString());
         }
     }
 
