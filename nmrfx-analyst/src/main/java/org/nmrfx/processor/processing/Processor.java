@@ -398,7 +398,7 @@ public class Processor {
         String fileType = getFileType(fileName);
         if ("nv".equals(fileType)) {
             try {
-                dataset = new Dataset(fileName, fileName, writeable, true);
+                dataset = new Dataset(fileName, fileName, writeable, true, false);
             } catch (IOException ex) {
                 log.warn("Could not create dataset. {}", ex.getMessage(), ex);
                 return false;
@@ -767,8 +767,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open FID " + filename);
@@ -792,8 +793,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());

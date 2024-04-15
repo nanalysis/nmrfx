@@ -707,10 +707,10 @@ public class JeolDelta implements NMRData {
     static final private int[] subMatrixEdges = {8, 32, 8, 8, 4, 4, 2, 2};
     static final String[] axisNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"}; // are these right (after Z)
 
-    public JeolDelta(final String fileName) throws IOException {
-        file = new File(fileName);
+    public JeolDelta(final File file) throws IOException {
+        this.file = file;
         if (!file.exists()) {
-            throw new IOException("File " + fileName + " doesn't exist");
+            throw new IOException("File " + file + " doesn't exist");
         }
 
         raFile = new RandomAccessFile(file, "r");
@@ -759,12 +759,12 @@ public class JeolDelta implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    public static boolean findFID(StringBuilder bpath) {
-        return bpath.toString().endsWith(".jdf");
+    public static boolean findFID(File file) {
+        return file.getName().endsWith(".jdf");
     }
 
-    private static boolean findFIDFiles(String dpath) {
-        return dpath.endsWith(".jdf");
+    private static boolean findFIDFiles(File file) {
+        return file.getName().endsWith(".jdf");
     }
 
     public void close() {

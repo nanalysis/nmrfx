@@ -206,6 +206,9 @@ public class VNMRPar {
             return valueList;
         } else {
             String[] fields = attrLine.split("\\s");
+            if (fields.length < 10) {
+                System.out.println("Insufficient fields " + name + " " + attrLine);
+            }
             String type = fields[2];
             String active = fields[9];
 
@@ -346,7 +349,7 @@ public class VNMRPar {
                 while (true) {
                     int len = s1.length();
 
-                    if ((len > 0) && (s1.charAt(len - 1) == '"')) {
+                    if ((len > 0) && (s1.charAt(len - 1) == '"') && ((len == 1) || (s1.charAt(len-2) != '\\'))) {
                         break;
                     }
 
