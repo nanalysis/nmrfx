@@ -368,7 +368,7 @@ public class ScannerTool implements ControllerTool {
                 if (itemDataset == null) {
                     File datasetFile = new File(scanTable.getScanDir(), datasetName);
                     try {
-                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                     } catch (IOException ioE) {
                         GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
                         return;
@@ -419,7 +419,7 @@ public class ScannerTool implements ControllerTool {
             if (itemDataset == null) {
                 File datasetFile = new File(scanTable.getScanDir(), datasetName);
                 try {
-                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                 } catch (IOException ioE) {
                     GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
                     return;

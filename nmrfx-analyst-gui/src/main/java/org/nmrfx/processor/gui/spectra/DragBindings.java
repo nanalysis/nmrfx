@@ -97,8 +97,8 @@ public class DragBindings {
         boolean isAccepted = false;
         if (db.hasFiles()) {
             if (!files.isEmpty()) {
-                isAccepted = NMRDataUtil.isFIDDir(files.get(0).getAbsolutePath()) != null
-                        || NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null
+                isAccepted = NMRDataUtil.isFIDDir(files.get(0)) != null
+                        || NMRDataUtil.isDatasetFile(files.get(0)) != null
                         || SDFile.isSDFFile(files.get(0).getName());
             }
         } else if (db.hasString()) {
