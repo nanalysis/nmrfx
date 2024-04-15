@@ -595,7 +595,7 @@ public class ScanTable {
             File file = new File(filePath);
             NMRData nmrData = null;
             try {
-                nmrData = NMRDataUtil.getFID(filePath);
+                nmrData = NMRDataUtil.getFID(file);
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
 
@@ -813,7 +813,7 @@ public class ScanTable {
 
                             NMRData nmrData;
                             try {
-                                nmrData = NMRDataUtil.getFID(filePath.toString());
+                                nmrData = NMRDataUtil.getFID(filePath.toFile());
                             } catch (IOException ioE) {
                                 GUIUtils.warn("Load scan table", "Couldn't load this file: " + filePath);
                                 return;

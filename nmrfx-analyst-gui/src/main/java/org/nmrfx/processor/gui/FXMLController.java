@@ -77,7 +77,6 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
-import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
@@ -370,7 +369,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private NMRData getNMRData(String filePath) {
         NMRData nmrData = null;
         try {
-            nmrData = NMRDataUtil.loadNMRData(filePath, null);
+            File file = new File(filePath);
+            nmrData = NMRDataUtil.loadNMRData(file, null, true);
         } catch (IOException ioE) {
             log.error("Unable to load NMR file: {}", filePath, ioE);
             ExceptionDialog eDialog = new ExceptionDialog(ioE);
@@ -584,7 +584,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             try {
                 for (File selectedFile : selectedFiles) {
                     setInitialDirectory(selectedFile.getParentFile());
-                    NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
+                    NMRData nmrData = NMRDataUtil.getFID(selectedFile);
                     if (nmrData instanceof NMRViewData) {
                         PreferencesController.saveRecentFiles(selectedFile.toString());
                     }

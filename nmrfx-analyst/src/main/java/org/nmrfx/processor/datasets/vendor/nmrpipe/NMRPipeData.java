@@ -197,13 +197,12 @@ public class NMRPipeData implements NMRData {
         tbytes = np * ebytes;
     }
 
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
+    public static boolean findFID(File file) {
+        return findFIDFiles(file);
     }
 
-    public static boolean findFIDFiles(String dpath) {
+    public static boolean findFIDFiles(File file) {
         boolean found = false;
-        File file = new File(dpath);
         String dirName = file.getParent();
         String fileName = file.getName();
         if (fileName.contains("%")) {
