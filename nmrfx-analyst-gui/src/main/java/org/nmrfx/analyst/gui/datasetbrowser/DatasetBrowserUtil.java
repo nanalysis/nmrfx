@@ -45,11 +45,8 @@ public class DatasetBrowserUtil {
             try {
                 NMRData data = NMRDataUtil.getFID(new File(fileName));
                 DatasetSummary datasetSummary = createDatasetSummary(path1, data, getProcessedDataset(Paths.get(fileName).toFile()));
-
                 items.add(datasetSummary);
             } catch (Exception ex) {
-                System.out.println("Error reading " + fileName);
-                ex.printStackTrace();
                 log.error(ex.getMessage() + " " + fileName, ex);
             }
         }
