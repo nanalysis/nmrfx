@@ -92,7 +92,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *                     closed)
      * @throws IOException if an I/O error occurs
      */
-    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
+    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile, boolean saveToProject)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, writable, useCacheFile);
@@ -137,7 +137,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
 
         log.info("new dataset {}", fileName);
-        addFile(fileName);
+        if (saveToProject) {
+            addFile(fileName);
+        }
         loadLSCatalog();
     }
 
@@ -529,7 +531,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         log.info(fullName);
         String fileString = Files.readString(linkFile.toPath());
         log.info(fileString);
-        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
+        NMRData nmrData = NMRDataUtil.getNMRData(new File(fileString));
         log.info("{}", nmrData);
         if (nmrData instanceof BrukerData brukerData) {
             return brukerData.toDataset(name);
