@@ -68,8 +68,6 @@ public class Noe extends DistanceConstraint implements Serializable {
     private double volume = 0.0;
     private double scale = 1.0;
     public double atomScale = 1.0;
-    public DistanceStat disStat = DEFAULT_STAT;
-    private DistanceStat disStatAvg = DEFAULT_STAT;
     private double ppmError = 0.0;
     private short active = 1;
     public boolean symmetrical = false;
@@ -160,11 +158,6 @@ public class Noe extends DistanceConstraint implements Serializable {
         } else {
             return spg2;
         }
-    }
-
-    @Override
-    public DistanceStat getStat() {
-        return disStat;
     }
 
     public static int getSize(NoeSet noeSet) {

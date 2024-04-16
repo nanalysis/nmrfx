@@ -21,10 +21,7 @@ package org.nmrfx.structure.noe;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.constraints.DistanceStat;
-import org.nmrfx.chemistry.constraints.Flags;
-import org.nmrfx.chemistry.constraints.Noe;
-import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
@@ -151,53 +148,64 @@ public class NOECalibrator {
         return new String(violCharArray);
     }
 
-    public void updateNOEListDistances(List<Noe> noeList) {
-        double sum = 0.0;
-        MoleculeBase mol = noeSet.getMolecularConstraints().molecule;
+    public static void updateNOEListDistances(MoleculeBase mol, List<? extends DistanceConstraint> noeList) {
+        for (DistanceConstraint distanceConstraint : noeList) {
+            updateDistanceStat(mol, distanceConstraint);
+         }
+    }
+
+    public static void updateDistanceStat(MoleculeBase mol, DistanceConstraint distanceConstraint) {
         int[] structures = mol.getActiveStructures();
         if (structures.length == 0) {
             structures = new int[1];
         }
         int nStructures;
         ArrayList<Double> dList = new ArrayList<>();
-        for (Noe noe : noeList) {
-            dList.clear();
-            double bound = noe.getUpper();
-            int nInBounds = 0;
-            nStructures = 1;
-            BitSet violStructures = noe.disStat.getViolStructures();
-            if (structures.length > 0) {
-                nStructures = structures.length;
-                if (violStructures == null) {
-                    violStructures = new BitSet(nStructures);
-                }
-                violStructures.clear();
-                for (int iStruct : structures) {
-                    double distance = Atom.calcWeightedDistance(noe.spg1, noe.spg2, iStruct, 6, false, sumAverage);
-                    if (distance < bound) {
-                        nInBounds++;
-                    } else {
-                        violStructures.set(iStruct);
-                    }
-                    dList.add(distance);
-                }
+        dList.clear();
+        double bound = distanceConstraint.getUpper();
+        int nInBounds = 0;
+        nStructures = 1;
+        BitSet violStructures = distanceConstraint.disStat.getViolStructures();
+        if (structures.length > 0) {
+            nStructures = structures.length;
+            if (violStructures == null) {
+                violStructures = new BitSet(nStructures);
             }
-            double fracInBound = (double) nInBounds / nStructures;
-            SummaryStatistics stat = new SummaryStatistics();
-            dList.stream().forEach(stat::addValue);
-            double minDis = stat.getMin();
-            double maxDis = stat.getMax();
-            double meanDis = stat.getMean();
-
-            double stdDevDis = 0.0;
-            if (dList.size() > 1) {
-                stdDevDis = stat.getStandardDeviation();
+            violStructures.clear();
+            SpatialSetGroup spg1;
+            SpatialSetGroup spg2;
+            if (distanceConstraint instanceof Noe noe) {
+                spg1 = noe.spg1;
+                spg2 = noe.spg1;
+            } else {
+                spg1 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms1());
+                spg2 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms2());
             }
-            DistanceStat dStat = new DistanceStat(minDis, maxDis, meanDis, stdDevDis, fracInBound, violStructures);
-            noe.disStat = dStat;
+            for (int iStruct : structures) {
+                double distance = Atom.calcWeightedDistance(spg1, spg2, iStruct, 6, false, sumAverage);
+                if (distance < bound) {
+                    nInBounds++;
+                } else {
+                    violStructures.set(iStruct);
+                }
+                dList.add(distance);
+            }
         }
-    }
+        double fracInBound = (double) nInBounds / nStructures;
+        SummaryStatistics stat = new SummaryStatistics();
+        dList.stream().forEach(stat::addValue);
+        double minDis = stat.getMin();
+        double maxDis = stat.getMax();
+        double meanDis = stat.getMean();
 
+        double stdDevDis = 0.0;
+        if (dList.size() > 1) {
+            stdDevDis = stat.getStandardDeviation();
+        }
+        DistanceStat dStat = new DistanceStat(minDis, maxDis, meanDis, stdDevDis, fracInBound, violStructures);
+        distanceConstraint.disStat = dStat;
+
+    }
     public void updateNOEListDistancesAvg(List<Noe> noeList, boolean requireActive) {
         int[] structures = molecule.getActiveStructures();
         if (structures.length == 0) {
@@ -260,11 +268,11 @@ public class NOECalibrator {
         violCharArray = new char[lastStruct + 1];
         if (noeSet.getPeakMapEntries().isEmpty()) {
             List<Noe> noeList = noeSet.getConstraints();
-            updateNOEListDistances(noeList);
+            updateNOEListDistances(noeSet.getMolecularConstraints().molecule, noeList);
         } else {
             for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
                 List<Noe> noeList = entry.getValue();
-                updateNOEListDistances(noeList);
+                updateNOEListDistances(noeSet.getMolecularConstraints().molecule, noeList);
             }
         }
     }
