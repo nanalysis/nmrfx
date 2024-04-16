@@ -56,17 +56,16 @@ enum DisTypes {
 
 public class Noe extends DistanceConstraint implements Serializable {
     public static final int PPM_SET = 0;
-    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
     private static final DisTypes DISTANCE_TYPE = DisTypes.MINIMUM;
     private static double tolerance = 0.2;
 
     private int idNum = 0;
     public SpatialSetGroup spg1;
     public SpatialSetGroup spg2;
-    public Peak peak = null;
+    public Peak peak;
     private double intensity = 0.0;
     private double volume = 0.0;
-    private double scale = 1.0;
+    private double scale;
     public double atomScale = 1.0;
     private double ppmError = 0.0;
     private short active = 1;
@@ -78,7 +77,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     private boolean swapped = false;
     private boolean filterSwapped = false;
     public Map resMap = null;
-    public EnumSet<Flags> activeFlags = null;
+    public EnumSet<Flags> activeFlags;
     private GenTypes genType = GenTypes.MANUAL;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
@@ -191,7 +190,7 @@ public class Noe extends DistanceConstraint implements Serializable {
             if (entity instanceof Residue) {
                 value = ((Residue) entity).polymer.getName();
             } else {
-                value = ((Compound) entity).getName();
+                value = entity.getName();
             }
         }
         return value;
@@ -208,8 +207,7 @@ public class Noe extends DistanceConstraint implements Serializable {
         if (!sumAverage) {
             nMonomers = n;
         }
-        double distance = Math.pow((sum / nMonomers), 1.0 / expValue);
-        return distance;
+        return Math.pow((sum / nMonomers), 1.0 / expValue);
 
     }
 
@@ -267,9 +265,7 @@ public class Noe extends DistanceConstraint implements Serializable {
 
     public String getActivityFlags() {
         StringBuilder result = new StringBuilder();
-        activeFlags.forEach((f) -> {
-            result.append(f.getCharDesc());
-        });
+        activeFlags.forEach(f -> result.append(f.getCharDesc()));
         return result.toString();
     }
 
@@ -310,7 +306,6 @@ public class Noe extends DistanceConstraint implements Serializable {
 
         StringBuilder result = new StringBuilder();
         char sep = ' ';
-        char stringQuote = '"';
 
         //        Gen_dist_constraint.ID
         result.append(NoeSet.id);
@@ -596,11 +591,11 @@ public class Noe extends DistanceConstraint implements Serializable {
         int iRes1 = 0;
         int iRes2 = 0;
         // fixme what about multiple polymers or other entities
-        if (e1 instanceof Residue) {
-            iRes1 = ((Residue) e1).iRes;
+        if (e1 instanceof Residue residue) {
+            iRes1 = residue.iRes;
         }
-        if (e2 instanceof Residue) {
-            iRes2 = ((Residue) e2).iRes;
+        if (e2 instanceof Residue residue) {
+            iRes2 = residue.iRes;
         }
         return Math.abs(iRes1 - iRes2);
     }
