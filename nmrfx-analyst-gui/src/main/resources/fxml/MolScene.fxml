@@ -85,8 +85,12 @@
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#drawConstraints"
                                                           text="Show"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#addDistanceConstraint"
-                                                          text="Add"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addStrongDistanceConstraint"
+                                                          text="Add Strong (3.0)"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addMediumDistanceConstraint"
+                                                          text="Add Medium (4.0)"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addWeakDistanceConstraint"
+                                                          text="Add Weak (5.0)"/>
                                             </items>
                                         </MenuButton>
 

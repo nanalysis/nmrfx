@@ -61,6 +61,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
+    static Random random = new Random();
     private Stage stage;
     SSViewer ssViewer;
     MolViewer molViewer;
@@ -958,14 +959,23 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
     }
 
-    public void addDistanceConstraint() {
+    public void addStrongDistanceConstraint() {
+        addDistanceConstraint(3.0);
+    }
+    public void addMediumDistanceConstraint() {
+        addDistanceConstraint(4.0);
+    }
+    public void addWeakDistanceConstraint() {
+        addDistanceConstraint(5.0);
+    }
+    public void addDistanceConstraint(double upper) {
         Molecule molecule = Molecule.getActive();
         if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
             var molConstraints = molecule.getMolecularConstraints();
             var disCon = molConstraints.getDistanceSet("noe_restraint_list", true);
             Atom atom1 = molecule.globalSelected.get(0).getAtom();
             Atom atom2 = molecule.globalSelected.get(1).getAtom();
-            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, 3.0);
+            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, upper);
         }
         drawConstraints();
     }
@@ -1008,6 +1018,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     String getScript(StructureCalculator.StructureMode mode) {
+        int seed = random.nextInt();
         StringBuilder scriptB = new StringBuilder();
         scriptB.append("homeDir = os.getcwd()\n");
         scriptB.append("print yamlString\n");
@@ -1015,9 +1026,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
         scriptB.append("global refiner\n");
         scriptB.append("dataDir=homeDir+'/'\n");
         scriptB.append("refiner=refine()\n");
-        scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
+        scriptB.append("osfiles.setOutFiles(refiner,dataDir," + seed + ")\n");
         scriptB.append("refiner.rootName = 'temp'\n");
-        scriptB.append("refiner.loadFromYaml(data,0)\n");
+        scriptB.append("refiner.loadFromYaml(data," + seed + ")\n");
         if (mode == INIT) {
             scriptB.append("refiner.init(save=False)\n");
         } else if (mode == REFINE) {
