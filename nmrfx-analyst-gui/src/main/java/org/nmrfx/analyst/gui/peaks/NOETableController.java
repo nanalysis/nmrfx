@@ -299,21 +299,21 @@ public class NOETableController implements Initializable, StageBasedController {
             TableColumn<Noe, Integer> entityCol = new TableColumn<>("entity" + (iGroup + 1));
             entityCol.setCellValueFactory((CellDataFeatures<Noe, Integer> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.spg1 : noe.spg2;
+                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
                 Integer res = spg.getSpatialSet().atom.getTopEntity().getIDNum();
                 return new ReadOnlyObjectWrapper<>(res);
             });
             TableColumn<Noe, Integer> resCol = new TableColumn<>("res" + (iGroup + 1));
             resCol.setCellValueFactory((CellDataFeatures<Noe, Integer> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.spg1 : noe.spg2;
+                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
                 Integer res = spg.getSpatialSet().atom.getResidueNumber();
                 return new ReadOnlyObjectWrapper<>(res);
             });
             TableColumn<Noe, String> atomCol = new TableColumn<>("aname" + (iGroup + 1));
             atomCol.setCellValueFactory((CellDataFeatures<Noe, String> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.spg1 : noe.spg2;
+                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
                 String aname = spg.getSpatialSet().atom.getName();
                 return new ReadOnlyObjectWrapper<>(aname);
             });
