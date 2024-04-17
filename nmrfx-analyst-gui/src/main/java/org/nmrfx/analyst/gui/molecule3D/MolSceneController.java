@@ -57,6 +57,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
+    static Random random = new Random();
     private Stage stage;
     SSViewer ssViewer;
     MolViewer molViewer;
@@ -640,6 +641,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molViewer.addBox(0, 0.3, "box " + getIndex());
     }
 
+    public void drawConstraints() {
+        molViewer.deleteItems("delete", "constraints");
+        molViewer.addConstraintLines(0, "constraints " + getIndex());
+    }
+
+    public void drawTree() {
+        molViewer.deleteItems("delete", "tree");
+        molViewer.drawAtomTree();
+    }
     /**
      * Draws the original axes.
      *
@@ -945,6 +955,27 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
     }
 
+    public void addStrongDistanceConstraint() {
+        addDistanceConstraint(3.0);
+    }
+    public void addMediumDistanceConstraint() {
+        addDistanceConstraint(4.0);
+    }
+    public void addWeakDistanceConstraint() {
+        addDistanceConstraint(5.0);
+    }
+    public void addDistanceConstraint(double upper) {
+        Molecule molecule = Molecule.getActive();
+        if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
+            var molConstraints = molecule.getMolecularConstraints();
+            var disCon = molConstraints.getDistanceSet("noe_restraint_list", true);
+            Atom atom1 = molecule.globalSelected.get(0).getAtom();
+            Atom atom2 = molecule.globalSelected.get(1).getAtom();
+            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, upper);
+        }
+        drawConstraints();
+    }
+
     @FXML
     private void genPRF() {
         genAngleTree();
@@ -1038,6 +1069,4 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void setProcessingOn() {
 
     }
-
-
 }

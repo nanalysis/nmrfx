@@ -76,7 +76,7 @@ import java.util.ResourceBundle;
 public class NOETableController implements Initializable, StageBasedController {
 
     private static final Logger log = LoggerFactory.getLogger(NOETableController.class);
-    
+
     private static final String CONSTRAINT_GENERATION_STRING = "Constraint Generation";
     private static final String EXP_CALIBRATION_STRING = "Calibration-Exponential";
     private Stage stage;
@@ -142,15 +142,15 @@ public class NOETableController implements Initializable, StageBasedController {
         masterDetailPane.showDetailNodeProperty().bindBidirectional(detailsCheckBox.selectedProperty());
 
         maxAmbigItem = new IntRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
-                20, 1,40, CONSTRAINT_GENERATION_STRING, "Maximum Ambiguity", "Maximum Ambiguity");
+                20, 1, 40, CONSTRAINT_GENERATION_STRING, "Maximum Ambiguity", "Maximum Ambiguity");
 
-        autoAssignItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Auto-Assign", "Autoassign unassigned peaks");
+        autoAssignItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Auto-Assign", "Autoassign unassigned peaks");
 
-        onlyFrozenItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Frozen", "Only extract from frozen peaks");
+        onlyFrozenItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Frozen", "Only extract from frozen peaks");
 
-        strictItem = new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Strictly Assign", "Only extract assigned peaks");
+        strictItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Strictly Assign", "Only extract assigned peaks");
 
-        unambiguousItem= new BooleanOperationItem(propertySheet, (a,b,c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Unambiguous", "Only extract unambiguous peaks");
+        unambiguousItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Unambiguous", "Only extract unambiguous peaks");
 
         List<String> intVolChoice = List.of("Intensity", "Volume");
         modeItem = new ChoiceOperationItem(propertySheet, (a, b, c) -> refresh(), "intensity", intVolChoice, EXP_CALIBRATION_STRING, "Mode", "Reference Distance");
@@ -165,7 +165,7 @@ public class NOETableController implements Initializable, StageBasedController {
         fErrorItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 0.125, 0.0, 0.2, false, EXP_CALIBRATION_STRING, "Tolerance", "Fractional additional bound");
         propertySheet.getItems().addAll(
-                autoAssignItem, strictItem, onlyFrozenItem, unambiguousItem,maxAmbigItem,
+                autoAssignItem, strictItem, onlyFrozenItem, unambiguousItem, maxAmbigItem,
                 modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem
         );
     }
@@ -206,6 +206,7 @@ public class NOETableController implements Initializable, StageBasedController {
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Options");
+        noeSetMenuItem.setOnContextMenuRequested(e -> updateNoeSetMenu());
 
         toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton,
                 calibrateButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
@@ -252,7 +253,7 @@ public class NOETableController implements Initializable, StageBasedController {
 
         @Override
         public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<S, T>() {
+            return new TableCell<>() {
                 @Override
                 protected void updateItem(T item, boolean empty) {
                     super.updateItem(item, empty);
@@ -271,11 +272,9 @@ public class NOETableController implements Initializable, StageBasedController {
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns();
         tableView.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) {
-                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
-                    Noe noe = tableView.getSelectionModel().getSelectedItems().get(0);
-                    showPeakInfo(noe);
-                }
+            if ((e.getClickCount() == 2) && !tableView.getSelectionModel().getSelectedItems().isEmpty()){
+                Noe noe = tableView.getSelectionModel().getSelectedItems().get(0);
+                showPeakInfo(noe);
             }
         });
     }
@@ -284,15 +283,15 @@ public class NOETableController implements Initializable, StageBasedController {
         tableView.getColumns().clear();
 
         TableColumn<Noe, Integer> idNumCol = new TableColumn<>("id");
-        idNumCol.setCellValueFactory(new PropertyValueFactory("ID"));
+        idNumCol.setCellValueFactory(new PropertyValueFactory<>("ID"));
         idNumCol.setEditable(false);
         idNumCol.setPrefWidth(50);
 
         TableColumn<Noe, String> peakListCol = new TableColumn<>("PeakList");
-        peakListCol.setCellValueFactory(new PropertyValueFactory("PeakListName"));
+        peakListCol.setCellValueFactory(new PropertyValueFactory<>("PeakListName"));
 
         TableColumn<Noe, Integer> peakNumCol = new TableColumn<>("PeakNum");
-        peakNumCol.setCellValueFactory(new PropertyValueFactory("PeakNum"));
+        peakNumCol.setCellValueFactory(new PropertyValueFactory<>("PeakNum"));
         tableView.getColumns().addAll(idNumCol, peakListCol, peakNumCol);
 
         for (int i = 0; i < 2; i++) {
@@ -300,56 +299,49 @@ public class NOETableController implements Initializable, StageBasedController {
             TableColumn<Noe, Integer> entityCol = new TableColumn<>("entity" + (iGroup + 1));
             entityCol.setCellValueFactory((CellDataFeatures<Noe, Integer> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.spg1 : noe.spg2;
+                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
                 Integer res = spg.getSpatialSet().atom.getTopEntity().getIDNum();
-                return new ReadOnlyObjectWrapper(res);
+                return new ReadOnlyObjectWrapper<>(res);
             });
             TableColumn<Noe, Integer> resCol = new TableColumn<>("res" + (iGroup + 1));
             resCol.setCellValueFactory((CellDataFeatures<Noe, Integer> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.spg1 : noe.spg2;
+                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
                 Integer res = spg.getSpatialSet().atom.getResidueNumber();
-                return new ReadOnlyObjectWrapper(res);
+                return new ReadOnlyObjectWrapper<>(res);
             });
             TableColumn<Noe, String> atomCol = new TableColumn<>("aname" + (iGroup + 1));
             atomCol.setCellValueFactory((CellDataFeatures<Noe, String> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.spg1 : noe.spg2;
+                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
                 String aname = spg.getSpatialSet().atom.getName();
-                return new ReadOnlyObjectWrapper(aname);
+                return new ReadOnlyObjectWrapper<>(aname);
             });
             tableView.getColumns().addAll(entityCol, resCol, atomCol);
         }
 
-        TableColumn<Noe, Float> lowerCol = new TableColumn<>("Lower");
-        lowerCol.setCellValueFactory(new PropertyValueFactory("Lower"));
-        lowerCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
-        lowerCol.setPrefWidth(75);
+        DistanceConstraintTableController.addConstraintColumns(tableView);
 
-        TableColumn<Noe, Float> upperCol = new TableColumn<>("Upper");
-        upperCol.setCellValueFactory(new PropertyValueFactory("Upper"));
-        upperCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
-        upperCol.setPrefWidth(75);
         TableColumn<Noe, Float> ppmCol = new TableColumn<>("PPM");
-        ppmCol.setCellValueFactory(new PropertyValueFactory("PpmError"));
+        ppmCol.setCellValueFactory(new PropertyValueFactory<>("PpmError"));
         ppmCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         ppmCol.setPrefWidth(75);
 
         TableColumn<Noe, Float> contribCol = new TableColumn<>("Contrib");
-        contribCol.setCellValueFactory(new PropertyValueFactory("Contribution"));
+        contribCol.setCellValueFactory(new PropertyValueFactory<>("Contribution"));
         contribCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         contribCol.setPrefWidth(75);
 
         TableColumn<Noe, Float> networkCol = new TableColumn<>("Network");
-        networkCol.setCellValueFactory(new PropertyValueFactory("NetworkValue"));
+        networkCol.setCellValueFactory(new PropertyValueFactory<>("NetworkValue"));
         networkCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         networkCol.setPrefWidth(75);
 
         TableColumn<Noe, String> flagCol = new TableColumn<>("Flags");
-        flagCol.setCellValueFactory(new PropertyValueFactory("ActivityFlags"));
+        flagCol.setCellValueFactory(new PropertyValueFactory<>("ActivityFlags"));
         flagCol.setPrefWidth(75);
 
-        tableView.getColumns().addAll(lowerCol, upperCol, ppmCol, contribCol, networkCol, flagCol);
+        tableView.getColumns().addAll(ppmCol, contribCol, networkCol, flagCol);
 
     }
 
@@ -418,7 +410,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 noeSetOpt = Optional.of(noeSet);
             }
             if (!autoAssign) {
-                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguous, onlyFrozen );
+                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguous, onlyFrozen);
             } else {
                 NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozen);
             }
