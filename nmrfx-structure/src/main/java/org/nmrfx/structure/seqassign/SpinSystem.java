@@ -872,7 +872,7 @@ public class SpinSystem {
 
     }
 
-    void updateSpinSystem() {
+    public void updateSpinSystem() {
         purgeDeleted();
         List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
         for (int i = 0; i < ATOM_TYPES.length; i++) {
@@ -924,7 +924,7 @@ public class SpinSystem {
         StringBuilder sBuilder = new StringBuilder();
         String linkDim = RunAbout.getNDimName(rootPeak.getPeakList()); // fixme
         List<Peak> linkedPeaks = PeakList.getLinks(rootPeak,
-                rootPeak.getPeakList().getSpectralDim(linkDim).getDataDim());
+                rootPeak.getPeakList().getSpectralDim(linkDim).getIndex());
         for (Peak peak : linkedPeaks) {
             for (PeakDim peakDim : peak.getPeakDims()) {
                 peakDim.setUser("");

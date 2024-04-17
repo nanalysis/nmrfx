@@ -199,17 +199,19 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public void writeNMRFxFile(File file) throws IOException {
+        Map<Peak, Integer> peakMap = new HashMap<>();
         try (FileWriter fileWriter = new FileWriter(file)) {
             int i = 0;
             for (Noe noe : constraints) {
                 if (noe.isActive()) {
+                    Integer iGroup = peakMap.computeIfAbsent(noe.getPeak(), peak -> peakMap.size());
                     double lower = noe.getLower();
                     double upper = noe.getUpper();
-                    SpatialSetGroup spg1 = noe.spg1;
-                    SpatialSetGroup spg2 = noe.spg2;
+                    SpatialSetGroup spg1 = noe.getSpg1();
+                    SpatialSetGroup spg2 = noe.getSpg2();
                     String aName1 = spg1.getFullName();
                     String aName2 = spg2.getFullName();
-                    String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, i, aName1, aName2, lower, upper);
+                    String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, iGroup, aName1, aName2, lower, upper);
                     fileWriter.write(outputString);
                     i++;
                 }

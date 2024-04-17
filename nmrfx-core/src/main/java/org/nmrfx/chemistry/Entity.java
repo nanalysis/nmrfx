@@ -170,9 +170,9 @@ public class Entity implements AtomContainer, Serializable, ITree {
         this.entityID = entityID;
     }
 
-    public void changed() {
+    public void changed(Atom atom) {
         if (molecule != null) {
-            molecule.changed();
+            molecule.changed(atom);
         }
     }
 

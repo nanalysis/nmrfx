@@ -8,11 +8,13 @@ import org.nmrfx.chemistry.relax.RelaxationSet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utilities.Updater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @PluginAPI("ring")
 public class MoleculeBase implements Serializable, ITree {
@@ -47,6 +49,11 @@ public class MoleculeBase implements Serializable, ITree {
     public static final int LABEL_PPM = 18;
     public static final int LABEL_NONHC = 19;
     private static final String ATOM_MATCH_WARN_MSG_TEMPLATE = "null spatialset while matching atom {} in coordset {}";
+    public AtomicBoolean atomUpdated = new AtomicBoolean(false);
+    public AtomicBoolean atomTableUpdated = new AtomicBoolean(false);
+    Updater atomUpdater = null;
+    MoleculeListener atomChangeListener;
+    MoleculeListener atomTableListener;
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -1243,8 +1250,28 @@ public class MoleculeBase implements Serializable, ITree {
         return (null);
     }
 
-    public void changed() {
+    public void changed(Atom atom) {
         changed = true;
+        if (atomUpdater != null) {
+            atomUpdater.update(atom);
+        }
+    }
+    public void registerUpdater(Updater atomUpdater) {
+        this.atomUpdater = atomUpdater;
+    }
+    public void registerAtomChangeListener(MoleculeListener newListener){
+        this.atomChangeListener = newListener;
+    }
+
+    public void registerAtomTableListener(MoleculeListener newListener){
+        this.atomTableListener = newListener;
+    }
+
+    public void notifyAtomChangeListener() {
+        atomChangeListener.moleculeChanged(new MoleculeEvent(this));
+    }
+    public void notifyAtomTableListener() {
+        atomTableListener.moleculeChanged(new MoleculeEvent(this));
     }
 
     public void clearChanged() {

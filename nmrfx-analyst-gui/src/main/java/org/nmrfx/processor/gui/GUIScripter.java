@@ -531,10 +531,6 @@ public class GUIScripter {
                 for (CanvasAnnotation annoType : annoTypes) {
                     chart.addAnnotation(annoType);
                 }
-                for (CanvasAnnotation annoType: chart.getCanvasAnnotations()) {
-                    System.out.println(annoType.getClass());
-                }
-
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

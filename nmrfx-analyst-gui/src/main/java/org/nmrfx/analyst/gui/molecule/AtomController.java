@@ -73,7 +73,7 @@ import java.util.*;
 /**
  * @author johnsonb
  */
-public class AtomController implements Initializable, StageBasedController, FreezeListener {
+public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener {
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final Map<String, String> filterMap = new HashMap<>();
@@ -135,6 +135,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             }
         });
         PeakList.registerFreezeListener(this);
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol != null) {
+            activeMol.registerAtomTableListener(this);
+        }
         updateView();
     }
 
@@ -598,6 +602,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         } else {
             System.out.println("Coudn't make predictor controller");
         }
+    }
+    @Override
+    public void moleculeChanged(MoleculeEvent e){
+        refreshAtomTable();
     }
 
 }

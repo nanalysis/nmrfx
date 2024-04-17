@@ -39,10 +39,10 @@ public class DatasetUtilities {
             int[] counts = iterator.getCounts();
             for (int i=0;i< counts.length;i++) {
                 point1[i + 1] = counts[i];
-                double value = dataset.readPointRaw(point1);
-                newDataset.writePoint(counts, value);
-
             }
+            double value = dataset.readPointRaw(point1);
+            newDataset.writePoint(counts, value);
+
         }
         if (newDataset.isMemoryFile()) {
             newDataset.saveMemoryFile();

@@ -1,10 +1,7 @@
 package org.nmrfx.utils;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
 import java.util.function.DoubleUnaryOperator;
@@ -12,6 +9,7 @@ import java.util.function.DoubleUnaryOperator;
 public class ColumnMath {
     Dialog<DoubleUnaryOperator> dialog = null;
     TextField[] varFields = null;
+    CheckBox invertCheckBox = null;
     double[] values;
 
     public double[] getValues() {
@@ -76,6 +74,8 @@ public class ColumnMath {
                 grid.add(varField, iCol, 1);
                 iCol++;
             }
+            invertCheckBox = new CheckBox("Invert V");
+            grid.add(invertCheckBox, iCol, 1);
             dialog.getDialogPane().setContent(grid);
         }
         dialog.setResultConverter(dialogButton -> {
@@ -89,7 +89,18 @@ public class ColumnMath {
 
     DoubleUnaryOperator getFunction() {
         getValues();
-        return v -> (v + values[0]) * values[1] + values[2];
+        boolean invert = invertCheckBox.isSelected();
+        if (invert) {
+            return v -> {
+                double vNew = 0.0;
+                if (Math.abs(v) > 1.0e-9) {
+                    vNew = (1.0 / v + values[0]) * values[1] + values[2];
+                }
+                return vNew;
+            };
+        } else {
+            return v -> (v + values[0]) * values[1] + values[2];
+        }
     }
 
 }

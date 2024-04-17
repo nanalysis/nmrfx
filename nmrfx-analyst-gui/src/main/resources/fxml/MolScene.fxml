@@ -72,20 +72,25 @@
                                         <MenuButton mnemonicParsing="false" text="Calculate">
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#to3DAction"
-                                                          text="To3D" />
+                                                          text="To3D"/>
                                                 <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
                                                           text="Calc Structure"/>
                                                 <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"
                                                           text="Refine Structure"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawTree"
+                                                          text="Draw Tree"/>
                                             </items>
                                         </MenuButton>
-                                        <MenuButton mnemonicParsing="false" text="Edit">
+                                        <MenuButton mnemonicParsing="false" text="Constraints">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#deactivateBondAction"
-                                                          text="Deactivate Bond"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#activateBondAction"
-                                                          text="Reactivate Bonds"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#genPRF" text="Gen PRF"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawConstraints"
+                                                          text="Show"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addStrongDistanceConstraint"
+                                                          text="Add Strong (3.0)"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addMediumDistanceConstraint"
+                                                          text="Add Medium (4.0)"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addWeakDistanceConstraint"
+                                                          text="Add Weak (5.0)"/>
                                             </items>
                                         </MenuButton>
 

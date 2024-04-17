@@ -537,16 +537,20 @@ public class PeakNavigator implements PeakListener {
                     }
                 }
                 if (id != Integer.MIN_VALUE) {
-                    if (id < 0) {
-                        id = 0;
-                    } else if (id >= peakList.size()) {
-                        id = peakList.size() - 1;
-                    }
-                    Peak peak = peakList.getPeakByID(id);
-                    setPeak(peak);
+                    gotoPeakId(id);
                 }
             }
         }
+    }
+
+    public void gotoPeakId(int id) {
+        if (id < 0) {
+            id = 0;
+        } else if (id >= peakList.size()) {
+            id = peakList.size() - 1;
+        }
+        Peak peak = peakList.getPeakByID(id);
+        setPeak(peak);
     }
 
     void gotoNextMatch(int dir) {

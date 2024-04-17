@@ -1084,8 +1084,12 @@ public class NMRStarWriter {
             results.add(value);
             results.add(error);
             if (expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO)) {
-                Double RexValue = ((RelaxationRex) relaxData).getRexValue();
-                Double RexError = ((RelaxationRex) relaxData).getRexError();
+                Double RexValue = null;
+                Double RexError = null;
+                if (relaxData instanceof RelaxationRex relaxationRex) {
+                    RexValue = relaxationRex.getRexValue();
+                    RexError = relaxationRex.getRexError();
+                }
                 results.add(RexValue);
                 results.add(RexError);
             }

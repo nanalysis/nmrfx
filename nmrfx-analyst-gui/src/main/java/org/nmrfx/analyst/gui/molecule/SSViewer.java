@@ -25,6 +25,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.predict.RNAStats;
 import org.nmrfx.structure.rna.SSLayout;
+import org.nmrfx.structure.rna.SSPredictor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,12 +53,14 @@ public class SSViewer extends Pane {
     ArrayList<String> constraintPairs = new ArrayList<>();
     Map<String, AtomCoord> atomMap = new HashMap<>();
     AtomCoord[] deltaCoords = null;
+    SSPredictor ssPredictor = null;
 
     // if true, draw lines connecting bases in sequence
     boolean seqState = true;
     boolean basePairState = true;
     boolean constraintPairState = true;
     private final SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty drawProbabilitiesProp = new SimpleBooleanProperty(false);
     private final SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
     private final SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
     private final List<String> displayAtomTypes = new ArrayList<>();
@@ -74,6 +77,7 @@ public class SSViewer extends Pane {
     double scale = 10.0;
 
     double superScale = 1.0;
+    HashMap<Integer, NodeRecord> nodeRecordHashMap = new HashMap<>();
 
     public SSViewer() {
         initScene();
@@ -84,11 +88,13 @@ public class SSViewer extends Pane {
         scrollPane.setPrefWidth(this.getWidth());
         scrollPane.setPrefHeight(this.getHeight());
         super.layoutChildren();
-        drawSS();
     }
 
     public SimpleBooleanProperty getDrawNumbersProp() {
         return drawNumbersProp;
+    }
+    public SimpleBooleanProperty getDrawProbabilitiesProp() {
+        return drawProbabilitiesProp;
     }
 
     public SimpleBooleanProperty getShowActiveProp() {
@@ -107,6 +113,7 @@ public class SSViewer extends Pane {
         displayAtomTypes.clear();
         displayAtomTypes.addAll(atomNames);
         layoutChildren();
+        drawSS();
     }
 
     public final void initScene() {
@@ -118,21 +125,23 @@ public class SSViewer extends Pane {
         pane.setPrefSize(boxDim, boxDim);
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
+        pane.setOnMousePressed(e -> revertToOriginal());
         scrollPane.setContent(pane);
         this.getChildren().add(scrollPane);
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
         constraintTypeProp.addListener(e -> drawSS());
         drawSS();
-        scrollPane.widthProperty().addListener(e -> updateScale());
-        scrollPane.heightProperty().addListener(e -> updateScale());
+        scrollPane.widthProperty().addListener(e -> resizeWindow());
+        scrollPane.heightProperty().addListener(e -> resizeWindow());
         pane.setOnZoom((Event event) -> {
             ZoomEvent rEvent = (ZoomEvent) event;
             double zoom = rEvent.getZoomFactor();
             zoom(zoom);
         });
 
-    }
+        }
+
 
     public void clear() {
         points.clear();
@@ -182,6 +191,12 @@ public class SSViewer extends Pane {
         scale *= (0.85 - N_ATOMS * 0.02);
     }
 
+    void resizeWindow() {
+        updateScale();
+        layoutChildren();
+        drawSS();
+    }
+
     public void zoom(double factor) {
         double h = scrollPane.getHvalue();
         double v = scrollPane.getVvalue();
@@ -191,10 +206,11 @@ public class SSViewer extends Pane {
         layoutChildren();
         scrollPane.setHvalue(h);
         scrollPane.setVvalue(v);
+        drawSS();
     }
 
 
-    Node drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
+    NodeRecord drawLabelledCircle(double width, String text, int fontSize, Color color, double x, double y) {
         StackPane stack = new StackPane();
         Circle circle = new Circle(width / 2.0, color);
         Text textItem = new Text(text);
@@ -204,11 +220,61 @@ public class SSViewer extends Pane {
         stack.setAlignment(Pos.CENTER);     // Right-justify nodes in stack
         stack.setTranslateX(x - width / 2 + 1);
         stack.setTranslateY(y - width / 2 + 1);
-        return stack;
+        return new NodeRecord(circle, textItem, stack, text, color, fontSize);
 
     }
 
-    Node drawLabelledNode(int iRes, String resName, String text, double x, double y) {
+    record NodeRecord(Circle circle, Text text, Node node, String label, Color color, int fontSize){}
+
+    public void selectResidue(int selectedResidue) {
+        revertToOriginal();
+        if (drawProbabilitiesProp.get()) {
+            for (var entry : nodeRecordHashMap.entrySet()) {
+                NodeRecord nodeRecord = entry.getValue();
+                int iRes = entry.getKey();
+                Circle circle = nodeRecord.circle;
+                Text text = nodeRecord.text;
+                if (iRes != selectedResidue) {
+                    circle.setFill(Color.GRAY);
+                }
+
+                if (ssPredictor != null) {
+                    double pLimit = 0.1;
+                    for (SSPredictor.BasePairProbability bp : ssPredictor.getAllBasePairs(pLimit)) {
+                        int res1 = bp.i();
+                        int res2 = bp.j();
+                        if (selectedResidue > iRes) {
+                            res1 = bp.j();
+                            res2 = bp.i();
+                        }
+                        if (res1 == selectedResidue && res2 == iRes) {
+                            String label = String.format("%.2f", bp.probability());
+                            circle.setFill(Color.YELLOW);
+                            double fontSize = text.getFont().getSize();
+                            if (!drawNumbersProp.get()) {
+                                fontSize /= 2;
+                            }
+                            text.setText(label);
+                            text.setFont(Font.font(fontSize));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void revertToOriginal(){
+        for (var entry : nodeRecordHashMap.entrySet()){
+            NodeRecord nodeRecord = entry.getValue();
+            Circle circle = nodeRecord.circle;
+            Text text = nodeRecord.text;
+            circle.setFill(nodeRecord.color);
+            text.setText(nodeRecord.label);
+            text.setFont(Font.font(nodeRecord.fontSize));
+        }
+    }
+
+    NodeRecord drawLabelledNode(int iRes, String resName, String text, double x, double y) {
         double width = scale * 0.5;
         if (width < 12) {
             width = 12.0;
@@ -222,16 +288,37 @@ public class SSViewer extends Pane {
             case "U", "T" -> Color.LIGHTBLUE;
             default -> Color.WHITE;
         };
-        String label;
+        String label = text;
         if (drawNumbersProp.get()) {
             label = resName.substring(1);
             fontSize /= 2;
-        } else {
-            label = text;
         }
 
         atomMap.put(iRes + "", new AtomCoord(x, y));
         return drawLabelledCircle(width, label, fontSize, color, x, y);
+    }
+
+    Color colorCodeAtom(String resNum, String aName) {
+        String aType = hydrogenPredictionProp.get() ? ".H" : ".C";
+        String atomSpec = resNum + aType + aName;
+        Atom atom = MoleculeBase.getAtomByName(atomSpec);
+        Color color = Color.LIGHTGRAY;
+        if (atom!= null) {
+            Double ppm = atom.getPPM();
+            Double refPPM = atom.getRefPPM();
+            Double stdDev = atom.getSDevRefPPM();
+            if (ppm != null && refPPM != null) {
+                double delta = Math.abs(ppm - refPPM) / stdDev;
+                if (delta <= 1.0) {
+                    color = Color.FORESTGREEN;
+                } else if (delta <= 3.0) {
+                    color = Color.YELLOWGREEN;
+                } else {
+                    color = Color.ORANGERED;
+                }
+            }
+        }
+        return color;
     }
 
     Node drawAtom(String resNum, String text, double x, double y, boolean active) {
@@ -241,20 +328,16 @@ public class SSViewer extends Pane {
         }
 
         int fontSize = (int) Math.round(width);
-        Color color = switch (text) {
-            case "5''", "5'", "4'", "3'", "2'", "1'" -> Color.SALMON;
-            case "8", "6", "5", "2" -> Color.RED;
-            default -> Color.WHITE;
-        };
+        Color color = colorCodeAtom(resNum, text);
         if (!active) {
             color = Color.LIGHTGRAY;
         }
-        Node node = drawLabelledCircle(width, text, fontSize, color, x, y);
-        node.setOnMousePressed(e -> showInfo(e, resNum, text));
+        NodeRecord nodeRecord = drawLabelledCircle(width, text, fontSize, color, x, y);
+        nodeRecord.node().setOnMousePressed(e -> showInfo(e, resNum, text));
 
         atomMap.put(resNum + "." + "H" + text, new AtomCoord(x, y));
 
-        return node;
+        return nodeRecord.node;
     }
 
     void hideInfo() {
@@ -685,6 +768,7 @@ public class SSViewer extends Pane {
             }
         }
         int iRes = 0;
+
         for (Point2D point : points) {
             String resName = sequence.get(iRes);
             char resChar = resName.charAt(0);
@@ -692,8 +776,14 @@ public class SSViewer extends Pane {
             double y = point.getY();
             x = toX(x);
             y = toY(y);
-            Node node = drawLabelledNode(iRes, resName, String.valueOf(resChar), x, y);
-            group.getChildren().add(node);
+            NodeRecord nodeRecord = drawLabelledNode(iRes, resName, String.valueOf(resChar), x, y);
+            int finalIRes = iRes;
+            group.getChildren().add(nodeRecord.node);
+            nodeRecord.node.setOnMousePressed(e -> {
+                e.consume();
+                selectResidue(finalIRes);
+            });
+            nodeRecordHashMap.put(iRes, nodeRecord);
             iRes++;
         }
         getVectors();
@@ -701,7 +791,6 @@ public class SSViewer extends Pane {
         if (constraintPairState) {
             drawConstraints(group);
         }
-
     }
 
     void drawConstraints(Group group) {
@@ -837,4 +926,10 @@ public class SSViewer extends Pane {
         this.constraintPairs.addAll(constraintPairs);
         constraintPairState = true;
     }
+
+    public void setSSPredictor(SSPredictor ssPredictor) {
+        this.ssPredictor = ssPredictor;
+    }
+
+
 }

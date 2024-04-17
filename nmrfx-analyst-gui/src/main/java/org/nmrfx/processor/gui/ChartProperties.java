@@ -77,7 +77,7 @@ public class ChartProperties implements PublicPropertyContainer {
         integrals = add(new SimpleBooleanProperty(polyChart, "integrals", false));
         integralLowPos = add(new SimpleDoubleProperty(polyChart, "integralLowPos", 0.8));
         integralHighPos = add(new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95));
-        titles = add(new SimpleBooleanProperty(polyChart, "titles", false));
+        titles = add(new SimpleBooleanProperty(polyChart, "titles", true));
         parameters = add(new SimpleBooleanProperty(polyChart, "parameters", false));
         aspectRatio = add(new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0));
         aspect = add(new SimpleBooleanProperty(polyChart, "aspect", false));

@@ -129,7 +129,7 @@ public class ScriptParser {
 
         for (String line : lines) {
             line = line.trim();
-            if (line.isEmpty() || line.charAt(0) == '#') {
+            if (line.isBlank() || line.charAt(0) == '#') {
                 continue;
             }
             int index = line.indexOf('(');

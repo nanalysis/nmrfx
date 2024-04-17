@@ -85,6 +85,7 @@ from org.nmrfx.processor.operations import Stack
 from org.nmrfx.processor.operations import DGRINSOp
 from org.nmrfx.processor.operations import TDCombine
 from org.nmrfx.processor.operations import TDPoly
+from org.nmrfx.processor.operations import Tilt45
 from org.nmrfx.processor.operations import Tm
 from org.nmrfx.processor.operations import Tri
 from org.nmrfx.processor.operations import Tdss
@@ -1372,6 +1373,30 @@ def CSHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     return op
 
 @generic_operation
+def TILT45(disabled=False, vector=None, process=None):
+    '''Perform 45 degree shear (tilt) on a 2D dataset, as is commonly done on 2D J-Resolved
+    datasets.
+'''
+    if disabled:
+        return None
+
+    global fidInfo
+    global dataInfo
+    fidObj = fidInfo.fidObj
+    sw1 = fidObj.getSW(0)
+    sw2 = fidObj.getSW(1)
+    n1 = fidObj.getSize(0);
+    n2 = fidObj.getSize(1);
+
+    # The shift of each row n2 is given by round(m * n2 + c)
+    m = (sw2 * n1) / (sw1 * n2)
+    c = -(sw2 * n1) / (2 * sw1)
+
+    op = Tilt45(m, c)
+    return op
+
+
+@generic_operation
 def COADD(coef=None, disabled=False, vector=None, process=None):
     '''Coaddition of a set of vectors to yield one result vector.
     Parameters
@@ -2411,6 +2436,8 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     logToFile=False
     zeroAtStart=True
     threshold=0.0
+    nGrins=128
+    shapeFactor = 0.5
 
     noise = 0.0
     phase = None
@@ -2439,7 +2466,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     if alg == 'nesta':
         op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, phaseList, preserve, skipIndices)
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -2800,8 +2827,12 @@ def PRINT(disabled=False, vector=None, process=None):
         process.addOperation(op)
     return op
 
-def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, process=None):
+def WRITE(index=-1, dimag=True, disabled=False, vector=None, process=None):
     '''Write vector to dataset (normally done automatically).
+    Parameters
+    ---------
+    index : int
+        Index of vector to write.  A value of -1 uses index stored in vector.
     dimag : bool
         Discard imaginary values (make vector real).
 '''
@@ -2959,15 +2990,15 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     return op
 
 
-def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=True, phase=None, preserve=True, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
-    noise : real
-        amin : 0.0
-        min : 0.0
-        max : 100.0
-        Noise estimate
+    noiseRatio : real
+        amin : 2.0
+        min : 2.0
+        max : 10.0
+        Threshold calculated from noise * noiseRatio 
     scale : real
         amin : 0.1
         min : 0.2
@@ -2980,6 +3011,20 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         max : 2
         amax : 2
         Zero fill factor 
+    iterations : int
+        amin : 1
+        min : 1
+        max : 512
+        amax : 512
+        Iterations 
+    shapeFactor : real
+        amin : 0.0
+        min : 0.0
+        max : 1.0
+        amax : 1.0
+        Lineshape factor 
+    apodize : bool
+        Do Kaiser apodization during GRINS
     phase : []
         Array of phase values, 2 per indirect dimension.
     preserve : bool
@@ -3009,14 +3054,16 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         schedule = fidInfo.fidObj.getSampleSchedule()
         if logToFile:
             rootdir = fidInfo.fidObj.getFilePath()
-            logDir = os.path.join(rootdir,"nesta")
+            if not os.path.isdir(rootdir):
+                rootdir = os.path.dirname(rootdir)
+            logDir = os.path.join(rootdir,"grins_log")
             if not os.path.exists(logDir):
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, phaseList, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noiseRatio, scale, zf, iterations, shapeFactor, apodize, phaseList, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
@@ -3258,7 +3305,7 @@ def SIGN(mode='i', disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+def SB(offset=0.5, end=1.0, power=2.0, c=1.0, apodSize=0, dim=0, inverse=False, disabled=False, vector=None, process=None):
     '''Sine Bell Apodization
     Parameters
     ---------
@@ -3289,11 +3336,13 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = SinebellApod(offset, end, power, c, apodSize, inverse)
+    op = SinebellApod(offset, end, power, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3338,7 +3387,7 @@ def BLACKMAN(offset=0.5,end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=F
         process.addOperation(op)
     return op
 
-def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
+def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=0, inverse=False,disabled=False, vector=None, process=None):
     '''Kaiser Apodization
     Parameters
     ---------
@@ -3369,8 +3418,8 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
-    dim : {1,2,3,4,5,6}
-        Dataset dimension to apodize. Only applicable for matrix operations.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
@@ -3811,6 +3860,7 @@ def genScript(arrayed=False):
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
+            script += 'SB(dim=0, c=0.5)\n'
             script += 'NESTA()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:

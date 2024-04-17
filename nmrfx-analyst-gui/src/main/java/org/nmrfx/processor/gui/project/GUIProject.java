@@ -169,12 +169,12 @@ public class GUIProject extends StructureProject {
         setProjectDir(null);
     }
 
-    public static boolean checkProjectActive() {
+    public static boolean checkProjectActive(boolean includeDatasets) {
         ProjectBase project = ProjectBase.getActive();
         boolean hasMolecules = !MoleculeFactory.getMolecules().isEmpty();
         boolean hasDatasets = project != null && !project.getDatasets().isEmpty();
         boolean hasPeakLists = project != null && !project.getPeakLists().isEmpty();
-        return hasMolecules || hasDatasets || hasPeakLists;
+        return hasMolecules || (hasDatasets && includeDatasets) || hasPeakLists;
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {

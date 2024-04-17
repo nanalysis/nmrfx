@@ -398,7 +398,7 @@ public class Processor {
         String fileType = getFileType(fileName);
         if ("nv".equals(fileType)) {
             try {
-                dataset = new Dataset(fileName, fileName, writeable, true);
+                dataset = new Dataset(fileName, fileName, writeable, true, false);
             } catch (IOException ex) {
                 log.warn("Could not create dataset. {}", ex.getMessage(), ex);
                 return false;
@@ -555,10 +555,12 @@ public class Processor {
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(groupSizes, complex, acqOrderToUse);
-                itemsToWrite = sampleSchedule.getTotalSamples() * tmult.getGroupSize();
+                itemsToWrite = sampleSchedule.getTotalSamples();
+                if (!sampleSchedule.isPhaseMode()) {
+                    itemsToWrite *= tmult.getGroupSize();
+                }
                 itemsToRead = itemsToWrite;
             }
-
             totalVecGroups = totalVecs / tmult.getGroupSize();
             vectorsMultiDataMin = nmrDataSets.size() * tmult.getGroupSize();
         } else {
@@ -709,7 +711,8 @@ public class Processor {
 
         this.pt = calcPt(dim);
 
-        totalMatrices.set(pt[pt.length - 1][1] + 1);
+        int n = dims.length == dim.length ? 1 : pt[pt.length - 1][1] + 1;
+        totalMatrices.set(n);
         itemsToWrite = totalMatrices.get();
         itemsToRead = itemsToWrite;
         this.vectorSize = 1 + pt[0][1] - pt[0][0];
@@ -764,8 +767,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open FID " + filename);
@@ -789,8 +793,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());

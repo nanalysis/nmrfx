@@ -119,20 +119,32 @@ public class FitUtils {
         double yMin = getMinValue(y);
         double hh = (yMin + yMax) / 2.0;
         double deltaMin = Double.MAX_VALUE;
-        double iMid = 0;
+        double upY = Double.MAX_VALUE;
+        double upX = 0.0;
+        double downY = Double.MAX_VALUE;
+        double downX = 0.0;
 
         for (int i = 0; i < x.length; i++) {
             if (indices[i] == index) {
                 double dvar = y[i];
                 double ivar = x[i];
                 double ddvar = Math.abs(dvar - hh);
-
-                if (ddvar < deltaMin) {
-                    deltaMin = ddvar;
-                    iMid = ivar;
+                if (dvar > hh) {
+                    if (ddvar < Math.abs(upY - hh)) {
+                        upX = ivar;
+                        upY = dvar;
+                    }
+                }
+                if (dvar < hh) {
+                    if (ddvar < Math.abs(downY - hh)) {
+                        downX = ivar;
+                        downY = dvar;
+                    }
                 }
             }
         }
+        double f = (hh - downY) / (upY - downY);
+        double iMid = f * (upX - downX) + downX;
 
         return iMid;
     }

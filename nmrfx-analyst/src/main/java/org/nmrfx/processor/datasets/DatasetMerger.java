@@ -72,7 +72,7 @@ public class DatasetMerger {
         int iFile = 0;
         int nInput = fileNames.size();
         for (String fileName : fileNames) {
-            Dataset inputDataset = new Dataset(fileName, fileName, false, true);
+            Dataset inputDataset = new Dataset(fileName, fileName, false, true, false);
             if (outputDataset == null) {
                 openOutput(inputDataset, nInput, outFile);
             }

@@ -9,14 +9,19 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.peaks.DistanceConstraintTableController;
+import org.nmrfx.analyst.gui.peaks.NOETableController;
 import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.io.*;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 public class MoleculeMenuActions extends MenuActions {
@@ -25,6 +30,8 @@ public class MoleculeMenuActions extends MenuActions {
     private AtomController atomController;
     private RDCGUI rdcGUI = null;
     private RNAPeakGeneratorSceneController rnaPeakGenController;
+    private NOETableController noeTableController;
+    private DistanceConstraintTableController distanceConstraintTableController;
 
     public MoleculeMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -79,17 +86,28 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
         sequenceMenuItem.setOnAction(this::showSequence);
 
-        MenuItem molMenuItem = new MenuItem("Viewer");
+        MenuItem molMenuItem = new MenuItem("Viewer...");
         molMenuItem.setOnAction(e -> showMols());
+
+
+        Menu molConstraintsMenu = new Menu("Constraints");
+
+        MenuItem noeTableMenuItem = new MenuItem("NOE Constraint Table...");
+        noeTableMenuItem.setOnAction(e -> showNOETable());
+
+        MenuItem distanceConstraintTableMenuItem = new MenuItem("Distance Constraint Table...");
+        distanceConstraintTableMenuItem.setOnAction(e -> showDistanceConstraintTable());
 
         MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
-        MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
+        molConstraintsMenu.getItems().addAll(noeTableMenuItem, distanceConstraintTableMenuItem, rdcMenuItem);
+
+        MenuItem rnaPeakGenMenuItem = new MenuItem("RNA Label Scheme...");
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, rdcMenuItem, rnaPeakGenMenuItem);
+                sequenceMenuItem, molMenuItem, molConstraintsMenu, rnaPeakGenMenuItem);
     }
 
     void clearExisting() {
@@ -251,4 +269,34 @@ public class MoleculeMenuActions extends MenuActions {
             }
         }
     }
+
+    private void showNOETable() {
+        if (noeTableController == null) {
+            noeTableController = NOETableController.create();
+            if (noeTableController == null) {
+                return;
+            }
+            Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
+
+            noeSets.stream().findFirst().ifPresent(noeTableController::setNoeSet);
+        }
+        noeTableController.getStage().show();
+        noeTableController.getStage().toFront();
+        noeTableController.updateNoeSetMenu();
+    }
+    private void showDistanceConstraintTable() {
+        if (distanceConstraintTableController == null) {
+            distanceConstraintTableController = DistanceConstraintTableController.create();
+            if (distanceConstraintTableController == null) {
+                return;
+            }
+            Collection<DistanceConstraintSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().distanceSets();
+
+            noeSets.stream().findFirst().ifPresent(distanceConstraintTableController::setDistanceConstraintSet);
+        }
+        distanceConstraintTableController.getStage().show();
+        distanceConstraintTableController.getStage().toFront();
+        distanceConstraintTableController.updateDistanceSetMenu();
+    }
+
 }

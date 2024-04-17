@@ -2053,10 +2053,9 @@ public class DatasetBase {
         if (values == null) {
             this.values[iDim] = null;
         } else {
-            if (values.length != getSizeTotal(iDim)) {
-                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSizeTotal(iDim) + ") for dim " + iDim);
+            if (values.length == getSizeTotal(iDim)) {
+                this.values[iDim] = values.clone();
             }
-            this.values[iDim] = values.clone();
         }
     }
 
