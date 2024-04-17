@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class DistanceConstraint implements Constraint {
+    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
 
     private final AtomDistancePair[] atomPairs;
     private final boolean isBond;
@@ -36,6 +37,8 @@ public class DistanceConstraint implements Constraint {
     protected double weight;
     protected double target;
     protected double targetErr;
+    public DistanceStat disStat = DEFAULT_STAT;
+    DistanceStat disStatAvg = DEFAULT_STAT;
 
     public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
                               final double weight, final double targetValue, final double targetErr) {
@@ -191,7 +194,7 @@ public class DistanceConstraint implements Constraint {
 
     @Override
     public DistanceStat getStat() {
-        return null;
+        return disStat;
     }
 
     @Override

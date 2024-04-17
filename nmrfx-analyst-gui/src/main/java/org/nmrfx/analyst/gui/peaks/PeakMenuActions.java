@@ -11,22 +11,18 @@ import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.PeakGeneratorGUI;
 import org.nmrfx.analyst.gui.ZZPlotTool;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.project.ProjectBase;
 
-import java.util.Collection;
 import java.util.List;
 
 public class PeakMenuActions extends MenuActions {
     private static PeakTableController peakTableController;
     private static PeakGeneratorGUI peakGeneratorGUI;
     private LigandScannerController scannerController;
-    private NOETableController noeTableController;
     private AtomBrowser atomBrowser;
     private CheckMenuItem assignOnPick;
     private PeakAtomPicker peakAtomPicker;
@@ -62,9 +58,6 @@ public class PeakMenuActions extends MenuActions {
         ligandScannerMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         ligandScannerMenuItem.setOnAction(e -> showLigandScanner());
 
-        MenuItem noeTableMenuItem = new MenuItem("Show NOE Table");
-        noeTableMenuItem.setOnAction(e -> showNOETable());
-
         Menu assignCascade = new Menu("Assign Tools");
 
         assignOnPick = new CheckMenuItem("Assign on Pick");
@@ -73,18 +66,15 @@ public class PeakMenuActions extends MenuActions {
         atomBrowserMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
 
-        MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
-        runAboutMenuItem.setOnAction(e -> showRunAbout());
-
         MenuItem zzMenuItem = new MenuItem("ZZ Fitting");
         zzMenuItem.setOnAction(e -> showZZTool());
 
 
         assignCascade.getItems().addAll(assignOnPick,
-                atomBrowserMenuItem, runAboutMenuItem);
+                atomBrowserMenuItem);
         menu.getItems().addAll(peakGeneratorMenuItem, linkPeakDimsMenuItem,
                 ligandScannerMenuItem,
-                noeTableMenuItem, zzMenuItem,
+                zzMenuItem,
                 assignCascade);
 
     }
@@ -122,30 +112,9 @@ public class PeakMenuActions extends MenuActions {
         if (scannerController == null) {
             scannerController = LigandScannerController.create();
         }
-        if (scannerController != null) {
-            scannerController.getStage().show();
-            scannerController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make atom controller");
-        }
-    }
+        scannerController.getStage().show();
+        scannerController.getStage().toFront();
 
-    private void showNOETable() {
-        if (noeTableController == null) {
-            noeTableController = NOETableController.create();
-            if (noeTableController == null) {
-                return;
-            }
-            Collection<NoeSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().noeSets();
-
-            noeSets.stream().findFirst().ifPresent(noeTableController::setNoeSet);
-        }
-        noeTableController.getStage().show();
-        noeTableController.getStage().toFront();
-        noeTableController.updateNoeSetMenu();
-    }
-
-    void showRunAbout() {
     }
 
     public void showAtomBrowser() {
@@ -189,18 +158,18 @@ public class PeakMenuActions extends MenuActions {
         peakAtomPicker.show(300, 300, null);
     }
 
-    public void showPeakGeneratorGUI() {
+    public static void showPeakGeneratorGUI() {
         if (peakGeneratorGUI == null) {
             peakGeneratorGUI = new PeakGeneratorGUI();
             peakGeneratorGUI.create();
         }
         peakGeneratorGUI.show(300, 300);
     }
+
     public void showZZTool() {
         ZZPlotTool zzPlotTool = new ZZPlotTool();
         zzPlotTool.show("Time", "Intensity");
     }
-
 
 
 }

@@ -3079,7 +3079,7 @@ class refine:
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
-        self.restart()
+        #self.restart()
         self.mode = 'refine'
 
         self.rDyn = self.rinertia()
