@@ -190,7 +190,7 @@ public final class NMRDataUtil {
         try {
             Optional<File> fileOpt;
             if (NMRViewData.findFID(file)) {
-                return new NMRViewData(file, false);
+                return new NMRViewData(file, saveToProject);
             }
             if (RS2DData.findFID(file) || RS2DData.findData(file)) {
                 return new RS2DData(file, nusFile);
