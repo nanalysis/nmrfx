@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,6 +56,9 @@ public class WriteVector extends IO {
         // fixme always writes real, what if we want to write complex
         if (makeReal) {
             vector.makeReal();
+        } else {
+            // updates location point even though it doesn't change size
+            vector.resize(vector.getSize(), vector.isComplex());
         }
         if (index >= 0) {
             int[][] pt = vector.getPt();

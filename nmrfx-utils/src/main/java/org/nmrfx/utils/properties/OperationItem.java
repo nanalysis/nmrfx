@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,31 +16,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.utils.properties;
 
-import java.util.Optional;
 import javafx.beans.value.ObservableValue;
+import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
 
+import java.util.Optional;
+
 /**
- *
  * @author brucejohnson
  */
 public abstract class OperationItem implements Item {
+    final PropertySheet propertySheet;
+    final String category;
+    final String description;
+    final String name;
 
-    String category;
-    String description;
-    String name;
-
-    public OperationItem(String category, String name, String description) {
+    public OperationItem(PropertySheet propertySheet, String category, String name, String description) {
+        this.propertySheet = propertySheet;
         this.category = category;
         this.description = description;
         this.name = name;
+    }
+
+    public PropertySheet getPropertySheet() {
+        return propertySheet;
     }
 
     @Override

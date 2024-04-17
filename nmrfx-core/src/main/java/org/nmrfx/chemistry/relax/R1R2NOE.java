@@ -22,10 +22,10 @@ public class R1R2NOE {
     @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(String.format("%.2f",sf));
-        RelaxationValues.appendValueError(sBuilder, R1, R1err,"%.2f");
-        RelaxationValues.appendValueError(sBuilder, R2, R2err,"%.2f");
-        RelaxationValues.appendValueError(sBuilder, NOE, NOEerr,"%.2f");
+        sBuilder.append(String.format("%.2f", sf));
+        RelaxationValues.appendValueErrorWithSep(sBuilder, R1, R1err, "%.2f", ",");
+        RelaxationValues.appendValueErrorWithSep(sBuilder, R2, R2err, "%.2f", ",");
+        RelaxationValues.appendValueErrorWithSep(sBuilder, NOE, NOEerr, "%.2f",",");
         return sBuilder.toString();
     }
 }

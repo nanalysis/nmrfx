@@ -8,7 +8,6 @@
 # CLASSPATH  - colon separated list of additional jar files & class directories
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
 #
-JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED"
 LOG_CONFIG="-Dlogback.configurationFile=config/logback.xml"
 
 if [ -n "$NMRFXP_MEMORY" ] ; then

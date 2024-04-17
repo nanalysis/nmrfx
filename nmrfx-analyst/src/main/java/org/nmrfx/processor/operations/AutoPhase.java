@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -29,14 +29,13 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
 public class AutoPhase extends Operation {
-    
-    public static AtomicDouble lastPh0 = new AtomicDouble(0.0);
-    public static AtomicDouble lastPh1 = new AtomicDouble(0.0);
+
+    public static final AtomicDouble lastPh0 = new AtomicDouble(0.0);
+    public static final AtomicDouble lastPh1 = new AtomicDouble(0.0);
 
     private final boolean firstOrder;
     private final boolean maxMode;
@@ -45,7 +44,7 @@ public class AutoPhase extends Operation {
     private final int mode;
     private final double ph1Limit;
     private final double negativePenalty;
-    
+
 
     public AutoPhase(boolean firstOrder, boolean maxMode, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
         this.firstOrder = firstOrder;

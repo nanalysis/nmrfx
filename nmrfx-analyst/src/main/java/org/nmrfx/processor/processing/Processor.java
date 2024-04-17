@@ -67,8 +67,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @PythonAPI({"nmrpar", "pyproc"})
 public class Processor {
     private static final Logger log = LoggerFactory.getLogger(Processor.class);
-    private static long MEMORY_MODE_LIMIT = 536870912L;
-    private static boolean TEST_CORRUPTION_MODE = false;
+    private static long memoryModeLimit = 536870912L;
+    private static boolean testCorruptionMode = false;
     private static int iDataNum = 0;
 
 
@@ -143,12 +143,7 @@ public class Processor {
      * True if the file has been completely read so that loading vectors will
      * stop.
      */
-    private AtomicBoolean endOfFile = new AtomicBoolean(false);
-    /**
-     * If True then processes will stop querying for unprocessed vectors to
-     * process.
-     */
-    public static boolean stopProcessing = false;
+    private final AtomicBoolean endOfFile = new AtomicBoolean(false);
     /**
      * Processor is a singleton which is able to control and communicate with
      * processes.
@@ -341,6 +336,11 @@ public class Processor {
         acqOrder = null;
     }
 
+    public void addDataset(NMRData nmrData) {
+        nmrDataSets.clear();
+        nmrDataSets.add(nmrData);
+    }
+
     /**
      * Open a NMRView or Varian file in read-only mode.
      *
@@ -398,7 +398,7 @@ public class Processor {
         String fileType = getFileType(fileName);
         if ("nv".equals(fileType)) {
             try {
-                dataset = new Dataset(fileName, fileName, writeable, true);
+                dataset = new Dataset(fileName, fileName, writeable, true, false);
             } catch (IOException ex) {
                 log.warn("Could not create dataset. {}", ex.getMessage(), ex);
                 return false;
@@ -429,7 +429,7 @@ public class Processor {
         }
         int nDim = nmrData.getNDim();
         int nArray = 0;
-        groupSizes = new int[nDim+nArray];
+        groupSizes = new int[nDim + nArray];
         for (int i = 1; i < nDim; i++) {
             int arraySize = nmrData.getArraySize(i);
             if (arraySize != 0) {
@@ -555,10 +555,12 @@ public class Processor {
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(groupSizes, complex, acqOrderToUse);
-                itemsToWrite = sampleSchedule.getTotalSamples() * tmult.getGroupSize();
+                itemsToWrite = sampleSchedule.getTotalSamples();
+                if (!sampleSchedule.isPhaseMode()) {
+                    itemsToWrite *= tmult.getGroupSize();
+                }
                 itemsToRead = itemsToWrite;
             }
-
             totalVecGroups = totalVecs / tmult.getGroupSize();
             vectorsMultiDataMin = nmrDataSets.size() * tmult.getGroupSize();
         } else {
@@ -688,7 +690,7 @@ public class Processor {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("First process using DIM(1)");
         }
-        if (dataset.getNDim() < 3 || dims.length < 2) {
+        if (dataset.getNDim() < 2 || dims.length < 2) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Number of dimensions must be greater than two.");
         }
@@ -709,7 +711,8 @@ public class Processor {
 
         this.pt = calcPt(dim);
 
-        totalMatrices.set(pt[pt.length - 1][1] + 1);
+        int n = dims.length == dim.length ? 1 : pt[pt.length - 1][1] + 1;
+        totalMatrices.set(n);
         itemsToWrite = totalMatrices.get();
         itemsToRead = itemsToWrite;
         this.vectorSize = 1 + pt[0][1] - pt[0][0];
@@ -764,8 +767,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open FID " + filename);
@@ -789,8 +793,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());
@@ -883,12 +888,12 @@ public class Processor {
     }
 
     public static boolean useMemoryMode(long size) {
-        return size <= MEMORY_MODE_LIMIT;
+        return size <= memoryModeLimit;
     }
 
     // used from Python for testing
     public static void setMemoryModeLimit(long size) {
-        MEMORY_MODE_LIMIT = size;
+        memoryModeLimit = size;
     }
 
     // called from Python
@@ -1108,18 +1113,24 @@ public class Processor {
         } else {
             // zerofill matrix size for processing and writing
             int[][] writePt = calcPt(dim);
-            int[] matrixSizes = new int[pt.length - 1];
+            int matrixDim = pt.length - 1;
+            if (dim[0] == 0) {
+                matrixDim++;
+            }
+            int[] matrixSizes = new int[matrixDim];
             // size in points of valid data (used for apodizatin etc.)
-            int[] vSizes = new int[pt.length - 1];
-            for (int i = 0; i < pt.length - 1; i++) {
+            int[] vSizes = new int[matrixDim];
+            for (int i = 0; i < matrixDim; i++) {
                 matrixSizes[i] = pt[i][1] + 1;
                 vSizes[i] = (pt[i][1] + 1);
             }
-            for (int i = 0; i < pt.length - 1; i++) {
+            for (int i = 0; i < matrixDim; i++) {
                 writePt[i][1] = matrixSizes[i] - 1;
             }
-            writePt[pt.length - 1][0] = matrixCount;
-            pt[pt.length - 1][0] = matrixCount;
+            if (matrixDim < nDim) {
+                writePt[matrixDim][0] = matrixCount;
+                pt[matrixDim][0] = matrixCount;
+            }
             try {
                 matrix = new MatrixND(writePt, dim, matrixSizes);
                 matrix.setVSizes(vSizes);
@@ -1251,7 +1262,7 @@ public class Processor {
                             for (NMRData nmrData : nmrDataSets) {
                                 temp = new Vec(vectorSize, nmrData.isComplex(dim[0]));
                                 nmrData.readVector(vecIndex.inVecs[j], temp);
-                                if (TEST_CORRUPTION_MODE) {
+                                if (testCorruptionMode) {
                                     for (int[] rowSkip : nmrData.getSkipIndices()) {
                                         if (rowSkip[0] == vecIndex.getOutVec(j)[1][0]) {
                                             temp.rand();
@@ -1464,6 +1475,7 @@ public class Processor {
         clearProcessorError();
         int nDimsProcessed = 0;
         for (ProcessOps p : dimProcesses) {
+            p.firstProcess(!nvDataset);
             // check if this process corresponds to dimension that should be skipped
             if (mapToDataset(p.getDim()) == -1) {
                 log.warn("Skip dim {}", (p.getDim() + 1));
@@ -1745,7 +1757,7 @@ public class Processor {
     }
 
     public NMRData getNMRData() {
-        return nmrDataSets.get(0);
+        return nmrDataSets.size() > 0 ? nmrDataSets.get(0) : null;
     }
 
     public boolean isNVDataset() {
@@ -1856,6 +1868,6 @@ public class Processor {
     }
 
     public static void setTestCorruptionMode(boolean state) {
-        TEST_CORRUPTION_MODE = state;
+        testCorruptionMode = state;
     }
 }

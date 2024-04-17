@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,10 +30,8 @@ import org.nmrfx.structure.chemistry.io.TrajectoryWriter;
 import org.nmrfx.utilities.ProgressUpdater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import smile.math.BFGS;
 
 /**
- *
  * @author johnsonb
  */
 public class GradientRefinement extends Refinement {
@@ -93,11 +91,7 @@ public class GradientRefinement extends Refinement {
     }
 
     public void gradMinimize(int nSteps, double tolerance) {
-        if (NLCG) {
-            gradMinimizeNLCG(nSteps, tolerance);
-        } else {
-            gradMinimizeBFGS(nSteps, tolerance);
-        }
+        gradMinimizeNLCG(nSteps, tolerance);
     }
 
     public void gradMinimizeNLCG(int nSteps, double tolerance) {
@@ -131,39 +125,6 @@ public class GradientRefinement extends Refinement {
                 GoalType.MINIMIZE,
                 new InitialGuess(dihedrals.angleValues));
         System.arraycopy(result.getPoint(), 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
-        putDihedrals();
-        molecule.genCoords(false, null);
-    }
-
-    // this does not converge as well as above method.
-    public void gradMinimizeBFGS(int nSteps, double tolerance) {
-        prepareAngles(false);
-        dihedrals.setBoundaries(0.1, false);
-        PointValuePair result = null;
-        getDihedrals();
-
-        dihedrals.energyList.makeAtomListFast();
-        DihedralEnergyGradient dihEnergyGradient = new DihedralEnergyGradient(dihedrals, this);
-        report(0, 0, 0, dihedrals.energyList.atomList.size(), dihEnergyGradient.f(dihedrals.angleValues));
-        reportAt = 20;
-        if (trajectoryWriter != null) {
-            try {
-                trajectoryWriter.writeStructure();
-            } catch (MissingCoordinatesException ex) {
-                log.error(ex.getMessage(), ex);
-            }
-        }
-        double[] values = new double[dihedrals.angleValues.length];
-        System.arraycopy(dihedrals.angleValues, 0, values, 0, values.length);
-        double value = 0.0;
-        System.out.println("start ");
-        try {
-            value = BFGS.minimize(dihEnergyGradient, 5, values, tolerance * 1.0e-3, nSteps * 100);
-        } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-        }
-        System.out.println("end " + value);
-        System.arraycopy(values, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
         molecule.genCoords(false, null);
     }

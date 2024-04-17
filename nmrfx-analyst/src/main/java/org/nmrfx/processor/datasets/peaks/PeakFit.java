@@ -40,8 +40,8 @@ import org.nmrfx.processor.optimization.SineSignal;
 import java.util.*;
 
 public class PeakFit implements MultivariateFunction {
-
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    
     final PeakFitParameters fitParameters;
     final boolean fitShape;
     final boolean constrainShape;
@@ -133,7 +133,8 @@ public class PeakFit implements MultivariateFunction {
                     new ObjectiveFunction(this), org.apache.commons.math3.optim.nonlinear.scalar.GoalType.MINIMIZE,
                     new SimpleBounds(uniformBoundaries[0], uniformBoundaries[1]),
                     new InitialGuess(newStart));
-        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
+        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
+                 TooManyEvaluationsException e) {
             throw new Exception("failure to fit data " + e.getMessage());
         }
         return result.getValue();
@@ -300,7 +301,7 @@ public class PeakFit implements MultivariateFunction {
         for (int i = 0; i < cplItems.length; i++) {
             CouplingPattern.jSplittings(cplItems[i], freqs[i], amplitudes[i]);
             for (CouplingItem cplItem : cplItems[i]) {
-                System.out.print("coup " + cplItem.getCoupling());
+                System.out.print("coup " + cplItem.coupling());
             }
 
             System.out.println("");
@@ -345,8 +346,8 @@ public class PeakFit implements MultivariateFunction {
             nFit++;
             int nFreqs = 1;
 
-            if ((cplItems[i].length == 1) && (cplItems[i][0].getNSplits() < 0)) { // generic multiplet
-                nFreqs = -cplItems[i][0].getNSplits();
+            if ((cplItems[i].length == 1) && (cplItems[i][0].nSplits() < 0)) { // generic multiplet
+                nFreqs = -cplItems[i][0].nSplits();
                 start += nFreqs;
                 nFit += nFreqs;
                 if (fitAmps) {
@@ -357,7 +358,7 @@ public class PeakFit implements MultivariateFunction {
                 nSigAmps[i] = nFreqs;
             } else {
                 for (CouplingItem cplItem : cplItems[i]) {
-                    nFreqs = nFreqs * cplItem.getNSplits();
+                    nFreqs = nFreqs * cplItem.nSplits();
                 }
                 nSigAmpsTotal++;
                 nSigAmps[i] = 1;
@@ -399,9 +400,9 @@ public class PeakFit implements MultivariateFunction {
             int start = sigStarts[iSig] + startOffset;
             lw[iSig] = Math.abs(aCalc[start++]);
 
-            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
+            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].nSplits() < 0)) { // generic multiplet
 
-                int nFreqs = -cplItems[iSig][0].getNSplits();
+                int nFreqs = -cplItems[iSig][0].nSplits();
 
                 for (int iLine = 0; iLine < nFreqs; iLine++) {
                     double amp = 0.0;
@@ -425,7 +426,7 @@ public class PeakFit implements MultivariateFunction {
                 double freq = aCalc[start++];
 
                 for (int i = 0; i < cplItems[iSig].length; i++) {
-                    cplItems[iSig][i] = new CouplingItem(aCalc[start++], aCalc[start++], freq, cplItems[iSig][i].getNSplits());
+                    cplItems[iSig][i] = new CouplingItem(aCalc[start++], aCalc[start++], freq, cplItems[iSig][i].nSplits());
                 }
 
                 SineSignal signal = new SineSignal(freq,
@@ -463,7 +464,7 @@ public class PeakFit implements MultivariateFunction {
         double sigLw = a[start++];
         freqs[iSig][0] = a[start++];
         for (int i = 0; i < cplItems[iSig].length; i++) {
-            cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].getNSplits());
+            cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].nSplits());
         }
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
@@ -476,7 +477,7 @@ public class PeakFit implements MultivariateFunction {
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
             double yTemp;
-            yTemp = lineShape(x,  freqs[iSig][iLine], sigLw, shapeFactor);
+            yTemp = lineShape(x, freqs[iSig][iLine], sigLw, shapeFactor);
             if (amplitudes[iSig][iLine] < 0) {
                 yTemp = -yTemp;
             }
@@ -506,7 +507,7 @@ public class PeakFit implements MultivariateFunction {
         for (int iSig = 0; iSig < nSignals; iSig++) {
             int start = sigStarts[iSig] + startOffset;
             double sigLw = a[start++];
-            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
+            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].nSplits() < 0)) { // generic multiplet
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
                     amplitudes[iSig][iLine] = a[start++];
                     freqs[iSig][iLine] = a[start++];
@@ -525,7 +526,7 @@ public class PeakFit implements MultivariateFunction {
                 amplitudes[iSig][0] = 1.0;
 
                 for (int i = 0; i < cplItems[iSig].length; i++) {
-                    cplItems[iSig][i] = new CouplingItem(a[start++], a[start++], freqs[iSig][0], cplItems[iSig][i].getNSplits());
+                    cplItems[iSig][i] = new CouplingItem(a[start++], a[start++], freqs[iSig][0], cplItems[iSig][i].nSplits());
                 }
 
                 CouplingPattern.jSplittings(cplItems[iSig], freqs[iSig], amplitudes[iSig]);
@@ -565,7 +566,7 @@ public class PeakFit implements MultivariateFunction {
         for (int iSig = 0; iSig < nSignals; iSig++) {
             int start = sigStarts[iSig] + startOffset;
             double sigLw = a[start++];
-            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
+            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].nSplits() < 0)) { // generic multiplet
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
                     freqs[iSig][iLine] = a[start++];
                 }
@@ -584,7 +585,7 @@ public class PeakFit implements MultivariateFunction {
             } else {
                 freqs[iSig][0] = a[start++];
                 for (int i = 0; i < cplItems[iSig].length; i++) {
-                    cplItems[iSig][i] = new CouplingItem(a[start++], a[start++], freqs[iSig][0], cplItems[iSig][i].getNSplits());
+                    cplItems[iSig][i] = new CouplingItem(a[start++], a[start++], freqs[iSig][0], cplItems[iSig][i].nSplits());
                 }
 
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {

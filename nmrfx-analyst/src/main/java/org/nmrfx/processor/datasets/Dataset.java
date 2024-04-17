@@ -67,8 +67,8 @@ import java.util.stream.IntStream;
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
-    private static long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
-    static boolean useCacheFile = false;
+    private static final long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
+    private static boolean useCacheFile = false;
 
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     LineShapeCatalog simVecs = null;
@@ -82,17 +82,17 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Create a new Dataset object that refers to an existing random access file
      * in a format that can be described by this class.
      *
-     * @param fullName The full path to the file
-     * @param name The short name (and initial title) to be used for the
-     * dataset.
-     * @param writable true if the file should be opened in a writable mode.
+     * @param fullName     The full path to the file
+     * @param name         The short name (and initial title) to be used for the
+     *                     dataset.
+     * @param writable     true if the file should be opened in a writable mode.
      * @param useCacheFile true if the file will use StorageCache rather than
-     * memory mapping file. You should not use StorageCache if the file is to be
-     * opened for drawing in NMRFx (as thread interrupts may cause it to be
-     * closed)
+     *                     memory mapping file. You should not use StorageCache if the file is to be
+     *                     opened for drawing in NMRFx (as thread interrupts may cause it to be
+     *                     closed)
      * @throws IOException if an I/O error occurs
      */
-    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
+    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile, boolean saveToProject)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, writable, useCacheFile);
@@ -122,7 +122,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         // Datasets that were not generated in NMRFx don't
         // have freqDomain  attribute set so set freq domain
         // here
-        boolean isFID =  (getNFreqDims() == 0) && (!getFreqDomain(0) && (getComplex(0)));
+        boolean isFID = (getNFreqDims() == 0) && (!getFreqDomain(0) && (getComplex(0)));
         if (!isFID && noFreqDomains) {
             int nFreq = getNFreqDims() == 0 ? nDim : getNFreqDims();
             for (int i = 0; i < nFreq; i++) {
@@ -137,7 +137,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
 
         log.info("new dataset {}", fileName);
-        addFile(fileName);
+        if (saveToProject) {
+            addFile(fileName);
+        }
         loadLSCatalog();
     }
 
@@ -145,21 +147,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Create a new Dataset object that refers to an existing random access file
      * in a format that can be described by this class.
      *
-     * @param fullName The full path to the file
-     * @param name The short name (and initial title) to be used for the
-     * dataset.
+     * @param fullName      The full path to the file
+     * @param name          The short name (and initial title) to be used for the
+     *                      dataset.
      * @param datasetLayout contains information about layout (sizes, blocksizes
-     * etc. of dataset to be created)
-     * @param useCacheFile true if the file will use StorageCache rather than
-     * memory mapping file. You should not use StorageCache if the file is to be
-     * opened for drawing in NMRFx (as thread interrupts may cause it to be
-     * closed)
-     * @param byteOrder Spcify little or big endian
-     * @param dataType 0 is float, 1 is integer
+     *                      etc. of dataset to be created)
+     * @param useCacheFile  true if the file will use StorageCache rather than
+     *                      memory mapping file. You should not use StorageCache if the file is to be
+     *                      opened for drawing in NMRFx (as thread interrupts may cause it to be
+     *                      closed)
+     * @param byteOrder     Spcify little or big endian
+     * @param dataType      0 is float, 1 is integer
      * @throws IOException if an I/O error occurs
      */
     public Dataset(String fullName, String name, DatasetLayout datasetLayout,
-            boolean useCacheFile, ByteOrder byteOrder, int dataType)
+                   boolean useCacheFile, ByteOrder byteOrder, int dataType)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, false, useCacheFile);
@@ -241,7 +243,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     private Dataset(String fullName, String fileName, String title,
-            int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
+                    int[] dimSizes, boolean closeDataset, boolean createFile) throws DatasetException {
         try {
             file = new File(fullName);
 
@@ -295,14 +297,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     // create in memory file
+
     /**
      * Create a dataset in memory for fast access. The dataset is not
      * written to disk so can't be persisted.
      *
-     * @param title Dataset title
-     * @param file The file associated with the dataset, if null, the title will be used as the fileName
+     * @param title    Dataset title
+     * @param file     The file associated with the dataset, if null, the title will be used as the fileName
      * @param dimSizes Sizes of the dataset dimensions
-     * @param addFile Whether to add the dataset to the active projects
+     * @param addFile  Whether to add the dataset to the active projects
      * @throws DatasetException if an I/O error occurs
      */
     public Dataset(String title, File file, int[] dimSizes, boolean addFile) throws DatasetException {
@@ -344,12 +347,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     // create in memory file
+
     /**
      * Create a dataset in memory for fast access. This is an experimental mode,
      * and the dataset is not currently written to disk so can't be persisted.
      *
      * @param fullName Dataset file path
-     * @param nDim Number of dataset dimensions
+     * @param nDim     Number of dataset dimensions
      * @throws DatasetException if an I/O error occurs
      */
     public Dataset(String fullName, int nDim) throws DatasetException {
@@ -423,8 +427,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 dataFile = new MemoryFile(this, layout, true);
                 dataFile.zero();
             } else {
-               layout = DatasetLayout.createBlockMatrix(getFileHeaderSize(file.getName()), dimSizes);
-               setLayout(layout, false);
+                layout = DatasetLayout.createBlockMatrix(getFileHeaderSize(file.getName()), dimSizes);
+                setLayout(layout, false);
             }
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
@@ -450,11 +454,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             throw new DatasetException("Can't resize dataset " + ioe.getMessage());
         }
     }
+
     public void resizeDims(int[] dimSizes) throws DatasetException {
         try {
             dataFile = StorageResizer.resizeDim(this, layout, dataFile, dimSizes);
             layout = dataFile.getLayout();
-            for (int iDim=0;iDim<dimSizes.length;iDim++) {
+            for (int iDim = 0; iDim < dimSizes.length; iDim++) {
                 refPt[iDim] = getSizeReal(iDim) / 2.0;
                 refPt_r[iDim] = getSizeReal(iDim) / 2.0;
             }
@@ -488,10 +493,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return newDataFile;
     }
 
-    public static void setBigMapLimit(long size) {
-        BIG_MAP_LIMIT = size;
-    }
-
     @Override
     public String toString() {
         return fileName;
@@ -500,9 +501,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Create a new dataset file in NMRView format.
      *
-     * @param fullName The full path to the new file
-     * @param title The title to be used for the new dataset
-     * @param dimSizes The sizes of the new dataset.
+     * @param fullName     The full path to the new file
+     * @param title        The title to be used for the new dataset
+     * @param dimSizes     The sizes of the new dataset.
      * @param closeDataset If true, close dataset after creating
      * @return the created Dataset
      * @throws DatasetException if an I/O error occurred when writing out file
@@ -518,10 +519,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     /**
      * Create a new dataset file from the provided path by first loading as an NMRData and then converting to a dataset.
-     * @param name The name of the new dataset.
+     *
+     * @param name     The name of the new dataset.
      * @param fullName The name of the file containing the path to the dataset file.
      * @return A new dataset or null if no NMRData type was found.
-     * @throws IOException if an IO exception occurs.
+     * @throws IOException      if an IO exception occurs.
      * @throws DatasetException if there is a problem creating the JCAMP dataset.
      */
     public static Dataset newLinkDataset(String name, String fullName) throws IOException, DatasetException {
@@ -529,7 +531,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         log.info(fullName);
         String fileString = Files.readString(linkFile.toPath());
         log.info(fileString);
-        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
+        NMRData nmrData = NMRDataUtil.getNMRData(new File(fileString));
         log.info("{}", nmrData);
         if (nmrData instanceof BrukerData brukerData) {
             return brukerData.toDataset(name);
@@ -740,11 +742,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Calculate basic descriptive statistics on the specified region of the
      * dataset.
      *
-     * @param pt The bounds of the region in dataset points
-     * @param cpt The center point of each region
+     * @param pt    The bounds of the region in dataset points
+     * @param cpt   The center point of each region
      * @param width the width of each region
-     * @param dim the dataset dimensions that the pt, cpt, and width parameters
-     * use
+     * @param dim   the dataset dimensions that the pt, cpt, and width parameters
+     *              use
      * @return RegionData with statistical information about the specified
      * region
      * @throws java.io.IOException if an I/O error ocurrs
@@ -972,7 +974,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * calculated by measureSliceRMSD
      *
      * @return true if has stored rmsd values
-     *
      */
     public boolean sliceRMSDValid() {
         boolean valid = true;
@@ -1035,8 +1036,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * point.
      *
      * @param level Peak picking level
-     * @param pt indices of dataset
-     * @param dim dataset dimensions used by pt indices
+     * @param pt    indices of dataset
+     * @param dim   dataset dimensions used by pt indices
      * @return ratio of point level to threshold level
      */
     public double checkNoiseLevel(double level, int[] pt, int[] dim) {
@@ -1111,13 +1112,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * of points. Used to find points that should be included when doing peak
      * fitting.
      *
-     * @param p2 Bounds of peak regions
-     * @param cpt Array of centers of peak positions
-     * @param width Array of widths of peaks
-     * @param pdim Array of integers indicating mapping of peak dimension to
-     * dataset dimension
-     * @param multiplier   multiply width of regions to get elliptical region
-     * @param minWidth: minimum half width (in points) of region.  Ensures that at least a minium number of peaks are used
+     * @param p2         Bounds of peak regions
+     * @param cpt        Array of centers of peak positions
+     * @param width      Array of widths of peaks
+     * @param pdim       Array of integers indicating mapping of peak dimension to
+     *                   dataset dimension
+     * @param multiplier multiply width of regions to get elliptical region
+     * @param minWidth:  minimum half width (in points) of region.  Ensures that at least a minium number of peaks are used
      * @return List of points near peak centers
      */
     public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier, int minWidth) {
@@ -1157,7 +1158,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                         double scaledWidth = multiplier * width[iPeak][iDim] / 2.0;
                         int delta = Math.abs(value - cpt[iPeak][iDim]);
                         if (delta > minWidth) {
-                            delta2 += (delta *delta) / (scaledWidth * scaledWidth);
+                            delta2 += (delta * delta) / (scaledWidth * scaledWidth);
                         }
                     }
                     iDim++;
@@ -1213,20 +1214,20 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * matrix.  The region is specified in complex or real (if dimensionis real)
      * points and translated to raw indices based on whether dimension is complex or not.
      *
-     * @param pt The region to read
-     * @param dim The dataset dimensions used by the region points
+     * @param pt     The region to read
+     * @param dim    The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
-     * least as big as region.
+     *               least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public float readMatrix(int[][] pt,
-            int[] dim, float[][] matrix) throws IOException {
+                                         int[] dim, float[][] matrix) throws IOException {
         float maxValue = Float.NEGATIVE_INFINITY;
         float minValue = Float.MAX_VALUE;
         int[] point = new int[nDim];
         int[] mul = new int[2];
-        for (int i =0;i<2;i++) {
+        for (int i = 0; i < 2; i++) {
             mul[i] = getComplex(dim[i]) ? 2 : 1;
         }
 
@@ -1241,12 +1242,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 if (axisReversed[dim[0]]) {
                     point[dim[0]] = getSizeTotal(dim[0]) - 1 - i * mul[0];
                 } else {
-                    point[dim[0]] =  i * mul[0];
+                    point[dim[0]] = i * mul[0];
                 }
                 if (axisReversed[dim[1]]) {
                     point[dim[1]] = getSizeTotal(dim[1]) - 1 - j * mul[1];
                 } else {
-                    point[dim[1]] =  j * mul[1];
+                    point[dim[1]] = j * mul[1];
                 }
                 float value = (float) readPointRaw(point);
                 matrix[jj][ii] = value;
@@ -1265,15 +1266,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param pt The region to read
-     * @param dim The dataset dimensions used by the region points
+     * @param pt     The region to read
+     * @param dim    The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
-     * least as big as region.
+     *               least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public double readMatrix(int[][] pt,
-            int[] dim, double[][] matrix) throws IOException {
+                                          int[] dim, double[][] matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
@@ -1304,22 +1305,24 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read an N dimensional matrix of values within the specified region of the
      * matrix
      *
-     * @param pt The region to read
-     * @param dim The dataset dimensions used by the region points
+     * @param pt     The region to read
+     * @param dim    The dataset dimensions used by the region points
      * @param matrix A matrix in which to store the read values. Must be at
-     * least as big as region.
+     *               least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error occurs
      */
     synchronized public double readMatrixND(int[][] pt,
-            int[] dim, MatrixND matrix) throws IOException {
+                                            int[] dim, MatrixND matrix) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
-        point[dim[nDim - 1]] = pt[nDim - 1][0];
-        int[] mPoint = new int[nDim - 1];
-        // fixme should mPoint be pt +1 
-        for (int i = 0; i < nDim - 1; i++) {
+        int mDims = matrix.getNDim();
+        for (int i=mDims;i<nDim;i++) {
+            point[dim[i]] = pt[i][0];
+        }
+        int[] mPoint = new int[mDims];
+        for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
         }
 
@@ -1344,11 +1347,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
 
-
     /**
      * Write a matrix of values to the dataset
      *
-     * @param dim indices of dimensions to write matrix along
+     * @param dim    indices of dimensions to write matrix along
      * @param matrix the values to write
      * @throws IOException if an I/O error occurs
      */
@@ -1374,18 +1376,26 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Write a matrix of values to the dataset
      *
-     * @param dim indices of dimensions to write matrix along
+     * @param dim    indices of dimensions to write matrix along
      * @param matrix the values to write
      * @throws IOException if an I/O error occurs
      */
     public void writeMatrixNDToDatasetFile(int[] dim, MatrixND matrix) throws IOException {
         int[][] pt = matrix.getPt();
         int[] point = new int[nDim];
-        point[dim[nDim - 1]] = pt[nDim - 1][0];
-        int[] mPoint = new int[nDim - 1];
-        int[] matVSizes = matrix.getVSizes();
-        for (int i = 0; i < nDim - 1; i++) {
+
+        int mDims = matrix.getNDim();
+        for (int i=mDims;i<nDim;i++) {
+            point[dim[i]] = pt[i][0];
+        }
+        int[] mPoint = new int[mDims];
+        for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
+        }
+
+
+        int[] matVSizes = matrix.getVSizes();
+        for (int i = 0; i < mDims; i++) {
             setVSize(dim[i], matVSizes[i]);
             setPh0(dim[i], matrix.getPh0(i));
             setPh1(dim[i], matrix.getPh1(i));
@@ -1427,37 +1437,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     synchronized public static List<String> names() {
         return ProjectBase.getActive().getDatasetNames();
     }
-
-    static String[] exptListLoopString = {
-        "_Experiment.ID",
-        "_Experiment.Name",
-        "_Experiment.Raw_data_flag",
-        "_Experiment.NMR_spec_expt_ID",
-        "_Experiment.NMR_spec_expt_label",
-        "_Experiment.Sample_ID",
-        "_Experiment.Sample_label",
-        "_Experiment.Sample_state",
-        "_Experiment.Sample_volume",
-        "_Experiment.Sample_volume_units",
-        "_Experiment.Sample_condition_list_ID",
-        "_Experiment.Sample_condition_list_label",
-        "_Experiment.Sample_spinning_rate",
-        "_Experiment.Sample_angle",
-        "_Experiment.NMR_tube_type",
-        "_Experiment.NMR_spectrometer_ID",
-        "_Experiment.NMR_spectrometer_label",
-        "_Experiment.NMR_spectrometer_probe_ID",
-        "_Experiment.NMR_spectrometer_probe_label",
-        "_Experiment.NMR_spectral_processing_ID",
-        "_Experiment.NMR_spectral_processing_label",
-        "_Experiment.Experiment_list_ID",};
-    static String[] exptFileLoopString = {
-        "_Experiment_file.ID",
-        "_Experiment_file.Name",
-        "_Experiment_file.Type",
-        "_Experiment_file.Directory_path",
-        "_Experiment_file.Details",
-        "_Experiment_file.Experiment_list_ID",};
 
     /**
      * Test of speed of accessing data in file
@@ -1514,11 +1493,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     //new version
+
     /**
      * Read a vector of data values from dataset
      *
-     * @param pt raw indices specifying range of points to read from
-     * @param dim dataset dimensions that are used in pt array
+     * @param pt       raw indices specifying range of points to read from
+     * @param dim      dataset dimensions that are used in pt array
      * @param rwVector the vector to put values in
      * @throws IOException if an I/O error occurs
      */
@@ -1558,7 +1538,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.setTDSize(getTDSize(dim[0]));
         rwVector.setPt(pt, dim);
         if (getFreqDomain_r(dim[0])) {
-            rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0])-pt[0][0]));
+            rwVector.setRefValue(getRefValue_r(dim[0]), (getRefPt_r(dim[0]) - pt[0][0]));
         } else {
             rwVector.setRefValue(getRefValue_r(dim[0]));
         }
@@ -1568,7 +1548,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 1; i < nDim; i++) {
             if (getAxisReversed(dim[i])) {
                 point[dim[i]] = getSizeReal(dim[i]) - 1 - pt[i][0];
-            } else{
+            } else {
                 point[dim[i]] = pt[i][0];
             }
         }
@@ -1637,10 +1617,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read specified values along specified row. Only appropriate for 2D
      * datasets
      *
-     * @param row the row to read
+     * @param row     the row to read
      * @param indices List of points to read along row
      * @return the data values
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if indices is null or empty
      */
     public ArrayRealVector getRowVector(int row, ArrayList<Integer> indices) throws IOException, IllegalArgumentException {
@@ -1681,10 +1661,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read specified values along specified column. Only appropriate for 2D
      * datasets
      *
-     * @param column the column of dataset to read
+     * @param column  the column of dataset to read
      * @param indices List of points to read along column
      * @return the values
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if indices is null or empty
      */
     public ArrayRealVector getColumnVector(int column, ArrayList<Integer> indices) throws IOException, IllegalArgumentException {
@@ -1705,12 +1685,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Return a 2D matrix of data values from specified rows and columns
      *
-     * @param rowIndices List of rows
+     * @param rowIndices    List of rows
      * @param columnIndices List of columns
      * @return the matrix of values
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if row or column indices is null or
-     * empty
+     *                                  empty
      */
     public Array2DRowRealMatrix getSubMatrix(ArrayList<Integer> rowIndices, ArrayList<Integer> columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || rowIndices.isEmpty()) {
@@ -1733,15 +1713,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     *
      * Return a 2D matrix of data values from specified rows and columns
      *
-     * @param rowIndices List of rows
+     * @param rowIndices    List of rows
      * @param columnIndices List of columns
      * @return the matrix of values
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if row or column indices is null or
-     * empty
+     *                                  empty
      */
     public Array2DRowRealMatrix getSubMatrix(int[] rowIndices, int[] columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -1768,11 +1747,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Make a Dataset file from a matrix of values
      *
-     * @param matrix The matrix of values
-     * @param fullName The name of the file to create
+     * @param matrix      The matrix of values
+     * @param fullName    The name of the file to create
      * @param datasetName The name (title) of the dataset.
      * @throws DatasetException if an I/O error occurred while creating dataset
-     * @throws IOException if an I/O error occurs
+     * @throws IOException      if an I/O error occurs
      */
     public static void makeDatasetFromMatrix(RealMatrix matrix, String fullName, String datasetName) throws DatasetException, IOException {
         int nRows = matrix.getRowDimension();
@@ -1814,14 +1793,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Create a @see BucketMatrix from this dataset
      *
-     * @param rowIndices Indices of rows to include in bucketing
+     * @param rowIndices    Indices of rows to include in bucketing
      * @param columnIndices Indices of columns to include in bucketing
-     * @param bucketSize size of the bucket
-     * @param dataTbl Names for rows and columns
+     * @param bucketSize    size of the bucket
+     * @param dataTbl       Names for rows and columns
      * @return a BucketMatrix object containing the bucket values from dataset
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if row or column indices is null or
-     * empty
+     *                                  empty
      */
     public BucketedMatrix getBucketedSubMatrix(int[] rowIndices, List<Integer> columnIndices, int bucketSize, String[][] dataTbl) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -1943,7 +1922,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read vector from two dimensional dataset
      *
      * @param index the index of vector to read
-     * @param iDim read values along this dimension index
+     * @param iDim  read values along this dimension index
      * @return Vec the vector read from dataset
      * @throws IOException if an I/O error occurs
      */
@@ -1958,8 +1937,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Read vector from a two dimensional dataset
      *
      * @param vector Store dataset values in this vec
-     * @param index the index of vector to read
-     * @param iDim read values along this dimension index
+     * @param index  the index of vector to read
+     * @param iDim   read values along this dimension index
      * @throws IOException if an I/O error occurs
      */
     public void readVector(Vec vector, int index, int iDim) throws IOException {
@@ -1970,9 +1949,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     /**
      * Read vector from dataset
      *
-     * @param vector Store dataset values in this vec
+     * @param vector  Store dataset values in this vec
      * @param indices the indices of vector to read
-     * @param iDim read values along this dimension index
+     * @param iDim    read values along this dimension index
      * @throws IOException if an I/O error occurs
      */
     public void readVector(Vec vector, int[] indices, int iDim) throws IOException {
@@ -1985,9 +1964,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * header
      *
      * @param vector Store data values in this vector object.
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException If the vector doesn't have a location in
-     * header.
+     *                                  header.
      */
     public void readVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -2000,8 +1979,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Write vector to a two dimensional dataset
      *
      * @param vector Store dataset values in this vec
-     * @param index the index of vector to write
-     * @param iDim write values along this dimension index
+     * @param index  the index of vector to write
+     * @param iDim   write values along this dimension index
      * @throws IOException if an I/O error occurs
      */
     public void writeVector(Vec vector, int index, int iDim) throws IOException {
@@ -2016,12 +1995,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * vector is written along the specified dimension. The location at which
      * the vector is written is stored in the vector header.
      *
-     * @param vector the vector to write
+     * @param vector  the vector to write
      * @param indices The location at which to write the vector.
-     * @param iDim Vector is written parallel to this dimension.
-     * @throws IOException if an I/O exception occurs
+     * @param iDim    Vector is written parallel to this dimension.
+     * @throws IOException              if an I/O exception occurs
      * @throws IllegalArgumentException if dataset stores data in a Vec object
-     * (not dataset file)
+     *                                  (not dataset file)
      */
     public void writeVector(Vec vector, int[] indices, int iDim) throws IOException, IllegalArgumentException {
         Location location = getLocation(vector, indices, iDim);
@@ -2044,9 +2023,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Write the vector to the dataset at the location stored in the vector.
      *
      * @param vector the vector to write
-     * @throws IOException if an I/O error occurs
+     * @throws IOException              if an I/O error occurs
      * @throws IllegalArgumentException if dataset stores data in a Vec object
-     * (not dataset file)
+     *                                  (not dataset file)
      */
     public void writeVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -2060,9 +2039,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * written along the dimension specified in the first entry of the dim
      * array.
      *
-     * @param pt index in points where vector should be written.
-     * @param dim Specify the dimension that each entry in the pt array refers
-     * to
+     * @param pt     index in points where vector should be written.
+     * @param dim    Specify the dimension that each entry in the pt array refers
+     *               to
      * @param vector the vector to write
      * @throws IOException if an I/O error occurs
      */
@@ -2158,7 +2137,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         String path = null;
         if (isMemoryFile()) {
             path = file.getCanonicalPath();
-            copyDataset(path, file.getName()+".memtmp");
+            copyDataset(path, file.getName() + ".memtmp");
         }
         return path;
     }
@@ -2167,8 +2146,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Copy dataset to a new file
      *
      * @param newFileName File name of new dataset.
-     * @param key Dataset key.
-     * @throws IOException if an I/O error occurs
+     * @param key         Dataset key.
+     * @throws IOException      if an I/O error occurs
      * @throws DatasetException if an I/O error occured while creating dataset
      */
     public void copyDataset(String newFileName, String key) throws IOException, DatasetException {
@@ -2547,7 +2526,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         dataFile.force();
     }
 
-    public double[] autoPhase(int iDim, boolean firstOrder, int winSize, double ratio, double ph1Limit, IDBaseline2.ThreshMode threshMode) throws IOException {
+    public double[] autoPhase(int iDim, boolean firstOrder, int winSize, double ratio, double ph1Limit, IDBaseline2.ThreshMode threshMode, boolean apply) throws IOException {
         if (!isWritable()) {
             changeWriteMode(true);
         }
@@ -2557,19 +2536,25 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         double dph1 = 0.0;
         if (firstOrder) {
             double[] phases = phaser.getPhase(ph1Limit);
-            phaser.applyPhases2(iDim, phases[0], phases[1]);
+            if (apply) {
+                phaser.applyPhases2(iDim, phases[0], phases[1]);
+            }
             dph0 = phases[0];
             dph1 = phases[1];
         } else {
             dph0 = phaser.getPhaseZero();
-            phaser.applyPhases2(iDim, dph0, 0.0);
+            if (apply) {
+                phaser.applyPhases2(iDim, dph0, 0.0);
+            }
         }
-        setPh0(iDim, dph0);
-        setPh0_r(iDim, dph0);
-        setPh1(iDim, dph1);
-        setPh1_r(iDim, dph1);
-        writeHeader();
-        dataFile.force();
+        if (apply) {
+            setPh0(iDim, dph0);
+            setPh0_r(iDim, dph0);
+            setPh1(iDim, dph1);
+            setPh1_r(iDim, dph1);
+            writeHeader();
+            dataFile.force();
+        }
         return new double[]{dph0, dph1};
     }
 
@@ -2586,7 +2571,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             projections = new Dataset[getNDim()];
         }
         Vec projVec = new Vec(getSizeReal(iDim), getComplex(iDim));
-        projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) +".nv");
+        projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) + ".nv");
         readVector(projVec, 0, iDim);
         projVec.zeros();
         Iterator<Vec> iter = vectors(iDim);

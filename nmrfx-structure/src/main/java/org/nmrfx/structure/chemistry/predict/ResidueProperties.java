@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,6 @@ package org.nmrfx.structure.chemistry.predict;
 import org.nmrfx.chemistry.Residue;
 
 /**
- *
  * @author brucejohnson
  */
 public class ResidueProperties {
@@ -34,12 +33,12 @@ public class ResidueProperties {
      * | Volume 3 | Article 4
      *
      * @param centerResidue calculate score for this residue
-     * @param ppmSet index of ppm set to get experimental shifts from
-     * @param refSet index of ppm set to get random coil values from
+     * @param ppmSet        index of ppm set to get experimental shifts from
+     * @param refSet        index of ppm set to get random coil values from
      * @return the CheZOD score
      */
     public static double calcZIDR(Residue centerResidue,
-            int ppmSet, int refSet) {
+                                  int ppmSet, int refSet) {
         Residue prevResidue = centerResidue.previous;
         Residue nextResidue = centerResidue.next;
 
@@ -74,13 +73,14 @@ public class ResidueProperties {
     }
 
     // L. Canal/Computational Statistics & Data Analysis 48 (2005) 803–808
+
     /**
      * Transform a chi-squared distributed number to a normally distributed
      * number using the method of L. Canal, Computational Statistics & Data
      * Analysis 48 (2005) 803–808
      *
      * @param chiSq the chiSq value to transform
-     * @param n the number of observations
+     * @param n     the number of observations
      * @return a score that is approximately normally distributed.
      */
     public static double normChiSq(double chiSq, int n) {

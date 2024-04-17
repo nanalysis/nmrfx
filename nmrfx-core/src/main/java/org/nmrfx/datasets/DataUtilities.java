@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ public class DataUtilities {
     }
 
     public static boolean writeBytes(RandomAccessFile raFile, byte[] dataBytes, long newDataPos,
-            int length) {
+                                     int length) {
         try {
             //write the data bytes to the data file
             raFile.seek(newDataPos);

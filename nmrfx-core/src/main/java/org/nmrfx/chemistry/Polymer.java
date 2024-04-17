@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,20 +25,14 @@ import static java.util.Objects.requireNonNull;
 
 @PluginAPI("ring")
 public class Polymer extends Entity {
-
-    /**
-     * @return the firstResidue
-     */
-    public Residue getFirstResidue() {
-        return firstResidue;
-    }
-
-    /**
-     * @return the lastResidue
-     */
-    public Residue getLastResidue() {
-        return lastResidue;
-    }
+    private static final String[] CYCLIC_CLOSERS = {
+            "CA", "N", "2.5",
+            "C", "N", "1.32",
+            "C", "H", "2.044",
+            "C", "CA", "2.452",
+            "O", "H", "3.174",
+            "O", "N", "2.271"
+    };
 
     private Map<String, Residue> residues;
     private List<Residue> residueList = new ArrayList<>();
@@ -51,14 +45,6 @@ public class Polymer extends Entity {
     private boolean libraryMode = true;
     ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
     ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
-    static String[] cyclicClosers = {
-        "CA", "N", "2.5",
-        "C", "N", "1.32",
-        "C", "H", "2.044",
-        "C", "CA", "2.452",
-        "O", "H", "3.174",
-        "O", "N", "2.271"
-    };
 
     class PolymerIterator implements Iterator<Residue> {
 
@@ -96,6 +82,21 @@ public class Polymer extends Entity {
         this.name = name;
         this.label = label;
         residues = new HashMap<>();
+    }
+
+
+    /**
+     * @return the firstResidue
+     */
+    public Residue getFirstResidue() {
+        return firstResidue;
+    }
+
+    /**
+     * @return the lastResidue
+     */
+    public Residue getLastResidue() {
+        return lastResidue;
     }
 
     public Iterator<Residue> iterator() {
@@ -372,7 +373,7 @@ public class Polymer extends Entity {
     /**
      * getCyclicConstraints returns a list of constraints necessary to create a
      * cyclic polymer.
-     *
+     * <p>
      * Is called by addCyclicBond in refine.py
      */
     public List<String> getCyclicConstraints() {
@@ -382,18 +383,18 @@ public class Polymer extends Entity {
         if (getLastResidue() != null && getFirstResidue() != null) {
             return constraints;
         }
-        for (int i = 0; i < cyclicClosers.length; i += 3) {
-            Atom atom1 = getLastResidue().getAtom(cyclicClosers[i]);
-            Atom atom2 = getFirstResidue().getAtom(cyclicClosers[i + 1]);
+        for (int i = 0; i < CYCLIC_CLOSERS.length; i += 3) {
+            Atom atom1 = getLastResidue().getAtom(CYCLIC_CLOSERS[i]);
+            Atom atom2 = getFirstResidue().getAtom(CYCLIC_CLOSERS[i + 1]);
             if (atom1 == null) {
-                System.out.println("no atom1 " + cyclicClosers[i]);
+                System.out.println("no atom1 " + CYCLIC_CLOSERS[i]);
                 atom1 = requireNonNull(getLastResidue().getAtom("H1"), "Failed 2 attempts to set atom1.");
             }
             if (atom2 == null) {
-                System.out.println("no atom2 " + cyclicClosers[i + 1]);
+                System.out.println("no atom2 " + CYCLIC_CLOSERS[i + 1]);
                 atom2 = requireNonNull(getFirstResidue().getAtom("H1"), "Failed 2 attempts to set atom2.");
             }
-            String distance = cyclicClosers[i + 2];
+            String distance = CYCLIC_CLOSERS[i + 2];
             String constraint = atom2.getFullName() + " " + atom1.getFullName() + " " + distance;
             constraints.add(constraint);
         }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,9 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  * Finite Impulse Response (FIR) filter. See Oppenheim, "Digital Signal Processing", pp. 468 - 472.
@@ -72,9 +72,9 @@ public class FirFilter {
     /**
      * Constructor
      *
-     * @param factor decimation factor
+     * @param factor     decimation factor
      * @param groupDelay group delay in points, sets number of coefficients
-     * @param type filter type 'lowpass' or 'notch'
+     * @param type       filter type 'lowpass' or 'notch'
      * @throws ProcessingException if a processing error occurs
      */
     public FirFilter(int factor, double groupDelay, String type) throws ProcessingException {
@@ -86,7 +86,7 @@ public class FirFilter {
      *
      * @param factor decimation factor
      * @param ncoefs number of coefficients
-     * @param type filter type 'lowpass' or 'notch'
+     * @param type   filter type 'lowpass' or 'notch'
      * @throws ProcessingException if a processing error occurs
      */
     public FirFilter(int factor, int ncoefs, String type) throws ProcessingException {
@@ -111,9 +111,9 @@ public class FirFilter {
     /**
      * Constructor
      *
-     * @param fc filter cutoff, usually 0.0 &lt; fc &lt; 1.0
+     * @param fc     filter cutoff, usually 0.0 &lt; fc &lt; 1.0
      * @param ncoefs number of coefficients
-     * @param type filter type 'lowpass' or 'notch'
+     * @param type   filter type 'lowpass' or 'notch'
      * @throws ProcessingException if a processing error occurs
      */
     public FirFilter(double fc, int ncoefs, String type) throws ProcessingException {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,32 +17,25 @@
  */
 package org.nmrfx.chemistry.io;
 
-import java.io.BufferedReader;
-
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.util.*;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
+import org.nmrfx.chemistry.constraints.AngleConstraintSet;
+import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
-import org.nmrfx.chemistry.MolFilter;
-import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.file.FileSystems;
+import java.util.*;
+
 /**
- *
  * @author brucejohnson, Martha
  */
 @PluginAPI("ring")
@@ -55,8 +48,6 @@ public class NMRNEFReader {
 
     Map entities = new HashMap();
     boolean hasResonances = false;
-    Map<Long, List<PeakDim>> resMap = new HashMap<>();
-    public static boolean DEBUG = false;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
@@ -298,7 +289,7 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = PeakList.resFactory();
+            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
                 String sequenceCode = (String) sequenceCodeColumn.get(i);
                 String chainCode = (String) chainCodeColumn.get(i);

@@ -5,6 +5,8 @@
  */
 package org.nmrfx.utils;
 
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
@@ -19,12 +21,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.DoubleConsumer;
+import java.util.function.UnaryOperator;
 
 /**
  * @author brucejohnson
@@ -32,8 +37,46 @@ import java.util.*;
 //TODO add annotations once core and utils are merged
 // @PluginAPI({"parametric", "ring"})
 public class GUIUtils {
+    public enum AlertRespones {
+        YES,
+        NO,
+        CANCEL,
+        DELETE,
+        APPEND;
+    }
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
+    public static class FixedDecimalFilter implements UnaryOperator<TextFormatter.Change> {
+
+        @Override
+        public TextFormatter.Change apply(TextFormatter.Change change) {
+            if (change.getControlNewText().matches("-?([0-9]+)?(\\.[0-9]*)?")) {
+                return change;
+            }
+            return null;
+        }
+    }
+    public static class FixedDecimalConverter extends DoubleStringConverter {
+
+        private final int decimalPlaces;
+
+        public FixedDecimalConverter(int decimalPlaces) {
+            this.decimalPlaces = decimalPlaces;
+        }
+
+        @Override
+        public String toString(Double value) {
+            return String.format("%." + decimalPlaces + "f", value);
+        }
+
+        @Override
+        public Double fromString(String valueString) {
+            if (valueString.isEmpty()) {
+                return 0d;
+            }
+            return super.fromString(valueString);
+        }
+    }
 
     private GUIUtils() {
     }
@@ -52,6 +95,20 @@ public class GUIUtils {
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             result = true;
+        }
+        return result;
+    }
+
+    public static AlertRespones deleteAppendCancel(String message) {
+        ButtonType deleteType = new ButtonType("Delete");
+        ButtonType appendType = new ButtonType("Append");
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, deleteType, appendType);
+        AlertRespones result = AlertRespones.CANCEL;
+        Optional<ButtonType> response = alert.showAndWait();
+        if (response.isPresent() && (response.get() == deleteType)) {
+            result = AlertRespones.DELETE;
+        } else if (response.isPresent() && (response.get() == appendType)) {
+            result = AlertRespones.APPEND;
         }
         return result;
     }
@@ -85,7 +142,7 @@ public class GUIUtils {
      * Splits the provided string segment into a list of strings where each string is shorter than the region length.
      * The segment string is split by words unless the region width is smaller than the width of the longest word in the
      * segment. In that case the segment string will be split by character.
-     * If the regionWidth is less than the average character list, the segement string will be returned as a list of
+     * If the regionWidth is less than the average character list, the segment string will be returned as a list of
      * strings containing a single character only.
      *
      * @param regionWidth The width of the display region.
@@ -234,6 +291,19 @@ public class GUIUtils {
         }
     }
 
+    public static void nodeAdjustWidths(List<Node> nodeList) {
+        // Set width of controls within a toolbar to be the same.
+        Optional<Double> width = nodeList.stream().map(node -> node.prefWidth(Region.USE_COMPUTED_SIZE)).max(Double::compare);
+        if (width.isEmpty()) {
+            return;
+        }
+        for (Node node : nodeList) {
+            if (node instanceof Control control) {
+                control.setPrefWidth(width.get());
+            }
+        }
+    }
+
     public static String getPassword() {
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Password");
@@ -287,5 +357,88 @@ public class GUIUtils {
         TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
         field.setTextFormatter(formatter);
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
+    public static void bindSliderField(Slider slider, TextField field, String pattern, double range) {
+        DecimalFormat numberFormat = new DecimalFormat(pattern);
+        FormatStringConverter<Number> converter = new FormatStringConverter<>(numberFormat);
+        TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
+        field.setTextFormatter(formatter);
+        formatter.valueProperty().addListener(e -> resetRange(formatter, slider, range));
+        slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
+
+    private static void resetRange(TextFormatter<Number> formatter, Slider slider, double range) {
+        double formatterValue = formatter.getValue().doubleValue();
+        double sliderValue = slider.getValue();
+        double delta = Math.abs(formatterValue - sliderValue);
+        if (delta > 1.0) {
+            formatterValue = Math.round(formatterValue * 10) / 10.0;
+            double halfRange = range / 2.0;
+            double start = halfRange * Math.round(formatterValue / halfRange) - 2.0 * halfRange;
+            double end = start + 4 * halfRange;
+            slider.setMin(start);
+            slider.setMax(end);
+        }
+        slider.setValue(formatterValue);
+    }
+
+    public static TextField getDoubleTextField(SimpleDoubleProperty prop) {
+        TextField textField = new TextField();
+        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+        textFormatter.valueProperty().bindBidirectional((Property) prop);
+        textField.setTextFormatter(textFormatter);
+        return textField;
+    }
+    public static Color getColor(String colorString) {
+        Color color = null;
+        if (colorString != null && !colorString.isBlank()) {
+            try {
+                color = Color.web(colorString);
+            } catch(Exception e) {
+                color = Color.web("black");
+            }
+        }
+        return color;
+
+    }
+
+    public record SliderRange(double min, double value, double max, double incrValue) {}
+
+    public static Optional<Double> getSliderValue(String name, double x, double y, SliderRange sliderRange,  DoubleConsumer applyValue) {
+        Dialog<Double> dialog = new Dialog<>();
+        dialog.setX(x);
+        dialog.setY(y);
+        dialog.setTitle(name);
+        dialog.setHeaderText("");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+
+        Slider slider = new Slider(sliderRange.min, sliderRange.max, sliderRange.value);
+        slider.setBlockIncrement(sliderRange.incrValue);
+        Label valueLabel = new Label();
+        slider.setMinWidth(200);
+        valueLabel.setMinWidth(80);
+        int nDigits = Math.max(1, (int) Math.ceil(Math.log10(1.0/sliderRange.max))) + 1;
+        String format = "%." + nDigits + "f";
+        valueLabel.setText(String.format(format, sliderRange.value));
+
+        if (applyValue != null) {
+            slider.valueProperty().addListener((a,b,c) -> applyValue.accept(c.doubleValue()));
+        }
+        slider.valueProperty().addListener((a,b,c) -> {
+            valueLabel.setText(String.format(format, c));
+        });
+
+        HBox content = new HBox();
+        content.setAlignment(Pos.CENTER_LEFT);
+        content.setSpacing(10);
+        content.getChildren().addAll(new Label("Value:"), slider, valueLabel);
+        dialog.getDialogPane().setContent(content);
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.APPLY) {
+                return slider.getValue();
+            }
+            return null;
+        });
+        return dialog.showAndWait();
     }
 }

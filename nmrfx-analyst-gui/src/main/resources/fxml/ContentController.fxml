@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.RangeSlider?>
+<?import javafx.scene.control.Accordion?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.ListSelectionView?>
-<VBox xmlns="http://javafx.com/javafx"
+<VBox fx:id="contentVBox"
+      xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.nmrfx.processor.gui.ContentController"
 >
     <children>
-        <ScrollPane fx:id="contentScrollPane" fitToHeight="true" fitToWidth="true" maxWidth="245">
-        <Accordion fx:id="contentAccordion">
-            <panes>
-                <TitledPane text="Datasets">
-                    <VBox>
-                        <children>
-                            <ListSelectionView fx:id="datasetView" orientation="VERTICAL" minHeight="250" prefHeight="400"/>
-                        </children>
-                    </VBox>
-                </TitledPane>
-                <TitledPane text="Peaks">
-                    <VBox>
-                        <children>
-                            <ListSelectionView fx:id="peakView" orientation="VERTICAL" minHeight="250" prefHeight="400"/>
-                        </children>
-                    </VBox>
-                </TitledPane>
-            </panes>
-        </Accordion>
+        <ScrollPane fx:id="contentScrollPane" fitToHeight="true" fitToWidth="true">
+            <Accordion fx:id="contentAccordion">
+                <panes>
+                    <TitledPane fx:id="datasetTitledPane" text="Datasets">
+                        <VBox>
+                            <children>
+                                <ListSelectionView fx:id="datasetView" orientation="VERTICAL" minHeight="250"
+                                                   prefHeight="400"/>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane fx:id="peakTitledPane" text="Peaks">
+                        <VBox>
+                            <children>
+                                <ListSelectionView fx:id="peakView" orientation="VERTICAL" minHeight="250"
+                                                   prefHeight="400"/>
+                            </children>
+                        </VBox>
+                    </TitledPane>
+                </panes>
+            </Accordion>
         </ScrollPane>
     </children>
 </VBox>

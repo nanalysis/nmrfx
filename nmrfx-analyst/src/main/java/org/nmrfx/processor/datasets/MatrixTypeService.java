@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
  * @author brucejohnson
  */
 public class MatrixTypeService {
@@ -255,7 +254,7 @@ public class MatrixTypeService {
                 }
             } catch (InterruptedException ex) {
                 log.error(ex.getMessage(), ex);
-                throw(ex);
+                throw (ex);
             } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
                 errorWhileReadWrite.set(true);

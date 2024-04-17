@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,108 +16,114 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class OperationInfo {
 
     public final static String[] opOrders = {
-        "Cascade-Simulate",
-        "VECREF",
-        "ZEROS",
-        "ONES",
-        "GEN",
-        "RANDN",
-        "RAND",
-        "ADD",
-        "Cascade-FID",
-        "BZ",
-        "TDCOMB",
-        "EA",
-        "DCFID",
-        "FILTER",
-        "SIGN",
-        "Cascade-TD-Solvent",
-        "SUPPRESS",
-        "TDSS",
-        "Cascade-Sampling",
-        "EXTEND",
-        "SCHEDULE",
-        "GRINS",
-        "IST",
-        "ISTMATRIX",
-        "NESTA_L1_EXT",
-        "NESTA_L0_EXT",
-        "NESTA",
-        "LP",
-        "LPR",
-        "Cascade-Apodization",
-        "APODIZE",
-        "BLACKMAN",
-        "EXPD",
-        "KAISER",
-        "SB",
-        "TRI",
-        "TM",
-        "GM",
-        "GMB",
-        "Cascade-Transform",
-        "ZF",
-        "FT",
-        "IFT",
-        "RFT",
-        "REVERSE",
-        "CSHIFT",
-        "SHIFT",
-        "TRIM",
-        "Cascade-FD-Solvent",
-        "FDSS",
-        "Cascade-Phasing",
-        "HFT",
-        "AUTOPHASE",
-        "PHASE",
-        "COMB",
-        "REAL",
-        "IMAG",
-        "MAG",
-        "POWER",
-        "Cascade-Baseline",
-        "BC",
-        "DC",
-        "DCFID",
-        "REGIONS",
-        "AUTOREGIONS",
-        "BCMED",
-        "BCPOLY",
-        "TDPOLY",
-        "BCWHIT",
-        "BCSINE",
-        "GAPSMOOTH",
-        "Cascade-Regions",
-        "BUCKET",
-        "EXTRACT",
-        "Cascade-Measure",
-        "INTEGRATE",
-        "MEASURE",
-        "Cascade-Dataset",
-        "DPHASE",
-        "DEPT",
-        "Cascade-New",
-        "SCRIPT",
-        "CWTD",
-        "DX",
-        "MULT", //"SCRIPT"
+            "Cascade-Simulate",
+            "VECREF",
+            "ZEROS",
+            "ONES",
+            "GEN",
+            "RANDN",
+            "RAND",
+            "ADD",
+            "Cascade-FID",
+            "BZ",
+            "TDCOMB",
+            "EA",
+            "DCFID",
+            "FILTER",
+            "SIGN",
+            "Cascade-TD-Solvent",
+            "SUPPRESS",
+            "TDSS",
+            "Cascade-Sampling",
+            "EXTEND",
+            "SCHEDULE",
+            "GRINS",
+            "IST",
+            "ISTMATRIX",
+            "NESTA_L1_EXT",
+            "NESTA_L0_EXT",
+            "NESTA",
+            "LP",
+            "LPR",
+            "Cascade-Apodization",
+            "Apodization",
+            "EXPD",
+            "GM",
+            "SB",
+            "KAISER",
+            "BLACKMAN",
+            "TRI",
+            "TM",
+            "GMB",
+            "APODIZE",
+            "Cascade-Transform",
+            "ZF",
+            "FT",
+            "IFT",
+            "RFT",
+            "REVERSE",
+            "CSHIFT",
+            "TILT45",
+            "SHIFT",
+            "TRIM",
+            "Cascade-FD-Solvent",
+            "FDSS",
+            "Cascade-Phasing",
+            "HFT",
+            "AUTOPHASE",
+            "PHASE",
+            "COMB",
+            "REAL",
+            "IMAG",
+            "MAG",
+            "POWER",
+            "Cascade-Baseline",
+            "Baseline Correction",
+            "BC",
+            "DC",
+            "DCFID",
+            "REGIONS",
+            "AUTOREGIONS",
+            "BCMED",
+            "BCPOLY",
+            "TDPOLY",
+            "BCWHIT",
+            "BCSINE",
+            "GAPSMOOTH",
+            "Cascade-Regions",
+            "BUCKET",
+            "EXTRACT",
+            "EXTRACTP",
+            "Cascade-Measure",
+            "INTEGRATE",
+            "MEASURE",
+            "Cascade-Dataset",
+            "DPHASE",
+            "DEPT",
+            "Cascade-New",
+            "SCRIPT",
+            "CWTD",
+            "DX",
+            "MULT", //"SCRIPT"
     };
 
     public final static ArrayList<String> opOrderList = new ArrayList<>();
@@ -167,13 +173,20 @@ public class OperationInfo {
         return result;
     }
 
-    public static int getCurrentPosition(List<String> current, String newOp) {
+    public static int getCurrentPosition(List<ProcessingOperationInterface> current, ProcessingOperation newOp) {
+        String newOpName = newOp.getName();
+        return getCurrentPosition(current, newOpName);
+    }
+
+    public static int getCurrentPosition(List<ProcessingOperationInterface> current, String newOpName) {
+        if (newOpName.indexOf("(") != -1) {
+            newOpName = newOpName.substring(0, newOpName.indexOf("("));
+        }
         int index = -1;
-        newOp = trimOp(newOp);
         int iPos = 0;
-        for (String currentOp : current) {
-            currentOp = trimOp(currentOp);
-            if (newOp.equals(currentOp)) {
+        for (ProcessingOperationInterface currentOp : current) {
+            String currentOpName = currentOp.getName();
+            if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
             }
@@ -182,25 +195,32 @@ public class OperationInfo {
         return index;
     }
 
-    public static int getPosition(List<String> current, String newOp) {
+    public static int getPosition(List<ProcessingOperationInterface> current, ProcessingOperationInterface newOp) {
+        String newOpName = newOp.getName();
+        return getPosition(current, newOpName);
+    }
+
+    public static int getPosition(List<ProcessingOperationInterface> current, String newOpName) {
+        if (newOpName.indexOf("(") != -1) {
+            newOpName = newOpName.substring(0, newOpName.indexOf("("));
+        }
         int index = -1;
-        newOp = trimOp(newOp);
         int iPos = 0;
-        for (String currentOp : current) {
-            currentOp = trimOp(currentOp);
-            if (newOp.equals(currentOp)) {
+        for (ProcessingOperationInterface currentOp : current) {
+            String currentOpName = currentOp.getName();
+            if (newOpName.equalsIgnoreCase(currentOpName)) {
                 index = iPos;
                 break;
             }
             iPos++;
         }
         if (index == -1) {
-            int orderIndex = opOrderList.indexOf(newOp);
+            int orderIndex = opOrderList.indexOf(newOpName);
             if (orderIndex != -1) {
                 int i = 0;
-                for (String curOp : current) {
-                    curOp = trimOp(curOp);
-                    int curIndex = opOrderList.indexOf(curOp);
+                for (ProcessingOperationInterface currentOp : current) {
+                    String currentOpName = currentOp.getName();
+                    int curIndex = opOrderList.indexOf(currentOpName);
                     if (curIndex >= orderIndex) {
                         index = i;
                         break;

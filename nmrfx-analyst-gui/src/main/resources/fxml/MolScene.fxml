@@ -1,26 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.ButtonBar?>
-<?import javafx.scene.control.MenuButton?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.TitledPane?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import org.controlsfx.control.*?>
-
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.StatusBar?>
 <BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0"
             styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -30,60 +12,85 @@
         </ToolBar>
     </top>
     <center>
-        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" focusTraversable="false" BorderPane.alignment="CENTER">
+        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" focusTraversable="false"
+                 BorderPane.alignment="CENTER">
             <tabs>
                 <Tab text="3D">
                     <content>
-                        <BorderPane fx:id="molBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                        <BorderPane fx:id="molBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"
+                                    prefWidth="400.0">
                             <top>
                                 <HBox>
                                     <children>
-                                        <MenuButton  mnemonicParsing="false" text="Select">
+                                        <MenuButton mnemonicParsing="false" text="Select">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#selectBackbone" text="Backbone" />
-                                                <MenuItem mnemonicParsing="false" onAction="#selectHeavy" text="Heavy Atoms" />
-                                                <MenuItem mnemonicParsing="false" onAction="#selectAll" text="All Atoms" />
-                                                <MenuItem mnemonicParsing="false" onAction="#selectLigand" text="Ligand Atoms" />
-                                                <MenuItem mnemonicParsing="false" onAction="#selectResidues" text="Residues" />
+                                                <MenuItem mnemonicParsing="false" onAction="#selectBackbone"
+                                                          text="Backbone"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#selectHeavy"
+                                                          text="Heavy Atoms"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#selectAll"
+                                                          text="All Atoms"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#selectLigand"
+                                                          text="Ligand Atoms"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#selectResidues"
+                                                          text="Residues"/>
                                             </items>
                                         </MenuButton>
-                                        <TextField fx:id="selectField" prefWidth="150" />
-                                        <MenuButton  mnemonicParsing="false" text="Display">
+                                        <TextField fx:id="selectField" prefWidth="150"/>
+                                        <MenuButton mnemonicParsing="false" text="Display">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#drawLines" text="Lines" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawSticks" text="Sticks" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawSpheres" text="Spheres" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawTubes" text="Tubes" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawBox" text="Box" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawAxes" text="Axes" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawSVDAxes" text="SVD Axes" />
-                                                <MenuItem mnemonicParsing="false" onAction="#drawRDCAxes" text="RDC Axes" />
+                                                <MenuItem mnemonicParsing="false" onAction="#drawLines" text="Lines"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawSticks" text="Sticks"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawSpheres"
+                                                          text="Spheres"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawTubes" text="Tubes"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawBox" text="Box"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawAxes" text="Axes"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawSVDAxes"
+                                                          text="SVD Axes"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawRDCAxes"
+                                                          text="RDC Axes"/>
                                             </items>
                                         </MenuButton>
-                                        <MenuButton  mnemonicParsing="false" text="View">
+                                        <MenuButton mnemonicParsing="false" text="View">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#centerOnSelection" text="Center on Selection" />
-                                                <MenuItem mnemonicParsing="false" onAction="#resetTransform" text="Reset Transform" />
-                                                <MenuItem mnemonicParsing="false" onAction="#rotateMoleculeSVD" text="Rotate to SVD Axes" />
-                                                <MenuItem mnemonicParsing="false" onAction="#rotateMoleculeRDC" text="Rotate to RDC Axes" />
+                                                <MenuItem mnemonicParsing="false" onAction="#centerOnSelection"
+                                                          text="Center on Selection"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#resetTransform"
+                                                          text="Reset Transform"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#rotateMoleculeSVD"
+                                                          text="Rotate to SVD Axes"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#rotateMoleculeRDC"
+                                                          text="Rotate to RDC Axes"/>
                                             </items>
                                         </MenuButton>
 
-                                        <MenuButton  fx:id="removeMenuButton" mnemonicParsing="false" text="Remove">
+                                        <MenuButton fx:id="removeMenuButton" mnemonicParsing="false" text="Remove">
                                             <items>
                                             </items>
                                         </MenuButton>
-                                        <MenuButton  mnemonicParsing="false" text="Calculate">
+                                        <MenuButton mnemonicParsing="false" text="Calculate">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#calcStructureAction" text="Calc Structure" />
-                                                <MenuItem mnemonicParsing="false" onAction="#refineStructureAction" text="Refine Structure" />
+                                                <MenuItem mnemonicParsing="false" onAction="#to3DAction"
+                                                          text="To3D"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
+                                                          text="Calc Structure"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"
+                                                          text="Refine Structure"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#drawTree"
+                                                          text="Draw Tree"/>
                                             </items>
                                         </MenuButton>
-                                        <MenuButton  mnemonicParsing="false" text="Edit">
+                                        <MenuButton mnemonicParsing="false" text="Constraints">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#deactivateBondAction" text="Deactivate Bond" />
-                                                <MenuItem mnemonicParsing="false" onAction="#activateBondAction" text="Reactivate Bonds" />
-                                                <MenuItem mnemonicParsing="false" onAction="#genPRF" text="Gen PRF" />
+                                                <MenuItem mnemonicParsing="false" onAction="#drawConstraints"
+                                                          text="Show"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addStrongDistanceConstraint"
+                                                          text="Add Strong (3.0)"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addMediumDistanceConstraint"
+                                                          text="Add Medium (4.0)"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#addWeakDistanceConstraint"
+                                                          text="Add Weak (5.0)"/>
                                             </items>
                                         </MenuButton>
 
@@ -100,15 +107,25 @@
                 </Tab>
                 <Tab text="Secondary Structure">
                     <content>
-                        <BorderPane fx:id="ssBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                        <BorderPane fx:id="ssBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"
+                                    prefWidth="400.0">
                             <top>
-                                <HBox   HBox.hgrow="ALWAYS">
+                                <HBox HBox.hgrow="ALWAYS">
                                     <children>
                                         <ButtonBar HBox.hgrow="ALWAYS">
                                             <buttons>
-                                                <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0" prefWidth="87.0" text="Draw" />
-                                                <Button mnemonicParsing="false" onAction="#ssFrom3D" prefHeight="27.0" prefWidth="87.0" text="From3D" />
-                                                <Button mnemonicParsing="false" onAction="#ssTo3D" prefHeight="27.0" prefWidth="87.0" text="To3D" />
+                                                <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0"
+                                                        prefWidth="87.0" text="Draw"/>
+                                                <MenuButton mnemonicParsing="false" text="Sec. Structure">
+                                                    <items>
+                                                        <MenuItem mnemonicParsing="false" onAction="#ssFrom3D"
+                                                                  text="From 3D"/>
+                                                        <MenuItem mnemonicParsing="false" onAction="#seqTo2D"
+                                                                  text="Predict 2D"/>
+                                                        <MenuItem mnemonicParsing="false" onAction="#ssTo3D"
+                                                                  text="To 3D "/>
+                                                    </items>
+                                                </MenuButton>
                                                 <MenuButton fx:id="atomMenu" text="Atoms"/>
                                                 <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
                                                 <MenuButton fx:id="modeMenuButton" text="Modes"/>
@@ -121,11 +138,18 @@
                             </top>
                             <center>
                             </center>
+                            <left>
+                                <VBox>
+                                    <Button text="-" onAction="#zoomOut"/>
+                                    <Button text="+" onAction="#zoomIn"/>
+
+                                </VBox>
+                            </left>
                             <bottom>
-                                <VBox   HBox.hgrow="ALWAYS">
+                                <VBox HBox.hgrow="ALWAYS">
                                     <children>
-                                        <Pane fx:id="dotBracketPane"  minHeight="40" HBox.hgrow="ALWAYS"/>
-                                        <TextField fx:id="dotBracketField"  HBox.hgrow="ALWAYS"/>
+                                        <Pane fx:id="dotBracketPane" minHeight="40" HBox.hgrow="ALWAYS"/>
+                                        <TextField fx:id="dotBracketField" HBox.hgrow="ALWAYS"/>
                                     </children>
                                 </VBox>
                             </bottom>
@@ -134,13 +158,15 @@
                 </Tab>
                 <Tab text="Ligands">
                     <content>
-                        <BorderPane fx:id="ligandBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                        <BorderPane fx:id="ligandBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"
+                                    prefWidth="400.0">
                             <top>
-                                <HBox   HBox.hgrow="ALWAYS">
+                                <HBox HBox.hgrow="ALWAYS">
                                     <children>
                                         <ButtonBar HBox.hgrow="ALWAYS">
                                             <buttons>
-                                                <Button mnemonicParsing="false" onAction="#drawLigand" prefHeight="27.0" prefWidth="87.0" text="Draw" />
+                                                <Button mnemonicParsing="false" onAction="#drawLigand" prefHeight="27.0"
+                                                        prefWidth="87.0" text="Draw"/>
                                             </buttons>
                                         </ButtonBar>
                                     </children>

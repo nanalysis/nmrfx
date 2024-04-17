@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,16 +19,17 @@ package org.nmrfx.processor.operations;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
-public class Schedule extends Operation {
+public class Schedule extends MatrixOperation {
 
     private static SampleSchedule schedule = null;
     private final double fraction;
@@ -37,7 +38,6 @@ public class Schedule extends Operation {
     private final String fileName;
 
     /**
-     *
      * @param fraction The fraction of points to keep.
      */
     public Schedule(double fraction, boolean endOnly, String fileName) {
@@ -55,7 +55,7 @@ public class Schedule extends Operation {
     public Operation eval(Vec vector) throws ProcessingException {
         if ((fileName != null) && !fileName.equals("")) {
             if (schedule == null) {
-                schedule = new SampleSchedule(fileName, false);
+                schedule = new SampleSchedule(fileName, false, false);
             }
             if (schedule.reloadFile(fileName, vector.getSize())) {
                 zero_samples = null;
@@ -74,14 +74,24 @@ public class Schedule extends Operation {
         return this;
     }
 
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if ((fileName != null) && !fileName.isEmpty()) {
+            if (schedule == null) {
+                schedule = new SampleSchedule(fileName, false, false);
+            }
+            MatrixND matrixND = (MatrixND) matrix;
+            matrixND.schedule(schedule);
+        }
+        return this;
+    }
+
     /**
      * Calculate inverse list of SampleSchedule. For 2D only.
      *
      * @param vsize
-     * @see Ist#zero_samples
      * @see SampleSchedule
      * @see SampleSchedule#getSamples
-     * @see SampleSchedule#v_samples
      */
     private void calcZeroes(int vsize) {
         int[][] samples = schedule.getSamples();
@@ -105,7 +115,6 @@ public class Schedule extends Operation {
     /**
      * Zero (or rezero) a vector with inverse samples.
      *
-     * @param input
      * @see Vec
      * @see #calcZeroes
      */

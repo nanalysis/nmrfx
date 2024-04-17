@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.optimization;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StreamTokenizer;
@@ -24,23 +26,22 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * Jama = Java Matrix class.
- * <P>
+ * <p>
  * The Java Matrix Class provides the fundamental operations of numerical linear algebra. Various constructors create
  * Matrices from two dimensional arrays of double precision floating point numbers. Various "gets" and "sets" provide
  * access to submatrices and matrix elements. Several methods implement basic matrix arithmetic, including matrix
  * addition and multiplication, matrix norms, and element-by-element array operations. Methods for reading and printing
  * matrices are also included. All the operations in this version of the Matrix Class involve real matrices. Complex
  * matrices may be handled in a future version.
- * <P>
+ * <p>
  * Five fundamental matrix decompositions, which consist of pairs or triples of matrices, permutation vectors, and the
  * like, produce results in five decomposition classes. These decompositions are accessed by the Matrix class to compute
  * solutions of simultaneous linear equations, determinants, inverses and other matrix functions. The five
  * decompositions are:
- * <P>
+ * <p>
  * <UL>
  * <LI>Cholesky Decomposition of symmetric, positive definite matrices.
  * <LI>LU Decomposition of rectangular matrices.
@@ -50,9 +51,9 @@ import org.apache.commons.math3.util.FastMath;
  * </UL>
  * <DL>
  * <DT><B>Example of use:</B></DT>
- * <P>
+ * <p>
  * <DD>Solve a linear system A x = b and compute the residual norm, ||b - A x||.
- * <P>
+ * <p>
  * <
  * PRE>
  * double[][] vals = {{1.,2.,3},{4.,5.,6.},{7.,8.,10.}}; Matrix A = new Matrix(vals); Matrix b = Matrix.random(3,1);
@@ -92,6 +93,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
     /* ------------------------
      Constructors
      * ------------------------ */
+
     /**
      * Construct an m-by-n matrix of zeros.
      *
@@ -127,7 +129,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * Construct a matrix from a 2-D array.
      *
      * @param A Two-dimensional array of doubles.
-     * @exception IllegalArgumentException All rows must have the same length
+     * @throws IllegalArgumentException All rows must have the same length
      * @see #constructWithCopy
      */
     public Matrix(double[][] A) {
@@ -161,8 +163,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * Construct a matrix from a one-dimensional packed array
      *
      * @param vals One-dimensional array of doubles, packed by columns (ala Fortran).
-     * @param m Number of rows.
-     * @exception IllegalArgumentException Array length must be a multiple of m.
+     * @param m    Number of rows.
+     * @throws IllegalArgumentException Array length must be a multiple of m.
      */
     public Matrix(double[] vals, int m) {
         this.m = m;
@@ -185,11 +187,12 @@ public class Matrix implements Cloneable, java.io.Serializable {
     /* ------------------------
      Public Methods
      * ------------------------ */
+
     /**
      * Construct a matrix from a copy of a 2-D array.
      *
      * @param A Two-dimensional array of doubles.
-     * @exception IllegalArgumentException All rows must have the same length
+     * @throws IllegalArgumentException All rows must have the same length
      */
     public static Matrix constructWithCopy(double[][] A) {
         int m = A.length;
@@ -317,8 +320,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
      *
      * @param i Row index.
      * @param j Column index.
-     * @return A(i,j)
-     * @exception ArrayIndexOutOfBoundsException
+     * @return A(i, j)
+     * @throws ArrayIndexOutOfBoundsException
      */
     public double get(int i, int j) {
         return A[i][j];
@@ -331,8 +334,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * @param i1 Final row index
      * @param j0 Initial column index
      * @param j1 Final column index
-     * @return A(i0:i1,j0:j1)
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @return A(i0 : i1, j0 : j1)
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public Matrix getMatrix(int i0, int i1, int j0, int j1) {
         Matrix X = new Matrix(i1 - i0 + 1, j1 - j0 + 1);
@@ -356,8 +359,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
      *
      * @param r Array of row indices.
      * @param c Array of column indices.
-     * @return A(r(:),c(:))
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @return A(r ( :), c(:))
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public Matrix getMatrix(int[] r, int[] c) {
         Matrix X = new Matrix(r.length, c.length);
@@ -381,9 +384,9 @@ public class Matrix implements Cloneable, java.io.Serializable {
      *
      * @param i0 Initial row index
      * @param i1 Final row index
-     * @param c Array of column indices.
-     * @return A(i0:i1,c(:))
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @param c  Array of column indices.
+     * @return A(i0 : i1, c ( :))
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public Matrix getMatrix(int i0, int i1, int[] c) {
         Matrix X = new Matrix(i1 - i0 + 1, c.length);
@@ -405,11 +408,11 @@ public class Matrix implements Cloneable, java.io.Serializable {
     /**
      * Get a submatrix.
      *
-     * @param r Array of row indices.
+     * @param r  Array of row indices.
      * @param i0 Initial column index
      * @param i1 Final column index
-     * @return A(r(:),j0:j1)
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @return A(r ( :), j0:j1)
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public Matrix getMatrix(int[] r, int j0, int j1) {
         Matrix X = new Matrix(r.length, j1 - j0 + 1);
@@ -434,7 +437,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * @param i Row index.
      * @param j Column index.
      * @param s A(i,j).
-     * @exception ArrayIndexOutOfBoundsException
+     * @throws ArrayIndexOutOfBoundsException
      */
     public void set(int i, int j, double s) {
         A[i][j] = s;
@@ -447,8 +450,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * @param i1 Final row index
      * @param j0 Initial column index
      * @param j1 Final column index
-     * @param X A(i0:i1,j0:j1)
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @param X  A(i0:i1,j0:j1)
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public void setMatrix(int i0, int i1, int j0, int j1, Matrix X) {
         try {
@@ -468,7 +471,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * @param r Array of row indices.
      * @param c Array of column indices.
      * @param X A(r(:),c(:))
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public void setMatrix(int[] r, int[] c, Matrix X) {
         try {
@@ -485,11 +488,11 @@ public class Matrix implements Cloneable, java.io.Serializable {
     /**
      * Set a submatrix.
      *
-     * @param r Array of row indices.
+     * @param r  Array of row indices.
      * @param j0 Initial column index
      * @param j1 Final column index
-     * @param X A(r(:),j0:j1)
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @param X  A(r(:),j0:j1)
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public void setMatrix(int[] r, int j0, int j1, Matrix X) {
         try {
@@ -508,9 +511,9 @@ public class Matrix implements Cloneable, java.io.Serializable {
      *
      * @param i0 Initial row index
      * @param i1 Final row index
-     * @param c Array of column indices.
-     * @param X A(i0:i1,c(:))
-     * @exception ArrayIndexOutOfBoundsException Submatrix indices
+     * @param c  Array of column indices.
+     * @param X  A(i0:i1,c(:))
+     * @throws ArrayIndexOutOfBoundsException Submatrix indices
      */
     public void setMatrix(int i0, int i1, int[] c, Matrix X) {
         try {
@@ -854,7 +857,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
      *
      * @param B another matrix
      * @return Matrix product, A * B
-     * @exception IllegalArgumentException Matrix inner dimensions must agree.
+     * @throws IllegalArgumentException Matrix inner dimensions must agree.
      */
     public Matrix times(Matrix B) {
         if (B.m != n) {
@@ -955,8 +958,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * Print the matrix to the output stream. Line the elements up in columns with a Fortran-like 'Fw.d' style format.
      *
      * @param output Output stream.
-     * @param w Column width.
-     * @param d Number of digits after the decimal.
+     * @param w      Column width.
+     * @param d      Number of digits after the decimal.
      */
     public void print(PrintWriter output, int w, int d) {
         DecimalFormat format = new DecimalFormat();
@@ -974,7 +977,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
      * NumberFormat that is set to US Locale.
      *
      * @param format A Formatting object for individual elements.
-     * @param width Field width for each column.
+     * @param width  Field width for each column.
      * @see java.text.DecimalFormat#setDecimalFormatSymbols
      */
     public void print(NumberFormat format, int width) {
@@ -985,6 +988,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
     // Since it doesn't pad on the left, the elements will come out different
     // widths.  Consequently, we'll pass the desired column width in as an
     // argument and do the extra padding ourselves.
+
     /**
      * Print the matrix to the output stream. Line the elements up in columns. Use the format object, and right justify
      * within columns of width characters. Note that is the matrix is to be read back in, you probably will want to use
@@ -992,7 +996,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
      *
      * @param output the output stream.
      * @param format A formatting object to format the matrix elements
-     * @param width Column width.
+     * @param width  Column width.
      * @see java.text.DecimalFormat#setDecimalFormatSymbols
      */
     public void print(PrintWriter output, NumberFormat format, int width) {
@@ -1093,6 +1097,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
     /* ------------------------
      Private Methods
      * ------------------------ */
+
     /**
      * Check if size(A) == size(B) *
      */

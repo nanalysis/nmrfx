@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
@@ -227,7 +226,8 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             public Number getValue() {
                 try {
                     return sourceClass.getConstructor(String.class).newInstance(getEditor().getText());
-                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
+                         InvocationTargetException | NoSuchMethodException | SecurityException e) {
                     log.warn(e.getMessage(), e);
                     return null;
                 }

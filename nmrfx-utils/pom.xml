@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.3.4-SNAPSHOT</version>
+        <version>11.4.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.3.4-SNAPSHOT</version>
+                <version>11.4.8-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -37,6 +37,14 @@
         <dependency>
             <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-javafx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-materialdesign2-pack</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
@@ -84,22 +92,6 @@
                 <version>2.5</version>
                 <configuration>
                     <generateBackupPoms>false</generateBackupPoms>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.4</version>
-                <configuration>
-                    <mainClass>HelloFX</mainClass>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <configuration>
-                    <mainClass>org.nmrfx.chart.PlotApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

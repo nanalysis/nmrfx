@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,6 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -56,6 +55,10 @@ public class BcPoly extends Operation {
         }
 
         boolean[] isInSignalRegion = vector.getSignalRegion();
+        if ((isInSignalRegion == null) || (isInSignalRegion.length <= 4)) {
+            vector.calcBaseLineRegions();
+            isInSignalRegion = vector.getSignalRegion();
+        }
 
         if ((isInSignalRegion != null) && (isInSignalRegion.length > 4)) {
             double[] reVec = new double[nRegions];

@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.3.4-SNAPSHOT</version>
+        <version>11.4.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.3.4-SNAPSHOT</version>
+                <version>11.4.8-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -29,17 +29,17 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>11.3.4-SNAPSHOT</version>
+            <version>11.4.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-utils</artifactId>
-            <version>11.3.4-SNAPSHOT</version>
+            <version>11.4.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-structure</artifactId>
-            <version>11.3.4-SNAPSHOT</version>
+            <version>11.4.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.nanalysis</groupId>
@@ -90,28 +90,12 @@
             <artifactId>janino</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-interpolation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-io</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacpp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>openblas-platform</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>arpack-ng-platform</artifactId>
         </dependency>
         <dependency>
             <groupId>org.python</groupId>

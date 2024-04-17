@@ -8,7 +8,6 @@ import org.nmrfx.chemistry.Residue;
 import org.nmrfx.peaks.*;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import smile.clustering.KMeans;
-import smile.math.MathEx;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -17,14 +16,13 @@ import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
 import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpinSystem {
     static final List<String> systemLoopTags = List.of("ID", "Spectral_peak_list_ID", "Peak_ID",
             "Confirmed_previous_ID", "Confirmed_next_ID", "Fragment_ID", "Fragment_index");
     static final List<String> peakLoopTags = List.of("ID", "Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID", "Match_score");
-    static final List<String> fragmentLoopTags = List.of("ID",  "Polymer_ID", "First_residue_ID" , "Residue_count", "Score");
+    static final List<String> fragmentLoopTags = List.of("ID", "Polymer_ID", "First_residue_ID", "Residue_count", "Score");
     static final Map<Integer, SpinSystem> peakToSpinSystemMap = new HashMap<>();
 
     SpinSystems spinSystems;
@@ -232,7 +230,7 @@ public class SpinSystem {
     }
 
     public static Optional<SpinSystem> spinSystemFromPeak(Peak peak) {
-        return  Optional.ofNullable(peakToSpinSystemMap.get(peak.getIdNum()));
+        return Optional.ofNullable(peakToSpinSystemMap.get(peak.getIdNum()));
     }
 
     public Peak getRootPeak() {
@@ -874,7 +872,7 @@ public class SpinSystem {
 
     }
 
-    void updateSpinSystem() {
+    public void updateSpinSystem() {
         purgeDeleted();
         List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
         for (int i = 0; i < ATOM_TYPES.length; i++) {
@@ -907,13 +905,13 @@ public class SpinSystem {
 
     public boolean userFieldsSet() {
         boolean userFieldSet = false;
-        for (PeakMatch match : peakMatches ) {
+        for (PeakMatch match : peakMatches) {
             Peak peak = match.peak;
             for (PeakDim peakDim : peak.getPeakDims()) {
-               if (!peakDim.getUser().isBlank()) {
-                   userFieldSet = true;
-                   break;
-               }
+                if (!peakDim.getUser().isBlank()) {
+                    userFieldSet = true;
+                    break;
+                }
             }
             if (userFieldSet) {
                 break;
@@ -926,7 +924,7 @@ public class SpinSystem {
         StringBuilder sBuilder = new StringBuilder();
         String linkDim = RunAbout.getNDimName(rootPeak.getPeakList()); // fixme
         List<Peak> linkedPeaks = PeakList.getLinks(rootPeak,
-                rootPeak.getPeakList().getSpectralDim(linkDim).getDataDim());
+                rootPeak.getPeakList().getSpectralDim(linkDim).getIndex());
         for (Peak peak : linkedPeaks) {
             for (PeakDim peakDim : peak.getPeakDims()) {
                 peakDim.setUser("");
@@ -981,7 +979,7 @@ public class SpinSystem {
         boolean ok = false;
         int nMatch = 0;
         boolean[] matched = new boolean[ATOM_TYPES.length];
-        for (int i =0;i<ATOM_TYPES.length;i++) {
+        for (int i = 0; i < ATOM_TYPES.length; i++) {
             double vA = getValue(idxA, i);
             double vB = spinSysB.getValue(idxB, i);
             double tolA = tols[i];
@@ -1053,11 +1051,12 @@ public class SpinSystem {
             }
             i++;
         }
+
         KMeans kMeans = KMeans.lloyd(values, 2);
-        int[] labels = kMeans.y;
-        double[][] centroids = kMeans.centroids;
-        double dis0 = MathEx.norm(centroids[0]);
-        double dis1 = MathEx.norm(centroids[1]);
+        double[][] centroids = kMeans.centroids();
+        int[] labels = kMeans.getClusterLabel();
+        double dis0 = smile.math.Math.norm(centroids[0]);
+        double dis1 = smile.math.Math.norm(centroids[1]);
         int origCluster;
         int newCluster;
         if (dis0 < dis1) {
@@ -1124,10 +1123,10 @@ public class SpinSystem {
         double sumsS = 0.0;
         spinMatchP.addAll(spinSystems.compare(this, true));
         spinMatchS.addAll(spinSystems.compare(this, false));
-        for (var match:spinMatchP) {
+        for (var match : spinMatchP) {
             sumsP += match.score;
         }
-        for (var match:spinMatchS) {
+        for (var match : spinMatchS) {
             sumsS += match.score;
         }
 
@@ -1154,13 +1153,13 @@ public class SpinSystem {
     }
 
     private void removeMatches(SpinSystem spinSys) {
-        for (int i=spinMatchP.size() - 1;i>=0;i--) {
+        for (int i = spinMatchP.size() - 1; i >= 0; i--) {
             var match = spinMatchP.get(i);
             if (match.getSpinSystemA() == spinSys) {
                 spinMatchP.remove(i);
             }
         }
-        for (int i=spinMatchS.size() - 1;i>=0;i--) {
+        for (int i = spinMatchS.size() - 1; i >= 0; i--) {
             var match = spinMatchS.get(i);
             if (match.getSpinSystemB() == spinSys) {
                 spinMatchS.remove(i);
@@ -1169,21 +1168,21 @@ public class SpinSystem {
     }
 
     public void delete() {
-        for (var spinMatch:spinMatchP) {
+        for (var spinMatch : spinMatchP) {
             var spinA = spinMatch.getSpinSystemA();
             spinA.removeMatches(this);
         }
-        for (var spinMatch:spinMatchS) {
+        for (var spinMatch : spinMatchS) {
             var spinB = spinMatch.getSpinSystemB();
             spinB.removeMatches(this);
         }
         if (confirmP.isPresent()) {
             var match = confirmP.get();
-            match.getSpinSystemA().unconfirm(match,false);
+            match.getSpinSystemA().unconfirm(match, false);
         }
         if (confirmS.isPresent()) {
             var match = confirmS.get();
-            match.getSpinSystemB().unconfirm(match,false);
+            match.getSpinSystemB().unconfirm(match, false);
         }
         for (var peakMatch : peakMatches) {
             peakMatch.getPeak().delete();
@@ -1237,9 +1236,10 @@ public class SpinSystem {
             }
         }
     }
+
     private static void extendNext(SpinSystem startSys, double minScore) {
         SpinSystem spinSys = startSys;
-        while(spinSys.confirmS.isEmpty()) {
+        while (spinSys.confirmS.isEmpty()) {
             if (spinSys.getMatchToNext().isEmpty()) {
                 break;
             }
@@ -1258,7 +1258,7 @@ public class SpinSystem {
         }
     }
 
-     void assignPeaksInSystem(Residue residue) {
+    void assignPeaksInSystem(Residue residue) {
         for (var peakMatch : peakMatches()) {
             for (var peakDim : peakMatch.getPeak().getPeakDims()) {
                 Optional<Atom> atomOpt = AtomResPattern.setLabelFromUserField(peakDim, residue);
@@ -1291,7 +1291,7 @@ public class SpinSystem {
     }
 
     int getPeakSTARString(StringBuilder sBuilder, int i) {
-        for (PeakMatch match:peakMatches) {
+        for (PeakMatch match : peakMatches) {
             sBuilder.append(String.format("%4d %4d %2d %3d %10.7f\n", i++, getId(), match.peak.getPeakList().getId(), match.peak.getIdNum(), match.prob));
         }
         return i;

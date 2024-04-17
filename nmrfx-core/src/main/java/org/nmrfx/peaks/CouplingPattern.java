@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,19 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
 import org.nmrfx.utilities.Format;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class CouplingPattern extends Coupling {
@@ -50,6 +50,13 @@ public class CouplingPattern extends Coupling {
         }
     }
 
+    CouplingPattern(final Multiplet multiplet, double intensity, CouplingItem[] couplingItems) {
+        this.multiplet = multiplet;
+        this.intensity = intensity;
+        this.couplingItems = new CouplingItem[couplingItems.length];
+        System.arraycopy(couplingItems, 0, this.couplingItems, 0, couplingItems.length);
+    }
+
     CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity, final double[] sin2thetas) {
         this.multiplet = multiplet;
 
@@ -66,7 +73,7 @@ public class CouplingPattern extends Coupling {
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
-    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types,  final List<Double> sin2thetas, final double intensity) {
+    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types, final List<Double> sin2thetas, final double intensity) {
         this.multiplet = multiplet;
 
         couplingItems = new CouplingItem[values.size()];
@@ -84,10 +91,16 @@ public class CouplingPattern extends Coupling {
     }
 
     @Override
+    Coupling copy(Multiplet multiplet) {
+        CouplingPattern couplingPattern = new CouplingPattern(multiplet, this.intensity, this.couplingItems);
+        return couplingPattern;
+    }
+
+    @Override
     public String getMultiplicity() {
         StringBuilder sBuilder = new StringBuilder();
         for (CouplingItem cItem : couplingItems) {
-            int index = cItem.getNSplits() - 1;
+            int index = cItem.nSplits() - 1;
             if ((index >= COUPLING_CHARS.length()) || (index < 1)) {
                 sBuilder.append('m');
             } else {
@@ -109,7 +122,7 @@ public class CouplingPattern extends Coupling {
     public double getValueAt(int i) {
         double value = 0.0;
         if (i < couplingItems.length) {
-            value = couplingItems[i].getCoupling();
+            value = couplingItems[i].coupling();
         }
         return value;
     }
@@ -117,7 +130,7 @@ public class CouplingPattern extends Coupling {
     public int getNValue(int i) {
         int nValue = 0;
         if (i < couplingItems.length) {
-            nValue = couplingItems[i].getNSplits();
+            nValue = couplingItems[i].nSplits();
         }
         return nValue;
     }
@@ -126,7 +139,7 @@ public class CouplingPattern extends Coupling {
         double[] values = new double[couplingItems.length];
         int i = 0;
         for (CouplingItem couplingItem : couplingItems) {
-            values[i++] = couplingItem.getCoupling();
+            values[i++] = couplingItem.coupling();
         }
         return values;
     }
@@ -134,7 +147,7 @@ public class CouplingPattern extends Coupling {
     public double getSin2Theta(int i) {
         double value = 0.0;
         if (i < couplingItems.length) {
-            value = couplingItems[i].getSin2Theta();
+            value = couplingItems[i].sin2Theta();
         }
         return value;
     }
@@ -143,7 +156,7 @@ public class CouplingPattern extends Coupling {
         double[] values = new double[couplingItems.length];
         int i = 0;
         for (CouplingItem couplingItem : couplingItems) {
-            values[i++] = couplingItem.getSin2Theta();
+            values[i++] = couplingItem.sin2Theta();
         }
         return values;
     }
@@ -152,7 +165,7 @@ public class CouplingPattern extends Coupling {
         int[] n = new int[couplingItems.length];
         int i = 0;
         for (CouplingItem couplingItem : couplingItems) {
-            n[i++] = couplingItem.getNSplits();
+            n[i++] = couplingItem.nSplits();
         }
         return n;
     }
@@ -173,11 +186,11 @@ public class CouplingPattern extends Coupling {
                 sbuf.append(" ");
             }
 
-            sbuf.append(String.format("%.2f", couplingItems[i].getCoupling()));
+            sbuf.append(String.format("%.2f", couplingItems[i].coupling()));
             sbuf.append(" ");
-            sbuf.append(couplingItems[i].getNSplits() - 1);
+            sbuf.append(couplingItems[i].nSplits() - 1);
             sbuf.append(" ");
-            sbuf.append(String.format("%.2f", couplingItems[i].getSin2Theta()));
+            sbuf.append(String.format("%.2f", couplingItems[i].sin2Theta()));
         }
         return sbuf.toString();
     }
@@ -191,7 +204,7 @@ public class CouplingPattern extends Coupling {
                 sbuf.append(" ");
             }
 
-            sbuf.append(Format.format1(couplingItems[i].getCoupling()));
+            sbuf.append(Format.format1(couplingItems[i].coupling()));
         }
 
         return sbuf.toString();
@@ -204,17 +217,17 @@ public class CouplingPattern extends Coupling {
                 newValue = minValue;
             }
             if ((iCoupling - 1) >= 0) {
-                if (newValue > (couplingItems[iCoupling - 1].getCoupling() - minValue)) {
-                    newValue = couplingItems[iCoupling - 1].getCoupling() - minValue;
+                if (newValue > (couplingItems[iCoupling - 1].coupling() - minValue)) {
+                    newValue = couplingItems[iCoupling - 1].coupling() - minValue;
                 }
             }
             if ((iCoupling + 1) < couplingItems.length) {
-                if (newValue < (couplingItems[iCoupling + 1].getCoupling() + minValue)) {
-                    newValue = couplingItems[iCoupling + 1].getCoupling() + minValue;
+                if (newValue < (couplingItems[iCoupling + 1].coupling() + minValue)) {
+                    newValue = couplingItems[iCoupling + 1].coupling() + minValue;
                 }
             }
             CouplingItem oldItem = couplingItems[iCoupling];
-            CouplingItem newItem = new CouplingItem(newValue, oldItem.getSin2Theta(), oldItem.getNSplits());
+            CouplingItem newItem = new CouplingItem(newValue, oldItem.sin2Theta(), oldItem.nSplits());
             couplingItems[iCoupling] = newItem;
         }
     }
@@ -224,7 +237,7 @@ public class CouplingPattern extends Coupling {
         List<AbsMultipletComponent> comps = new ArrayList<>();
         int nFreqs = 1;
         for (CouplingItem couplingItem : couplingItems) {
-            nFreqs *= couplingItem.getNSplits();
+            nFreqs *= couplingItem.nSplits();
         }
         double[] freqs = new double[nFreqs];
         double[] jAmps = new double[nFreqs];
@@ -249,7 +262,7 @@ public class CouplingPattern extends Coupling {
         List<RelMultipletComponent> comps = new ArrayList<>();
         int nFreqs = 1;
         for (CouplingItem couplingItem : couplingItems) {
-            nFreqs *= couplingItem.getNSplits();
+            nFreqs *= couplingItem.nSplits();
         }
         double[] freqs = new double[nFreqs];
         double[] jAmps = new double[nFreqs];
@@ -280,13 +293,13 @@ public class CouplingPattern extends Coupling {
         }
         Arrays.sort(cplItem);
         final double smallCoup = 0.01;
-        freqs[0] = cplItem[0].getFrequency();
+        freqs[0] = cplItem[0].freq();
         jAmps[0] = 1.0;
         for (int i = 0; i < nCouplings; i++) {
-            double jCoup = cplItem[i].getCoupling();
-            double sin2Theta = cplItem[i].getSin2Theta();
-            int nSplits = cplItem[i].getNSplits();
-            int last = (cplItem[i].getNSplits() * current) - 1;
+            double jCoup = cplItem[i].coupling();
+            double sin2Theta = cplItem[i].sin2Theta();
+            int nSplits = cplItem[i].nSplits();
+            int last = (cplItem[i].nSplits() * current) - 1;
             for (int j = 0; j < current; j++) {
                 double offset = jCoup * ((nSplits / 2.0) - 0.5);
                 for (int k = 0; k < nSplits; k++) {
@@ -316,7 +329,7 @@ public class CouplingPattern extends Coupling {
 
         if ((couplingItems != null) && (couplingItems.length > 0)
                 && (splitCount != null)) {
-            if ((couplingItems.length > 1) || (couplingItems[0].getCoupling() != 0.0)) {
+            if ((couplingItems.length > 1) || (couplingItems[0].coupling() != 0.0)) {
                 PeakDim peakDim = multiplet.getPeakDim();
                 double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
                 int nFreqs = 1;
@@ -334,14 +347,14 @@ public class CouplingPattern extends Coupling {
                     int last = (splitCount[i] * current) - 1;
 
                     for (int j = 0; j < current; j++) {
-                        double offset = (couplingItems[i].getCoupling() / sf) * ((splitCount[i] / 2.0)
+                        double offset = (couplingItems[i].coupling() / sf) * ((splitCount[i] / 2.0)
                                 - 0.5);
                         double origin = freqs[current - j - 1];
                         for (int k = 0; k < splitCount[i]; k++) {
                             double freq = freqs[current - j - 1] + offset;
                             freqs[last--] = freq;
                             lines.add(new TreeLine(origin, i * 1.0, -freq, i * 1.0));
-                            offset -= (couplingItems[i].getCoupling() / sf);
+                            offset -= (couplingItems[i].coupling() / sf);
                         }
                     }
 

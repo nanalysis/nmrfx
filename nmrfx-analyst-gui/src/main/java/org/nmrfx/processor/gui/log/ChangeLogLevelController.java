@@ -32,6 +32,7 @@ public class ChangeLogLevelController implements Initializable, StageBasedContro
 
     /**
      * Creates a new ChangeLogLevelController
+     *
      * @param parentStage The parent stage of the new ChangeLogLevelController
      * @return ChangeLogLevelController
      */
@@ -127,8 +128,9 @@ public class ChangeLogLevelController implements Initializable, StageBasedContro
 
     /**
      * Sets the log level and refreshes the custom loggers in the table.
+     *
      * @param loggerName The name of the logger to set the level for.
-     * @param newLevel The new LogLevel to use.
+     * @param newLevel   The new LogLevel to use.
      */
     private void setLogLevel(String loggerName, LogLevel newLevel) {
         Log.setLogLevel(loggerName, newLevel);

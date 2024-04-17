@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("autoscript")
@@ -38,7 +37,7 @@ public class RefInfo {
         }
         return arraySizes;
     }
-    
+
     public void setDirectRef(String value) {
         directRef = value;
     }

@@ -1,11 +1,11 @@
 package org.nmrfx.structure.chemistry.miner;
 
-import java.util.*;
-
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.IAtom;
 import org.nmrfx.chemistry.IBond;
-import org.nmrfx.chemistry.Atom;
+
+import java.util.*;
 
 public class BreadthFirstIterator implements Iterator {
 
@@ -30,7 +30,7 @@ public class BreadthFirstIterator implements Iterator {
     void setupBondedAtoms() {
         int i = 0;
         for (IAtom atom : ac.atoms()) {
-            atomMap.put(atom, new Integer(i++));
+            atomMap.put(atom, Integer.valueOf(i++));
         }
         for (IAtom startAtom : ac.atoms()) {
             ArrayList aList = new ArrayList();
@@ -43,7 +43,7 @@ public class BreadthFirstIterator implements Iterator {
                     IAtom atom = bond.getConnectedAtom(startAtom);
 
                     if (atom.getAtomicNumber() != 1) {
-                        aList.add(new Integer(getAtomIndex(atom)));
+                        aList.add(Integer.valueOf(getAtomIndex(atom)));
                     }
                 }
             }
@@ -58,7 +58,7 @@ public class BreadthFirstIterator implements Iterator {
 
         IAtom atom = ac.getAtom(iAtom);
         sphereOfAtoms.clear();
-        sphereOfAtoms.add(new Integer(iAtom));
+        sphereOfAtoms.add(Integer.valueOf(iAtom));
         atom.setFlag(Atom.VISITED, true);
     }
 
@@ -86,7 +86,7 @@ public class BreadthFirstIterator implements Iterator {
                 Atom atom = (Atom) ac.getAtom(jAtom);
 
                 if (!atom.getFlag(Atom.VISITED)) {
-                    nextSphereOfAtoms.add(new Integer(jAtom));
+                    nextSphereOfAtoms.add(Integer.valueOf(jAtom));
                     atom.setFlag(Atom.VISITED, true);
                     addedAtom = true;
                 }

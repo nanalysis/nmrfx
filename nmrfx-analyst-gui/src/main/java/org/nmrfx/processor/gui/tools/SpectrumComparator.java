@@ -2,16 +2,7 @@ package org.nmrfx.processor.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
-
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -25,15 +16,18 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class SpectrumComparator {
 
     private static final Logger log = LoggerFactory.getLogger(SpectrumComparator.class);
     VBox vBox;
-    FXMLController controller;
     PolyChart chart;
     ToolBar toolBar1;
     ToolBar toolBar2;
@@ -43,7 +37,6 @@ public class SpectrumComparator {
     private ColorPicker[] datasetColorPickers = new ColorPicker[2];
 
     public SpectrumComparator(FXMLController controller, Consumer closeAction) {
-        this.controller = controller;
         this.closeAction = closeAction;
         this.chart = controller.getActiveChart();
     }
@@ -52,7 +45,7 @@ public class SpectrumComparator {
         return vBox;
     }
 
-    public void close(Object o) {
+    public void close() {
         closeAction.accept(this);
     }
 
@@ -65,7 +58,7 @@ public class SpectrumComparator {
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
-        closeButton.setOnAction(e -> close(this));
+        closeButton.setOnAction(e -> close());
 
         ArrayList<Button> dataset1Buttons = new ArrayList<>();
         ArrayList<Button> dataset2Buttons = new ArrayList<>();
@@ -174,10 +167,6 @@ public class SpectrumComparator {
         }
 
         chart.refresh();
-    }
-
-    void allDatasets() {
-
     }
 
     int getActiveDataset(int iSet) {

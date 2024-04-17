@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,22 +17,19 @@
  */
 package org.nmrfx.processor.math;
 
-import java.util.ArrayList;
+import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.optim.SimpleValueChecker;
-import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.util.Precision;
+import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
+import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.optim.PointValuePair;
-import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.util.Precision;
+
+import java.util.ArrayList;
 
 
 public class SignalOpt implements MultivariateFunction {
@@ -100,7 +97,8 @@ public class SignalOpt implements MultivariateFunction {
                     boundaries[1][i] = parameters[i] + 0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
-                    }   break;
+                    }
+                    break;
                 case 1:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;
@@ -110,7 +108,8 @@ public class SignalOpt implements MultivariateFunction {
                     boundaries[1][i] = parameters[i] + 0.1;
                     if (boundaries[0][i] <= 0.0) {
                         boundaries[0][i] = 1.0e-8;
-                    }   break;
+                    }
+                    break;
                 case 3:
                     boundaries[0][i] = parameters[i] - 0.1;
                     boundaries[1][i] = parameters[i] + 0.1;

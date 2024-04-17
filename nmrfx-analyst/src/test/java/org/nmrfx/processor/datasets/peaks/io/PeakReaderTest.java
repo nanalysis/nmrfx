@@ -108,7 +108,7 @@ public class PeakReaderTest {
             Assert.assertEquals(widths[i], (double) peakList.getPeak(0).getPeakDim(i).getLineWidth(), 1.0e-5);
         }
     }
-    
+
     @Test
     public void testXPKReaderBoxWidth() {
         PeakList peakList = getPeakList();
@@ -120,7 +120,7 @@ public class PeakReaderTest {
             Assert.assertEquals(bwidths[i], (double) peakList.getPeak(0).getPeakDim(i).getBounds(), 1.0e-5);
         }
     }
-    
+
     @Test
     public void testXPKReaderVolume() {
         PeakList peakList = getPeakList();
@@ -130,7 +130,7 @@ public class PeakReaderTest {
         Assert.assertNotNull(peakList);
         Assert.assertEquals(vol, (double) peakList.getPeak(0).getVolume1(), 1.0e-5);
     }
-    
+
     @Test
     public void testXPKReaderIntensity() {
         PeakList peakList = getPeakList();

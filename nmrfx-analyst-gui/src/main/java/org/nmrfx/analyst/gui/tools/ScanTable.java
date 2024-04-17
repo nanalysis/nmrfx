@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
@@ -39,6 +40,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
@@ -73,10 +75,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.DoubleConsumer;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class ScanTable {
@@ -92,11 +94,16 @@ public class ScanTable {
     static final String COLOR_COLUMN_NAME = "Color";
     static final String POSITIVE_COLUMN_NAME = "Positive";
     static final String NEGATIVE_COLUMN_NAME = "Negative";
+    static final String LVL_COLUMN_NAME = "Lvl";
+    static final String CLM_COLUMN_NAME = "CLM";
+    static final String NLVL_COLUMN_NAME = "NLevels";
+    static final String OFFSET_COLUMN_NAME = "Offset";
     static final String SCANNER_ERROR = "Scanner Error";
 
     static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
     static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+
     static {
         COLORS[0] = Color.BLACK;
         int i = 1;
@@ -132,16 +139,18 @@ public class ScanTable {
         ensureAllDatasetsAdded();
         selectionChanged();
     };
-    ListChangeListener<Integer> selectionListener;
+    ListChangeListener<? super DatasetAttributes> datasetListener = c -> datasetsInChartChanged();
 
-    TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
-    TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
-    TableColumn<FileTableItem, Boolean> posDrawOnCol;
-    TableColumn<FileTableItem, Boolean> negDrawOnCol;
+    ListChangeListener<Integer> selectionListener;
+    PolyChart currentChart;
+    Map<TableColumn, ContextMenu> columnMenus = new HashMap<>();
+    Set<TableColumn> columnsToCheckForMulti = new HashSet<>();
+
 
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
         this.tableView = tableView;
+        currentChart = controller.getChart();
         init();
     }
 
@@ -168,11 +177,18 @@ public class ScanTable {
         columnTypes.put(DATASET_COLUMN_NAME, "S");
         columnTypes.put(ETIME_COLUMN_NAME, "I");
         columnTypes.put(GROUP_COLUMN_NAME, "I");
+        if (currentChart != null) {
+            currentChart.getDatasetAttributes().addListener(datasetListener);
+        }
+
 
     }
 
     public void refresh() {
         tableView.refresh();
+    }
+
+    private void datasetsInChartChanged() {
     }
 
     private void ensureAllDatasetsAdded() {
@@ -290,7 +306,7 @@ public class ScanTable {
         chart.refresh();
     }
 
-     protected final void selectionChanged() {
+    protected final void selectionChanged() {
         if (processingTable) {
             return;
         }
@@ -301,20 +317,42 @@ public class ScanTable {
                 || processorController.isViewingDataset()
                 || !processorController.isVisible()) {
             List<FileTableItem> showRows = new ArrayList<>();
-            if (selected.isEmpty()) {
+            for (var item : getItems()) {
+                item.setSelected(false);
+            }
+            ScannerTool.TableSelectionMode tableSelectionMode = scannerTool.tableSelectionMode();
+            if (tableSelectionMode == ScannerTool.TableSelectionMode.HIGHLIGHT) {
+                for (var item : selected) {
+                    item.setSelected(true);
+                }
+            }
+
+            boolean showAll = tableSelectionMode == ScannerTool.TableSelectionMode.ALL || tableSelectionMode == ScannerTool.TableSelectionMode.HIGHLIGHT;
+            if (selected.isEmpty() || showAll) {
                 showRows.addAll(tableView.getItems());
             } else {
                 showRows.addAll(selected);
             }
             Double curLvl = null;
-            if (!chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                curLvl = dataAttr.getLvl();
+
+            boolean hasDataset = false;
+            for (var item : showRows) {
+                if (!item.getDatasetName().isBlank()) {
+                    hasDataset = true;
+                    break;
+                }
             }
 
-            setDatasetVisibility(showRows, curLvl);
-            refresh();
-            chart.refresh();
+            if (hasDataset) {
+                setDatasetVisibility(showRows, curLvl);
+                refresh();
+                chart.refresh();
+            } else {
+                openSelectedListFile();
+                chart.refresh();
+            }
+        } else {
+            openSelectedListFile();
         }
     }
 
@@ -335,7 +373,7 @@ public class ScanTable {
             if (file.isDirectory()) {
                 scanDir = file;
                 Platform.runLater(() -> {
-                    ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
+                    List<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
                     initTable();
                     loadScanFiles(nmrFiles);
                 });
@@ -374,7 +412,7 @@ public class ScanTable {
             return;
         }
         scanDir = scanDirFile;
-        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
+        List<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir.getAbsolutePath());
         processingTable = true;
         try {
             initTable();
@@ -427,6 +465,9 @@ public class ScanTable {
 
         PolyChart chart = scannerTool.getChart();
         processingTable = true;
+        tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
+        tableView.getItems().removeListener(filterItemListener);
+
         try (PythonInterpreter processInterp = new PythonInterpreter()) {
             List<String> fileNames = new ArrayList<>();
 
@@ -460,10 +501,9 @@ public class ScanTable {
                 // merge datasets into single pseudo-nd dataset
                 DatasetMerger merger = new DatasetMerger();
                 File mergedFile = new File(scanOutputDir, combineFileName);
-                String mergedFilepath = mergedFile.getAbsolutePath();
                 try {
                     // merge all the 1D files into a pseudo 2D file
-                    merger.merge(fileNames, mergedFilepath);
+                    merger.mergeFiles(fileNames, mergedFile);
                     // After merging, remove the 1D files
                     for (String fileName : fileNames) {
                         File file = new File(fileName);
@@ -496,7 +536,36 @@ public class ScanTable {
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
         } finally {
+            tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
+            tableView.getItems().addListener(filterItemListener);
+            getGroups();
+            ensureAllDatasetsAdded();
+            selectionChanged();
             processingTable = false;
+            refresh();
+        }
+    }
+
+    public void combineDatasets() {
+        List<Dataset> datasets = getDatasetAttributesList().stream().map(dAttr -> (Dataset) dAttr.getDataset()).toList();
+        if (currentChart.getDatasetAttributes().size() < 2) {
+            GUIUtils.warn("Combine", "Need more than one dataset to combine");
+        } else {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle(("Output File"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                DatasetMerger datasetMerger = new DatasetMerger();
+                try {
+                    datasetMerger.mergeDatasets(datasets, file);
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                    return;
+                }
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(file, false, true);
+                loadFromDataset();
+            }
         }
     }
 
@@ -518,7 +587,7 @@ public class ScanTable {
         }
     }
 
-    private void loadScanFiles(ArrayList<String> nmrFiles) {
+    private void loadScanFiles(List<String> nmrFiles) {
         fileListItems.clear();
         long firstDate = Long.MAX_VALUE;
         List<FileTableItem> items = new ArrayList<>();
@@ -526,7 +595,7 @@ public class ScanTable {
             File file = new File(filePath);
             NMRData nmrData = null;
             try {
-                nmrData = NMRDataUtil.getFID(filePath);
+                nmrData = NMRDataUtil.getFID(file);
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
 
@@ -563,15 +632,57 @@ public class ScanTable {
         return scanDir;
     }
 
+    public void loadMultipleDatasets() {
+        PolyChart chart = scannerTool.getChart();
+        var datasetAttributesList = chart.getDatasetAttributes();
+        int iRow = 0;
+        HashMap<String, String> fieldMap = new HashMap<>();
+        tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
+        tableView.getItems().removeListener(filterItemListener);
+        fileListItems.clear();
+        for (var datasetAttributes: datasetAttributesList) {
+            Dataset dataset = (Dataset) datasetAttributes.getDataset();
+            long eTime = 0;
+            FileTableItem fileTableItem = new FileTableItem(dataset.getName(), "", dataset.getNDim(),
+                    eTime, iRow + 1, dataset.getName(), fieldMap);
+            fileTableItem.setDatasetAttributes(datasetAttributes);
+            fileListItems.add(fileTableItem);
+            iRow++;
+        }
+        tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
+        tableView.getItems().addListener(filterItemListener);
+        columnTypes.put(PATH_COLUMN_NAME, "S");
+        columnTypes.put(SEQUENCE_COLUMN_NAME, "S");
+        columnTypes.put(NDIM_COLUMN_NAME, "I");
+        columnTypes.put(ROW_COLUMN_NAME, "I");
+        columnTypes.put(DATASET_COLUMN_NAME, "S");
+        columnTypes.put(ETIME_COLUMN_NAME, "I");
+        columnTypes.put(GROUP_COLUMN_NAME, "I");
+        initTable(false);
+        updateFilter();
+        tableView.refresh();
+    }
+
     public void loadFromDataset() {
         PolyChart chart = scannerTool.getChart();
+        if (chart.getDatasetAttributes().size() > 1) {
+            loadMultipleDatasets();
+            return;
+        } else if (!chart.getDatasetAttributes().isEmpty()){
+            Dataset dataset = (Dataset) chart.getDataset();
+            if (!chart.is1D()  && ((dataset.getNDim() > 1) && (dataset.getNDim() == dataset.getNFreqDims()))) {
+                loadMultipleDatasets();
+                return;
+            }
+
+        }
         DatasetBase dataset = chart.getDataset();
         if (dataset == null) {
             log.warn("Unable to load dataset, dataset is null.");
             return;
         }
         if (dataset.getNDim() < 2) {
-            log.warn("Unable to load dataset, dataset only has 1 dimension.");
+            loadMultipleDatasets();
             return;
         }
         scanDir = null;
@@ -580,9 +691,10 @@ public class ScanTable {
         tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
-        int nRows = dataset.getSizeTotal(1);
+        int nDim = dataset.getNDim();
+        int nRows = dataset.getSizeTotal(nDim - 1);
         HashMap<String, String> fieldMap = new HashMap<>();
-        double[] values = dataset.getValues(1);
+        double[] values = dataset.getValues(nDim - 1);
         for (int iRow = 0; iRow < nRows; iRow++) {
             double value = 0;
             if ((values != null) && (iRow < values.length)) {
@@ -591,6 +703,7 @@ public class ScanTable {
             long eTime = (long) (value * 1000);
             fileListItems.add(new FileTableItem(dataset.getName(), "", 1, eTime, iRow + 1, dataset.getName(), fieldMap));
         }
+
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         tableView.getItems().addListener(filterItemListener);
         columnTypes.put(PATH_COLUMN_NAME, "S");
@@ -605,7 +718,7 @@ public class ScanTable {
             item.setDate(item.getDate() - firstDate);
         }
         initTable();
-        fileTableFilter.resetFilter();
+        updateFilter();
         List<Integer> rows = new ArrayList<>();
         rows.add(0);
         // Load from Dataset assumes an arrayed dataset
@@ -648,11 +761,11 @@ public class ScanTable {
                         for (int iField = 0; iField < fields.length; iField++) {
                             fields[iField] = fields[iField].trim();
                             try {
-                                 Integer.parseInt(fields[iField]);
+                                Integer.parseInt(fields[iField]);
                             } catch (NumberFormatException nfE) {
                                 notInteger[iField] = true;
                                 try {
-                                     Double.parseDouble(fields[iField]);
+                                    Double.parseDouble(fields[iField]);
                                 } catch (NumberFormatException nfE2) {
                                     notDouble[iField] = true;
                                 }
@@ -700,9 +813,9 @@ public class ScanTable {
 
                             NMRData nmrData;
                             try {
-                                nmrData = NMRDataUtil.getFID(filePath.toString());
+                                nmrData = NMRDataUtil.getFID(filePath.toFile());
                             } catch (IOException ioE) {
-                                GUIUtils.warn("Load scan table", "Couldn't load this file: " + filePath.toString());
+                                GUIUtils.warn("Load scan table", "Couldn't load this file: " + filePath);
                                 return;
                             }
 
@@ -719,7 +832,7 @@ public class ScanTable {
                         if (eTime < firstDate) {
                             firstDate = eTime;
                         }
-                       var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
+                        var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
                         fileListItems.add(item);
                     }
 
@@ -863,7 +976,7 @@ public class ScanTable {
 
     private List<String> headersMissing(String[] headerNames) {
         List<String> missing = new ArrayList<>();
-        for (var headerName:headerNames) {
+        for (var headerName : headerNames) {
             if (headerAbsent(headerName)) {
                 missing.add(headerName);
             }
@@ -890,22 +1003,146 @@ public class ScanTable {
             addColumn(newName);
         }
     }
-
     private void initTable() {
+        initTable(true);
+
+    }
+
+    private boolean columnHasMultiple(TableColumn column) {
+        int nRows = tableView.getItems().size();
+        if (nRows < 2) {
+            return false;
+        }
+        String firstRow = column.getCellData(0) == null ? "" : column.getCellData(0).toString();
+        boolean hasMulti = false;
+        for (int i=1;i<nRows;i++) {
+            String thisRow = column.getCellData(i) == null ? "" : column.getCellData(i).toString();
+            if (!firstRow.equals(thisRow)) {
+                hasMulti = true;
+                break;
+            }
+        }
+        return hasMulti;
+    }
+
+    private void checkColumnsForMultiple() {
+        for (var column : columnsToCheckForMulti) {
+            column.setVisible(columnHasMultiple(column));
+        }
+    }
+
+    private void initTable(boolean arrayDataset) {
+        IntegerStringConverter isConverter = new IntegerStringConverter();
         tableView.setEditable(true);
+        tableView.getColumns().clear();
+        TableColumn<FileTableItem, String> datasetColumn = new TableColumn<>(DATASET_COLUMN_NAME);
+        datasetColumn.setCellValueFactory(e -> new SimpleStringProperty(e.getValue().getDatasetName()));
+        tableView.getColumns().add(datasetColumn);
+
         TableColumn<FileTableItem, String> fileColumn = new TableColumn<>(PATH_COLUMN_NAME);
         TableColumn<FileTableItem, String> seqColumn = new TableColumn<>(SEQUENCE_COLUMN_NAME);
         TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>(NDIM_COLUMN_NAME);
         TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>(ETIME_COLUMN_NAME);
         TableColumn<FileTableItem, Number> rowColumn = new TableColumn<>(ROW_COLUMN_NAME);
-        TableColumn<FileTableItem, String> datasetColumn = new TableColumn<>(DATASET_COLUMN_NAME);
-
         fileColumn.setCellValueFactory(e -> new SimpleStringProperty(e.getValue().getFileName()));
         seqColumn.setCellValueFactory(e -> new SimpleStringProperty(e.getValue().getSeqName()));
         nDimColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getNDim()));
         rowColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getRow()));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
-        datasetColumn.setCellValueFactory(e -> new SimpleStringProperty(e.getValue().getDatasetName()));
+        tableView.getColumns().addAll(seqColumn, nDimColumn, dateColumn, rowColumn);
+        fileColumn.setVisible(false);
+        seqColumn.setVisible(false);
+        columnsToCheckForMulti.add(fileColumn);
+        columnsToCheckForMulti.add(seqColumn);
+        columnsToCheckForMulti.add(nDimColumn);
+        columnsToCheckForMulti.add(dateColumn);
+
+        TableColumn<FileTableItem, Double> levelCol = new TableColumn<>(LVL_COLUMN_NAME);
+        levelCol.setSortable(false);
+        levelCol.setCellValueFactory(new PropertyValueFactory<>("lvl"));
+        TableUtils.addDatasetTextEditor(levelCol, TableUtils.getDoubleColumnFormatter(4), (item, value) -> {
+            item.setLvl(value);
+            scannerTool.getChart().refresh();
+        });
+
+        ContextMenu levelMenu = new ContextMenu();
+        MenuItem adjustLevelItem = new MenuItem("Adjust...");
+        adjustLevelItem.setOnAction(e -> adjust(ATTR_COLUMNS.LVL, levelMenu, this::adjustLevel));
+        MenuItem unifyLevelItem = new MenuItem("unify");
+        unifyLevelItem.setOnAction(e -> unifyLevel());
+        levelCol.setContextMenu(levelMenu);
+        levelMenu.getItems().addAll(adjustLevelItem, unifyLevelItem);
+        columnMenus.put(levelCol, levelMenu);
+
+        TableColumn<FileTableItem, Double> offsetCol = new TableColumn<>(OFFSET_COLUMN_NAME);
+        offsetCol.setSortable(false);
+        offsetCol.setCellValueFactory(new PropertyValueFactory<>("offset"));
+        TableUtils.addDatasetTextEditor(offsetCol, TableUtils.getDoubleColumnFormatter(2), (item, value) -> {
+            item.setOffset(value);
+            scannerTool.getChart().refresh();
+        });
+
+        ContextMenu offsetMenu = new ContextMenu();
+        MenuItem adjustOffsetItem = new MenuItem("Adjust...");
+        adjustOffsetItem.setOnAction(e -> adjust(ATTR_COLUMNS.OFFSET, offsetMenu, this::adjustOffset));
+        MenuItem unifyOffsetItem = new MenuItem("unify");
+        unifyOffsetItem.setOnAction(e -> unifyOffset());
+        MenuItem rampOffsetItem = new MenuItem("ramp");
+        rampOffsetItem.setOnAction(e -> rampOffset());
+        offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem);
+        offsetCol.setContextMenu(offsetMenu);
+        offsetCol.setPrefWidth(50);
+        columnMenus.put(offsetCol, offsetMenu);
+
+        TableColumn<FileTableItem, Integer> nLevelsCol = new TableColumn<>(NLVL_COLUMN_NAME);
+        nLevelsCol.setSortable(false);
+        nLevelsCol.setCellValueFactory(new PropertyValueFactory<>("nlvls"));
+        nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
+        nLevelsCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<FileTableItem, Integer> t) -> {
+                    Integer value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setNlvls(value);
+                    }
+                });
+
+        nLevelsCol.setPrefWidth(35);
+        nLevelsCol.setEditable(true);
+
+        ContextMenu nLvlMenu = new ContextMenu();
+        MenuItem adjustNLvlItem = new MenuItem("Adjust...");
+        adjustNLvlItem.setOnAction(e -> adjust(ATTR_COLUMNS.NLVL, nLvlMenu, this::adjustNLevels));
+        MenuItem unifyNLvlItem = new MenuItem("unify");
+        unifyNLvlItem.setOnAction(e -> unifyNLvl());
+        nLevelsCol.setContextMenu(nLvlMenu);
+        nLvlMenu.getItems().addAll(adjustNLvlItem, unifyNLvlItem);
+        columnMenus.put(nLevelsCol, nLvlMenu);
+
+        TableColumn<FileTableItem, Double> clmCol = new TableColumn<>(CLM_COLUMN_NAME);
+        clmCol.setSortable(false);
+        clmCol.setCellValueFactory(new PropertyValueFactory<>("clm"));
+        TableUtils.addDatasetTextEditor(clmCol, TableUtils.getDoubleColumnFormatter(2), (item, value) -> {
+            item.setClm(value);
+            scannerTool.getChart().refresh();
+        });
+
+        clmCol.setPrefWidth(50);
+
+        ContextMenu clmMenu = new ContextMenu();
+        MenuItem adjustCLMItem = new MenuItem("Adjust...");
+        adjustCLMItem.setOnAction(e -> adjust(ATTR_COLUMNS.CLM, clmMenu, this::adjustCLM));
+        MenuItem unifyCLMItem = new MenuItem("unify");
+        unifyCLMItem.setOnAction(e -> unifyCLM());
+        clmCol.setContextMenu(clmMenu);
+        clmMenu.getItems().addAll(adjustCLMItem, unifyCLMItem);
+        columnMenus.put(clmCol, clmMenu);
+
+        tableView.getColumns().addAll(levelCol, offsetCol, nLevelsCol, clmCol);
+
+        TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
+        TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
+        TableColumn<FileTableItem, Boolean> posDrawOnCol;
+        TableColumn<FileTableItem, Boolean> negDrawOnCol;
 
         posColorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getPosColor()));
         posColorCol.setEditable(true);
@@ -914,6 +1151,8 @@ public class ScanTable {
             item.setPosColor(color);
             scannerTool.getChart().refresh();
         });
+        ContextMenu posColumnMenu = createColorContextMenu(true);
+        columnMenus.put(posColorCol, posColumnMenu);
 
         negColorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getNegColor()));
         negColorCol.setEditable(true);
@@ -922,12 +1161,15 @@ public class ScanTable {
             scannerTool.getChart().refresh();
         });
         negColorCol.setSortable(false);
+        ContextMenu negColumnMenu = createColorContextMenu(false);
+        columnMenus.put(negColorCol, negColumnMenu);
 
         posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setSortable(false);
         posDrawOnCol.setEditable(true);
         posDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getPos()));
         TableUtils.addCheckBoxEditor(posDrawOnCol, (item, b) -> {
+            System.out.println("set item " + b);
             item.setPos(b);
             scannerTool.getChart().refresh();
         });
@@ -969,16 +1211,16 @@ public class ScanTable {
             };
         });
 
-        tableView.getColumns().clear();
         TableColumn<FileTableItem, TableColumn> posColumn = new TableColumn<>(POSITIVE_COLUMN_NAME);
         TableColumn<FileTableItem, TableColumn> negColumn = new TableColumn<>(NEGATIVE_COLUMN_NAME);
         posColumn.getColumns().addAll(posDrawOnCol, posColorCol);
         negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn, posColumn, negColumn);
+        tableView.getColumns().addAll(posColumn, negColumn, groupColumn);
         updateFilter();
 
         for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
-            if (!column.getText().equals(COLOR_COLUMN_NAME) && !column.getText().equals(POSITIVE_COLUMN_NAME) && !column.getText().equals(NEGATIVE_COLUMN_NAME)) {
+            String columnText = column.getText();
+            if (!isAttributeColumn(columnText)) {
                 if (setColumnGraphic(column)) {
                     column.graphicProperty().addListener(e -> graphicChanged(column));
                 }
@@ -988,7 +1230,7 @@ public class ScanTable {
 
     private void addHeaders(String[] headers) {
         var missingHeaders = headersMissing(headers);
-        for (var header:missingHeaders) {
+        for (var header : missingHeaders) {
             addColumn(header);
         }
     }
@@ -1105,16 +1347,16 @@ public class ScanTable {
         scannerTool.getChart().refresh();
     }
 
-    private void setMenuGraphics(TableColumn<FileTableItem, ?> column, boolean posColorMode) {
+    private void setMenuGraphics(TableColumn<FileTableItem, ?> column, ContextMenu menu) {
         Text text = GlyphsDude.createIcon(FontAwesomeIcon.BARS);
         text.setMouseTransparent(true);
         column.setGraphic(text);
-        column.setContextMenu(createColorContextMenu(posColorMode));
+        column.setContextMenu(menu);
     }
 
     private boolean setColumnGraphic(TableColumn<FileTableItem, ?> column) {
         String text = column.getText().toLowerCase();
-        if (text.equalsIgnoreCase(COLOR_COLUMN_NAME) || text.equalsIgnoreCase(POSITIVE_COLUMN_NAME) || text.equalsIgnoreCase(NEGATIVE_COLUMN_NAME)) {
+        if (isAttributeColumn(text)) {
             return false;
         }
         String type = columnTypes.get(column.getText());
@@ -1160,6 +1402,12 @@ public class ScanTable {
         }
     }
 
+    private boolean isAttributeColumn(String columnText) {
+        return columnText.equalsIgnoreCase(COLOR_COLUMN_NAME) || columnText.equalsIgnoreCase(POSITIVE_COLUMN_NAME) ||
+                columnText.equalsIgnoreCase(NEGATIVE_COLUMN_NAME) || columnText.equalsIgnoreCase(LVL_COLUMN_NAME) ||
+                columnText.equalsIgnoreCase(CLM_COLUMN_NAME) || columnText.equalsIgnoreCase(NLVL_COLUMN_NAME)
+                || columnText.equalsIgnoreCase(OFFSET_COLUMN_NAME);
+    }
     private boolean isFiltered(TableColumn column) {
         boolean filtered = false;
         Optional<ColumnFilter<FileTableItem, ?>> opt = fileTableFilter.getColumnFilter(column);
@@ -1172,13 +1420,12 @@ public class ScanTable {
     private boolean isGroupable(String text) {
         return !standardHeaders.contains(text) && !text.equalsIgnoreCase(GROUP_COLUMN_NAME)
                 && !text.contains(":") && !text.equalsIgnoreCase(DATASET_COLUMN_NAME) &&
-                !text.contains(COLOR_COLUMN_NAME) && !text.equalsIgnoreCase(POSITIVE_COLUMN_NAME)
-                && !text.equalsIgnoreCase(NEGATIVE_COLUMN_NAME);
+                !isAttributeColumn(text);
     }
 
     public boolean isData(String text) {
         return !standardHeaders.contains(text) && !text.equals(GROUP_COLUMN_NAME)
-                && text.contains(":") && !text.equals(DATASET_COLUMN_NAME);
+                && text.contains(":") && !text.equals(DATASET_COLUMN_NAME) && !isAttributeColumn(text);
     }
 
     private void hitDataDelete(TableColumn<FileTableItem, ?> column) {
@@ -1206,22 +1453,50 @@ public class ScanTable {
         selectionChanged();
         tableView.refresh();
     }
+    public void setChart() {
+        PolyChart chart = scannerTool.getChart();
+        if (currentChart != chart) {
+           if  (currentChart != null) {
+               currentChart.getDatasetAttributes().removeListener(datasetListener);
+           }
+           chart.getDatasetAttributes().addListener(datasetListener);
+           currentChart = chart;
+           loadFromDataset();
+        }
+        updateFilter();
+    }
 
     public void updateFilter() {
         // Old listener must be removed before setting the items!
         tableView.getItems().removeListener(filterItemListener);
         tableView.setItems(fileListItems);
+        checkColumnsForMultiple();
         builder = TableFilter.forTableView(tableView);
         fileTableFilter = builder.apply();
         fileTableFilter.resetFilter();
         tableView.getItems().addListener(filterItemListener);
         getGroups();
-        setMenuGraphics(posColorCol, true);
-        setMenuGraphics(negColorCol, false);
+        for (var entry: columnMenus.entrySet()) {
+            setMenuGraphics(entry.getKey(), entry.getValue());
+        }
     }
 
     public ObservableList<FileTableItem> getItems() {
         return fileListItems;
+    }
+
+    public List<DatasetAttributes> getDatasetAttributesList() {
+        return fileListItems.stream().filter(item -> item.getDatasetAttributes() != null).
+                map(item -> item.getDatasetAttributes()).collect(Collectors.toList());
+    }
+
+    public List<DatasetAttributes> getSelectedDatasetAttributesList() {
+        List<FileTableItem> selectedItems = tableView.getSelectionModel().getSelectedItems();
+        if (selectedItems.isEmpty()) {
+            selectedItems = tableView.getItems();
+        }
+        return selectedItems.stream().filter(item -> item.getDatasetAttributes() != null).
+                map(item -> item.getDatasetAttributes()).collect(Collectors.toList());
     }
 
     public void makeGroupMap() {
@@ -1268,5 +1543,214 @@ public class ScanTable {
             maxValue = Math.max(maxValue, iValue);
         }
         groupSize = maxValue + 1;
+    }
+
+     Optional<DatasetAttributes> getSelectedAttributes() {
+        List<org.nmrfx.processor.gui.spectra.DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+         DatasetAttributes dataAttr0 = null;
+        if (!datasetAttributesList.isEmpty()) {
+             FileTableItem item0 = tableView.getSelectionModel().getSelectedItem();
+            if (item0 == null) {
+                item0 = getItems().get(0);
+            }
+            if (item0 != null) {
+                dataAttr0 = item0.getDatasetAttributes();
+            }
+        }
+        return Optional.ofNullable(dataAttr0);
+    }
+
+    void unifyWidth(boolean pos) {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            datasetAttributesList.forEach(datasetAttributes -> {
+                if (pos) {
+                    datasetAttributes.setPosWidth(dataAttr0.getPosWidth());
+                } else {
+                    datasetAttributes.setNegWidth(dataAttr0.getNegWidth());
+                }
+            });
+            tableView.refresh();
+        });
+    }
+
+    void adjust(ATTR_COLUMNS columnType, ContextMenu menu,  DoubleConsumer consumer) {
+        double x = menu.getX();
+        double y = menu.getY();
+        double width = menu.getWidth();
+        Double currentValue = getValue(columnType);
+        var sliderRange = columnType.getSliderRange(currentValue);
+        Optional<Double> optValue = GUIUtils.getSliderValue(columnType.title, x + width, y,
+                sliderRange, consumer);
+        double value = optValue.orElse(currentValue);
+        consumer.accept(value);
+        tableView.refresh();
+    }
+
+    Double getValue(ATTR_COLUMNS attrColumn) {
+        Double value = null;
+        List<DatasetAttributes> datasetAttributesList = getSelectedDatasetAttributesList();
+        if (!datasetAttributesList.isEmpty()) {
+            value = attrColumn.getValue(datasetAttributesList.get(0)).doubleValue();
+        }
+        return value;
+    }
+
+    void setValue(ATTR_COLUMNS attrColumn, Double value) {
+        List<DatasetAttributes> datasetAttributesList = getSelectedDatasetAttributesList();
+        if (value != null) {
+            datasetAttributesList.forEach(datasetAttributes -> {
+                attrColumn.setValue(datasetAttributes, value);
+            });
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        }
+    }
+
+    void adjustLevel(Double value) {
+        setValue(ATTR_COLUMNS.LVL, value);
+    }
+
+    void unifyLevel() {
+        System.out.println("unify");
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            datasetAttributesList.forEach(datasetAttributes -> {
+                datasetAttributes.setLvl(dataAttr0.getLvl());
+            });
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
+    void adjustCLM(Double value) {
+        setValue(ATTR_COLUMNS.CLM, value);
+    }
+
+    void unifyCLM() {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            datasetAttributesList.forEach(datasetAttributes -> {
+                datasetAttributes.setClm(dataAttr0.getClm());
+            });
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
+    void adjustNLevels(Double value) {
+        setValue(ATTR_COLUMNS.NLVL, value);
+    }
+
+    void unifyNLvl() {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            datasetAttributesList.forEach(datasetAttributes -> {
+                datasetAttributes.setNlvls(dataAttr0.getNlvls());
+            });
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
+    void adjustOffset(Double value) {
+        setValue(ATTR_COLUMNS.OFFSET, value);
+    }
+
+    void unifyOffset() {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            datasetAttributesList.forEach(datasetAttributes -> {
+                datasetAttributes.setOffset(dataAttr0.getOffset());
+            });
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
+    void rampOffset() {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            int nItems = datasetAttributesList.size();
+            if (nItems > 0) {
+                double offset = dataAttr0.getOffset();
+                double offsetIncr = 0.0;
+                if (nItems > 1) {
+                    offsetIncr = 0.8 / (nItems);
+                }
+                for (DatasetAttributes dataAttr : datasetAttributesList) {
+                    dataAttr.setOffset(offset);
+                    offset += offsetIncr;
+                }
+            }
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
+    enum ATTR_COLUMNS {
+        LVL(LVL_COLUMN_NAME, "Level") {
+            GUIUtils.SliderRange getSliderRange(double value) {
+                return new GUIUtils.SliderRange(value / 10.0, value, value * 10.0, value / 100.0);
+            }
+            Number getValue(DatasetAttributes datasetAttributes) {
+                return datasetAttributes.getLvl();
+            }
+            void setValue(DatasetAttributes datasetAttributes, Number value) {
+                datasetAttributes.setLvl(value.doubleValue());
+            }
+
+        },
+        OFFSET(OFFSET_COLUMN_NAME, "Offset") {
+            GUIUtils.SliderRange getSliderRange(double value) {
+                return new GUIUtils.SliderRange(0.0, value, 1.0, 0.01);
+            }
+            Number getValue(DatasetAttributes datasetAttributes) {
+                return datasetAttributes.getOffset();
+            }
+            void setValue(DatasetAttributes datasetAttributes, Number value) {
+                datasetAttributes.setOffset(value.doubleValue());
+            }
+        },
+        CLM(OFFSET_COLUMN_NAME,"Contour Level Multiplier") {
+            GUIUtils.SliderRange getSliderRange(double value) {
+                return new GUIUtils.SliderRange(1.01, value, 4.0, 0.01);
+            }
+            Number getValue(DatasetAttributes datasetAttributes) {
+                return datasetAttributes.getClm();
+            }
+            void setValue(DatasetAttributes datasetAttributes, Number value) {
+                datasetAttributes.setClm(value.doubleValue());
+            }
+        },
+        NLVL(NLVL_COLUMN_NAME, "Number of Levels") {
+            GUIUtils.SliderRange getSliderRange(double value) {
+                return new GUIUtils.SliderRange(1.0, value, 50.0, 1.0);
+            }
+            Number getValue(DatasetAttributes datasetAttributes) {
+                return datasetAttributes.getNlvls();
+            }
+            void setValue(DatasetAttributes datasetAttributes, Number value) {
+                datasetAttributes.setNlvls(value.intValue());
+            }
+        };
+        final String name;
+        final String title;
+
+        ATTR_COLUMNS(String name, String title) {
+            this.name = name;
+            this.title = title;
+        }
+
+        abstract GUIUtils.SliderRange getSliderRange(double value);
+
+        abstract Number getValue(DatasetAttributes datasetAttributes);
+
+        abstract void setValue(DatasetAttributes datasetAttributes, Number value);
     }
 }

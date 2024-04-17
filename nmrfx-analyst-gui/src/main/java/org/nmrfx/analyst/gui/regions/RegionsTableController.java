@@ -22,6 +22,7 @@ import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
@@ -79,13 +80,13 @@ public class RegionsTableController implements Initializable, StageBasedControll
     public void initialize(URL location, ResourceBundle rb) {
         regionsTable = new RegionsTable();
         regionsBorderPane.setCenter(regionsTable);
-        chart = PolyChart.getActiveChart();
+        chart = PolyChartManager.getInstance().getActiveChart();
         chart.addRegionListener(activeDatasetRegionListener);
         if (chart.getDataset() != null) {
             chart.getDataset().addDatasetRegionsListListener(datasetRegionsListListener);
         }
-        PolyChart.getCurrentDatasetProperty().addListener((observable, oldValue, newValue) -> {
-            if( oldValue != null) {
+        PolyChartManager.getInstance().currentDatasetProperty().addListener((observable, oldValue, newValue) -> {
+            if (oldValue != null) {
                 oldValue.removeDatasetRegionsListListener(datasetRegionsListListener);
             }
             if (newValue != null) {
@@ -104,18 +105,18 @@ public class RegionsTableController implements Initializable, StageBasedControll
         removeRegionButton.setOnAction(event -> regionsTable.removeSelectedRegion());
         addRegionButton.setOnAction(event -> addRegion());
         autoIntegrateButton.setOnAction(event -> {
-           SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
-           if (peakRegionTool != null) {
-               peakRegionTool.findRegions();
-           }
+            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getFXMLController().getTool(SimplePeakRegionTool.class);
+            if (peakRegionTool != null) {
+                peakRegionTool.findRegions();
+            }
         });
         removeAllButton.setOnAction(event -> {
-            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getController().getTool(SimplePeakRegionTool.class);
+            SimplePeakRegionTool peakRegionTool = (SimplePeakRegionTool) chart.getFXMLController().getTool(SimplePeakRegionTool.class);
             if (peakRegionTool != null) {
                 peakRegionTool.clearAnalysis(false);
             }
         });
-        PolyChart.getActiveChartProperty().addListener(this::activeChartUpdatedListener);
+        PolyChartManager.getInstance().activeChartProperty().addListener(this::activeChartUpdatedListener);
         updateActiveChartRegions();
         selectedRowRegionsTableListener = this::setSelectedRowRegionsTableListener;
         regionsTable.getSelectionModel().selectedItemProperty().addListener(selectedRowRegionsTableListener);
@@ -164,7 +165,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
         addRegionButton.disableProperty().unbind();
         autoIntegrateButton.disableProperty().unbind();
         removeAllButton.disableProperty().unbind();
-        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> PolyChart.getCurrentDatasetProperty().get() == null || PolyChart.getCurrentDatasetProperty().get().getNDim() > 1, PolyChart.getCurrentDatasetProperty());
+        BooleanBinding disableButtonBinding = Bindings.createBooleanBinding(() -> {
+            if (PolyChartManager.getInstance().currentDatasetProperty().get() == null) return true;
+            return PolyChartManager.getInstance().currentDatasetProperty().get().getNDim() > 1;
+        }, PolyChartManager.getInstance().currentDatasetProperty());
         fileMenuButton.disableProperty().bind(disableButtonBinding);
         addRegionButton.disableProperty().bind(disableButtonBinding);
         autoIntegrateButton.disableProperty().bind(disableButtonBinding);
@@ -173,9 +177,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
 
     /**
      * Selects the integral in the chart and centres the chart view on the selected region if it is not already in view.
+     *
      * @param observableValue The observable dataset region property from the table selection model.
-     * @param oldRegion The old selected dataset region.
-     * @param newRegion The new selected dataset region
+     * @param oldRegion       The old selected dataset region.
+     * @param newRegion       The new selected dataset region
      */
     private void setSelectedRowRegionsTableListener(ObservableValue<? extends DatasetRegion> observableValue, DatasetRegion oldRegion, DatasetRegion newRegion) {
         chart.selectIntegral(newRegion);
@@ -207,8 +212,8 @@ public class RegionsTableController implements Initializable, StageBasedControll
                 AnalystApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.loadRegions(regionFile);
                 updateActiveChartRegions();
-                chart.chartProps.setIntegrals(true);
-                chart.chartProps.setRegions(true);
+                chart.getChartProperties().setIntegrals(true);
+                chart.getChartProperties().setRegions(true);
                 chart.refresh();
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
@@ -245,9 +250,10 @@ public class RegionsTableController implements Initializable, StageBasedControll
 
     /**
      * Listener that update the selected row in the chart to the active region.
+     *
      * @param observableValue The Active Region
-     * @param oldRegion The old value of the active region
-     * @param newRegion The new value of the active region
+     * @param oldRegion       The old value of the active region
+     * @param newRegion       The new value of the active region
      */
     private void updateActiveRegion(ObservableValue<? extends DatasetRegion> observableValue, DatasetRegion oldRegion, DatasetRegion newRegion) {
         if (newRegion == null) {
@@ -264,7 +270,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
      */
     public void addRegion() {
         Dataset dataset = (Dataset) chart.getDataset();
-        double[] ppms = chart.getVerticalCrosshairPositions();
+        double[] ppms = chart.getCrossHairs().getVerticalPositions();
         DatasetRegion region = new DatasetRegion(ppms[0], ppms[1]);
         try {
             region.measure(dataset);
@@ -273,13 +279,14 @@ public class RegionsTableController implements Initializable, StageBasedControll
             return;
         }
         dataset.addRegion(region);
-        chart.chartProps.setRegions(true);
-        chart.chartProps.setIntegrals(true);
+        chart.getChartProperties().setRegions(true);
+        chart.getChartProperties().setIntegrals(true);
         chart.refresh();
     }
 
     /**
      * Gets the RegionsTableController. A new controller is created if one has not already been made.
+     *
      * @return The RegionsTableController instance.
      */
     public static RegionsTableController getRegionsTableController() {

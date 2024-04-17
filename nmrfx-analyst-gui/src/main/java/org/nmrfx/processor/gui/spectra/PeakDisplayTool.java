@@ -23,7 +23,7 @@ public class PeakDisplayTool {
     }
 
     private static double getWidthScale(Peak peak) {
-         return peak.getPeakDims().length == 1 ? ONED_WIDTH_SCALE : ND_WIDTH_SCALE;
+        return peak.getPeakDims().length == 1 ? ONED_WIDTH_SCALE : ND_WIDTH_SCALE;
     }
 
     private static boolean chartHasPeakList(PolyChart chart, PeakList peakList) {

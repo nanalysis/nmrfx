@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
  * @author brucejohnson
  */
 public class WindowIO implements FileWatchListener {
@@ -64,72 +63,8 @@ public class WindowIO implements FileWatchListener {
     Stage stage;
     BorderPane borderPane;
     ListView<String> listView;
-    private NMRFxFileWatcher watcher;
     Path dir;
-
-    public void create() {
-        stage = new Stage(StageStyle.DECORATED);
-        borderPane = new BorderPane();
-        Scene scene = new Scene(borderPane);
-        stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
-        stage.setTitle("Favorites");
-        ToolBar toolBar = new ToolBar();
-        borderPane.setTop(toolBar);
-        Button openButton = new Button("Open");
-        openButton.setOnAction(e -> openSelectedFavorite());
-        toolBar.getItems().add(openButton);
-        listView = new ListView<>();
-        borderPane.setCenter(listView);
-        stage.show();
-        listView.setOnMouseClicked(e -> listClicked(e));
-        openButton.disableProperty().bind(listView.getSelectionModel().selectedIndexProperty().lessThan(0));
-    }
-
-    public void setupWatcher(Path dir) throws IOException {
-        if ((watcher == null) || !this.dir.equals(dir)) {
-            if (watcher != null) {
-                Path path = Paths.get(this.dir.toFile().getAbsolutePath());
-                NMRFxFileWatcher.remove(path.toString());
-            }
-            this.dir = dir;
-            this.watcher = new NMRFxFileWatcher(dir.toFile());
-            this.watcher.addListener(this);
-            watcher.monitor();
-        }
-    }
-
-    public Stage getStage() {
-        return stage;
-    }
-
-    void listClicked(MouseEvent e) {
-        if (e.getClickCount() > 1) {
-            openSelectedFavorite();
-        }
-    }
-
-    void openSelectedFavorite() {
-        String item = listView.getSelectionModel().getSelectedItem();
-        if (item != null) {
-            loadFavorite(item);
-        }
-    }
-
-    public void updateFavorites() {
-        ProjectBase project = ProjectBase.getActive();
-        if ((project != null) && project.hasDirectory()) {
-            Path projectDir = project.getDirectory();
-            Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
-            try {
-                listView.getItems().clear();
-                List<String> names = findFavorites(path);
-                listView.getItems().addAll(names);
-            } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-        }
-    }
+    private NMRFxFileWatcher watcher;
 
     public static void loadWindow() {
         FileChooser fileChooser = new FileChooser();
@@ -210,9 +145,11 @@ public class WindowIO implements FileWatchListener {
 
     public static void loadWindow(File file) throws IOException {
         AnalystPythonInterpreter.exec("import nwyaml\\n");
+        String fileContent = Files.readString(file.toPath());
+        AnalystPythonInterpreter.set("yamlContents", fileContent);
         AnalystPythonInterpreter.set("yamlFileName", file.toString());
         AnalystPythonInterpreter.set("yamlFileNum", 1);
-        AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
+        AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlContents, yamlFileNum)");
     }
 
     public static void loadWindows(Path directory) throws IOException {
@@ -228,9 +165,15 @@ public class WindowIO implements FileWatchListener {
                             String fileName = path.getFileName().toString();
                             Optional<Integer> fileNum = ProjectBase.getIndex(fileName);
                             if (fileNum.isPresent()) {
-                                AnalystPythonInterpreter.set("yamlFileName", path.toString());
-                                AnalystPythonInterpreter.set("yamlFileNum", fileNum.get());
-                                AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlFileNum)");
+                                try {
+                                    String fileContent = Files.readString(path);
+                                    AnalystPythonInterpreter.set("yamlContents", fileContent);
+                                    AnalystPythonInterpreter.set("yamlFileName", path.toString());
+                                    AnalystPythonInterpreter.set("yamlFileNum", fileNum.get());
+                                    AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlContents, yamlFileNum)");
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         });
             }
@@ -243,7 +186,7 @@ public class WindowIO implements FileWatchListener {
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
 
         if (Files.isDirectory(directory)) {
-            try (Stream<Path> files = Files.list(directory)){
+            try (Stream<Path> files = Files.list(directory)) {
                 files.sequential().filter(path
                                 -> predicate.test(path.getFileName().toString()) || predicate2.test(path.getFileName().toString())).
                         forEach(path -> {
@@ -254,7 +197,7 @@ public class WindowIO implements FileWatchListener {
                             }
                         });
             } catch (IOException ex) {
-                log.warn(ex.getMessage(),ex);
+                log.warn(ex.getMessage(), ex);
             }
         }
     }
@@ -285,6 +228,70 @@ public class WindowIO implements FileWatchListener {
             i++;
         }
         GUIScripter.setController(activeController);
+    }
+
+    public void create() {
+        stage = new Stage(StageStyle.DECORATED);
+        borderPane = new BorderPane();
+        Scene scene = new Scene(borderPane);
+        stage.setScene(scene);
+        scene.getStylesheets().add("/styles/Styles.css");
+        stage.setTitle("Favorites");
+        ToolBar toolBar = new ToolBar();
+        borderPane.setTop(toolBar);
+        Button openButton = new Button("Open");
+        openButton.setOnAction(e -> openSelectedFavorite());
+        toolBar.getItems().add(openButton);
+        listView = new ListView<>();
+        borderPane.setCenter(listView);
+        stage.show();
+        listView.setOnMouseClicked(e -> listClicked(e));
+        openButton.disableProperty().bind(listView.getSelectionModel().selectedIndexProperty().lessThan(0));
+    }
+
+    public void setupWatcher(Path dir) throws IOException {
+        if ((watcher == null) || !this.dir.equals(dir)) {
+            if (watcher != null) {
+                Path path = Paths.get(this.dir.toFile().getAbsolutePath());
+                NMRFxFileWatcher.remove(path.toString());
+            }
+            this.dir = dir;
+            this.watcher = new NMRFxFileWatcher(dir.toFile());
+            this.watcher.addListener(this);
+            watcher.monitor();
+        }
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    void listClicked(MouseEvent e) {
+        if (e.getClickCount() > 1) {
+            openSelectedFavorite();
+        }
+    }
+
+    void openSelectedFavorite() {
+        String item = listView.getSelectionModel().getSelectedItem();
+        if (item != null) {
+            loadFavorite(item);
+        }
+    }
+
+    public void updateFavorites() {
+        ProjectBase project = ProjectBase.getActive();
+        if ((project != null) && project.hasDirectory()) {
+            Path projectDir = project.getDirectory();
+            Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
+            try {
+                listView.getItems().clear();
+                List<String> names = findFavorites(path);
+                listView.getItems().addAll(names);
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
+            }
+        }
     }
 
     void updateFavoritesOnFxThread() {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,9 @@
  */
 package org.nmrfx.chemistry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class Compound extends Entity implements AtomIterable {
 
@@ -80,6 +82,15 @@ public class Compound extends Entity implements AtomIterable {
         atomMap.remove(atom.getName().toLowerCase());
         molecule.invalidateAtomArray();
         setHasEquivalentAtoms(false);
+    }
+
+    public void removeAllAtoms() {
+        int nAtoms = atoms.size();
+        for (int i = nAtoms - 1; i >= 0; i--) {
+            Atom atom = atoms.get(i);
+            removeAtom(atom);
+        }
+        bonds.clear();
     }
 
     @Override
@@ -165,7 +176,7 @@ public class Compound extends Entity implements AtomIterable {
         });
         atomMap = newMap;
     }
-    
+
     public String toNEFSequenceString(int idx, String link) {
         //sequence code
         int num = Integer.parseInt(this.getNumber());

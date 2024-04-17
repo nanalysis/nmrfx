@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,17 +17,18 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.utilities.ConvUtil;
 import org.nmrfx.utilities.Format;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PeakDim {
-
-    public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
-
     private int spectralDim = 0;
     private Float chemShift = null;
     private Float chemShiftError = null;
@@ -45,7 +46,7 @@ public class PeakDim {
     private char[] error = {'+', '+'};
     private String user = "";
     private Peak myPeak = null;
-    private Resonance resonance;
+    private AtomResonance resonance;
     private boolean frozen = false;
     private boolean linksDrawn = false;  // used in drawing link lines
 
@@ -58,6 +59,10 @@ public class PeakDim {
     public PeakDim(Peak peak, int iDim) {
         myPeak = peak;
         setSpectralDim(iDim);
+    }
+    @Override
+    public String toString() {
+        return myPeak.getName() + "." + spectralDim;
     }
 
     public PeakDim copy(Peak peak) {
@@ -94,6 +99,13 @@ public class PeakDim {
         targetPeakDim.decayRateError = decayRateError;
         targetPeakDim.error = error.clone();
         targetPeakDim.user = user;
+        if (multiplet != null) {
+            Multiplet newMultiplet = new Multiplet(targetPeakDim);
+            multiplet.copyTo(newMultiplet);
+            newMultiplet.myPeakDim = targetPeakDim;
+            targetPeakDim.multiplet = newMultiplet;
+        }
+        targetPeakDim.resonance = resonance.copy();
     }
 
     public void restoreFrom(PeakDim peakDim) {
@@ -121,8 +133,8 @@ public class PeakDim {
     }
 
     public void copyLabels(PeakDim newPeakDim) {
-        Resonance resOld = getResonance();
-        Resonance resNew = newPeakDim.getResonance();
+        AtomResonance resOld = getResonance();
+        AtomResonance resNew = newPeakDim.getResonance();
         resNew.setName(resOld.getName());
     }
 
@@ -135,11 +147,12 @@ public class PeakDim {
     }
 
     public void initResonance() {
-        resonance = PeakList.resFactory().build();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        resonance = resFactory.build();
         resonance.add(this);
     }
 
-    public Resonance getResonance() {
+    public AtomResonance getResonance() {
         return resonance;
     }
 
@@ -150,7 +163,7 @@ public class PeakDim {
     public List<PeakDim> getLinkedPeakDims() {
         if (resonance == null) {
             // fixme should this contain this peakdim (and in general should result contain this dim plus linked)
-            return EMPTY_LIST;
+            return Collections.emptyList();
         } else {
             return resonance.getPeakDims();
         }
@@ -177,7 +190,11 @@ public class PeakDim {
 
     public void unLink() {
         resonance.remove(this);
+        var oldNames = resonance.getNames();
+        Atom atom = resonance.getAtom();
         initResonance();
+        resonance.setName(oldNames);
+        resonance.setAtom(atom);
         if (multiplet != null) {
             multiplet = new Multiplet(this);
         }
@@ -193,10 +210,11 @@ public class PeakDim {
 
     public void setResonance(long resID) {
         remove();
-        resonance = PeakList.resFactory().get(resID);
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        resonance = resFactory.get(resID);
     }
 
-    public void setResonance(Resonance newResonance) {
+    public void setResonance(AtomResonance newResonance) {
         resonance = newResonance;
     }
 

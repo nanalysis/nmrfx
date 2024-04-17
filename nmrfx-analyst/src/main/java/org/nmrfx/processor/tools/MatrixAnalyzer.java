@@ -1,5 +1,15 @@
 package org.nmrfx.processor.tools;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.datasets.RegionData;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.processor.datasets.Dataset;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -10,18 +20,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.datasets.RegionData;
-import org.nmrfx.peaks.io.PeakReader;
 
 /**
- *
  * @author brucejohnson
  */
 public class MatrixAnalyzer {
@@ -289,7 +289,7 @@ public class MatrixAnalyzer {
                     datasetName = datasetFile.getName();
                     Dataset dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
-                        dataset = new Dataset(datasetFile.toString(), datasetName, false, false);
+                        dataset = new Dataset(datasetFile.toString(), datasetName, false, false, false);
                     }
                     Integer index = getIntegerValue(data, headerMap, "index", null);
                     if (index == null) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,9 @@ package org.nmrfx.processor.gui;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Orientation;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -28,6 +30,11 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
+import org.nmrfx.processor.operations.Util;
+import org.nmrfx.processor.processing.ProcessingOperation;
+import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.processor.processing.ProcessingSection;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,58 +45,147 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 public class Phaser {
 
     private static final Logger log = LoggerFactory.getLogger(Phaser.class);
+    private final boolean processMode;
     String delImagString = "False";
     FXMLController controller;
     Slider[] sliders = new Slider[2];
-    Label[] phLabels = new Label[2];
-    double[] scales = {1, 8};
+    TextField[] phLabels = new TextField[2];
+    double[] scales = {1, 4};
     SimpleStringProperty phaseChoice = new SimpleStringProperty("X");
-    ChoiceBox xyPhaseChoice;
+    ChoiceBox<String> xyPhaseChoice;
     List<MenuItem> processorMenuItems = new ArrayList<>();
     List<MenuItem> datasetMenuItems = new ArrayList<>();
     MenuButton phaseMenuButton = null;
+    ProcessingOperation processingOperation = null;
+    boolean sliceStatus = false;
+    Cursor cursor = null;
 
-    public Phaser(FXMLController controller, VBox vbox) {
+    public Phaser(FXMLController controller, VBox vbox, Orientation orientation) {
         this.controller = controller;
-        initGUI(vbox);
+        processMode = false;
+        makeSliders(vbox, orientation);
+        setupMenus(vbox);
     }
 
-    private void initGUI(VBox vbox) {
+    public Phaser(FXMLController controller, VBox vbox, Orientation orientation,
+                  ProcessingOperation processingOperation) {
+        this.controller = controller;
+        processMode = true;
+        this.processingOperation = processingOperation;
+        HBox hBox = new HBox();
+        setupMenus(hBox);
+        vbox.setSpacing(15);
+        vbox.getChildren().add(hBox);
+        makeSliders(vbox, orientation);
+    }
+
+    private void makeSliders(VBox vbox, Orientation orientation) {
+        Pane layoutPane;
         for (int iPh = 0; iPh < 2; iPh++) {
+            HBox hBox;
+            if (orientation == Orientation.HORIZONTAL) {
+                hBox = new HBox();
+                HBox.setHgrow(hBox, Priority.ALWAYS);
+                vbox.getChildren().add(hBox);
+                layoutPane = hBox;
+            } else {
+                layoutPane = vbox;
+            }
             final int phMode = iPh;
             Label label = new Label("PH" + iPh);
             Slider slider = new Slider();
-            slider.setBlockIncrement(1.0 * scales[iPh]);
+            slider.setBlockIncrement(scales[iPh]);
             slider.setMajorTickUnit(15.0 * scales[iPh]);
             slider.setMin(-45.0 * scales[iPh]);
             slider.setMax(45.0 * scales[iPh]);
             slider.setMinorTickCount(3);
             slider.setShowTickMarks(true);
             slider.setShowTickLabels(true);
-            slider.setOrientation(Orientation.VERTICAL);
+            slider.setOrientation(orientation);
+            sliders[iPh] = slider;
+            if (orientation == Orientation.VERTICAL) {
+                VBox.setVgrow(slider, Priority.ALWAYS);
+            } else {
+                HBox.setHgrow(slider, Priority.ALWAYS);
+            }
+            phLabels[iPh] = new TextField();
+            phLabels[iPh].setPrefWidth(50);
+            GUIUtils.bindSliderField(slider, phLabels[iPh], "##0.0", 45.0 * scales[iPh]);
             slider.valueProperty().addListener(e -> handlePh(phMode));
             slider.setOnMouseReleased(e -> handlePhReset(phMode));
-            sliders[iPh] = slider;
-            VBox.setVgrow(slider, Priority.ALWAYS);
-            Separator sep = new Separator();
-            phLabels[iPh] = new Label();
-            vbox.getChildren().addAll(label, slider, phLabels[iPh]);
-            if (iPh == 0) {
+            phLabels[iPh].setOnAction(e -> handlePhReset(phMode));
+            layoutPane.getChildren().addAll(label, slider, phLabels[iPh]);
+            if ((iPh == 0) && (orientation == Orientation.VERTICAL)) {
                 Pane filler = new Pane();
                 filler.setMinHeight(20);
                 vbox.getChildren().add(filler);
             }
         }
-        xyPhaseChoice = new ChoiceBox();
+    }
+
+    private void setupMenus(HBox hbox) {
+        SplitMenuButton splitMenuButton = new SplitMenuButton();
+        splitMenuButton.setText("Pivot");
+        splitMenuButton.setOnAction(e -> setPhasePivotToMax());
+
+        MenuItem setPivotToMaxItem = new MenuItem("Set toMax");
+        setPivotToMaxItem.setOnAction(e -> setPhasePivotToMax());
+        splitMenuButton.getItems().add(setPivotToMaxItem);
+
+        MenuItem setPivotItem = new MenuItem("At Crosshair");
+        setPivotItem.setOnAction(e -> setPhasePivot());
+        splitMenuButton.getItems().add(setPivotItem);
+
+        SplitMenuButton phaseSplitMenuButton = new SplitMenuButton();
+        phaseSplitMenuButton.setText("Set");
+        phaseSplitMenuButton.setOnAction(e -> setPhases());
+
+        MenuItem setPhasesToDataValuesItem = new MenuItem("To Data Values");
+        setPhasesToDataValuesItem.setOnAction(e -> setPhases());
+
+        MenuItem setPhase0_0Item = new MenuItem("0,0");
+        setPhase0_0Item.setOnAction(e -> setPhase_0_0());
+
+        MenuItem setPhase180_0Item = new MenuItem("180,0");
+        setPhase180_0Item.setOnAction(e -> setPhase_180_0());
+
+        MenuItem setPhase90_180Item = new MenuItem("-90,180");
+        setPhase90_180Item.setOnAction(e -> setPhase_minus90_180());
+
+        MenuItem invertPhaseItem = new MenuItem("Invert");
+        invertPhaseItem.setOnAction(e -> invertPhase());
+
+        phaseSplitMenuButton.getItems().addAll(setPhasesToDataValuesItem, setPhase0_0Item, setPhase180_0Item, setPhase90_180Item, invertPhaseItem);
+
+        SplitMenuButton autoPhaseMenuButton = new SplitMenuButton();
+        autoPhaseMenuButton.setText("Auto");
+        autoPhaseMenuButton.setOnAction(e -> autoPhase01());
+
+        MenuItem autoPhase01Item = new MenuItem("AutoPhase 0+1");
+        autoPhase01Item.setOnAction(e -> autoPhase01());
+
+        MenuItem autoPhase0Item = new MenuItem("AutoPhase 0");
+        autoPhase0Item.setOnAction(e -> autoPhase0());
+
+        autoPhaseMenuButton.getItems().addAll(autoPhase01Item, autoPhase0Item);
+
+        hbox.setSpacing(15);
+        hbox.getChildren().addAll(splitMenuButton, phaseSplitMenuButton, autoPhaseMenuButton);
+
+    }
+
+    private void setupMenus(VBox vbox) {
+        xyPhaseChoice = new ChoiceBox<>();
         xyPhaseChoice.getItems().addAll("X", "Y");
         vbox.getChildren().add(xyPhaseChoice);
+
         xyPhaseChoice.valueProperty().bindBidirectional(phaseChoice);
+        xyPhaseChoice.valueProperty().addListener(e -> setChartPhaseDim());
 
         phaseMenuButton = new MenuButton("Phase");
 
@@ -139,30 +235,34 @@ public class Phaser {
         Collections.addAll(datasetMenuItems, setPivotItem, applyPhaseItem,
                 autoPhaseDataset0Item, autoPhaseDataset01Item, resetPhaseItem);
 
+        vbox.getChildren().add(phaseMenuButton);
         phaseMenuButton.getItems().addAll(datasetMenuItems);
 
-        vbox.getChildren().add(phaseMenuButton);
-        phaseChoice.addListener(e -> setChartPhaseDim());
-        controller.processControllerVisibleProperty().addListener(e -> resetMenus());
     }
 
-    void resetMenus() {
-        if (controller.isProcessControllerVisible()) {
-            phaseMenuButton.getItems().setAll(processorMenuItems);
-            xyPhaseChoice.setVisible(false);
-        } else {
-            phaseMenuButton.getItems().setAll(datasetMenuItems);
-            xyPhaseChoice.setVisible(true);
-        }
-    }
-
-    void setChartPhaseDim() {
+     void setChartPhaseDim() {
         PolyChart chart = controller.getActiveChart();
         chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
-        if ((controller.getChartProcessor() == null) || !controller.isProcessControllerVisible()) {
+        if (!processMode) {
             setPH1Slider(chart.getDataPH1());
             setPH0Slider(chart.getDataPH0());
         }
+    }
+
+    public void sliceStatus(boolean state) {
+        sliceStatus = state;
+    }
+
+    public boolean sliceStatus() {
+        return sliceStatus;
+    }
+
+    public void cursor(Cursor cursor) {
+        this.cursor = cursor;
+    }
+
+    public Cursor cursor() {
+        return cursor;
     }
 
     void handlePhReset(int iPh) {
@@ -185,7 +285,6 @@ public class Phaser {
     private void handlePh0() {
         double sliderPH0 = sliders[0].getValue();
         sliderPH0 = Math.round(sliderPH0 * 10) / 10.0;
-        phLabels[0].setText(String.format("%.1f", sliderPH0));
         double deltaPH0 = 0.0;
         PolyChart chart = controller.getActiveChart();
         if (controller.getActiveChart().hasData()) {
@@ -196,7 +295,7 @@ public class Phaser {
             chart.layoutPlotChildren();
         } else {
             chart.setPh0(deltaPH0);
-            chart.getCrossHairs().refreshCrossHairs();
+            chart.getCrossHairs().refresh();
         }
     }
 
@@ -222,9 +321,6 @@ public class Phaser {
             deltaPH1 = sliderPH1 - chart.getDataPH1();
         }
 
-        phLabels[0].setText(String.format("%.1f", sliderPH0));
-        phLabels[1].setText(String.format("%.1f", sliderPH1));
-
         if (chart.is1D()) {
             chart.setPh0(deltaPH0);
             chart.setPh1(deltaPH1);
@@ -232,7 +328,7 @@ public class Phaser {
         } else {
             chart.setPh0(deltaPH0);
             chart.setPh1(deltaPH1);
-            chart.getCrossHairs().refreshCrossHairs();
+            chart.getCrossHairs().refresh();
         }
     }
 
@@ -246,6 +342,7 @@ public class Phaser {
     }
 
     public void handlePh0Reset(double ph0, boolean updateOp) {
+        ph0 = Util.phaseMin(ph0);
         ph0 = Math.round(ph0 * 10) / 10.0;
         double halfRange = 22.5;
         double start = halfRange * Math.round(ph0 / halfRange) - 2.0 * halfRange;
@@ -254,17 +351,9 @@ public class Phaser {
         sliders[0].setMax(end);
         sliders[0].setBlockIncrement(0.1);
         sliders[0].setValue(ph0);
-        phLabels[0].setText(String.format("%.1f", ph0));
         if (updateOp) {
             setPhaseOp();
         }
-    }
-
-    public void setPhaseLabels(double ph0, double ph1) {
-        ph0 = Math.round(ph0 * 10) / 10.0;
-        ph1 = Math.round(ph1 * 10) / 10.0;
-        phLabels[0].setText(String.format("%.1f", ph0));
-        phLabels[1].setText(String.format("%.1f", ph1));
     }
 
     private void handlePh1Reset() {
@@ -283,7 +372,6 @@ public class Phaser {
         sliders[1].setMin(start);
         sliders[1].setMax(end);
         sliders[1].setValue(ph1);
-        phLabels[1].setText(String.format("%.1f", ph1));
         if (updateOp) {
             setPhaseOp();
         }
@@ -314,31 +402,37 @@ public class Phaser {
             chart.setPhaseDim(phaseDim);
             getPhaseOp();
         } else {
-            chart.datasetPhaseDim = 0;
+            chart.resetPhaseDim();
             handlePh1Reset(0.0);
             handlePh0Reset(0.0);
         }
-        phaseChoice.set(chart.phaseAxis == 0 ? "X" : "Y");
+        phaseChoice.set(chart.getPhaseAxis() == PolyChartAxes.X_INDEX ? "X" : "Y");
     }
 
     public void setPhaseOp(String opString) {
         PolyChart chart = controller.getActiveChart();
-        int opIndex = chart.processorController.propertyManager.setOp(opString);
-        chart.processorController.propertyManager.setPropSheet(opIndex, opString);
+        processingOperation.update(opString);
+        if (processMode) {
+            chart.getProcessorController().chartProcessor.updateOpList();
+        }
     }
 
     public void setPhaseOp() {
+        if (!processMode) {
+            return;
+        }
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
-        String phaseDim = String.valueOf(chart.datasetPhaseDim + 1);
+        int phaseDim = chart.getPhaseDim();
         if (chart.hasData() && (controller.getChartProcessor() != null)) {
             if (chart.is1D()) {
-                List<String> listItems = controller.getChartProcessor().getOperations("D" + phaseDim);
+                int[] dims = {chart.getPhaseDim()};
+                ProcessingSection processingSection = new ProcessingSection(1, dims, "D");
+                List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(processingSection);
                 if (listItems != null) {
-                    Map<String, String> values = null;
-                    for (String s : listItems) {
-                        if (s.contains("AUTOPHASE")) {
+                    for (ProcessingOperationInterface processingOperation : listItems) {
+                        if (processingOperation.getName().equals("AUTOPHASE")) {
                             double aph0 = AutoPhase.lastPh0.get();
                             double aph1 = AutoPhase.lastPh1.get();
                             ph0 -= aph0;
@@ -347,30 +441,40 @@ public class Phaser {
                     }
                 }
                 String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
-                if (chart.processorController != null) {
+                if (processingOperation != null) {
+                    processingOperation.update(opString);
+                    controller.getChartProcessor().updateOpList();
+                }
+
+                if (chart.getProcessorController() != null) {
                     setPhaseOp(opString);
                 }
                 chart.setPh0(0.0);
                 chart.setPh1(0.0);
                 chart.layoutPlotChildren();
-            } else if (phaseDim.equals(controller.getChartProcessor().getVecDimName().substring(1))) {
-                double newph0 = ph0;
-                double newph1 = ph1;
+            } else if (controller.getChartProcessor().getCurrentProcessingSection().getFirstDimension() == phaseDim) {
                 double deltaPH0 = ph0 - chart.getDataPH0();
                 double deltaPH1 = ph1 - chart.getDataPH1();
 
-                String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", newph0, newph1, delImagString);
-                if (chart.processorController != null) {
+                String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
+                if (processingOperation != null) {
+                    processingOperation.update(opString);
+                    controller.getChartProcessor().updateOpList();
+                }
+                if (chart.getProcessorController() != null) {
                     setPhaseOp(opString);
                 }
                 chart.setPh0(deltaPH0);
                 chart.setPh1(deltaPH1);
-                chart.getCrossHairs().refreshCrossHairs();
+                chart.getCrossHairs().refresh();
             }
         }
     }
 
     protected void getPhaseOp() {
+        if (!processMode) {
+            return;
+        }
         PolyChart chart = controller.getActiveChart();
         double ph0 = 0.0;
         double ph1 = 0.0;
@@ -379,19 +483,26 @@ public class Phaser {
         if (!chart.hasData()) {
             return;
         }
-        DatasetBase dataset = chart.getDataset();
-        String phaseDim = "D" + String.valueOf(chart.datasetPhaseDim + 1);
+        String phaseDim = "D" + (chart.getPhaseDim() + 1);
         if (controller.getChartProcessor() != null) {
-            List<String> listItems = controller.getChartProcessor().getOperations(phaseDim);
+            int[] dims = {chart.getPhaseDim()};
+            ProcessingSection processingSection = new ProcessingSection(1, dims, "D");
+
+            List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(processingSection);
             if (listItems != null) {
                 Map<String, String> values = null;
-                for (String s : listItems) {
-                    if (s.contains("PHASE")) {
-                        values = PropertyManager.parseOpString(s);
-                    }
-                    if (s.contains("AUTOPHASE")) {
-                        aph0 = AutoPhase.lastPh0.get();
-                        aph1 = AutoPhase.lastPh1.get();
+                if (processingOperation != null) {
+                    values = PropertyManager.parseOpString(processingOperation.toString());
+                } else {
+                    for (ProcessingOperationInterface processingOperation : listItems) {
+                        String opName = processingOperation.getName();
+                        if (opName.equals("PHASE")) {
+                            values = PropertyManager.parseOpString(processingOperation.toString());
+                        }
+                        if (opName.equals("AUTOPHASE")) {
+                            aph0 = AutoPhase.lastPh0.get();
+                            aph1 = AutoPhase.lastPh1.get();
+                        }
                     }
                 }
                 if (values != null) {
@@ -408,12 +519,7 @@ public class Phaser {
                         } else {
                             ph1 = 0.0;
                         }
-                        if (values.containsKey("dimag")) {
-                            String value = values.get("dimag");
-                            delImagString = value;
-                        } else {
-                            delImagString = "False";
-                        }
+                        delImagString = values.getOrDefault("dimag", "False");
                     } catch (NumberFormatException nfE) {
                         log.warn("Unable to parse phase.", nfE);
                     }
@@ -432,12 +538,25 @@ public class Phaser {
         controller.getActiveChart().drawSlices();
     }
 
+    private void setPhasePivotToMax() {
+        controller.getActiveChart().setPivotToMax();
+        controller.getActiveChart().drawSlices();
+    }
+
     private void autoPhase0() {
-        controller.getActiveChart().autoPhase(false, false);
+        if (controller.getActiveChart().is1D()) {
+            controller.getActiveChart().autoPhase(false, false);
+        } else {
+            autoPhaseDataset(false, false);
+        }
     }
 
     private void autoPhase01() {
-        controller.getActiveChart().autoPhase(false,true);
+        if (controller.getActiveChart().is1D()) {
+            controller.getActiveChart().autoPhase(false, true);
+        } else {
+            autoPhaseDataset(true, false);
+        }
     }
 
     private void autoPhaseMax() {
@@ -449,7 +568,7 @@ public class Phaser {
         DatasetBase datasetBase = chart.getDataset();
         Dataset dataset = (Dataset) datasetBase;
         try {
-            int iDim = chart.datasetPhaseDim;
+            int iDim = chart.getPhaseDim();
             double ph0 = chart.getPh0();
             double ph1 = chart.getPh1();
             dataset.phaseDim(iDim, ph0, ph1);
@@ -463,30 +582,37 @@ public class Phaser {
     }
 
     private void autoPhaseDataset0() {
-        autoPhaseDataset(false);
+        autoPhaseDataset(false, true);
     }
 
     private void autoPhaseDataset01() {
-        autoPhaseDataset(true);
+        autoPhaseDataset(true, true);
     }
 
-    private void autoPhaseDataset(boolean firstOrder) {
+    private void autoPhaseDataset(boolean firstOrder, boolean apply) {
         PolyChart chart = controller.getActiveChart();
         DatasetBase datasetBase = chart.getDataset();
-        if (!(datasetBase instanceof Dataset)) {
-
+        if (!(datasetBase instanceof Dataset dataset)) {
+            throw new IllegalStateException("Dataset isn't a valid instance!");
         }
-        Dataset dataset = (Dataset) datasetBase;
+
         double ratio = 25.0;
         IDBaseline2.ThreshMode threshMode = IDBaseline2.ThreshMode.SDEV;
 
-        int iDim = chart.datasetPhaseDim;
+        int iDim = chart.getPhaseDim();
         int winSize = 2;
         double ph1Limit = 90.0;
         try {
-            double[] phases = dataset.autoPhase(iDim, firstOrder, winSize, ratio, ph1Limit, threshMode);
-            chart.setPh0(0.0);
-            chart.setPh1(0.0);
+            double[] phases = dataset.autoPhase(iDim, firstOrder, winSize, ratio, ph1Limit, threshMode, apply);
+            if (apply) {
+                chart.setPh0(0.0);
+                chart.setPh1(0.0);
+            } else {
+                chart.setPh0(0.0);
+                chart.setPh1(0.0);
+                handlePh1Reset(sliders[1].getValue() + phases[1]);
+                handlePh0Reset(sliders[0].getValue() + phases[0]);
+            }
             chart.refresh();
         } catch (IOException ioE) {
             ExceptionDialog d = new ExceptionDialog(ioE);
@@ -505,37 +631,44 @@ public class Phaser {
         }
         setPH1Slider(0.0);
         setPH0Slider(0.0);
+        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", 0.0, 0.0, delImagString);
+        setPhaseOp(opString);
         chart.resetChartPhases();
     }
 
     private void setPhase_minus90_180() {
-        PolyChart chart = controller.getActiveChart();
-        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", -90.0, 180.0, delImagString);
-        setPhaseOp(opString);
-        setPH1Slider(180.0);
-        setPH0Slider(-90.0);
-        chart.setPh0(0.0);
-        chart.setPh1(0.0);
-        chart.layoutPlotChildren();
+        setPhase(-90.0, 180.0);
+    }
+
+    private void setPhases() {
+        var nmrData = controller.getChartProcessor().getNMRData();
+        if (nmrData != null) {
+            double ph0 = nmrData.getPH0(0);
+            double ph1 = nmrData.getPH1(0);
+            setPhase(ph0, ph1);
+        }
+    }
+
+    private void invertPhase() {
+        double ph0 = sliders[0].getValue();
+        double ph1 = sliders[1].getValue();
+        setPhase(ph0 + 180.0, ph1);
     }
 
     private void setPhase_0_0() {
-        PolyChart chart = controller.getActiveChart();
-        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", 0.0, 0.0, delImagString);
-        setPhaseOp(opString);
-        setPH1Slider(0.0);
-        setPH0Slider(0.0);
-        chart.setPh0(0.0);
-        chart.setPh1(0.0);
-        chart.layoutPlotChildren();
+        setPhase(0.0, 0.0);
     }
 
     private void setPhase_180_0() {
+        setPhase(180.0, 0.0);
+    }
+
+    private void setPhase(double ph0, double ph1) {
         PolyChart chart = controller.getActiveChart();
-        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", 180.0, 0.0, delImagString);
+        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
         setPhaseOp(opString);
-        setPH1Slider(0.0);
-        setPH0Slider(180.0);
+        setPH1Slider(ph1);
+        setPH0Slider(ph0);
         chart.setPh0(0.0);
         chart.setPh1(0.0);
         chart.layoutPlotChildren();

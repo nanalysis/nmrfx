@@ -4,29 +4,26 @@
  */
 package org.nmrfx.structure.rna;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.optim.SimpleValueChecker;
-import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.MersenneTwister;
-import org.apache.commons.math3.util.Precision;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
+import org.apache.commons.math3.random.MersenneTwister;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.util.Precision;
+import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SSLayout implements MultivariateFunction {
 
@@ -100,6 +97,7 @@ public class SSLayout implements MultivariateFunction {
             angleRelations[i] = 0;
         }
     }
+
 
     public static SSLayout createLayout(Molecule mol) throws InvalidMoleculeException {
         List<List<String>> sequences = setupSequence(mol);
@@ -834,7 +832,7 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];                        
+                        int start = levelMap[levels[rightIndex]][rightIndex];
                         int end = i;
                         addPair(start, end);
 
@@ -844,10 +842,10 @@ public class SSLayout implements MultivariateFunction {
                 log.warn(aiE.getMessage(), aiE);
                 return;
             }
-        } 
+        }
     }
-    
-        public List<Residue> interpVienna(String vienna, List<Residue> res) {
+
+    public List<Residue> interpVienna(String vienna, List<Residue> res) {
         String leftBrackets = "({[";
         String rightBrackets = ")}]";
         int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
@@ -864,7 +862,7 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];                        
+                        int start = levelMap[levels[rightIndex]][rightIndex];
                         int end = i;
                         addPair(start, end);
                         res.get(start).pairedTo = res.get(end);

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -43,6 +43,8 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.math.VecException;
+import org.nmrfx.processor.operations.IDBaseline2;
+import org.nmrfx.processor.operations.OperationException;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -69,7 +71,7 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
  * resized and may have a capacity larger than the number of valid data values
  * they contain. Because of this the user must always pay attention to the size
  * field which indicates the number of valid points.
- *
+ * <p>
  * The class extends the Jython PySequence class which allows it to be used in
  * basic Python operations (addition, subtraction etc.).
  *
@@ -80,10 +82,9 @@ import static org.nmrfx.processor.math.VecUtil.nnlsFit;
 public class Vec extends VecBase {
 
     public static final PyType VTYPE = PyType.fromClass(Vec.class);
-
-    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
-
     public static final String TYPE_NAME = "nmrfxvector";
+
+    private static final GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
     private double[] annotationData = null;
 
@@ -111,6 +112,7 @@ public class Vec extends VecBase {
 
     /**
      * Create a real vector.
+     *
      * @param real The real data to store in the vector.
      */
     public Vec(double[] real) {
@@ -119,6 +121,7 @@ public class Vec extends VecBase {
 
     /**
      * Create a complex vector that stores real and imaginary in separate arrays.
+     *
      * @param real
      * @param imaginary
      */
@@ -130,8 +133,8 @@ public class Vec extends VecBase {
      * Create a vector with the specified name, size and complex mode and store
      * it in a Map of Vec objects.
      *
-     * @param size Size of vector.
-     * @param name name of vector
+     * @param size    Size of vector.
+     * @param name    name of vector
      * @param complex true if vector stores complex data
      * @return new Vec object
      */
@@ -371,7 +374,7 @@ public class Vec extends VecBase {
      * correction algorithms.
      *
      * @param region boolean array where true values indicate that point is
-     * signal.
+     *               signal.
      */
     public void setSignalRegion(boolean[] region) {
         inSignalRegion = region;
@@ -399,10 +402,10 @@ public class Vec extends VecBase {
         }
         System.arraycopy(data, 0, annotationData, 0, data.length);
         double max = Double.NEGATIVE_INFINITY;
-        for (int i=0;i<annotationData.length;i++) {
+        for (int i = 0; i < annotationData.length; i++) {
             max = Math.max(max, annotationData[i]);
         }
-        for (int i=0;i<annotationData.length;i++) {
+        for (int i = 0; i < annotationData.length; i++) {
             annotationData[i] /= max;
         }
     }
@@ -412,6 +415,7 @@ public class Vec extends VecBase {
     }
 
     // fixme what the he?? does this do
+
     /**
      * Get start of "valid" data in vectors that have DSP "charge-up" at
      * beginning. This value is calculated based on the vectors stored
@@ -528,7 +532,7 @@ public class Vec extends VecBase {
     /**
      * Fix DSP charge-up
      *
-     * @param amp amplitude of filter
+     * @param amp   amplitude of filter
      * @param phase phase of filter
      */
     public void fixWithBrukerFilter(double amp, double phase) {
@@ -726,9 +730,9 @@ public class Vec extends VecBase {
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
      * @param freq frequency in Hz
-     * @param lw Linewidth in Hz
-     * @param amp amplitude
-     * @param ph phase in degrees
+     * @param lw   Linewidth in Hz
+     * @param amp  amplitude
+     * @param ph   phase in degrees
      */
     public void genSignalHz(double freq, double lw, double amp, double ph) {
         double f = freq / (1.0 / dwellTime);
@@ -759,10 +763,10 @@ public class Vec extends VecBase {
     /**
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
-     * @param freq frequency in degrees per point
+     * @param freq  frequency in degrees per point
      * @param decay exponential decay per point
-     * @param amp amplitude
-     * @param ph phase in degrees
+     * @param amp   amplitude
+     * @param ph    phase in degrees
      */
     public void genSignal(double freq, double decay, double amp, double ph) {
         Complex w = ComplexUtils.polar2Complex(decay, freq * Math.PI / 180.0);
@@ -889,7 +893,7 @@ public class Vec extends VecBase {
      * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
      * TPPI data collection.
      *
-     * @param rvec real values
+     * @param rvec    real values
      * @param vecSize size of vector
      */
     public static void negatePairs(double[] rvec, int vecSize) {
@@ -914,8 +918,8 @@ public class Vec extends VecBase {
      * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
      * TPPI data collection.
      *
-     * @param rvec real values
-     * @param ivec imaginary values
+     * @param rvec    real values
+     * @param ivec    imaginary values
      * @param vecSize size of vector
      */
     public static void negatePairs(double[] rvec, double[] ivec, int vecSize) {
@@ -939,7 +943,7 @@ public class Vec extends VecBase {
      * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
      * TPPI data collection.
      *
-     * @param cvec complex values
+     * @param cvec    complex values
      * @param vecSize size of vector
      */
     public static void negatePairs(Complex[] cvec, int vecSize) {
@@ -1029,6 +1033,7 @@ public class Vec extends VecBase {
     }
 
     //print a string of the value(s) at index i
+
     /**
      * Return String representation of value at specified index
      *
@@ -1055,10 +1060,10 @@ public class Vec extends VecBase {
     /**
      * Perform Fast Fourier Transform (FFT) of this vector with various options.
      *
-     * @param negatePairs negate alternate real/imaginary pairs
+     * @param negatePairs     negate alternate real/imaginary pairs
      * @param negateImaginary negate imaginary pairs
-     * @param fixGroupDelay modify vector to remove DSP charge-up at front of
-     * vector
+     * @param fixGroupDelay   modify vector to remove DSP charge-up at front of
+     *                        vector
      */
     public void fft(boolean negatePairs, boolean negateImaginary, boolean fixGroupDelay) {
         if (isComplex()) {
@@ -1097,7 +1102,7 @@ public class Vec extends VecBase {
      * Perform inverse Fast Fourier Transform (FFT) of this vector with various
      * options.
      *
-     * @param negatePairs negate alternate real/imaginary pairs
+     * @param negatePairs     negate alternate real/imaginary pairs
      * @param negateImaginary negate imaginary pairs
      */
     public void ifft(boolean negatePairs, boolean negateImaginary) {
@@ -1150,14 +1155,14 @@ public class Vec extends VecBase {
 
     /**
      * Real FT.
-     *
+     * <p>
      * Vec must be real. If a Vec is using cvec it will do a RFT of the real
      * part and copy back to cvec, if a Vec is using rvec it will copy RFT back
      * to rvec and ivec.
      *
-     * @param inverse If true do the inverse FFT.
+     * @param inverse     If true do the inverse FFT.
      * @param negatePairs negate alternate real/imaginary pairs
-     * @param negateOdd negate alternate values
+     * @param negateOdd   negate alternate values
      */
     public void rft(boolean inverse, boolean negatePairs, boolean negateOdd) {
         if (!isComplex) {
@@ -1384,10 +1389,10 @@ public class Vec extends VecBase {
      * of this vector. FIXME check moments
      *
      * @param start first point of region
-     * @param end last point of region
+     * @param end   last point of region
      * @return an array of four values containing the first four moments.
      * @throws IllegalArgumentException if not vector not real, data is null, or
-     * the range is invalid
+     *                                  the range is invalid
      */
     public double[] moments(int start, int end)
             throws IllegalArgumentException {
@@ -1508,10 +1513,10 @@ public class Vec extends VecBase {
      * region of this vector
      *
      * @param start starting point (inclusive)
-     * @param end ending point (inclusive)
+     * @param end   ending point (inclusive)
      * @return an array of four doubles containing the statistics
      * @throws IllegalArgumentException if vector not real or doesn't have at
-     * least 4 values in range
+     *                                  least 4 values in range
      */
     public double[] regionStats(int start, int end)
             throws IllegalArgumentException {
@@ -1542,9 +1547,9 @@ public class Vec extends VecBase {
      * arrays. FIXME
      *
      * @param rVec this vector will be a real vector containing the real values
-     * of the original vector
+     *             of the original vector
      * @param iVec this vector will be a real vector containing the imaginary
-     * values of the original vector.
+     *             values of the original vector.
      */
     public void split(Vec rVec, Vec iVec) {
         rVec.resize(size, false);
@@ -1747,13 +1752,13 @@ public class Vec extends VecBase {
      * algorithms. One based on flattening baseline regions adjacent to peaks
      * and one based on entropy minimization
      *
-     * @param doFirst Set to true to include first order phase correction
-     * @param winSize Window size used for analyzing for baseline region
-     * @param ratio Ratio Intensity to noise ratio used for indentifying
-     * baseline reginos
-     * @param mode Set to 0 for flattening mode and 1 for entropy mode
+     * @param doFirst  Set to true to include first order phase correction
+     * @param winSize  Window size used for analyzing for baseline region
+     * @param ratio    Ratio Intensity to noise ratio used for indentifying
+     *                 baseline reginos
+     * @param mode     Set to 0 for flattening mode and 1 for entropy mode
      * @param ph1Limit Set limit on first order phase. Can prevent unreasonable
-     * results
+     *                 results
      * @return an array of 1 or two phase values (depending on whether first
      * order mode is used)
      */
@@ -1779,12 +1784,12 @@ public class Vec extends VecBase {
     }
 
     public double testAutoPhase(int winSize, double ratio, int mode,
-            double negativePenalty) {
+                                double negativePenalty) {
         return testAutoPhase(winSize, ratio, mode, negativePenalty, 0.0, 0.0);
     }
 
     public double testAutoPhase(int winSize, double ratio, int mode,
-            double negativePenalty, double phase0, double phase1) {
+                                double negativePenalty, double phase0, double phase1) {
         TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
         return tbPoints.testFit(phase0, phase1);
     }
@@ -1802,7 +1807,7 @@ public class Vec extends VecBase {
      * Automatically phase spectrum by maximizing the sum of intensities
      *
      * @param first starting point of region to analyze
-     * @param last ending point of region to analyze
+     * @param last  ending point of region to analyze
      * @return zeroth order phase value
      */
     public double autoPhaseByMax(int first, int last) {
@@ -1871,15 +1876,15 @@ public class Vec extends VecBase {
     /**
      * Apply the specified phase values to this vector.
      *
-     * @param p0 The zeroth order phase value
-     * @param p1 The first order phase value
-     * @param pivot The pivot value at which the first order phase correction
-     * has no effect on data
-     * @param phaseAbs if false apply the specified values, if true subtract the
-     * currently stored ph0 and ph1 values from the specified values and then
+     * @param p0               The zeroth order phase value
+     * @param p1               The first order phase value
+     * @param pivot            The pivot value at which the first order phase correction
+     *                         has no effect on data
+     * @param phaseAbs         if false apply the specified values, if true subtract the
+     *                         currently stored ph0 and ph1 values from the specified values and then
      * @param discardImaginary Discard the imaginary values and convert vector
-     * to real. Phasing is a little faster if you do this (and saves calling a
-     * seperate REAL operation.
+     *                         to real. Phasing is a little faster if you do this (and saves calling a
+     *                         seperate REAL operation.
      * @return this vector
      */
     public Vec phase(double p0, double p1, int pivot, boolean phaseAbs, boolean discardImaginary) {
@@ -1980,7 +1985,7 @@ public class Vec extends VecBase {
      * Multiply vector by a frequency, relative to sweep width. Used with
      * digital filter with group delay (shift) of ncoefs/2.
      *
-     * @param freq frequency in Hz (up to +/-0.5 sweep width)
+     * @param freq  frequency in Hz (up to +/-0.5 sweep width)
      * @param shift number of points to shift scale by
      * @see FirFilter
      */
@@ -2001,7 +2006,7 @@ public class Vec extends VecBase {
      * values for the polynomial are in fractions of the vector size.
      *
      * @param order the polynomial order
-     * @param X the coefficients.
+     * @param X     the coefficients.
      */
     public void correctVec(int order, RealVector X) {
         double xval;
@@ -2020,11 +2025,29 @@ public class Vec extends VecBase {
         }
     }
 
+    public void calcBaseLineRegions() {
+        int vecSize = getSize();
+        int winSize = 16;
+        double ratio = 10.0;
+        if (winSize > (vecSize / 4)) {
+            winSize = vecSize / 4;
+        }
+
+        boolean[] isInSignalRegion;
+
+        ArrayList<Integer> positions = Util.idBaseLineBySDev(this, winSize, ratio);
+        isInSignalRegion = Util.getSignalRegion(vecSize, positions);
+        setSignalRegion(isInSignalRegion);
+    }
+
     public Vec bcWhit(double lambda, int order, boolean baselineMode) {
         int vecSize = getSize();
 
         boolean[] isInSignalRegion = getSignalRegion();
-
+        if ((isInSignalRegion == null) || (isInSignalRegion.length <= 4)) {
+            calcBaseLineRegions();
+            isInSignalRegion = getSignalRegion();
+        }
         if ((isInSignalRegion != null) && (isInSignalRegion.length > 4)) {
             double[] w = new double[vecSize + 1];
             double[] z = new double[vecSize + 1];
@@ -2032,27 +2055,29 @@ public class Vec extends VecBase {
             if (isComplex()) {
                 makeReal();
             }
+
+            int nSig = 0;
             for (int i = 0; i < vecSize; i++) {
                 y[i + 1] = rvec[i];
                 if (isInSignalRegion[i]) {
                     w[i + 1] = 0;
+                    nSig++;
                 } else {
                     w[i + 1] = 1;
                 }
             }
             double[] a = new double[order + 1];
-
-            Util.pascalrow(a, order);
-
-            //is this fine?
-            Util.asmooth(w, y, z, a, lambda, vecSize, order);
-            if (baselineMode) {
-                if (vecSize >= 0) {
-                    System.arraycopy(z, 1, rvec, 0, vecSize);
-                }
-            } else {
-                for (int i = 0; i < vecSize; i++) {
-                    rvec[i] -= z[i + 1];
+            if (nSig < (vecSize - 4)) {
+                Util.pascalrow(a, order);
+                Util.asmooth(w, y, z, a, lambda, vecSize, order);
+                if (baselineMode) {
+                    if (vecSize >= 0) {
+                        System.arraycopy(z, 1, rvec, 0, vecSize);
+                    }
+                } else {
+                    for (int i = 0; i < vecSize; i++) {
+                        rvec[i] -= z[i + 1];
+                    }
                 }
             }
         }
@@ -2065,7 +2090,7 @@ public class Vec extends VecBase {
      *
      * @param nBuckets The number of buckets (will be the new size of vector).
      * @throws IllegalArgumentException if vector is complex or number of
-     * buckets larger than size or not an integer fraction of size
+     *                                  buckets larger than size or not an integer fraction of size
      */
     public void bucket(int nBuckets) throws IllegalArgumentException {
         if (getFreqDomain()) {
@@ -2124,9 +2149,9 @@ public class Vec extends VecBase {
      * Time-domain solvent suppression
      *
      * @param winSize Size of window. Larger the window the narrower the region
-     * of suppression
+     *                of suppression
      * @param nPasses How many passes of filter to perform. Performing 3 passes
-     * is optimal.
+     *                is optimal.
      * @return this vector
      * @throws VecException if winSize larger than size of vector
      */
@@ -2149,9 +2174,9 @@ public class Vec extends VecBase {
      * Moving average filter.
      *
      * @param winSize Size of window. Larger the window the narrower the region
-     * of suppression when used for solvent suppression
+     *                of suppression when used for solvent suppression
      * @param nPasses How many passes of filter to perform. Performing 3 passes
-     * is optimal.
+     *                is optimal.
      * @return this vector
      * @throws VecException if winSize larger than size of vector
      */
@@ -2187,7 +2212,7 @@ public class Vec extends VecBase {
      * @param vecSize Number of values to use
      * @param winSize window size of filter
      * @throws VecException if windows size bigger than vector or values are
-     * null
+     *                      null
      */
     public static void movingAverageFilter(double[] rValues, int vecSize, int winSize)
             throws VecException {
@@ -2229,7 +2254,7 @@ public class Vec extends VecBase {
      * @param vecSize Number of values to use
      * @param winSize window size of filter
      * @throws VecException if windows size bigger than vector or values are
-     * null
+     *                      null
      */
     public static void movingAverageFilter(double[] rValues, double[] iValues, int vecSize, int winSize)
             throws VecException {
@@ -2284,7 +2309,7 @@ public class Vec extends VecBase {
      * @param vecSize Number of values to use
      * @param winSize window size of filter
      * @throws VecException if windows size bigger than vector or values are
-     * null
+     *                      null
      */
     public static void movingAverageFilter(Complex[] cValues, int vecSize, int winSize)
             throws VecException {
@@ -2359,12 +2384,12 @@ public class Vec extends VecBase {
      * Time domain polynomial correction. Can be used for solvent suppression by
      * fitting a polynomial to the FID.
      *
-     * @param order The polynomial order
+     * @param order   The polynomial order
      * @param winSize Size of regions to fit
-     * @param start Start the fit at this point. Using value greater than 0
-     * allows skipping artifacts
+     * @param start   Start the fit at this point. Using value greater than 0
+     *                allows skipping artifacts
      * @throws VecException if window size or polynomial order invalid for
-     * vector size
+     *                      vector size
      */
     public void tdpoly(int order, int winSize, int start) throws VecException {
         int m;
@@ -2456,7 +2481,7 @@ public class Vec extends VecBase {
      * provided vector.
      *
      * @param order The order of correction function
-     * @param X an array of coefficients
+     * @param X     an array of coefficients
      */
     public void correctVecSine(int order, RealVector X) {
         double yval;
@@ -2479,11 +2504,11 @@ public class Vec extends VecBase {
     /**
      * Baseline correction by fitting a smooth envelope below vector points
      *
-     * @param winSize window size
-     * @param lambda smoothing parameter
-     * @param order order of fit (0 or 1)
+     * @param winSize      window size
+     * @param lambda       smoothing parameter
+     * @param order        order of fit (0 or 1)
      * @param baselineMode if true set the vector to be the fitted baseline,
-     * rather than correcting the values. Useful for diagnostics
+     *                     rather than correcting the values. Useful for diagnostics
      * @throws VecException if vector complex
      */
     public void esmooth(int winSize, double lambda, int order, boolean baselineMode) throws VecException {
@@ -2622,10 +2647,10 @@ public class Vec extends VecBase {
      * will be interpolated between the average of the left and right edge
      * regions.
      *
-     * @param icenter center of region. If value less than 0 the position of
-     * maximum intensity will be used.
-     * @param nInterp Number of points within each side of region that will be
-     * fully interpolated.
+     * @param icenter   center of region. If value less than 0 the position of
+     *                  maximum intensity will be used.
+     * @param nInterp   Number of points within each side of region that will be
+     *                  fully interpolated.
      * @param halfWidth half width of region be zero within region.
      * @throws VecException if vector complex
      */
@@ -2745,7 +2770,7 @@ public class Vec extends VecBase {
     /**
      * Construct row n of Pascal's triangle in
      *
-     * @param a array to store result in
+     * @param a   array to store result in
      * @param row the row to calculate
      */
     public static void pascalrow(double[] a, int row) {
@@ -2764,8 +2789,8 @@ public class Vec extends VecBase {
     /**
      * Calculate the value of a Lorentzian lineshape function
      *
-     * @param x the frequency position
-     * @param b the linewidth
+     * @param x    the frequency position
+     * @param b    the linewidth
      * @param freq the frequency
      * @return the value at x
      */
@@ -2790,9 +2815,9 @@ public class Vec extends VecBase {
     /**
      * Fill a vector with Lorentzian lineshapes as specified in signals list
      *
-     * @param signals the list of signal objects
+     * @param signals        the list of signal objects
      * @param signalInPoints if true the frequency and decay in signals are in
-     * data points, otherwise they are in ppm and Hz.
+     *                       data points, otherwise they are in ppm and Hz.
      * @return this vector
      */
     public Vec fillVec(List<? extends Signal> signals, boolean signalInPoints) {
@@ -2872,13 +2897,13 @@ public class Vec extends VecBase {
      * Find amplitudes that optimize the fit of signals to an array of
      * intensities.
      *
-     * @param x The array of intensities
-     * @param fd A complex array whose values represent frequency and decay rate
-     * @param useColumns Only use signals whose indexed value is set to true in
-     * this array
-     * @param winSize Size of window frequencies came from
+     * @param x            The array of intensities
+     * @param fd           A complex array whose values represent frequency and decay rate
+     * @param useColumns   Only use signals whose indexed value is set to true in
+     *                     this array
+     * @param winSize      Size of window frequencies came from
      * @param uniformWidth If true use the same linewidth for all frequencies
-     * @param lineWidth If uniformWidth is true, use this line width
+     * @param lineWidth    If uniformWidth is true, use this line width
      * @return an AmplitudeFitResult with amplitudes and quality measures
      */
     public static AmplitudeFitResult fitAmplitudes(final double[] x, final Complex[] fd, final int[] useColumns, final int winSize, final boolean uniformWidth, final double lineWidth) {
@@ -3002,7 +3027,7 @@ public class Vec extends VecBase {
      * Integrate this vector over the specified range
      *
      * @param first starting point of range
-     * @param last ending point of range
+     * @param last  ending point of range
      */
     public void integrate(int first, int last) {
         integrate(first, last, 0.0, 0.0);
@@ -3013,10 +3038,10 @@ public class Vec extends VecBase {
      * of values between start and end. The values in vector are replaced with
      * their integral.
      *
-     * @param first starting point of range
-     * @param last ending point of range
+     * @param first          starting point of range
+     * @param last           ending point of range
      * @param firstIntensity Starting value for linear baseline
-     * @param lastIntensity Ending value for linear baseline
+     * @param lastIntensity  Ending value for linear baseline
      */
     public void integrate(int first, int last, double firstIntensity, double lastIntensity) {
         if (first < 0) {
@@ -3061,18 +3086,18 @@ public class Vec extends VecBase {
     /**
      * Identify signal regions.
      *
-     * @param winSize Size of window used in assessing standard deviation
-     * @param ratio Threshold ratio of intensities to noise
-     * @param regionWidth Minimum width for regions
-     * @param joinWidth Regions are joined if separation is less than this
-     * @param extend Increase width of region edges by this amount
+     * @param winSize      Size of window used in assessing standard deviation
+     * @param ratio        Threshold ratio of intensities to noise
+     * @param regionWidth  Minimum width for regions
+     * @param joinWidth    Regions are joined if separation is less than this
+     * @param extend       Increase width of region edges by this amount
      * @param minThreshold Threshold is the larger of this and ratio times noise
      * @return matrix of results. Each row is a region. Columns are the start,
      * end and mean intensity.
      * @throws IllegalArgumentException if real value array is null
      */
     public RealMatrix idIntegrals(int winSize, double ratio,
-            int regionWidth, int joinWidth, int extend, double minThreshold)
+                                  int regionWidth, int joinWidth, int extend, double minThreshold)
             throws IllegalArgumentException {
         double sumsq;
         double rmsd;
@@ -3274,7 +3299,7 @@ public class Vec extends VecBase {
      * @param exp target decay
      * @return this vector
      * @throws IllegalArgumentException if vectors aren't all the same size and
-     * complex
+     *                                  complex
      */
     public Vec deconv(Vec ref, Vec exp)
             throws IllegalArgumentException {

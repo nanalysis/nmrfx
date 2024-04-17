@@ -17,21 +17,17 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 import org.apache.commons.math3.complex.Complex;
 
+import java.nio.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class DataConvert {
 
 // copy read data into double array
+
     /**
      *
      */
@@ -61,7 +57,7 @@ public class DataConvert {
     /**
      * Scale values (divide) in array by specified parameter
      *
-     * @param data array of data values
+     * @param data  array of data values
      * @param scale divide values by this value
      */
     public static void scale(double[] data, double scale) {
@@ -86,10 +82,10 @@ public class DataConvert {
      * Copy data values from a complex (alternate values) array into two arrays
      * of real and imaginary values
      *
-     * @param data array of data values
+     * @param data  array of data values
      * @param rdata the array to receive the real values
      * @param idata the array to receive the imaginary values
-     * @param size the number of complex values to copy
+     * @param size  the number of complex values to copy
      */
     public static void toArrays(double[] data, double[] rdata, double[] idata, int size) {
         for (int i = 0; i < size; i += 2) {
@@ -102,9 +98,9 @@ public class DataConvert {
      * Copy values from a complex (alternate values) array into an array
      * containing Complex objects
      *
-     * @param data array of data values
+     * @param data  array of data values
      * @param cData the array of complex objects
-     * @param size the number complex values to copy
+     * @param size  the number complex values to copy
      */
     public static void toComplex(double[] data, Complex[] cData, int size) {
         for (int i = 0; i < size; i += 2) {
@@ -132,10 +128,10 @@ public class DataConvert {
      * DataType can be DOUBLE, FLOAT, INT, or SHORT
      *
      * @param dataBuf the array of bytes to convert
-     * @param data the array of double values to receive the converted values.
-     * If null a new array will be created
-     * @param size The number of data values to create
-     * @param type The type of the data in the data buffer.
+     * @param data    the array of double values to receive the converted values.
+     *                If null a new array will be created
+     * @param size    The number of data values to create
+     * @param type    The type of the data in the data buffer.
      * @return the new array of double values
      */
     public static double[] copyVecData(byte[] dataBuf, double[] data, int size, DataType type) {

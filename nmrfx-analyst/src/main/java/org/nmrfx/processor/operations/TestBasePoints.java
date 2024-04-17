@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,13 +34,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 public class TestBasePoints implements MultivariateFunction {
     private static final Logger log = LoggerFactory.getLogger(TestBasePoints.class);
+    private static final double DEGTORAD = Math.PI / 180.0;
+
+    private static final Map<String, TestBasePoints> tbMap = new HashMap<>();
 
     int winSize;
     double negativePenalty = 1.0e-5;
@@ -56,14 +59,12 @@ public class TestBasePoints implements MultivariateFunction {
     boolean[] hasSignal = null;
     double p1Penalty = 0.0;
     double p1PenaltyWeight = 0.02;
-    static double DEGTORAD = Math.PI / 180.0;
     int mode = 0;
     boolean useRegionSign = false;
 
     // list of start and end of baseline regions
     ArrayList<RegionPositions> bList = new ArrayList<>();
     ArrayList<BRegionData> b2List = new ArrayList<>();
-    static HashMap<String, TestBasePoints> tbMap = new HashMap<>();
 
     public TestBasePoints(Vec vector, int winSize, double ratio, int mode, double negativePenalty) {
         this.winSize = winSize;
@@ -800,7 +801,7 @@ public class TestBasePoints implements MultivariateFunction {
             double r2 = regionSum(regData.base3, regData.base4, p0, p1);
             double m1 = r1 / (regData.base2 - regData.base1 + 1);
             double m2 = r2 / (regData.base4 - regData.base3 + 1);
-            double c = regionSum(regData.sig1, regData.sig2,  p0, p1);
+            double c = regionSum(regData.sig1, regData.sig2, p0, p1);
             double mean = (m1 + m2) / 2;
             double c2 = c - mean * (regData.sig2 - regData.sig1 + 1);
             if (c2 < 0.0) {

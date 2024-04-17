@@ -30,29 +30,52 @@ import java.util.List;
 public class AnnoPolyLine extends AnnoShape {
     private static final Logger log = LoggerFactory.getLogger(AnnoPolyLine.class);
 
-    final double[] xPoints;
-    final double[] yPoints;
-    final double[] xCPoints;
-    final double[] yCPoints;
+    double[] x;
+    double[] y;
+    double[] xCPoints;
+    double[] yCPoints;
     int activeHandle = -1;
+
+    public AnnoPolyLine() {
+
+    }
 
     public AnnoPolyLine(List<Double> xList, List<Double> yList,
                         POSTYPE xPosType, POSTYPE yPosType) {
-        xPoints = new double[xList.size()];
-        yPoints = new double[yList.size()];
-        for (int i = 0; i < xPoints.length; i++) {
-            xPoints[i] = xList.get(i);
-            yPoints[i] = yList.get(i);
+        x = new double[xList.size()];
+        y = new double[yList.size()];
+        for (int i = 0; i < x.length; i++) {
+            x[i] = xList.get(i);
+            y[i] = yList.get(i);
         }
 
-        xCPoints = new double[xPoints.length];
-        yCPoints = new double[yPoints.length];
+        xCPoints = new double[x.length];
+        yCPoints = new double[y.length];
         this.xPosType = xPosType;
         this.yPosType = yPosType;
     }
 
+    public double[] getX() {
+        return x;
+    }
+
+    public void setX(double[] values) {
+        x = values.clone();
+        xCPoints = new double[x.length];
+    }
+
+    public double[] getY() {
+        return y;
+    }
+
+    public void setY(double[] values) {
+        y = values.clone();
+        yCPoints = new double[y.length];
+    }
+
+
     @Override
-    public boolean hit( double x, double y, boolean selectMode) {
+    public boolean hit(double x, double y, boolean selectMode) {
         return false;
     }
 
@@ -61,9 +84,9 @@ public class AnnoPolyLine extends AnnoShape {
         try {
             gC.setStroke(stroke);
             gC.setLineWidth(lineWidth);
-            for (int i = 0; i < xPoints.length; i++) {
-                xCPoints[i] = xPosType.transform(xPoints[i], bounds[0], world[0]);
-                yCPoints[i] = yPosType.transform(yPoints[i], bounds[1], world[1]);
+            for (int i = 0; i < x.length; i++) {
+                xCPoints[i] = xPosType.transform(x[i], bounds[0], world[0]);
+                yCPoints[i] = yPosType.transform(y[i], bounds[1], world[1]);
             }
             gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
             if (isSelected()) {
@@ -92,6 +115,22 @@ public class AnnoPolyLine extends AnnoShape {
             activeHandle = -1;
         }
         return activeHandle;
+    }
+
+    public void updateXPosType(POSTYPE newType, double[] bounds, double[] world) {
+        for (int i = 0; i < x.length; i++) {
+            double xPix = xPosType.transform(x[i], bounds, world);
+            x[i] = newType.itransform(xPix, bounds, world);
+        }
+        xPosType = newType;
+    }
+
+    public void updateYPosType(POSTYPE newType, double[] bounds, double[] world) {
+        for (int i = 0; i < y.length; i++) {
+            double yPix = yPosType.transform(y[i], bounds, world);
+            y[i] = newType.itransform(yPix, bounds, world);
+        }
+        yPosType = newType;
     }
 
 }

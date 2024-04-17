@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * SpectralDim.java
  *
  * Created on January 26, 2007, 5:42 PM
@@ -26,40 +26,39 @@
  */
 package org.nmrfx.peaks;
 
-import java.util.ArrayList;
-import java.util.DoubleSummaryStatistics;
-import java.util.List;
-import java.util.Optional;
-
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.Nuclei;
 
+import java.util.DoubleSummaryStatistics;
+import java.util.Optional;
+
 /**
- *
  * @author brucejohnson
  */
 @PluginAPI("ring")
 public class SpectralDim {
 
-    static String loopStrings[] = {
-        "_Spectral_dim.ID",
-        "_Spectral_dim.Atom_type",
-        "_Spectral_dim.Atom_isotope_number",
-        "_Spectral_dim.Spectral_region",
-        "_Spectral_dim.Magnetization_linkage_ID",
-        "_Spectral_dim.Sweep_width",
-        "_Spectral_dim.Spectrometer_frequency",
-        "_Spectral_dim.Encoding_code",
-        "_Spectral_dim.Encoded_source_dimension_ID",
-        "_Spectral_dim.Dataset_dimension",
-        "_Spectral_dim.Dimension_name",
-        "_Spectral_dim.ID_tolerance",
-        "_Spectral_dim.Pattern",
-        "_Spectral_dim.Relation",
-        "_Spectral_dim.Aliasing",
-        "_Spectral_dim.Precision",};
+    private static final String[] loopStrings = {
+            "_Spectral_dim.ID",
+            "_Spectral_dim.Atom_type",
+            "_Spectral_dim.Atom_isotope_number",
+            "_Spectral_dim.Spectral_region",
+            "_Spectral_dim.Magnetization_linkage_ID",
+            "_Spectral_dim.Sweep_width",
+            "_Spectral_dim.Spectrometer_frequency",
+            "_Spectral_dim.Encoding_code",
+            "_Spectral_dim.Encoded_source_dimension_ID",
+            "_Spectral_dim.Dataset_dimension",
+            "_Spectral_dim.Dimension_name",
+            "_Spectral_dim.ID_tolerance",
+            "_Spectral_dim.Pattern",
+            "_Spectral_dim.Relation",
+            "_Spectral_dim.Aliasing",
+            "_Spectral_dim.Precision",};
     private PeakList peakList = null;
-// fixme sf should come from dataset
+    // fixme sf should come from dataset
+
+    private final int index;
     private double sf = 1.0;
     private double sw = 1.0;
     private double ref = 0.0;
@@ -92,10 +91,11 @@ public class SpectralDim {
      * Creates a new instance of SpectralDim
      *
      * @param peakList The Peak List that this spectral dimension is part of
-     * @param iDim The dimension number of this spectral dimension
+     * @param iDim     The dimension number of this spectral dimension
      */
     public SpectralDim(PeakList peakList, int iDim) {
         this.peakList = peakList;
+        this.index = iDim;
         dataDim = iDim;
         magLinkage = iDim;
         dimName = "D" + dataDim;
@@ -105,6 +105,9 @@ public class SpectralDim {
         }
     }
 
+    public int getIndex() {
+        return index;
+    }
     public static String[] parsePattern(String pattern) {
         int dot = pattern.indexOf('.');
         String[] resPats;
@@ -136,7 +139,7 @@ public class SpectralDim {
     }
 
     public SpectralDim copy(PeakList peakList) {
-        SpectralDim newSpectralDim = new SpectralDim(peakList, dataDim);
+        SpectralDim newSpectralDim = new SpectralDim(peakList, index);
         newSpectralDim.sf = sf;
         newSpectralDim.sw = sw;
         newSpectralDim.ref = ref;
@@ -175,7 +178,7 @@ public class SpectralDim {
         StringBuilder result = new StringBuilder();
         String sep = " ";
         char stringQuote = '"';
-        result.append(String.valueOf(getDataDim() + 1)).append(sep);
+        result.append(String.valueOf(getIndex() + 1)).append(sep);
         result.append(getAtomType()).append(sep);
         result.append(getAtomIsotope());
         result.append(sep);
@@ -466,7 +469,7 @@ public class SpectralDim {
     public String getNucleus() {
         if (nucName.equals("")) {
             Nuclei[] nuclei = getPeakList().guessNuclei();
-            nucName = nuclei[dataDim].getNumberName();
+            nucName = nuclei[index].getNumberName();
         }
         return nucName;
     }
@@ -601,7 +604,7 @@ public class SpectralDim {
 
     public double getMeanWidthPPM() {
         if (!meanWidthPPM.isPresent()) {
-            DoubleSummaryStatistics stats = peakList.widthStatsPPM(dataDim);
+            DoubleSummaryStatistics stats = peakList.widthStatsPPM(index);
             meanWidthPPM = Optional.of(stats.getAverage());
         }
         return meanWidthPPM.get();

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,8 +27,8 @@ import java.util.*;
 public class VNMRPar {
     private static final Logger log = LoggerFactory.getLogger(VNMRPar.class);
 
-    static Map<String, Map> parGroups = new HashMap<String, Map>();
-    static long nParGroups = 0;
+    private static final Map<String, Map> parGroups = new HashMap<>();
+    private static long nParGroups = 0;
     public String name = null;
     String attrLine = null;
     String[] valueLines = null;
@@ -48,7 +48,7 @@ public class VNMRPar {
     }
 
     public VNMRPar(String handle, String newName, String newAttrLine,
-            String[] newValueLines, String newEnumLine) {
+                   String[] newValueLines, String newEnumLine) {
         name = newName.intern();
         attrLine = newAttrLine.intern();
         enumLine = newEnumLine.intern();
@@ -132,7 +132,7 @@ public class VNMRPar {
     /**
      * get parameters from a Varian procpar file entry point for VarianData
      *
-     * @param fpath : full path to the procpar file
+     * @param fpath   : full path to the procpar file
      * @param parlist : list of space-separated parameters
      * @return a HashMap of parameter names and values
      */
@@ -206,6 +206,9 @@ public class VNMRPar {
             return valueList;
         } else {
             String[] fields = attrLine.split("\\s");
+            if (fields.length < 10) {
+                System.out.println("Insufficient fields " + name + " " + attrLine);
+            }
             String type = fields[2];
             String active = fields[9];
 
@@ -346,7 +349,7 @@ public class VNMRPar {
                 while (true) {
                     int len = s1.length();
 
-                    if ((len > 0) && (s1.charAt(len - 1) == '"')) {
+                    if ((len > 0) && (s1.charAt(len - 1) == '"') && ((len == 1) || (s1.charAt(len-2) != '\\'))) {
                         break;
                     }
 

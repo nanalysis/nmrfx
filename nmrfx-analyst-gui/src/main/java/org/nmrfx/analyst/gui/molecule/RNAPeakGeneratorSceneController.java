@@ -95,14 +95,14 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
 
     Stage stage;
     String[][] baseAtoms = {
-        {"H2", "C2", "H8", "C8"}, // Adenine
-        {"H61", "H62", "N6"},
-        {"H8", "C8"},// Guanine
-        {"H21", "H22", "N2"},
-        {"H5", "C5", "H6", "C6"},// Uridine
-        {"H3", "N3"},
-        {"H5", "C5", "H6", "C6"},//Cytosine
-        {"H41", "H42", "N4"}
+            {"H2", "C2", "H8", "C8"}, // Adenine
+            {"H61", "H62", "N6"},
+            {"H8", "C8"},// Guanine
+            {"H21", "H22", "N2"},
+            {"H5", "C5", "H6", "C6"},// Uridine
+            {"H3", "N3"},
+            {"H5", "C5", "H6", "C6"},//Cytosine
+            {"H41", "H42", "N4"}
     };
     String[] riboseAtoms = {"H1'", "H2'", "H3'", "C1'", "C2'", "C3'", "H4'", "H5'", "H5''", "C4'", "C5'"};
     String[] baseChars = {"A", "G", "U", "C"};

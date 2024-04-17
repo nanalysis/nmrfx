@@ -51,7 +51,7 @@ public class StorageResizer {
         copyTo(sourceLayout, source, target);
         if ((targetPath != null) && (origFile != null)) {
             source.close();
-            Files.move(targetPath,origFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.move(targetPath, origFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             target.writeHeader(true);
         }
         return target;

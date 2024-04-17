@@ -27,26 +27,19 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class WebConnect {
-
     private static final Logger log = LoggerFactory.getLogger(WebConnect.class);
-    static String webAddress = "https://nmrfx.org/downloads/version/version.txt";
+    private static final String VERSION_FILE_URL = "https://nmrfx.org/downloads/version/version.txt";
 
     public static String getVersion() {
-        WebConnect webConn = new WebConnect();
-        String version;
         try {
-            version = webConn.fetchContent(webAddress);
+            return new WebConnect().fetchContent(VERSION_FILE_URL);
         } catch (Exception ex) {
-            version = "";
+            log.warn("Unable to fetch version file", ex);
+            return "";
         }
-        return version;
     }
 
-    public WebConnect() {
-    }
-
-    public String fetchContent(String urlStr)
-            throws Exception {
+    public String fetchContent(String urlStr) {
         URL url;
         BufferedReader bufferedReader = null;
         StringBuilder stringBuilder;

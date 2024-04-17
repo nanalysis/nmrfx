@@ -6,7 +6,6 @@
 package org.nmrfx.peaks;
 
 /**
- *
  * @author brucejohnson
  */
 public abstract class MultipletComponent {
@@ -23,6 +22,14 @@ public abstract class MultipletComponent {
         this.intensity = intensity;
         this.lineWidth = lw;
         this.volume = volume;
+    }
+
+    public MultipletComponent(Multiplet multiplet, MultipletComponent component) {
+        this.multiplet = multiplet;
+        this.offset = component.offset;
+        this.intensity = component.intensity;
+        this.lineWidth = component.lineWidth;
+        this.volume = component.volume;
     }
 
     public double getOffset() {

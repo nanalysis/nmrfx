@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.nmrfx.structure.rdc.AlignmentCalc;
 
 /**
- *
  * @author brucejohnson
  */
 public class AlignmentTest {
@@ -20,7 +19,7 @@ public class AlignmentTest {
     public void testVectors() {
         int n = 100;
         AlignmentCalc aCalc = new AlignmentCalc();
-        int result = aCalc.genAngles(n,1, 1.0);
+        int result = aCalc.genAngles(n, 1, 1.0);
         Assert.assertEquals((double) n, (double) result, 2);
     }
 
@@ -28,7 +27,7 @@ public class AlignmentTest {
     public void testVectors2() {
         int n = 1000;
         AlignmentCalc aCalc = new AlignmentCalc();
-        int result = aCalc.genAngles(n,1, 1.0);
+        int result = aCalc.genAngles(n, 1, 1.0);
         aCalc.genVectors();
         double[] minMax = aCalc.minMax();
         System.out.println(minMax[0] + " " + minMax[1]);
@@ -39,7 +38,7 @@ public class AlignmentTest {
     public void testVectors3() {
         int n = 1000;
         AlignmentCalc aCalc = new AlignmentCalc();
-        int result = aCalc.genAngles(n,1, 1.0);
+        int result = aCalc.genAngles(n, 1, 1.0);
         aCalc.genVectors();
         aCalc.makeEnclosingSphere();
         EnclosingBall ball = aCalc.getBall();

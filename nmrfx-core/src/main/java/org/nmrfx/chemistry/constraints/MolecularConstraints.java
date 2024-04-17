@@ -1,14 +1,10 @@
 package org.nmrfx.chemistry.constraints;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import org.nmrfx.chemistry.MoleculeBase;
 
+import java.util.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class MolecularConstraints {

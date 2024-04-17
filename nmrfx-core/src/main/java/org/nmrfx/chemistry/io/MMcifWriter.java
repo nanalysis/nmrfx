@@ -17,31 +17,18 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.protein.ProteinHelix;
+import org.nmrfx.chemistry.protein.Sheet;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.star.ParseException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.protein.ProteinHelix;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SecondaryStructure;
-import org.nmrfx.chemistry.protein.Sheet;
-import org.nmrfx.chemistry.SpatialSet;
+import java.util.*;
 
 /**
- *
  * @author brucejohnson, Martha
  */
 public class MMcifWriter {
@@ -302,7 +289,7 @@ public class MMcifWriter {
      * to a mmCif formatted file.
      *
      * @param fileName String. Name of the file to write.
-     * @param name String. The name of the dataset.
+     * @param name     String. The name of the dataset.
      * @throws IOException
      * @throws ParseException
      * @throws InvalidPeakException

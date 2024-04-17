@@ -7,7 +7,7 @@ public abstract class MenuActions {
     protected Menu menu;
     protected boolean advancedActive = false;
 
-    public  MenuActions(AnalystApp app, Menu menu) {
+    public MenuActions(AnalystApp app, Menu menu) {
         this.app = app;
         this.menu = menu;
     }

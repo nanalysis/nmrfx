@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,10 @@
  */
 package org.nmrfx.datasets;
 
-import java.io.IOException;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.math.VecBase;
+
+import java.io.IOException;
 
 /**
  * Interface for memory-mapped matrix files.
@@ -29,6 +30,7 @@ import org.nmrfx.math.VecBase;
 public interface DatasetStorageInterface {
 
     public DatasetLayout getLayout();
+
     /**
      * Flush the header values out to the dataset file.
      */
@@ -95,7 +97,7 @@ public interface DatasetStorageInterface {
     /**
      * Set the value at a specified position in matrix
      *
-     * @param value the value to set
+     * @param value   the value to set
      * @param offsets the position
      * @throws IOException if an I/O error occurs
      */

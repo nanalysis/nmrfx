@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -26,9 +26,9 @@ package org.nmrfx.utils.properties;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableDoubleValue;
+import org.controlsfx.control.PropertySheet;
 
 /**
- *
  * @author brucejohnson
  */
 public class DoubleOperationItem extends OperationItem implements ObservableDoubleValue {
@@ -70,23 +70,23 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
         return amax;
     }
 
-    public DoubleOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public DoubleOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
     }
 
-    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
-        this(listener, defaultValue, category, name, description);
+    public DoubleOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
+        this(propertySheet, listener, defaultValue, category, name, description);
         this.min = min;
         this.max = max;
         this.amin = min;
         this.amax = max;
     }
 
-    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
-        this(listener, defaultValue, category, name, description);
+    public DoubleOperationItem(PropertySheet propertySheet, ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        this(propertySheet, listener, defaultValue, category, name, description);
         this.min = min;
         this.max = max;
         this.amin = amin;

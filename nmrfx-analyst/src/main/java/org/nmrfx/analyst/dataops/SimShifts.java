@@ -1,22 +1,23 @@
 package org.nmrfx.analyst.dataops;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
 import org.ejml.data.BMatrixRMaj;
 import org.ejml.data.Complex_F64;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.data.ZMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.CommonOps_ZDRM;
-import org.ejml.interfaces.decomposition.EigenDecomposition_F64;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
+import org.ejml.interfaces.decomposition.EigenDecomposition_F64;
 import org.ejml.simple.SimpleMatrix;
-import static org.nmrfx.analyst.dataops.KronProduct.kronProd;
 import org.nmrfx.processor.math.Vec;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
+import static org.nmrfx.analyst.dataops.KronProduct.kronProd;
+
 /**
- *
  * @author brucejohnson
  */
 public class SimShifts {

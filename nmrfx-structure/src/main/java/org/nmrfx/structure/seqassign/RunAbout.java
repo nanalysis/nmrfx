@@ -132,6 +132,23 @@ public class RunAbout implements SaveframeWriter {
         return typeInfoMap.get(typeName);
     }
 
+    public static List<String> getPatterns(SpectralDim sDim) {
+        String pattern = sDim.getPattern();
+        String[] parts = pattern.split("\\.");
+        List<String> choices = new ArrayList<>();
+        if (parts.length == 2) {
+            String[] types = parts[0].split(",");
+            String[] aNames = parts[1].split(",");
+            for (String type : types) {
+                for (String aName : aNames) {
+                    String pat = type + "." + aName;
+                    choices.add(pat);
+                }
+            }
+        }
+        return choices;
+    }
+
     void setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
         int[] dimCount = new int[patElems.size()];
         int i = 0;
@@ -342,9 +359,9 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public void autoSetTolerance(Collection<PeakList> peakLists, double scale) {
-        for (var peakList:peakLists) {
+        for (var peakList : peakLists) {
             int nDim = peakList.getNDim();
-            for (int i=0;i<nDim;i++) {
+            for (int i = 0; i < nDim; i++) {
                 var stat = peakList.widthDStatsPPM(i);
                 double median = stat.getPercentile(50.0);
                 peakList.getSpectralDim(i).setIdTol(median * scale);
@@ -393,7 +410,7 @@ public class RunAbout implements SaveframeWriter {
         return result;
     }
 
-    public void filterPeaks() {
+    public Map<String, Integer> filterPeaks() {
         double tolScale = 3.0;
         PeakList refList = peakLists.get(0);
         refList.clearSearchDims();
@@ -405,6 +422,7 @@ public class RunAbout implements SaveframeWriter {
             refList.addSearchDim(dimName, sDim.getIdTol() * tolScale);
         }
 
+        Map<String, Integer> result = new HashMap<>();
         for (PeakList peakList : peakLists) {
             AtomicInteger nFiltered = new AtomicInteger();
             if (refList != peakList) {
@@ -412,7 +430,7 @@ public class RunAbout implements SaveframeWriter {
                 int j = 0;
                 for (String dimName : commonDimNames) {
                     SpectralDim sDim = peakList.getSpectralDim(dimName);
-                    dims[j++] = sDim.getDataDim();
+                    dims[j++] = sDim.getIndex();
                 }
                 double[] ppms = new double[dims.length];
                 peakList.peaks().forEach(peak -> {
@@ -429,8 +447,9 @@ public class RunAbout implements SaveframeWriter {
                 peakList.compress();
                 peakList.reNumber();
             }
-            System.out.println(peakList.getName() + " " + nFiltered);
+            result.put(peakList.getName(), nFiltered.intValue());
         }
+        return result;
     }
 
     public boolean getHasAllAtoms(SpinSystem spinSystem) {
@@ -450,7 +469,7 @@ public class RunAbout implements SaveframeWriter {
                     }
                     double value = spinSystem.getValue(k, i);
                     if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
-                        if ((value < 50.0)  && (value > 40.0)) {
+                        if ((value < 50.0) && (value > 40.0)) {
                             isGly = true;
                         }
                     }

@@ -27,7 +27,7 @@ public class DatasetGroupIndex {
                 }
                 indices[i] = value;
             } else {
-                lastValue = StringUtils.strip(fields[i],"'\"");
+                lastValue = StringUtils.strip(fields[i], "'\"");
                 break;
             }
         }

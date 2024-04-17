@@ -6,7 +6,6 @@
 package org.nmrfx.utilities;
 
 /**
- *
  * @author brucejohnson
  */
 public interface Updater {

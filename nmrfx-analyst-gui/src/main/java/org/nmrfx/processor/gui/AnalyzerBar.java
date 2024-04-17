@@ -19,9 +19,6 @@ package org.nmrfx.processor.gui;
 
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-
-import java.util.*;
-import java.util.function.Consumer;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -33,8 +30,10 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
 import org.nmrfx.utils.GUIUtils;
 
+import java.util.*;
+import java.util.function.Consumer;
+
 /**
- *
  * @author brucejohnson
  */
 public class AnalyzerBar {

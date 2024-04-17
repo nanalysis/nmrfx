@@ -21,10 +21,7 @@ package org.nmrfx.structure.noe;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.constraints.DistanceStat;
-import org.nmrfx.chemistry.constraints.NoeSet;
-import org.nmrfx.chemistry.constraints.Flags;
-import org.nmrfx.chemistry.constraints.Noe;
+import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.slf4j.Logger;
@@ -32,7 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.nmrfx.chemistry.constraints.Noe.*;
+import static org.nmrfx.chemistry.constraints.Noe.avgDistance;
+import static org.nmrfx.chemistry.constraints.Noe.getAtoms;
 
 /**
  * @author brucejohnson
@@ -111,7 +109,7 @@ public class NOECalibrator {
             boolean hasDiagonal = false;
             List<Noe> noeList = entry.getValue();
             for (Noe noe : noeList) {
-                if (noe.spg1.getSpatialSet() == noe.spg2.getSpatialSet()) {  // don't include diagonal peaks
+                if (noe.getSpg1().getSpatialSet() == noe.getSpg2().getSpatialSet()) {  // don't include diagonal peaks
                     hasDiagonal = true;
                     break;
                 }
@@ -132,8 +130,8 @@ public class NOECalibrator {
 
     public void convertToMethyls() {
         for (Noe noe : noeSet.getConstraints()) {
-            noe.spg1.convertToMethyl();
-            noe.spg2.convertToMethyl();
+            noe.getSpg1().convertToMethyl();
+            noe.getSpg2().convertToMethyl();
         }
     }
 
@@ -150,53 +148,64 @@ public class NOECalibrator {
         return new String(violCharArray);
     }
 
-    public void updateNOEListDistances(List<Noe> noeList) {
-        double sum = 0.0;
-        MoleculeBase mol = noeSet.getMolecularConstraints().molecule;
+    public static void updateNOEListDistances(MoleculeBase mol, List<? extends DistanceConstraint> noeList) {
+        for (DistanceConstraint distanceConstraint : noeList) {
+            updateDistanceStat(mol, distanceConstraint);
+         }
+    }
+
+    public static void updateDistanceStat(MoleculeBase mol, DistanceConstraint distanceConstraint) {
         int[] structures = mol.getActiveStructures();
         if (structures.length == 0) {
             structures = new int[1];
         }
         int nStructures;
         ArrayList<Double> dList = new ArrayList<>();
-        for (Noe noe : noeList) {
-            dList.clear();
-            double bound = noe.getUpper();
-            int nInBounds = 0;
-            nStructures = 1;
-            BitSet violStructures = noe.disStat.getViolStructures();
-            if (structures.length > 0) {
-                nStructures = structures.length;
-                if (violStructures == null) {
-                    violStructures = new BitSet(nStructures);
-                }
-                violStructures.clear();
-                for (int iStruct : structures) {
-                    double distance = Atom.calcWeightedDistance(noe.spg1, noe.spg2, iStruct, 6, false, sumAverage);
-                    if (distance < bound) {
-                        nInBounds++;
-                    } else {
-                        violStructures.set(iStruct);
-                    }
-                    dList.add(distance);
-                }
+        dList.clear();
+        double bound = distanceConstraint.getUpper();
+        int nInBounds = 0;
+        nStructures = 1;
+        BitSet violStructures = distanceConstraint.disStat.getViolStructures();
+        if (structures.length > 0) {
+            nStructures = structures.length;
+            if (violStructures == null) {
+                violStructures = new BitSet(nStructures);
             }
-            double fracInBound = (double) nInBounds / nStructures;
-            SummaryStatistics stat = new SummaryStatistics();
-            dList.stream().forEach(stat::addValue);
-            double minDis = stat.getMin();
-            double maxDis = stat.getMax();
-            double meanDis = stat.getMean();
-
-            double stdDevDis = 0.0;
-            if (dList.size() > 1) {
-                stdDevDis = stat.getStandardDeviation();
+            violStructures.clear();
+            SpatialSetGroup spg1;
+            SpatialSetGroup spg2;
+            if (distanceConstraint instanceof Noe noe) {
+                spg1 = noe.getSpg1();
+                spg2 = noe.getSpg1();
+            } else {
+                spg1 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms1());
+                spg2 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms2());
             }
-            DistanceStat dStat = new DistanceStat(minDis, maxDis, meanDis, stdDevDis, fracInBound, violStructures);
-            noe.disStat = dStat;
+            for (int iStruct : structures) {
+                double distance = Atom.calcWeightedDistance(spg1, spg2, iStruct, 6, false, sumAverage);
+                if (distance < bound) {
+                    nInBounds++;
+                } else {
+                    violStructures.set(iStruct);
+                }
+                dList.add(distance);
+            }
         }
-    }
+        double fracInBound = (double) nInBounds / nStructures;
+        SummaryStatistics stat = new SummaryStatistics();
+        dList.stream().forEach(stat::addValue);
+        double minDis = stat.getMin();
+        double maxDis = stat.getMax();
+        double meanDis = stat.getMean();
 
+        double stdDevDis = 0.0;
+        if (dList.size() > 1) {
+            stdDevDis = stat.getStandardDeviation();
+        }
+        DistanceStat dStat = new DistanceStat(minDis, maxDis, meanDis, stdDevDis, fracInBound, violStructures);
+        distanceConstraint.disStat = dStat;
+
+    }
     public void updateNOEListDistancesAvg(List<Noe> noeList, boolean requireActive) {
         int[] structures = molecule.getActiveStructures();
         if (structures.length == 0) {
@@ -214,7 +223,7 @@ public class NOECalibrator {
             for (Noe noe : noeList) {
                 bound = noe.getUpper();
                 if (!requireActive || noe.isActive()) {
-                    Atom.getDistances(noe.spg1, noe.spg2, iStruct, dArray);
+                    Atom.getDistances(noe.getSpg1(), noe.getSpg2(), iStruct, dArray);
                 } else {
                     double distance = noe.disStat.getMax();
                     if (distance > max) {
@@ -259,11 +268,11 @@ public class NOECalibrator {
         violCharArray = new char[lastStruct + 1];
         if (noeSet.getPeakMapEntries().isEmpty()) {
             List<Noe> noeList = noeSet.getConstraints();
-            updateNOEListDistances(noeList);
+            updateNOEListDistances(noeSet.getMolecularConstraints().molecule, noeList);
         } else {
             for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
                 List<Noe> noeList = entry.getValue();
-                updateNOEListDistances(noeList);
+                updateNOEListDistances(noeSet.getMolecularConstraints().molecule, noeList);
             }
         }
     }
@@ -332,12 +341,12 @@ public class NOECalibrator {
             cName1.setLength(0);
             cName2.setLength(0);
             Noe iNoe = noeSet.get(i);
-            iNoe.spg1.getName();
-            if (iNoe.spg1.getSpatialSet() == iNoe.spg2.getSpatialSet()) {  // don't include diagonal peaks
+            iNoe.getSpg1().getName();
+            if (iNoe.getSpg1().getSpatialSet() == iNoe.getSpg2().getSpatialSet()) {  // don't include diagonal peaks
                 continue;
             }
-            Entity e1 = iNoe.spg1.getAnAtom().getEntity();
-            Entity e2 = iNoe.spg2.getAnAtom().getEntity();
+            Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
+            Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
             Residue r1 = checkEntityIsResidue(e1);
             Residue r2 = checkEntityIsResidue(e2);
 
@@ -353,10 +362,10 @@ public class NOECalibrator {
                 } else {
                     eName2 = e2.getName();
                 }
-                String a1 = iNoe.spg1.getAnAtom().getName();
-                String a2 = iNoe.spg2.getAnAtom().getName();
+                String a1 = iNoe.getSpg1().getAnAtom().getName();
+                String a2 = iNoe.getSpg2().getAnAtom().getName();
 
-                cName1.append(iNoe.spg1.getName());
+                cName1.append(iNoe.getSpg1().getName());
                 cName1.append('.');
                 cName1.append(eName1);
                 cName1.append(':');
@@ -364,7 +373,7 @@ public class NOECalibrator {
                 cName1.append('.');
                 cName1.append(a1);
 
-                cName2.append(iNoe.spg2.getName());
+                cName2.append(iNoe.getSpg2().getName());
                 cName2.append('.');
                 cName2.append(eName2);
                 cName2.append(':');
@@ -429,11 +438,12 @@ public class NOECalibrator {
 
     /**
      * Checks if the entity is a residue and returns it as a residue, if not a message is logged and null is returned.
+     *
      * @param entity The entity to check
      * @return The entity cast to a residue
      */
     private Residue checkEntityIsResidue(Entity entity) {
-        if (entity instanceof Residue ) {
+        if (entity instanceof Residue) {
             return (Residue) entity;
         } else {
             log.info("Entity is not a polymer: {}", entity.getName());
@@ -456,12 +466,12 @@ public class NOECalibrator {
             cName1.setLength(0);
             cName2.setLength(0);
             Noe iNoe = noeSet.get(i);
-            iNoe.spg1.getName();
-            if (iNoe.spg1.getSpatialSet() == iNoe.spg2.getSpatialSet()) {  // don't include diagonal peaks
+            iNoe.getSpg1().getName();
+            if (iNoe.getSpg1().getSpatialSet() == iNoe.getSpg2().getSpatialSet()) {  // don't include diagonal peaks
                 continue;
             }
-            Entity e1 = iNoe.spg1.getAnAtom().getEntity();
-            Entity e2 = iNoe.spg2.getAnAtom().getEntity();
+            Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
+            Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
             Residue r1 = checkEntityIsResidue(e1);
             Residue r2 = checkEntityIsResidue(e2);
 
@@ -477,12 +487,12 @@ public class NOECalibrator {
                 } else {
                     eName2 = e2.getName();
                 }
-                cName1.append(iNoe.spg1.getName());
+                cName1.append(iNoe.getSpg1().getName());
                 cName1.append('.');
                 cName1.append(eName1);
                 cName1.append(':');
                 cName1.append(r1.getNumber());
-                cName2.append(iNoe.spg2.getName());
+                cName2.append(iNoe.getSpg2().getName());
                 cName2.append('.');
                 cName2.append(eName2);
                 cName2.append(':');
@@ -490,8 +500,8 @@ public class NOECalibrator {
 
                 String cName;
                 String aName;
-                String a1 = iNoe.spg1.getAnAtom().getName();
-                String a2 = iNoe.spg2.getAnAtom().getName();
+                String a1 = iNoe.getSpg1().getAnAtom().getName();
+                String a2 = iNoe.getSpg2().getAnAtom().getName();
                 if (cName1.toString().compareTo(cName2.toString()) < 0) {
                     cName1.append('_');
                     cName1.append(cName2);
@@ -519,8 +529,8 @@ public class NOECalibrator {
 
         Map<Residue, Integer> countMap = new HashMap<>();
         for (Noe iNoe : noeSet.getConstraints()) {
-            Entity e1 = iNoe.spg1.getAnAtom().getEntity();
-            Entity e2 = iNoe.spg2.getAnAtom().getEntity();
+            Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
+            Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
             Residue r1 = checkEntityIsResidue(e1);
             Residue r2 = checkEntityIsResidue(e2);
             if ((r1 != null) && (r2 != null)) {
@@ -577,8 +587,8 @@ public class NOECalibrator {
             }
             log.info("{} {}", protons[0].length, isAssigned);
             for (Noe noe : noeList) {
-                String spg1Name = noe.spg1.getFullName();
-                String spg2Name = noe.spg2.getFullName();
+                String spg1Name = noe.getSpg1().getFullName();
+                String spg2Name = noe.getSpg2().getFullName();
                 boolean consistent = false;
                 if (isAssigned) {
                     for (int i = 0; i < protons[0].length; i++) {
@@ -668,7 +678,7 @@ public class NOECalibrator {
                 double scale = 1.0;
                 double intensity;
                 for (int i = 0; i < 2; i++) {
-                    SpatialSetGroup sp = (i == 0) ? noe.spg1 : noe.spg2;
+                    SpatialSetGroup sp = (i == 0) ? noe.getSpg1() : noe.getSpg2();
                     Atom atom = sp.getAnAtom();
                     Atom parent = atom.parent;
                     String pName = "";
@@ -684,7 +694,7 @@ public class NOECalibrator {
                     }
                 }
                 scale = Math.sqrt(scale);
-                noe.atomScale = scale;
+                noe.setAtomScale(scale);
                 if (noe.getContribution() > maxContrib) {
                     if (mMode.startsWith("int")) {
                         intensity = Math.abs(noe.getIntensity());
@@ -767,26 +777,26 @@ public class NOECalibrator {
         Map<String, Noe> symMap = new HashMap<>();
         for (int i = 0; i < nNoe; i++) {
             Noe iNoe = noeSet.get(i);
-            iNoe.symmetrical = false;
+            iNoe.setSymmetrical(false);
             Peak iPeak = iNoe.peak;
             if (iPeak != null) {
                 String listName = iPeak.getPeakList().getName();
-                String spg1Name = iNoe.spg1.getFullName();
-                String spg2Name = iNoe.spg2.getFullName();
+                String spg1Name = iNoe.getSpg1().getFullName();
+                String spg2Name = iNoe.getSpg2().getFullName();
                 symMap.put(listName + "." + spg1Name + "." + spg2Name, iNoe);
             }
         }
         for (int i = 0; i < nNoe; i++) {
             Noe iNoe = noeSet.get(i);
             Peak iPeak = iNoe.peak;
-            if ((iPeak != null) && (!iNoe.symmetrical)) {
+            if ((iPeak != null) && (!iNoe.getSymmetrical())) {
                 String listName = iPeak.getPeakList().getName();
-                String spg1Name = iNoe.spg1.getFullName();
-                String spg2Name = iNoe.spg2.getFullName();
+                String spg1Name = iNoe.getSpg1().getFullName();
+                String spg2Name = iNoe.getSpg2().getFullName();
                 Noe jNoe = symMap.get(listName + "." + spg2Name + "." + spg1Name);
                 if (jNoe != null) {
-                    iNoe.symmetrical = true;
-                    jNoe.symmetrical = true;
+                    iNoe.setSymmetrical(true);
+                    jNoe.setSymmetrical(true);
                 }
             }
         }
@@ -799,7 +809,7 @@ public class NOECalibrator {
             for (Noe noe : noeList) {
                 if (!(noe.activeFlags.contains(Flags.DIAGONAL))) {
                     double value = 1.0;
-                    if (noe.symmetrical) {
+                    if (noe.getSymmetrical()) {
                         value *= SYM_BONUS;
                     }
                     value *= noe.getNetworkValue();
@@ -861,8 +871,8 @@ public class NOECalibrator {
                 if (requireActive && !noe.isActive()) {
                     continue;
                 }
-                String name1 = noe.spg1.getFullName();
-                String name2 = noe.spg2.getFullName();
+                String name1 = noe.getSpg1().getFullName();
+                String name2 = noe.getSpg2().getFullName();
                 if (!name1.contains(":")) {
                     name1 = "*.*:" + name1;
                 }

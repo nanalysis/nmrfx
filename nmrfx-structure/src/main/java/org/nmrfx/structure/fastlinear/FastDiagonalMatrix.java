@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
 package org.nmrfx.structure.fastlinear;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class FastDiagonalMatrix {
@@ -33,11 +32,11 @@ public class FastDiagonalMatrix {
         this.nCols = nRows;
         data = new double[nRows];
     }
-    
+
     public void setEntry(int i, double value) {
         data[i] = value;
     }
-    
+
     public double getEntry(int i) {
         return data[i];
     }

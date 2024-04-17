@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,22 +17,19 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.Optional;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.RotateEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.*;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+
+import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
 public class CanvasBindings {
@@ -115,12 +112,11 @@ public class CanvasBindings {
         mouseNode.setOnMousePressed((MouseEvent mouseEvent) -> {
             Optional<PolyChart> oChart = controller.getChart(mouseEvent.getX(), mouseEvent.getY());
             oChart.ifPresent(chart -> {
-                chart.setActiveChart();
+                PolyChartManager.getInstance().setActiveChart(chart);
                 chart.getMouseBindings().mousePressed(mouseEvent);
             });
             mouseNode.requestFocus();
         });
-
 
 
         mouseNode.setOnMouseMoved((MouseEvent mouseEvent) -> {
@@ -137,18 +133,6 @@ public class CanvasBindings {
             }
         });
 
-        mouseNode.setOnRotate((RotateEvent rEvent) -> {
-            PolyChart chart = controller.getActiveChart();
-            if (chart != null) {
-                chart.getGestureBindings().rotate(rEvent);
-            }
-        });
-        mouseNode.setOnRotationFinished((RotateEvent rEvent) -> {
-            PolyChart chart = controller.getActiveChart();
-            if (chart != null) {
-                chart.getGestureBindings().rotationFinished(rEvent);
-            }
-        });
         mouseNode.setOnZoom((Event event) -> {
             PolyChart chart = controller.getActiveChart();
             if (chart != null) {

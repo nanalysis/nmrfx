@@ -28,6 +28,7 @@ public enum LogSection {
 
     /**
      * Finds a match for loggerName based on the prefixes.
+     *
      * @param loggerName The String Logger name
      * @return True if a match is found.
      */
@@ -47,6 +48,7 @@ public enum LogSection {
     /**
      * Gets the LogSection from the logger name string. The string is expected to be in the format
      * xxx.xxx.xxx etc where '.' separates package names.
+     *
      * @param loggerName The string logger name
      * @return The matching LogSection or the GENERAL section if no match is found.
      */
@@ -61,6 +63,7 @@ public enum LogSection {
     /**
      * Get the LogSection from the log section string. This string is expected
      * to be one of the LogSection.sectionName options.
+     *
      * @param logSectionName The log section name string.
      * @return The matching LogSection or the GENERAL section if no match is found.
      */

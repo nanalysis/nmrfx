@@ -1,31 +1,8 @@
 package org.nmrfx.analyst.peaks;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.reverseOrder;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.math.VecBase.IndexValue;
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.Coupling;
-import org.nmrfx.peaks.CouplingItem;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.RelMultipletComponent;
-import org.nmrfx.peaks.Singlet;
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
@@ -33,13 +10,19 @@ import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class Multiplets {
     private static final Logger log = LoggerFactory.getLogger(Multiplets.class);
-    public static double DOUBLETRATIO = 3.0;
+    public static final double DOUBLETRATIO = 3.0;
 
     public static PeakDim getMultipletRoot(Multiplet multiplet) throws IllegalArgumentException {
         return multiplet == null ? null : multiplet.getPeakDim();
@@ -234,7 +217,7 @@ public class Multiplets {
                     minDelta = delta;
                 }
             }
-            if (iMin < comps.size() -1 ) {
+            if (iMin < comps.size() - 1) {
                 offset = (comps.get(iMin).getOffset() + comps.get(iMin + 1).getOffset()) / 2.0;
             }
         }
@@ -489,7 +472,7 @@ public class Multiplets {
             double[] bounds = Analyzer.getRegionBounds(dataset.getReadOnlyRegions(), 0, refPeak.peakDims[0].getChemShift());
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
-                double rms = peakFitting.fitPeakDims(peakDims,  bounds, fitParameters);
+                double rms = peakFitting.fitPeakDims(peakDims, bounds, fitParameters);
                 result = Optional.of(rms);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
@@ -526,7 +509,7 @@ public class Multiplets {
             PeakFitParameters fitParameters = new PeakFitParameters();
             fitParameters.fitJMode(PeakFitParameters.FITJ_MODE.JFIT);
             try {
-                double rms = peakFitting.fitPeakDims(peakDims,  bounds, fitParameters);
+                double rms = peakFitting.fitPeakDims(peakDims, bounds, fitParameters);
                 result = Optional.of(rms);
 
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
@@ -597,8 +580,8 @@ public class Multiplets {
             int[] nValues = new int[couplingData.couplingItems.size()];
             int i = 0;
             for (CouplingItem item : couplingData.couplingItems) {
-                values[i] = item.getCoupling();
-                nValues[i] = item.getNSplits();
+                values[i] = item.coupling();
+                nValues[i] = item.nSplits();
                 i++;
             }
             double[] sin2thetas = new double[values.length];
@@ -740,7 +723,7 @@ public class Multiplets {
                 break;
             }
         }
-        couplings.sort(comparing(p -> p.getCoupling(), reverseOrder()));
+        couplings.sort(comparing(p -> p.coupling(), reverseOrder()));
         System.out.println("end");
         return new CouplingData(couplings, ppmCenter, nComps);
     }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,12 @@
  */
 package org.nmrfx.utils.properties;
 
-import java.util.function.IntFunction;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import org.controlsfx.control.textfield.CustomTextField;
+
+import java.util.function.IntFunction;
 
 public class CustomIntegerTextField extends CustomTextField {
 
@@ -43,7 +44,7 @@ public class CustomIntegerTextField extends CustomTextField {
     }
 
     public CustomIntegerTextField() {
-        this(new Integer(0));
+        this(Integer.valueOf(0));
     }
 
     public CustomIntegerTextField(Integer value) {

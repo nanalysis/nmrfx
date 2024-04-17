@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ import java.util.Map.Entry;
 public class PeakPaths implements PeakListener {
 
     private static final String[] PRESSURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
-    private static final String[] TITRATION_NAMES = {"K", "C"};
+    private static final String[] TITRATION_NAMES = {"K", "D"};
 
     boolean fit0 = false;
     ArrayList<PeakList> peakLists;
@@ -77,6 +77,20 @@ public class PeakPaths implements PeakListener {
         }
     }
 
+    public enum BINDINGMODE {
+        SINGLE_SITE(1),
+        TWO_SITES(2);
+
+        int nStates;
+
+        public int nStates() {
+            return nStates;
+        }
+
+        BINDINGMODE(int nStates) {
+            this.nStates = nStates;
+        }
+    }
     public enum PATHMODE {
         TITRATION("Concentration", "Shift Delta", TITRATION_NAMES),
         PRESSURE("Pressure", "Shift Delta", PRESSURE_NAMES);
@@ -117,7 +131,7 @@ public class PeakPaths implements PeakListener {
     }
 
     public PeakPaths(String name, final List<PeakList> peakLists, double[] concentrations,
-            final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
+                     final double[] binderConcs, final double[] weights, double[] tols, PATHMODE pathMode) {
         this.name = name;
         this.pathMode = pathMode;
         this.peakLists = new ArrayList<>();
@@ -181,14 +195,15 @@ public class PeakPaths implements PeakListener {
         return peakPath;
     }
 
-    record X2WithData(Double x0, Double x1, String dataName) {}
+    record X2WithData(Double x0, Double x1, String dataName) {
+    }
 
     public static PeakPaths loadPathData(PATHMODE pathMode, List<String> datasetNames,
                                          List<Double> x0List, List<Double> x1List, String peakPathName) {
         double[] x0 = new double[x0List.size()];
         double[] x1 = new double[x0List.size()];
         List<X2WithData> x2WithDataList = new ArrayList<>();
-        for (int i=0;i<datasetNames.size();i++) {
+        for (int i = 0; i < datasetNames.size(); i++) {
             var x2d = new X2WithData(x0List.get(i), x1List.isEmpty() ? null : x1List.get(i), datasetNames.get(i));
             x2WithDataList.add(x2d);
         }
@@ -312,8 +327,10 @@ public class PeakPaths implements PeakListener {
             if (fit0) {
                 baseParNames.add("A");
             }
-            baseParNames.add("K");
-            baseParNames.add("C");
+            baseParNames.add("K1");
+            baseParNames.add("K2");
+            baseParNames.add("D1");
+            baseParNames.add("D2");
         }
         return baseParNames;
     }

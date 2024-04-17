@@ -9,12 +9,14 @@ import java.io.File;
 public class FileUtils {
     private static final Logger log = LoggerFactory.getLogger(FileUtils.class);
 
-    private FileUtils() {}
+    private FileUtils() {
+    }
 
     /**
      * Checks if the new file has an extension and if it doesn't a new file is created from the file with the extension
      * added.
-     * @param file The file to check the extension from
+     *
+     * @param file      The file to check the extension from
      * @param extension The string extension to add
      * @return A file
      */

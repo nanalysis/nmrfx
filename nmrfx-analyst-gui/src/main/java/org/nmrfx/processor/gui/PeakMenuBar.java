@@ -1,5 +1,18 @@
 package org.nmrfx.processor.gui;
 
+import javafx.scene.control.*;
+import javafx.stage.FileChooser;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.io.PeakReader;
+import org.nmrfx.peaks.io.PeakWriter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.utils.GUIUtils;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,33 +25,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Consumer;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.ToolBar;
-import javafx.stage.FileChooser;
-import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.peaks.InvalidPeakException;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.io.PeakReader;
-import org.nmrfx.peaks.io.PeakWriter;
-import org.nmrfx.processor.datasets.peaks.PeakListTools;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.utils.GUIUtils;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakMenuBar {
+    private static final Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
 
-    final PeakMenuTarget menuTarget;
-    MenuButton peakListMenu = null;
-    static Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
+    private final PeakMenuTarget menuTarget;
+    private MenuButton peakListMenu = null;
 
     public PeakMenuBar(PeakMenuTarget menuTarget) {
         this.menuTarget = menuTarget;
@@ -60,7 +55,10 @@ public class PeakMenuBar {
         MenuItem saveSparky = new MenuItem("Save Sparky...");
         saveSparky.setOnAction(e -> savePeaks("sparky", "txt"));
 
-        fileMenu.getItems().addAll(saveXPK2, saveXPK, saveSparky);
+        MenuItem saveNMRPipe = new MenuItem("Save nmrPipe...");
+        saveNMRPipe.setOnAction(e -> savePeaks("nmrpipe", "txt"));
+
+        fileMenu.getItems().addAll(saveXPK2, saveXPK, saveSparky, saveNMRPipe);
 
         MenuItem readListItem = new MenuItem("Open...");
         readListItem.setOnAction(e -> readList());
@@ -117,6 +115,11 @@ public class PeakMenuBar {
         MenuItem mirrorMenuItem = new MenuItem("Mirror 2D List");
         mirrorMenuItem.setOnAction(e -> mirror2DList());
         editMenu.getItems().add(mirrorMenuItem);
+
+
+        MenuItem unifyMenuItem = new MenuItem("Unify Widths");
+        unifyMenuItem.setOnAction(e -> unifyPeakWidths());
+        editMenu.getItems().add(unifyMenuItem);
 
         menuBar.getItems().add(editMenu);
 
@@ -189,7 +192,7 @@ public class PeakMenuBar {
         boolean ok = false;
         String datasetName = getPeakList().getDatasetName();
         if ((datasetName == null) || datasetName.equals("")) {
-            PolyChart chart = PolyChart.getActiveChart();
+            PolyChart chart = PolyChartManager.getInstance().getActiveChart();
             DatasetBase dataset = chart.getDataset();
             if (dataset != null) {
                 for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
@@ -278,6 +281,10 @@ public class PeakMenuBar {
         }
     }
 
+    void unifyPeakWidths() {
+        menuTarget.getPeak().ifPresent(peak -> PeakListTools.unifyWidths(peak));
+    }
+
     void measureIntensities() {
         if (!checkDataset()) {
             return;
@@ -303,7 +310,7 @@ public class PeakMenuBar {
     }
 
     void measureEVolumesMulti() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         var datasets = new ArrayList<Dataset>();
         for (var dataAttr : chart.getDatasetAttributes()) {
             datasets.add((Dataset) dataAttr.getDataset());
@@ -439,14 +446,10 @@ public class PeakMenuBar {
                     try (FileWriter writer = new FileWriter(listFileName)) {
                         PeakWriter peakWriter = new PeakWriter();
                         switch (mode) {
-                            case "xpk":
-                                peakWriter.writePeaksXPK(writer, getPeakList());
-                                break;
-                            case "sparky":
-                                peakWriter.writePeaksToSparky(writer, getPeakList());
-                                break;
-                            default:
-                                peakWriter.writePeaksXPK2(writer, getPeakList());
+                            case "xpk" -> peakWriter.writePeaksXPK(writer, getPeakList());
+                            case "sparky" -> peakWriter.writePeaksToSparky(writer, getPeakList());
+                            case "nmrpipe" -> peakWriter.writePeakstoNMRPipe(writer, getPeakList());
+                            default -> peakWriter.writePeaksXPK2(writer, getPeakList());
                         }
                         writer.close();
                     }

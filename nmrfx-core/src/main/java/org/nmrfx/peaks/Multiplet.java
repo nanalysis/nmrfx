@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,20 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.utilities.Format;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.nmrfx.datasets.DatasetBase;
 
 /**
- *
  * @author brucejohnson
  */
 public class Multiplet implements PeakOrMulti, Comparable {
@@ -61,7 +61,23 @@ public class Multiplet implements PeakOrMulti, Comparable {
         max = peakDim.getPeak().getIntensity();
     }
 
-    @Override
+    public void copyTo(Multiplet multiplet) {
+        multiplet.intensity = intensity;
+        multiplet.max = max;
+        multiplet.myPeakDim = myPeakDim;
+        if (coupling != null) {
+            multiplet.coupling = coupling.copy(multiplet);
+        }
+    }
+
+    public void restoreFrom(Multiplet multiplet) {
+        intensity = multiplet.intensity;
+        max = multiplet.max;
+        myPeakDim = multiplet.myPeakDim;
+        coupling = multiplet.coupling.copy(this);
+    }
+
+        @Override
     public int getStatus() {
         int status = -1;
         if (myPeakDim != null) {
@@ -237,7 +253,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
             Peak newPeak = peakList.getNewPeak();
             PeakDim newPeakDim = newPeak.getPeakDim(0);
             Multiplet newMultiplet = newPeakDim.getMultiplet();
-            moveCouplings(this,keepAbsComps, newMultiplet, removeAbsComps);
+            moveCouplings(this, keepAbsComps, newMultiplet, removeAbsComps);
             result = Optional.of(newMultiplet);
         }
         return result;
@@ -245,10 +261,10 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public static void moveCouplings(Multiplet keepMultiplet, List<AbsMultipletComponent> keepAbsComps,
                                      Multiplet newMultiplet, List<AbsMultipletComponent> moveAbsComps) {
-        for (var comp:keepAbsComps) {
+        for (var comp : keepAbsComps) {
             comp.multiplet = keepMultiplet;
         }
-        for (var comp:moveAbsComps) {
+        for (var comp : moveAbsComps) {
             comp.multiplet = newMultiplet;
         }
         keepMultiplet.updateCoupling(keepAbsComps);
@@ -523,18 +539,18 @@ public class Multiplet implements PeakOrMulti, Comparable {
      * dimension than dimension 0 of the peak.
      *
      * @param theFile The dataset to use for translating ppm to pts
-     * @param pdim An integer mapping of peak dimension to dataset dimension.
-     * For example, pdim[0] contains the dataset dimension that corresponds to
-     * peak dimension 0.
-     * @param p Two-dimensional pre-allocated array of int that will contain the
-     * boundaries of the peak dimension. The boundaries are determined by the
-     * peak foot print (bounds).
-     * @param cpt Array of ints specifying the center of the peak region.
-     * @param width Array of doubles containing the widths of the peak in units
-     * of dataset points. The width is determined by the peak linewidth
+     * @param pdim    An integer mapping of peak dimension to dataset dimension.
+     *                For example, pdim[0] contains the dataset dimension that corresponds to
+     *                peak dimension 0.
+     * @param p       Two-dimensional pre-allocated array of int that will contain the
+     *                boundaries of the peak dimension. The boundaries are determined by the
+     *                peak foot print (bounds).
+     * @param cpt     Array of ints specifying the center of the peak region.
+     * @param width   Array of doubles containing the widths of the peak in units
+     *                of dataset points. The width is determined by the peak linewidth
      */
     public void getMultipletRegion(DatasetBase theFile, int[] pdim, int[][] p,
-            int[] cpt, double[] width) {
+                                   int[] cpt, double[] width) {
         double p1 = Double.NEGATIVE_INFINITY;
         double p2 = Double.MAX_VALUE;
 

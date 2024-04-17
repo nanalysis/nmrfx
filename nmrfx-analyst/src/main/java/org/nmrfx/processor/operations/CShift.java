@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -32,7 +32,6 @@ import org.nmrfx.processor.processing.ProcessingException;
 import java.util.Optional;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -43,7 +42,6 @@ public class CShift extends Operation {
     private final boolean adjustRef;
 
     /**
-     *
      * @param shift The amount of points to shift by.
      */
     public CShift(int shift, boolean adjustRef) {
@@ -59,7 +57,6 @@ public class CShift extends Operation {
     }
 
     /**
-     *
      * @param units The amount to shift vector by specified using units.
      */
     public CShift(Unit units, boolean adjustRef) {
@@ -80,7 +77,15 @@ public class CShift extends Operation {
         if (unit.isPresent()) {
             iShift = (int) Math.round(unit.get().getDoubleDelta(vector));
         }
+        shift(vector, iShift, adjustRef);
+        return this;
+    }
+
+    public static void shift(Vec vector, int iShift, boolean adjustRef) {
+        int size = vector.getSize();
+
         double adjustAmount = iShift;
+        iShift = iShift % size;
 
         if ((iShift != 0) && (((int) Math.abs(iShift)) < size)) {
             if (vector.isComplex()) {
@@ -123,12 +128,10 @@ public class CShift extends Operation {
                     System.arraycopy(temp, 0, vector.rvec, marker, iShift);
                 }
             }
-            if (adjustRef) {
-                vector.adjustRef(-adjustAmount, size);
-            }
         }
-
-        return this;
+        if ((adjustRef) && (Math.abs(adjustAmount) > 0.1)){
+            vector.adjustRef(-adjustAmount, size);
+        }
     }
 
 }

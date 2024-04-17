@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,8 @@ package org.nmrfx.structure.chemistry.energy;
 import org.nmrfx.chemistry.Util;
 import smile.math.DifferentiableMultivariateFunction;
 
-public class DihedralEnergyGradient implements DifferentiableMultivariateFunction {
-
-    final Dihedral dihedral;
+public class DihedralEnergyGradient {
+        Dihedral dihedral;
     final GradientRefinement gradRefine;
 
     public DihedralEnergyGradient(Dihedral dihedral, GradientRefinement gradRefine) {

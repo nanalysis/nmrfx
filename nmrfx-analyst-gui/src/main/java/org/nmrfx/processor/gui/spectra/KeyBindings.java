@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,14 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.scene.control.Alert;
+import javafx.scene.input.*;
+import org.nmrfx.processor.gui.CanvasCursor;
+import org.nmrfx.processor.gui.KeyMonitor;
+import org.nmrfx.processor.gui.PeakPicking;
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,36 +32,28 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javafx.scene.Cursor;
-import javafx.scene.control.Alert;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.DataFormat;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
-import org.nmrfx.processor.gui.*;
-import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class KeyBindings {
     private static final Map<DataFormat, DataFormatEventHandler> dataFormatHandlers = new HashMap<>();
+    private static final Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
+
     KeyMonitor keyMonitor = new KeyMonitor();
     PolyChart chart;
     Map<String, Consumer> keyActionMap = new HashMap<>();
-    static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
     private final KeyCodeCombination pasteKeyCodeCombination = new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN);
+
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
     }
 
     /**
      * Adds the provided DataFormat event handler to the dataFormatHandler map.
+     *
      * @param dataFormat The DataFormat.
-     * @param handler The DataFormat handler.
+     * @param handler    The DataFormat handler.
      */
     public static void registerCanvasDataFormatHandler(DataFormat dataFormat, DataFormatEventHandler handler) {
         dataFormatHandlers.put(dataFormat, handler);
@@ -101,14 +101,9 @@ public class KeyBindings {
                     chart.incrementPlane(3, -1);
                     keyEvent.consume();
                     break;
-                case ENTER:
+                case ENTER, ESCAPE:
                     keyMonitor.complete();
                     keyEvent.consume();
-                    break;
-                case ESCAPE:
-                    keyMonitor.complete();
-                    keyEvent.consume();
-                    chart.getController().deselectCharts();
                     break;
                 case DELETE, BACK_SPACE:
                     keyMonitor.complete();
@@ -175,10 +170,9 @@ public class KeyBindings {
                 List<DatasetAttributes> activeData = chart.getActiveDatasetAttributes();
                 if (activeData.size() == 1) {
                     DatasetAttributes datasetAttr = activeData.get(0);
-                    double pickX = chart.getAxis(0).getValueForDisplay(chart.getMouseX()).doubleValue();
-                    double pickY = chart.getAxis(1).getValueForDisplay(chart.getMouseY()).doubleValue();
+                    double pickX = chart.getAxes().getX().getValueForDisplay(chart.getMouseX()).doubleValue();
+                    double pickY = chart.getAxes().getY().getValueForDisplay(chart.getMouseY()).doubleValue();
                     PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, shortString.equals("as"), false);
-                    chart.setPeakStatus(true);
                     keyMonitor.clear();
                     chart.drawPeakLists(true);
                 } else {
@@ -193,27 +187,25 @@ public class KeyBindings {
                 break;
 
             case "c1":
-                chart.setHasMiddleMouseButton(false);
                 keyMonitor.clear();
                 break;
             case "c3":
-                chart.setHasMiddleMouseButton(true);
                 keyMonitor.clear();
                 break;
             case "cc":
-                chart.getController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
                 keyMonitor.clear();
                 break;
             case "cs":
-                chart.getController().setCursor(CanvasCursor.SELECTOR.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.SELECTOR.getCursor());
                 keyMonitor.clear();
                 break;
             case "ca":
-                chart.getController().setCursor(CanvasCursor.PEAK.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.PEAK.getCursor());
                 keyMonitor.clear();
                 break;
             case "cr":
-                chart.getController().setCursor(CanvasCursor.REGION.getCursor());
+                chart.getFXMLController().setCursor(CanvasCursor.REGION.getCursor());
                 keyMonitor.clear();
                 break;
             case "p":
@@ -221,11 +213,11 @@ public class KeyBindings {
             case "u":
                 break;
             case "uu":
-                chart.getController().undo();
+                chart.getFXMLController().undo();
                 keyMonitor.clear();
                 break;
             case "ur":
-                chart.getController().redo();
+                chart.getFXMLController().redo();
                 keyMonitor.clear();
                 break;
             case "v":
@@ -302,7 +294,7 @@ public class KeyBindings {
                                     if (matcher.matches()) {
                                         String group = matcher.group(1);
                                         int plane = Integer.parseInt(group);
-                                        chart.setAxis(2, plane, plane);
+                                        chart.getAxes().setMinMax(2, plane, plane);
                                         chart.refresh();
                                     }
                                 }
@@ -321,7 +313,7 @@ public class KeyBindings {
         if (keyEvent.isShiftDown()) {
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             dataAttrs.stream().forEach(d -> d.rotateDim(1, 1));
-            chart.getController().updateAttrDims();
+            chart.getFXMLController().updateAttrDims();
             chart.full();
             chart.focus();
         } else {
@@ -337,7 +329,7 @@ public class KeyBindings {
         if (keyEvent.isShiftDown()) {
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             dataAttrs.forEach(d -> d.rotateDim(1, -1));
-            chart.getController().updateAttrDims();
+            chart.getFXMLController().updateAttrDims();
             chart.full();
             chart.focus();
         } else {

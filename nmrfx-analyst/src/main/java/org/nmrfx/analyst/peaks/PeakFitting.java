@@ -1,22 +1,22 @@
 package org.nmrfx.analyst.peaks;
 
+import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.Multiplet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
+import org.nmrfx.processor.datasets.peaks.PeakFitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.nmrfx.datasets.DatasetRegion;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakFitException;
-import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
-import org.nmrfx.processor.datasets.peaks.PeakFitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FITJ_MODE.JFIT;
 import static org.nmrfx.processor.datasets.peaks.PeakFitParameters.FITJ_MODE.LFIT;

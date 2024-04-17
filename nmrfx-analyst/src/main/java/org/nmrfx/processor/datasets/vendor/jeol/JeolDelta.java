@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.vendor.jeol;
 
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.parameters.FPMult;
@@ -67,6 +68,8 @@ public class JeolDelta implements NMRData {
     private String[] sfNames;
     private Double[] refValue;
     private Double[] refPoint;
+    private AcquisitionType[] symbolicCoefs;
+
     private String[] nucleiNames;
     private int[] dimSizes;
     private double dspPh = 0.0;
@@ -137,10 +140,12 @@ public class JeolDelta implements NMRData {
             return null;
         }
     }
-  @Override
+
+    @Override
     public String getFTType(int iDim) {
         return "ft";
     }
+
     @Override
     public int getNVectors() {
         return nVectors;
@@ -265,14 +270,20 @@ public class JeolDelta implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
-        return dcoefs;
+        return AcquisitionType.HYPER.getCoefficients();
+    }
 
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        return "hyper";
+        return AcquisitionType.HYPER.getLabel();
     }
 
     @Override
@@ -692,13 +703,14 @@ public class JeolDelta implements NMRData {
         Strip() {
         }
     }
+
     static final private int[] subMatrixEdges = {8, 32, 8, 8, 4, 4, 2, 2};
     static final String[] axisNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"}; // are these right (after Z)
 
-    public JeolDelta(final String fileName) throws IOException {
-        file = new File(fileName);
+    public JeolDelta(final File file) throws IOException {
+        this.file = file;
         if (!file.exists()) {
-            throw new IOException("File " + fileName + " doesn't exist");
+            throw new IOException("File " + file + " doesn't exist");
         }
 
         raFile = new RandomAccessFile(file, "r");
@@ -747,12 +759,12 @@ public class JeolDelta implements NMRData {
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
      */
-    public static boolean findFID(StringBuilder bpath) {
-        return bpath.toString().endsWith(".jdf");
+    public static boolean findFID(File file) {
+        return file.getName().endsWith(".jdf");
     }
 
-    private static boolean findFIDFiles(String dpath) {
-        return dpath.endsWith(".jdf");
+    private static boolean findFIDFiles(File file) {
+        return file.getName().endsWith(".jdf");
     }
 
     public void close() {
@@ -864,6 +876,8 @@ public class JeolDelta implements NMRData {
     void standardize() {
         sw = new Double[nDim];
         sf = new Double[nDim];
+        symbolicCoefs = new AcquisitionType[nDim];
+
         swNames = new String[nDim];
         sfNames = new String[nDim];
         nucleiNames = new String[nDim];

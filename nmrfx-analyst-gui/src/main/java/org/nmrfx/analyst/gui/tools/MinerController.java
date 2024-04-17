@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,36 +16,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.analyst.gui.tools;
 
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToolBar;
+import org.nmrfx.analyst.dataops.Align;
+import org.nmrfx.analyst.dataops.Normalize;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.ToolBar;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import org.nmrfx.analyst.dataops.Align;
-import org.nmrfx.analyst.dataops.Normalize;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author johnsonb
  */
 public class MinerController {
@@ -95,6 +94,7 @@ public class MinerController {
 
     /**
      * Set the disabled state of the sub menu items.
+     *
      * @param state If true, disable sub menu items.
      */
     public void setDisableSubMenus(boolean state) {
@@ -103,27 +103,11 @@ public class MinerController {
         }
     }
 
-    /**
-     * Set the disabled state of the adjuster menu button.
-     * @param state If true, disable button.
-     */
-    public void disableController(boolean state) {
-        adjusterMenu.setDisable(state);
-    }
-
     @FXML
     public void undoAlign(ActionEvent event) {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getVerticalCrosshairPositions();
-            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            NMRAxis axis = (NMRAxis) polyChart.getXAxis();
-            AXMODE axMode = polyChart.getAxMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
-            int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
-            int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
             try {
                 List<Double> valueList;
@@ -154,12 +138,9 @@ public class MinerController {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getVerticalCrosshairPositions();
-            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            NMRAxis axis = (NMRAxis) polyChart.getXAxis();
-            AXMODE axMode = polyChart.getAxMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
+            double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
+            DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
+            AXMODE axMode = polyChart.getAxes().getMode(0);
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
@@ -191,12 +172,9 @@ public class MinerController {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getVerticalCrosshairPositions();
-            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            NMRAxis axis = (NMRAxis) polyChart.getXAxis();
-            AXMODE axMode = polyChart.getAxMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
+            double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
+            DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
+            AXMODE axMode = polyChart.getAxes().getMode(0);
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
@@ -214,12 +192,9 @@ public class MinerController {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getVerticalCrosshairPositions();
-            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            NMRAxis axis = (NMRAxis) polyChart.getXAxis();
-            AXMODE axMode = polyChart.getAxMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
+            double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
+            DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
+            AXMODE axMode = polyChart.getAxes().getMode(0);
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
@@ -258,9 +233,9 @@ public class MinerController {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getVerticalCrosshairPositions();
-            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            AXMODE axMode = polyChart.getAxMode(0);
+            double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
+            DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
+            AXMODE axMode = polyChart.getAxes().getMode(0);
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
@@ -314,9 +289,9 @@ public class MinerController {
         PolyChart polyChart = scannerTool.getChart();
         Dataset dataset = (Dataset) polyChart.getDataset();
         if (dataset != null) {
-            double[] ppms = polyChart.getVerticalCrosshairPositions();
-            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            AXMODE axMode = polyChart.getAxMode(0);
+            double[] ppms = polyChart.getCrossHairs().getVerticalPositions();
+            DatasetAttributes dataAttr = polyChart.getDatasetAttributes().get(0);
+            AXMODE axMode = polyChart.getAxes().getMode(0);
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Normalize normalizer = new Normalize();

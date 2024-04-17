@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,15 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.text.DecimalFormat;
 import javafx.util.StringConverter;
+import javafx.util.converter.NumberStringConverter;
+
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javafx.util.converter.NumberStringConverter;
 
 /**
- *
  * @author brucejohnson
  */
 public class NMRAxisBase {
@@ -44,7 +44,7 @@ public class NMRAxisBase {
         reverse = state;
     }
 
-    public boolean getReverse() {
+    public boolean isReversed() {
         return reverse;
     }
 

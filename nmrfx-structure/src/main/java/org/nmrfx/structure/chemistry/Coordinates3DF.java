@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ class Coordinates3DF {
 
         /*
          * Define aunit vector <uv1> with components ux1,uy1,uz1 colinear with
-         * and having the same direction as <23>. 
+         * and having the same direction as <23>.
          */
         double[] data1 = p1.getValues();
         double[] data2 = p2.getValues();
@@ -64,7 +64,7 @@ class Coordinates3DF {
 
         /*
          * Define a second unit vector <uv2> with components ux2,uy2,uz2 and
-         * having the same direction as the cross product <23> x <21>. 
+         * having the same direction as the cross product <23> x <21>.
          */
         d = data1[0] - data2[0];
         e = data1[1] - data2[1];
@@ -79,11 +79,11 @@ class Coordinates3DF {
         while (d2 < small) {
             /* colinear points */
 
- /*
+            /*
              * Construct normal to line. Assume that the line is formed by 2
-             * intersecting planes having equations of the form: 
+             * intersecting planes having equations of the form:
              *
-             * y = Mx + c1         M = b/a = e/d z = Nx + c2 N = c/a = f/d 
+             * y = Mx + c1         M = b/a = e/d z = Nx + c2 N = c/a = f/d
              */
             if (Math.abs(a) <= small) {
                 x2 = 0.0;
@@ -102,7 +102,7 @@ class Coordinates3DF {
             /*
              * BAJ I inserted the following line. Without it the loop would
              * be endless, but I am not sure if this is what the author
-             * intended. 
+             * intended.
              */
             d2 = Math.sqrt(x2 * x2 + y2 * y2 + z2 * z2);
         }
@@ -112,7 +112,7 @@ class Coordinates3DF {
 
         /*
          * Define a third vector <uv3> with components ux3, uy3, uz3 defined
-         * as the cross product: <uv3> = <uv2> x <uv1> 
+         * as the cross product: <uv3> = <uv2> x <uv1>
          */
         ux3 = uy2 * uz1 - uz2 * uy1;
         uy3 = uz2 * ux1 - ux2 * uz1;
@@ -123,7 +123,7 @@ class Coordinates3DF {
          * vary over two-pi radians then the point 4 will describe a circle
          * in space with radius given below. The center of this circle is
          * denoted as point "e". The vector <34> is then found as the vector
-         * sum of <3e> + <e4>. 
+         * sum of <3e> + <e4>.
          */
         return true;
 
@@ -154,7 +154,7 @@ class Coordinates3DF {
         final double cdz = bndcos * uz1 + bndsin * (uz2 * sinphi + uz3 * cosphi);
 
         /*
-         * Set the coordinates of p4. 
+         * Set the coordinates of p4.
          */
         p3.add(cdx, cdy, cdz, p4);
         return checkDihedral(dihedral, p4, bndcos, bndsin);

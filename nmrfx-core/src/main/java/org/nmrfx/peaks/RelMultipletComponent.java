@@ -6,13 +6,16 @@
 package org.nmrfx.peaks;
 
 /**
- *
  * @author brucejohnson
  */
 public class RelMultipletComponent extends MultipletComponent {
 
     public RelMultipletComponent(Multiplet multiplet, double offset, double intensity, double volume, double lw) {
         super(multiplet, offset, intensity, volume, lw);
+    }
+
+    public RelMultipletComponent(Multiplet multiplet, RelMultipletComponent component) {
+        super(multiplet,component);
     }
 
     public AbsMultipletComponent toAbsolute() {

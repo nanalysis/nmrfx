@@ -1,7 +1,6 @@
 package org.nmrfx.processor.datasets.vendor;
 
 /**
- *
  * @author brucejohnson
  */
 public class VendorPar {

@@ -18,6 +18,7 @@ import java.util.Set;
  */
 public class FXMLControllerManager {
     // The active controller is the last one created, or the one that has focus
+    private static int nControllers = 0;
     private final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
 
     // A collection of all known controllers.
@@ -113,8 +114,16 @@ public class FXMLControllerManager {
      *
      * @return the newly created controller.
      */
+    public FXMLController newController(Stage stage) {
+        return newController(stage, null);
+    }
+
     public FXMLController newController() {
-        return newController(new Stage(StageStyle.DECORATED));
+        return newController(new Stage(StageStyle.DECORATED), null);
+    }
+
+    public FXMLController newController(String title) {
+        return newController(new Stage(StageStyle.DECORATED), title);
     }
 
 
@@ -124,7 +133,11 @@ public class FXMLControllerManager {
      * @param stage the stage used to display the scene associated with this controller
      * @return the newly created controller.
      */
-    public FXMLController newController(Stage stage) {
+    public FXMLController newController(Stage stage, String title) {
+        nControllers++;
+        if (title == null) {
+            title = "NMRFx Spectra " + nControllers;
+        }
         FXMLController controller = Fxml.load(FXMLControllerManager.class, "NMRScene.fxml")
                 .withStage(stage)
                 .getController();
@@ -134,7 +147,12 @@ public class FXMLControllerManager {
         AnalystApp.registerStage(stage);
 
         stage.focusedProperty().addListener(observable -> focusChanged(controller));
-        stage.setOnCloseRequest(e -> closeController(controller));
+        stage.setOnCloseRequest(e -> {
+            closeController(controller);
+            AnalystApp.removeStage(stage);
+        });
+        controller.initStageGeometry();
+        stage.setTitle(title);
         stage.show();
 
         return controller;
@@ -152,16 +170,16 @@ public class FXMLControllerManager {
     }
 
     private void setActiveControllerFromChart() {
-        PolyChart activeChart = PolyChart.getActiveChart();
-        if (activeChart == null && !PolyChart.CHARTS.isEmpty()) {
-            activeChart = PolyChart.CHARTS.get(0);
+        PolyChart activeChart = PolyChartManager.getInstance().getActiveChart();
+        if (activeChart == null) {
+            activeChart = PolyChartManager.getInstance().getFirstChart();
         }
 
-        if (activeChart == null || activeChart.getController() == null) {
+        if (activeChart == null || activeChart.getFXMLController() == null) {
             setActiveController(null);
         } else {
-            setActiveController(activeChart.getController());
-            activeChart.getController().setActiveChart(activeChart);
+            setActiveController(activeChart.getFXMLController());
+            activeChart.getFXMLController().setActiveChart(activeChart);
         }
     }
 

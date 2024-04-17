@@ -18,7 +18,6 @@ from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry.energy import ForceWeight
 from org.nmrfx.structure.chemistry.energy import Dihedral
 from org.nmrfx.structure.chemistry.energy import GradientRefinement
-from org.nmrfx.structure.chemistry.energy import StochasticGradientDescent
 from org.nmrfx.structure.chemistry.energy import CmaesRefinement
 #from org.nmrfx.structure.chemistry.energy import FireflyRefinement
 from org.nmrfx.structure.chemistry.energy import RNARotamer
@@ -995,11 +994,6 @@ class refine:
 
     def gmin(self,nsteps=100,tolerance=1.0e-5):
         self.refiner = GradientRefinement(self.dihedral)
-        self.refiner.setTrajectoryWriter(self.trajectoryWriter)
-        self.refiner.gradMinimize(nsteps, tolerance)
-
-    def sgdmin(self,nsteps=100,tolerance=1.0e-5):
-        self.refiner = StochasticGradientDescent(self.dihedral)
         self.refiner.setTrajectoryWriter(self.trajectoryWriter)
         self.refiner.gradMinimize(nsteps, tolerance)
 
@@ -3085,6 +3079,7 @@ class refine:
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
+        #self.restart()
         self.mode = 'refine'
 
         self.rDyn = self.rinertia()
@@ -3162,25 +3157,6 @@ class refine:
         self.rDyn = self.rinertia()
         self.rDyn.initDynamics(temp,temp,steps,timeStep, timePower)
         self.rDyn.run(1.0)
-
-    def sgd(self,dOpt=None,stage1={},stage2={}):
-        if (dOpt==None):
-            dOpt = dynOptions()
-
-        self.annealPrep(dOpt, 100)
-
-        self.updateAt(dOpt['update'])
-        irp = dOpt['irpWeight']
-        self.setForces({'repel':0.5,'dis':1.0,'dih':5,'irp':irp})
-        self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
-        self.setPars(stage1)
-        energy = self.energy()
-
-        steps = dOpt['steps']
-        self.sgdmin(2*steps/3)
-        self.setPars({'useh':True,'hardSphere':0.0,'shrinkValue':0.0,'shrinkHValue':0.0})
-        self.sgdmin(steps/3)
-
 
     def polish(self, steps, usePseudo=False, stage1={}):
         #XXX: Need to complete docstring
@@ -3384,17 +3360,4 @@ def doAnneal(seed,dOpt=None,homeDir=None, writeTrajectory=False):
     if dOpt == None:
         dOpt = dynOptions({'highFrac':0.4})
     refiner.anneal(dOpt)
-    refiner.output()
-
-def doSGD(seed,homeDir=None):
-    import osfiles
-    refiner = refine()
-    dataDir = osfiles.getDataDir(homeDir)
-    osfiles.setOutFiles(refiner,dataDir, seed)
-    osfiles.guessFiles(refiner, homeDir)
-    refiner.molecule.setMethylRotationActive(True)
-    refiner.setup(dataDir,seed)
-    refiner.rootName = "temp"
-    dOpt = dynOptions({'steps':150000,'highFrac':0.4})
-    refiner.sgd(dOpt)
     refiner.output()

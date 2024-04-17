@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ import org.nmrfx.processor.datasets.DataCoordTransformer;
 import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.gui.PolyChartAxes;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.nmrfx.utils.properties.PublicPropertyContainer;
@@ -58,12 +59,12 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     private final Map<String, Float> extremes = new HashMap<>();
     private final Map<Integer, Color> colorMap = new HashMap<>();
     private final Map<Integer, Double> offsetMap = new HashMap<>();
+    private final Set<Integer> selectionSet = new HashSet<>();
+    public boolean selected;
 
     public int mChunk = 0;
     public int[] dim;
     public List<Integer> drawList = new ArrayList<>();
-    public boolean[] selectionList = null;
-    public boolean selected;
     public boolean intSelected;
     public String title = "";
     int[] chunkSize;
@@ -460,9 +461,8 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             dAttr.drawList = new ArrayList<>();
             dAttr.drawList.addAll(drawList);
         }
-        if (selectionList != null) {
-            dAttr.selectionList = selectionList.clone();
-        }
+        dAttr.selectionSet.clear();
+        dAttr.selectionSet.addAll(selectionSet);
         dAttr.selected = selected;
     }
 
@@ -553,14 +553,15 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return (Dataset.getDataset(theFile.getFileName()) != null) && ((theFile.getVec() != null) || theFile.hasDataFile());
     }
 
-    public void setDrawListSize(final int size) {
-        if (size == 0) {
-            drawList.clear();
-            selectionList = null;
+    public int getDrawListIndex(int i) {
+        if (drawList.isEmpty() || i >= drawList.size()) {
+            return 0;
         } else {
-            drawList.clear();
-            selectionList = new boolean[size];
+            return drawList.get(i);
         }
+    }
+    public void setDrawListSize(final int size) {
+        drawList.clear();
     }
 
     public void incrDrawList(int delta) {
@@ -594,15 +595,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public void setDrawList(List<Integer> indices) {
         drawList.clear();
-        if (indices.isEmpty()) {
-            selectionList = null;
-        } else {
+        if (!indices.isEmpty()) {
             if (dim.length > 1) {
                 indices.stream().filter(i -> i >= 0 && i < theFile.getSizeReal(dim[1])).
                         forEach(drawList::add);
-                selectionList = new boolean[indices.size()];
-            } else {
-                selectionList = null;
             }
         }
     }
@@ -667,7 +663,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
         rearrangeDim(dimC, ptC);
         int size = ptC[0][1] - ptC[0][0] + 1;
-        if ((iDim  == 0) && theFile.getComplex(0)) {
+        if ((iDim == 0) && theFile.getComplex(0)) {
             ptC[0][0] *= 2;
             ptC[0][1] *= 2;
         }
@@ -722,7 +718,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return rowIndex;
     }
 
-    public void updateBounds(AXMODE[] axModes, NMRAxis[] axes, DISDIM disDim) {
+    public void updateBounds(PolyChartAxes axes, DISDIM disDim) {
         int[][] localPt;
         double[][] limits;
         localPt = new int[nDim][2];
@@ -730,23 +726,23 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         limits = new double[nDim][2];
         for (int i = 0; i < nDim; i++) {
             if (i == 0) {
-                localPtD[i][0] = axModes[i].getIndexD(this, i, axes[0].getLowerBound());
-                localPtD[i][1] = axModes[i].getIndexD(this, i, axes[0].getUpperBound());
+                localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(0).getLowerBound());
+                localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(0).getUpperBound());
             } else if (i == 1) {
                 if (disDim == DISDIM.TwoD) {
-                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[1].getLowerBound());
-                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[1].getUpperBound());
+                    localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(1).getLowerBound());
+                    localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(1).getUpperBound());
                 } else {
                     localPtD[i][0] = 0;
                     localPtD[i][1] = theFile.getSizeReal(dim[i]) - 1.0;
                 }
-            } else if (axModes.length <= i) {
+            } else if (axes.count() <= i) {
                 localPtD[i][0] = theFile.getSizeReal(dim[i]) / 2.0;
                 localPtD[i][1] = theFile.getSizeReal(dim[i]) / 2.0;
             } else {
-                if (Objects.nonNull(axModes[i]) && Objects.nonNull(axes[i])) {
-                    localPtD[i][0] = axModes[i].getIndexD(this, i, axes[i].getLowerBound());
-                    localPtD[i][1] = axModes[i].getIndexD(this, i, axes[i].getUpperBound());
+                if (Objects.nonNull(axes.getMode(i)) && Objects.nonNull(axes.get(i))) {
+                    localPtD[i][0] = axes.getMode(i).getIndexD(this, i, axes.get(i).getLowerBound());
+                    localPtD[i][1] = axes.getMode(i).getIndexD(this, i, axes.get(i).getUpperBound());
                 }
             }
             if (localPtD[i][0] > localPtD[i][1]) {
@@ -1226,7 +1222,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public void setDims(int[] newDims) {
         for (int i = 0; i < newDims.length; i++) {
-            setDim(newDims[i],i);
+            setDim(newDims[i], i);
         }
     }
 
@@ -1463,7 +1459,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             limit[1] = (theFile.getSizeReal(dim[i]) - 1) / theFile.getSw(dim[i]);
         } else if (mode == AXMODE.PPM) {
             limit[1] = theFile.pointToPPM(dim[i], 0.0);
-            limit[0] =  theFile.pointToPPM(dim[i],
+            limit[0] = theFile.pointToPPM(dim[i],
                     (theFile.getSizeReal(dim[i]) - 1));
         }
 
@@ -1539,34 +1535,30 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
     }
 
-    public void setSelectedElem(int iElem) {
-        if (selectionList == null) {
-            selectionList = new boolean[getLastChunk(0) + 1];
+    public void setSelectedElem(int iElem, boolean state) {
+        if (state) {
+            selectionSet.add(iElem);
+        } else {
+            selectionSet.remove(iElem);
         }
-        if (iElem < selectionList.length) {
-            selectionList[iElem] = true;
-        }
+        selected = state;
     }
 
     public int[] getSelected() {
         int[] result = new int[0];
-        if ((selectionList != null) && (selectionList.length != 0)) {
-            List<Integer> resultList = new ArrayList<>();
-            for (int i = 0; i < selectionList.length; i++) {
-                if (selectionList[i]) {
-                    if (!drawList.isEmpty()) {
-                        resultList.add(i);
-                    } else if (pt.length > 1) {
-                        resultList.add(i);
-                    }
-                }
+        List<Integer> resultList = new ArrayList<>();
+        for (int i : selectionSet) {
+            if (!drawList.isEmpty()) {
+                resultList.add(i);
+            } else if (pt.length > 1) {
+                resultList.add(i);
             }
-            result = new int[resultList.size()];
-            int i = 0;
-            for (Integer iVal : resultList) {
-                result[i++] = iVal;
+        }
+        result = new int[resultList.size()];
+        int i = 0;
+        for (Integer iVal : resultList) {
+            result[i++] = iVal;
 
-            }
         }
         return result;
     }
@@ -1578,16 +1570,14 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     public void setSelected(boolean state) {
         selected = state;
         if (!state) {
-            if (selectionList != null) {
-                selectionList = new boolean[selectionList.length];
-            }
+            selectionSet.clear();
         }
     }
 
     public boolean isSelected(int iElem) {
         boolean value;
-        if ((selectionList != null) && (iElem < selectionList.length) && (iElem >= 0)) {
-            value = selectionList[iElem];
+        if ((iElem >= 0) && !selectionSet.isEmpty()) {
+            value = selectionSet.contains(iElem);
         } else {
             value = selected;
         }
@@ -1631,11 +1621,11 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, NMRAxis[] axes, double[] newValue) {
+    public void moveRegion(IntegralHit iHit, PolyChartAxes axes, double[] newValue) {
         int handle = iHit.handle;
         DatasetRegion r = iHit.getDatasetRegion();
-        double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
-        double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
+        double newX = axes.getX().getValueForDisplay(newValue[0]).doubleValue();
+        double newY = axes.getY().getValueForDisplay(newValue[1]).doubleValue();
         switch (handle) {
             case 1:
                 double oldEnd = r.getRegionEndIntensity(0);

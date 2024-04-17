@@ -17,12 +17,9 @@
  */
 package org.nmrfx.console;
 
-import javafx.application.Platform;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -49,8 +46,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.nmrfx.utils.GUIUtils.affirm;
-
 /**
  * This class extends from OutputStream to redirect output to a TextArea
  *
@@ -75,14 +70,6 @@ public class ConsoleController extends OutputStream implements Initializable, St
     int historyInd = 0;
     KeyCode prevKey = null;
     ScheduledFuture futureUpdate = null;
-    EventHandler<WindowEvent> close = event -> {
-        if (affirm("Are you sure you want to exit?")) {
-            Platform.exit();
-            System.exit(0);
-        } else {
-            event.consume();
-        }
-    };
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -107,14 +94,6 @@ public class ConsoleController extends OutputStream implements Initializable, St
         consoleController = Fxml.load(ConsoleController.class, "ConsoleScene.fxml")
                 .withStage(stage)
                 .getController();
-
-        stage.show();
-        Screen screen = Screen.getPrimary();
-        Rectangle2D screenSize = screen.getBounds();
-        stage.toFront();
-        stage.setY(screenSize.getHeight() - stage.getHeight());
-        stage.setOnCloseRequest(consoleController.close);
-
         return consoleController;
     }
 
@@ -248,6 +227,8 @@ public class ConsoleController extends OutputStream implements Initializable, St
 
     public void show() {
         stage.show();
+        // if the stage has been minimized, show it
+        stage.setIconified(false);
         stage.toFront();
     }
 

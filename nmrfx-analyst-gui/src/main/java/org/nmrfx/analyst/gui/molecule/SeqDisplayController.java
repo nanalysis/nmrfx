@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -156,71 +157,71 @@ public class SeqDisplayController implements Initializable, StageBasedController
         propertySheet.setModeSwitcherVisible(false);
         propertySheet.setSearchBoxVisible(false);
 
-        fontScaleItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        fontScaleItem = new DoubleRangeOperationItem(propertySheet, (a, b, c) -> refresh(),
                 1.25, 1.0, 3.0, false, "Annotations", "Font Scale", "Scale for atom and residue number label font");
 
-        showResNumberItem = new ChoiceOperationItem((a, b, c) -> {
+        showResNumberItem = new ChoiceOperationItem(propertySheet, (a, b, c) -> {
             refresh();
         }, "Horizontal", List.of("Horizontal", "Vertical", "Off"), "Annotations", "Residue Orient", "Orientation for residue numbers");
 
-        showSeqCharItem = new BooleanOperationItem((a, b, c) -> {
+        showSeqCharItem = new BooleanOperationItem(propertySheet, (a, b, c) -> {
             refresh();
         }, true, "Annotations", "Residue Char", "Show One-Letter Residue Character");
-        showViennaItem = new BooleanOperationItem((a, b, c) -> {
+        showViennaItem = new BooleanOperationItem(propertySheet, (a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Annotations", "Dot-Bracket", "Show RNA Dot-Bracket (Vienna)");
 
-        showZIRDItem = new BooleanOperationItem((a, b, c) -> {
+        showZIRDItem = new BooleanOperationItem(propertySheet, (a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Residue Order Value", "Display", "Display IRD");
-        fillWith2ndStrItem = new BooleanOperationItem((a, b, c) -> {
+        fillWith2ndStrItem = new BooleanOperationItem(propertySheet, (a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Residue Order Value", "Fill 2ndStr", "Fill bars with secondary structure prediction");
-        show2ndStrDItem = new BooleanOperationItem((a, b, c) -> {
+        show2ndStrDItem = new BooleanOperationItem(propertySheet,(a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Secondary Structure Prediction", "Display", "Display 2nd Str");
 
         List<String> zirdModeChoices = List.of("Dot", "Bar");
-        modeZIRDItem = new ChoiceOperationItem((a, b, c) -> {
+        modeZIRDItem = new ChoiceOperationItem(propertySheet,(a, b, c) -> {
             refresh();
         }, "Dot", zirdModeChoices, "Residue Order Value", "Mode", "Display Mode for IRD");
 
-        showAtomShiftsItem = new BooleanOperationItem((a, b, c) -> {
+        showAtomShiftsItem = new BooleanOperationItem(propertySheet,(a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Atom Shifts", "Display", "Display Atom Shift Deviation to Ref");
 
-        showAtomShiftsDotItem = new BooleanOperationItem((a, b, c) -> {
+        showAtomShiftsDotItem = new BooleanOperationItem(propertySheet,(a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Atom Shifts", "Dot", "Show delta values as dot symbols");
 
-        showAtomShiftsCombineItem = new BooleanOperationItem((a, b, c) -> {
+        showAtomShiftsCombineItem = new BooleanOperationItem(propertySheet,(a, b, c) -> {
             refresh();
         }, Boolean.FALSE, "Atom Shifts", "Combine", "Combine multiple atoms per line");
 
         List<String> proteinShiftsAtoms = List.of("H", "N", "C", "CA", "CB", "HA", "HB");
-        proteinShiftsAtomsItem = new CheckComboOperationItem((a) -> {
+        proteinShiftsAtomsItem = new CheckComboOperationItem(propertySheet,(a) -> {
             refresh();
         }, "H", proteinShiftsAtoms, "Atom Shifts", "Protein Atoms", "Select atoms for display");
 
         List<String> rnaShiftsAtoms = List.of("H5,H8", "H5", "H8", "H6,H2", "H6", "H2", "H1'", "H2'", "H3'", "H4'", "H5'",
                 "C5,C8", "C5", "C8", "C6,C2", "C6", "C2", "C1'", "C2'", "C3'", "C4'", "C5'");
-        rnaShiftsAtomsItem = new CheckComboOperationItem((a) -> {
+        rnaShiftsAtomsItem = new CheckComboOperationItem(propertySheet,(a) -> {
             refresh();
         }, "H", rnaShiftsAtoms, "Atom Shifts", "RNA Atoms", "Select atoms for display");
 
         List<String> groupShiftsAtoms = List.of("C", "ribose");
-        groupShiftsAtomsItem = new CheckComboOperationItem((a) -> {
+        groupShiftsAtomsItem = new CheckComboOperationItem(propertySheet,(a) -> {
             refresh();
         }, "", groupShiftsAtoms, "Atom Shifts", "Group By", "Select types to group atoms with");
 
-        atomScaleItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        atomScaleItem = new DoubleRangeOperationItem(propertySheet,(a, b, c) -> refresh(),
                 5.0, 1.0, 21.0, false, "Atom Shifts", "Scale", "Scale delta values by by this amount");
 
-        atomBarHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        atomBarHeightItem = new DoubleRangeOperationItem(propertySheet,(a, b, c) -> refresh(),
                 1.0, 1.0, 5.0, false, "Atom Shifts", "Height", "Scale atom bar height by this amount");
-        zirdHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        zirdHeightItem = new DoubleRangeOperationItem(propertySheet,(a, b, c) -> refresh(),
                 5.0, 1.0, 31.0, false, "Residue Order Value", "Height", "Scale region height by this amount");
-        ssStrHeightItem = new DoubleRangeOperationItem((a, b, c) -> refresh(),
+        ssStrHeightItem = new DoubleRangeOperationItem(propertySheet,(a, b, c) -> refresh(),
                 5.0, 1.0, 31.0, false, "Secondary Structure Prediction", "Height", "Scale region height by this amount");
 
         propertySheet.getItems().addAll(showResNumberItem, fontScaleItem,
@@ -360,7 +361,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawAtomScores(GraphicsContextInterface gC, Residue residue,
-            List<String> aNames, double x, double y, double atomBarWidth, double height) {
+                        List<String> aNames, double x, double y, double atomBarWidth, double height) {
         y = y + height / 2.0 + smallGap;
         for (String aName : aNames) {
             String[] splitAtoms = aName.split(",");
@@ -398,8 +399,8 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawDotScores(GraphicsContextInterface gC, Residue residue,
-            List<String> aNames, double x, double y,
-            double atomBarWidth, double height, boolean combineMode) {
+                       List<String> aNames, double x, double y,
+                       double atomBarWidth, double height, boolean combineMode) {
         y = y + height / 2.0;
         int iAtom = 0;
         double deltaMax = 1.05;
@@ -487,9 +488,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawSymbol(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double value, double lower, double upper) {
+                    double x, double y,
+                    double atomBarWidth, double height,
+                    double value, double lower, double upper) {
         y = y + height + smallGap;
 
         double delta = (value - lower) / (upper - lower);
@@ -505,9 +506,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawBar(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double value, double lower, double upper) {
+                 double x, double y,
+                 double atomBarWidth, double height,
+                 double value, double lower, double upper) {
 
         y = y + height + smallGap;
         double x1 = x - atomBarWidth / 2.0;
@@ -522,9 +523,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
     }
 
     void drawFractionalBar(GraphicsContextInterface gC, Residue residue,
-            double x, double y,
-            double atomBarWidth, double height,
-            double[] values) {
+                           double x, double y,
+                           double atomBarWidth, double height,
+                           double[] values) {
 
         y = y + height + smallGap;
         double x1 = x - atomBarWidth / 2.0;
@@ -617,7 +618,9 @@ public class SeqDisplayController implements Initializable, StageBasedController
         DRAW,
         SIZE,
         PICK;
-    };
+    }
+
+    ;
 
     private void get2ndStrPredictor(Molecule mol) {
         if (show2ndStrDItem.getValue()) {
@@ -630,8 +633,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
                     pred2ndStr.predict(mol);
                     currentMol = mol;
                 }
-
-            } catch (IOException ex) {
+            } catch (IOException | URISyntaxException ex) {
                 log.warn(ex.getMessage(), ex);
             }
         }
@@ -683,7 +685,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
                 pred2ndStr = new Protein2ndStructurePredictor();
                 try {
                     pred2ndStr.load();
-                } catch (IOException ex) {
+                } catch (IOException | URISyntaxException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }
@@ -692,7 +694,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
                     pred2ndStr.load();
                     pred2ndStr.predict(mol);
                     currentMol = mol;
-                } catch (IOException ex) {
+                } catch (IOException | URISyntaxException ex) {
                     log.warn(ex.getMessage(), ex);
                 }
             }

@@ -9,7 +9,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.layout.Pane;
 
 /**
- *
  * @author brucejohnson
  */
 //TODO uncomment once core & utils are merged

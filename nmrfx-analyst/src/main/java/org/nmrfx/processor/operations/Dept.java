@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("pyproc")
@@ -36,17 +35,17 @@ public class Dept extends DatasetOperation {
     private static final Logger log = LoggerFactory.getLogger(Dept.class);
 
     private static final double[][] COEFS = {
-        {2.23, 0.23, 0, 0},
-        {0, 1, 1, 0},
-        {1, 0, 0, -1},
-        {0.23, 0, -0.77, 1}};
+            {2.23, 0.23, 0, 0},
+            {0, 1, 1, 0},
+            {1, 0, 0, -1},
+            {0.23, 0, -0.77, 1}};
 
     private static final double[][] COEFSQ = {
-        {2.23, 2.23, 0.23, 0.23, 0, 0, 0, 0},
-        {1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0},
-        {0, 0, 1, 1, 1, 1, 0, 0},
-        {1, 1, 0, 0, 0, 0, -1, -1},
-        {0.23, 0.23, 0, 0, -0.77, -0.77, 1, 1}};
+            {2.23, 2.23, 0.23, 0.23, 0, 0, 0, 0},
+            {1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0},
+            {0, 0, 1, 1, 1, 1, 0, 0},
+            {1, 1, 0, 0, 0, 0, -1, -1},
+            {0.23, 0.23, 0, 0, -0.77, -0.77, 1, 1}};
 
     public Dept() {
     }

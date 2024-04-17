@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@ public class Coordinates {
 
         /*
          * Define aunit vector <uv1> with components ux1,uy1,uz1 colinear with
-         * and having the same direction as <23>. 
+         * and having the same direction as <23>.
          */
         a = p3.getX() - p2.getX();
         b = p3.getY() - p2.getY();
@@ -56,7 +56,7 @@ public class Coordinates {
 
         /*
          * Define a second unit vector <uv2> with components ux2,uy2,uz2 and
-         * having the same direction as the cross product <23> x <21>. 
+         * having the same direction as the cross product <23> x <21>.
          */
         d = p1.getX() - p2.getX();
         e = p1.getY() - p2.getY();
@@ -69,11 +69,11 @@ public class Coordinates {
         while (d2 < small) {
             /* colinear points */
 
- /*
+            /*
              * Construct normal to line. Assume that the line is formed by 2
-             * intersecting planes having equations of the form: 
+             * intersecting planes having equations of the form:
              *
-             * y = Mx + c1         M = b/a = e/d z = Nx + c2 N = c/a = f/d 
+             * y = Mx + c1         M = b/a = e/d z = Nx + c2 N = c/a = f/d
              */
             if (FastMath.abs(a) <= small) {
                 x2 = 0.0;
@@ -92,7 +92,7 @@ public class Coordinates {
             /*
              * BAJ I inserted the following line. Without it the loop would
              * be endless, but I am not sure if this is what the author
-             * intended. 
+             * intended.
              */
             d2 = FastMath.sqrt(x2 * x2 + y2 * y2 + z2 * z2);
         }
@@ -102,7 +102,7 @@ public class Coordinates {
 
         /*
          * Define a third vector <uv3> with components ux3, uy3, uz3 defined
-         * as the cross product: <uv3> = <uv2> x <uv1> 
+         * as the cross product: <uv3> = <uv2> x <uv1>
          */
         ux3 = uy2 * uz1 - uz2 * uy1;
         uy3 = uz2 * ux1 - ux2 * uz1;
@@ -113,7 +113,7 @@ public class Coordinates {
          * vary over two-pi radians then the point 4 will describe a circle
          * in space with radius given below. The center of this circle is
          * denoted as point "e". The vector <34> is then found as the vector
-         * sum of <3e> + <e4>. 
+         * sum of <3e> + <e4>.
          */
         return true;
 
@@ -126,7 +126,7 @@ public class Coordinates {
         final double cdx = bndcos * ux1 + bndsin * (ux2 * sinphi + ux3 * cosphi);
         final double cdy = bndcos * uy1 + bndsin * (uy2 * sinphi + uy3 * cosphi);
         final double cdz = bndcos * uz1 + bndsin * (uz2 * sinphi + uz3 * cosphi);
-        if (!Double.isFinite(cdx) ||!Double.isFinite(cdy) || !Double.isFinite(cdz)) {
+        if (!Double.isFinite(cdx) || !Double.isFinite(cdy) || !Double.isFinite(cdz)) {
             System.out.println("non finite coords");
         }
         return new Point3(p3.getX() + cdx, p3.getY() + cdy, p3.getZ() + cdz);

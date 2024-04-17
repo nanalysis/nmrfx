@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,12 @@
  */
 package org.nmrfx.processor.optimization;
 
-import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 
 /* DataRMap
  *  Provides elementary hash map via VecID to allow arbitrary dimensioning
- *  of data. 
+ *  of data.
  *  Differs from previous maps in that it wraps the VecID functionality around
  *  RealMatrix found in apache commons math linear.  Thus it is not generic like
  *  the previous, bound to double now.

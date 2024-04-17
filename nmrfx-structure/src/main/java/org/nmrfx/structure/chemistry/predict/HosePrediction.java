@@ -1,19 +1,14 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.TreeSet;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.stream.Stream;
-
 import org.apache.commons.collections4.bag.HashBag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class HosePrediction {
 
@@ -523,8 +518,8 @@ public class HosePrediction {
         int[] nValues = new int[2];
         int[] nNulls = new int[2];
         int[] nViols = new int[2];
-        try (Stream<String> lines = Files.lines(new File(validate).toPath())){
-             lines.forEach(line -> {
+        try (Stream<String> lines = Files.lines(new File(validate).toPath())) {
+            lines.forEach(line -> {
                 cPPMs.clear();
                 hPPMs.clear();
                 String[] values = line.split("\t");
@@ -615,7 +610,7 @@ public class HosePrediction {
         return getHoseAtPosition(index);
     }
 
-     HOSEPPM getHoseAtPosition(int position) {
+    HOSEPPM getHoseAtPosition(int position) {
         StringBuilder hoseCode = new StringBuilder();
         if (position >= buffer.length) {
             return null;
@@ -673,13 +668,13 @@ public class HosePrediction {
     }
 
     public void openData(String fileName, boolean resourceMode) {
-        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)){
+        try (InputStream iStream = resourceMode ? ClassLoader.getSystemResourceAsStream(fileName) : new FileInputStream(fileName)) {
             if (resourceMode) {
                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                 int nRead;
                 byte[] data = new byte[16384];
                 while ((nRead = iStream.read(data, 0, data.length)) != -1) {
-                    for (int i=0;i<nRead;i++) {
+                    for (int i = 0; i < nRead; i++) {
                         if (data[i] != '\r') {
                             byteBuffer.write(data[i]);
                         }
@@ -696,6 +691,7 @@ public class HosePrediction {
             log.warn(ioE.getMessage(), ioE);
         }
     }
+
     // used from Python to sort hose code file
     public static void sortData(String fileName) throws IOException {
         List<String[]> lines = new ArrayList<>();

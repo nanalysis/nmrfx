@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * PeakEvent.java
  *
  * Created on December 13, 2006, 11:39 AM
@@ -26,10 +26,7 @@
  */
 package org.nmrfx.peaks.events;
 
-import java.util.EventObject;
-
 /**
- *
  * @author brucejohnson
  */
 public class PeakCountEvent extends PeakEvent {
@@ -37,6 +34,7 @@ public class PeakCountEvent extends PeakEvent {
 
     /**
      * Creates a new instance of PeakCountEvent
+     *
      * @param object event object
      */
     public PeakCountEvent(Object object, int size) {

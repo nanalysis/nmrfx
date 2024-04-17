@@ -15,6 +15,7 @@ import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.star.*;
@@ -40,24 +41,25 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNullElse;
 
 /**
- *
  * @author brucejohnson
  */
 @PluginAPI("parametric")
 public class ProjectBase {
     private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 
-    public static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
-    public static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
+    private static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
+    private static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     private static final Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
-    protected static PropertyChangeSupport pcs = null;
-    static ProjectBase activeProject = null;
+    private static PropertyChangeSupport pcs = null;
+    private static ProjectBase activeProject = null;
     final String name;
     protected Path projectDir = null;
     protected Map<String, PeakPaths> peakPaths = new HashMap<>();
     protected Map<String, Compound> compoundMap = new HashMap<>();
-    protected  Map<String, MoleculeBase> molecules = new HashMap<>();
+    protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
+
+    private ResonanceFactory resFactory;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
@@ -75,7 +77,8 @@ public class ProjectBase {
             Class[] parameterTypes = {String.class};
             Constructor constructor = c.getDeclaredConstructor(parameterTypes);
             projectBase = (ProjectBase) constructor.newInstance(name);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
+                 InvocationTargetException | NoSuchMethodException | SecurityException ex) {
             projectBase = new ProjectBase(name);
         }
         return projectBase;
@@ -125,6 +128,15 @@ public class ProjectBase {
         }
     }
 
+    public static ResonanceFactory activeResonanceFactory() {
+        return getActive().resonanceFactory();
+    }
+    public ResonanceFactory resonanceFactory() {
+        if (resFactory == null) {
+            resFactory = new ResonanceFactory();
+        }
+        return resFactory;
+    }
     public String getName() {
         return name;
     }
@@ -189,13 +201,13 @@ public class ProjectBase {
     }
 
     public void writeSaveframes(Writer chan) throws ParseException, IOException {
-        for (SaveframeWriter saveframeWriter :extraSaveframes) {
+        for (SaveframeWriter saveframeWriter : extraSaveframes) {
             saveframeWriter.write(chan);
         }
     }
 
     public static void processExtraSaveFrames(STAR3 star3) throws ParseException {
-        for (Saveframe saveframe: star3.getSaveFrames().values()) {
+        for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframeProcessors.containsKey(saveframe.getCategoryName())) {
                 try {
                     saveframeProcessors.get(saveframe.getCategoryName()).process(saveframe);
@@ -264,7 +276,7 @@ public class ProjectBase {
     }
 
     /**
-     * Return an Optional containing the PeakList with lowest id number or an
+     * Return an Optional containing the PeakList with the lowest id number or an
      * empty value if no PeakLists are present.
      *
      * @return Optional containing first peakList if any peak lists present or
@@ -286,7 +298,7 @@ public class ProjectBase {
         peakLists.clear();
     }
 
-    public  MoleculeBase getActiveMolecule() {
+    public MoleculeBase getActiveMolecule() {
         return activeMol;
     }
 
@@ -298,23 +310,23 @@ public class ProjectBase {
         molecules.put(molecule.getName(), molecule);
     }
 
-    public  MoleculeBase getMolecule(String name) {
+    public MoleculeBase getMolecule(String name) {
         return molecules.get(name);
     }
 
-    public  Collection<MoleculeBase> getMolecules() {
+    public Collection<MoleculeBase> getMolecules() {
         return molecules.values();
     }
 
-    public  Collection<String> getMoleculeNames() {
+    public Collection<String> getMoleculeNames() {
         return molecules.keySet();
     }
 
-    public  void setMoleculeMap(Map<String, MoleculeBase> newMap) {
+    public void setMoleculeMap(Map<String, MoleculeBase> newMap) {
         molecules = newMap;
     }
 
-    public  void removeMolecule(String name) {
+    public void removeMolecule(String name) {
         var mol = molecules.get(name);
         if (mol == activeMol) {
             activeMol = null;
@@ -324,7 +336,7 @@ public class ProjectBase {
         }
     }
 
-    public  void clearAllMolecules() {
+    public void clearAllMolecules() {
         activeMol = null;
         molecules.clear();
     }
@@ -353,7 +365,7 @@ public class ProjectBase {
 
     public void setProjectDir(Path projectDir) {
         this.projectDir = projectDir;
-        if (pcs != null ) {
+        if (pcs != null) {
             pcs.firePropertyChange(new PropertyChangeEvent(this, "project", null, this));
         }
     }
@@ -392,18 +404,15 @@ public class ProjectBase {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
             if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
                 switch (subDir) {
-                    case "datasets":
-                        loadDatasets(subDirectory);
-                        break;
-                    case "peaks":
+                    case "datasets" -> loadDatasets(subDirectory);
+                    case "peaks" -> {
                         if (mpk2Mode) {
                             loadMPKs(subDirectory);
                         } else {
                             loadPeaks(subDirectory);
                         }
-                        break;
-                    default:
-                        throw new IllegalStateException("Invalid subdir type");
+                    }
+                    default -> throw new IllegalStateException("Invalid subdir type");
                 }
             }
 
@@ -541,9 +550,10 @@ public class ProjectBase {
     /**
      * Loads the regions from the provided filename and sets them in the dataset. If resetNorm is true, the
      * integral norm is calculated from the regions and set in the dataset.
+     *
      * @param regionFileStr The string path of the region file.
-     * @param dataset The dataset to set the regions for.
-     * @param resetNorm Whether to reset the integral norm.
+     * @param dataset       The dataset to set the regions for.
+     * @param resetNorm     Whether to reset the integral norm.
      * @throws IOException if there is problem loading the regions.
      */
     private void loadRegions(String regionFileStr, DatasetBase dataset, boolean resetNorm) throws IOException {
@@ -551,7 +561,7 @@ public class ProjectBase {
         if (regionFile.canRead()) {
             List<DatasetRegion> regions = DatasetRegion.loadRegions(regionFile);
             if (!DatasetRegion.isLongRegionFile(regionFile)) {
-                for (DatasetRegion region: regions) {
+                for (DatasetRegion region : regions) {
                     region.measure(dataset);
                 }
             }

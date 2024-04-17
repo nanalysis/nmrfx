@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -29,12 +29,12 @@ import javafx.beans.value.ObservableObjectValue;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.commons.math3.exception.MathParseException;
+import org.controlsfx.control.PropertySheet;
 import org.python.core.PyComplex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
  */
 public class ComplexOperationItem extends OperationItem implements ObservableObjectValue<String> {
@@ -47,8 +47,8 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
     ChangeListener<? super String> listener;
     private final ComplexFormat cf;
 
-    public ComplexOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
-        super(category, name, description);
+    public ComplexOperationItem(PropertySheet propertySheet, ChangeListener listener, Complex defaultValue, String category, String name, String description) {
+        super(propertySheet, category, name, description);
         if (defaultValue != null) {
             this.defaultValue = defaultValue;
         } else {
@@ -59,8 +59,8 @@ public class ComplexOperationItem extends OperationItem implements ObservableObj
         this.cf = new ComplexFormat("j");
     }
 
-    public ComplexOperationItem(ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
-        this(listener, defaultValue, category, name, description);
+    public ComplexOperationItem(PropertySheet propertySheet, ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
+        this(propertySheet, listener, defaultValue, category, name, description);
 
         this.min = min;
         this.max = max;

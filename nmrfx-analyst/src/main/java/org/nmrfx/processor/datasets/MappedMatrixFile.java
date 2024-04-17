@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,13 +17,6 @@
  */
 package org.nmrfx.processor.datasets;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.FloatBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetHeaderIO;
 import org.nmrfx.datasets.DatasetLayout;
@@ -31,6 +24,14 @@ import org.nmrfx.datasets.DatasetStorageInterface;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.FloatBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -56,8 +57,8 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
      * An object that represents a mapping of specified dataset with a memory
      * map.
      *
-     * @param dataset Dataset object that uses this mapped matrix file
-     * @param raFile The Random access file that actually stores data
+     * @param dataset  Dataset object that uses this mapped matrix file
+     * @param raFile   The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */

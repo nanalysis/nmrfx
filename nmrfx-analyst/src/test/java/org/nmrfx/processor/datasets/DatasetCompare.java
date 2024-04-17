@@ -54,6 +54,23 @@ public class DatasetCompare {
                         break;
                     }
                 }
+                if (dataErrorPosition != -1) {
+                    refRAFile.seek(headerSize);
+                    testRAFile.seek(headerSize);
+                    dataErrorPosition = -1;
+                    for (int i = headerSize; i < refLen / Float.BYTES; i++) {
+                        float refFloat = refRAFile.readFloat();
+                        float testFloat = testRAFile.readFloat();
+                        if (Float.compare(refFloat, testFloat) != 0) {
+                            if (Math.abs(refFloat - testFloat) > 1.0e-4) {
+                                System.out.println(refFloat + " " + testFloat + " " + Math.abs(refFloat - testFloat));
+                                dataErrorPosition = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
             }
 
         }

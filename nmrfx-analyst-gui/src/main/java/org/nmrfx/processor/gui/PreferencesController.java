@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,8 +45,23 @@ import java.util.prefs.Preferences;
  * @author johnsonb
  */
 public class PreferencesController implements Initializable, StageBasedController {
-
     private static final Logger log = LoggerFactory.getLogger(PreferencesController.class);
+    private static final Map<String, String> recentMap = new HashMap<>();
+
+    private static File nestaNMR = null;
+    private static File datasetDir = null;
+    private static String location = null;
+    private static Integer nProcesses = null;
+    private static BooleanProperty useImmediateModeProp = null;
+    private static BooleanProperty useNVJMouseModeProp = null;
+    private static IntegerProperty tickFontSizeProp = null;
+    private static IntegerProperty labelFontSizeProp = null;
+    private static IntegerProperty peakFontSizeProp = null;
+    private static BooleanProperty fitPeakShapeProp = null;
+    private static BooleanProperty constrainPeakShapeProp = null;
+    private static DoubleProperty peakShapeDirectFactorProp = null;
+    private static DoubleProperty peakShapeIndirectFactorProp = null;
+    private static StringProperty rnaModelProp = null;
 
     @FXML
     PropertySheet prefSheet;
@@ -56,18 +71,6 @@ public class PreferencesController implements Initializable, StageBasedControlle
     ChangeListener<Integer> nprocessListener;
     Stage stage;
 
-    static File nestaNMR = null;
-    static File datasetDir = null;
-    private static Map<String, String> recentMap = new HashMap<>();
-    static String location = null;
-    static Integer nProcesses = null;
-    static IntegerProperty tickFontSizeProp = null;
-    static IntegerProperty labelFontSizeProp = null;
-    static IntegerProperty peakFontSizeProp = null;
-    static BooleanProperty fitPeakShapeProp = null;
-    static BooleanProperty constrainPeakShapeProp = null;
-    static DoubleProperty peakShapeDirectFactorProp = null;
-    static DoubleProperty peakShapeIndirectFactorProp = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -88,65 +91,87 @@ public class PreferencesController implements Initializable, StageBasedControlle
         nprocessListener = (ObservableValue<? extends Integer> observableValue, Integer n1, Integer n2) -> {
             setNProcesses(n2);
         };
-        FileOperationItem nestaFileItem = new FileOperationItem(stringListener, getNESTANMR().getPath(), "External Programs", "NESTA-NMR", "desc");
+        FileOperationItem nestaFileItem = new FileOperationItem(prefSheet, stringListener, getNESTANMR().getPath(), "External Programs", "NESTA-NMR", "desc");
         ArrayList<String> locationChoices = new ArrayList<>();
         locationChoices.add("FID directory");
         locationChoices.add("Dataset directory");
-        ChoiceOperationItem locationTypeItem = new ChoiceOperationItem(locationListener, getLocation(), locationChoices, "File Locations", "location", "Directory Location for Dataset");
+        ChoiceOperationItem locationTypeItem = new ChoiceOperationItem(prefSheet, locationListener, getLocation(), locationChoices, "File Locations", "location", "Directory Location for Dataset");
 
-        DirectoryOperationItem locationFileItem = new DirectoryOperationItem(datasetListener, getDatasetDirectory().getPath(), "File Locations", "Datasets", "desc");
+        DirectoryOperationItem locationFileItem = new DirectoryOperationItem(prefSheet, datasetListener, getDatasetDirectory().getPath(), "File Locations", "Datasets", "desc");
 
         int nProcessesDefault = Runtime.getRuntime().availableProcessors() / 2;
-        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(nprocessListener,
+        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(prefSheet, nprocessListener,
                 nProcessesDefault, 1, 32, "Processor", "NProcesses",
                 "How many parallel processes to run during processing");
 
-        IntRangeOperationItem ticFontSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem ticFontSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     tickFontSizeProp.setValue((Integer) c);
                 },
                 getTickFontSize(), 1, 32, "Spectra", "TicFontSize", "Font size for tic mark labels");
 
-        IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     labelFontSizeProp.setValue((Integer) c);
                 },
                 getLabelFontSize(), 1, 32, "Spectra", "LabelFontSize", "Font size for axis labels");
 
-        IntRangeOperationItem peakFontSizeItem = new IntRangeOperationItem(
+        IntRangeOperationItem peakFontSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     peakFontSizeProp.setValue((Integer) c);
                 },
                 getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
 
-        BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(
+        BooleanOperationItem useImmediateModeItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useImmediateModeProp.setValue((Boolean) c);
+                    PolyChart.updateImmediateModes((Boolean) c);
+                    setBoolean("IMMEDIATE_MODE", (Boolean) c);
+                },
+                getUseImmediateMode(), "Spectra", "UseImmediateMode", "Don't multi-thread drawing");
+
+        BooleanOperationItem useNvJMouseItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useNVJMouseModeProp.setValue((Boolean) c);
+                    setBoolean("NVJ_SCROLL_MODE", (Boolean) c);
+                },
+                getUseNvjMouseMode(), "Spectra", "UseNvJMouseMode", "Use original NvJ scrolling modes");
+        BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     fitPeakShapeProp.setValue((Boolean) c);
                 },
                 getFitPeakShape(), "Peak", "FitPeakShape", "Fit Non-Lorentzian Peak Shapes");
 
-        BooleanOperationItem constrainPeakShapeItem = new BooleanOperationItem(
+        BooleanOperationItem constrainPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     constrainPeakShapeProp.setValue((Boolean) c);
                 },
                 getConstrainPeakShape(), "Peak", "ConstrainPeakShape", "Constrain Non-Lorentzian Peak Shapes");
 
-        DoubleRangeOperationItem peakShapeDirectItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem peakShapeDirectItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     peakShapeDirectFactorProp.setValue((Double) c);
                 },
                 getPeakShapeDirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeDirect", "Shape factor for direct dimension");
 
-        DoubleRangeOperationItem peakShapeInirectItem = new DoubleRangeOperationItem(
+        DoubleRangeOperationItem peakShapeInirectItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     peakShapeIndirectFactorProp.setValue((Double) c);
                 },
                 getPeakShapeIndirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeIndirect", "Shape factor for indirect dimension");
 
 
+        DirectoryOperationItem rnaSSModelItem = new DirectoryOperationItem(prefSheet,
+                (a, b, c) -> {
+                    setString("RNA-MODEL", (String) c);
+                    rnaModelProp.setValue((String) c);
+                }
+
+                , getRNAModelDirectory(), "RNA", "SS Model", "Directory for secondary predictino model");
+
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
-                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem,
-                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem);
+                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
+                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem);
     }
 
     @Override
@@ -249,6 +274,17 @@ public class PreferencesController implements Initializable, StageBasedControlle
         }
 
     }
+
+    public static String getRNAModelDirectory() {
+        rnaModelProp = getString(rnaModelProp, "RNA-MODEL", "");
+        return rnaModelProp.getValue();
+    }
+
+    public static void setRNAModelDirectory(String directory) {
+        rnaModelProp.setValue(directory);
+        setString("RNA-MODEL", directory);
+    }
+
 
     /**
      * Returns the Directory for datasets,
@@ -415,6 +451,16 @@ public class PreferencesController implements Initializable, StageBasedControlle
         return peakFontSizeProp.getValue();
     }
 
+    public static Boolean getUseImmediateMode() {
+        useImmediateModeProp = getBoolean(useImmediateModeProp, "IMMEDIATE_MODE", false);
+        return useImmediateModeProp.getValue();
+    }
+
+    public static Boolean getUseNvjMouseMode() {
+        useNVJMouseModeProp = getBoolean(useNVJMouseModeProp, "NVJ_SCROLL_MODE", false);
+        return useNVJMouseModeProp.getValue();
+    }
+
     public static Boolean getFitPeakShape() {
         fitPeakShapeProp = getBoolean(fitPeakShapeProp, "FIT_PEAK_SHAPE", false);
         return fitPeakShapeProp.getValue();
@@ -470,7 +516,6 @@ public class PreferencesController implements Initializable, StageBasedControlle
         }
     }
 
-    
 
     public static DoubleProperty getDouble(DoubleProperty prop, String name, double defValue) {
         if (prop == null) {

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.*;
@@ -38,7 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
+import static org.nmrfx.processor.gui.spectra.DrawPeaks.MIN_HIT_SIZE;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
 
 /**
@@ -60,7 +61,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     private final BooleanProperty drawPeaks = new SimpleBooleanProperty(this, DRAW_PEAKS, true);
     private final BooleanProperty simPeaks = new SimpleBooleanProperty(this, SIM_PEAKS, false);
     private final BooleanProperty drawLinks = new SimpleBooleanProperty(this, "drawLinks", false);
-    private final ObjectProperty<PeakDisplayParameters.LabelTypes> peakLabelType = new SimpleObjectProperty<>(this, "peakLabelType", Number);
+    private final ObjectProperty<PeakDisplayParameters.LabelTypes> labelType = new SimpleObjectProperty<>(this, LABEL_TYPE, PeakDisplayParameters.LabelTypes.Label);
     private final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayType = new SimpleObjectProperty<>(this, DISPLAY_TYPE, DisplayTypes.Peak);
     private final ObjectProperty<PeakDisplayParameters.ColorTypes> colorType = new SimpleObjectProperty<>(this, "colorType", ColorTypes.Plane);
     private final StringProperty peakListName = new SimpleStringProperty(this, "peakListName", "");
@@ -72,8 +73,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     Optional<List<Multiplet>> multipletsInRegion = Optional.empty();
     Set<Peak> selectedPeaks = new HashSet<>();
     Set<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
-    NMRAxis xAxis = null;
-    NMRAxis yAxis = null;
+    Axis xAxis = null;
+    Axis yAxis = null;
     double[][] foldLimits = null;
 
     public IntegerProperty nplanesProperty() {
@@ -151,7 +152,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
 
     public final ObjectProperty<PeakDisplayParameters.LabelTypes> labelTypeProperty() {
-        return this.peakLabelType;
+        return this.labelType;
     }
 
     public final PeakDisplayParameters.LabelTypes getLabelType() {
@@ -250,12 +251,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         int nDataDim = dataAttr.nDim;
         double[][] limits = new double[nDataDim][2];
         for (int i = 0; i < nDataDim; i++) {
-            NMRAxis axis = chart.getAxis(i);
-            if (chart.getAxMode(i) == DatasetAttributes.AXMODE.PPM) {
+            Axis axis = chart.getAxes().get(i);
+            if (chart.getAxes().getMode(i) == DatasetAttributes.AXMODE.PPM) {
                 limits[i][0] = axis.getLowerBound();
                 limits[i][1] = axis.getUpperBound();
-                double lb = chart.getAxMode(i).getIndexD(dataAttr, i, limits[i][0]);
-                double ub = chart.getAxMode(i).getIndexD(dataAttr, i, limits[i][1]);
+                double lb = chart.getAxes().getMode(i).getIndexD(dataAttr, i, limits[i][0]);
+                double ub = chart.getAxes().getMode(i).getIndexD(dataAttr, i, limits[i][1]);
                 if (Math.abs(lb - ub) < 0.5) {
                     lb = lb - ((double) getNplanes()) - 0.5;
                     ub = ub + ((double) getNplanes()) + 0.5;
@@ -409,8 +410,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         Optional<Peak> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
             if ((peakList.nDim > 1) && !chart.is1D()) {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
@@ -421,11 +422,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         }
         return hit;
     }
+
     public Optional<MultipletSelection> hitMultiplet(DrawPeaks drawPeaks, double pickX, double pickY) {
         if (peakList.getNDim() > 1) {
             return Optional.empty();
         }
-        Optional<MultipletSelection> hit =  drawPeaks.hitMultipletLabel(pickX, pickY);
+        Optional<MultipletSelection> hit = drawPeaks.hitMultipletLabel(pickX, pickY);
         if (hit.isPresent()) {
             return hit;
         } else {
@@ -437,8 +439,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         Optional<MultipletSelection> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
             if (peakList.nDim == 1) {
                 var pickResult = peaksInRegion.get().stream().filter(peak -> peak.getStatus() >= 0).
                         map(peak -> peak.getPeakDim(0).getMultiplet())
@@ -455,9 +457,9 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         Optional<Peak> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
-            if ((peakList.nDim > 1) && !chart.is1D()){
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
+            if ((peakList.nDim > 1) && !chart.is1D()) {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
                 if (hit.isPresent()) {
@@ -513,12 +515,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     public void selectPeaks(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
-            xAxis = (NMRAxis) chart.getXAxis();
-            yAxis = (NMRAxis) chart.getYAxis();
+            xAxis = chart.getAxes().getX();
+            yAxis = chart.getAxes().getY();
             if (!append) {
                 selectedPeaks.clear();
             }
-            if ((peakList.nDim > 1) && !chart.is1D()){
+            if ((peakList.nDim > 1) && !chart.is1D()) {
                 List<Peak> peaks = peaksInRegion.get().stream().parallel()
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY))
                         .filter((peak) -> !selectedPeaks.contains(peak))
@@ -615,7 +617,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     }
 
     protected boolean pick1DPeak(Peak peak, double x,
-            double y) {
+                                 double y) {
         double height = yAxis.getHeight();
         y = height - y;
         int[] peakDim = getPeakDim();
@@ -627,17 +629,26 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     }
 
     private boolean pick2DPeak(Peak peak, double x,
-            double y) {
+                               double y) {
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
         int[] peakDim = getPeakDim();
+        boolean ok = true;
+        for (int i=0;i<2;i++) {
+            int pDim = peakDim[i];
+            if ((pDim >= 0) && (pDim < peak.peakDims.length)) {
+                bou[i] = peak.peakDims[pDim].getBoundsValue();
+                ctr[i] = peak.peakDims[pDim].getChemShiftValue();
+                ctr[i] = foldShift(i, ctr[i]);
+            } else {
+                ok = false;
+                break;
+            }
+        }
+        if (!ok) {
+            return false;
+        }
 
-        bou[0] = peak.peakDims[peakDim[0]].getBoundsValue();
-        bou[1] = peak.peakDims[peakDim[1]].getBoundsValue();
-        ctr[0] = peak.peakDims[peakDim[0]].getChemShiftValue();
-        ctr[1] = peak.peakDims[peakDim[1]].getChemShiftValue();
-        ctr[0] = foldShift(0, ctr[0]);
-        ctr[1] = foldShift(1, ctr[1]);
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
 
@@ -645,12 +656,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             int growWidth = 0;
             int growHeight = 0;
             int width = (int) box.getWidth();
-            if (width < minHitSize) {
-                growWidth = minHitSize - width;
+            if (width < MIN_HIT_SIZE) {
+                growWidth = MIN_HIT_SIZE - width;
             }
             int height = (int) box.getHeight();
-            if (height < minHitSize) {
-                growHeight = minHitSize - height;
+            if (height < MIN_HIT_SIZE) {
+                growHeight = MIN_HIT_SIZE - height;
             }
             // fixme why are we doing this (from old code) and should it grow symmetrically
             // gues we try to hit small rect for selectivity, then expand if no hit
@@ -754,7 +765,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
     @Override
     public Collection<Property<?>> getPublicProperties() {
-        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, peakLabelType, displayType);
+        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, labelType, displayType);
     }
 
     /**

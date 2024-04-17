@@ -8,6 +8,7 @@ import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.project.ProjectBase;
@@ -36,7 +37,10 @@ public class SpectrumMenuActions extends MenuActions {
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().removeSelectedChart());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
-        syncMenuItem.setOnAction(e -> PolyChart.getActiveChart().syncSceneMates());
+        syncMenuItem.setOnAction(e -> {
+            PolyChart chart = PolyChartManager.getInstance().getActiveChart();
+            PolyChartManager.getInstance().getSynchronizer().syncSceneMates(chart);
+        });
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem createGridItem = new MenuItem("Add Grid...");
@@ -61,7 +65,7 @@ public class SpectrumMenuActions extends MenuActions {
         copyItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().copySVGAction(e));
         menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
         MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
-        for (var item:disableItems) {
+        for (var item : disableItems) {
             item.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         }
     }
@@ -74,6 +78,7 @@ public class SpectrumMenuActions extends MenuActions {
         menu.getItems().addAll(
                 alignMenuItem);
     }
+
     void showFavorites() {
         if (windowIO == null) {
             windowIO = new WindowIO();
@@ -99,7 +104,6 @@ public class SpectrumMenuActions extends MenuActions {
 
     private void newGraphics(ActionEvent event) {
         Stage stage = new Stage(StageStyle.DECORATED);
-        stage.setTitle(AnalystApp.getAppName() + " " + AnalystApp.getVersion());
         AnalystApp.getFXMLControllerManager().newController(stage);
     }
 }

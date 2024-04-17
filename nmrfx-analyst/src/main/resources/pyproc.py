@@ -85,6 +85,7 @@ from org.nmrfx.processor.operations import Stack
 from org.nmrfx.processor.operations import DGRINSOp
 from org.nmrfx.processor.operations import TDCombine
 from org.nmrfx.processor.operations import TDPoly
+from org.nmrfx.processor.operations import Tilt45
 from org.nmrfx.processor.operations import Tm
 from org.nmrfx.processor.operations import Tri
 from org.nmrfx.processor.operations import Tdss
@@ -167,9 +168,6 @@ StdCoefs={
 
 class FIDInfo:
     size=[]
-    sw=[]
-    sf=[]
-    ref=[]
     refpt=[]
     label=[]
     mapToFIDList=[]
@@ -186,13 +184,10 @@ class FIDInfo:
             raise Exception("Number of parameters must be < "+str(nd))
 
     def printInfo(self):
-        print "  sw",    self.sw
-        print "  sf",    self.sf
         print "  size",  self.size
         print "  useSize", self.useSize
         print "  acqArray", self.acqArray
         print "  label", self.label
-        print "  ref",   self.ref
         print "  refpt", self.refpt
         print "  flags", self.flags
         print "  acqOrder", self.acqOrder
@@ -208,72 +203,24 @@ class FIDInfo:
 
     def setFixDSP(self,value):
         self.fidObj.setFixDSP(value)
+
+    def setZeroFreq(self,value):
+        self.fidObj.setZeroFreq(value)
         
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sw[i] = par
-            elif isinstance(par,int):
-                self.sw[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSW(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if isinstance(value,float):
-                    self.sw[i] = value
-            self.fidObj.setSW(i,self.sw[i])
+            self.fidObj.setSW(i,par)
 
     def setSF(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sf[i] = par
-            elif isinstance(par,int):
-                self.sf[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSF(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if self.fidObj.getVendor() == "rs2d":
-                    value = value / 1.0e6
-                if isinstance(value,float):
-                    self.sf[i] = value
-            self.fidObj.setSF(i,self.sf[i])
+            self.fidObj.setSF(i,par)
 
     def setRef(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.ref[i] = par
-            elif isinstance(par,int):
-                self.ref[i] = float(par)
-            else:
-                par = par.upper().strip()
-                if (par == ''):
-                    self.fidObj.resetRef(i)
-                    self.ref[i] = self.fidObj.getRef(i)
-                    continue
-                if (par == 'H2O'):
-                    temp = self.fidObj.getTempK()
-                    self.ref[i] = getWaterPPM(temp)
-                elif (par.find('@') != -1):
-                    (refValue,sfValue) = par.split('@')
-                    refValue = float(refValue)
-                    sfValue = float(sfValue)
-                    self.ref[i] = (self.sf[i]-sfValue)*1.e6/sfValue+refValue
-                elif ((i > 0) and (par in ('N','C','P','D','H'))):
-                    self.ref[i] = refByRatio(self.sf[0],self.ref[0],self.sf[i],par)
-                else:
-                    doubleValue = self.fidObj.getParDouble(par)
-                    if doubleValue == None:
-                        raise Exception("Cannot convert par "+par)
-                    self.ref[i] = doubleValue;
-            if self.size[i] != 0:
-                delRef = (self.size[i]/2) * self.sw[i] / self.sf[i] / self.size[i];
-                self.fidObj.setRef(i,self.ref[i])
+            self.fidObj.setRef(i, par)
 
     def setLabel(self,pars):
         self.checkParDim(pars)
@@ -413,6 +360,9 @@ def tdcomplex(*pars):
        </ul>
     '''
     fidInfo.setComplex(pars)
+
+def zerofreq(zf):
+    fidInfo.setZeroFreq(zf)
 
 def ref(*pars):
     ''' Reference position (in ppm) at center of spectrum to set for each dimension.<br>
@@ -558,6 +508,8 @@ def acqarray(*pars):
         else:
             fidInfo.acqArray.append(0)
             fidInfo.fidObj.setArraySize(i,0)
+    size = list(fidInfo.maxSize)
+    acqsize(size)
 
 # set fid size limits 
 def acqsize(*pars):
@@ -609,6 +561,13 @@ def tdsize(*size):
             fidInfo.useSize.append(fidInfo.size[i])
         else:
             fidInfo.useSize.append(par)
+
+def acqmode(*modes):
+    ''' Set the acquisition modes (complex, hypercomplex, echo-antiecho etc. for each dimension. 
+    '''
+    global fidInfo
+    for i,par in enumerate(modes):
+        fidInfo.fidObj.setAcqMode(i, par)
 
 def p(par):
     return fidInfo.getPar(par)
@@ -780,7 +739,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
-    fidInfo.sw = []
     fidInfo.sf = []
     fidInfo.ref = []
     fidInfo.refpt = []
@@ -794,10 +752,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     j = 0
     for i in range(fidInfo.nd):
-        fidInfo.sw.append(fidObj.getSW(i))
-        fidInfo.sf.append(fidObj.getSF(i))
-        fidInfo.ref.append(fidObj.getRef(i))
-        fidInfo.refpt.append(fidObj.getSize(i)/2)
         fidInfo.label.append('D'+str(i))
         fidInfo.maxSize.append(fidObj.getMaxSize(i))
         fidInfo.acqArray.append(0)
@@ -913,13 +867,10 @@ def setDataInfo(dSize):
         for iDim in range(nDim):
             fidDim = fidInfo.mapToFID0(iDim)
             if fidDim != -1:
-                if fidInfo.ref:
-                    dataset.setRefValue(iDim,fidInfo.ref[fidDim])
-                    dataset.setRefValue_r(iDim,fidInfo.ref[fidDim])
-                if fidInfo.sw:
-                    dataset.setSw(iDim,fidInfo.sw[fidDim])
-                if fidInfo.sf:
-                    dataset.setSf(iDim,fidInfo.sf[fidDim])
+                dataset.setRefValue(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setRefValue_r(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setSw(iDim,fidInfo.fidObj.getSW(fidDim))
+                dataset.setSf(iDim,fidInfo.fidObj.getSF(fidDim))
                 if fidInfo.label:
                     dataset.setLabel(iDim,fidInfo.label[fidDim])
         if fidInfo.label:
@@ -1422,6 +1373,30 @@ def CSHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     return op
 
 @generic_operation
+def TILT45(disabled=False, vector=None, process=None):
+    '''Perform 45 degree shear (tilt) on a 2D dataset, as is commonly done on 2D J-Resolved
+    datasets.
+'''
+    if disabled:
+        return None
+
+    global fidInfo
+    global dataInfo
+    fidObj = fidInfo.fidObj
+    sw1 = fidObj.getSW(0)
+    sw2 = fidObj.getSW(1)
+    n1 = fidObj.getSize(0);
+    n2 = fidObj.getSize(1);
+
+    # The shift of each row n2 is given by round(m * n2 + c)
+    m = (sw2 * n1) / (sw1 * n2)
+    c = -(sw2 * n1) / (2 * sw1)
+
+    op = Tilt45(m, c)
+    return op
+
+
+@generic_operation
 def COADD(coef=None, disabled=False, vector=None, process=None):
     '''Coaddition of a set of vectors to yield one result vector.
     Parameters
@@ -1670,33 +1645,51 @@ def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
         process.addOperation(op)
     return op
 
-def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
-    '''Extract a specified range of points.
+
+def EXTRACTP(start=0.0, end=0.0, mode='left',  disabled=False, vector=None, process=None):
+    '''Extract a specified range of the vector.
     Parameters
     ---------
-    fstart : real
+    start : real
         min : -1.0
         max : 15.0
         Start point of region to extract
-    fend : real
+    end : real
         min : -1.0
         max : 15.0
         End point of region to extract
+    mode : {'left', 'right', 'all', 'middle','region'}
+        Extract a named region (left,right,all,middle) instead of using start and end points
 '''
-    global fidInfo
-    global dataInfo
     if disabled:
         return None
-    curDim = dataInfo.curDim
-    curSize = dataInfo.size[curDim]
-    f1 = ppmToFrac(fidInfo, fstart,curSize,  curDim)
-    f2 = ppmToFrac(fidInfo, fend, curSize, curDim)
     process = process or getCurrentProcess()
-    op = Extract(f1,f2)
+    fmode = False
+    if (mode == 'left'):
+        fstart = 0.0
+        fend = 0.5
+        fmode = True
+    elif (mode == 'all'):
+        fstart = 0.0
+        fend = 1.0
+        fmode = True
+    elif (mode == 'right'):
+        fstart = 0.5
+        fend = 1.0
+        fmode = True
+    elif (mode == 'middle'):
+        fstart = 0.25
+        fend = 0.75
+        fmode = True
+    if (fmode):
+        op = Extract(fstart,fend)
+    else:
+        op = Extract(start,end, True)
     if (vector != None):
         op.eval(vector)
     else:
         process.addOperation(op)
+
 
 def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=None):
     '''Extract a specified range of points.
@@ -2443,6 +2436,8 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     logToFile=False
     zeroAtStart=True
     threshold=0.0
+    nGrins=128
+    shapeFactor = 0.5
 
     noise = 0.0
     phase = None
@@ -2462,13 +2457,16 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
     global fidInfo
-    skipIndices = fidInfo.fidObj.getSkipIndices()
+    if fidInfo == None or fidInfo.fidObj == None:
+        skipIndices = None
+    else:
+        skipIndices = fidInfo.fidObj.getSkipIndices()
 
 
     if alg == 'nesta':
         op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, phaseList, preserve, skipIndices)
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -2829,8 +2827,12 @@ def PRINT(disabled=False, vector=None, process=None):
         process.addOperation(op)
     return op
 
-def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, process=None):
+def WRITE(index=-1, dimag=True, disabled=False, vector=None, process=None):
     '''Write vector to dataset (normally done automatically).
+    Parameters
+    ---------
+    index : int
+        Index of vector to write.  A value of -1 uses index stored in vector.
     dimag : bool
         Discard imaginary values (make vector real).
 '''
@@ -2988,15 +2990,15 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
     return op
 
 
-def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5, apodize=True, phase=None, preserve=True, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
-    noise : real
-        amin : 0.0
-        min : 0.0
-        max : 100.0
-        Noise estimate
+    noiseRatio : real
+        amin : 2.0
+        min : 2.0
+        max : 10.0
+        Threshold calculated from noise * noiseRatio 
     scale : real
         amin : 0.1
         min : 0.2
@@ -3009,6 +3011,20 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         max : 2
         amax : 2
         Zero fill factor 
+    iterations : int
+        amin : 1
+        min : 1
+        max : 512
+        amax : 512
+        Iterations 
+    shapeFactor : real
+        amin : 0.0
+        min : 0.0
+        max : 1.0
+        amax : 1.0
+        Lineshape factor 
+    apodize : bool
+        Do Kaiser apodization during GRINS
     phase : []
         Array of phase values, 2 per indirect dimension.
     preserve : bool
@@ -3038,14 +3054,16 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         schedule = fidInfo.fidObj.getSampleSchedule()
         if logToFile:
             rootdir = fidInfo.fidObj.getFilePath()
-            logDir = os.path.join(rootdir,"nesta")
+            if not os.path.isdir(rootdir):
+                rootdir = os.path.dirname(rootdir)
+            logDir = os.path.join(rootdir,"grins_log")
             if not os.path.exists(logDir):
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, phaseList, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noiseRatio, scale, zf, iterations, shapeFactor, apodize, phaseList, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
@@ -3287,7 +3305,7 @@ def SIGN(mode='i', disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+def SB(offset=0.5, end=1.0, power=2.0, c=1.0, apodSize=0, dim=0, inverse=False, disabled=False, vector=None, process=None):
     '''Sine Bell Apodization
     Parameters
     ---------
@@ -3318,11 +3336,13 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = SinebellApod(offset, end, power, c, apodSize, inverse)
+    op = SinebellApod(offset, end, power, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3367,7 +3387,7 @@ def BLACKMAN(offset=0.5,end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=F
         process.addOperation(op)
     return op
 
-def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
+def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=0, inverse=False,disabled=False, vector=None, process=None):
     '''Kaiser Apodization
     Parameters
     ---------
@@ -3398,8 +3418,8 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
-    dim : {1,2,3,4,5,6}
-        Dataset dimension to apodize. Only applicable for matrix operations.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
@@ -3804,14 +3824,17 @@ def genScript(arrayed=False):
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
-        script += 'APODIZE(lbOn=True, lb=0.5)\n'
+        script += 'SUPPRESS(disabled=True)\n'
+        script += 'EXPD(lb=1.0)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
+
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
         phases = NMRDataUtil.autoPhase(fidInfo.fidObj);
         script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
+        script += 'BaselineGroup()\n'
     else:
         script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'
@@ -3822,13 +3845,7 @@ def genScript(arrayed=False):
                 continue
             if fidInfo.mapToDatasetList[iDim-1] == -1:
                 continue
-            fCoef = fidInfo.getSymbolicCoefs(iDim-1)
-            if fCoef != None and fCoef != 'hyper' and fCoef != 'sep':
-                script += 'TDCOMB('
-                script += "dim="+str(iDim)
-                script += ",coef='"
-                script += fCoef
-                script += "')\n"
+        script += 'SUPPRESS(disabled=True)\n'
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
@@ -3836,12 +3853,14 @@ def genScript(arrayed=False):
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep' and not arrayed:
             script += "COMB(coef='sep')\n"
+        script += 'EXTRACTP(disabled=True)\n'
         if fidInfo.nd > 2 and fidInfo.fidObj.getSampleSchedule() != None:
             multiDim = 'DIM(2'
             for mDim in range(2,fidInfo.nd):
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
+            script += 'SB(dim=0, c=0.5)\n'
             script += 'NESTA()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
@@ -3852,9 +3871,14 @@ def genScript(arrayed=False):
             continue
         if (iDim >= fidInfo.nd) and arrayed:
             continue
+        fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+        if fCoef == "array":
+            continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            script += 'NESTA()\n'
+            script += 'NUSGroup()\n'
+        else:
+            script += 'EXTEND(disabled=True)\n'
         script += 'SB(c=0.5)\n'
         script += 'ZF()\n'
 
@@ -3880,6 +3904,24 @@ def genScript(arrayed=False):
             script += "MAG()\n"
         else:
             script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+    if fidInfo.nd > 1:
+        for iDim in range(1,fidInfo.nd+1):
+            if fidInfo.size[iDim-1] < 2:
+                continue
+            if fidInfo.mapToDatasetList[iDim-1] == -1:
+                continue
+            if not fidInfo.fidObj.isFrequencyDim(iDim-1):
+                continue
+            if (iDim >= fidInfo.nd) and arrayed:
+                continue
+            fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+            if fCoef == "array":
+                continue
+            if iDim == 1:
+                script += 'DIM()\n'
+                script += 'DPHASE(disabled=True)\n'
+            script += 'DIM('+str(iDim)+')\n'
+            script += 'BaselineGroup()\n'
     script += 'run()'
     return script
 
@@ -4046,5 +4088,29 @@ def parseFileArgs():
     fidInfo = FID(fidDir)
     datasetInfo = CREATE(datasetName)
     return fidInfo,datasetInfo
+
+def setTestLocations(fidHome, tmpHome):
+    global FIDHOME
+    global TMPHOME
+    FIDHOME = fidHome
+    TMPHOME = tmpHome
+
+def getTestLocations():
+    global FIDHOME
+    global TMPHOME
+    try:
+        fidHome = FIDHOME
+        tmpHome = TMPHOME
+    except NameError:
+        fidHome = os.getenv("FIDHOME")
+        tmpHome = os.getenv("TMPHOME")
+        if fidHome == None:
+            fidHome = "../../nmrfx-test-data/testfids"
+        if tmpHome == None:
+            tmpHome = "../../nmrfx-test-data-gen"
+            if not os.path.exists(tmpHome):
+                tmpHome = None
+        
+    return (fidHome, tmpHome)
 
 dataInfo = DataInfo()

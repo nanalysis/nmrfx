@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.annotations.PluginAPI;
 
-import java.io.*;
+import java.io.Serializable;
 
 @PluginAPI("residuegen")
 public class Bond implements IBond, Serializable {
@@ -30,6 +30,7 @@ public class Bond implements IBond, Serializable {
     static final public int STEREO_BOND_UP = 10;
     static final public int STEREO_BOND_DOWN = 11;
     static final public int STEREO_BOND_EITHER = 12;
+    static final public int STEREO_BOND_CROSS = 13;
     static final public int VISITED = 0;
     static final public int ISAROMATIC = 1;
     boolean[] properties;

@@ -1,7 +1,10 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.*;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.exception.NotPositiveException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
 import org.apache.commons.math3.optim.*;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
@@ -26,9 +29,8 @@ import java.util.stream.IntStream;
 // we may refactor so Fitter2 extends, or replaces Fitter
 
 public class Fitter2 {
-
     private static final Logger log = LoggerFactory.getLogger(Fitter2.class);
-    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
+    private static final RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     boolean reportFitness = false;
     int reportAt = 10;
@@ -44,6 +46,7 @@ public class Fitter2 {
     BiFunction<double[], double[], double[]> function;
     BiFunction<double[], double[][], Double> valuesFunction = null;
     ExpressionEvaluator expressionEvaluator = null;
+
     private Fitter2() {
 
     }
@@ -78,7 +81,7 @@ public class Fitter2 {
         return fitter;
     }
 
-    public Optional<PointValuePair> fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma)  {
+    public Optional<PointValuePair> fit(double[] start, double[] lowerBounds, double[] upperBounds, double inputSigma) {
         this.start = start;
         this.lowerBounds = lowerBounds.clone();
         this.upperBounds = upperBounds.clone();
@@ -160,7 +163,7 @@ public class Fitter2 {
                 }
                 value = function.apply(par, ax);
 
-                for (int j=0;j<yValues.length;j++) {
+                for (int j = 0; j < yValues.length; j++) {
                     double delta = (value[j] - yValues[j][i]);
                     if (weightFit) {
                         delta /= errValues[j][i];
@@ -226,7 +229,7 @@ public class Fitter2 {
             }
         }
 
-        public Optional<PointValuePair> refineCMAES(double[] guess, double inputSigma)  {
+        public Optional<PointValuePair> refineCMAES(double[] guess, double inputSigma) {
             startTime = System.currentTimeMillis();
             random.setSeed(1);
             double lambdaMul = 3.0;
@@ -256,7 +259,8 @@ public class Fitter2 {
                         new ObjectiveFunction(this), GoalType.MINIMIZE,
                         new SimpleBounds(normLower, normUpper),
                         new InitialGuess(normGuess));
-            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | MaxCountExceededException e) {
+            } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException |
+                     MaxCountExceededException e) {
                 log.error("Failure in refineCMAES", e);
                 return Optional.empty();
             }
@@ -281,7 +285,7 @@ public class Fitter2 {
                 for (int xIndex = 0; xIndex < newX.length; xIndex++) {
                     newX[xIndex][iValue] = xValues[xIndex][rI];
                 }
-                for (int iY=0;iY<yValues.length;iY++) {
+                for (int iY = 0; iY < yValues.length; iY++) {
                     newY[iY][iValue] = yValues[iY][rI];
                     newErr[iY][iValue] = errValues[iY][rI];
                 }

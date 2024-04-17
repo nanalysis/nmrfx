@@ -14,17 +14,19 @@ public enum DatasetType {
     SPINit("data.dat");
 
     String extension;
+
     DatasetType(String extension) {
         this.extension = extension;
     }
 
     /**
      * Determine the type of the file from the fileName.
+     *
      * @param file the file to check
      * @return an Optional containing DatasetType if fileName is valid file or empty if not.
      */
     public static Optional<DatasetType> typeFromFile(File file) {
-        if(file.isDirectory() && new File(file, RS2DData.DATA_FILE_NAME).isFile()) {
+        if (file.isDirectory() && new File(file, RS2DData.DATA_FILE_NAME).isFile()) {
             return Optional.of(DatasetType.SPINit);
         }
 
@@ -33,11 +35,12 @@ public enum DatasetType {
 
     /**
      * Determine the type of the file from the fileName.
+     *
      * @param name the pathname string of the file to check
      * @return an Optional containing DatasetType if fileName is valid file or empty if not.
      */
     public static Optional<DatasetType> typeFromName(String name) {
-        for (var ext:values()) {
+        for (var ext : values()) {
             if (name.endsWith(ext.extension)) {
                 return Optional.of(ext);
             }
@@ -55,6 +58,7 @@ public enum DatasetType {
     /**
      * Adds, if not already present, the correct file extension for .nv and .ucsf files
      * or the filename (data.data) for SPINit files.
+     *
      * @param file the file to check
      * @return the file with added extension (or SPINit fileName).
      */
@@ -63,7 +67,7 @@ public enum DatasetType {
         String fileName = file.getName();
         if (this == SPINit) {
             if (!fileName.equals(extension)) {
-                 file = file.toPath().resolve(extension).toFile();
+                file = file.toPath().resolve(extension).toFile();
             }
         } else {
             fileName = addExtension(fileName);

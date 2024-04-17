@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -54,7 +54,7 @@ public class Asmooth extends Operation {
     }
 
     /* Program 3. Smoothing and interpolation with any difference equation. */
- /* Contribution to Graphic Gems IV */
+    /* Contribution to Graphic Gems IV */
  /* Paul H. C. Eilers, DCMR Milieudienst Rijnmond, 's-Gravelandseweg 565,
      3119 XT Schiedam, The Netherlands, E-Mail: paul@dcmr.nl */
     private void Asmooth(Vec vector) throws ProcessingException {

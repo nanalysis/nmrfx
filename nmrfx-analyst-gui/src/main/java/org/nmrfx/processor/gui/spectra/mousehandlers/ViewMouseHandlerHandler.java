@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public class ViewMouseHandlerHandler extends MouseHandler {
     ChartBorder border = ChartBorder.NONE;
+
     public ViewMouseHandlerHandler(MouseBindings mouseBindings) {
         super(mouseBindings);
     }

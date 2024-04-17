@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -317,7 +317,6 @@ public class Dihedral {
 
     /**
      * based on the angleValues value, the dihedral angles of molecules are set
-     *
      */
     public void putDihedrals() {
         int i = 0;
@@ -485,10 +484,17 @@ public class Dihedral {
      * Generates random angles
      */
     public void randomizeAngles() {
+        randomizeAngles(null);
+    }
+    public void randomizeAngles(Double frac) {
         getDihedrals();
         setBoundaries(0.1, false, Math.PI);
         for (int i = 0; i < angleValues.length; i++) {
-            angleValues[i] = 2.0 * Math.PI * (rand.nextDouble() - 0.5);
+            if (frac != null) {
+                angleValues[i] = angleValues[i] + frac * 2.0 * Math.PI * (rand.nextDouble() - 0.5);
+            } else {
+                angleValues[i] = 2.0 * Math.PI * (rand.nextDouble() - 0.5);
+            }
             angleValues[i] = Util.reduceAngle(angleValues[i]);
         }
         putDihedrals();
@@ -590,13 +596,13 @@ public class Dihedral {
     }
 
     public static double[] setSugarBonds(double pseudoRotationAngle,
-            double maxTorsionAngle) {
+                                         double maxTorsionAngle) {
         double[] sugarAngles = new double[5];
 
         for (int i = 0; i < sugarAngles.length; i++) {
             sugarAngles[i] = maxTorsionAngle
                     * Math.cos(pseudoRotationAngle + (i - 2) * 4.0 * Math.PI
-                            / 5.0);
+                    / 5.0);
         }
         return sugarAngles;
     }
@@ -636,7 +642,7 @@ public class Dihedral {
         randomizeAngles();
         if (!useRandom) {
             int nPseudoAngles = pseudoAngleAtoms.size() / 3;
-            for (int i = 0; i < angleValues.length;) {
+            for (int i = 0; i < angleValues.length; ) {
                 Atom atom;
                 boolean incrementByTwo = false;
                 if (i < (2 * nPseudoAngles)) {

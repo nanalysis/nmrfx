@@ -17,29 +17,29 @@
  */
 package org.nmrfx.processor.datasets.vendor.rs2d;
 
+import org.nmrfx.processor.datasets.AcquisitionType;
+
 /**
  * Possible values for PHASE_MOD parameter in RS2D data
  */
 public enum PhaseMod {
-    NONE(true, "ft", "sep", new double[0], 1),
-    STATES(true, "negate", "hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}, 2),
-    TPPI(false, "rft", "real", new double[0], 1),
-    STATES_TPPI(true, "negate", "hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}, 2),
-    ECHO_ANTIECHO(true, "ft", "echo-antiecho", new double[]{1, 0, -1, 0, 0, -1, 0, -1}, 2),
-    QF(true, "ft", "sep", new double[0], 1),
-    QSEQ(false, "rft", "real", new double[0], 2);
+    NONE(true, "ft", AcquisitionType.SEP, 1),
+    STATES(true, "negate", AcquisitionType.HYPER_R, 2),
+    TPPI(false, "rft", AcquisitionType.REAL, 1),
+    STATES_TPPI(true, "negate", AcquisitionType.HYPER, 2),
+    ECHO_ANTIECHO(true, "ft", AcquisitionType.ECHO_ANTIECHO, 2),
+    QF(true, "ft", AcquisitionType.SEP, 1),
+    QSEQ(false, "rft", AcquisitionType.REAL, 2);
 
     private final boolean complex;
     private final String ftType;
-    private final String symbolicCoefs;
+    private final AcquisitionType acquisitionType;
     private final int groupSize;
-    private final double[] coefs;
 
-    PhaseMod(boolean complex, String ftType, String symbolicCoefs, double[] coefs, int groupSize) {
+    PhaseMod(boolean complex, String ftType, AcquisitionType acquisitionType, int groupSize) {
         this.complex = complex;
         this.ftType = ftType;
-        this.symbolicCoefs = symbolicCoefs;
-        this.coefs = coefs;
+        this.acquisitionType = acquisitionType;
         this.groupSize = groupSize;
     }
 
@@ -56,15 +56,16 @@ public enum PhaseMod {
     }
 
     public String getSymbolicCoefs() {
-        return symbolicCoefs;
+        return acquisitionType.getLabel();
     }
 
     public double[] getCoefs() {
-        return coefs;
+        return acquisitionType.getCoefficients();
     }
 
     /**
      * Get the PhaseMod directly from its name
+     *
      * @param name the phase mod name
      * @return the PhaseMod enum value.
      */
@@ -82,14 +83,14 @@ public enum PhaseMod {
      */
     public static PhaseMod fromAcquisitionMode(String acqMode) {
         String normalized = normalize(acqMode);
-        switch (normalized) {
-            case "COMPLEX": return STATES;
-            case "TPPI": return TPPI;
-            case "COMPLEX_TPPI": return STATES_TPPI;
-            case "PHASE_MODULATION": return NONE; //XXX Not sure about this one, does it really exist?
-            case "ECHO_ANTIECHO": return ECHO_ANTIECHO;
-            default: return NONE;
-        }
+        return switch (normalized) {
+            case "COMPLEX" -> STATES;
+            case "TPPI" -> TPPI;
+            case "COMPLEX_TPPI" -> STATES_TPPI;
+            case "PHASE_MODULATION" -> NONE; //XXX Not sure about this one, does it really exist?
+            case "ECHO_ANTIECHO" -> ECHO_ANTIECHO;
+            default -> NONE;
+        };
     }
 
     private static String normalize(String s) {

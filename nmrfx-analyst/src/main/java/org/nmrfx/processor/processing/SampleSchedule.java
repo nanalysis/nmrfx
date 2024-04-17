@@ -17,6 +17,11 @@
  */
 package org.nmrfx.processor.processing;
 
+import org.apache.commons.math3.random.Well19937c;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -28,10 +33,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-import org.apache.commons.math3.random.Well19937c;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used
@@ -50,10 +51,10 @@ import org.slf4j.LoggerFactory;
  * IST : in python script <i>pyproc</i> - read a schedule from a file, and
  * perform IST processing.
  *
- * @see #v_samples
- * @see Ist
- * @since NMRViewJ 9.0
  * @author bfetler
+ * @see #v_samples
+ * @see org.nmrfx.processor.math.GRINS
+ * @since NMRViewJ 9.0
  */
 public class SampleSchedule {
 
@@ -101,6 +102,10 @@ public class SampleSchedule {
      * Optional flag used with fully acquired data set to simulate NUS.
      */
     private boolean demo = false;
+    /**
+     * Optional flag used with sample schedule that specifies individual phase points.
+     */
+    private boolean phaseMode = false;
 
     /**
      * Flag used to set schedule to be just zeros at end.
@@ -155,11 +160,10 @@ public class SampleSchedule {
      * Used by SAMPLE_SCHEDULE(mode='create') in python script <i>pyproc</i>.
      *
      * @param nSamples number of sampled points (must be less than total)
-     * @param nPoints total number of points
-     * @param path full path file name
-     * @param demo set true if nmr dataset not NUS acquisition
-     *
-     * @see Ist
+     * @param nPoints  total number of points
+     * @param path     full path file name
+     * @param demo     set true if nmr dataset not NUS acquisition
+     * @see org.nmrfx.processor.math.GRINS
      * @see #nSamples
      * @see #nPoints
      * @see #fpath
@@ -187,12 +191,12 @@ public class SampleSchedule {
      *
      * @param path full path file name
      * @param demo set true if nmr dataset not NUS acquisition
-     *
-     * @see Ist
+     * @see org.nmrfx.processor.math.GRINS
      * @see #fpath
      */
-    public SampleSchedule(String path, boolean demo) {
+    public SampleSchedule(String path, boolean demo, boolean phaseMode) {
         this.fpath = path;
+        this.phaseMode = phaseMode;
         readFile();
         this.demo = demo;
     }
@@ -202,6 +206,7 @@ public class SampleSchedule {
     }
 
     /**
+     *
      */
     public SampleSchedule(int p, int z) {
         this.nSamples = p;
@@ -212,6 +217,7 @@ public class SampleSchedule {
     }
 
     /**
+     *
      */
     public SampleSchedule(int p, int z, boolean endOnly) {
         this.nSamples = p;
@@ -335,6 +341,10 @@ public class SampleSchedule {
         return demo;
     }
 
+    public boolean isPhaseMode() {
+        return phaseMode;
+    }
+
     /**
      * Set output MultiVecCounter.
      *
@@ -368,6 +378,10 @@ public class SampleSchedule {
      * @see VecIndex
      */
     public VecIndex convertToNUSGroup(VecIndex fullIndex, int groupNum) {
+        return phaseMode ? convertToPhasedNUSGroup(fullIndex, groupNum) : convertToComplexNUSGroup(fullIndex, groupNum);
+    }
+
+    private VecIndex convertToComplexNUSGroup(VecIndex fullIndex, int groupNum) {
         int groupSize = fullIndex.inVecs.length;
         int[] inVecs = fullIndex.inVecs;
         boolean ok = true;
@@ -377,8 +391,7 @@ public class SampleSchedule {
         for (int i = 0; i < groupSize; i++) {
             int j = inVecs[i];
             int phOff = j % groupSize;
-            j /= groupSize;
-            int index = sampleIndices[groupNum];
+            int index = groupNum < sampleIndices.length ? sampleIndices[groupNum] : -1;
             if (index == -1) {
                 ok = false;
                 break;
@@ -394,6 +407,29 @@ public class SampleSchedule {
         return nusIndex;
     }
 
+    private VecIndex convertToPhasedNUSGroup(VecIndex fullIndex, int groupNum) {
+        int groupSize = fullIndex.inVecs.length;
+        int[] inVecs = fullIndex.inVecs;
+        boolean ok = true;
+        if (offsetMul == 0) {
+            offsetMul = groupSize;
+        }
+        for (int i = 0; i < groupSize; i++) {
+            int j = inVecs[i];
+            int index = j < sampleIndices.length ? sampleIndices[j] : -1;
+            if (index == -1) {
+                ok = false;
+                break;
+
+            }
+        }
+
+        VecIndex nusIndex = null;
+        if (ok) {
+            nusIndex = fullIndex;
+        }
+        return nusIndex;
+    }
     public synchronized boolean reloadFile(String path, int vecSize) {
         boolean recreate = false;
         if (!fpath.equals(path) || vecSize != nPoints) {
@@ -486,8 +522,7 @@ public class SampleSchedule {
      *
      * @param lambda average gap length, calculated from p_sampled and z_total
      * @return gap size increment, zero or random positive integer
-     * @see
-     * <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
+     * @see <a href='http://www.itl.nist.gov/div898/handbook/eda/section3/eda366j.htm'>Poisson
      * Distribution from NIST</a>
      */
     private int poisson(double lambda) {
@@ -611,7 +646,6 @@ public class SampleSchedule {
                 calcDims();
                 calcSampleHash();
                 calcSampleIndices();
-                log.info("sample schedule read {} points from {}", nSamples, fpath);
             }
         } catch (IOException e) {
             throw new ProcessingException("error reading " + fpath);

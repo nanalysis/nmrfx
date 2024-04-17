@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,11 +20,12 @@ package org.nmrfx.star;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
 
 public class STAR3 extends STAR3Base {
 
     private static final Logger log = LoggerFactory.getLogger(STAR3.class);
+
     public STAR3(String name) {
         super(name);
     }

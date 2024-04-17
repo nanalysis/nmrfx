@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author brucejohnson
  */
 public class BrukerPar {
@@ -39,11 +38,11 @@ public class BrukerPar {
     /**
      * parse a Bruker parameter file
      *
-     * @param pmap : HashMap to store parameters
+     * @param pmap     : HashMap to store parameters
      * @param filename : parameter file to read
-     * @param iDim : data dimension
-     * @param strict: convert parameter names to JCAMP standard (strip space
-     * etc.)
+     * @param iDim     : data dimension
+     * @param strict:  convert parameter names to JCAMP standard (strip space
+     *                 etc.)
      */
     static void processBrukerParFile(final HashMap<String, String> pmap, final String filename, final int iDim, final boolean strict)
             throws NMRParException {
@@ -117,9 +116,9 @@ public class BrukerPar {
     /**
      * store parameter name and value in a hashmap
      *
-     * @param pmap : HashMap to store parameters
+     * @param pmap    : HashMap to store parameters
      * @param parName : parameter name
-     * @param values : parameter value list
+     * @param values  : parameter value list
      */
     static void storeParameter(final HashMap<String, String> pmap, final String parName, List<String> values, String sepChar) {
         int nValues = values.size();

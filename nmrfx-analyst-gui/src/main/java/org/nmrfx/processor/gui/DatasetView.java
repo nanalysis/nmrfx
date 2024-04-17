@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 public class DatasetView {
     FXMLController fxmlController;
-    ContentController attributesController;
     ListSelectionView<String> datasetView;
     ListChangeListener<String> datasetTargetListener;
     Integer startIndex = null;
@@ -37,7 +36,6 @@ public class DatasetView {
 
     public DatasetView(FXMLController fxmlController, ContentController controller) {
         this.fxmlController = fxmlController;
-        this.attributesController = controller;
         datasetView = controller.datasetView;
         datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
             PolyChart chart = this.fxmlController.getActiveChart();
@@ -49,7 +47,7 @@ public class DatasetView {
         };
         datasetView.getTargetItems().addListener(datasetTargetListener);
         this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
-        PolyChart.getActiveChartProperty().addListener((observable, oldValue, newValue) -> {
+        PolyChartManager.getInstance().activeChartProperty().addListener((observable, oldValue, newValue) -> {
 
             if (oldValue != null && this.fxmlController.getCharts().contains(oldValue)) {
                 oldValue.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
@@ -74,9 +72,9 @@ public class DatasetView {
                             setText(null);
                             setGraphic(null);
                         } else {
-                            Rectangle rect = new Rectangle(10,10);
+                            Rectangle rect = new Rectangle(10, 10);
                             rect.setFill(Color.BLACK);
-                            getDatasetAttributes(s).ifPresent( datasetAttributes -> rect.setFill(datasetAttributes.getPosColor()));
+                            getDatasetAttributes(s).ifPresent(datasetAttributes -> rect.setFill(datasetAttributes.getPosColor()));
                             setText(s);
                             setGraphic(rect);
                         }
@@ -88,7 +86,7 @@ public class DatasetView {
 
     Optional<DatasetAttributes> getDatasetAttributes(String name) {
         PolyChart chart = fxmlController.getActiveChart();
-        return chart.getDatasetAttributes().stream().filter( dAttr -> dAttr.getDataset().getName().equals(name)).findFirst();
+        return chart.getDatasetAttributes().stream().filter(dAttr -> dAttr.getDataset().getName().equals(name)).findFirst();
     }
 
     public void chartDatasetAttributesListener(ListChangeListener.Change<? extends DatasetAttributes> change) {
@@ -120,7 +118,7 @@ public class DatasetView {
         chart.updateDatasets(datasetTargets);
         if (datasetTargets.isEmpty()) {
             chart.removeProjections();
-            chart.getCrossHairs().hideCrossHairs();
+            chart.getCrossHairs().hideAll();
         } else {
             chart.updateProjections();
             chart.updateProjectionBorders();

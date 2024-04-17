@@ -4,7 +4,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx</artifactId>
-    <version>11.3.4-SNAPSHOT</version>
+    <version>11.4.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -31,6 +31,13 @@
         <repository>
             <id>nanalysis-public</id>
             <url>https://raw.githubusercontent.com/nanalysis/maven-repository/public/</url>
+        </repository>
+        <repository>
+            <id>tensorflow-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 

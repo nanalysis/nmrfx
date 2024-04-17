@@ -1,16 +1,20 @@
 package org.nmrfx.chemistry;
 
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.relax.OrderParSet;
+import org.nmrfx.chemistry.relax.RelaxationSet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
+import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utilities.Updater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
-import org.nmrfx.chemistry.constraints.MolecularConstraints;
-import org.nmrfx.chemistry.io.Sequence;
-import org.nmrfx.project.ProjectBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @PluginAPI("ring")
 public class MoleculeBase implements Serializable, ITree {
@@ -45,6 +49,11 @@ public class MoleculeBase implements Serializable, ITree {
     public static final int LABEL_PPM = 18;
     public static final int LABEL_NONHC = 19;
     private static final String ATOM_MATCH_WARN_MSG_TEMPLATE = "null spatialset while matching atom {} in coordset {}";
+    public AtomicBoolean atomUpdated = new AtomicBoolean(false);
+    public AtomicBoolean atomTableUpdated = new AtomicBoolean(false);
+    Updater atomUpdater = null;
+    MoleculeListener atomChangeListener;
+    MoleculeListener atomTableListener;
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -305,6 +314,7 @@ public class MoleculeBase implements Serializable, ITree {
         }
         return selected;
     }
+
     public final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     protected final List<Bond> bselected = new ArrayList<>(1024);
     public Set<Integer> structures = new TreeSet();
@@ -325,6 +335,8 @@ public class MoleculeBase implements Serializable, ITree {
     protected HashMap<String, String> propertyMap = new HashMap<String, String>();
     MolecularConstraints molecularConstraints = new MolecularConstraints(this);
     List<SecondaryStructure> secondaryStructure = new ArrayList<>();
+    Map<String, RelaxationSet> relaxationSetMap = new HashMap<>();
+    Map<String, OrderParSet> orderParSetMap = new HashMap<>();
 
     public MoleculeBase(String name) {
         this.name = name;
@@ -566,6 +578,9 @@ public class MoleculeBase implements Serializable, ITree {
         entity.setHasEquivalentAtoms(true);
     }
 
+    public List<SpatialSet> selectedSpatialSets() {
+        return globalSelected;
+    }
     public static Atom getAtomByName(String name) throws IllegalArgumentException {
         MoleculeBase molecule = MoleculeFactory.getActive();
 
@@ -653,7 +668,15 @@ public class MoleculeBase implements Serializable, ITree {
                                 validRes = false;
                             }
                         }
-
+                        if (!molFilter.firstResType.equals("*")) {
+                            if (compound instanceof Residue residue) {
+                                String snglChar = String.valueOf(residue.getOneLetter());
+                                String resType = molFilter.firstResType;
+                                if (!snglChar.equals(resType)) {
+                                    validRes = false;
+                                }
+                            }
+                        }
                         if (validRes) {
                             boolean validAtom = false;
 
@@ -1227,8 +1250,28 @@ public class MoleculeBase implements Serializable, ITree {
         return (null);
     }
 
-    public void changed() {
+    public void changed(Atom atom) {
         changed = true;
+        if (atomUpdater != null) {
+            atomUpdater.update(atom);
+        }
+    }
+    public void registerUpdater(Updater atomUpdater) {
+        this.atomUpdater = atomUpdater;
+    }
+    public void registerAtomChangeListener(MoleculeListener newListener){
+        this.atomChangeListener = newListener;
+    }
+
+    public void registerAtomTableListener(MoleculeListener newListener){
+        this.atomTableListener = newListener;
+    }
+
+    public void notifyAtomChangeListener() {
+        atomChangeListener.moleculeChanged(new MoleculeEvent(this));
+    }
+    public void notifyAtomTableListener() {
+        atomTableListener.moleculeChanged(new MoleculeEvent(this));
     }
 
     public void clearChanged() {
@@ -1344,7 +1387,7 @@ public class MoleculeBase implements Serializable, ITree {
 
     public List<Entity> getCompoundsAndResidues() {
         var entities = new ArrayList<Entity>();
-        for (var polymer: getPolymers()) {
+        for (var polymer : getPolymers()) {
             entities.addAll(polymer.getResidues());
         }
         entities.addAll(getLigands());
@@ -1658,5 +1701,12 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void addNonStandardResidue(Sequence sequence, Residue residue) {
+    }
+
+    public Map<String, RelaxationSet> relaxationSetMap() {
+        return relaxationSetMap;
+    }
+    public Map<String, OrderParSet> orderParSetMap() {
+        return orderParSetMap;
     }
 }

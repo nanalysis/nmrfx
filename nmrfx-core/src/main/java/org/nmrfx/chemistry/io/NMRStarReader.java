@@ -18,44 +18,26 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.annotations.PluginAPI;
-import org.nmrfx.chemistry.relax.*;
-import org.nmrfx.chemistry.Order;
-
-import java.io.BufferedReader;
-
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
-import org.nmrfx.chemistry.AtomResonance;
+import org.nmrfx.chemistry.constraints.*;
+import org.nmrfx.chemistry.relax.*;
+import org.nmrfx.chemistry.relax.RelaxTypes;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.*;
+import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.util.*;
-
-import org.nmrfx.peaks.AbsMultipletComponent;
-import org.nmrfx.peaks.ComplexCoupling;
-import org.nmrfx.peaks.CouplingPattern;
-import org.nmrfx.peaks.Multiplet;
-import org.nmrfx.peaks.PeakDim;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.Resonance;
-import org.nmrfx.peaks.ResonanceFactory;
-import org.nmrfx.peaks.SpectralDim;
-import org.nmrfx.peaks.Peak;
 import org.nmrfx.utilities.NvUtil;
-import org.nmrfx.peaks.io.PeakPathReader;
-import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.file.FileSystems;
+import java.util.*;
 
 /**
  * @author brucejohnson
@@ -82,15 +64,24 @@ public class NMRStarReader {
         return read(file);
     }
 
-    public static STAR3 read(File starFile) throws ParseException {
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(starFile);
-        } catch (FileNotFoundException ex) {
-            throw new ParseException("Could not find file " + starFile);
-        }
-        BufferedReader bfR = new BufferedReader(fileReader);
+    public static void readFromString(String starData) throws ParseException {
+        StringReader stringReader;
+        stringReader = new StringReader(starData);
+        read(stringReader, null);
+    }
 
+
+    public static STAR3 read(File starFile) throws ParseException {
+        STAR3 star3;
+        try (FileReader fileReader = new FileReader(starFile)) {
+            star3 = read(fileReader, starFile);
+        } catch (IOException e) {
+            throw new ParseException(e.getMessage());
+        }
+        return star3;
+    }
+    public static STAR3 read(Reader reader, File starFile) throws ParseException {
+        BufferedReader bfR = new BufferedReader(reader);
         STAR3 star = new STAR3(bfR, "star3");
 
         try {
@@ -98,8 +89,8 @@ public class NMRStarReader {
         } catch (ParseException parseEx) {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
-        NMRStarReader reader = new NMRStarReader(starFile, star);
-        reader.process();
+        NMRStarReader nmrStarReader = new NMRStarReader(starFile, star);
+        nmrStarReader.process();
         return star;
     }
 
@@ -341,7 +332,7 @@ public class NMRStarReader {
         }
     }
 
-    public void buildRelaxation(relaxTypes expType) throws ParseException {
+    public void buildRelaxation(RelaxTypes expType) throws ParseException {
         String expName = expType.getName().toUpperCase();
         if (expName.equals("R1")) {
             expName = "T1";
@@ -555,9 +546,9 @@ public class NMRStarReader {
     }
 
     public void addMissingResonances() {
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         peakDimsWithoutResonance.forEach((peakDim) -> {
-            Resonance resonance = resFactory.build();
+            AtomResonance resonance = resFactory.build();
             resonance.add(peakDim);
         });
     }
@@ -578,7 +569,7 @@ public class NMRStarReader {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
                 log.debug("process resonances {}", saveframe.getName());
-                AtomResonance.processSTAR3ResonanceList(this, saveframe, compoundMap);
+                AtomResonance.processSTAR3ResonanceList(saveframe, compoundMap);
             }
         }
     }
@@ -630,7 +621,7 @@ public class NMRStarReader {
     }
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
@@ -910,7 +901,7 @@ public class NMRStarReader {
                         Peak peak = peakList.getPeakByID(idNum);
                         PeakDim peakDim = peak.getPeakDim(sDim);
                         if (resonanceID != -1L) {
-                            Resonance resonance = resFactory.build(resonanceID);
+                            AtomResonance resonance = resFactory.build(resonanceID);
                             resonance.add(peakDim);
                         } else {
                             peakDimsWithoutResonance.add(peakDim);
@@ -1048,7 +1039,7 @@ public class NMRStarReader {
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
             List<Integer> ambigColumn = loop.getColumnAsIntegerList("Ambiguity_code", -1);
-            ResonanceFactory resFactory = PeakList.resFactory();
+            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
                 String iEntity = entityIDColumn.get(i);
                 String entityAssemblyID = entityAssemblyIDColumn.get(i);
@@ -1215,6 +1206,9 @@ public class NMRStarReader {
         List<String> atom2Column = loop.getColumnAsList("Atom_ID_2");
         List<String> valColumn = loop.getColumnAsList("Val");
         List<String> errColumn = loop.getColumnAsList("Val_err");
+        double fieldValue = Double.valueOf(field);
+        double temperature = 25.0;
+        RelaxationSet relaxationSet = new RelaxationSet(frameName, RelaxTypes.NOE, fieldValue, temperature, extras);
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = entityIDColumn.get(i);
@@ -1237,8 +1231,6 @@ public class NMRStarReader {
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-
-            double temperature = 25.0;
 
             if (entityAssemblyID.equals(".")) {
                 entityAssemblyID = "1";
@@ -1266,12 +1258,12 @@ public class NMRStarReader {
 
             ResonanceSource resSource = new ResonanceSource(atom, atom2);
 
-            RelaxationData relaxData = new RelaxationData(frameName, relaxTypes.NOE, resSource, Double.parseDouble(field), temperature, value, error, extras);
-            atom.addRelaxationData(frameName, relaxData);
+            RelaxationData relaxData = new RelaxationData(relaxationSet, resSource, value, error);
+            atom.addRelaxationData(relaxationSet, relaxData);
         }
     }
 
-    public void processRelaxation(Saveframe saveframe, relaxTypes expType) throws ParseException {
+    public void processRelaxation(Saveframe saveframe, RelaxTypes expType) throws ParseException {
         String catName = saveframe.getCategoryName();
         String frameName = saveframe.getName().substring(5);
         for (String cat : saveframe.getCategories()) {
@@ -1309,12 +1301,13 @@ public class NMRStarReader {
         List<String> errColumn = loop.getColumnAsListIfExists("Val_err");
         List<String> RexValColumn = loop.getColumnAsListIfExists("Rex_val");
         List<String> RexErrColumn = loop.getColumnAsListIfExists("Rex_err");
-        if (expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO)) {
+        if (expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO)) {
             valColumn = loop.getColumnAsList(expName + "_val");
             errColumn = loop.getColumnAsList(expName + "_val_err");
         }
 
         double temperature = 25.0;
+        RelaxationSet relaxationSet = new RelaxationSet(frameName, expType, field, temperature, extras);
 
         for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
             String iEntity = entityIDColumn.get(i);
@@ -1334,7 +1327,7 @@ public class NMRStarReader {
             if (!errColumn.get(i).equals(".")) {
                 error = Double.parseDouble(errColumn.get(i));
             }
-            if ((expType.equals(relaxTypes.R2) || expType.equals(relaxTypes.T1RHO))
+            if ((expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO))
                     && (RexValColumn != null)) {
                 if (!RexValColumn.get(i).equals(".")) {
                     RexValue = Double.parseDouble(RexValColumn.get(i));
@@ -1363,12 +1356,12 @@ public class NMRStarReader {
             }
             ResonanceSource resSource = new ResonanceSource(atom);
 
-            if (expType.equals(relaxTypes.R1)) {
-                RelaxationData relaxData = new RelaxationData(frameName, expType, resSource, field, temperature, value, error, extras);
-                atom.addRelaxationData(frameName, relaxData);
+            if (expType.equals(RelaxTypes.R1)) {
+                RelaxationData relaxData = new RelaxationData(relaxationSet, resSource, value, error);
+                atom.addRelaxationData(relaxationSet, relaxData);
             } else {
-                RelaxationRex relaxData = new RelaxationRex(frameName, expType, resSource, field, temperature, value, error, RexValue, RexError, extras);
-                atom.addRelaxationData(frameName, relaxData);
+                RelaxationRex relaxData = new RelaxationRex(relaxationSet, resSource,  value, error, RexValue, RexError);
+                atom.addRelaxationData(relaxationSet, relaxData);
             }
         }
     }
@@ -1443,6 +1436,8 @@ public class NMRStarReader {
                 errColumns.put(parName, column);
             }
         }
+        OrderParSet orderParSet = new OrderParSet(frameName);
+
         var modelfreeErrorColumn = loop.getColumnAsDoubleList("Model_free_sum_squared_errs", null);
         var modelfreeNValuesColumn = loop.getColumnAsIntegerList("Model_free_n_values", null);
         var modelfreeNParsColumn = loop.getColumnAsIntegerList("Model_free_n_pars", null);
@@ -1457,7 +1452,7 @@ public class NMRStarReader {
                 Integer modelNPars = modelfreeNParsColumn.get(i);
                 String modelName = modelNameColumn.get(i);
                 ResonanceSource resSource = new ResonanceSource(atomOpt.get());
-                OrderPar orderPar = new OrderPar(resSource, modelSSErr, modelNValues, modelNPars, modelName);
+                OrderPar orderPar = new OrderPar(orderParSet, resSource, modelSSErr, modelNValues, modelNPars, modelName);
                 for (var parName : valueColumns.keySet()) {
                     var valueColumn = valueColumns.get(parName);
                     var errColumn = errColumns.get(parName);
@@ -1467,7 +1462,7 @@ public class NMRStarReader {
                         orderPar = orderPar.set(parName, value, err);
                     }
                 }
-                atomOpt.get().addOrderPar(frameName, orderPar);
+                atomOpt.get().addOrderPar(orderParSet, orderPar);
             }
         }
     }
@@ -1699,7 +1694,7 @@ public class NMRStarReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
         log.debug("nSave " + star3.getSaveFrameNames());
-        ResonanceFactory resFactory = PeakList.resFactory();
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         if (argv.length == 0) {
             hasResonances = false;
             var compoundMap = MoleculeBase.compoundMap();
@@ -1723,8 +1718,8 @@ public class NMRStarReader {
             buildRDCConstraints();
             log.debug("process NOE");
             buildNOE();
-            for (var relaxType : relaxTypes.values()) {
-                if ((relaxType != relaxTypes.NOE) && (relaxType != relaxTypes.S2)) {
+            for (var relaxType : RelaxTypes.values()) {
+                if ((relaxType != RelaxTypes.NOE) && (relaxType != RelaxTypes.S2)) {
                     log.debug("process {}", relaxType);
                     buildRelaxation(relaxType);
                 }
@@ -1735,10 +1730,12 @@ public class NMRStarReader {
             buildRunAbout();
             log.debug("process paths");
             buildPeakPaths();
+
+            ProjectBase.processExtraSaveFrames(star3);
+
             log.debug("clean resonances");
             resFactory.clean();
 
-            ProjectBase.processExtraSaveFrames(star3);
             log.debug("process done");
         } else if ("shifts".startsWith(argv[0])) {
             int fromSet = Integer.parseInt(argv[1]);

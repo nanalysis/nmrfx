@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import java.util.*;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -12,13 +11,16 @@ import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
-import javax.vecmath.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.Bond;
 
-public class MolCylinders extends Group implements MolItem {
+import javax.vecmath.Vector3d;
+import java.util.ArrayList;
+import java.util.List;
 
-    static final private double minSelRadius = 0.1;
+public class MolCylinders extends Group implements MolItem {
+    private static final double MIN_SEL_RADIUS = 0.1;
+    private final static double DEGTORAD = 180.0 / Math.PI;
 
     String molName = null;
     int iStructure = 0;
@@ -28,8 +30,6 @@ public class MolCylinders extends Group implements MolItem {
     List<BondLine> bondLines = null;
     Vector3d a = new Vector3d(0.0, 0.0, 0.0);
     Vector3d b = new Vector3d(0.0, 0.0, 0.0);
-    static Map parameterMap = new TreeMap();
-    private final static double DEGTORAD = 180.0 / Math.PI;
 
     public MolCylinders(String molName, List<Bond> bonds, List<BondLine> bondLines, double radius, String tag) {
         this.molName = molName;
@@ -110,8 +110,8 @@ public class MolCylinders extends Group implements MolItem {
         if (node instanceof Cylinder) {
             Cylinder cylinder = (Cylinder) node;
             double selRadius = cylinder.getRadius() * 1.2;
-            if (selRadius < minSelRadius) {
-                selRadius = minSelRadius;
+            if (selRadius < MIN_SEL_RADIUS) {
+                selRadius = MIN_SEL_RADIUS;
             }
             String nodeID = node.getId();
             String[] nodeIDParts = nodeID.split("\\.");
@@ -192,7 +192,6 @@ public class MolCylinders extends Group implements MolItem {
     }
 
     /**
-     *
      * @param radius
      */
     public void setRadius(double radius) {

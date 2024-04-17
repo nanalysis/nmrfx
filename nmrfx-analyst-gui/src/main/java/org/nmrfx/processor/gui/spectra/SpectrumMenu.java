@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,19 +22,34 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.tools.PeakLinker;
+import org.nmrfx.processor.gui.undo.PeaksUndo;
+import org.nmrfx.utils.GUIUtils;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class SpectrumMenu extends ChartMenu {
 
     public SpectrumMenu(PolyChart chart) {
         super(chart);
+    }
+
+    PeaksUndo undo = null;
+
+    void addSelectedPeaksUndo() {
+        undo = new PeaksUndo(PeakLinker.getSelectedPeaks());
+    }
+
+    void addSelectedPeaksUndoRedo(String name) {
+        if (undo != null) {
+            PeaksUndo redo = new PeaksUndo(PeakLinker.getSelectedPeaks());
+            chart.getFXMLController().getUndoManager().add(name, undo, redo);
+            undo = null;
+        }
     }
 
     public void makeChartMenu() {
@@ -58,20 +73,6 @@ public class SpectrumMenu extends ChartMenu {
         popOutItem.setOnAction((ActionEvent e) -> chart.popView());
         viewMenu.getItems().add(popOutItem);
 
-        Menu baselineMenu = new Menu("Baseline/Extract Regions");
-        MenuItem addBaselineItem = new MenuItem("Add Baseline Region");
-        addBaselineItem.setOnAction((ActionEvent e) -> chart.addBaselineRange(false));
-        MenuItem clearBaselineItem = new MenuItem("Clear Baseline Region");
-        clearBaselineItem.setOnAction((ActionEvent e) -> chart.addBaselineRange(true));
-        MenuItem clearAllBaselineItem = new MenuItem("Clear Baseline Regions");
-        clearAllBaselineItem.setOnAction((ActionEvent e) -> chart.clearBaselineRanges());
-        MenuItem extractItem = new MenuItem("Add Extract Region");
-        extractItem.setOnAction((ActionEvent e) -> chart.addRegionRange());
-
-        baselineMenu.getItems().add(addBaselineItem);
-        baselineMenu.getItems().add(clearBaselineItem);
-        baselineMenu.getItems().add(clearAllBaselineItem);
-        baselineMenu.getItems().add(extractItem);
         Menu peakMenu = new Menu("Peaks");
         Menu peakFitMenu = new Menu("Fit");
 
@@ -95,30 +96,21 @@ public class SpectrumMenu extends ChartMenu {
         peakMenu.getItems().add(tweakListItem);
 
         MenuItem duplicatePeakMenuItem = new MenuItem("Add Duplicate Peak List");
-        duplicatePeakMenuItem.setOnAction((ActionEvent e) -> {
-            chart.duplicatePeakList();
-        });
+        duplicatePeakMenuItem.setOnAction((ActionEvent e) -> chart.duplicatePeakList());
         peakMenu.getItems().add(duplicatePeakMenuItem);
 
         peakMenu.getItems().add(peakFitMenu);
 
-//     fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
         MenuItem fitListItem = new MenuItem("Fit");
-        fitListItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1);
-        });
+        fitListItem.setOnAction((ActionEvent e) -> chart.fitPeakLists(-1));
         peakFitMenu.getItems().add(fitListItem);
 
         MenuItem fitColumnItem = new MenuItem("Fit Clustered Column");
-        fitColumnItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(0);
-        });
+        fitColumnItem.setOnAction((ActionEvent e) -> chart.fitPeakLists(0));
         peakFitMenu.getItems().add(fitColumnItem);
 
         MenuItem fitRowItem = new MenuItem("Fit Clustered Row");
-        fitRowItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(1);
-        });
+        fitRowItem.setOnAction((ActionEvent e) -> chart.fitPeakLists(1));
         peakFitMenu.getItems().add(fitRowItem);
 
         MenuItem fitPlanesItem = new MenuItem("Fit Planes");
@@ -136,97 +128,115 @@ public class SpectrumMenu extends ChartMenu {
             chart.fitPeakLists(fitPars, true);
         });
         peakFitMenu.getItems().add(fitExpDecayItem);
+        MenuItem fitZZDecayItem = new MenuItem("Fit Planes (ZZ)");
+        fitZZDecayItem.setOnAction((ActionEvent e) -> {
+            PeakFitParameters fitPars = new PeakFitParameters();
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_SHAPE);
+            chart.fitPeakLists(fitPars, true);
+        });
+        peakFitMenu.getItems().add(fitZZDecayItem);
+
+        MenuItem fitZZIntensityItem = new MenuItem("Fit Planes (ZZ Intensity)");
+        fitZZIntensityItem.setOnAction((ActionEvent e) -> {
+            PeakFitParameters fitPars = new PeakFitParameters();
+            fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY);
+            chart.fitPeakLists(fitPars, true);
+        });
+        peakFitMenu.getItems().add(fitZZIntensityItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
-        fitLSItem.setOnAction((ActionEvent e) -> {
-            PeakPicking.peakPickActive(chart.getController(), true, null);
-        });
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.refineLS = true;
+
+        fitLSItem.setOnAction((ActionEvent e) -> PeakPicking.peakPickActive(chart.getFXMLController(), peakPickParameters));
         peakFitMenu.getItems().add(fitLSItem);
 
         Menu refMenu = new Menu("Reference");
 
         MenuItem diagRefMenuItem = new MenuItem("Adjust Diagonal");
-        diagRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.adjustDiagonalReference();
-        });
+        diagRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.adjustDiagonalReference());
         MenuItem shiftRefMenuItem = new MenuItem("Shift Reference");
-        shiftRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.adjustDatasetRef();
-        });
+        shiftRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.adjustDatasetRef());
         MenuItem shiftPeaksMenuItem = new MenuItem("Shift Peaks");
-        shiftPeaksMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.shiftPeaks();
-        });
+        shiftPeaksMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.shiftPeaks());
         MenuItem setRefMenuItem = new MenuItem("Set Reference...");
-        setRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.showRefInput();
-        });
+        setRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.showRefInput());
         MenuItem undoRefMenuItem = new MenuItem("Undo");
-        undoRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.undo();
-        });
+        undoRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.undo());
         MenuItem writeRefMenuItem = new MenuItem("Write Reference Parameters");
-        writeRefMenuItem.setOnAction((ActionEvent e) -> {
-            SpectrumAdjuster.writePars();
-        });
+        writeRefMenuItem.setOnAction((ActionEvent e) -> SpectrumAdjuster.writePars());
 
         refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem,
                 diagRefMenuItem, shiftPeaksMenuItem,
                 undoRefMenuItem, writeRefMenuItem);
-        Menu extractMenu = new Menu("Extract Slice/Projection"
-                + "");
+        Menu extractMenu = new Menu("Extract Slice/Projection");
 
         MenuItem projectMenuItem = new MenuItem("Project");
-        projectMenuItem.setOnAction((ActionEvent e) -> {
-            chart.projectDataset();
-        });
+        projectMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset());
         MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
         removeProjectionsItem.visibleProperty().bind(chart.getDisDimProperty().isEqualTo(PolyChart.DISDIM.TwoD));
         removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());
         MenuItem extractXMenuItem = new MenuItem("Extract-X");
-        extractXMenuItem.setOnAction((ActionEvent e) -> {
-            chart.extractSlice(0);
-        });
+        extractXMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(0));
         MenuItem extractYMenuItem = new MenuItem("Extract-Y");
-        extractYMenuItem.setOnAction((ActionEvent e) -> {
-            chart.extractSlice(1);
-        });
+        extractYMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(1));
         MenuItem extractZMenuItem = new MenuItem("Extract-Z");
-        extractZMenuItem.setOnAction((ActionEvent e) -> {
-            chart.extractSlice(2);
-        });
+        extractZMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(2));
         extractMenu.getItems().addAll(projectMenuItem, removeProjectionsItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
 
         Menu linkMenu = new Menu("Peak Linking");
         MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
         linkColumnMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.linkSelectedPeaks(0);
+            addSelectedPeaksUndoRedo("Link Column");
         });
         MenuItem linkRowMenuItem = new MenuItem("Link Selected Row");
         linkRowMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.linkSelectedPeaks(1);
+            addSelectedPeaksUndoRedo("Link Row");
         });
 
         MenuItem unlinkSelectedMenuItem = new MenuItem("Unlink Selected");
         unlinkSelectedMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.unlinkSelected();
+            addSelectedPeaksUndoRedo("Unlink selected");
         });
         MenuItem unlinkSelectedColumnMenuItem = new MenuItem("Unlink Selected Column");
         unlinkSelectedColumnMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.unlinkSelected(0);
+            addSelectedPeaksUndoRedo("Unlink Column");
         });
         MenuItem unlinkSelectedRowMenuItem = new MenuItem("Unlink Selected Row");
         unlinkSelectedRowMenuItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
             PeakLinker.unlinkSelected(1);
+            addSelectedPeaksUndoRedo("Unlink Row");
+        });
+        MenuItem linkFourPeaksItem = new MenuItem("Link Four Peaks(ZZ)");
+        linkFourPeaksItem.setOnAction((ActionEvent e) -> {
+            addSelectedPeaksUndo();
+            try {
+                PeakLinker.linkFourPeaks();
+                chart.getPeakListAttributes().get(0).setDrawLinks(true);
+                chart.refresh();
+            } catch (IllegalStateException iSE) {
+                GUIUtils.warn("Peak Linking", "Need exactly four selected peaks");
+                return;
+            }
+            addSelectedPeaksUndoRedo("Unlink Row");
         });
 
         linkMenu.getItems().addAll(linkColumnMenuItem, linkRowMenuItem,
-                unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem);
+                unlinkSelectedMenuItem, unlinkSelectedColumnMenuItem, unlinkSelectedRowMenuItem,
+                linkFourPeaksItem);
 
         chartMenu.getItems().add(viewMenu);
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);
-        chartMenu.getItems().add(baselineMenu);
         chartMenu.getItems().add(linkMenu);
         chartMenu.getItems().add(extractMenu);
     }

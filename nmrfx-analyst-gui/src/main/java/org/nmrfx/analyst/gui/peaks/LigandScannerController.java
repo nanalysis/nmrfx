@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -40,6 +40,7 @@ import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
@@ -75,7 +76,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
     double[] mcsAlphas = null;
     double mcsTol = 0.0;
     int refIndex = 0;
-    PolyChart chart = PolyChart.getActiveChart();
+    PolyChart chart = PolyChartManager.getInstance().getActiveChart();
     XYCanvasChart activeChart = null;
     ChoiceBox<String> xArrayChoice;
     ChoiceBox<String> yArrayChoice;
@@ -207,7 +208,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
         mcsAlphas = new double[nDim];
         double[][] ppms = new double[nDim][2];
         int[] deltas = new int[nDim];
-        if (!chart.getCrossHairs().hasCrosshairRegion()) {
+        if (!chart.getCrossHairs().hasRegion()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("No crosshair region");
             alert.showAndWait();
@@ -217,8 +218,8 @@ public class LigandScannerController implements Initializable, StageBasedControl
         for (int i = 0; i < nDim; i++) {
             dimNames[i] = chartDimNames.get(i);
             deltas[i] = 10;
-            Double[] positions0 = chart.getCrossHairs().getCrossHairPositions(0);
-            Double[] positions1 = chart.getCrossHairs().getCrossHairPositions(1);
+            Double[] positions0 = chart.getCrossHairs().getPositions(0);
+            Double[] positions1 = chart.getCrossHairs().getPositions(1);
             ppms[i][0] = positions0[i];
             ppms[i][1] = positions1[i];
             // fixm need to set based on nucleus and/or in gui
@@ -296,10 +297,6 @@ public class LigandScannerController implements Initializable, StageBasedControl
         return fileListItems;
     }
 
-  
-    public void updateDataFrame() {
-      
-    }
 
     double[] getTableValues(String columnName) {
         double[] values = null;

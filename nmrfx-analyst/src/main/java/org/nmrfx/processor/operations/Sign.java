@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -63,7 +62,8 @@ public class Sign extends Operation implements Invertible {
                 vec.negatePairs();
             }
 
-        },;
+        },
+        ;
 
         String name;
 
@@ -78,6 +78,7 @@ public class Sign extends Operation implements Invertible {
         public abstract void execute(Vec vec);
 
     }
+
     private static final Map<String, ModeType> lookup
             = new HashMap<String, ModeType>();
 

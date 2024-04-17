@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.vendor.nmrpipe;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -66,6 +67,8 @@ public class NMRPipeData implements NMRData {
     private Double[] Ref = new Double[MAXDIM];
     private Double[] Sw = new Double[MAXDIM];
     private Double[] Sf = new Double[MAXDIM];
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
+
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
     Header fileHeader;
@@ -194,13 +197,12 @@ public class NMRPipeData implements NMRData {
         tbytes = np * ebytes;
     }
 
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
+    public static boolean findFID(File file) {
+        return findFIDFiles(file);
     }
 
-    public static boolean findFIDFiles(String dpath) {
+    public static boolean findFIDFiles(File file) {
         boolean found = false;
-        File file = new File(dpath);
         String dirName = file.getParent();
         String fileName = file.getName();
         if (fileName.contains("%")) {
@@ -446,14 +448,20 @@ public class NMRPipeData implements NMRData {
 
     @Override
     public double[] getCoefs(int dim) {
-        double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
-        return dcoefs;
-
+        return AcquisitionType.HYPER.getCoefficients();
     }
 
     @Override
     public String getSymbolicCoefs(int dim) {
-        return "hyper";
+        return AcquisitionType.HYPER.getLabel();
+    }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
     }
 
     @Override
@@ -814,10 +822,12 @@ public class NMRPipeData implements NMRData {
         }
         boolean gotSchedule = false;
         if (nusFile == null) {
-            nusFile = new File(fpath + File.separator + "nuslist");
+            File fidFile = new File(fpath);
+            Path nusPath = fidFile.getParentFile().toPath().resolve("nuslist");
+            nusFile = nusPath.toFile();
         }
         if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), false);
+            readSampleSchedule(nusFile.getPath(), true, false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {

@@ -72,7 +72,7 @@ public class PeakGenerator {
         return ppmV;
     }
 
-    void addPeak(PeakList peakList, double intensity, Atom... atoms) {
+    void addPeak(PeakList peakList, double hWidth, double intensity, Atom... atoms) {
         int nAtoms = atoms.length;
         double[] ppms = new double[nAtoms];
         double[] eppms = new double[nAtoms];
@@ -80,6 +80,7 @@ public class PeakGenerator {
         double[] bounds = new double[nAtoms];
         String[] names = new String[nAtoms];
         boolean ok = true;
+        double xScale = nAtoms < 3 ? 1.0 : 2.0;  //three D usually have lower resolution in X dims
         for (int i = 0; i < nAtoms; i++) {
             PPMv ppmV = getPPM(atoms[i]);
             if ((ppmV == null) || !ppmV.isValid()) {
@@ -90,7 +91,7 @@ public class PeakGenerator {
             ppms[i] = ppmV.getValue();
             eppms[i] = ppmV.getError();
 
-            widths[i] = atoms[i].getElementNumber() == 1 ? 2.0 : 5.0;
+            widths[i] = atoms[i].getAtomicNumber() == 1 ? hWidth : xScale * hWidth;
             bounds[i] = widths[i] * 2.0;
             names[i] = atoms[i].getShortName();
         }
@@ -245,6 +246,7 @@ public class PeakGenerator {
     }
 
     public void generateHMBC(PeakList peakList, int limit) {
+        double hWidth = getHWidth();
         generateHMBCCouplings(limit);
         Atom[] atoms = new Atom[2];
         molecule.getAtoms().stream()
@@ -257,7 +259,7 @@ public class PeakGenerator {
                             atoms[0] = hmbcCoupling.getAtom(0);
                             atoms[1] = hmbcCoupling.getAtom(1);
                             double intensity = atom.isMethyl() ? 3.0 : 1.0;
-                            addPeak(peakList, intensity, atoms);
+                            addPeak(peakList, hWidth, intensity, atoms);
                         }
                     }
                 });
@@ -266,6 +268,7 @@ public class PeakGenerator {
 
     public void generateTOCSY(PeakList peakList, int limit) {
         generateTocsyCouplings(limit);
+        double hWidth = getHWidth();
         Atom[] atoms = new Atom[2];
         molecule.getAtoms().stream()
                 .filter(atom -> atom.getAtomicNumber() == 1)
@@ -277,13 +280,14 @@ public class PeakGenerator {
                             atoms[0] = tocsyCoupling.getAtom(0);
                             atoms[1] = tocsyCoupling.getAtom(1);
                             double intensity = atom.isMethyl() ? 3.0 : 1.0;
-                            addPeak(peakList, intensity, atoms);
+                            addPeak(peakList, hWidth, intensity, atoms);
                         }
                     }
                 });
     }
 
     public void generateHSQC(PeakList peakList, int parentElement) {
+        double hWidth = getHWidth();
         Atom[] atoms = new Atom[2];
         molecule.getAtoms().stream()
                 .filter(atom -> atom.getAtomicNumber() == 1)
@@ -293,7 +297,7 @@ public class PeakGenerator {
                     atoms[0] = atom;
                     atoms[1] = atom.getParent();
                     double intensity = atom.isMethyl() ? 3.0 : 1.0;
-                    addPeak(peakList, intensity, atoms);
+                    addPeak(peakList, hWidth, intensity, atoms);
                 });
     }
 
@@ -329,11 +333,12 @@ public class PeakGenerator {
 
      */
 
-    public void generateNOESY(PeakList peakList, double tol) throws InvalidMoleculeException {
+    public void generateNOESY(PeakList peakList, double tol, boolean useN, boolean requireActive) throws InvalidMoleculeException {
         int nDim = peakList.getNDim();
+        double hWidth = getHWidth();
         Atom[] atoms = new Atom[nDim];
         molecule.selectAtoms("*.H*");
-        var protonPairs = molecule.getDistancePairs(tol, false);
+        var protonPairs = molecule.getDistancePairs(tol, requireActive);
         int[] indices = new int[atoms.length];
         Arrays.fill(indices, -1);
         int aNum = 1;
@@ -363,21 +368,35 @@ public class PeakGenerator {
         protonPairs.forEach(aP -> {
             atoms[indices[0]] = aP.getAtom1();
             atoms[indices[1]] = aP.getAtom2();
-            final boolean ok;
+            Atom parent0 = atoms[indices[0]].getParent();
+            Atom parent1 = atoms[indices[1]].getParent();
+            boolean ok;
             if (indices.length == 2) {
                 ok = true;
             } else {
                 if ((indices[2] != -1)) {
                     atoms[indices[2]] = atoms[indices[0]].getParent();
-                    ok = (atoms[indices[2]] != null) && (atoms[indices[2]].getElementNumber() == testANum);
+                    ok = (atoms[indices[2]] != null) && (atoms[indices[2]].getAtomicNumber() == testANum);
                 } else {
+                    ok = false;
+                }
+            }
+            if (!useN) {
+                if ((parent0 != null) && (parent0.getAtomicNumber() == 7)) {
+                    ok = false;
+                }
+                if ((parent1 != null) && (parent1.getAtomicNumber() == 7)) {
                     ok = false;
                 }
             }
             if (ok) {
                 double distance = Math.max(2.0, Math.abs(aP.getDistance()));
                 double intensity = 100.0 * Math.pow(distance, exponent) / scale;
-                addPeak(peakList, intensity, atoms);
+                addPeak(peakList, hWidth, intensity, atoms);
+                if (atoms.length == 2) {
+                    Atom[] atomsSwap = {atoms[1], atoms[0]};
+                    addPeak(peakList, hWidth, intensity, atomsSwap);
+                }
             }
         });
     }
@@ -443,6 +462,7 @@ public class PeakGenerator {
     private void addResiduePeak(PeakList peakList, Residue residue,
                                 List<String> nucNames, String[] specifier, boolean firstSpec) {
         int nDim = peakList.getNDim();
+        double hWidth = getHWidth();
         Atom[] atoms = new Atom[nDim];
         boolean ok = true;
         for (String atomSpec : specifier) {
@@ -466,7 +486,12 @@ public class PeakGenerator {
             } else {
                 intensity = 0.5;
             }
-            addPeak(peakList, intensity, atoms);
+            addPeak(peakList, hWidth, intensity, atoms);
         }
+    }
+
+    double getHWidth() {
+        double weight = molecule.guessMolecularWeight();
+        return Math.max(1.0, weight / 400.0);
     }
 }

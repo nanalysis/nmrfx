@@ -1,7 +1,7 @@
 package org.nmrfx.processor.gui.undo;
 
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@ package org.nmrfx.processor.gui.undo;
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 /**
- *
  * @author Bruce Johnson
  */
 public abstract class ChartUndo implements Undo {

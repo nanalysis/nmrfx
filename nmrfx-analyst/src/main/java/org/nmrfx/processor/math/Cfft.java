@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,8 @@ package org.nmrfx.processor.math;
 import org.apache.commons.math3.complex.Complex;
 
 public class Cfft {
-
-    static double[] sineTable = null;
-    static double[] cosTable = null;
+    private static double[] sineTable = null;
+    private static double[] cosTable = null;
 
     static void fillTables(int n) {
         sineTable = new double[n];

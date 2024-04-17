@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -27,7 +27,6 @@ import org.nmrfx.processor.math.LinearPrediction;
 import org.nmrfx.processor.math.Vec;
 
 /**
- *
  * @author michael
  */
 @PythonAPI("pyproc")
@@ -61,8 +60,8 @@ public class Extend extends Operation {
      * @param mirror
      */
     public Extend(int fitStart, int fitEnd, int predictStart, int predictEnd,
-            int npred, int ncoef, double threshold, boolean backward,
-            boolean forward, boolean insertMode, int mirror) {
+                  int npred, int ncoef, double threshold, boolean backward,
+                  boolean forward, boolean insertMode, int mirror) {
         this.fitStart = fitStart;
         this.fitEnd = fitEnd;
         this.predictStart = predictStart;

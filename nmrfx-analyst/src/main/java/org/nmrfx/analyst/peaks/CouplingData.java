@@ -1,11 +1,11 @@
 package org.nmrfx.analyst.peaks;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.nmrfx.peaks.CouplingItem;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class CouplingData {
@@ -55,7 +55,7 @@ public class CouplingData {
         } else {
             StringBuilder sBuilder = new StringBuilder();
             couplingItems.forEach((couplingItem) -> {
-                sBuilder.append(" ").append(couplingItem.getCoupling()).append(" ").append(couplingItem.getNSplits() - 1);
+                sBuilder.append(" ").append(couplingItem.coupling()).append(" ").append(couplingItem.nSplits() - 1);
             });
             return sBuilder.toString().trim();
         }
@@ -66,7 +66,7 @@ public class CouplingData {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(centerPPM);
         couplingItems.forEach((couplingItem) -> {
-            sBuilder.append(" ").append(couplingItem.getCoupling()).append(" ").append(couplingItem.getNSplits());
+            sBuilder.append(" ").append(couplingItem.coupling()).append(" ").append(couplingItem.nSplits());
         });
         return sBuilder.toString();
     }

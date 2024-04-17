@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
  * @author Bruce Johnson
  */
 public class EnergyCoords {
@@ -40,8 +39,8 @@ public class EnergyCoords {
     public static final double RSCALE = Math.pow(2.0, -1.0 / 6.0);
 
     private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
-    {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
-    {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
+            {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
+            {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
     FastVector3D[] vecCoords = null;
     EnergyDistancePairs eDistancePairs;
@@ -206,7 +205,8 @@ public class EnergyCoords {
         String atomName = iAtomNewSub.substring(iAtomNewSub.indexOf(".") + 1);
         if (atomName.length() < 1) {
             return 'n';
-        };
+        }
+        ;
 
         if (iAtomOldSub.equals(iAtomNewSub) && jAtomNew.equals(jAtomOld)) {
             return 'i';
@@ -283,7 +283,7 @@ public class EnergyCoords {
     }
 
     public void setRadii(double hardSphere, boolean includeH,
-            double shrinkValue, double shrinkHValue, boolean useFF) {
+                         double shrinkValue, double shrinkHValue, boolean useFF) {
         try {
             AtomEnergyProp.readPropFile();
         } catch (IOException ex) {
@@ -324,8 +324,8 @@ public class EnergyCoords {
     }
 
     public void setCells(EnergyPairs ePairs, int deltaEnd, double limit,
-            double hardSphere, boolean includeH, double shrinkValue,
-            double shrinkHValue, boolean useFF) {
+                         double hardSphere, boolean includeH, double shrinkValue,
+                         double shrinkHValue, boolean useFF) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];

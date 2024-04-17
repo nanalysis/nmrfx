@@ -40,7 +40,7 @@ import java.nio.file.Path;
 public class XmlUtil {
     public static void writeDocument(Document document, File outFile) throws TransformerException, IOException {
         DOMSource source = new DOMSource(document);
-        StreamResult result =  new StreamResult(new StringWriter());
+        StreamResult result = new StreamResult(new StringWriter());
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
         transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
@@ -48,7 +48,7 @@ public class XmlUtil {
         Transformer transformer = transformerFactory.newTransformer();
         transformer.transform(source, result);
         String xmlString = result.getWriter().toString();
-        Files.writeString(outFile.toPath(),xmlString);
+        Files.writeString(outFile.toPath(), xmlString);
     }
 
     public static Document readDocument(Path filePath) throws ParserConfigurationException, IOException, SAXException {

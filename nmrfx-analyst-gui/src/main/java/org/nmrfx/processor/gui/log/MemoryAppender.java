@@ -18,7 +18,7 @@ public class MemoryAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent event) {
-        if(records.size() >= MAX_SIZE) {
+        if (records.size() >= MAX_SIZE) {
             records.remove(0);
         }
 

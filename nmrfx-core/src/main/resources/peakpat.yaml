@@ -1,36 +1,58 @@
 types:
-  - name : NOESY
-    dims :
+  - name: NOESY
+    dims:
       - name: H
-        pattern : i.H*
-        bonds :
-      - name : H
-        pattern : j.H*
-        bonds :
-  - name : COSY
-    dims :
+        pattern: i.H*
+        bonds:
       - name: H
-        pattern : i.H*
-        bonds :
-      - name : H
-        pattern : i.H*
-        bonds :
-  - name : 15N-HSQC
-    dims :
+        pattern: j.H*
+        bonds:
+  - name: NOESY-3D-iN
+    dims:
       - name: H
-        pattern : i.H*
-        bonds : N
-      - name : N
-        pattern : i.N*
-        bonds :
-  - name : 13N-HSQC
-    dims :
+        pattern: i.H*
+        bonds: N
       - name: H
-        pattern : i.H*
-        bonds : C
-      - name : C
-        pattern : i.C*
-        bonds :
+        pattern: j.H*
+        bonds:
+      - name: N
+        pattern: i.N*
+        bonds:
+  - name: NOESY-3D-jN
+    dims:
+      - name: H
+        pattern: i.H*
+        bonds:
+      - name: H
+        pattern: j.H*
+        bonds: N
+      - name: N
+        pattern: j.N*
+        bonds:
+  - name: COSY
+    dims:
+      - name: H
+        pattern: i.H*
+        bonds:
+      - name: H
+        pattern: i.H*
+        bonds:
+  - name: 15N-HSQC
+    dims:
+      - name: H
+        pattern: i.H*
+        bonds: N
+      - name: N
+        pattern: i.N*
+        bonds:
+  - name: 13N-HSQC
+    dims:
+      - name: H
+        pattern: i.H*
+        bonds: C
+      - name: C
+        pattern: i.C*
+        bonds:
   - name: HNCO
     dims:
       - name: H

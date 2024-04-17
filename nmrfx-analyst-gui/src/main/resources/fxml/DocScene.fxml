@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.web.*?>
-<?import org.controlsfx.control.*?>
-<?import org.nmrfx.processor.gui.*?>
-
-<BorderPane fx:id="borderPane" prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.DocWindowController">
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.web.WebView?>
+<?import java.net.URL?>
+<BorderPane fx:id="borderPane" prefHeight="600.0" prefWidth="900.0" styleClass="mainFxmlClass"
+            xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.processor.gui.DocWindowController">
     <stylesheets>
-        <URL value="@/styles/Styles.css" />
+        <URL value="@/styles/Styles.css"/>
     </stylesheets>
     <top>
         <ToolBar prefWidth="200.0" BorderPane.alignment="CENTER">
@@ -19,7 +17,7 @@
         </ToolBar>
     </top>
     <center>
-        <WebView fx:id="webView" />
+        <WebView fx:id="webView"/>
     </center>
     <left>
     </left>

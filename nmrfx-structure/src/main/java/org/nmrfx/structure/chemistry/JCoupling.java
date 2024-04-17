@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- *
  * @author brucejohnson
  */
 public class JCoupling {
@@ -101,11 +100,11 @@ public class JCoupling {
     public Atom getAtom(int index) {
         return spatialSets.get(index).atom;
     }
-    
+
     public int getNAtoms() {
         return spatialSets.size();
     }
-    
+
     public int getShell() {
         return shell;
     }

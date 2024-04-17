@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,21 +27,20 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author brucejohnson
  */
 public class Mol2File {
     private static final Logger log = LoggerFactory.getLogger(Mol2File.class);
 
-    static final int MOLECULE = 0;
-    static final int ATOM = 1;
-    static final int BOND = 2;
-    static final int LIST = 3;
-    static final int STEXT = 4;
-    static final int PROP = 5;
-    static final int FREE = 6;
-    static final int VALUE = 7;
-    static Pattern pattern = Pattern.compile("> +<(.*)>");
+    private static final int MOLECULE = 0;
+    private static final int ATOM = 1;
+    private static final int BOND = 2;
+    private static final int LIST = 3;
+    private static final int STEXT = 4;
+    private static final int PROP = 5;
+    private static final int FREE = 6;
+    private static final int VALUE = 7;
+    private static final Pattern PATTERN = Pattern.compile("> +<(.*)>");
 
     int nMols = 0;
     MoleculeBase molecule = null;
@@ -192,10 +191,10 @@ public class Mol2File {
                 }
             }
             /*
-                 * String stereoString = string.substring(39, 42).trim(); int
-                 * stereoValue = 0; try { stereoValue =
-                 * Integer.parseInt(stereoString); } catch
-                 * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
+             * String stereoString = string.substring(39, 42).trim(); int
+             * stereoValue = 0; try { stereoValue =
+             * Integer.parseInt(stereoString); } catch
+             * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
              */
 
             atom.entity = compound;
@@ -322,7 +321,8 @@ public class Mol2File {
         if (molecule != null) {
             sdFile.getMolName(fileName);
             String compoundName = sdFile.molName;
-            compound = residue != null ? residue : new Compound("1", compoundName);;
+            compound = residue != null ? residue : new Compound("1", compoundName);
+            ;
             compound.molecule = molecule;
             compound.assemblyID = molecule.entityLabels.size() + 1;
             if (residue == null) {

@@ -3,7 +3,6 @@ package org.nmrfx.structure.seqassign;
 import java.util.List;
 
 /**
- *
  * @author brucejohnson
  */
 public class PPMScore {

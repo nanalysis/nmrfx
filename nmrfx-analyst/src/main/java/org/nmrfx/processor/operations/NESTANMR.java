@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.List;
 
+import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
+
 /**
  * @author Bruce Johnson
  */
@@ -100,14 +102,16 @@ public class NESTANMR extends MatrixOperation {
         this.extendMode = extendMode;
         this.extendFactor = extendFactor;
     }
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule,
                     List phaseList, boolean zeroAtStart, double threshold,
                     String logHomeName) throws ProcessingException {
-        this(outerIterations, innerIterations, tolFinal, muFinal, schedule,phaseList,zeroAtStart,threshold,logHomeName, false,0);
+        this(outerIterations, innerIterations, tolFinal, muFinal, schedule, phaseList, zeroAtStart, threshold, logHomeName, false, 0);
     }
+
     public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal,
                     List phaseList, boolean zeroAtStart, double threshold, int extendFactor, List<int[]> skipList) throws ProcessingException {
-        this(outerIterations, innerIterations, tolFinal, muFinal, null,phaseList,zeroAtStart,threshold,null,true, extendFactor);
+        this(outerIterations, innerIterations, tolFinal, muFinal, null, phaseList, zeroAtStart, threshold, null, true, extendFactor);
         this.skipList = skipList;
     }
 
@@ -168,10 +172,13 @@ public class NESTANMR extends MatrixOperation {
                     logFile = logHome.toString() + vector.getIndex() + ".log";
                 }
             }
-            if (schedule == null) {
-                return this;
+            int[] zeroList;
+            if (schedule != null) {
+                zeroList = IstMatrix.genZeroList(schedule, matrixND);
+            } else {
+                int[][] zeroTarget = matrixND.findZeros();
+                zeroList = zeroTarget[0];
             }
-            int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
 
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
             nesta.doNESTA();
@@ -230,16 +237,27 @@ public class NESTANMR extends MatrixOperation {
     }
 
     public Operation evalNUSMatrix(MatrixType matrix) {
+        MatrixND matrixND = (MatrixND) matrix;
+        SampleSchedule schedule;
         if (sampleSchedule == null) {
-            throw new ProcessingException("No sample schedule");
+            schedule = matrixND.schedule();
+        } else {
+            schedule = sampleSchedule;
         }
+
         try {
-            MatrixND matrixND = (MatrixND) matrix;
             matrixND.ensurePowerOf2();
             for (int i = 0; i < matrixND.getNDim(); i++) {
                 matrixND.setVSizes(matrixND.getSizes());
             }
-            int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
+            int[] zeroList;
+            int[] srcTargetMap;
+            if (schedule != null) {
+                zeroList = IstMatrix.genZeroList(schedule, matrixND);
+            } else {
+                int[][] zeroTarget = matrixND.findZeros();
+                zeroList = zeroTarget[0];
+            }
             String logFile = null;
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";

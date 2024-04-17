@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,15 +17,14 @@
  */
 package org.nmrfx.peaks;
 
-import java.util.*;
-
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.Residue;
 
+import java.util.*;
+
 /**
- *
  * @author brucejohnson
  */
 public class AtomResPattern {
@@ -149,7 +148,7 @@ public class AtomResPattern {
 
     public static Optional<Atom> setLabelFromUserField(PeakDim peakDim, Residue residue) {
         Atom atom = null;
-        AtomResPatterns atomResPatterns = parsePattern(peakDim.getUser(),"");
+        AtomResPatterns atomResPatterns = parsePattern(peakDim.getUser(), "");
         if (!atomResPatterns.atomResPatterns.isEmpty() && !atomResPatterns.ambiguousResidue
                 && !atomResPatterns.ambiguousANames) {
             AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
@@ -177,7 +176,7 @@ public class AtomResPattern {
             AtomResPattern arPat = atomResPatterns.atomResPatterns.get(0);
             if (!arPat.bondedDim.isBlank()) {
 
-                AtomResonance atomRes = (AtomResonance) activeDim.getResonance();
+                AtomResonance atomRes = activeDim.getResonance();
                 Atom atom = atomRes.getPossibleAtom();
                 if (atom != null) {
                     Atom parent = atom.getParent();

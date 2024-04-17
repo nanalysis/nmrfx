@@ -59,7 +59,7 @@ public class LogDetailsView extends GridPane {
     }
 
     private void clearDetails() {
-        this.logRecord  = null;
+        this.logRecord = null;
         datetime.setText("");
         location.setText("");
         message.setText("");
@@ -67,6 +67,7 @@ public class LogDetailsView extends GridPane {
 
     /**
      * Sets the controls with the values from logRecord.
+     *
      * @param logRecord The LogRecord object.
      */
     public void setDetails(LogRecord logRecord) {
@@ -83,6 +84,7 @@ public class LogDetailsView extends GridPane {
     /**
      * Copies the values of the controls as well as the software version to the
      * system clipboard.
+     *
      * @param actionEvent
      */
     private void toClipboardClicked(ActionEvent actionEvent) {

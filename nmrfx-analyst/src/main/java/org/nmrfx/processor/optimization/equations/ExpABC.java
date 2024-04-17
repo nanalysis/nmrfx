@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,10 @@
  */
 package org.nmrfx.processor.optimization.equations;
 
-import org.nmrfx.processor.optimization.*;
+import org.nmrfx.processor.optimization.DataUtil;
+import org.nmrfx.processor.optimization.Equation;
+import org.nmrfx.processor.optimization.EstParam;
+import org.nmrfx.processor.optimization.VecID;
 
 /**
  * Author: graham Class: ExpABC Desc: -
@@ -29,19 +32,19 @@ public class ExpABC extends OptFunction {
         setParams(VecID.A, VecID.B, VecID.C);
 
         setPartialDerivatives(new Equation[]{
-            // dY/dA
-            new Equation() {
-                public VecID name() {
-                    return VecID.A;
-                }
+                // dY/dA
+                new Equation() {
+                    public VecID name() {
+                        return VecID.A;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double b = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double b = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
                     /*SUICIDE CHANGE[REM COMMENT IF NO PROB]
                      //double idb;
@@ -51,41 +54,41 @@ public class ExpABC extends OptFunction {
                      }else{
                      idb = -ival / bParam;
                      }*/
-                    return Math.exp(-x * b);
-                }
-            },
-            // dY/dB
-            new Equation() {
-                public VecID name() {
-                    return VecID.B;
-                }
+                        return Math.exp(-x * b);
+                    }
+                },
+                // dY/dB
+                new Equation() {
+                    public VecID name() {
+                        return VecID.B;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    double aParam = getParamVal(VecID.A, pts);
-                    double bParam = getParamVal(VecID.B, pts);
-                    double x = ival[getVarIndex(VecID.X) - 1];
+                    public double value(double[] pts, double[] ival) {
+                        double aParam = getParamVal(VecID.A, pts);
+                        double bParam = getParamVal(VecID.B, pts);
+                        double x = ival[getVarIndex(VecID.X) - 1];
 
-                    return -1.0 * aParam * x * Math.exp(-1.0 * bParam * x);
-                }
-            },
-            // dY/dC
-            new Equation() {
-                public VecID name() {
-                    return VecID.C;
-                }
+                        return -1.0 * aParam * x * Math.exp(-1.0 * bParam * x);
+                    }
+                },
+                // dY/dC
+                new Equation() {
+                    public VecID name() {
+                        return VecID.C;
+                    }
 
-                public int getID() {
-                    return getUnboundParamIndex(name());
-                }
+                    public int getID() {
+                        return getUnboundParamIndex(name());
+                    }
 
-                public double value(double[] pts, double[] ival) {
-                    return 1.0;
+                    public double value(double[] pts, double[] ival) {
+                        return 1.0;
+                    }
                 }
-            }
         });
 
         // y = a * exp(-x * b) + c

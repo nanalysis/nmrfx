@@ -12,8 +12,8 @@
     -->
     <body>
         <links>
-            <item name="Tk" href="http://www.tcl.tk/" />
-            <item name="Java" href="http://www.oracle.com/technetwork/java/index.html" />
+            <item name="Tk" href="http://www.tcl.tk/"/>
+            <item name="Java" href="http://www.oracle.com/technetwork/java/index.html"/>
         </links>
 
         <menu name="Swank Links">
@@ -24,9 +24,9 @@
             <item name="FAQ" href="faq.html"/>
             <item name="Bugs" href="http://kenai.com/jira/browse/SWANK"/>
             <item name="Mailing Lists" href="http://kenai.com/projects/swank/lists"/>
-            <item name="Source Code" href="http://kenai.com/projects/swank/sources/swank-main/show"/>      
-            <item name="Project Page" href="http://kenai.com/projects/swank"/>      
-            <item name="License" href="licenses.html"/>      
+            <item name="Source Code" href="http://kenai.com/projects/swank/sources/swank-main/show"/>
+            <item name="Project Page" href="http://kenai.com/projects/swank"/>
+            <item name="License" href="licenses.html"/>
         </menu>
     </body>
 </project>

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,10 @@
  */
 package org.nmrfx.processor.datasets;
 
+import org.apache.commons.collections4.map.LRUMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
@@ -28,17 +32,17 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.Map;
-import org.apache.commons.collections4.map.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MapInfo {
 
     private static final Logger log = LoggerFactory.getLogger(MapInfo.class);
-    public static int maxSize = 100;
+    public static final int MAX_SIZE = 100;
+
+    private static Map mapMap = null;
+    private static MapInfo lastTouched = null;
+
 
     public static class MyLRUMap extends LRUMap {
-
         int ip = 0;
         int gcAt = 1024;
 
@@ -58,14 +62,16 @@ public class MapInfo {
             return true;
         }
     }
+
+
     public MappedByteBuffer buffer = null;
     final long start;
     final long size;
     final FileChannel.MapMode mapMode;
     final ByteOrder byteOrder;
-    static int nMaps = 0;
-    static Map mapMap = null;
-    static MapInfo lastTouched = null;
+
+
+
 
     public MapInfo(final long start, final long size, final FileChannel.MapMode mapMode, final ByteOrder byteOrder) {
         this.start = start;
@@ -79,29 +85,14 @@ public class MapInfo {
             buffer = raFile.getChannel().map(mapMode, start, size);
             buffer.order(byteOrder);
             if (size > 4 * 1024 * 1024) {
-                nMaps++;
                 if (mapMap == null) {
-                    mapMap = Collections.synchronizedMap(new MyLRUMap(maxSize));
+                    mapMap = Collections.synchronizedMap(new MyLRUMap(MAX_SIZE));
                 }
                 mapMap.put(this, this);
             }
         } catch (IOException e) {
             raFile.close();
             throw e;
-        }
-
-    }
-
-    public static int getMaxSize() {
-        return maxSize;
-    }
-
-    public static boolean setMaxSize(final int newMaxSize) {
-        if (mapMap != null) {
-            return false;
-        } else {
-            maxSize = newMaxSize;
-            return true;
         }
     }
 
@@ -134,7 +125,6 @@ public class MapInfo {
         }
         closeDirectBuffer(buffer);
         buffer = null;
-        nMaps--;
     }
 
     // code from 
@@ -173,7 +163,8 @@ public class MapInfo {
                 Object theUnsafe = theUnsafeField.get(null);
                 clean.invoke(theUnsafe, cb);
             }
-        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchFieldException |
+                 NoSuchMethodException | SecurityException | InvocationTargetException ex) {
             log.warn(ex.getMessage(), ex);
         }
     }

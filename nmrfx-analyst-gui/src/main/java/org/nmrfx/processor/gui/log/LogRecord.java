@@ -45,6 +45,7 @@ public class LogRecord {
 
     /**
      * Gets the LogRecord's source method name from the caller data.
+     *
      * @return A String of the caller's method name or an empty string if there is no caller data.
      */
     public String getSourceMethodName() {

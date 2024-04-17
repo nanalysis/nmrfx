@@ -45,8 +45,12 @@ public class GridPaneCanvas extends GridPane {
         HORIZONTAL,
         GRID
     }
+
     private static final String GRID_DIM_VALID_INTEGER = "([1-9]|1[0-9]|20)";
-    public record GridDimensions(Integer rows, Integer cols) {}
+
+    public record GridDimensions(Integer rows, Integer cols) {
+    }
+
     FXMLController controller;
     final Canvas canvas;
     int nRows = 1;
@@ -82,7 +86,7 @@ public class GridPaneCanvas extends GridPane {
         super.layoutChildren();
         double width = getWidth();
         double height = getHeight();
-        controller.resizeCanvases(width, height);
+
         GraphicsContext gC = canvas.getGraphicsContext2D();
         gC.clearRect(0, 0, width, height);
         if (controller.getBgColor() != null) {
@@ -208,8 +212,8 @@ public class GridPaneCanvas extends GridPane {
             columnSpan = columnSpan == null ? 1 : columnSpan;
             rowSpan = rowSpan == null ? 1 : rowSpan;
             nColumns = Math.max(nColumns, column + columnSpan);
-            nRows = Math.max(nRows, row + rowSpan );
-         }
+            nRows = Math.max(nRows, row + rowSpan);
+        }
         if ((nColumns > 0) && (nRows > 0)) {
             int nChartColumns = nColumns / 2;
             int nChartRows = nRows / 2;

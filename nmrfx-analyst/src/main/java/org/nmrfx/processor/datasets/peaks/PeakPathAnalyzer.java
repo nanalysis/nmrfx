@@ -5,12 +5,8 @@ import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.optimization.VecID;
 import org.nmrfx.processor.optimization.equations.OptFunction;
-import smile.interpolation.KrigingInterpolation;
-import smile.interpolation.variogram.PowerVariogram;
-import smile.interpolation.variogram.Variogram;
 import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.MercerKernel;
-import smile.math.matrix.Matrix;
 import smile.regression.GaussianProcessRegression;
 
 import java.util.*;
@@ -54,7 +50,7 @@ public class PeakPathAnalyzer {
     }
 
     public static PeakPath checkForUnambigous(PeakPaths peakPath, List<List<PeakDistance>> filteredLists,
-            boolean useLast) {
+                                              boolean useLast) {
         // find largest first distance
         double maxDis = Double.NEGATIVE_INFINITY;
         double lastDis = 0.0;
@@ -183,10 +179,10 @@ public class PeakPathAnalyzer {
                         i++;
                     }
                     if (j > 2) {
-                        Variogram vGram = new PowerVariogram(xValues, yValues);
-                        KrigingInterpolation krig = new KrigingInterpolation(xValues,
-                                yValues, vGram, weightValues);
-                        double iValue = krig.interpolate(indVars[0][iSkip]);
+                        MercerKernel mKernel = new GaussianKernel(2000.0);
+                        GaussianProcessRegression gaussianProcessRegression = new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
+                        double[] testPoint = {indVars[0][iSkip]};
+                        double iValue = gaussianProcessRegression.predict(testPoint);
                         double mValue = path.get(iSkip).getDelta(iDim);
                         double delta = (iValue - mValue) / tols[iDim];
                         deltaSum += delta * delta;
@@ -220,7 +216,7 @@ public class PeakPathAnalyzer {
                 indices[iLevel] = -1;
             }
         }
-        KrigingInterpolation[] krig = new KrigingInterpolation[peakDims.length];
+        GaussianProcessRegression[] gaussianProcessRegressions = new GaussianProcessRegression[peakDims.length];
         for (int iDim : peakDims) {
             double[] yValues = new double[nUseLevel];
             double[][] xValues = new double[nUseLevel][1];
@@ -236,9 +232,8 @@ public class PeakPathAnalyzer {
                     j++;
                 }
             }
-            Variogram vGram = new PowerVariogram(xValues, yValues);
-            krig[iDim] = new KrigingInterpolation(xValues,
-                    yValues, vGram, weightValues);
+            MercerKernel mKernel = new GaussianKernel(2000.0);
+            gaussianProcessRegressions[iDim] =  new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
         }
         for (int iLevel = 0; iLevel < filteredLists.size(); iLevel++) {
             if (indices[iLevel] < 0) {
@@ -248,7 +243,8 @@ public class PeakPathAnalyzer {
                 for (PeakDistance peakDist : peakDists) {
                     double sumSq = 0.0;
                     for (int iDim : peakDims) {
-                        double iValue = krig[iDim].interpolate(indVars[0][iLevel]);
+                        double[] testValue = {indVars[0][iLevel]};
+                        double iValue = gaussianProcessRegressions[iDim].predict(testValue);
                         double deltaDelta = iValue - peakDist.getDelta(iDim);
                         sumSq += deltaDelta * deltaDelta;
                     }
@@ -292,7 +288,7 @@ public class PeakPathAnalyzer {
                 indices[iLevel] = -1;
             }
         }
-        KrigingInterpolation[] krig = new KrigingInterpolation[peakDims.length];
+        GaussianProcessRegression[] gaussianProcessRegressions = new GaussianProcessRegression[peakDims.length];
         for (int jLevel = 2; jLevel < indices.length; jLevel++) {
             nUseLevel = 0;
             for (int iLevel = 0; iLevel < jLevel; iLevel++) {
@@ -315,9 +311,8 @@ public class PeakPathAnalyzer {
                         j++;
                     }
                 }
-                Variogram vGram = new PowerVariogram(xValues, yValues);
-                krig[iDim] = new KrigingInterpolation(xValues,
-                        yValues, vGram, weightValues);
+                MercerKernel mKernel = new GaussianKernel(2000.0);
+                gaussianProcessRegressions[iDim] =  new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
             }
             if (indices[jLevel] < 0) {
                 List<PeakDistance> peakDists = filteredLists.get(jLevel);
@@ -326,7 +321,8 @@ public class PeakPathAnalyzer {
                 for (PeakDistance peakDist : peakDists) {
                     double sumSq = 0.0;
                     for (int iDim : peakDims) {
-                        double iValue = krig[iDim].interpolate(indVars[0][jLevel]);
+                        double[] testValue = {indVars[0][jLevel]};
+                        double iValue = gaussianProcessRegressions[iDim].predict(testValue);
                         double deltaDelta = iValue - peakDist.getDelta(iDim);
                         sumSq += deltaDelta * deltaDelta;
                     }
@@ -434,7 +430,7 @@ public class PeakPathAnalyzer {
             System.out.println("nmid " + midDistancePeaks.size());
             int nDim = peakPaths.getPeakDims().length + 1;
             Collections.sort(midDistancePeaks);
-            KrigingInterpolation[] krig = new KrigingInterpolation[nDim];
+            GaussianProcessRegression[] gaussianProcessRegressions = new GaussianProcessRegression[nDim];
             for (PeakDistance midPeakDistance : midDistancePeaks) {
                 Peak midPeak = midPeakDistance.getPeak();
                 System.out.println(" mid " + midPeak.getName() + " ");
@@ -465,8 +461,8 @@ public class PeakPathAnalyzer {
                     xValues[0][0] = firstConc;
                     xValues[1][0] = midConc;
                     xValues[2][0] = lastConc;
-                    Variogram vGram = new PowerVariogram(xValues, yValues);
-                    krig[jDim] = new KrigingInterpolation(xValues, yValues, vGram, weightValues);
+                    MercerKernel mKernel = new GaussianKernel(2000.0);
+                    gaussianProcessRegressions[jDim] =  new GaussianProcessRegression(xValues, yValues, mKernel, 0.001);
                 }
                 double pathSum = 0.0;
                 ArrayList<PeakDistance> path = new ArrayList<>();
@@ -483,7 +479,7 @@ public class PeakPathAnalyzer {
                     } else {
                         testPeaks.addAll(filteredLists.get(iList));
                     }
-                    double testConc = indVars[0][iList];
+                    double[] testConc = {indVars[0][iList]};
                     double minSum = Double.MAX_VALUE;
                     PeakDistance minPeakDist = null;
                     for (PeakDistance testPeakDist : testPeaks) {
@@ -496,7 +492,7 @@ public class PeakPathAnalyzer {
                             } else {
                                 dis = testPeakDist.getPeak().getIntensity() * intensityScale;
                             }
-                            double estValue = krig[jDim].interpolate(testConc);
+                            double estValue = gaussianProcessRegressions[jDim].predict(testConc);
                             System.out.printf("%10s %d %7.3f %7.3f\n", testPeakDist.getPeak(), jDim, dis, estValue);
                             sum += (dis - estValue) * (dis - estValue);
                         }
@@ -541,116 +537,6 @@ public class PeakPathAnalyzer {
         peakPaths.getPathMap().put(newPath.getFirstPeak(), newPath);
 
         return bestPath;
-    }
-
-    public static ArrayList<Peak> scan2(PeakPaths peakPaths, final String startPeakName, double radius, double tolMul, int midListIndex, final String lastPeakName) {
-        double[][] indVars = peakPaths.getXValues();
-        double[] tols = peakPaths.getTols();
-        double[] weights = peakPaths.getWeights();
-        int[] peakDims = peakPaths.getPeakDims();
-
-        Peak startPeak = PeakList.getAPeak(startPeakName);
-        List<PeakDistance> peakDistances = new ArrayList<>();
-        List<List<PeakDistance>> filteredLists;
-        if (lastPeakName.length() != 0) {
-            Peak lastPeak = PeakList.getAPeak(lastPeakName);
-            double distance = peakPaths.calcDistance(startPeak, lastPeak);
-            double[] cDeltas = peakPaths.calcDeltas(startPeak, lastPeak);
-            PeakDistance peakDis = new PeakDistance(lastPeak, distance, cDeltas);
-            peakDistances.add(peakDis);
-            filteredLists = peakPaths.getNearPeaks(startPeak, distance * 1.1);
-        } else {
-            filteredLists = peakPaths.getNearPeaks(startPeak, radius);
-            List<PeakDistance> lastPeaks = filteredLists.get(filteredLists.size() - 1);
-            for (PeakDistance peakDis : lastPeaks) {
-                peakDistances.add(peakDis);
-            }
-            Collections.sort(peakDistances);
-        }
-        List<PeakDistance> midPeaks = filteredLists.get(midListIndex);
-        double firstConc = indVars[0][0];
-        double midConc = indVars[0][midListIndex];
-        double lastConc = indVars[0][indVars[0].length - 1];
-        double firstBConc = indVars[1][0];
-        double midBConc = indVars[1][midListIndex];
-        double lastBConc = indVars[1][indVars[1].length - 1];
-        ArrayList<Peak> bestPath = new ArrayList<>();
-        double sum = 0.0;
-
-        for (int iDim : peakDims) {
-            double boundary = startPeak.getPeakDim(iDim).getBoundsValue();
-            sum += boundary * boundary / (weights[iDim] * weights[iDim]);
-        }
-        double tol = tolMul * Math.sqrt(sum);
-        double minRMS = Double.MAX_VALUE;
-        int lastList = 0;
-        double maxDis = 0.0;
-        for (int iList = filteredLists.size() - 1; iList > 0; iList--) {
-            List<PeakDistance> peakDists = filteredLists.get(iList);
-            if (!peakDists.isEmpty()) {
-                PeakDistance peakDist = peakDists.get(0);
-                maxDis = peakDist.getDistance();
-                lastList = iList;
-                break;
-            }
-        }
-        maxDis += tol;
-        System.out.printf("last %2d %7.3f\n", lastList, maxDis);
-        List<Double> concList = new ArrayList<>();
-        List<double[]> disList = new ArrayList<>();
-        for (int iList = 1; iList < filteredLists.size(); iList++) {
-            List<PeakDistance> peakDists = filteredLists.get(iList);
-            for (PeakDistance peakDist : peakDists) {
-                if (peakDist.getDistance() < maxDis) {
-                    bestPath.add(peakDist.getPeak());
-                    concList.add(indVars[0][iList]);
-                    disList.add(peakDist.getDeltas());
-                } else {
-                    bestPath.add(null);
-                }
-
-            }
-        }
-        double[][] xValues = new double[disList.size()][1];
-        double[] yValues = new double[disList.size()];
-        double[] weightValues = new double[yValues.length];
-        double dTol = startPeak.getPeakDim(0).getLineWidthValue();
-        for (int i = 0; i < yValues.length; i++) {
-            yValues[i] = disList.get(i)[0];
-            xValues[i][0] = concList.get(i);
-            weightValues[i] = dTol;
-        }
-        MercerKernel mKernel = new GaussianKernel(2000.0);
-        var gRegr = GaussianProcessRegression.fit(xValues, yValues, mKernel, 0.001);
-        Variogram vGram = new PowerVariogram(xValues, yValues);
-        KrigingInterpolation krig = new KrigingInterpolation(xValues, yValues, vGram, weightValues);
-        for (int i = 0; i < yValues.length; i++) {
-            double v = krig.interpolate(xValues[i][0]);
-        }
-        for (int i = 0; i < 10; i++) {
-            double x0 = i * 150.0;
-            double[] xx = {i * 150.0};
-
-        }
-
-        return bestPath;
-    }
-
-    static double[] fitPoly(double[] x, double[] y, int order) {
-        if (x.length == 1) {
-            double[] coef = new double[1];
-            coef[0] = y[0] / x[0];
-            return coef;
-        }
-        Matrix mat = new Matrix(x.length, order);
-        for (int i = 0; i < x.length; i++) {
-            for (int j = 0; j < order; j++) {
-                mat.set(i, j, Math.pow(x[i], order + 1));
-            }
-        }
-        Matrix.SVD svd = mat.svd();
-        double[] s = svd.s;
-        return svd.solve(y);
     }
 
     static double predictWithPoly(double[] coefs, double x) {

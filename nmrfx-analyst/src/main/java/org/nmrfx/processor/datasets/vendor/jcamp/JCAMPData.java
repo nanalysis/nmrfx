@@ -22,10 +22,7 @@ import com.nanalysis.jcamp.parser.JCampParser;
 import com.nanalysis.jcamp.util.JCampUtil;
 import org.apache.commons.math3.complex.Complex;
 import org.codehaus.commons.nullanalysis.Nullable;
-import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.DatasetException;
-import org.nmrfx.processor.datasets.DatasetGroupIndex;
-import org.nmrfx.processor.datasets.DatasetType;
+import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.*;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
@@ -53,25 +50,32 @@ public class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
     private static final double SCALE = 1.0;
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[2];
 
     /**
      * JCamp-defined acquisition scheme.
      */
     enum AcquisitionScheme {
-        UNDEFINED("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        NOT_PHASE_SENSITIVE("sep", new double[0]),
-        TPPI("real", new double[0]),
-        STATES("hyper-r", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        STATES_TPPI("hyper", new double[]{1, 0, 0, 0, 0, 0, 1, 0}),
-        ECHO_ANTIECHO("echo-antiecho-r", new double[]{1, 0, -1, 0, 0, 1, 0, 1}),
-        QSEQ("real", new double[0]);
+        UNDEFINED(AcquisitionType.HYPER),
+        NOT_PHASE_SENSITIVE(AcquisitionType.SEP),
+        TPPI(AcquisitionType.REAL),
+        STATES(AcquisitionType.HYPER_R),
+        STATES_TPPI(AcquisitionType.HYPER),
+        ECHO_ANTIECHO(AcquisitionType.ECHO_ANTIECHO_R),
+        QSEQ(AcquisitionType.REAL);
 
-        public final String symbolicCoefs;
-        public final double[] coefs;
+        private final AcquisitionType acquisitionType;
 
-        AcquisitionScheme(String symbolicCoefs, double[] coefs) {
-            this.symbolicCoefs = symbolicCoefs;
-            this.coefs = coefs;
+        AcquisitionScheme(AcquisitionType acquisitionType) {
+            this.acquisitionType = acquisitionType;
+        }
+
+        public String getSymbolicCoefs() {
+            return acquisitionType.getLabel();
+        }
+
+        public double[] getCoefs() {
+            return acquisitionType.getCoefficients();
         }
     }
 
@@ -102,7 +106,7 @@ public class JCAMPData implements NMRData {
         NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
     }
 
-    private final String path;
+    private final File file;
     private final JCampDocument document;
     private final JCampBlock block;
     private final double[][] real;
@@ -119,11 +123,10 @@ public class JCAMPData implements NMRData {
     private final Map<Integer, Integer> size = new HashMap<>();
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
-    public JCAMPData(String path) throws IOException {
-        this.path = path;
+    public JCAMPData(File file) throws IOException {
+        this.file = file;
 
-        log.info("Parsing JCAMP data: {}", path);
-        this.document = new JCampParser().parse(new File(path));
+        this.document = new JCampParser().parse(file);
 
         if (document.getBlockCount() == 0) {
             throw new IOException("Invalid JCamp document, doesn't contain any block.");
@@ -157,6 +160,10 @@ public class JCAMPData implements NMRData {
         return matrix;
     }
 
+    public String getTitle() {
+        return document.getTitle();
+    }
+
     @Override
     public void close() {
         // Nothing to close
@@ -164,7 +171,7 @@ public class JCAMPData implements NMRData {
 
     @Override
     public String getFilePath() {
-        return path;
+        return file.toString();
     }
 
     private JCampRecord getRecord(String name) {
@@ -339,9 +346,9 @@ public class JCAMPData implements NMRData {
         // if none is present, then try to guess from first/last timestamps
 
         Optional<Label> label = getSWLabel(dim);
-        if(label.isPresent()) {
+        if (label.isPresent()) {
             return block.get(label.get(), dim).getDouble();
-        } else if(dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
+        } else if (dim == 0 && block.contains(FIRST) && block.contains(LAST)) {
             log.debug("Trying to guess SW from FIRST and LAST records for dimension {}", dim);
             double first = block.get(FIRST).getDoubles()[0];
             double last = block.get(LAST).getDoubles()[0];
@@ -481,7 +488,7 @@ public class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        return scheme == null ? new double[0] : scheme.coefs;
+        return scheme == null ? new double[0] : scheme.getCoefs();
     }
 
     @Override
@@ -491,8 +498,17 @@ public class JCAMPData implements NMRData {
         }
 
         AcquisitionScheme scheme = getAcquisitionScheme();
-        return scheme == null ? null : scheme.symbolicCoefs;
+        return scheme == null ? null : scheme.getSymbolicCoefs();
     }
+
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
+    }
+
 
     @Override
     public String getVendor() {
@@ -766,11 +782,11 @@ public class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegateImag(int dim) {
-        if(dim == 0) {
+        if (dim == 0) {
             return false;
         }
 
-        if("sep".equals(getSymbolicCoefs(dim))) {
+        if (AcquisitionType.SEP.getLabel().equals(getSymbolicCoefs(dim))) {
             return false;
         }
         boolean reverse = block.optional($REVERSE, dim).map(JCampRecord::getString)
@@ -835,11 +851,11 @@ public class JCAMPData implements NMRData {
     /**
      * Check whether the path contains a JCamp FID file
      *
-     * @param bpath the path to check
+     * @param file the path to check
      * @return true if the path correspond to a JCamp FID file.
      */
-    public static boolean findFID(StringBuilder bpath) {
-        String lower = bpath.toString().toLowerCase();
+    public static boolean findFID(File file) {
+        String lower = file.getName().toLowerCase();
         return MATCHING_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
@@ -847,26 +863,28 @@ public class JCAMPData implements NMRData {
     /**
      * Check whether the path contains a JCamp dataset file
      *
-     * @param bpath the path to check
+     * @param file the path to check
      * @return true if the path correspond to a JCamp dataset file.
      */
-    public static boolean findData(StringBuilder bpath) {
+    public static boolean findData(File file) {
         // FID and Dataset have the same extensions
-        return findFID(bpath);
+        return findFID(file);
     }
 
     /**
      * Get the total size of a dimension including both real and imaginary.
+     *
      * @param dim The dimension to use.
      * @return The total size.
      */
     private int getTotalSize(int dim) {
-        int factor = isComplex(dim) ? 2: 1;
+        int factor = isComplex(dim) ? 2 : 1;
         return getSize(dim) * factor;
     }
 
     /**
      * Get a name to use for a dataset based on the provided filename.
+     *
      * @param file The File object to parse the dataset name from.
      * @return A String dataset name.
      */
@@ -882,17 +900,17 @@ public class JCAMPData implements NMRData {
     /**
      * Create a Dataset from the JCAMP data. This method assumes the JCAMP data has already
      * been processed.
+     *
      * @param datasetName The String name to use for the new Dataset.
      * @return The newly created Dataset.
      * @throws IOException
      * @throws DatasetException
      */
     public Dataset toDataset(String datasetName) throws IOException, DatasetException {
-        File file = new File(path);
         Path fpath = file.toPath();
 
         int[] dimSizes = new int[getNDim()];
-        for(int i = 0; i < getNDim(); i++) {
+        for (int i = 0; i < getNDim(); i++) {
             dimSizes[i] = getTotalSize(i);
         }
 
@@ -905,7 +923,7 @@ public class JCAMPData implements NMRData {
         // Set the processed data into the dataset
         boolean hasImaginaryData = this.imaginary.length != 0;
         Vec complex;
-        for (int index = 0; index < this.real.length; index++){
+        for (int index = 0; index < this.real.length; index++) {
             if (hasImaginaryData) {
                 complex = new Vec(this.real[index], this.imaginary[index]);
             } else {

@@ -670,9 +670,9 @@ public class EnergyLists {
                 return dihedral;
             case 4:
                 Point3 pt0,
-                 pt1,
-                 pt2,
-                 pt3;
+                        pt1,
+                        pt2,
+                        pt3;
                 Atom[] atoms = boundary.getAtoms();
                 pt0 = atoms[0].getPoint();
                 pt1 = atoms[1].getPoint();
@@ -686,7 +686,7 @@ public class EnergyLists {
     }
 
     public static AtomEnergy calcDihedralEnergy(AngleConstraint boundary, final ForceWeight forceWeight,
-            final boolean calcDeriv) {
+                                                final boolean calcDeriv) {
         double dihedral = grabDihedral(boundary);
         double upper = boundary.getUpper();
         double lower = boundary.getLower();

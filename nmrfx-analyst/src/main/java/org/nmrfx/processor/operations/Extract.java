@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,6 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
- *
  * @author johnsonb
  */
 @PythonAPI("pyproc")
@@ -57,7 +56,6 @@ public class Extract extends Operation {
         this.istart = -1;
         this.iend = -1;
         this.ppmMode = ppmMode;
-        System.out.println(start + " " + end + " " + ppmMode);
     }
 
     @Override
@@ -100,15 +98,21 @@ public class Extract extends Operation {
         PPM ppm2 = new PPM(dend);
         int start = (int) vector.getDoublePosition(ppm1);
         int end = (int) vector.getDoublePosition(ppm2);
-        int size = vector.getSize();
-
-        if ((start < 0) || (start > (size - 1))) {
-            throw new OperationException(
-                    "Extract: start value must be > 0 and < " + (size - 1));
+        if (start > end) {
+            int hold = start;
+            start = end;
+            end = hold;
         }
-        if ((end > (size - 1)) || (end <= start)) {
-            throw new OperationException(
-                    "Extract: end value must be > " + start + " and < " + (size - 1));
+        int size = vector.getSize();
+        if (start < 0) {
+            start = 0;
+        }
+        if (end >= size) {
+            end = size -1;
+        }
+        if (Math.abs(end - start) < 4) {
+            start = 0;
+            end = size - 1;
         }
         vector.extract(start, end);
         return this;

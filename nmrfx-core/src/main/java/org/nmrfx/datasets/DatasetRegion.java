@@ -40,6 +40,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     /**
      * Checks the first line of the file to see if it is the long format of the regions file
+     *
      * @param file The file to check
      * @return True if it is a long region file, false if it is short or not a region file.
      * @throws IOException
@@ -60,6 +61,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     /**
      * Loads a region file as a list of DatasetRegion.
+     *
      * @param file The file to load.
      * @return A List of Dataset Regions
      * @throws IOException
@@ -76,6 +78,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     /**
      * Loads the long version of the region file as a list of DatasetRegions.
+     *
      * @param file The file to load.
      * @return A List of DatasetRegions
      * @throws IOException
@@ -126,18 +129,19 @@ public class DatasetRegion implements Comparator, Comparable {
 
     /**
      * Loads the short version of the region file as a list of DatasetRegions.
+     *
      * @param file The file to load.
      * @return A list of DatasetRegions
      * @throws IOException
      */
-    public static List<DatasetRegion> loadRegionsShort (File file) throws IOException {
+    public static List<DatasetRegion> loadRegionsShort(File file) throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
         List<DatasetRegion> regions = new ArrayList<>();
 
-        for (String line: lines) {
+        for (String line : lines) {
             line = line.trim();
             String[] fields = line.split("\\s+");
-            double[]x = new double[2];
+            double[] x = new double[2];
             x[0] = Double.parseDouble(fields[1]);
             x[1] = Double.parseDouble(fields[2]);
             DatasetRegion region = new DatasetRegion(x[0], x[1]);
@@ -469,7 +473,7 @@ public class DatasetRegion implements Comparator, Comparable {
     public double getMin() {
         return min;
     }
-    
+
     public int[] getMaxLocation() {
         return maxLocation;
     }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,24 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 package org.nmrfx.processor.gui;
 
-import java.util.Optional;
-import org.nmrfx.utils.properties.MenuTextField;
-import org.nmrfx.processor.datasets.vendor.NMRData;
 import javafx.event.ActionEvent;
+import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.utils.properties.MenuTextField;
+
+import java.util.Optional;
 
 /**
- *
  * @author brucejohnson
  */
 public class ReferenceMenuTextField extends MenuTextField {
@@ -101,15 +102,13 @@ public class ReferenceMenuTextField extends MenuTextField {
         double b = 5.011718;
         double ppm = a * (temp - 273.15) + b;
         return ppm;
-
     }
 
     private void crossHairMenuAction(ActionEvent event) {
         MenuItem menuItem = (MenuItem) event.getSource();
         String menuLabel = menuItem.getText();
-        PolyChart chart = processorController.chartProcessor.chart;
-        NMRData nmrData = processorController.chartProcessor.getNMRData();
-        double ppm = chart.crossHairPositions[0][1];
+        PolyChart chart = processorController.chartProcessor.getChart();
+        double ppm = chart.getCrossHairs().getPosition(0, Orientation.VERTICAL);
         System.out.println(ppm);
         double newCenter = 0.0;
         if (menuLabel.equals("0.0")) {

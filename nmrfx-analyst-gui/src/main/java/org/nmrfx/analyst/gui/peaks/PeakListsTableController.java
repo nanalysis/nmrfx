@@ -106,6 +106,7 @@ public class PeakListsTableController implements Initializable, StageBasedContro
 
     /**
      * Gets the PeakListsTableController. A new controller is created if one has not already been made.
+     *
      * @return The PeakListsTableController instance.
      */
     public static PeakListsTableController getPeakListsTableController() {

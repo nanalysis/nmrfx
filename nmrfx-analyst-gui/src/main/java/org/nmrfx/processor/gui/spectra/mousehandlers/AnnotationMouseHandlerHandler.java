@@ -32,10 +32,10 @@ public class AnnotationMouseHandlerHandler extends MouseHandler {
 
     @Override
     public void mouseReleased(MouseEvent mouseEvent) {
-            double x = mouseEvent.getX();
-            double y = mouseEvent.getY();
-            double[] dragStart = mouseBindings.getDragStart();
-            mouseBindings.getChart().finishAnno(dragStart, x, y, canvasAnnotation);
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+        double[] dragStart = mouseBindings.getDragStart();
+        mouseBindings.getChart().finishAnno(dragStart, x, y, canvasAnnotation);
     }
 
     @Override
@@ -45,10 +45,10 @@ public class AnnotationMouseHandlerHandler extends MouseHandler {
 
     @Override
     public void mouseDragged(MouseEvent mouseEvent) {
-            double x = mouseEvent.getX();
-            double y = mouseEvent.getY();
-            double[] dragStart = mouseBindings.getDragStart();
-            mouseBindings.getChart().dragAnno(dragStart, x, y, canvasAnnotation);
+        double x = mouseEvent.getX();
+        double y = mouseEvent.getY();
+        double[] dragStart = mouseBindings.getDragStart();
+        mouseBindings.getChart().dragAnno(dragStart, x, y, canvasAnnotation);
 
     }
 }

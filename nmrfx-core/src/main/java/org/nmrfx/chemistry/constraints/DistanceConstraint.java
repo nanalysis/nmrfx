@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,17 +17,18 @@
  */
 package org.nmrfx.chemistry.constraints;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.chemistry.SpatialSetGroup;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 public class DistanceConstraint implements Constraint {
+    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
 
     private final AtomDistancePair[] atomPairs;
     private final boolean isBond;
@@ -36,9 +37,11 @@ public class DistanceConstraint implements Constraint {
     protected double weight;
     protected double target;
     protected double targetErr;
+    public DistanceStat disStat = DEFAULT_STAT;
+    DistanceStat disStatAvg = DEFAULT_STAT;
 
     public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-            final double weight, final double targetValue, final double targetErr) {
+                              final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -191,7 +194,7 @@ public class DistanceConstraint implements Constraint {
 
     @Override
     public DistanceStat getStat() {
-        return null;
+        return disStat;
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
- * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ * NMRFx Processor : A Program for Processing NMR Data
+ * Copyright (C) 2004-2023 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,86 +16,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.gui;
-
-import java.text.DecimalFormat;
-import java.util.List;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.NMRAxis;
 
-/**
- *
- * @author brucejohnson
- */
 public class AxisChangeListener implements ChangeListener<Number> {
+    private final PolyChart chart;
+    private final int axisIndex;
+    private final Axis.Bound bound;
 
-    PolyChart chart;
-    int axNum;
-    int endNum;
-    static final DecimalFormat FORMATTER = new DecimalFormat();
-
-    static {
-        FORMATTER.setMaximumFractionDigits(3);
-    }
-
-    public AxisChangeListener(PolyChart chart, int axNum, int endNum) {
+    public AxisChangeListener(PolyChart chart, int axisIndex, Axis.Bound bound) {
         this.chart = chart;
-        this.axNum = axNum;
-        this.endNum = endNum;
-
+        this.axisIndex = axisIndex;
+        this.bound = bound;
     }
 
     @Override
     public void changed(ObservableValue observable, Number oldValue, Number newValue) {
-        if (axNum < chart.getNDim()) {
+        if (axisIndex < chart.getNDim()) {
             chart.updateDatasetAttributeBounds();
-            Double oldBound = (Double) oldValue;
-            double newBound = newValue.doubleValue();
-            if (chart == PolyChart.getActiveChart()) {
-                FXMLController fxmlController = chart.getFXMLController();
-                if (axNum >= 2) {
+            if (chart == PolyChartManager.getInstance().getActiveChart()) {
+                if (axisIndex >= 2) {
                     DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
-                    NMRAxis axis = chart.axes[axNum];
-                    int indexL = chart.axModes[axNum].getIndex(datasetAttributes, axNum, axis.getLowerBound());
-                    int indexU = chart.axModes[axNum].getIndex(datasetAttributes, axNum, axis.getUpperBound());
+                    Axis axis = chart.getAxes().get(axisIndex);
+                    int indexL = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
+                    int indexU = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
 
-                    chart.controller.getStatusBar().updatePlaneSpinner(indexL, axNum, 0);
-                    chart.controller.getStatusBar().updatePlaneSpinner(indexU, axNum, 1);
+                    chart.getFXMLController().getStatusBar().updatePlaneSpinner(indexL, axisIndex, 0);
+                    chart.getFXMLController().getStatusBar().updatePlaneSpinner(indexU, axisIndex, 1);
                 }
-                if (PolyChart.getNSyncGroups() > 0) {
-                    List<String> names = chart.getDimNames();
-                    String name = names.get(axNum);
-                    int syncGroup = chart.getSyncGroup(name);
 
-                    PolyChart.CHARTS.stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
-                        List<String> otherNames = otherChart.getDimNames();
-                        int i = 0;
-                        for (String otherName : otherNames) {
-                            if (otherName.equals(name)) {
-                                int otherGroup = otherChart.getSyncGroup(otherName);
-                                if ((otherGroup > 0) && (syncGroup == otherGroup)) {
-                                    if (endNum == 0) {
-                                        otherChart.axes[i].setLowerBound(newBound);
-                                    } else {
-                                        otherChart.axes[i].setUpperBound(newBound);
-                                    }
-                                    otherChart.refresh();
-                                }
-                            }
-                            i++;
-                        }
-                    });
-                }
+                PolyChartManager.getInstance().getSynchronizer().syncAxes(chart, axisIndex, bound, newValue.doubleValue());
             }
         }
     }
-
 }

@@ -8,7 +8,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
@@ -20,12 +22,18 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class ContentController {
+public class ContentController implements NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
+    @FXML
+    VBox contentVBox;
     @FXML
     ScrollPane contentScrollPane;
     @FXML
     Accordion contentAccordion;
+    @FXML
+    TitledPane datasetTitledPane;
+    @FXML
+    TitledPane peakTitledPane;
     @FXML
     ListSelectionView<String> datasetView;
     @FXML
@@ -38,9 +46,8 @@ public class ContentController {
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
     MapChangeListener mapChangeListener = change -> update();
 
-    public static ContentController create(FXMLController fxmlController, Pane processorPane) {
-        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml")
-                .withParent(processorPane);
+    public static ContentController create(FXMLController fxmlController) {
+        Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml");
         ContentController controller = builder.getController();
         controller.fxmlController = fxmlController;
         controller.datasetViewController = new DatasetView(fxmlController, controller);
@@ -62,14 +69,12 @@ public class ContentController {
         peakView.getTargetItems().addListener(peakTargetListener);
         ProjectBase.getActive().addDatasetListListener(mapChangeListener);
         ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        peakTitledPane.expandedProperty().addListener(e -> update());
+        datasetTitledPane.expandedProperty().addListener(e -> update());
     }
 
-    public void updateScrollSize(Pane pane) {
-        contentScrollPane.setMaxHeight(pane.getHeight() - 10);
-    }
-
-    private boolean isShowing() {
-        return fxmlController.isContentPaneShowing();
+    public Pane getPane() {
+        return contentVBox;
     }
 
     public void setChart(PolyChart chart) {
@@ -79,13 +84,15 @@ public class ContentController {
 
 
     public void update() {
-        if (isShowing()) {
+        if (getPane().isVisible()) {
             Platform.runLater(() -> {
-                        chart = fxmlController.getActiveChart();
-                        chart.setChartDisabled(true);
-                        datasetViewController.updateDatasetView();
-                        updatePeakView();
-                        chart.setChartDisabled(false);
+                chart = fxmlController.getActiveChart();
+                if (chart != null) {
+                    chart.setChartDisabled(true);
+                    datasetViewController.updateDatasetView();
+                    updatePeakView();
+                    chart.setChartDisabled(false);
+                }
             });
         }
     }

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,9 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author brucejohnson
- *
+ * <p>
  * The MultiVecCounter class converts an index (from 0 to nGroups-1) to a
  * VecIndex object that stores the input positions in FID at which to read the
  * vectors and the output positions in the dataset at which to write the
@@ -52,20 +51,20 @@ public class MultiVecCounter {
      * Construct a new MultiVecCounter with specified parameters describing
      * input and output data.
      *
-     * @param tdSizes an array of integers representing the size of the input
-     * data in each dimension. Output data sizes are set equal to the input data
-     * sizes.
-     * @param complex an array of booleans representing whether the input FID is
-     * complex in each dimension.
-     * @param modes an array of string values representing the order in which
-     * data was acquired. The first character of each mode is either a 'p',
-     * representing phase information, or 'd' representing time delay. The
-     * second character represents the dimension, with '1' representing the
-     * first indirect dimension. For example, "p1","p2","d1","d2" represents a
-     * typical Agilent 3D dataset with array value = "phase2,phase" and
-     * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param tdSizes     an array of integers representing the size of the input
+     *                    data in each dimension. Output data sizes are set equal to the input data
+     *                    sizes.
+     * @param complex     an array of booleans representing whether the input FID is
+     *                    complex in each dimension.
+     * @param modes       an array of string values representing the order in which
+     *                    data was acquired. The first character of each mode is either a 'p',
+     *                    representing phase information, or 'd' representing time delay. The
+     *                    second character represents the dimension, with '1' representing the
+     *                    first indirect dimension. For example, "p1","p2","d1","d2" represents a
+     *                    typical Agilent 3D dataset with array value = "phase2,phase" and
+     *                    "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
      * @param datasetNDim number of dimensions in final dataset, could be
-     * smaller than original data dimensions.
+     *                    smaller than original data dimensions.
      */
     public MultiVecCounter(int[] tdSizes, int[] groupSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
@@ -79,31 +78,31 @@ public class MultiVecCounter {
      * Construct a new MultiVecCounter with specified parameters describing
      * input and output data.
      *
-     * @param tdSizes an array of integers representing the size of the input
-     * data in each dimension
-     * @param outSizes an array of integers representing the size of the output
-     * dataset in each dimension
-     * @param groupSizes an array of integers representing the number of input rows used for each dimension
-     *                   typically 2 for phase-sensitive data (hyper complex or echo-antiecho) or 1 otherwise.
-     * @param oComplex an array of booleans representing whether the output dataset is
-     * complex in each dimension.
-     * @param modes an array of string values representing the order in which
-     * data was acquired. The first character of each mode is either a 'p',
-     * representing phase information, or 'd' representing time delay. The
-     * second character represents the dimension, with '1' representing the
-     * first indirect dimension. For example, "p1","p2","d1","d2" represents a
-     * typical Agilent 3D dataset with array value = "phase2,phase" and
-     * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
-     * @param swapIn an array of integers indicating input dimensions to swap to output dimensions
+     * @param tdSizes     an array of integers representing the size of the input
+     *                    data in each dimension
+     * @param outSizes    an array of integers representing the size of the output
+     *                    dataset in each dimension
+     * @param groupSizes  an array of integers representing the number of input rows used for each dimension
+     *                    typically 2 for phase-sensitive data (hyper complex or echo-antiecho) or 1 otherwise.
+     * @param oComplex    an array of booleans representing whether the output dataset is
+     *                    complex in each dimension.
+     * @param modes       an array of string values representing the order in which
+     *                    data was acquired. The first character of each mode is either a 'p',
+     *                    representing phase information, or 'd' representing time delay. The
+     *                    second character represents the dimension, with '1' representing the
+     *                    first indirect dimension. For example, "p1","p2","d1","d2" represents a
+     *                    typical Agilent 3D dataset with array value = "phase2,phase" and
+     *                    "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
+     * @param swapIn      an array of integers indicating input dimensions to swap to output dimensions
      * @param datasetNDim number of dimensions in final dataset, could be
-     * smaller than original data dimensions.
+     *                    smaller than original data dimensions.
      */
-    public MultiVecCounter(int[] tdSizes, int[] outSizes, int[] groupSizes, boolean[] oComplex,  String[] modes, int[] swapIn, int datasetNDim) {
+    public MultiVecCounter(int[] tdSizes, int[] outSizes, int[] groupSizes, boolean[] oComplex, String[] modes, int[] swapIn, int datasetNDim) {
         nDim = tdSizes.length;
         osizes = new int[(nDim - 1) * 2];
         isizes = new int[(nDim - 1) * 2];
         this.datasetNDim = datasetNDim;
-        init(tdSizes, outSizes, groupSizes, oComplex,  modes, swapIn);
+        init(tdSizes, outSizes, groupSizes, oComplex, modes, swapIn);
     }
 
     void init(int[] tdSizes, int[] outSizes, int[] groupSizes, boolean[] oComplex, String[] modes, int[] swapIn) {
@@ -126,7 +125,7 @@ public class MultiVecCounter {
         groupSize = 1;
         if (swapIn == null) {
             swapIn = new int[nIDim + 1];
-            for (int i = 0;i<nIDim + 1;i++) {
+            for (int i = 0; i < nIDim + 1; i++) {
                 swapIn[i] = i;
             }
         }
@@ -226,7 +225,7 @@ public class MultiVecCounter {
 
     public int[] getIndirectSizes() {
         int[] dimSizes = new int[outPoints.length];
-        for (int i =0;i<outPoints.length;i++) {
+        for (int i = 0; i < outPoints.length; i++) {
             dimSizes[i] = osizes[outPoints[i]] * osizes[outPhases[i]];
         }
         return dimSizes;
@@ -247,7 +246,7 @@ public class MultiVecCounter {
      * dataset to the corresponding locations of the raw data in the FID file.
      *
      * @param counts an array of integers corresponding to output dataset
-     * indices (with a phase and time increment position for each dimension)
+     *               indices (with a phase and time increment position for each dimension)
      * @return an integer array of input positions at which to load vector from
      * FID file.
      */
@@ -266,7 +265,7 @@ public class MultiVecCounter {
      * dataset.
      *
      * @param counts an array of integers corresponding to output dataset
-     * indices (with a phase and time increment position for each dimension)
+     *               indices (with a phase and time increment position for each dimension)
      * @return an array of output positions in dataset.
      */
     public int[] getOffsets(int[] counts) {
@@ -296,6 +295,10 @@ public class MultiVecCounter {
         try {
             for (int i = 0; i < groupSize; i++) {
                 int[] counts;
+                int index = groupSize * vecNum + i;
+                if (index >= outCounter.getSize()) {
+                    return null;
+                }
                 counts = outCounter.getCounts(groupSize * vecNum + i);
                 int[] iCounts = outToInCounter(counts);
                 inVecs[i] = inCounter.getCount(iCounts);
@@ -384,7 +387,6 @@ public class MultiVecCounter {
     }
 
     /**
-     *
      * @param args optional command line arguments
      */
     public static void main(String[] args) {

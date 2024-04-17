@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,13 +17,14 @@
  */
 package org.nmrfx.processor.math;
 
-import org.nmrfx.processor.processing.ProcessingException;
-import java.io.FileWriter;
-import java.io.IOException;
-import org.apache.commons.math3.util.FastMath;
-import java.util.Arrays;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.processor.processing.ProcessingException;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
 
 public class NESTAMath {
 

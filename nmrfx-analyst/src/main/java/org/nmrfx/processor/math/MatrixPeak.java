@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,11 @@
  */
 package org.nmrfx.processor.math;
 
-import java.util.Comparator;
 import org.apache.commons.math3.util.FastMath;
 
+import java.util.Comparator;
+
 /**
- *
  * @author Bruce Johnson
  */
 public class MatrixPeak implements Comparator<MatrixPeak> {
@@ -119,11 +119,11 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         for (int i = 0; i < intensities.length; i++) {
-            sBuilder.append(String.format(" dim %d: %5d %5d %7.2f %7.2f %7.2f %7.2f %7.2f" , i,
+            sBuilder.append(String.format(" dim %d: %5d %5d %7.2f %7.2f %7.2f %7.2f %7.2f", i,
                     offsets[i][1], pts[i][1], centers[i], widths[i],
-                    intensities[i][0],intensities[i][1],intensities[i][2]));
+                    intensities[i][0], intensities[i][1], intensities[i][2]));
         }
-        sBuilder.append(" ").append(String.format("%7.2f",height));
+        sBuilder.append(" ").append(String.format("%7.2f", height));
         return sBuilder.toString();
     }
 

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.vendor.nmrview;
 
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetGroupIndex;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -30,15 +31,17 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author bfetler
- *
+ * <p>
  * access through NMRDataUtil
  */
 public class NMRViewData implements NMRData {
@@ -48,19 +51,17 @@ public class NMRViewData implements NMRData {
     private SampleSchedule sampleSchedule = null;
     private DatasetType preferredDatasetType = DatasetType.NMRFX;
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
+    private final AcquisitionType[] symbolicCoefs = new AcquisitionType[8];
 
     /**
      * open NMRView parameter and data files
      *
-     * @param path : full path to the .fid directory, fid file or spectrum
+     * @param file : full path to the .fid directory, fid file or spectrum
      * @throws IOException if an I/O error occurs
      */
-    public NMRViewData(String path) throws IOException {
-        if (path.endsWith(File.separator)) {
-            path = path.substring(0, path.length() - 1);
-        }
-        this.fpath = path;
-        openDataFile(path);
+    public NMRViewData(File file, boolean saveToProject) throws IOException {
+        this.fpath = file.toString();
+        openDataFile(file.toString(), saveToProject);
     }
 
     @Override
@@ -68,15 +69,15 @@ public class NMRViewData implements NMRData {
         dataset.close();
     }
 
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
+    public static boolean findFID(File file) {
+        return findFIDFiles(file);
     }
 
-    private static boolean findFIDFiles(String dpath) {
+    private static boolean findFIDFiles(File file) {
         boolean found = false;
-        if (dpath.endsWith(".nv")) {
+        if (file.getName().endsWith(".nv")) {
             found = true;
-        } else if (dpath.endsWith(".ucsf")) {
+        } else if (file.getName().endsWith(".ucsf")) {
             found = true;
         }
         return found;
@@ -115,17 +116,17 @@ public class NMRViewData implements NMRData {
 
     @Override
     public String getPar(String parname) {
-            return null;
+        return null;
     }
 
     @Override
     public Double getParDouble(String parname) {
-            return null;
+        return null;
     }
 
     @Override
     public Integer getParInt(String parname) {
-            return null;
+        return null;
     }
 
     @Override
@@ -258,6 +259,14 @@ public class NMRViewData implements NMRData {
         return null;
     }
 
+    public void setUserSymbolicCoefs(int iDim, AcquisitionType coefs) {
+        symbolicCoefs[iDim] = coefs;
+    }
+
+    public AcquisitionType getUserSymbolicCoefs(int iDim) {
+        return symbolicCoefs[iDim];
+    }
+
     @Override
     public double[] getCoefs(int iDim) {
         String name = "f" + iDim + "coef";
@@ -338,7 +347,7 @@ public class NMRViewData implements NMRData {
     public String getFTType(int iDim) {
         return "ft";
     }
-    
+
     @Override
     public String getTN(int iDim) {
         return dataset.getNucleus(iDim).getName();
@@ -525,16 +534,14 @@ public class NMRViewData implements NMRData {
     }
 
     // open NMRView data file, read header
-    private void openDataFile(String datapath) throws IOException {
-        System.out.println("open data file " + datapath);
+    private void openDataFile(String datapath, boolean saveToProject) throws IOException {
         File file = new File(datapath);
 
-        List<DatasetBase> currentDatasets = Project.getActive().getDatasetsWithFile(file);
+        List<DatasetBase> currentDatasets = ProjectBase.getActive().getDatasetsWithFile(file);
         if (!currentDatasets.isEmpty()) {
-            System.out.println("already open");
             dataset = (Dataset) currentDatasets.get(0);
         } else {
-            dataset = new Dataset(datapath, datapath, true, false);
+            dataset = new Dataset(datapath, datapath, true, false, saveToProject);
         }
     }
 

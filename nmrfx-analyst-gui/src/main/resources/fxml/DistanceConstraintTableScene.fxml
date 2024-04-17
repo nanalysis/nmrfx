@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            prefHeight="350.0" prefWidth="600" styleClass="mainFxmlClass"
+            fx:id="attrBorderPane"
+            fx:controller="org.nmrfx.analyst.gui.peaks.DistanceConstraintTableController">
+    <top>
+        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="600"
+                 BorderPane.alignment="CENTER">
+            <items>
+            </items>
+        </ToolBar>
+    </top>
+    <center>
+        <TableView fx:id="tableView"/>
+    </center>
+</BorderPane>

@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,6 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
- *
  * @author brucejohnson
  */
 public class PeakMenu extends ChartMenu {
@@ -49,7 +48,7 @@ public class PeakMenu extends ChartMenu {
 
     void showPeakInspector() {
         chart.focus();
-        FXMLController controller = chart.getController();
+        FXMLController controller = chart.getFXMLController();
         controller.showPeakAttr();
         if (peak != null) {
             controller.getPeakAttrController().gotoPeak(peak);
@@ -59,5 +58,9 @@ public class PeakMenu extends ChartMenu {
 
     public void setActivePeak(Peak peak) {
         this.peak = peak;
+    }
+
+    public Peak getPeak() {
+        return peak;
     }
 }

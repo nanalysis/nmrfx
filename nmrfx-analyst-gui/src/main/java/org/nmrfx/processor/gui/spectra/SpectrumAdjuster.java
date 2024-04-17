@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,18 +17,8 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -36,19 +26,21 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+
+import java.util.*;
 
 /**
- *
  * @author brucejohnson
  */
 public class SpectrumAdjuster {
-
-    static Map<String, Double> datasetUndo = new HashMap<>();
-    static Map<String, Double> peakUndo = new HashMap<>();
-    static String undoChartName;
+    private static final Map<String, Double> datasetUndo = new HashMap<>();
+    private static final Map<String, Double> peakUndo = new HashMap<>();
+    private static String undoChartName;
 
     public static void showRefInput() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         int nDim = 1;
         if (chart.getNDim() > 1) {
             nDim = 2;
@@ -70,9 +62,7 @@ public class SpectrumAdjuster {
             TextField textField = new TextField();
             grid.add(textField, 1, i + 1);
             textFields.add(textField);
-            textField.textProperty().addListener(e -> {
-                checkChange(applyButton, textField);
-            });
+            textField.textProperty().addListener(e -> checkChange(applyButton, textField));
         }
         CheckBox saveParButton = new CheckBox("Save Par File");
         saveParButton.setSelected(true);
@@ -109,7 +99,7 @@ public class SpectrumAdjuster {
         for (TextField textField : textFields) {
             String s = textField.getText();
             s = s.trim();
-            if (s.length() != 0) {
+            if (!s.isEmpty()) {
                 try {
                     double newRef = Double.parseDouble(s);
                     processReference(chart, iDim, newRef, shiftPeaks);
@@ -125,27 +115,39 @@ public class SpectrumAdjuster {
 
         }
         if (savePars) {
-            writePars(chart);
+            writePars(chart, false);
         }
         chart.refresh();
 
     }
 
     public static void writePars() {
-        PolyChart chart = PolyChart.getActiveChart();
-        writePars(chart);
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
+        writePars(chart, true);
     }
 
-    private static void writePars(PolyChart chart) {
+    private static void writePars(PolyChart chart, boolean updateAttributes) {
         for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
             DatasetBase dataset = dataAttr.getDataset();
+            if (updateAttributes) {
+                dataset.setLvl(dataAttr.getLvl());
+                int posNeg = 0;
+                if (dataAttr.getPos()) {
+                    posNeg = 1;
+                }
+                if (dataAttr.getNeg()) {
+                    posNeg |= 2;
+                }
+
+                dataset.setPosneg(posNeg);
+            }
             dataset.writeParFile();
         }
 
     }
 
     public static void processReference(PolyChart chart, int iDim, double newPos, boolean shiftPeaks) {
-        Double[] cPos = chart.getCrossHairs().getCrossHairPositions(0);
+        Double[] cPos = chart.getCrossHairs().getPositions(0);
         double oldPos = cPos[iDim];
         double delta = newPos - oldPos;
         undoChartName = chart.getName();
@@ -179,24 +181,24 @@ public class SpectrumAdjuster {
     }
 
     public static void adjustDatasetRef(Optional<Double> delXOpt,
-            Optional<Double> delYOpt, boolean shiftDataset, boolean alwaysShiftPeaks) {
-        PolyChart chart = PolyChart.getActiveChart();
+                                        Optional<Double> delYOpt, boolean shiftDataset, boolean alwaysShiftPeaks) {
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         CrossHairs crossHairs = chart.getCrossHairs();
         int nDim = 1;
         if (chart.getNDim() > 1) {
             nDim = 2;
         }
-        Double[] c0 = crossHairs.getCrossHairPositions(0);
-        Double[] c1 = crossHairs.getCrossHairPositions(1);
+        Double[] c0 = crossHairs.getPositions(0);
+        Double[] c1 = crossHairs.getPositions(1);
 
         double[] deltas = {0.0, 0.0};
         boolean gotShifts = false;
-        if (crossHairs.hasCrosshairState("||") || delXOpt.isPresent()) {
-            deltas[0] = delXOpt.isPresent() ? delXOpt.get() : c1[0] - c0[0];
+        if (crossHairs.hasState("||") || delXOpt.isPresent()) {
+            deltas[0] = delXOpt.orElseGet(() -> c1[0] - c0[0]);
             gotShifts = true;
         }
-        if ((nDim > 1) && (crossHairs.hasCrosshairState("=") || delYOpt.isPresent())) {
-            deltas[1] = delYOpt.isPresent() ? delXOpt.get() : c1[1] - c0[1];
+        if ((nDim > 1) && (crossHairs.hasState("=") || delYOpt.isPresent())) {
+            deltas[1] = delYOpt.isPresent() ? delYOpt.get() : c1[1] - c0[1];
             gotShifts = true;
         }
         if (gotShifts) {
@@ -226,24 +228,24 @@ public class SpectrumAdjuster {
                 }
             }
             if (shiftDataset && saveParFiles()) {
-                writePars(chart);
+                writePars(chart, false);
             }
             chart.refresh();
         }
     }
 
     public static void adjustDiagonalReference() {
-        PolyChart chart = PolyChart.getActiveChart();
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart.getNDim() < 2) {
             return;
         }
         CrossHairs crossHairs = chart.getCrossHairs();
-        if (!crossHairs.hasCrosshairState("|_")) {
+        if (!crossHairs.hasState("|_")) {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Need a vertical and horizontal crosshair");
             alert.showAndWait();
             return;
         }
-        Double[] pos = crossHairs.getCrossHairPositions();
+        Double[] pos = crossHairs.getPositions();
 
         double delta = pos[0] - pos[1];
         boolean ok = true;
@@ -259,7 +261,7 @@ public class SpectrumAdjuster {
             datasetUndo.clear();
             peakUndo.clear();
             undoChartName = chart.getName();
-            chart.getDatasetAttributes().forEach((dataAttr) -> {
+            chart.getDatasetAttributes().forEach(dataAttr -> {
                 int dataDim = dataAttr.dim[1];
                 DatasetBase dataset = dataAttr.getDataset();
                 double oldRef = dataset.getRefValue(dataDim);
@@ -277,24 +279,24 @@ public class SpectrumAdjuster {
 
             chart.refresh();
             if (saveParFiles()) {
-                writePars(chart);
+                writePars(chart, false);
             }
         }
     }
 
     public static void undo() {
-        Optional<PolyChart> chartOpt = PolyChart.getChart(undoChartName);
+        Optional<PolyChart> chartOpt = PolyChartManager.getInstance().findChartByName(undoChartName);
         if (chartOpt.isPresent()) {
             for (Map.Entry<String, Double> entry : datasetUndo.entrySet()) {
                 String[] fields = entry.getKey().split(":");
                 Dataset dataset = Dataset.getDataset(fields[0]);
-                int iDim = Integer.valueOf(fields[1]);
+                int iDim = Integer.parseInt(fields[1]);
                 dataset.setRefValue(iDim, entry.getValue());
             }
             for (Map.Entry<String, Double> entry : peakUndo.entrySet()) {
                 String[] fields = entry.getKey().split(":");
-                PeakList peakList = (PeakList) PeakList.get(fields[0]);
-                int iDim = Integer.valueOf(fields[1]);
+                PeakList peakList = PeakList.get(fields[0]);
+                int iDim = Integer.parseInt(fields[1]);
                 peakList.shiftPeak(iDim, -entry.getValue());
             }
             chartOpt.get().refresh();

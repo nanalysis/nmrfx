@@ -12,17 +12,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *
  * @author brucejohnson
  */
 @PythonAPI("autoscript")
 public class ProcessingLib {
-
-    static Map<String, SequenceScript> sequences = new HashMap<>();
-    static String fileName = "resource:psglib/bruker.yaml";
+    private static final String FILE_NAME = "resource:psglib/bruker.yaml";
+    private static final Map<String, SequenceScript> sequences = new HashMap<>();
 
     public static class SequenceScript {
-
         final String name;
         final int nDim;
         final String vendor;
@@ -55,7 +52,7 @@ public class ProcessingLib {
         }
 
         public SequenceScript(String name, List<String> aliases, String vendor, int nDim, String script,
-                Map<String, Object> vars) {
+                              Map<String, Object> vars) {
             this.name = name;
             this.vendor = vendor;
             this.nDim = nDim;
@@ -122,7 +119,7 @@ public class ProcessingLib {
 
     public static SequenceScript findSequence(String seqName, String vendor, int nDim) throws IOException {
         if (sequences.isEmpty()) {
-            loadYaml(fileName);
+            loadYaml(FILE_NAME);
         }
         int matchMode = 0;
         while (true) {

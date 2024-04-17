@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /*
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -38,13 +38,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Bruce Johnson
  */
 @PythonAPI("pyproc")
 public class NESTANMREx extends MatrixOperation {
+    private static final String ROOT_NAME = "test";
+    private static final String IN_SUFFIX = "nestain";
+    private static final String OUT_SUFFIX = "nestaout";
 
-    public static File nestaExecutable = new File("NESTANMR");
+    private static File nestaExecutable = new File("NESTANMR");
     private final int iterations;
     private final int rwIterations;
     private final int method;
@@ -55,9 +57,6 @@ public class NESTANMREx extends MatrixOperation {
     private final String schedFile;
     private final double[] phases;  // init zero values
 
-    private final String rootName = "test";
-    private final String inSuffix = "nestain";
-    private final String outSuffix = "nestaout";
 
     FileSystem fileSys = FileSystems.getDefault();
     ProcessBuilder pb = new ProcessBuilder();
@@ -67,12 +66,11 @@ public class NESTANMREx extends MatrixOperation {
      * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
      */
     /**
-     *
-     * @param iterations The number of NESTA iterations to execute
+     * @param iterations   The number of NESTA iterations to execute
      * @param rwIterations The number of NESTA re-weighted iterations to execute
-     * @param nestDirName The name of the file in which to execute the code
-     * @param schedFile The schedule file
-     * @param phaseList List of phases to apply before processing
+     * @param nestDirName  The name of the file in which to execute the code
+     * @param schedFile    The schedule file
+     * @param phaseList    List of phases to apply before processing
      */
     public NESTANMREx(int iterations, int rwIterations, String nestDirName, String schedFile, ArrayList phaseList) {
         this.iterations = iterations;
@@ -111,11 +109,10 @@ public class NESTANMREx extends MatrixOperation {
     }
 
     /**
-     *
-     * @param iterations The number of NESTA iterations to execute
+     * @param iterations   The number of NESTA iterations to execute
      * @param rwIterations The number of NESTA re-weighted iterations to execute
-     * @param nestDirName The name of the file in which to execute the code
-     * @param schedule The sampling schedule object which contains a reference to the schedule file
+     * @param nestDirName  The name of the file in which to execute the code
+     * @param schedule     The sampling schedule object which contains a reference to the schedule file
      */
     public NESTANMREx(int iterations, double scaling, double cutoff, String nestDirName, String schedFile, ArrayList phaseList) {
         this.iterations = iterations;
@@ -163,13 +160,13 @@ public class NESTANMREx extends MatrixOperation {
     @Override
     public Operation evalMatrix(MatrixType matrix) throws ProcessingException {
         int fileIndex = matrix.getIndex();
-        Path fileRoot = fileSys.getPath(nestDir.getPath(), rootName);
+        Path fileRoot = fileSys.getPath(nestDir.getPath(), ROOT_NAME);
         String matFileName;
         if (phases != null) {
             matrix.phase(phases);
         }
         try {
-            matFileName = matrix.exportData(fileRoot.toString(), inSuffix, true);
+            matFileName = matrix.exportData(fileRoot.toString(), IN_SUFFIX, true);
         } catch (IOException ioE) {
             throw new ProcessingException(ioE.getMessage());
         }
@@ -188,7 +185,7 @@ public class NESTANMREx extends MatrixOperation {
             throw new ProcessingException(e.getLocalizedMessage());
         }
         try {
-            String outFileName = matrix.importData(fileRoot.toString(), outSuffix, true);
+            String outFileName = matrix.importData(fileRoot.toString(), OUT_SUFFIX, true);
             Files.delete(fileSys.getPath(matFileName));
             Files.delete(fileSys.getPath(matFileName + ".par"));
             Files.delete(fileSys.getPath(outFileName));

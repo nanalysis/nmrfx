@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2018 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,6 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.utils.GUIUtils;
 
 /**
- *
  * @author brucejohnson
  */
 public class IntegralMenu extends ChartMenu {
@@ -70,6 +69,7 @@ public class IntegralMenu extends ChartMenu {
         chart.refresh();
 
     }
+
     void setIntegralNormToValue() {
         DatasetRegion region = hit.getDatasetRegion();
         double integral = region.getIntegral();

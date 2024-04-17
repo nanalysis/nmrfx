@@ -1,5 +1,5 @@
 /*
- * NMRFx Processor : A Program for Processing NMR Data 
+ * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -54,8 +54,8 @@ public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
      * An object that represents a mapping of specified dataset with a memory
      * map.
      *
-     * @param dataset Dataset object that uses this mapped matrix file
-     * @param raFile The Random access file that actually stores data
+     * @param dataset  Dataset object that uses this mapped matrix file
+     * @param raFile   The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
