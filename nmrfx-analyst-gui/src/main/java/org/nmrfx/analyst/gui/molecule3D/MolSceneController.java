@@ -2,9 +2,6 @@ package org.nmrfx.analyst.gui.molecule3D;
 
 import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
-import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -34,9 +31,9 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
-import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
@@ -47,7 +44,6 @@ import org.nmrfx.structure.rna.RNALabels;
 import org.nmrfx.structure.rna.SSLayout;
 import org.nmrfx.structure.rna.SSPredictor;
 import org.nmrfx.utilities.ProgressUpdater;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +51,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.*;
 
-import static org.nmrfx.analyst.gui.molecule3D.MolSceneController.StructureCalculator.StructureMode.*;
+import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode.*;
 
 public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, ProgressUpdater, MoleculeListener {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
@@ -112,7 +108,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
-    private StructureCalculator structureCalculator = new StructureCalculator();
+    private StructureCalculator structureCalculator = new StructureCalculator(this);
     SSPredictor ssPredictor = null;
 
     @Override
@@ -865,7 +861,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     @FXML
     private void ssTo3D() {
-        structureCalculator.setMode(INIT);
+        structureCalculator.setMode(RNA);
         calcStructure();
     }
     @FXML
@@ -1014,173 +1010,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         GradientRefinement.setUpdater(this);
         setProcessingOn();
         statusBar.setProgress(0.0);
-        ((Service) structureCalculator.worker).restart();
-    }
-
-    String getScript(StructureCalculator.StructureMode mode) {
-        int seed = random.nextInt();
-        StringBuilder scriptB = new StringBuilder();
-        scriptB.append("homeDir = os.getcwd()\n");
-        scriptB.append("print yamlString\n");
-        scriptB.append("data=readYamlString(yamlString)\n");
-        scriptB.append("global refiner\n");
-        scriptB.append("dataDir=homeDir+'/'\n");
-        scriptB.append("refiner=refine()\n");
-        scriptB.append("osfiles.setOutFiles(refiner,dataDir," + seed + ")\n");
-        scriptB.append("refiner.rootName = 'temp'\n");
-        scriptB.append("refiner.loadFromYaml(data," + seed + ")\n");
-        if (mode == INIT) {
-            scriptB.append("refiner.init(save=False)\n");
-        } else if (mode == REFINE) {
-            scriptB.append("refiner.refine(refiner.dOpt)\n");
-            scriptB.append("refiner.dump(0.1,0.2, '')\n");
-        } else if (mode == ANNEAL) {
-            scriptB.append("refiner.anneal(refiner.dOpt)\n");
-            scriptB.append("refiner.dump(0.1,0.2, '')\n");
-        }
-        return scriptB.toString();
-    }
-
-    String genYaml(StructureCalculator.StructureMode mode) {
-        Molecule molecule = Molecule.getActive();
-        boolean isRNA = false;
-        boolean isLigand = false;
-        if (!molecule.getPolymers().isEmpty()) {
-             isRNA = molecule.getPolymers().get(0).isRNA();
-        }
-        if (molecule.getPolymers().isEmpty()) {
-            isLigand = true;
-        }
-        StringBuilder scriptB = new StringBuilder();
-        if (isRNA & (mode == INIT || mode == ANNEAL)) {
-            scriptB.append("rna:\n");
-            scriptB.append("    ribose : Constrain\n");
-            String dotBracket = molecule.getDotBracket();
-            if (dotBracket.length() > 0) {
-                scriptB.append("    vienna : ");
-                scriptB.append("'" + dotBracket + "'\n");
-            }
-            scriptB.append("""
-                        planarity : 1
-                        autolink : True
-                    tree:
-                    initialize:
-                        vienna :
-                            restrain : True
-                            lockfirst: False
-                            locklast: False
-                            lockloop: False
-                            lockbulge: False
-                    """);
-        }
-        if (isLigand) {
-            scriptB.append("tree:\n");
-        }
-        scriptB.append("""
-                anneal:
-                    dynOptions :
-                        steps : 15000
-                        highTemp : 5000.0
-                        dfreeSteps : 0
-                    force :
-                        tors : 0.1
-                        irp : 0.0
-                    stage4.1 :
-                        nStepVal : 5000
-                        tempVal : [100.0]
-                        param:
-                            dislim : 6.0
-                        force :
-                            cffnb : 1
-                            repel : -1"""
-        );
-
-        return scriptB.toString();
-
-    }
-
-    class StructureCalculator {
-        enum StructureMode {INIT, REFINE, ANNEAL}
-
-        ;
-        String script;
-        public Worker<Integer> worker;
-        StructureMode mode;
-
-        public void setMode(StructureMode mode) {
-            this.mode = mode;
-        }
-
-        private StructureCalculator() {
-            worker = new Service<Integer>() {
-
-                protected Task createTask() {
-                    return new Task() {
-                        protected Object call() {
-                            script = getScript(mode);
-                            try (PythonInterpreter processInterp = new PythonInterpreter()) {
-                                updateStatus("Start calculating");
-                                updateTitle("Start calculating");
-                                processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
-                                processInterp.set("yamlString", genYaml(mode));
-                                processInterp.exec(script);
-                            }
-                            return 0;
-                        }
-                    };
-                }
-            };
-
-            ((Service<Integer>) worker).setOnSucceeded(event -> {
-                finishProcessing();
-            });
-            ((Service<Integer>) worker).setOnCancelled(event -> {
-                setProcessingOff();
-                setProcessingStatus("cancelled", false);
-            });
-            ((Service<Integer>) worker).setOnFailed(event -> {
-                setProcessingOff();
-                final Throwable exception = worker.getException();
-                setProcessingStatus(exception.getMessage(), false, exception);
-
-            });
-
-        }
-    }
-
-    @Override
-    public void updateProgress(double f) {
-    }
-
-    @Override
-    public void updateStatus(String s) {
-        Fx.runOnFxThread(() -> {
-            setProcessingStatus(s, true);
-            updateView();
-        });
-    }
-
-    void updateView() {
-        removeAll();
-        try {
-            drawCartoon();
-            molViewer.centerOnSelection();
-        } catch (InvalidMoleculeException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-
-    }
-
-    void finishProcessing() {
-        updateStatus("Done calculating");
-    }
-
-    void setProcessingOff() {
-
-    }
-
-    void setProcessingOn() {
-
+        structureCalculator.restart();
     }
 
     public void setProcessingStatus(String s, boolean ok) {
@@ -1210,5 +1040,33 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
     public void moleculeChanged(MoleculeEvent e){
         Fx.runOnFxThread(ssViewer::drawSS);
+    }
+    @Override
+    public void updateProgress(double f) {
+    }
+
+    @Override
+    public void updateStatus(String s) {
+        Fx.runOnFxThread(() -> {
+            setProcessingStatus(s, true);
+            updateView();
+        });
+    }
+    void updateView() {
+        removeAll();
+        try {
+            drawCartoon();
+            molViewer.centerOnSelection();
+        } catch (InvalidMoleculeException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+
+    }
+    void setProcessingOff() {
+
+    }
+
+    void setProcessingOn() {
+
     }
 }
