@@ -647,18 +647,24 @@ public class PeakPicker {
 
     void convolutionPick(PeakList peakList) throws IOException {
         ConvolutionPickPar convolutionPickPar = peakPickPar.convolutionPickPar;
-        double widthHz;
-        if (false) {
-            widthHz = convolutionPickPar.directWidth();
-        } else {
-            widthHz = peakList.widthDStats(0).getPercentile(50);
+        int nDim = peakList.getNDim();
+        int[] n = new int[nDim];
+        double[] widthPt = new double[nDim];
+        double shapeFactor = 0.0;
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            double widthHz;
+            if (false) {
+                widthHz = convolutionPickPar.directWidth();
+            } else {
+                widthHz = peakList.widthDStats(iDim).getPercentile(50);
+            }
+            widthHz *= convolutionPickPar.scale();
+            widthPt[iDim] = (int) dataset.hzWidthToPoints(iDim, widthHz);
+            n[iDim] = (int) Math.round(widthPt[iDim] * 4 + 1);
+            shapeFactor = peakList.shapeFactorDStats(iDim).getPercentile(50);
+            System.out.println("wid " + widthHz + " " + widthPt + " " + n + " " + shapeFactor);
         }
-        widthHz *= convolutionPickPar.scale();
-        int widthPt = (int) dataset.hzWidthToPoints(0, widthHz);
-        int n = widthPt * 4 + 1;
-        double shapeFactor = peakList.shapeFactorDStats(0).getPercentile(50);
-        System.out.println("wid " + widthHz + " " + widthPt + " " + n + " " + shapeFactor);
-        ConvolutionFitter convolutionFitter = new  ConvolutionFitter(n, widthPt, shapeFactor);
+        ConvolutionFitter convolutionFitter = new ConvolutionFitter(n, widthPt, shapeFactor);
         peakList.clear();
         convolutionFitter.squash(convolutionPickPar.squash());
         convolutionFitter.lr(dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );

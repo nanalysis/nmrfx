@@ -332,29 +332,46 @@ public class ConvolutionFitter {
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {
             regions = new ArrayList<>();
-            double ppm1 = dataset.pointToPPM(0, 0);
-            double ppm2 = dataset.pointToPPM(0, dataset.getSizeReal(0) - 1.0);
-            DatasetRegion region = new DatasetRegion(ppm1, ppm2);
+            double[] x = new double[peakList.getNDim() * 2];
+            int nDim = peakList.getNDim();
+            DatasetRegion region = new DatasetRegion(x);
+            for (int iDim=0;iDim<nDim;iDim++) {
+                double ppm1 = dataset.pointToPPM(iDim, 0);
+                double ppm2 = dataset.pointToPPM(iDim, dataset.getSizeReal(iDim) - 1.0);
+                region.setRegionStart(iDim, ppm1);
+                region.setRegionEnd(iDim, ppm2);
+            }
             regions.add(region);
         }
+        int nDim = dataset.getNDim();
+        int[][] pt = new int[nDim][2];
+        int[] dim = new int[nDim];
+        int[] sizes = new int[nDim];
         for (DatasetRegion region : regions) {
-            int pt1 = dataset.ppmToPoint(0, region.getRegionStart(0));
-            int pt2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
-            if (pt1 > pt2) {
-                int hold = pt1;
-                pt1 = pt2;
-                pt2 = hold;
+            for (int iDim=0;iDim<nDim;iDim++) {
+                int pt1 = dataset.ppmToPoint(0, region.getRegionStart(0));
+                int pt2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
+                if (pt1 > pt2) {
+                    int hold = pt1;
+                    pt1 = pt2;
+                    pt2 = hold;
+                }
+                pt[iDim][0] = pt1;
+                pt[iDim][1] = pt2;
+                sizes[iDim] = pt2 - pt1 + 1;
+                dim[iDim] = iDim;
             }
-            int size = pt2 - pt1 + 1;
+            MatrixND matrixND = new MatrixND(sizes);
+            dataset.readMatrixND(pt, dim, matrixND);
 
             int psfSize = psf[0].length;
-            signal = new double[size + 2 * psfSize];
+            signal = new double[sizes[0] + 2 * psfSize];
             skip = new boolean[signal.length];
-            for (int i = 0; i < size; i++) {
-                signal[i + psfSize] = vec.getReal(i + pt1);
+            for (int i = 0; i < sizes[0]; i++) {
+                signal[i + psfSize] = vec.getReal(i + pt[0][0]);
             }
 
-            start = pt1 - psfSize;
+            start = pt[0][0] - psfSize;
             double[] result = lr(threshold, iterations);
             for (int i = 0; i < result.length; i++) {
                 if (!skip[i]) {
