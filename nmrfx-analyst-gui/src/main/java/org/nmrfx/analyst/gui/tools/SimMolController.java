@@ -14,6 +14,7 @@ import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.analyst.compounds.CompoundMatcher;
+import org.nmrfx.analyst.dataops.DBData;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -25,7 +26,10 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.SpectrumStatusBar;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
+import org.nmrfx.utils.GUIUtils;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -46,6 +50,11 @@ public class SimMolController implements ControllerTool {
     Background defaultBackground = null;
     Background errorBackground = new Background(new BackgroundFill(Color.YELLOW, null, null));
     CompoundMatcher cmpdMatcher = new CompoundMatcher();
+    ChoiceBox<LIBRARY_MODE> modeChoiceBox;
+    enum LIBRARY_MODE {
+        GISSMO,
+        SEGMENTS
+    }
 
     public SimMolController(FXMLController controller, Consumer<SimMolController> closeAction) {
         this.controller = controller;
@@ -77,6 +86,9 @@ public class SimMolController implements ControllerTool {
         toolBar.getItems().add(closeButton);
         addFiller(toolBar);
 
+        modeChoiceBox = new ChoiceBox<>();
+        modeChoiceBox.setValue(LIBRARY_MODE.GISSMO);
+        modeChoiceBox.getItems().addAll(LIBRARY_MODE.values());
         atomFieldLabel = new Label("Molecule:");
         molNameField = new TextField();
         molNameField.setPrefWidth(300);
@@ -85,6 +97,7 @@ public class SimMolController implements ControllerTool {
                 setMol();
             }
         });
+        toolBar.getItems().add(modeChoiceBox);
         toolBar.getItems().add(atomFieldLabel);
         toolBar.getItems().add(molNameField);
         addFiller(toolBar);
@@ -112,11 +125,27 @@ public class SimMolController implements ControllerTool {
     }
 
     public void setMol() {
+        LIBRARY_MODE mode = modeChoiceBox.getValue();
         String name = molNameField.getText().toLowerCase();
-        System.out.println("Mol Name: " + name);
-        if (SimData.contains(name)) {
+        if (mode == LIBRARY_MODE.SEGMENTS) {
+            String dbPath = AnalystPrefs.getSegmentLibraryFile();
+            if (dbPath == null) {
+                GUIUtils.warn("Spectrum Library", "No segment library set");
+                return;
+            } else {
+                try {
+                    DBData.loadData(Path.of(dbPath));
+                } catch (IOException ioE) {
+                    GUIUtils.warn("Spectrum Library", "Error loading library file");
+                    return;
+                }
+            }
+        }
+        boolean dataInLibrary = mode == LIBRARY_MODE.SEGMENTS ? DBData.contains(name) : SimData.contains(name);
+        if (dataInLibrary) {
             Dataset newDataset = Dataset.getDataset(name);
             PolyChart chart = controller.getActiveChart();
+            boolean appendMode = false;
             if (newDataset == null) {
                 Dataset currData = null;
                 for (PolyChart pChart : controller.getCharts()) {
@@ -125,22 +154,33 @@ public class SimMolController implements ControllerTool {
                         break;
                     }
                 }
-                SimDataVecPars pars;
                 if (currData != null) {
-                    pars = new SimDataVecPars(currData);
-                } else {
-                    pars = defaultPars();
+                    appendMode = true;
                 }
-                double lb = AnalystPrefs.getLibraryVectorLB();
-                newDataset = SimData.genDataset(name, pars, lb);
+                String label = currData == null ? "1H" : currData.getLabel(0);
+                if (mode == LIBRARY_MODE.SEGMENTS) {
+                    newDataset = DBData.makeData(name, label);
+                } else {
+                    SimDataVecPars pars;
+                    if (currData != null) {
+                        pars = new SimDataVecPars(currData);
+                    } else {
+                        pars = defaultPars();
+                    }
+                    double lb = AnalystPrefs.getLibraryVectorLB();
+                    newDataset = SimData.genDataset(name, pars, lb);
+                }
                 newDataset.addProperty("SIM", name);
             }
             controller.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
-            chart.setDataset(newDataset, true, false);
+            chart.setDataset(newDataset, appendMode, false);
 
             updateColors(chart);
             molNameField.setText("");
             chart.refresh();
+        } else {
+            GUIUtils.warn("Spectrum Library", "Entry not present " + name);
+            return;
         }
     }
 
@@ -173,11 +213,23 @@ public class SimMolController implements ControllerTool {
     }
 
     List<String> getMatchingNames(String pattern) {
-        if (!SimData.loaded()) {
-            SimData.load();
+        if (modeChoiceBox.getValue() == LIBRARY_MODE.SEGMENTS) {
+            String dbPath = AnalystPrefs.getSegmentLibraryFile();
+            try {
+                DBData.loadData(Path.of(dbPath));
+            } catch (IOException e) {
+            }
+
+            List<String> names = DBData.getNames(pattern);
+            return names;
+        } else {
+            if (!SimData.loaded()) {
+                SimData.load();
+            }
+            List<String> names = SimData.getNames(pattern);
+            return names;
+
         }
-        List<String> names = SimData.getNames(pattern);
-        return names;
 
     }
 }

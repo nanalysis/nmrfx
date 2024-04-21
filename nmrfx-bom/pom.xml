@@ -366,6 +366,11 @@
             <artifactId>openchemlib</artifactId>
             <version>2023.3.3</version>
         </dependency>
+        <dependency>
+            <groupId>berlin.yuna</groupId>
+            <artifactId>type-map</artifactId>
+            <version>2.1.2</version>
+        </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

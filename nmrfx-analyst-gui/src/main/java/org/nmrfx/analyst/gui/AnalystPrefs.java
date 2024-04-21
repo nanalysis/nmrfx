@@ -28,6 +28,8 @@ public class AnalystPrefs {
     private static DoubleProperty libraryVectorSW = null;
     private static DoubleProperty libraryVectorLB = null;
     private static DoubleProperty libraryVectorREF = null;
+
+    private static StringProperty segmentLibraryFile = null;
     private static BooleanProperty useRemotePassword = null;
     private static StringProperty remoteUserName = null;
     private static StringProperty remoteHostName = null;
@@ -37,6 +39,12 @@ public class AnalystPrefs {
 
     private AnalystPrefs() {
         throw new IllegalAccessError("Utility class shouldn't be instantiated!");
+    }
+
+
+    public static String getSegmentLibraryFile() {
+        segmentLibraryFile = PreferencesController.getString(segmentLibraryFile, "SEGMENT_LBRARY_FILE", "/Users/brucejohnson/metabo/save/all.json");
+        return segmentLibraryFile.getValue();
     }
 
     public static Integer getLibraryVectorSize() {
@@ -170,6 +178,8 @@ public class AnalystPrefs {
                 getLibraryVectorREF(), 0, 10.0, "Spectrum Library", "VectorREF",
                 "Center reference (PPM) for simulated spectra");
 
+        FileOperationItem segmentLibraryFileItem = new FileOperationItem(prefSheet, (a, b, c) -> segmentLibraryFile.setValue(c.toString()), getSegmentLibraryFile(), "Spectrum Library", "Segment Library", "File containing segment library");
+
         TextOperationItem remoteUserItem = new TextOperationItem(prefSheet, (a, b, c) -> {
             setRemoteUserName((String) c);
         }, getRemoteUserName(), "Remote Data",
@@ -205,7 +215,7 @@ public class AnalystPrefs {
                 "Directory for custom residues");
 
         prefSheet.getItems().addAll(libraryVectorSizeItem, libraryVectorLBItem,
-                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem,
+                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem, segmentLibraryFileItem,
                 localDirectoryItem,
                 remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem,
                 localResidueDirectoryItem);
