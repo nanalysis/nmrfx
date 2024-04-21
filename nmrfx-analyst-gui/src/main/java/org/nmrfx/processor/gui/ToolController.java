@@ -33,10 +33,13 @@ public class ToolController implements Initializable, NmrControlRightSideContent
     TitledPane annoPane;
     @FXML
     TitledPane peakPickPane;
+    @FXML
+    TitledPane libraryPane;
     PolyChart chart;
     PolyChart boundChart = null;
     FXMLController fxmlController;
     AnnotationController annotationController;
+    ChemicalLibraryController libraryController;
 
     PeakPickController peakPickController;
     @FXML
@@ -49,6 +52,8 @@ public class ToolController implements Initializable, NmrControlRightSideContent
         controller.annotationController = new AnnotationController();
         controller.annotationController.setup(fxmlController, controller.annoPane);
         controller.peakPickController = new PeakPickController();
+        controller.libraryController = new ChemicalLibraryController();
+        controller.libraryController.setup(fxmlController, controller.libraryPane);
         controller.peakPickController.setup(fxmlController,controller.peakPickPane);
         controller.setChart(fxmlController.getActiveChart());
         return controller;

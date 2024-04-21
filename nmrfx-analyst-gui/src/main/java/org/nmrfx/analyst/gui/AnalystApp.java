@@ -426,20 +426,6 @@ public class AnalystApp extends Application {
 
         statusBar.addToToolMenu(peakToolMenu);
 
-
-        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
-        spectrumLibraryMenuItem.disableProperty().bind(getFXMLControllerManager().activeControllerProperty().isNull());
-        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
-
-        MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
-        spectrumFitLibraryMenuItem.disableProperty().bind(getFXMLControllerManager().activeControllerProperty().isNull());
-        spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
-
-        Menu libraryMenu = new Menu("Library");
-        libraryMenu.getItems().addAll(spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
-        statusBar.addToToolMenu(libraryMenu);
-
-
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
@@ -489,32 +475,6 @@ public class AnalystApp extends Application {
             PeakSlider peakSlider = new PeakSlider(controller, this::removePeakSlider);
             peakSlider.initSlider(vBox);
             controller.addTool(peakSlider);
-        }
-    }
-
-    public void showSpectrumLibrary() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(SimMolController.class)) {
-            ToolBar navBar = new ToolBar();
-            controller.getBottomBox().getChildren().add(navBar);
-            SimMolController simMol = new SimMolController(controller, this::removeMolSim);
-            simMol.initialize(navBar);
-            controller.addTool(simMol);
-        }
-    }
-
-    public void showSpectrumFitter() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(SimFitMolController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            ToolBar navBar = new ToolBar();
-            ToolBar fitBar = new ToolBar();
-            vBox.getChildren().add(navBar);
-            vBox.getChildren().add(fitBar);
-            SimFitMolController simFit = new SimFitMolController(controller, this::removeMolFitter);
-            simFit.initialize(vBox, navBar, fitBar);
-            controller.addTool(simFit);
         }
     }
 
@@ -575,19 +535,6 @@ public class AnalystApp extends Application {
         controller.removeBottomBoxNode(peakSlider.getBox());
         peakSlider.removeListeners();
     }
-
-    public void removeMolSim(SimMolController simMolController) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(SimMolController.class);
-        controller.removeBottomBoxNode(simMolController.getToolBar());
-    }
-
-    public void removeMolFitter(SimFitMolController simMolController) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(SimFitMolController.class);
-        controller.removeBottomBoxNode(simMolController.getBox());
-    }
-
     public void removeScannerTool(ScannerTool scannerTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(ScannerTool.class);

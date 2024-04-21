@@ -67,7 +67,7 @@ public class DBData {
     public static void genVec(Vec vec, SpectralData spectralData, CompoundData cData) {
         for (SpectralSegment spectralSegment : spectralData.spectralSegments) {
             int firstPt = spectralSegment.segmentRegion.startPt;
-            int lastPt = spectralSegment.segmentRegion.startPt;
+            int lastPt = spectralSegment.segmentRegion.endPt;
             List<Double> values = spectralSegment.values();
             double[] intensities = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
@@ -84,7 +84,7 @@ public class DBData {
         Sample sample = sampleMap.get(sampleID);
         return sample;
     }
-    public static Dataset makeData(String specID, String label) {
+    public static CompoundData makeData(String specID, String label) {
         double refNProtons = 9.0;
         double refConc = 1.0;
         double cmpdConc = 1.0;
@@ -94,13 +94,12 @@ public class DBData {
             double ref = spectralData.ref - spectralData.sw / spectralData.sf / 2.0;
             CompoundData cData = new CompoundData(specID, specID, ref, spectralData.sf, spectralData.sw, spectralData.size, refConc, cmpdConc, refNProtons);
             CompoundData.put(cData, specID);
+
             SimDataVecPars pars = new SimDataVecPars(spectralData.sf, spectralData.sw, spectralData.size, ref, label);
             Vec vec = SimData.prepareVec(specID + "_segments", pars);
             genVec(vec, spectralData, cData);
-            Dataset dataset = new Dataset(vec);
-            dataset.setFreqDomain(0, true);
-            dataset.setLabel(0, pars.getLabel());
-            return dataset;
+            cData.setVec(vec);
+            return cData;
         }
         return null;
     }

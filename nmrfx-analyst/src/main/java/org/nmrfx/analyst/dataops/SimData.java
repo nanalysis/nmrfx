@@ -138,6 +138,7 @@ public class SimData {
         Vec vec = prepareVec(name, pars);
         List<Region> regions = genVec(name, vec, lb);
         CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);
+        cData.setVec(vec);
         return cData;
     }
 
