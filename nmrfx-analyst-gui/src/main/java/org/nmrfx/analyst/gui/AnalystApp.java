@@ -53,7 +53,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
-import org.nmrfx.plugin.api.PluginListener;
+import org.nmrfx.plugin.api.PluginFunction;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
@@ -239,8 +239,8 @@ public class AnalystApp extends Application {
 
         PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
-        PluginListener pluginListener = new PluginListener(pluginsMenu, this::pluginCommand);
-        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginListener);
+        PluginFunction pluginFunction = new PluginFunction(pluginsMenu, this::pluginCommand);
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginFunction);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
