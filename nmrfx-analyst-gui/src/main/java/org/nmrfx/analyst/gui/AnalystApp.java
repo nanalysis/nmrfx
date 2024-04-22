@@ -31,7 +31,6 @@ import javafx.geometry.Bounds;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
@@ -54,6 +53,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakLabeller;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.plugin.api.EntryPoint;
+import org.nmrfx.plugin.api.PluginFunction;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.log.Log;
@@ -67,6 +67,7 @@ import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.util.*;
 
 public class AnalystApp extends Application {
@@ -115,11 +116,7 @@ public class AnalystApp extends Application {
         String title = APP_NAME + " " + getVersion();
         getFXMLControllerManager().newController(stage, title);
 
-        if (isMac()) {
-            Platform.setImplicitExit(false);
-        } else {
-            Platform.setImplicitExit(true);
-        }
+        Platform.setImplicitExit(!isMac());
         hostServices = getHostServices();
 
         if (mainMenuBar == null) {
@@ -242,7 +239,8 @@ public class AnalystApp extends Application {
 
         PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
-        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginsMenu);
+        PluginFunction pluginFunction = new PluginFunction(pluginsMenu, this::pluginCommand);
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginFunction);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
@@ -265,6 +263,17 @@ public class AnalystApp extends Application {
         return menuBar;
     }
 
+    String pluginCommand(String s) {
+        String[] fields = s.split(" ");
+        if ((fields.length == 2) && fields[0].equalsIgnoreCase("nw.showPeak")) {
+            Peak peak = PeakList.getAPeak(fields[1]);
+            if (peak != null) {
+                GUIScripter.showPeak(peak);
+            }
+        }
+        return "";
+    }
+
     void pickedPeakAction(Peak peak) {
         if (peakMenuActions != null) {
             peakMenuActions.pickedPeakAction(peak);
@@ -280,10 +289,12 @@ public class AnalystApp extends Application {
     Stage makeAbout(String appName) {
         AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
                 .withAppName(appName).withCloseOnFocusLoss().withText("Processing for NMR Data")
-                .withVersionString("Version " + getVersion()).withCopyright("Copyright \u00A9 " + Calendar
+                .withVersionString("Version " + getVersion()).withCopyright("Copyright © " + Calendar
                         .getInstance().get(Calendar.YEAR));
-        Image image = new Image(AnalystApp.class.getResourceAsStream("/images/Icon_NVFX_256.png"));
-        aboutStageBuilder = aboutStageBuilder.withImage(image);
+        InputStream inputStream = AnalystApp.class.getResourceAsStream("/images/Icon_NVFX_256.png");
+        if (inputStream != null) {
+            aboutStageBuilder = aboutStageBuilder.withImage(new Image(inputStream));
+        }
         return aboutStageBuilder.build();
     }
 
@@ -295,13 +306,10 @@ public class AnalystApp extends Application {
         }
         if (preferencesController != null) {
             preferencesController.getStage().show();
-        } else {
-            System.out.println("Coudn't make controller");
         }
     }
 
     public void quit() {
-        System.out.println("quit");
         saveDatasets();
         waitForCommit();
         Platform.exit();
@@ -321,7 +329,7 @@ public class AnalystApp extends Application {
         onlineVersion = onlineVersion.replace('_', '.');
         String currentVersion = getVersion();
         String text;
-        if (onlineVersion.equals("")) {
+        if (onlineVersion.isEmpty()) {
             text = "Sorry, couldn't reach web site";
         } else if (onlineVersion.equals(currentVersion)) {
             text = "You're running the latest version: " + currentVersion;
@@ -384,7 +392,6 @@ public class AnalystApp extends Application {
         int nTries = 30;
         int iTry = 0;
         while (GUIProject.isCommitting() && (iTry < nTries)) {
-            System.out.println("committing");
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {
@@ -639,11 +646,9 @@ public class AnalystApp extends Application {
     public static void removeStage(Stage stage) {
         synchronized (stages) {
             stages.remove(stage);
-            if (stages.isEmpty()) {
-                if (!isMac()) {
-                    Platform.exit();
-                    System.exit(0);
-                }
+            if (stages.isEmpty() && !isMac()) {
+                Platform.exit();
+                System.exit(0);
             }
         }
     }
