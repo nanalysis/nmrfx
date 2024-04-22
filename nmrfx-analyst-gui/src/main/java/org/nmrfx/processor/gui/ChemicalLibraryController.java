@@ -388,16 +388,16 @@ public class ChemicalLibraryController {
     private Dataset makeDataset(ChemicalLibraryController.LIBRARY_MODE mode, Dataset currData, String name) {
         Dataset newDataset;
         String label = currData == null ? "1H" : currData.getLabel(0);
+        SimDataVecPars pars;
+        if (currData != null) {
+            pars = new SimDataVecPars(currData);
+        } else {
+            pars = defaultPars();
+        }
         if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
-            CompoundData compoundData = DBData.makeData(name, label);
+            CompoundData compoundData = DBData.makeData(name, pars);
             newDataset = new Dataset(compoundData.getVec());
         } else {
-            SimDataVecPars pars;
-            if (currData != null) {
-                pars = new SimDataVecPars(currData);
-            } else {
-                pars = defaultPars();
-            }
             double lb = AnalystPrefs.getLibraryVectorLB();
             newDataset = SimData.genDataset(name, pars, lb);
         }
@@ -470,7 +470,7 @@ public class ChemicalLibraryController {
             double cmpdConc = 1.0;
             CompoundData cData;
             if (mode == LIBRARY_MODE.SEGMENTS) {
-                cData = DBData.makeData(name, pars.getLabel());
+                cData = DBData.makeData(name, pars);
             } else {
                 cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc);
             }
@@ -524,7 +524,10 @@ public class ChemicalLibraryController {
         cFitter.scoreAbs();
         RealVector vecResult = cFitter.getX();
         for (int i = 0; i < vecResult.getDimension(); i++) {
-            System.out.println(i + " " + vecResult.getEntry(i));
+            activeMatch = cmpdMatcher.getMatch(activeField.getValue());
+            if (activeMatch != null) {
+                activeMatch.setScale(vecResult.getEntry(i));
+            }
         }
         updateSumData();
         regionChanged();

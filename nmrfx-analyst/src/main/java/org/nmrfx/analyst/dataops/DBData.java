@@ -2,9 +2,12 @@ package org.nmrfx.analyst.dataops;
 
 import berlin.yuna.typemap.model.TypeList;
 import berlin.yuna.typemap.model.TypeMap;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.exception.OutOfRangeException;
 import org.nmrfx.analyst.compounds.CompoundData;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +15,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class DBData {
+    private static final Logger log = LoggerFactory.getLogger(DBData.class);
     private static final Map<String, SpectralData> simDataMap = new TreeMap<>();
     private static final Map<String, CompoundDescription> compoundMap = new TreeMap<>();
     private static final Map<Integer, SampleComponent> componentMap = new TreeMap<>();
@@ -49,6 +53,7 @@ public class DBData {
     public record CompoundDescription(String name, String inChiKey, String hmdbID, String keggID, String pubChemID,
                                       String formula, Double weight, Double xLogP) {
     }
+
     public record SampleComponent(int id, String name, String casID, int compoundID, String type) {
     }
 
@@ -66,15 +71,30 @@ public class DBData {
 
     public static void genVec(Vec vec, SpectralData spectralData, CompoundData cData) {
         for (SpectralSegment spectralSegment : spectralData.spectralSegments) {
-            int firstPt = spectralSegment.segmentRegion.startPt;
-            int lastPt = spectralSegment.segmentRegion.endPt;
+            SegmentRegion segmentRegion = spectralSegment.segmentRegion;
+            int firstPt = segmentRegion.startPt;
+            int lastPt = segmentRegion.endPt;
+            double firstPPM = segmentRegion.startPPM;
+            double lastPPM = segmentRegion.endPPM;
+
+            int n = lastPt - firstPt + 1;
+            double hzPt1 = spectralData.sw / spectralData.size;
+            double hzPt2 = vec.getSW() / vec.getSize();
+            int newSize =  (int) Math.round(n * hzPt1 / hzPt2);
             List<Double> values = spectralSegment.values();
             double[] intensities = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
-                vec.add(firstPt + i, values.get(i));
                 intensities[i] = values.get(i);
             }
-            cData.addRegion(intensities, firstPt, lastPt, spectralSegment.segmentRegion.startPPM, spectralSegment.segmentRegion.endPPM);
+            double[] newIntensities = getInterpolated(intensities, newSize);
+            int pt1 = vec.refToPt(firstPPM);
+            int pt2 = vec.refToPt(lastPPM);
+            pt1 = (pt1 + pt2) /2 - newSize / 2;
+            pt2 = pt1 + newSize - 1;
+            for (int i = 0; i < newSize; i++) {
+                vec.add(pt1 + i, newIntensities[i]);
+            }
+            cData.addRegion(newIntensities, pt1, pt2, spectralSegment.segmentRegion.startPPM, spectralSegment.segmentRegion.endPPM);
         }
     }
 
@@ -84,7 +104,8 @@ public class DBData {
         Sample sample = sampleMap.get(sampleID);
         return sample;
     }
-    public static CompoundData makeData(String specID, String label) {
+
+    public static CompoundData makeData(String specID, SimDataVecPars pars) {
         double refNProtons = 9.0;
         double refConc = 1.0;
         double cmpdConc = 1.0;
@@ -92,10 +113,9 @@ public class DBData {
             SpectralData spectralData = simDataMap.get(specID);
 
             double ref = spectralData.ref - spectralData.sw / spectralData.sf / 2.0;
-            CompoundData cData = new CompoundData(specID, specID, ref, spectralData.sf, spectralData.sw, spectralData.size, refConc, cmpdConc, refNProtons);
+            CompoundData cData = new CompoundData(specID, specID, ref, pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, refNProtons);
             CompoundData.put(cData, specID);
 
-            SimDataVecPars pars = new SimDataVecPars(spectralData.sf, spectralData.sw, spectralData.size, ref, label);
             Vec vec = SimData.prepareVec(specID + "_segments", pars);
             genVec(vec, spectralData, cData);
             cData.setVec(vec);
@@ -137,7 +157,7 @@ public class DBData {
             String units = typeMap2.get(String.class, "units");
             Composition composition = new Composition(id, scompID, concentration, units);
             compositionMap.put(id, composition);
-            Sample sample = sampleMap.computeIfAbsent(sampleid, k -> new Sample(id,new ArrayList<>()));
+            Sample sample = sampleMap.computeIfAbsent(sampleid, k -> new Sample(id, new ArrayList<>()));
             sample.compositions.add(composition);
         }
     }
@@ -236,4 +256,36 @@ public class DBData {
             simDataMap.put(compoundName.toLowerCase().replace(' ', '-'), spectralData);
         }
     }
+
+    public static double[] getInterpolated(double[] intensities, int newSize) {
+        int n = intensities.length;
+        double[] interpIntensities = new double[newSize];
+        // we use two extra points, assumed to be y=0, so we can interpolate first and last points
+        double[] x = new double[n + 2];
+        double[] y = new double[n + 2];
+        for (int i = 0; i < n; i++) {
+            double f = (double) i / (n - 1);
+            x[i + 1] = f;
+            y[i + 1] = intensities[i];
+        }
+        y[0] = 0.0;
+        x[0] = -1.0 / (n -1);
+        y[n + 1] = 0.0;
+        x[n + 1] = (double) n / (n - 1);
+
+        SplineInterpolator sInterp = new SplineInterpolator();
+        var pSF = sInterp.interpolate(x, y);
+
+
+        try {
+            for (int i = 0; i < newSize; i++) {
+                double f = (double) i / (newSize - 1);
+                interpIntensities[i] = pSF.value(f);
+            }
+        } catch (OutOfRangeException adE) {
+            log.warn(adE.getMessage(), adE);
+        }
+        return interpIntensities;
+    }
+
 }
