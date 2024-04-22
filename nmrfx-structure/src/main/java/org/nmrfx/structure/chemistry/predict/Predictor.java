@@ -464,13 +464,15 @@ public class Predictor {
             Atom hoseAtom = null;
             double roundScale = 1.0;
             if (atom.getAtomicNumber() == 1) {
-                if (atom.getParent().getAtomicNumber() != aNum) {
+                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().get(0) : null;
+                if ((connectedAtom == null) || (connectedAtom.getAtomicNumber() != aNum)) {
                     continue;
                 }
             } else if (atom.getAtomicNumber() != aNum) {
                 continue;
             }
 
+            double defaultError = 2.0;
             if (atom.getAtomicNumber() == aNum) {
                 hoseAtom = atom;
                 predAtomType = aNum == 6 ? "13C" : "15N";
@@ -479,6 +481,7 @@ public class Predictor {
                 hoseAtom = atom.parent;
                 predAtomType = "1H";
                 roundScale = 100.0;
+                defaultError = 0.2;
             }
             if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == aNum)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
@@ -488,12 +491,35 @@ public class Predictor {
                     predResult = hosePred.predict(hosePPM, predAtomType);
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
                     if (hoseStat != null) {
-                        double shift = hoseStat.dStat.getPercentile(50);
+                        int n = hoseStat.nValues;
+                        double shift;
+                        double error;
+                        int nShells = predResult.getShell();
+                        int shellMult = 6 - nShells;
+                        if (n == 1) {
+                            shift = hoseStat.dStat.getElement(0);
+                            error = defaultError * shellMult;
+                        } else {
+                             shift = hoseStat.dStat.getPercentile(50);
+                             error = hoseStat.dStat.getStandardDeviation() * shellMult;
+                        }
+                        if (Double.isNaN(error)) {
+                            error = defaultError;
+                        }
+                        if (error < defaultError) {
+                            error = defaultError;
+                        }
+                        if (error > (shift * 0.2)) {
+                            error = shellMult * 0.2;
+                        }
                         shift = Math.round(shift * roundScale) / roundScale;
+                        error = Math.round(error * roundScale) / roundScale;
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, shift);
+                            atom.setRefError(-iRef -1, error);
                         } else {
                             atom.setPPM(iRef, shift);
+                            atom.setRefError(iRef, error);
                         }
                     } else {
                         log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);

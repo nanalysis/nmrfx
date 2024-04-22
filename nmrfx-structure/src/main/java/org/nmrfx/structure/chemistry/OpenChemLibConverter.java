@@ -131,6 +131,9 @@ public class OpenChemLibConverter {
             double z = stereoMolecule.getAtomZ(i);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            if (stereoMolecule.isAromaticAtom(i)) {
+                atom.setFlag(Atom.AROMATIC, true);
+            }
             String name = stereoMolecule.getAtomCustomLabel(i);
             if ((name == null) || name.isEmpty()) {
                 atom.setName(aName + (i + 1));
