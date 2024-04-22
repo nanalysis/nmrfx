@@ -26,9 +26,9 @@ public class DatasetFactory {
         DatasetBase dataset;
         try {
             Class<?> c = Class.forName("org.nmrfx.processor.datasets.Dataset");
-            var parameterTypes = new Class[]{String.class, String.class, boolean.class, boolean.class};
+            var parameterTypes = new Class[]{String.class, String.class, boolean.class, boolean.class, boolean.class};
             Constructor<?> constructor = c.getDeclaredConstructor(parameterTypes);
-            dataset = (DatasetBase) constructor.newInstance(fullName, name, writable, useCacheFile);
+            dataset = (DatasetBase) constructor.newInstance(fullName, name, writable, useCacheFile, true);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
                  InvocationTargetException | NoSuchMethodException | SecurityException ex) {
             dataset = new DatasetBase(fullName, name, writable, useCacheFile);
