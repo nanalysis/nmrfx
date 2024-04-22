@@ -270,10 +270,10 @@ public class AnalystApp extends Application {
     String pluginCommand(String s) {
         String[] fields = s.split(" ");
         if (fields.length == 2) {
-            if (fields[0].equalsIgnoreCase("showpeak")) {
+            if (fields[0].equalsIgnoreCase("nw.showPeak")) {
                 Peak peak = PeakList.getAPeak(fields[1]);
                 if (peak != null) {
-                    PeakDisplayTool.gotoPeak(peak);
+                    GUIScripter.showPeak(peak);
                 }
             }
         }
