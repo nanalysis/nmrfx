@@ -1323,7 +1323,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
         int[] mPoint = new int[mDims];
         for (int i = 0; i < mDims; i++) {
-            mPoint[i] = pt[i][1] + 1;
+            mPoint[i] = pt[i][1]  - pt[i][0] + 1;
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
