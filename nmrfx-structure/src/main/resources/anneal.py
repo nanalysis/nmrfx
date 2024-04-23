@@ -167,8 +167,10 @@ def getAnnealStages(dOpt, settings, mode='gen'):
                             }
     }
 
-    if cffSteps != 0:
-        mode = 'cff'
+
+    if mode == 'gen' and cffSteps != 0:
+        mode = 'all'
+
 
     if mode == 'all':
         stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_cff_reduced, stage_cff_full, stage_low]
