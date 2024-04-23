@@ -10,7 +10,7 @@ import org.python.util.PythonInterpreter;
 import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode.*;
 
 public class StructureCalculator {
-    public enum StructureMode {INIT, RNA, REFINE, ANNEAL}
+    public enum StructureMode {INIT, RNA, REFINE, CFF, ANNEAL, FULL}
 
     MolSceneController controller;
     private final StructureCalculatorService structureCalculatorService = new StructureCalculatorService();
@@ -81,12 +81,22 @@ public class StructureCalculator {
         scriptB.append("refiner=refine()\n");
         scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
         scriptB.append("refiner.rootName = 'temp'\n");
-        scriptB.append("refiner.loadFromYaml(data,0)\n");
         if (mode == RNA) {
+            scriptB.append("refiner.loadFromYaml(data,0)\n");
+            scriptB.append("refiner.init(save=False)\n");
+        } else if (mode == INIT) {
+            scriptB.append("refiner.loadFromYaml(data,0)\n");
             scriptB.append("refiner.init(save=False)\n");
         } else if (mode == REFINE) {
+            scriptB.append("refiner.initAnneal(data)\n");
             scriptB.append("refiner.refine(refiner.dOpt)\n");
         } else if (mode == ANNEAL) {
+            scriptB.append("refiner.initAnneal(data)\n");
+            scriptB.append("refiner.refine(refiner.dOpt,'anneal')\n");
+        } else if (mode == CFF) {
+            scriptB.append("refiner.initAnneal(data)\n");
+            scriptB.append("refiner.refine(refiner.dOpt,'cff')\n");
+        } else if (mode == FULL) {
             scriptB.append("refiner.anneal(refiner.dOpt)\n");
         }
         return scriptB.toString();
@@ -100,7 +110,7 @@ public class StructureCalculator {
         }
     }
 
-    boolean alreadyLinked () {
+    boolean alreadyLinked() {
         Molecule molecule = Molecule.getActive();
         boolean linked = false;
         for (Atom atom : molecule.getAtoms()) {
@@ -111,6 +121,7 @@ public class StructureCalculator {
         }
         return linked;
     }
+
     String genRNAYaml() {
         Molecule molecule = Molecule.getActive();
         if (alreadyLinked()) {
@@ -121,7 +132,7 @@ public class StructureCalculator {
             isRNA = molecule.getPolymers().get(0).isRNA();
         }
         StringBuilder yamlBuilder = new StringBuilder();
-        if (isRNA && (mode == RNA )) {
+        if (isRNA && (mode == RNA)) {
             yamlBuilder.append("rna:\n");
             yamlBuilder.append("    ribose : Constrain\n");
             String dotBracket = molecule.getDotBracket();
@@ -137,7 +148,7 @@ public class StructureCalculator {
                         vienna :
                             restrain : True
                             lockfirst: False
-                            locklast: False
+                            locklast: True
                             lockloop: False
                             lockbulge: False
                     anneal:
@@ -147,6 +158,7 @@ public class StructureCalculator {
         }
         return yamlBuilder.toString();
     }
+
     String genAnnealYaml() {
 
         return """
