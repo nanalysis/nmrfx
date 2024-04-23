@@ -848,6 +848,16 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     @FXML
+    private void initStructureAction() {
+        structureCalculator.setMode(INIT);
+        calcStructure();
+    }
+    @FXML
+    private void refineCFFStructureAction() {
+        structureCalculator.setMode(CFF);
+        calcStructure();
+    }
+    @FXML
     private void calcStructureAction() {
         structureCalculator.setMode(ANNEAL);
         calcStructure();

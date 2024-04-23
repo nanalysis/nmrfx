@@ -1453,6 +1453,14 @@ class refine:
         else:
             self.initializeData = None
 
+    def initAnneal(self, data):
+        seed = 0
+        self.setup('./',seed,writeTrajectory=False, usePseudo=False)
+        self.energy()
+        self.setSeed(0)
+        if 'anneal' in data:
+            self.dOpt = self.readAnnealDict(data['anneal'])
+
     def prepAngles(self):
         print 'Initializing angles'
         ranfact=20.0
@@ -3075,19 +3083,20 @@ class refine:
         if save:
             self.output()
 
-    def refine(self,dOpt=None):
+    def refine(self,dOpt=None,mode='refine'):
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
-        #self.restart()
-        self.mode = 'refine'
-
+        self.restart()
+        self.mode = mode
+        if mode == 'cff':
+            dOpt['cffSteps'] = 1000
         self.rDyn = self.rinertia()
         self.rDyn.setKinEScale(dOpt['kinEScale'])
         energy = self.energy()
-        print 'start energy is', energy
+        print('start energy is', energy)
 
-        stages = getAnnealStages(dOpt, self.settings,'refine')
+        stages = getAnnealStages(dOpt, self.settings,mode)
         for stageName in stages:
             stage = stages[stageName]
             runStage(stage, self, self.rDyn)
