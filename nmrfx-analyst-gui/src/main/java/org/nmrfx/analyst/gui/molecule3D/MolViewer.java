@@ -460,6 +460,72 @@ public class MolViewer extends Pane {
         }
     }
 
+    public void drawAtomTree() {
+        Molecule molecule = getCurrentMolecule();
+        if (molecule == null) {
+            return;
+        }
+        List<List<Atom>> atomTree = molecule.getAtomTree();
+        Color color1 = Color.RED;
+        Color color2 = Color.YELLOW;
+        int iBranch = 0;
+        for (List<Atom> branch : atomTree) {
+            Atom startAtom = branch.get(2);
+            if (startAtom == null) {
+                continue;
+            }
+            var v1 = startAtom.getPoint();
+            for (int i = 3;i< branch.size();i++) {
+                Atom endAtom = branch.get(i);
+                var v2 = endAtom.getPoint();
+                boolean rotatable = endAtom.rotActive && endAtom.irpIndex > 0;
+                Color color;
+                if (rotatable) {
+                    color = color1.interpolate(color2, (double) iBranch/ atomTree.size());
+                } else {
+                    color = Color.BLUE;
+                }
+                MolCylinder cyl0 = new MolCylinder(v1.toArray(), v2.toArray(), 0.1, color, "tree");
+                molGroup.getChildren().add(cyl0);
+            }
+            iBranch++;
+        }
+    }
+    public void addConstraintLines(int iStructure, String tag) {
+        Molecule molecule = getCurrentMolecule();
+        if (molecule == null) {
+            return;
+        }
+        var molecularConstraints = molecule.getMolecularConstraints();
+        for (var disSet : molecularConstraints.distanceSets.values()) {
+            for (var disCon : disSet.get()) {
+                if (!disCon.isBond()) {
+
+                    for (var atomPair : disCon.getAtomPairs()) {
+                        var center1 = atomPair.getCenter1();
+                        var center2 = atomPair.getCenter2();
+                        double upper = disCon.getUpper();
+                        double distance = atomPair.getDistanceToCenters();
+                        if (distance > (upper + 0.1)) {
+                            MolCylinder cyl0 = new MolCylinder(center1.toArray(), center2.toArray(), 0.05, Color.RED, tag);
+                            molGroup.getChildren().add(cyl0);
+                            var centerVec = center1.add(center2).scalarMultiply(0.5);
+                            var delVec = center2.subtract(center1);
+                            var normVec = delVec.normalize();
+                            var v1 = centerVec.add(normVec.scalarMultiply(upper / 2.0));
+                            var v2 = centerVec.subtract(normVec.scalarMultiply(upper / 2.0));
+                            MolCylinder cyl1 = new MolCylinder(v1.toArray(), v2.toArray(), 0.1, Color.LIGHTGREEN, tag);
+                            molGroup.getChildren().add(cyl1);
+                        } else {
+                            MolCylinder cyl0 = new MolCylinder(center1.toArray(), center2.toArray(), 0.05, Color.LIGHTGREEN, tag);
+                            molGroup.getChildren().add(cyl0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void addCyls(int iStructure, double cylRadius, double sphereRadius, String tag) {
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {

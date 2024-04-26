@@ -106,7 +106,7 @@ public class JCAMPData implements NMRData {
         NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
     }
 
-    private final String path;
+    private final File file;
     private final JCampDocument document;
     private final JCampBlock block;
     private final double[][] real;
@@ -123,11 +123,10 @@ public class JCAMPData implements NMRData {
     private final Map<Integer, Integer> size = new HashMap<>();
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
-    public JCAMPData(String path) throws IOException {
-        this.path = path;
+    public JCAMPData(File file) throws IOException {
+        this.file = file;
 
-        log.info("Parsing JCAMP data: {}", path);
-        this.document = new JCampParser().parse(new File(path));
+        this.document = new JCampParser().parse(file);
 
         if (document.getBlockCount() == 0) {
             throw new IOException("Invalid JCamp document, doesn't contain any block.");
@@ -172,7 +171,7 @@ public class JCAMPData implements NMRData {
 
     @Override
     public String getFilePath() {
-        return path;
+        return file.toString();
     }
 
     private JCampRecord getRecord(String name) {
@@ -852,11 +851,11 @@ public class JCAMPData implements NMRData {
     /**
      * Check whether the path contains a JCamp FID file
      *
-     * @param bpath the path to check
+     * @param file the path to check
      * @return true if the path correspond to a JCamp FID file.
      */
-    public static boolean findFID(StringBuilder bpath) {
-        String lower = bpath.toString().toLowerCase();
+    public static boolean findFID(File file) {
+        String lower = file.getName().toLowerCase();
         return MATCHING_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
@@ -864,12 +863,12 @@ public class JCAMPData implements NMRData {
     /**
      * Check whether the path contains a JCamp dataset file
      *
-     * @param bpath the path to check
+     * @param file the path to check
      * @return true if the path correspond to a JCamp dataset file.
      */
-    public static boolean findData(StringBuilder bpath) {
+    public static boolean findData(File file) {
         // FID and Dataset have the same extensions
-        return findFID(bpath);
+        return findFID(file);
     }
 
     /**
@@ -908,7 +907,6 @@ public class JCAMPData implements NMRData {
      * @throws DatasetException
      */
     public Dataset toDataset(String datasetName) throws IOException, DatasetException {
-        File file = new File(path);
         Path fpath = file.toPath();
 
         int[] dimSizes = new int[getNDim()];

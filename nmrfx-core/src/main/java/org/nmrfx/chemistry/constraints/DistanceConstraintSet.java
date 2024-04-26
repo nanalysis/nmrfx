@@ -21,10 +21,13 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.SpatialSetGroup;
+import org.nmrfx.peaks.Peak;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * @author brucejohnson
@@ -359,6 +362,23 @@ public class DistanceConstraintSet implements ConstraintSet, Iterable {
             // fixme  distancePairMap.put(modelNum, distList);
         }
 
+    }
+    public void writeNMRFxFile(File file) throws IOException {
+        Map<Peak, Integer> peakMap = new HashMap<>();
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            int i = 0;
+            for (DistanceConstraint distanceConstraint : constraints) {
+                    double lower = distanceConstraint.getLower();
+                    double upper = distanceConstraint.getUpper();
+                    Atom atom1 = distanceConstraint.getAtomPairs()[0].getAtoms1()[0];
+                    Atom atom2 = distanceConstraint.getAtomPairs()[0].getAtoms1()[1];
+                    String aName1 = atom1.getFullName();
+                    String aName2 = atom2.getFullName();
+                    String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, i, aName1, aName2, lower, upper);
+                    fileWriter.write(outputString);
+                    i++;
+            }
+        }
     }
 
 }

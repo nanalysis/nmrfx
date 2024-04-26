@@ -73,7 +73,7 @@ public class NoeCalibrationBin extends NoeCalibration {
         // 2.2 100 3.0 20 5.0 
         double bound = bins[bins.length - 1];
         double intensity = Math.abs(mMode.measure(noe));
-        double I = intensity / noe.getScale() / noe.atomScale;
+        double I = intensity / noe.getScale() / noe.getAtomScale();
         if (I > bins[1]) {
             bound = bins[0];
         }
