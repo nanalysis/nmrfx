@@ -83,9 +83,14 @@ public class RunAbout implements SaveframeWriter {
         List<String> aTypes = new ArrayList<>();
         for (var sDim : peakList.getSpectralDims()) {
             String patElem = sDim.getPattern();
-            patElems.add(patElem);
-            int dotPos = patElem.indexOf(".");
-            String aType = patElem.substring(dotPos + 1, dotPos + 2);
+            String aType = "";
+            if (!patElem.isBlank()) {
+                patElems.add(patElem);
+                int dotPos = patElem.indexOf(".");
+                if (dotPos != -1) {
+                     aType = patElem.substring(dotPos + 1, dotPos + 2);
+                }
+            }
             aTypes.add(aType);
         }
         aTypeMap.put(peakList.getExperimentType(), aTypes);
