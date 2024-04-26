@@ -1332,7 +1332,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             iter.next();
             int[] index = iter.getCounts();
             for (int i = 0; i < index.length; i++) {
-                point[dim[i]] = index[i];
+                point[dim[i]] = index[i] + pt[i][0];
             }
             double value = readPointRaw(point);
             matrix.setValue(value, index);
