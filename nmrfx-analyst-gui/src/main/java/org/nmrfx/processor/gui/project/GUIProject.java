@@ -135,7 +135,7 @@ public class GUIProject extends StructureProject {
     public void writeIgnore() {
         Path path = Paths.get(projectDir.toString(), ".gitignore");
         try (FileWriter writer = new FileWriter(path.toFile())) {
-            writer.write("*.nv\n*.ucsf");
+            writer.write("*.nv\n*.ucsf\njffi*\n");
         } catch (IOException ioE) {
             log.warn("{}", ioE.getMessage(), ioE);
         }
