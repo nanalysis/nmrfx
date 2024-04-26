@@ -309,8 +309,8 @@ public class ConvolutionFitter {
             }
         }
         findPeaks(values, skip);
-        squashPeaks(values, skip);
         convolve(values, skip);
+        squashPeaks(values, skip);
         return values;
     }
 
@@ -368,12 +368,14 @@ public class ConvolutionFitter {
             signal = new double[sizes[0] + 2 * psfSize];
             skip = new boolean[signal.length];
             for (int i = 0; i < sizes[0]; i++) {
-                signal[i + psfSize] = vec.getReal(i + pt[0][0]);
+                signal[i + psfSize] = matrixND.getValue(i);
             }
 
             start = pt[0][0] - psfSize;
             double[] result = lr(threshold, iterations);
+
             for (int i = 0; i < result.length; i++) {
+          //      System.out.printf("%4d %2b %10.5f %105f %10.5f %10.5f\n", i, skip[i],signal[i],  result[i] * psfMax, sim[i], vec.getReal(i + pt[0][0] - psfSize));
                 if (!skip[i]) {
                     double x1 = vec.pointToPPM(start + i - widths[0] / 2.0);
                     double x2 = vec.pointToPPM(start + i + widths[0] / 2.0);
