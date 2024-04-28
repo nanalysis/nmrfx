@@ -2,8 +2,10 @@ package org.nmrfx.processor.gui;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.WeakListChangeListener;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
@@ -45,9 +47,9 @@ public class DatasetView {
             updateChartDatasets();
             chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
         };
-        datasetView.getTargetItems().addListener(datasetTargetListener);
+        datasetView.getTargetItems().addListener(new WeakListChangeListener<String>(datasetTargetListener));
         this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
-        PolyChartManager.getInstance().activeChartProperty().addListener((observable, oldValue, newValue) -> {
+        PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>((observable, oldValue, newValue) -> {
 
             if (oldValue != null && this.fxmlController.getCharts().contains(oldValue)) {
                 oldValue.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
@@ -56,7 +58,9 @@ public class DatasetView {
                 newValue.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
                 updateDatasetView();
             }
-        });
+        }));
+
+
         initView();
     }
 

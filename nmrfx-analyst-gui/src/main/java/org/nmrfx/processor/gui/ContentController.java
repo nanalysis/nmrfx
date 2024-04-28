@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.WeakMapChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
@@ -67,10 +68,15 @@ public class ContentController implements NmrControlRightSideContent {
 
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
         peakView.getTargetItems().addListener(peakTargetListener);
-        ProjectBase.getActive().addDatasetListListener(mapChangeListener);
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addDatasetListListener(new WeakMapChangeListener<>(mapChangeListener));
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         peakTitledPane.expandedProperty().addListener(e -> update());
         datasetTitledPane.expandedProperty().addListener(e -> update());
+    }
+
+    public void removeListeners() {
+        ProjectBase.getActive().removeDatasetListListener(mapChangeListener);
+        ProjectBase.getActive().removePeakListListener(mapChangeListener);
     }
 
     public Pane getPane() {

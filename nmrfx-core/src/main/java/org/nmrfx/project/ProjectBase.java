@@ -377,11 +377,16 @@ public class ProjectBase {
     // used in subclasses
     public void addPeakListListener(Object mapChangeListener) {
     }
+    public void removePeakListListener(Object mapChangeListener) {
+    }
 
     // used in subclasses
     public void addDatasetListListener(Object mapChangeListener) {
     }
 
+    public void removeDatasetListListener(Object mapChangeListener) {
+
+    }
     public void loadProject(Path projectDir) throws IOException, IllegalStateException {
 
         String[] subDirTypes = {"datasets", "peaks"};

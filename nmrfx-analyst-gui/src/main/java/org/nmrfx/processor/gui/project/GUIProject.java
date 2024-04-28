@@ -314,10 +314,24 @@ public class GUIProject extends StructureProject {
         obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
     }
 
+    public void removePeakListListener(Object mapChangeObject) {
+        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
+            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+            obsMap.removeListener((MapChangeListener<String, PeakList>) mapChangeListener);
+        }
+    }
+
     @Override
     public void addDatasetListListener(Object mapChangeListener) {
         ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
         obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
+    }
+
+    public void removeDatasetListListener(Object mapChangeObject) {
+        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
+            ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
+            obsMap.removeListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
+        }
     }
 
     public void checkSubDirs(Path projectDir) throws IOException {
