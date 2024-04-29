@@ -243,24 +243,37 @@ public class AnalystApp extends Application {
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginFunction);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
+        Menu spectraWindowMenu = new Menu("Spectra Windows");
+        Menu windowMenu = new Menu("Window");
+        windowMenu.setOnShown(e -> updateWindowMenu(spectraWindowMenu));
 
         if (tk != null) {
-            Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
-                    new SeparatorMenuItem(), tk.createBringAllToFrontItem());
+                    new SeparatorMenuItem(), tk.createBringAllToFrontItem(), spectraWindowMenu);
             menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
-            tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, helpMenu);
+            windowMenu.getItems().add(spectraWindowMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         if (startInAdvanced || advancedIsActive) {
             advanced(null);
         }
         return menuBar;
+    }
+
+    private void updateWindowMenu(Menu windowMenu) {
+        FXMLControllerManager manager = getFXMLControllerManager();
+        windowMenu.getItems().clear();
+        for (var fxmlController : manager.getControllers()) {
+            Stage stage = fxmlController.getStage();
+            MenuItem menuItem = new MenuItem(stage.getTitle());
+            menuItem.setOnAction(e -> stage.toFront());
+            windowMenu.getItems().add(menuItem);
+        }
     }
 
     String pluginCommand(String s) {
