@@ -142,6 +142,7 @@ public class PolyChart extends Region {
     private CrossHairs crossHairs;
     private List<ChartUndo> undos = new ArrayList<>();
     private List<ChartUndo> redos = new ArrayList<>();
+    private  MapChangeListener<String, PeakList> peakListMapChangeListener = change -> purgeInvalidPeakListAttributes();
 
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
@@ -243,8 +244,7 @@ public class PolyChart extends Region {
         drawingLayers.getTopPane().getChildren().add(highlightRect);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
-        MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(peakListMapChangeListener));
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
