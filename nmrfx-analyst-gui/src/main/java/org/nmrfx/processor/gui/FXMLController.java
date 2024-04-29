@@ -208,6 +208,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
+        chartPane.getChildren().clear();
+        chartPane = null;
+        charts.clear();
+        System.gc();
+        System.gc();
     }
 
     public void saveDatasets() {
