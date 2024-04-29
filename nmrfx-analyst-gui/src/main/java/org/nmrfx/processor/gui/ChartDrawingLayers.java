@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.beans.InvalidationListener;
 import javafx.scene.Cursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -56,16 +57,18 @@ public class ChartDrawingLayers {
 
     // Top level (foreground): contains crosshairs, highlighted regions, selected canvas handles
     // Equivalent to a glasspane in swing
-    private final Pane top = new Pane();
+    private Pane top = new Pane();
 
+    private final InvalidationListener widthListener = observable -> updateCanvasWidth();
+    private final InvalidationListener heightListener = observable -> updateCanvasHeight();
 
     public ChartDrawingLayers(FXMLController controller, StackPane stack) {
         grid = new GridPaneCanvas(controller, base);
         grid.addCharts(1, controller.getCharts());
         grid.setMouseTransparent(true);
         grid.setManaged(true);
-        grid.widthProperty().addListener(observable -> updateCanvasWidth());
-        grid.heightProperty().addListener(observable -> updateCanvasHeight());
+        grid.widthProperty().addListener(widthListener);
+        grid.heightProperty().addListener(heightListener);
 
         base.setManaged(false);
         base.setCache(true);
@@ -129,7 +132,7 @@ public class ChartDrawingLayers {
     }
 
     public GraphicsContext getGraphicsContextFor(Item item) {
-        Canvas canvas =  switch (item) {
+        Canvas canvas = switch (item) {
             case Spectrum -> base;
             case Peaks, Annotations -> peaksAndAnnotations;
             case Slices, DragBoxes -> slicesAndDragBoxes;
