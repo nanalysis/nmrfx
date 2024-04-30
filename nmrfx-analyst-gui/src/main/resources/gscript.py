@@ -386,9 +386,9 @@ class NMRFxWindowScripting:
     def export(self, fileName):
         self.cmd.export(fileName)
 
-    def testGCCanvas(self, n):
+    def testGCCanvas(self, n, delay=0.3):
         fm=AnalystApp.getFXMLControllerManager()
-        fm.controllerTest(n)
+        fm.controllerTest(n, delay)
 
 
 def parseArgs(argv):
