@@ -47,7 +47,7 @@ public class DatasetView {
             updateChartDatasets();
             chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
         };
-        datasetView.getTargetItems().addListener(new WeakListChangeListener<String>(datasetTargetListener));
+        datasetView.getTargetItems().addListener(datasetTargetListener);
         this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>((observable, oldValue, newValue) -> {
 
