@@ -452,7 +452,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 processorController.cleanUp();
             }
             if (addDatasetToChart) {
-                addDataset(dataset, append, false);
+                addDataset(getActiveChart(), dataset, append, false);
             }
         } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);
@@ -490,7 +490,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
+    public void addDataset(PolyChart chart, DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
         if (dataset.getFile() != null) {
             PreferencesController.saveRecentFiles(dataset.getFile().toString());

@@ -1325,7 +1325,7 @@ public class PolyChart extends Region {
         if (!newAttributes.isEmpty() && datasetAttrs.isEmpty()) {
             // if no datsets present already must use addDataset once to set up
             // various parameters
-            controller.addDataset(newAttributes.get(0).getDataset(), false, false);
+            controller.addDataset(this, newAttributes.get(0).getDataset(), false, false);
             newAttributes.remove(0);
             datasetAttrs.addAll(newAttributes);
         } else {
