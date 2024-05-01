@@ -16,6 +16,8 @@ import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.ByteArrayInputStream;
@@ -29,6 +31,9 @@ import java.util.concurrent.ExecutionException;
  */
 @PythonAPI("gscript")
 public class GUIScripter {
+    private static final Logger log = LoggerFactory.getLogger(GUIScripter.class);
+
+    private static final String COLOR = "Color";
     private static final Map<String, String> keyActions = new HashMap<>();
     private final PolyChart useChart;
 
@@ -98,18 +103,16 @@ public class GUIScripter {
         return chart.getName();
     }
 
-    public boolean active(int index) throws IllegalArgumentException {
+    public boolean active(int index)  {
         if (useChart != null) {
             return false;
         }
-        // fixme throwing from fx thread
         Fx.runOnFxThread(() -> {
             List<PolyChart> charts = getActiveController().getCharts();
             if (charts.size() >= index) {
                 getActiveController().setActiveChart(charts.get(index));
             } else {
-                // fixme throwing from fx thread
-                throw new IllegalArgumentException("Invalid chart index");
+                log.error("Invaid chart index");
             }
         });
         return true;
@@ -119,7 +122,6 @@ public class GUIScripter {
         if (useChart != null) {
             return false;
         }
-        // fixme needs to be set on thread
         boolean success = true;
         Fx.runOnFxThread(() -> getActiveController().getCharts().stream()
                 .filter(c -> c.getName().equals(chartName))
@@ -316,7 +318,7 @@ public class GUIScripter {
     public void configOnFx(PolyChart chart, List<String> datasetNames, Map<String, Object> map) {
         List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
         map.forEach((key, value) -> {
-            if (key.contains("Color")) {
+            if (key.contains(COLOR)) {
                 value = GUIUtils.getColor(value.toString());
             }
             for (DatasetAttributes dataAttr : dataAttrs) {
@@ -430,7 +432,7 @@ public class GUIScripter {
     public void pconfigOnFx(PolyChart chart, List<String> peakListNames, Map<String, Object> map) {
         List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
         map.forEach((key, value) -> {
-            if (key.contains("Color")) {
+            if (key.contains(COLOR)) {
                 value = GUIUtils.getColor(value.toString());
             }
             if (key.equals("peakLabelType")) {  // some .yaml files were incorrectly written with peakLabelType
@@ -455,7 +457,7 @@ public class GUIScripter {
 
     public void cconfigOnFx(PolyChart chart, Map<String, Object> map) {
         map.forEach((key, value) -> {
-            if (key.contains("Color") && (value != null)) {
+            if (key.contains(COLOR) && (value != null)) {
                 value = GUIUtils.getColor(value.toString());
             }
             chart.getChartProperties().setPublicPropertyValue(key, value);
@@ -473,7 +475,7 @@ public class GUIScripter {
 
     public void sconfigOnFx(FXMLController controller, Map<String, Object> map) {
         map.forEach((key, value) -> {
-            if (key.contains("Color") && (value != null)) {
+            if (key.contains(COLOR) && (value != null)) {
                 value = GUIUtils.getColor(value.toString());
             }
             controller.setPublicPropertyValue(key, value);
@@ -511,7 +513,7 @@ public class GUIScripter {
                 chart.addAnnotation(annoType);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("Error loading annotations", e);
         }
     }
 
@@ -664,7 +666,7 @@ public class GUIScripter {
 
     public List<String> peakListsOnFx(PolyChart chart) {
         List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
-        return peakAttrs.stream().map(p -> p.getPeakListName()).toList();
+        return peakAttrs.stream().map(PeakListAttributes::getPeakListName).toList();
     }
 
     public void peakLists(List<String> peakListNames) {
@@ -693,7 +695,7 @@ public class GUIScripter {
         return result;
     }
 
-    public void geometry(Double x, Double y, Double width, Double height) throws InterruptedException, ExecutionException {
+    public void geometry(Double x, Double y, Double width, Double height)  {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
             Stage stage = chart.getFXMLController().getStage();

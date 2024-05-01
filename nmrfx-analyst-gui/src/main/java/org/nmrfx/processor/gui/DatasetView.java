@@ -5,7 +5,6 @@ import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakListChangeListener;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
@@ -49,7 +48,7 @@ public class DatasetView {
         };
         datasetView.getTargetItems().addListener(datasetTargetListener);
         this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
-        PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>((observable, oldValue, newValue) -> {
+        PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<>((observable, oldValue, newValue) -> {
 
             if (oldValue != null && this.fxmlController.getCharts().contains(oldValue)) {
                 oldValue.getDatasetAttributes().removeListener(datasetAttributesListChangeListener);
@@ -164,8 +163,7 @@ public class DatasetView {
             this.setOnDragDone(Event::consume);
             this.setOnDragDropped(event -> {
                 Object target = event.getGestureTarget();
-                if (target instanceof DatasetListCell) {
-                    var targetCell = (DatasetListCell) target;
+                if (target instanceof DatasetListCell targetCell) {
                     String targetText = targetCell.getText();
                     moveItem(targetText, getParent());
                 }
@@ -174,8 +172,7 @@ public class DatasetView {
             this.setOnDragEntered(Event::consume);
             this.setOnDragExited(event -> {
                 Object target = event.getTarget();
-                if (target instanceof DatasetListCell) {
-                    DatasetListCell targetCell = (DatasetListCell) target;
+                if (target instanceof DatasetListCell targetCell) {
                     targetCell.setEffect(null);
                 }
                 event.consume();
@@ -183,8 +180,7 @@ public class DatasetView {
             this.setOnDragOver(event -> {
                 event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
                 Object target = event.getGestureTarget();
-                if (target instanceof DatasetListCell) {
-                    DatasetListCell targetCell = (DatasetListCell) target;
+                if (target instanceof DatasetListCell targetCell) {
                     InnerShadow is = new InnerShadow();
                     is.setOffsetX(1.0);
                     is.setColor(Color.web("#666666"));
@@ -234,7 +230,7 @@ public class DatasetView {
             } finally {
                 datasetView.getTargetItems().addListener(datasetTargetListener);
             }
-            if ((targetText == null) || (targetText.equals(""))) {
+            if ((targetText == null) || (targetText.isEmpty())) {
                 moveToItems.add(startItem);
             } else {
                 int index = moveToItems.indexOf(targetText);

@@ -1,19 +1,14 @@
 package org.nmrfx.analyst.gui;
 
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.processor.gui.DatasetsController;
-import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.utilities.WebConnect;
-import org.nmrfx.project.ProjectBase;
 
 public class HelpMenuActions extends MenuActions {
 
-    private static final String PROCESSOR_MENU_TEXT = "Show Processor";
     DatasetsController datasetController;
 
     public HelpMenuActions(AnalystApp app, Menu menu) {
@@ -43,11 +38,6 @@ public class HelpMenuActions extends MenuActions {
         menu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
     }
 
-    @Override
-    protected void advanced() {
-
-    }
-
     private void showWebSiteAction(ActionEvent event) {
         app.getHostServices().showDocument("http://nmrfx.org");
     }
@@ -62,7 +52,7 @@ public class HelpMenuActions extends MenuActions {
     private void showVersionAction(ActionEvent event) {
         String onlineVersion = WebConnect.getVersion();
         onlineVersion = onlineVersion.replace('_', '.');
-        String currentVersion = app.getVersion();
+        String currentVersion = AnalystApp.getVersion();
         String text;
         if (onlineVersion.isEmpty()) {
             text = "Sorry, couldn't reach web site";
