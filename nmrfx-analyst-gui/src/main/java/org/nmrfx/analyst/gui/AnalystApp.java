@@ -216,26 +216,8 @@ public class AnalystApp extends Application {
         viewMenuActions.basic();
 
         Menu helpMenu = new Menu("Help");
-
-        MenuItem webSiteMenuItem = new MenuItem("NMRFx Web Site");
-        webSiteMenuItem.setOnAction(this::showWebSiteAction);
-
-        MenuItem docsMenuItem = new MenuItem("Online Documentation");
-        docsMenuItem.setOnAction(this::showDocAction);
-
-        MenuItem versionMenuItem = new MenuItem("Check Version");
-        versionMenuItem.setOnAction(this::showVersionAction);
-
-        MenuItem mailingListItem = new MenuItem("Mailing List Site");
-        mailingListItem.setOnAction(this::showMailingListAction);
-
-        MenuItem refMenuItem = new MenuItem("NMRFx Publication");
-        refMenuItem.setOnAction(e -> hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
-
-        MenuItem openSourceItem = new MenuItem("Open Source Libraries");
-        openSourceItem.setOnAction(this::showOpenSourceAction);
-
-        helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
+        HelpMenuActions helpMenuActions = new HelpMenuActions(this, helpMenu);
+        helpMenuActions.basic();
 
         PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
@@ -243,6 +225,7 @@ public class AnalystApp extends Application {
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginFunction);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
+
         Menu spectraWindowMenu = new Menu("Spectra Windows");
         Menu windowMenu = new Menu("Window");
         windowMenu.setOnShown(e -> updateWindowMenu(spectraWindowMenu));
@@ -329,39 +312,7 @@ public class AnalystApp extends Application {
         System.exit(0);
     }
 
-    private void showWebSiteAction(ActionEvent event) {
-        hostServices.showDocument("http://nmrfx.org");
-    }
 
-    private void showDocAction(ActionEvent event) {
-        hostServices.showDocument("http://docs.nmrfx.org");
-    }
-
-    private void showVersionAction(ActionEvent event) {
-        String onlineVersion = WebConnect.getVersion();
-        onlineVersion = onlineVersion.replace('_', '.');
-        String currentVersion = getVersion();
-        String text;
-        if (onlineVersion.isEmpty()) {
-            text = "Sorry, couldn't reach web site";
-        } else if (onlineVersion.equals(currentVersion)) {
-            text = "You're running the latest version: " + currentVersion;
-        } else {
-            text = "You're running " + currentVersion;
-            text += "\nbut the latest is: " + onlineVersion;
-        }
-        Alert alert = new Alert(AlertType.INFORMATION, text);
-        alert.setTitle("NMRFx Analyst Version");
-        alert.showAndWait();
-    }
-
-    private void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.io/g/NMRFx");
-    }
-
-    private void showOpenSourceAction(ActionEvent event) {
-        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
-    }
 
     public void advanced(MenuItem startAdvancedItem) {
         if (molMenuActions != null) {

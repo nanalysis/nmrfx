@@ -151,21 +151,8 @@ public class GUIScripterAdvanced extends GUIScripter {
     public void loadYAMLOnFx(String inputData, String pathName, boolean createNewStage) {
         var yaml = new Yaml();
         var data = (Map<String, Object>) yaml.load(inputData);
-        FXMLController controller;
-        if (createNewStage) {
-            File file = new File(pathName);
-            String title = file.getName();
-            if (title.endsWith("_fav.yaml")) {
-                title = title.replace("_fav.yaml", "");
-            } else if (title.endsWith(".yaml")) {
-                title = title.replace(".yaml", "");
-            }
-            controller = AnalystApp.getFXMLControllerManager().newController(title);
-            PolyChart chartActive = controller.getCharts().get(0);
-            controller.setActiveChart(chartActive);
-        } else {
-            controller = getActiveController();
-        }
+        FXMLController controller = getStageController(createNewStage, pathName);
+
         Stage stage = controller.getStage();
         if (data.containsKey(GEOMETRY)) {
             var geometry = (List<Double>) data.get(GEOMETRY);
@@ -198,6 +185,24 @@ public class GUIScripterAdvanced extends GUIScripter {
         }
     }
 
+    private FXMLController getStageController(boolean createNewStage, String pathName) {
+        FXMLController controller;
+        if (createNewStage) {
+            File file = new File(pathName);
+            String title = file.getName();
+            if (title.endsWith("_fav.yaml")) {
+                title = title.replace("_fav.yaml", "");
+            } else if (title.endsWith(".yaml")) {
+                title = title.replace(".yaml", "");
+            }
+            controller = AnalystApp.getFXMLControllerManager().newController(title);
+            PolyChart chartActive = controller.getCharts().get(0);
+            controller.setActiveChart(chartActive);
+        } else {
+            controller = getActiveController();
+        }
+        return controller;
+    }
     private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList, int columns) {
         for (var spectraMap : spectraList) {
             int iRow;
@@ -213,36 +218,39 @@ public class GUIScripterAdvanced extends GUIScripter {
             int iWin = iRow * columns + iCol;
             PolyChart chart = controller.getCharts().get(iWin);
             controller.setActiveChart(chart);
-            if (spectraMap.containsKey(CCONFIG)) {
-                var cconfigMap = (Map<String, Object>) spectraMap.get(CCONFIG);
-                cconfigOnFx(chart, cconfigMap);
-            }
-            var datasetList = (List<Map<String, Object>>) spectraMap.get("datasets");
-            List<String> datasetNames = datasetList.stream().filter(m -> m.containsKey("name")).map(m -> m.get("name").toString()).toList();
-            chart.updateDatasets(datasetNames);
-
-            if (spectraMap.containsKey("lim")) {
-                var limMap = (Map<String, List<Double>>) spectraMap.get("lim");
-                for (var entry : limMap.entrySet()) {
-                    String axName = entry.getKey();
-                    List<Double> limits = entry.getValue();
-                    double v1 = limits.get(0);
-                    double v2 = limits.get(1);
-                    limitOnFx(chart, axName, v1, v2);
-                }
-            }
-            processDatasets(chart, datasetList);
-            if (spectraMap.containsKey(PEAKLISTS)) {
-                var peakListList = (List<Map<String, Object>>) spectraMap.get(PEAKLISTS);
-                processPeakLists(chart, peakListList);
-            }
-            if (spectraMap.containsKey(ANNOTATIONS)) {
-                String annotations = spectraMap.get(ANNOTATIONS).toString();
-                loadAnnotationsOnFx(chart, annotations);
-            }
+            processChart(chart, spectraMap);
             chart.refresh();
         }
+    }
 
+    private void processChart(PolyChart chart, Map<String, Object> spectraMap) {
+        if (spectraMap.containsKey(CCONFIG)) {
+            var cconfigMap = (Map<String, Object>) spectraMap.get(CCONFIG);
+            cconfigOnFx(chart, cconfigMap);
+        }
+        var datasetList = (List<Map<String, Object>>) spectraMap.get("datasets");
+        List<String> datasetNames = datasetList.stream().filter(m -> m.containsKey("name")).map(m -> m.get("name").toString()).toList();
+        chart.updateDatasets(datasetNames);
+
+        if (spectraMap.containsKey("lim")) {
+            var limMap = (Map<String, List<Double>>) spectraMap.get("lim");
+            for (var entry : limMap.entrySet()) {
+                String axName = entry.getKey();
+                List<Double> limits = entry.getValue();
+                double v1 = limits.get(0);
+                double v2 = limits.get(1);
+                limitOnFx(chart, axName, v1, v2);
+            }
+        }
+        processDatasets(chart, datasetList);
+        if (spectraMap.containsKey(PEAKLISTS)) {
+            var peakListList = (List<Map<String, Object>>) spectraMap.get(PEAKLISTS);
+            processPeakLists(chart, peakListList);
+        }
+        if (spectraMap.containsKey(ANNOTATIONS)) {
+            String annotations = spectraMap.get(ANNOTATIONS).toString();
+            loadAnnotationsOnFx(chart, annotations);
+        }
     }
 
     private void processDatasets(PolyChart chart, List<Map<String, Object>> datasetList) {
