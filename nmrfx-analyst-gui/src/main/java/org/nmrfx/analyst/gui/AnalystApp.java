@@ -20,7 +20,6 @@ package org.nmrfx.analyst.gui;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
-import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -29,7 +28,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.scene.control.*;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -61,7 +59,6 @@ import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
-import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
 import org.slf4j.Logger;
@@ -86,7 +83,6 @@ public class AnalystApp extends Application {
     private final PopOverTools popoverTool = new PopOverTools();
     private DatasetBrowserController datasetBrowserController;
     private PreferencesController preferencesController;
-    private HostServices hostServices;
     private MenuBar mainMenuBar = null;
     private FileMenuActions fileMenuActions;
     private MoleculeMenuActions molMenuActions;
@@ -117,7 +113,6 @@ public class AnalystApp extends Application {
         getFXMLControllerManager().newController(stage, title);
 
         Platform.setImplicitExit(!isMac());
-        hostServices = getHostServices();
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(APP_NAME);
@@ -557,12 +552,6 @@ public class AnalystApp extends Application {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimFitMolController.class);
         controller.removeBottomBoxNode(simMolController.getBox());
-    }
-
-    public void removeScannerTool(ScannerTool scannerTool) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(ScannerTool.class);
-        controller.removeBottomBoxNode(scannerTool.getBox());
     }
 
     public void removeRunaboutTool(RunAboutGUI runaboutTool) {

@@ -18,7 +18,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Callback;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.utilities.DictionarySort;
 
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DatasetView {
     FXMLController fxmlController;
-    ListSelectionView<String> datasetView;
+    ListSelectionView<String> datasetSelectionView;
     ListChangeListener<String> datasetTargetListener;
     Integer startIndex = null;
     boolean moveItemIsSelected = false;
@@ -37,7 +36,7 @@ public class DatasetView {
 
     public DatasetView(FXMLController fxmlController, ContentController controller) {
         this.fxmlController = fxmlController;
-        datasetView = controller.datasetView;
+        datasetSelectionView = controller.datasetSelectionView;
         datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
             PolyChart chart = this.fxmlController.getActiveChart();
             // Must remove this listener since it calls updateDatasetView, which this listener may
@@ -46,7 +45,7 @@ public class DatasetView {
             updateChartDatasets();
             chart.getDatasetAttributes().addListener(datasetAttributesListChangeListener);
         };
-        datasetView.getTargetItems().addListener(datasetTargetListener);
+        datasetSelectionView.getTargetItems().addListener(datasetTargetListener);
         this.fxmlController.getActiveChart().getDatasetAttributes().addListener(datasetAttributesListChangeListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<>((observable, oldValue, newValue) -> {
 
@@ -64,10 +63,10 @@ public class DatasetView {
     }
 
     void initView() {
-        datasetView.setCellFactory(new Callback<>() {
+        datasetSelectionView.setCellFactory(new Callback<>() {
             @Override
             public ListCell<String> call(ListView<String> p) {
-                return new DatasetListCell<>(datasetView) {
+                return new DatasetListCell<>(datasetSelectionView) {
                     @Override
                     public void updateItem(String s, boolean empty) {
                         super.updateItem(s, empty);
@@ -97,9 +96,9 @@ public class DatasetView {
     }
 
     public void updateDatasetView() {
-        datasetView.getTargetItems().removeListener(datasetTargetListener);
-        ObservableList<String> datasetsTarget = datasetView.getTargetItems();
-        ObservableList<String> datasetsSource = datasetView.getSourceItems();
+        datasetSelectionView.getTargetItems().removeListener(datasetTargetListener);
+        ObservableList<String> datasetsTarget = datasetSelectionView.getTargetItems();
+        ObservableList<String> datasetsSource = datasetSelectionView.getSourceItems();
         datasetsTarget.clear();
         datasetsSource.clear();
         PolyChart chart = fxmlController.getActiveChart();
@@ -107,16 +106,16 @@ public class DatasetView {
             datasetsTarget.add(obj.getDataset().getName());
         }
         DictionarySort<DatasetBase> sorter = new DictionarySort<>();
-        Dataset.datasets().stream().sorted(sorter).forEach(d -> {
+        DatasetBase.datasets().stream().sorted(sorter).forEach(d -> {
             if (!datasetsTarget.contains(d.getName())) {
                 datasetsSource.add(d.getName());
             }
         });
-        datasetView.getTargetItems().addListener(datasetTargetListener);
+        datasetSelectionView.getTargetItems().addListener(datasetTargetListener);
     }
 
     private void updateChartDatasets() {
-        ObservableList<String> datasetTargets = datasetView.getTargetItems();
+        ObservableList<String> datasetTargets = datasetSelectionView.getTargetItems();
         PolyChart chart = fxmlController.getActiveChart();
         chart.updateDatasets(datasetTargets);
         if (datasetTargets.isEmpty()) {
@@ -203,7 +202,7 @@ public class DatasetView {
         }
 
         void moveItem(String targetText, Node endNode) {
-            datasetView.getTargetItems().removeListener(datasetTargetListener);
+            datasetSelectionView.getTargetItems().removeListener(datasetTargetListener);
             final boolean targetItemIsSelected;
             List<String> moveFromItems;
             List<String> moveToItems;
@@ -228,24 +227,19 @@ public class DatasetView {
                 startItem = moveFromItems.get(startIndex);
                 moveFromItems.remove(startIndex.intValue());
             } finally {
-                datasetView.getTargetItems().addListener(datasetTargetListener);
+                datasetSelectionView.getTargetItems().addListener(datasetTargetListener);
             }
             if ((targetText == null) || (targetText.isEmpty())) {
                 moveToItems.add(startItem);
             } else {
                 int index = moveToItems.indexOf(targetText);
-                if (targetItemIsSelected == moveItemIsSelected) {
-                    if (index >= startIndex) {
-                        index++;
-                    }
+                if ((targetItemIsSelected == moveItemIsSelected) && (index >= startIndex)) {
+                    index++;
                 }
+
                 moveToItems.add(index, startItem);
             }
-            refreshAction();
         }
-    }
-
-    private void refreshAction() {
     }
 }
 

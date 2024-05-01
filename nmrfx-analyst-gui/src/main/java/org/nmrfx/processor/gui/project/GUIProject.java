@@ -20,7 +20,6 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
@@ -277,7 +276,6 @@ public class GUIProject extends StructureProject {
         } catch (GitAPIException ex) {
             log.error(ex.getMessage(), ex);
         } finally {
-            // fixme, should we do this after each commit, or leave git open
             git.close();
             git = null;
             commitActive = false;
@@ -292,6 +290,7 @@ public class GUIProject extends StructureProject {
         peakList.registerUpdater(updater);
     }
 
+    @Override
     public void removePeakList(String name) {
         PeakList peakList = peakLists.get(name);
         if (peakList != null) {
@@ -309,15 +308,17 @@ public class GUIProject extends StructureProject {
         WindowIO.saveWindows(dir);
     }
 
+    @Override
     public void addPeakListListener(Object mapChangeListener) {
         ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
         obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
     }
 
+    @Override
     public void removePeakListListener(Object mapChangeObject) {
         if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
             ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-            obsMap.removeListener((MapChangeListener<String, PeakList>) mapChangeListener);
+            obsMap.removeListener(mapChangeListener);
         }
     }
 
@@ -327,10 +328,11 @@ public class GUIProject extends StructureProject {
         obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
     }
 
+    @Override
     public void removeDatasetListListener(Object mapChangeObject) {
         if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
             ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
-            obsMap.removeListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
+            obsMap.removeListener(mapChangeListener);
         }
     }
 

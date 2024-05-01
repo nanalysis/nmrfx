@@ -36,7 +36,7 @@ public class ContentController implements NmrControlRightSideContent {
     @FXML
     TitledPane peakTitledPane;
     @FXML
-    ListSelectionView<String> datasetView;
+    ListSelectionView<String> datasetSelectionView;
     @FXML
     ListSelectionView<String> peakView;
 

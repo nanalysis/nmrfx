@@ -4,12 +4,9 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.gui.DatasetsController;
 import org.nmrfx.processor.utilities.WebConnect;
 
 public class HelpMenuActions extends MenuActions {
-
-    DatasetsController datasetController;
 
     public HelpMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
