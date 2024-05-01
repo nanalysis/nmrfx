@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui;
 
-import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.annotations.PythonAPI;
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 
 @PythonAPI("gscript_adv")
 public class GUIScripterAdvanced extends GUIScripter {
@@ -138,35 +136,16 @@ public class GUIScripterAdvanced extends GUIScripter {
     }
 
     public String genYAML() throws ExecutionException, InterruptedException {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController controller = getActiveController();
-            return genYAMLOnFx(controller);
-        } else {
-            FutureTask<String> future = new FutureTask<>(() -> {
-                FXMLController controller = getActiveController();
-                return genYAMLOnFx(controller);
-            });
-            Fx.runOnFxThread(future);
-            return future.get();
-        }
+        return Fx.runOnFxThreadAndWait(() -> genYAMLOnFx(getActiveController()));
     }
 
     public String genYAML(FXMLController controller) throws ExecutionException, InterruptedException {
-        if (Platform.isFxApplicationThread()) {
-            return genYAMLOnFx(controller);
-        } else {
-            FutureTask<String> future = new FutureTask<>(() -> genYAMLOnFx(controller));
-            Fx.runOnFxThread(future);
-            return future.get();
-        }
+        return Fx.runOnFxThreadAndWait(() -> genYAMLOnFx(controller));
+
     }
 
     public void loadYAML(String inputData, String pathName, boolean createNewStage) {
-        if (Platform.isFxApplicationThread()) {
-            loadYAMLOnFx(inputData, pathName, createNewStage);
-        } else {
-            Fx.runOnFxThread(() -> loadYAMLOnFx(inputData, pathName, createNewStage));
-        }
+        Fx.runOnFxThread(() -> loadYAMLOnFx(inputData, pathName, createNewStage));
     }
 
     public void loadYAMLOnFx(String inputData, String pathName, boolean createNewStage) {
