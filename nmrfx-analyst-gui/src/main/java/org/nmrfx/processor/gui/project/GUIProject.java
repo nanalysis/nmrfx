@@ -314,7 +314,6 @@ public class GUIProject extends StructureProject {
         obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
     }
 
-    @Override
     public void removePeakListListener(Object mapChangeObject) {
         if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
             ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
@@ -328,7 +327,6 @@ public class GUIProject extends StructureProject {
         obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
     }
 
-    @Override
     public void removeDatasetListListener(Object mapChangeObject) {
         if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
             ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;

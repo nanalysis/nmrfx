@@ -211,8 +211,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         chartPane.getChildren().clear();
         chartPane = null;
         charts.clear();
-        System.gc();
-        System.gc();
     }
 
     public void saveDatasets() {
@@ -497,8 +495,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
 
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        PolyChart polyChart = getActiveChart();
-        polyChart.getCrossHairs().setStates(true, true, true, true);
+        chart.getCrossHairs().setStates(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();

@@ -74,11 +74,6 @@ public class ContentController implements NmrControlRightSideContent {
         datasetTitledPane.expandedProperty().addListener(e -> update());
     }
 
-    public void removeListeners() {
-        ProjectBase.getActive().removeDatasetListListener(mapChangeListener);
-        ProjectBase.getActive().removePeakListListener(mapChangeListener);
-    }
-
     public Pane getPane() {
         return contentVBox;
     }
