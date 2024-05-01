@@ -137,6 +137,8 @@ public class WindowIO implements FileWatchListener {
             try {
                 saveWindow(AnalystApp.getFXMLControllerManager().getOrCreateActiveController(), path);
             } catch (IOException | ExecutionException | InterruptedException ex) {
+                log.error("Error saving window file " + path, ex);
+                Thread.currentThread().interrupt();
                 GUIUtils.warn("Error saving window file", ex.getMessage());
             }
         }
@@ -220,6 +222,7 @@ public class WindowIO implements FileWatchListener {
                 i++;
             } catch (ExecutionException|InterruptedException e) {
                 log.error("Can't save yaml file", e);
+                Thread.currentThread().interrupt();
             }
         }
     }
