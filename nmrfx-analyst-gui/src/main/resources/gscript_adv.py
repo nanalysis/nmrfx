@@ -31,6 +31,15 @@ class NMRFxWindowAdvScripting(NMRFxWindowScripting):
         else:
             self.cmd.runabout(arrangement)
 
+    def genYAML(self):
+        return self.cmd.genYAML()
+
+    def dumpYaml(self, fileName):
+        yamlDump = self.genYAML()
+        with open(fileName,'w') as fOut:
+            fOut.write(yamlDump.encode("utf-8"))
+
+
 def parseArgs(argv):
     nw = NMRFxWindowScripting()
     parser = argparse.ArgumentParser(description="Evaluate NMRFx Command Line Args")

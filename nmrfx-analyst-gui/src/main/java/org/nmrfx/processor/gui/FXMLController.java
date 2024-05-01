@@ -208,6 +208,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
+        chartPane.getChildren().clear();
+        chartPane = null;
+        charts.clear();
     }
 
     public void saveDatasets() {
@@ -447,7 +450,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 processorController.cleanUp();
             }
             if (addDatasetToChart) {
-                addDataset(dataset, append, false);
+                addDataset(getActiveChart(), dataset, append, false);
             }
         } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);
@@ -485,15 +488,14 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
+    public void addDataset(PolyChart chart, DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
         if (dataset.getFile() != null) {
             PreferencesController.saveRecentFiles(dataset.getFile().toString());
         }
 
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        PolyChart polyChart = getActiveChart();
-        polyChart.getCrossHairs().setStates(true, true, true, true);
+        chart.getCrossHairs().setStates(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();

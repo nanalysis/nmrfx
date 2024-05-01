@@ -8,7 +8,7 @@
 # CLASSPATH  - colon separated list of additional jar files & class directories
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
 #
-JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED"
+JAVA_OPTS="--add-opens=javafx.controls/com.sun.javafx.scene.control.inputmap=ALL-UNNAMED -Dprism.maxvram=2G"
 
 if [ -n "$NMRFXP_MEMORY" ] ; then
     HEAP_MEM=$NMRFXP_MEMORY
@@ -57,4 +57,4 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -mx${HEAP_MEM}m -cp "$CLASSPATH" $LOG_CONFIG $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -Xms1024m -Xmx${HEAP_MEM}m -cp "$CLASSPATH" $LOG_CONFIG $JAVA_OPTS $nvjmain ${1+"$@"}
