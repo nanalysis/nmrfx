@@ -1572,7 +1572,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             viewProcessorControllerIfPossible = false;
         } else if (toolButton.isSelected()) {
             nmrControlRightSidePane.addContent(toolController);
-            toolController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
             boolean dataIsFID = false;
