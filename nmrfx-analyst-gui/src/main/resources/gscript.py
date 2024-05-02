@@ -1,5 +1,6 @@
 from org.nmrfx.processor.gui import FXMLController
 from org.nmrfx.processor.gui import GUIScripter
+from org.nmrfx.analyst.gui import AnalystApp
 from org.nmrfx.peaks import PeakList
 from org.nmrfx.processor.datasets import Dataset
 from javafx.stage import Stage
@@ -338,7 +339,7 @@ class NMRFxWindowScripting:
     def createStage(self):
         stage = Stage()
         bPane = BorderPane()
-        scene = Scene(bpane)
+        scene = Scene(bPane)
         stage.setScene(scene)
         stage.show()
         return bPane
@@ -384,6 +385,10 @@ class NMRFxWindowScripting:
 
     def export(self, fileName):
         self.cmd.export(fileName)
+
+    def testGCCanvas(self, n, delay=0.3):
+        fm=AnalystApp.getFXMLControllerManager()
+        fm.controllerTest(n, delay)
 
 
 def parseArgs(argv):

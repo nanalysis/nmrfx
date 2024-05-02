@@ -220,7 +220,7 @@ public class GUIProject extends StructureProject {
         WindowIO.loadWindows(dir);
     }
 
-    void saveWindows(Path dir) {
+    void saveWindows(Path dir) throws IOException {
         WindowIO.saveWindows(dir);
     }
 
@@ -232,10 +232,24 @@ public class GUIProject extends StructureProject {
         }
     }
 
+    public void removePeakListListener(Object mapChangeObject) {
+        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
+            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+            obsMap.removeListener(mapChangeListener);
+        }
+    }
+
     @Override
     public void addDatasetListListener(Object mapChangeListener) {
         ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
         obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
+    }
+
+    public void removeDatasetListListener(Object mapChangeObject) {
+        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
+            ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
+            obsMap.removeListener(mapChangeListener);
+        }
     }
 
     public void checkSubDirs(Path projectDir) throws IOException {

@@ -14,7 +14,9 @@ public abstract class MenuActions {
 
     public abstract void basic();
 
-    protected abstract void advanced();
+    protected  void advanced() {
+
+    }
 
     public void activateAdvanced() {
         if (!advancedActive) {
