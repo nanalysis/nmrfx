@@ -102,7 +102,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
             }
             // If all the datasets have the same dimension add them in append mode
             if (dimensions.size() == 1) {
-                unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(datasetToAdd, true, false));
+                unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(chart, datasetToAdd, true, false));
             } else {
                 chart.updateDatasets(datasetNames);
                 chart.updateProjections();

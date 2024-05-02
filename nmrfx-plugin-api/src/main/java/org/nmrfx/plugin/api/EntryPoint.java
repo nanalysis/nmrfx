@@ -22,5 +22,5 @@ package org.nmrfx.plugin.api;
  * The obvious ones would be menus and scenes.
  */
 public enum EntryPoint {
-    STARTUP, MENU_FILE, MENU_MOLECULE_VIEWER, MENU_PLUGINS, STATUS_BAR_TOOLS
+    STARTUP, MENU_FILE, MENU_MOLECULE_VIEWER, MENU_PLUGINS, STATUS_BAR_TOOLS, RIGHT_TOOLS
 }

@@ -96,7 +96,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
                     datasetsToAdd.forEach(d -> dimensions.add(d.getNDim()));
                     if (dimensions.size() == 1) {
                         for (Dataset datasetToAdd : datasetsToAdd) {
-                            chart.getFXMLController().addDataset(datasetToAdd, true, false);
+                            chart.getFXMLController().addDataset(chart, datasetToAdd, true, false);
                         }
                     } else {
                         List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());

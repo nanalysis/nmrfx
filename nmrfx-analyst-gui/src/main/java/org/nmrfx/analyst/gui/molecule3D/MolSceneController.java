@@ -2,6 +2,7 @@ package org.nmrfx.analyst.gui.molecule3D;
 
 import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
+import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -147,7 +148,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             updatePeakListMenu();
         };
 
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(probabilitiesCheckBox);
