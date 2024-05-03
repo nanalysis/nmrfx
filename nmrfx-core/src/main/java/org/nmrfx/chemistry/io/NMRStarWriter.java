@@ -1311,7 +1311,7 @@ public class NMRStarWriter {
 
     public static void writeAll(Writer chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
 
-        String projectName = "NMRFx Project";
+        String projectName = "NMRFx_Project";
         if (ProjectBase.getActive().getDirectory() != null) {
             String filename = ProjectBase.getActive().getDirectory().getFileName().toString();
             if (!filename.isBlank()) {

@@ -1,6 +1,8 @@
 package org.nmrfx.analyst.gui.BMRB;
 
+import javafx.application.HostServices;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -10,7 +12,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.ProjectMenuActions;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
@@ -38,6 +40,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
     private Button goToButton;
     @FXML
     TableView<BMRBSearchResult> BMRBSearchTableView;
+    private HostServices hostServices;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -54,10 +57,14 @@ public class BMRBSearchController implements Initializable, StageBasedController
         searchButton.setMinWidth(30);
 
         fetchStarButton.setText("Fetch STAR");
+        fetchStarButton.setOnAction(this::getSelected);
         fetchStarButton.setMinWidth(30);
 
         goToButton.setText("Go to Page");
+        goToButton.setOnAction(this::goToSite);
         goToButton.setMinWidth(30);
+
+        hostServices = AnalystApp.getAnalystApp().getHostServices();
     }
 
     @Override
@@ -180,22 +187,26 @@ public class BMRBSearchController implements Initializable, StageBasedController
         authorsCol.setMinWidth(300);
 
         BMRBSearchTableView.getColumns().addAll(entryIDCol, releaseDateCol, dataSummaryCol, entryTitleCol, authorsCol);
-        BMRBSearchTableView.getSelectionModel().selectedItemProperty().addListener(
-                (observable -> selectSearchRow())
-        );
     }
 
-    public void selectSearchRow() {
-        try {
-            var selected = BMRBSearchTableView.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                return;
+    public void getSelected(ActionEvent event) {
+        var selected = BMRBSearchTableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            try {
+                int entryID = Integer.valueOf(selected.getEntryID());
+                System.out.println(entryID);
+            } catch (Exception ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
             }
-            int entryID = Integer.valueOf(selected.getEntryID());
-            System.out.println(entryID);
-        } catch (Exception ex) {
-            ExceptionDialog dialog = new ExceptionDialog(ex);
-            dialog.showAndWait();
+        }
+    }
+
+    private void goToSite(ActionEvent event) {
+        var selected = BMRBSearchTableView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            String entryID = selected.getEntryID();
+            hostServices.showDocument("https://bmrb.io/data_library/summary/index.php?bmrbId=" + entryID);
         }
     }
 

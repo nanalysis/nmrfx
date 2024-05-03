@@ -247,11 +247,11 @@ public class ProjectMenuActions extends MenuActions {
             GUIUtils.warn("Email address", "Entry is blank");
             return;
         }
-        String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx Project" :
+        String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx_Project" :
                 GUIProject.getActive().getDirectory().getFileName().toString();
 
         if (projectName.isBlank()) {
-            projectName = "NMRFx Project";
+            projectName = "NMRFx_Project";
         }
         CompletableFuture<String> futureResponse = null;
         StringWriter starStr = NMRStarWriter.writeToString();
@@ -265,7 +265,8 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         futureResponse.thenAccept(r -> {
-            System.out.println(r);
+            Fx.runOnFxThread(() ->
+                    GUIUtils.affirm(r));
         });
     }
 
