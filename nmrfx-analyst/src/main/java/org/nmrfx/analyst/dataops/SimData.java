@@ -22,6 +22,11 @@ public class SimData {
     final short[][] ppms;
     final short[][] jValues;
     final short[][] jPairs;
+    final int[][] ids;
+
+    final int[][][] equiv;
+
+    double[][][] matrices = null;
 
     public SimData(String name, String id, int nBlocks) {
         this.name = name;
@@ -29,21 +34,81 @@ public class SimData {
         ppms = new short[nBlocks][];
         jValues = new short[nBlocks][];
         jPairs = new short[nBlocks][];
+        ids = new int[nBlocks][];
+        equiv = new int[nBlocks][][];
     }
 
     public static boolean loaded() {
         return !simDataMap.isEmpty();
     }
 
+    public int nBlocks() {
+        return ppms.length;
+    }
+
+    public void setMatrices(double[][][] matrices) {
+        this.matrices = matrices;
+    }
+
+    public double[][][] getMatrices() {
+        int nBlocks = ppms.length;
+        double[][][] matrix = new double[nBlocks][][];
+        for (int iBlock = 0;iBlock<nBlocks;iBlock++) {
+            double[] ppms2 = getPPMs(iBlock);
+            double[] j2 = getJValues(iBlock);
+            int[] jPairs2 = getJPairs(iBlock);
+            int n = ppms2.length;
+            matrix[iBlock] = new double[n][n];
+            double[][] subMatrix = matrix[iBlock];
+            for (int i = 0; i < n; i++) {
+                subMatrix[i][i] = ppms2[i];
+            }
+            for (int i = 0; i < jPairs2.length; i += 2) {
+                int r = jPairs2[i] - 1;
+                int c = jPairs2[i + 1] - 1;
+                double coupling = j2[i / 2];
+                subMatrix[r][c] = coupling;
+                subMatrix[c][r] = coupling;
+            }
+        }
+        return matrix;
+    }
+
+    public void setIDs(int iBlock, List<Integer> names) {
+        ids[iBlock] = new int[names.size()];
+        for (int i = 0; i < ids[iBlock].length; i++) {
+            ids[iBlock][i] = names.get(i);
+        }
+    }
+
+    public int[] getIDs(int iBlock) {
+        return ids[iBlock];
+    }
+
+    public int[][] getEquiv(int iBlock) {
+        return equiv[iBlock];
+    }
     public void setPPMs(int iBlock, List<Double> values) {
         ppms[iBlock] = new short[values.size()];
+        double tol = 0.002;
+        equiv[iBlock] = new int[ppms[iBlock].length][0];
+
+        for (int i=0;i<ppms[iBlock].length - 2;i++) {
+                double d1 = Math.abs(values.get(i) - values.get(i+1));
+                double d2 = Math.abs(values.get(i) - values.get(i+2));
+                if ((d1 < tol) && (d2 < tol)) {
+                    equiv[iBlock][i] = new int[]{i+1,i+2};
+                    equiv[iBlock][i+1] = new int[]{i};
+                    equiv[iBlock][i+2] = new int[]{i};
+                }
+        }
         for (int i = 0; i < ppms[iBlock].length; i++) {
             double f = values.get(i) / ppmScale;
             ppms[iBlock][i] = (short) Math.round(f * Short.MAX_VALUE);
         }
     }
 
-    double[] getPPMs(int iBlock) {
+    public double[] getPPMs(int iBlock) {
         double[] values = new double[ppms[iBlock].length];
         for (int i = 0; i < values.length; i++) {
             values[i] = ppms[iBlock][i] * ppmScale / Short.MAX_VALUE;
@@ -59,7 +124,7 @@ public class SimData {
         }
     }
 
-    double[] getJValues(int iBlock) {
+    public double[] getJValues(int iBlock) {
         double[] values = new double[jValues[iBlock].length];
         for (int i = 0; i < values.length; i++) {
             values[i] = jValues[iBlock][i] * jScale / Short.MAX_VALUE;
@@ -74,12 +139,16 @@ public class SimData {
         }
     }
 
-    int[] getJPairs(int iBlock) {
+    public int[] getJPairs(int iBlock) {
         int[] values = new int[jPairs[iBlock].length];
         for (int i = 0; i < values.length; i++) {
             values[i] = jPairs[iBlock][i];
         }
         return values;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public static boolean contains(String name) {
@@ -125,8 +194,16 @@ public class SimData {
     }
 
     public static Dataset genDataset(String name, SimDataVecPars pars, double lb) {
+        SimData data = simDataMap.get(name);
+        if (data == null) {
+            throw new IllegalArgumentException("Can't find data for \"" + name + "\"");
+        }
+        return genDataset(data, name, pars, lb);
+    }
+
+    public static Dataset genDataset(SimData data, String name, SimDataVecPars pars, double lb) {
         Vec vec = prepareVec(name, pars);
-        genVec(name, vec, lb);
+        genVec(data, vec, lb);
         Dataset dataset = new Dataset(vec);
         dataset.setLabel(0, pars.getLabel());
         return dataset;
@@ -156,11 +233,20 @@ public class SimData {
 
     }
 
+    public static Optional<SimData> getSimData(String name) {
+        SimData data = simDataMap.get(name);
+        return Optional.ofNullable(data);
+    }
+
     public static List<Region> genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
         SimData data = simDataMap.get(name);
         if (data == null) {
             throw new IllegalArgumentException("Can't find data for \"" + name + "\"");
         }
+        return genVec(data, vec, lb);
+    }
+
+    public static List<Region> genVec(SimData data, Vec vec, double lb) throws IllegalArgumentException {
         vec.zeros();
         int nBlocks = data.ppms.length;
         List<double[]> regions = new ArrayList<>();
@@ -181,7 +267,12 @@ public class SimData {
                 double[] region = {min - 3 * lb / vec.getSF(), max + 3 * lb / vec.getSF()};
                 regions.add(region);
             }
-            SimShifts simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
+            SimShifts simShifts;
+            if (data.matrices != null) {
+                simShifts = new SimShifts(data.matrices[i], vec.getSF());
+            }  else {
+                simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
+            }
             simShifts.diag();
             simShifts.makeSpec(vec);
         }
@@ -244,23 +335,30 @@ public class SimData {
 
         Yaml yaml = new Yaml();
         for (Object data : yaml.loadAll(istream)) {
-            Map<String, Object> dataMap = (HashMap<String, Object>) data;
-            String name = ((String) dataMap.get("name")).trim();
-            String id = (String) dataMap.get("id");
-            List blocks = (List) dataMap.get("blocks");
-            SimData simData = new SimData(name, id, blocks.size());
-            int iBlock = 0;
-            for (Object block : blocks) {
-                Map<String, Object> blockMap = (Map<String, Object>) block;
-                List<Double> ppms = (List<Double>) blockMap.get("shifts");
-                List<Double> jValues = (List<Double>) blockMap.get("jValues");
-                List<Integer> jPairs = (List<Integer>) blockMap.get("jPairs");
-                simData.setPPMs(iBlock, ppms);
-                simData.setJValues(iBlock, jValues);
-                simData.setJPairs(iBlock, jPairs);
-                iBlock++;
+            try {
+                Map<String, Object> dataMap = (HashMap<String, Object>) data;
+                String name = ((String) dataMap.get("name")).trim();
+                String id = (String) dataMap.get("id");
+                List blocks = (List) dataMap.get("blocks");
+                SimData simData = new SimData(name, id, blocks.size());
+                int iBlock = 0;
+                for (Object block : blocks) {
+                    Map<String, Object> blockMap = (Map<String, Object>) block;
+                    List<Double> ppms = (List<Double>) blockMap.get("shifts");
+                    List<Double> jValues = (List<Double>) blockMap.get("jValues");
+                    List<Integer> jPairs = (List<Integer>) blockMap.get("jPairs");
+                    List<Integer> ids = (List<Integer>) blockMap.get("id");
+                    simData.setPPMs(iBlock, ppms);
+                    simData.setJValues(iBlock, jValues);
+                    simData.setJPairs(iBlock, jPairs);
+                    simData.setIDs(iBlock, ids);
+
+                    iBlock++;
+                }
+                simDataMap.put(name.toLowerCase().replace(' ', '-'), simData);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            simDataMap.put(name.toLowerCase().replace(' ', '-'), simData);
         }
     }
 

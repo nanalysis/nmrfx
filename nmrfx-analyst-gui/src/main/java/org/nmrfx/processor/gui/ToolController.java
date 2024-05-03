@@ -71,5 +71,8 @@ public class ToolController implements NmrControlRightSideContent {
     public AnnotationController getAnnotationController(){
         return annotationController;
     }
+    public ChemicalLibraryController getLibraryController(){
+        return libraryController;
+    }
 
 }

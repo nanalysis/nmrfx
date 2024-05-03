@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -41,6 +42,7 @@ public class ChemicalLibraryController {
     TextField nameField;
     ChoiceBox<ChemicalLibraryController.LIBRARY_MODE> modeChoiceBox;
 
+    VBox vBox;
     Spinner<Integer> spinner;
     Slider shiftSlider;
     CheckBox activeBox;
@@ -52,6 +54,7 @@ public class ChemicalLibraryController {
     Dataset currentDataset = null;
     Dataset sumDataset = null;
     CompoundMatcher cmpdMatcher = new CompoundMatcher();
+    SimpleObjectProperty<SimData> currentSimData = new SimpleObjectProperty<>();
 
     enum LIBRARY_MODE {
         GISSMO,
@@ -62,7 +65,7 @@ public class ChemicalLibraryController {
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
         this.chart = fxmlController.getActiveChart();
-        VBox vBox = new VBox();
+        vBox = new VBox();
         vBox.setSpacing(10);
         annoPane.setContent(vBox);
 
@@ -84,8 +87,8 @@ public class ChemicalLibraryController {
         searchField.setPrefWidth(200);
         searchField.setOnKeyReleased(e -> {
             if (e.getCode() == KeyCode.ENTER) {
-                //setMol();
-                createCmpdData();
+                setMol();
+                //createCmpdData();
             }
         });
         HBox hBox2 = new HBox();
@@ -182,6 +185,13 @@ public class ChemicalLibraryController {
 
     }
 
+    public VBox getvBox() {
+        return vBox;
+    }
+
+    public SimpleObjectProperty<SimData> getCurrentSimData() {
+        return currentSimData;
+    }
 
     SimDataVecPars defaultPars() {
         String label = "1H";
@@ -403,14 +413,37 @@ public class ChemicalLibraryController {
         }
         newDataset.setFreqDomain(0, true);
         newDataset.addProperty("SIM", name);
-        return  newDataset;
+        return newDataset;
     }
+
+    private Dataset makeDataset(Dataset currData, SimData simData, String name) {
+        Dataset newDataset;
+        String label = currData == null ? "1H" : currData.getLabel(0);
+        SimDataVecPars pars;
+        if (currData != null) {
+            pars = new SimDataVecPars(currData);
+        } else {
+            pars = defaultPars();
+        }
+        double lb = AnalystPrefs.getLibraryVectorLB();
+        newDataset = SimData.genDataset(simData, name, pars, lb);
+
+        newDataset.setFreqDomain(0, true);
+        newDataset.addProperty("SIM", name);
+        return newDataset;
+    }
+
+    public SimpleObjectProperty<SimData> getSimData() {
+        return currentSimData;
+    }
+
     public void setMol() {
         ChemicalLibraryController.LIBRARY_MODE mode = modeChoiceBox.getValue();
         if (!loadData(mode)) {
             return;
         }
         String name = searchField.getText().toLowerCase();
+        currentSimData.set(null);
         boolean dataInLibrary = mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS ? DBData.contains(name) : SimData.contains(name);
         if (dataInLibrary) {
             Dataset newDataset = Dataset.getDataset(name);
@@ -429,6 +462,10 @@ public class ChemicalLibraryController {
                 }
                 newDataset = makeDataset(mode, currData, name);
             }
+            if (mode == LIBRARY_MODE.GISSMO) {
+                SimData.getSimData(name).ifPresent(simData -> currentSimData.set(simData));
+            }
+
             fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
             chart.setDataset(newDataset, appendMode, false);
 
@@ -440,11 +477,40 @@ public class ChemicalLibraryController {
         }
     }
 
+    public void updateDataset(SimData simData, String name) {
+        Dataset newDataset = Dataset.getDataset(name);
+        PolyChart chart = fxmlController.getActiveChart();
+        boolean appendMode = false;
+        if (newDataset == null) {
+            Dataset currData = null;
+            for (PolyChart pChart : fxmlController.getCharts()) {
+                currData = (Dataset) pChart.getDataset();
+                if (currData != null) {
+                    break;
+                }
+            }
+            if (currData != null) {
+                appendMode = true;
+            }
+            newDataset = makeDataset(currData, simData, name);
+        } else {
+            Vec vec = newDataset.getVec();
+            double lb = AnalystPrefs.getLibraryVectorLB();
+            SimData.genVec(simData, vec, lb);
+        }
+        fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
+        chart.setDataset(newDataset, appendMode, false);
+
+        updateColors(chart);
+        searchField.setText("");
+        chart.refresh();
+    }
     public void createCmpdData() {
         ChemicalLibraryController.LIBRARY_MODE mode = modeChoiceBox.getValue();
         if (!loadData(mode)) {
             return;
         }
+        currentSimData.set(null);
 
         String name = searchField.getText().toLowerCase();
         List<String> names = Arrays.asList("sum", "current");
@@ -472,6 +538,7 @@ public class ChemicalLibraryController {
             if (mode == LIBRARY_MODE.SEGMENTS) {
                 cData = DBData.makeData(name, pars);
             } else {
+                SimData.getSimData(name).ifPresent(simData -> currentSimData.set(simData));
                 cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc);
             }
             CompoundData.put(cData, name);
