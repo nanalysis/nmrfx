@@ -24,10 +24,7 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
+import javafx.collections.*;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Side;
@@ -135,7 +132,7 @@ public class NOETableController implements Initializable, StageBasedController {
 
         noeSetMap.addListener(mapChangeListener);
         MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-        ProjectBase.getActive().addPeakListListener(peakmapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(peakmapChangeListener));
 
         updateNoeSetMenu();
         updatePeakListMenu();

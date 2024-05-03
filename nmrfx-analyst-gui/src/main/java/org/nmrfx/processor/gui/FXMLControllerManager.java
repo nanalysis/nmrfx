@@ -1,8 +1,13 @@
 package org.nmrfx.processor.gui;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.event.EventHandler;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
 
@@ -187,5 +192,30 @@ public class FXMLControllerManager {
         if (controller.getStage().isFocused()) {
             setActiveController(controller);
         }
+    }
+
+    public  void controllerTest(int nControllers, double delay) {
+
+        Timeline timeline = new Timeline();
+        timeline.setCycleCount(Animation.INDEFINITE);
+        final Integer[] timeSeconds = {nControllers};
+        final FXMLController[] fxmlControllers = new FXMLController[1];
+        // KeyFrame event handler
+        timeline.getKeyFrames().add(
+                new KeyFrame(Duration.seconds(delay),
+                        (EventHandler) event -> {
+                            timeSeconds[0]--;
+                            if (timeSeconds[0] <= 0) {
+                                timeline.stop();
+                            }
+                            if (fxmlControllers[0] != null) {
+                                Stage stage = fxmlControllers[0].getStage();
+                                closeController(fxmlControllers[0]);
+                                stage.close();
+                                AnalystApp.removeStage(stage);
+                            }
+                            fxmlControllers[0] = newController();
+                        }));
+        timeline.playFromStart();
     }
 }

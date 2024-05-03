@@ -23,6 +23,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.WeakMapChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -214,7 +215,7 @@ public class StripController implements ControllerTool {
                 new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -557,7 +558,7 @@ public class StripController implements ControllerTool {
             controller.setActiveChart(chart);
             if (item.dataset != null) {
                 if (init) {
-                    controller.addDataset(item.dataset, false, false);
+                    controller.addDataset(chart, item.dataset, false, false);
                     chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
                 }
                 chart.setDataset(item.dataset);
