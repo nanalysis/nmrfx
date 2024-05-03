@@ -87,6 +87,24 @@
             <groupId>org.ojalgo</groupId>
             <artifactId>ojalgo</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>berlin.yuna</groupId>
+            <artifactId>type-map</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.nmrfx</groupId>
+            <artifactId>nmrfx-utils</artifactId>
+            <version>11.4.8-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

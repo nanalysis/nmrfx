@@ -32,10 +32,7 @@ import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -1265,6 +1262,15 @@ public class NMRStarWriter {
         }
     }
 
+    public static StringWriter writeToString(){
+        try (StringWriter writer = new StringWriter()) {
+            writeAll(writer);
+            return writer;
+        } catch (IOException | ParseException | InvalidPeakException | InvalidMoleculeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void writeSoftwareSTAR3(Writer chan) throws  IOException {
         String softwareSf = """
                 save_software_1
@@ -1280,22 +1286,39 @@ public class NMRStarWriter {
                   'chemical shift assignment'
                   'peak picking'
                   
+                  stop_
+                  
                 save_
                 
                 """;
         chan.write(softwareSf);
     }
 
+    public class WriteMode {
+        public WriteMode() {}
+        public boolean doMolecule = true;
+        public boolean doPeakLists = true;
+        public boolean doResonances = true;
+        public boolean doAssignments = true;
+        public boolean doCoordinates = true;
+        public boolean doConstraints = true;
+        public boolean doPeakPaths = true;
+        public boolean doRelaxation = true;
+        public boolean doNOEs = true;
+        public boolean doOrderPars = true;
+
+    }
+
     public static void writeAll(Writer chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
 
-        String projectName = "Project";
+        String projectName = "NMRFx Project";
         if (ProjectBase.getActive().getDirectory() != null) {
             String filename = ProjectBase.getActive().getDirectory().getFileName().toString();
             if (!filename.isBlank()) {
                 projectName = filename;
             }
         }
-        chan.write("data_" + projectName + "\n");
+        chan.write("data_" + projectName + "\n\n");
         ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         resFactory.clean();
 

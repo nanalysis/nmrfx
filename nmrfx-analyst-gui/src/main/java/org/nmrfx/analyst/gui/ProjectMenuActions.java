@@ -7,6 +7,7 @@ import javafx.scene.control.MenuItem;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.BMRB.BMRBSearchController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
@@ -15,14 +16,14 @@ import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.star.BMRBFetch;
+import org.nmrfx.star.BMRBio;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.io.StringWriter;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.List;
@@ -60,6 +61,11 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem fetchSTARMenuItem = new MenuItem("Fetch STAR3...");
         fetchSTARMenuItem.setOnAction(this::fetchSTAR);
 
+        MenuItem depositSTARMenuItem = new MenuItem("Deposit STAR3...");
+        depositSTARMenuItem.setOnAction(this::depositSTAR);
+
+        MenuItem searchBMRBMenuItem = new MenuItem("Search BMRB");
+        searchBMRBMenuItem.setOnAction(this::searchBMRB);
 
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
@@ -75,7 +81,7 @@ public class ProjectMenuActions extends MenuActions {
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
                 projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem, fetchSTARMenuItem);
+                openSTARMenuItem, saveSTARMenuItem, fetchSTARMenuItem, depositSTARMenuItem, searchBMRBMenuItem);
 
     }
 
@@ -180,9 +186,15 @@ public class ProjectMenuActions extends MenuActions {
 
     @FXML
     void fetchSTAR(ActionEvent event) {
+        boolean loadShiftsOnly;
+        String ppmSet;
         if (GUIProject.checkProjectActive(false)) {
-            GUIUtils.warn("Fetch BMRB Entry", "Project content already present.  Close existing first");
-            return;
+            GUIUtils.warn("Fetch BMRB Entry", "Project content already present. Only Chemical Shifts Fetched");
+            ppmSet = GUIUtils.input("ppm set");
+            loadShiftsOnly = true;
+        } else {
+            ppmSet = null;
+            loadShiftsOnly = false;
         }
 
         String entryStr = GUIUtils.input("BMRB Entry:");
@@ -200,7 +212,7 @@ public class ProjectMenuActions extends MenuActions {
         }
         CompletableFuture<HttpResponse<String>> futureResponse = null;
         try {
-            futureResponse = BMRBFetch.fetchEntryASync(entryId);
+            futureResponse = BMRBio.fetchEntryASync(entryId);
         } catch (Exception e) {
             ExceptionDialog dialog = new ExceptionDialog(e);
             dialog.showAndWait();
@@ -214,7 +226,11 @@ public class ProjectMenuActions extends MenuActions {
                         GUIUtils.warn("Invalid BMRB Entry", "Entry not found");
                         return;
                     }
-                    NMRStarReader.readFromString(r.body());
+                    if (!loadShiftsOnly) {
+                        NMRStarReader.readFromString(r.body());
+                    } else {
+                        NMRStarReader.readChemicalShiftsFromString(r.body(), Integer.valueOf(ppmSet));
+                    }
                 } catch (ParseException e) {
                     ExceptionDialog dialog = new ExceptionDialog(e);
                     dialog.showAndWait();
@@ -222,6 +238,41 @@ public class ProjectMenuActions extends MenuActions {
             });
             return true;
         });
+    }
+    @FXML
+    void depositSTAR(ActionEvent event) {
+        //fixme need to check if project is present
+        String emailAddress = GUIUtils.input("Email address:");
+        if (emailAddress.isBlank()) {
+            GUIUtils.warn("Email address", "Entry is blank");
+            return;
+        }
+        String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx Project" :
+                GUIProject.getActive().getDirectory().getFileName().toString();
+
+        if (projectName.isBlank()) {
+            projectName = "NMRFx Project";
+        }
+        CompletableFuture<String> futureResponse = null;
+        StringWriter starStr = NMRStarWriter.writeToString();
+
+        try {
+            futureResponse = BMRBio.depositEntry(emailAddress, projectName, starStr);
+        } catch (Exception e) {
+            ExceptionDialog dialog = new ExceptionDialog(e);
+            dialog.showAndWait();
+            return;
+        }
+
+        futureResponse.thenAccept(r -> {
+            System.out.println(r);
+        });
+    }
+
+    void searchBMRB(ActionEvent event) {
+        BMRBSearchController searchController = BMRBSearchController.create();
+        searchController.getStage().show();
+        searchController.getStage().toFront();
     }
 
     void writeSTAR(ActionEvent event) {

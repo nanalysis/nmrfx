@@ -94,6 +94,20 @@ public class NMRStarReader {
         return star;
     }
 
+    public static void readChemicalShiftsFromString(String starData, int ppmSet) throws ParseException {
+        StringReader stringReader;
+        stringReader = new StringReader(starData);
+        BufferedReader bfR = new BufferedReader(stringReader);
+        STAR3 star = new STAR3(bfR, "star3");
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRStarReader reader = new NMRStarReader(null, star);
+        reader.buildChemShifts(0, ppmSet);
+    }
+
     public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
         FileReader fileReader;
         try {
