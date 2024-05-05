@@ -47,6 +47,8 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
@@ -1940,6 +1942,51 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             scannerTool.setSplitPanePosition(dividerPositions[0]);
             removeBottomBoxNode(scannerTool.getBox());
         }
+    }
+
+    public Optional<RunAboutGUI>  showRunAboutTool() {
+        RunAboutGUI runAboutGUI;
+        if (!containsTool(RunAboutGUI.class)) {
+            TabPane tabPane = new TabPane();
+            getBottomBox().getChildren().add(tabPane);
+            tabPane.setMinHeight(200);
+            runAboutGUI = new RunAboutGUI(this, this::removeRunaboutTool);
+            runAboutGUI.initialize(tabPane);
+            addTool(runAboutGUI);
+            return Optional.of(runAboutGUI);
+        } else {
+            return getRunAboutTool();
+        }
+    }
+
+    public Optional<RunAboutGUI> getRunAboutTool() {
+        ControllerTool tool = getTool(RunAboutGUI.class);
+        if (tool instanceof RunAboutGUI runAboutGUI) {
+            return Optional.of(runAboutGUI);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        removeTool(RunAboutGUI.class);
+        removeBottomBoxNode(runaboutTool.getTabPane());
+    }
+
+    public StripController showStripsBar() {
+        if (!containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(this, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            addTool(stripsController);
+        }
+        return (StripController) getTool(StripController.class);
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        removeTool(StripController.class);
+        removeBottomBoxNode(stripsController.getBox());
     }
 
     public void removeBottomBoxNode(Node node) {

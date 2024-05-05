@@ -129,6 +129,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         this.closeAction = closeAction;
     }
 
+    public RunAbout getRunAbout() {
+        return runAbout;
+    }
     public ToolBar getToolBar() {
         return navigatorToolBar;
     }

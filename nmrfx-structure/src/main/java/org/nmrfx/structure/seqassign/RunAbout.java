@@ -65,6 +65,9 @@ public class RunAbout implements SaveframeWriter {
         return peakListMap.get(key);
     }
 
+    public PeakList getRefList() {
+        return refList;
+    }
     public List<PeakList> getPeakLists() {
         return peakLists;
     }
@@ -564,7 +567,7 @@ public class RunAbout implements SaveframeWriter {
         spinSystems.writeSpinSystemPeaks(sBuilder);
 
         chan.write(sBuilder.toString());
-        chan.write("save_");
+        chan.write("save_\n\n");
     }
 
     void writePeakLists(StringBuilder sBuilder) {
