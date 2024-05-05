@@ -65,7 +65,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 
@@ -132,6 +131,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     public RunAbout getRunAbout() {
         return runAbout;
     }
+
     public ToolBar getToolBar() {
         return navigatorToolBar;
     }
@@ -228,6 +228,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             for (var sDim : peakList.getSpectralDims()) {
                 if (sDim.getPattern().isBlank()) {
                     hasPattern = false;
+                    break;
                 }
             }
             return hasPattern;
@@ -274,9 +275,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Tab helmTab = new Tab("Helm");
         helmTab.setClosable(false);
         tabPane.getTabs().add(helmTab);
-        VBox vBox = new VBox();
-        helmTab.setContent(vBox);
-        initHelm(vBox);
+        VBox helmVBox = new VBox();
+        helmTab.setContent(helmVBox);
+        initHelm(helmVBox);
 
         Tab prefTab = new Tab("Configure");
         prefTab.setClosable(false);
@@ -348,7 +349,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakListSelectedColumn.setCellValueFactory(new PropertyValueFactory<>("active"));
         peakListSelectedColumn.setEditable(true);
         peakListSelectedColumn.setCellFactory(param -> new CheckBoxTableCell<>());
-        var peakListSelectors = peakLists.stream().map(PeakListSelection::new).collect(Collectors.toList());
+        var peakListSelectors = peakLists.stream().map(PeakListSelection::new).toList();
 
         peakTableView.getColumns().addAll(peakListNameColumn, peakTypeColumn, peakListPatternColumn,
                 peakListSizeColumn, peakListSelectedColumn);
@@ -392,7 +393,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     private void updatePeakTableView() {
-        var peakListSelectors = PeakList.peakLists().stream().map(PeakListSelection::new).collect(Collectors.toList());
+        var peakListSelectors = PeakList.peakLists().stream().map(PeakListSelection::new).toList();
         peakTableView.getItems().setAll(peakListSelectors);
         for (var peakListSelector : peakListSelectors) {
             if (runAbout.getPeakLists().contains(peakListSelector.peakList)) {
@@ -407,10 +408,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (!items.isEmpty()) {
             PeakListSelection item = items.get(0);
             PeakList peakList = item.peakList;
-            controller.showPeakAttr();
-            controller.getPeakAttrController().setPeakList(peakList);
-            controller.getPeakAttrController().getStage().toFront();
-            controller.getPeakAttrController().selectTab("Reference");
+            FXMLController.showPeakAttr();
+            FXMLController.getPeakAttrController().setPeakList(peakList);
+            FXMLController.getPeakAttrController().getStage().toFront();
+            FXMLController.getPeakAttrController().selectTab("Reference");
         }
     }
 
@@ -603,17 +604,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakIdField.setOnKeyReleased(kE -> {
             if (null != kE.getCode()) {
                 switch (kE.getCode()) {
-                    case ENTER:
-                        navigator.gotoPeakId(peakIdField);
-                        break;
-                    case UP:
-                        navigator.gotoNextMatch(1);
-                        break;
-                    case DOWN:
-                        navigator.gotoNextMatch(-1);
-                        break;
-                    default:
-                        break;
+                    case ENTER -> navigator.gotoPeakId(peakIdField);
+                    case UP -> navigator.gotoNextMatch(1);
+                    case DOWN -> navigator.gotoNextMatch(-1);
+                    default -> {
+                    }
                 }
             }
         });
@@ -852,7 +847,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 if (resSeqScores.size() == 1) {
                     frag.setResSeqScore(resSeqScores.get(0));
                 }
-                resSeqScores.stream().sorted((a,b) -> Double.compare(a.getScore(), b.getScore())).forEach(resSeqScore -> {
+                resSeqScores.stream().sorted(Comparator.comparingDouble(ResidueSeqScore::getScore)).forEach(resSeqScore -> {
                     log.debug("{} {}", resSeqScore.getFirstResidue().getNumber(), resSeqScore.getScore());
                     Residue residue = resSeqScore.getFirstResidue();
                     double score = resSeqScore.getScore();
@@ -1281,6 +1276,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             console.write(entry.getKey() + " " + entry.getValue() + "\n");
         }
     }
+
     void assemble() {
         runAbout.assemble();
         updatePeakListMenu();
@@ -1308,7 +1304,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     public void setPeakList() {
         if (navigationPeakList == null) {
             PeakList testList = null;
-            FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
             PolyChart chart = controller.getActiveChart();
             if (chart != null) {
                 ObservableList<PeakListAttributes> attr = chart.getPeakListAttributes();
@@ -1628,7 +1623,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (navigationPeakList != null) {
                 matchPeaks.clear();
                 int id = Integer.MIN_VALUE;
-                if (idString.length() != 0) {
+                if (!idString.isEmpty()) {
                     try {
                         id = Integer.parseInt(idString);
                     } catch (NumberFormatException nfE) {
@@ -1682,11 +1677,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
         if (peakEvent.getSource() instanceof PeakList) {
-            PeakList sourceList = (PeakList) peakEvent.getSource();
-            if (peakEvent instanceof PeakListEvent) {
-                peakTableView.refresh();
-            } else if (peakEvent instanceof PeakCountEvent) {
-                PeakCountEvent countEvent = (PeakCountEvent) peakEvent;
+            if ((peakEvent instanceof PeakListEvent) || (peakEvent instanceof PeakCountEvent)) {
                 peakTableView.refresh();
             }
         }
@@ -1728,7 +1719,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes) {
-        Double[] widths = new Double[dataset.getNDim()];
+        Double[] dimWidths = new Double[dataset.getNDim()];
         for (int i = 0; i < dimNames.size(); i++) {
             Double width;
             String widthType = widthTypes.get(i);
@@ -1747,10 +1738,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             } else {
                 width = null;
             }
-            widths[i] = width;
+            dimWidths[i] = width;
 
         }
-        return widths;
+        return dimWidths;
     }
 
     void setupRunAbout() {
@@ -1758,8 +1749,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 GUIUtils.affirm("Peak lists already setup, Setup again?")) {
             var peakLists = peakTableView.getItems().stream().
                     filter(PeakListSelection::getActive).
-                    map(p -> p.peakList).
-                    collect(Collectors.toList());
+                    map(p -> p.peakList).toList();
             if (peakLists.isEmpty()) {
                 GUIUtils.warn("RunAbout", "No peak lists selected");
             } else {
@@ -1785,8 +1775,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         var peakLists = peakTableView.getItems().stream().
                 filter(PeakListSelection::getActive).
                 map(p -> p.peakList).
-                filter(p -> !currentLists.contains(p)).
-                collect(Collectors.toList());
+                filter(p -> !currentLists.contains(p)).toList();
         runAbout.addLists(peakLists);
         clusterStatus.refresh();
         genWin(currentArrangement);
@@ -1908,7 +1897,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             List<String> peakLists = Collections.singletonList(peakList.getName());
                             chart.updatePeakLists(peakLists);
                             updateChartPeakMenu(chart);
-                            winPatterns.put(chart, sDims.stream().map(SpectralDim::getPattern).collect(Collectors.toList()));
+                            winPatterns.put(chart, sDims.stream().map(SpectralDim::getPattern).toList());
                         }
                     });
                     iChart++;
@@ -1926,12 +1915,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void updateChartPeakMenu(PolyChart chart) {
-        if (chart.getPeakMenu() instanceof  PeakMenu peakMenu) {
-            if (peakMenu.chartMenu.getItems().size() == 1) {
-                Menu menuItem = new Menu("Pattern");
-                peakMenu.chartMenu.getItems().add(menuItem);
-                peakMenu.chartMenu.setOnShown(e -> updateChartPeakMenu(peakMenu, menuItem));
-            }
+        if ((chart.getPeakMenu() instanceof PeakMenu peakMenu) && (peakMenu.chartMenu.getItems().size() == 1)) {
+            Menu menuItem = new Menu("Pattern");
+            peakMenu.chartMenu.getItems().add(menuItem);
+            peakMenu.chartMenu.setOnShown(e -> updateChartPeakMenu(peakMenu, menuItem));
+
         }
     }
 
@@ -1960,7 +1948,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void updatePeakPattern(Peak peak, SpectralDim sDim, String pattern) {
         if (pattern.endsWith("-")) {
-            pattern = pattern.substring(0, pattern.length() -1);
+            pattern = pattern.substring(0, pattern.length() - 1);
         }
         peak.getPeakDim(sDim.getDataDim()).setUser(pattern);
         currentSpinSystem.updateSpinSystem();
