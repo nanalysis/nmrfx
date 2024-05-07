@@ -1,5 +1,6 @@
 package org.nmrfx.structure.seqassign;
 
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -34,6 +35,7 @@ public class RunAbout implements SaveframeWriter {
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
     boolean active = false;
+    Map<Residue, SpinSystem> residueSpinSystemsMap = new HashMap<>();
 
     List<Map<String, Object>> typeList;
 
@@ -68,6 +70,7 @@ public class RunAbout implements SaveframeWriter {
     public PeakList getRefList() {
         return refList;
     }
+
     public List<PeakList> getPeakLists() {
         return peakLists;
     }
@@ -91,7 +94,7 @@ public class RunAbout implements SaveframeWriter {
                 patElems.add(patElem);
                 int dotPos = patElem.indexOf(".");
                 if (dotPos != -1) {
-                     aType = patElem.substring(dotPos + 1, dotPos + 2);
+                    aType = patElem.substring(dotPos + 1, dotPos + 2);
                 }
             }
             aTypes.add(aType);
@@ -186,7 +189,6 @@ public class RunAbout implements SaveframeWriter {
         TypeInfo typeInfo = new TypeInfo(patElems.size(), total);
         for (String elem : patElems) {
             String[] parts = elem.split("\\.");
-            System.out.println("elem " + elem + " " + parts.length);
             if (parts.length == 2) {
                 String[] types = parts[0].split(",");
                 String[] aNames = parts[1].split(",");
@@ -600,4 +602,37 @@ public class RunAbout implements SaveframeWriter {
             setPeakLists(loopLists);
         }
     }
+
+    public void mapSpinSystemToResidue() {
+        var sortedSystems = getSpinSystems().getSortedSystems();
+        for (SpinSystem spinSys : sortedSystems) {
+            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
+            fragmentOpt.ifPresent(seqFragment -> {
+                if (seqFragment.isFrozen()) {
+                    var spinSystemMatches = seqFragment.getSpinSystemMatches();
+                    var resSeqScore = seqFragment.getResSeqScore();
+                    Residue residue = resSeqScore.getFirstResidue();
+                    for (int i = 0; i < resSeqScore.getNResidues(); i++) {
+                        int j = i < 3 ? 0 : i - 2;
+                        if (j < spinSystemMatches.size()) {
+                            var spinSystemMatch = spinSystemMatches.get(j);
+                            SpinSystem spinSystem;
+                            if (i < 2) {
+                                spinSystem = spinSystemMatch.getSpinSystemA();
+                            } else {
+                                spinSystem = spinSystemMatch.getSpinSystemB();
+                            }
+                            residueSpinSystemsMap.put(residue, spinSystem);
+                        }
+                        residue = residue.getNext();
+                    }
+                }
+            });
+        }
+    }
+
+    public SpinSystem getSpinSystemForResidue(Residue residue) {
+        return residueSpinSystemsMap.get(residue);
+    }
+
 }

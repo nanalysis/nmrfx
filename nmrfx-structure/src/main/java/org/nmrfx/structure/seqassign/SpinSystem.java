@@ -355,11 +355,13 @@ public class SpinSystem {
         boolean result = false;
         if (prev) {
             if (confirmP.isPresent()) {
-                result = confirmP.get().spinSystemB == this;
+                SpinSystemMatch prevMatch = confirmP.get();
+                result = prevMatch.spinSystemB == this && prevMatch.spinSystemA == spinSys.spinSystemA;
             }
         } else {
             if (confirmS.isPresent()) {
-                result = confirmS.get().spinSystemA == this;
+                SpinSystemMatch nextMatch = confirmS.get();
+                result = nextMatch.spinSystemA == this && nextMatch.spinSystemB == spinSys.spinSystemB;
             }
         }
         return result;
@@ -1104,6 +1106,21 @@ public class SpinSystem {
 
     public List<SpinSystemMatch> getMatchToPrevious() {
         return spinMatchP;
+    }
+
+    public int getConfirmedPrevious() {
+        if (spinMatchP.isEmpty() || confirmP.isEmpty()) {
+            return 0;
+        } else {
+            return spinMatchP.indexOf(confirmP.get());
+        }
+    }
+    public int getConfirmedNext() {
+        if (spinMatchS.isEmpty() || confirmS.isEmpty()) {
+            return 0;
+        } else {
+            return spinMatchS.indexOf(confirmS.get());
+        }
     }
 
     public List<SpinSystemMatch> getMatchToNext() {
