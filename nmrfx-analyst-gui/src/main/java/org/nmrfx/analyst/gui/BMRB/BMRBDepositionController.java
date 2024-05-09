@@ -4,10 +4,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -78,6 +75,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         }
 
         HBox hBox = new HBox();
+        hBox.setMinHeight(20);
         hBox.setSpacing(10);
         emailField.setMinWidth(200);
         emailField.setPromptText("required");
@@ -85,6 +83,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         hBox.setAlignment(Pos.CENTER);
 
         HBox hBox1 = new HBox();
+        hBox1.setMinHeight(20);
         Button depositButton = new Button();
         depositButton.setText("Deposit");
         depositButton.setMinWidth(30);

@@ -214,7 +214,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
 
     private record fetchStarOptions(int entryID, boolean useRef, int ppmSet){}
 
-    public static fetchStarOptions choosePPMSet(boolean promptForEntryID) {
+    public static fetchStarOptions choosePPMSet(boolean promptForEntryID, boolean loadShiftsOnly) {
         Dialog<fetchStarOptions> dialog = new Dialog<>();
         dialog.setTitle("Fetch BMRB");
         dialog.setHeaderText("Fetch BMRB:");
@@ -244,6 +244,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
         comboBoxRows.setConverter(new IntegerStringConverter());
         grid.add(new Label("Assign to set"), 0, row);
         grid.add(comboBoxRows, 1, row);
+        if (!loadShiftsOnly) {setRef.setDisable(true); comboBoxRows.setDisable(true);}
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 // The value set in the formatter may not have been set yet so commit the value before retrieving
@@ -270,17 +271,24 @@ public class BMRBSearchController implements Initializable, StageBasedController
     }
 
     public static void fetchStar(int entryID) {
-        boolean promptForEntryID = entryID == 0;
-        fetchStarOptions options = choosePPMSet(promptForEntryID);
-        if (options == null) {
-            return;
-        }
         boolean loadShiftsOnly = GUIProject.checkProjectActive(false);
-        if (promptForEntryID) {
-            entryID = options.entryID;
-        }
+        boolean promptForEntryID = entryID == 0;
 
-        int ppmSet = options.useRef ? -options.ppmSet - 1 : options.ppmSet;
+        fetchStarOptions options;
+        int ppmSet = 0;
+        if (loadShiftsOnly || promptForEntryID) {
+            options = choosePPMSet(promptForEntryID, loadShiftsOnly);
+            if (options == null) {
+                return;
+            }
+            if (promptForEntryID) {
+                entryID = options.entryID;
+            }
+            if (loadShiftsOnly) {
+                ppmSet = options.useRef ? -options.ppmSet - 1 : options.ppmSet;
+            }
+        }
+        int finalPpmSet = ppmSet;
 
         CompletableFuture<HttpResponse<String>> futureResponse;
         try {
@@ -301,7 +309,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
                     if (!loadShiftsOnly) {
                         NMRStarReader.readFromString(r.body());
                     } else {
-                        NMRStarReader.readChemicalShiftsFromString(r.body(), ppmSet);
+                        NMRStarReader.readChemicalShiftsFromString(r.body(), finalPpmSet);
                     }
                 } catch (ParseException e) {
                     ExceptionDialog dialog = new ExceptionDialog(e);

@@ -61,7 +61,6 @@ public class NMRStarWriter {
         CONSTRAINTS("Constraints"),
         PEAKPATHS("Peak Paths"),
         RELAXATION("Relaxation"),
-        NOES("Noes"),
         ORDERPARAMETERS("Order Parameters")
         ;
         public final String name;
