@@ -21,7 +21,7 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
 import org.nmrfx.chemistry.relax.*;
-import org.nmrfx.chemistry.relax.RelaxTypes;
+import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakPaths;
@@ -1278,7 +1278,7 @@ public class NMRStarWriter {
                   _Software.Sf_framecode  software_1
                   _Software.ID            1
                   _Software.Name          NMRFx
-                  _Software.Version       11.4.7
+                  _Software.Version       %s
                   
                   loop_
                   _Task.Task
@@ -1290,23 +1290,8 @@ public class NMRStarWriter {
                   
                 save_
                 
-                """;
+                """.formatted(NvUtil.getVersion());
         chan.write(softwareSf);
-    }
-
-    public class WriteMode {
-        public WriteMode() {}
-        public boolean doMolecule = true;
-        public boolean doPeakLists = true;
-        public boolean doResonances = true;
-        public boolean doAssignments = true;
-        public boolean doCoordinates = true;
-        public boolean doConstraints = true;
-        public boolean doPeakPaths = true;
-        public boolean doRelaxation = true;
-        public boolean doNOEs = true;
-        public boolean doOrderPars = true;
-
     }
 
     public static void writeAll(Writer chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {

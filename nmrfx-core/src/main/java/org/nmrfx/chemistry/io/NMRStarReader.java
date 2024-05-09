@@ -22,7 +22,6 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.relax.*;
-import org.nmrfx.chemistry.relax.RelaxTypes;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPathReader;
@@ -1047,6 +1046,7 @@ public class NMRStarReader {
             List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
             List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
+            List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
             List<String> atomColumn = loop.getColumnAsList("Atom_ID");
             List<String> typeColumn = loop.getColumnAsList("Atom_type");
             List<String> valColumn = loop.getColumnAsList("Val");
@@ -1078,6 +1078,11 @@ public class NMRStarReader {
                     log.warn("invalid compound in assignments saveframe \"{}\"", mapID);
                     continue;
                 }
+                String compID = compIDColumn.get(i);
+            if (!compound.getName().equals(compID)) {
+                log.warn("sequence does not match " + compound.getName() + " " + compID);
+                continue;
+            }
                 Atom atom = compound.getAtomLoose(atomName);
                 if (atom == null) {
                     if (atomName.startsWith("H")) {
