@@ -350,15 +350,17 @@ public class SeqFragment {
 
     public void thawFragment() {
         setFrozen(false);
-        Residue residue = resSeqScore.getFirstResidue();
-        for (int i = 0; i < resSeqScore.nResidues; i++) {
-            for (Atom atom : residue.atoms) {
-                if ((i == 0) && (atom.getName().equals("N") || atom.getName().equals("H"))) {
-                    continue;
+        if (resSeqScore != null) {
+            Residue residue = resSeqScore.getFirstResidue();
+            for (int i = 0; i < resSeqScore.nResidues; i++) {
+                for (Atom atom : residue.atoms) {
+                    if ((i == 0) && (atom.getName().equals("N") || atom.getName().equals("H"))) {
+                        continue;
+                    }
+                    atom.setPPMValidity(0, false);
                 }
-                atom.setPPMValidity(0, false);
+                residue = residue.getNext();
             }
-            residue = residue.getNext();
         }
         for (SpinSystem spinSystem : getSpinSystems()) {
             spinSystem.clearPeaksInSystem();

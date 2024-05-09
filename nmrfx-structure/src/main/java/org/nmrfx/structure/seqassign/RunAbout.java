@@ -605,6 +605,7 @@ public class RunAbout implements SaveframeWriter {
 
     public void mapSpinSystemToResidue() {
         var sortedSystems = getSpinSystems().getSortedSystems();
+        residueSpinSystemsMap.clear();
         for (SpinSystem spinSys : sortedSystems) {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             fragmentOpt.ifPresent(seqFragment -> {

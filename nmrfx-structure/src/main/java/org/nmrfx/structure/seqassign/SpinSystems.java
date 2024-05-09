@@ -511,7 +511,7 @@ public class SpinSystems {
                     int nResidues = nResiduesColumn.get(i);
                     double score = scoreColumn.get(i);
                     Polymer polymer = molecule.getPolymers().get(polymerID - 1);
-                    Residue residue = polymer.getResidue(residueID);
+                    Residue residue = polymer.getResidue(String.valueOf(residueID));
                     ResidueSeqScore residueSeqScore = new ResidueSeqScore(residue, nResidues, score);
                     fragment.setResSeqScore(residueSeqScore);
                     fragment.setFrozen(true);
