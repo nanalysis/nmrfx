@@ -25,7 +25,7 @@ public class BMRBioTest {
         String projectName = "nmrfx test";
         String filePath = "/Users/ekoag/Downloads/test_ubiq.str";
         NMRStarReader.read(filePath);
-        StringWriter starString = NMRStarWriter.writeToString();
+        StringWriter starString = NMRStarWriter.writeToString(null);
 
         File tmpFile = File.createTempFile("star",".str");
         FileWriter fileWriter = new FileWriter(tmpFile, true);

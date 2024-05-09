@@ -245,9 +245,6 @@ public class BMRBSearchController implements Initializable, StageBasedController
         grid.add(new Label("Assign to set"), 0, row);
         grid.add(comboBoxRows, 1, row);
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == ButtonType.CANCEL || dialogButton == ButtonType.CLOSE) {
-                return null;
-            }
             if (dialogButton == ButtonType.OK) {
                 // The value set in the formatter may not have been set yet so commit the value before retrieving
                 comboBoxRows.commitValue();

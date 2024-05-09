@@ -32,23 +32,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class BMRBDepositionController implements Initializable, StageBasedController {
     private Stage stage;
-    public enum StarTypes {
-        MOLECULES("Molecules"),
-        PEAKLISTS("Peak Lists"),
-        RESONANCE("Resonances"),
-        ASSIGNMENTS("Assignments"),
-        COORDINATES("Coordinates"),
-        CONSTRAINTS("Constraints"),
-        PEAKPATHS("Peak Paths"),
-        RELAXATION("Relaxation"),
-        NOES("Noes"),
-        ORDERPARAMETERS("Order Parameters")
-        ;
-        private final String name;
-        StarTypes(String name) {
-            this.name = name;
-        }
-    }
 
     @FXML
     private VBox vBox = new VBox();
@@ -78,10 +61,10 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         gridPane.getColumnConstraints().addAll(col0,col1);
         gridPane.setVgap(20);
 
-        Map<StarTypes, SimpleBooleanProperty> starTypesPropertiesMap = new HashMap<>();
+        Map<NMRStarWriter.StarTypes, SimpleBooleanProperty> starTypesPropertiesMap = new HashMap<>();
         int row = 0;
         int col = 0;
-        for (StarTypes starType : StarTypes.values()) {
+        for (NMRStarWriter.StarTypes starType : NMRStarWriter.StarTypes.values()) {
             CheckBox checkBox = new CheckBox(starType.name);
             SimpleBooleanProperty simpleBooleanProperty = new SimpleBooleanProperty();
             simpleBooleanProperty.bind(checkBox.selectedProperty());
@@ -115,7 +98,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
     @Override
     public void setStage(Stage stage) {this.stage = stage;}
 
-    void depositSTAR(Map<StarTypes, SimpleBooleanProperty> map ) {
+    void depositSTAR(Map<NMRStarWriter.StarTypes, SimpleBooleanProperty> starTypesMap ) {
         String emailAddress = emailField.getText();
 
         String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx_Project" :
@@ -125,7 +108,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
             projectName = "NMRFx_Project";
         }
         CompletableFuture<String> futureResponse;
-        StringWriter starStr = NMRStarWriter.writeToString();
+        StringWriter starStr = NMRStarWriter.writeToString(starTypesMap);
 
         try {
             futureResponse = BMRBio.depositEntry(emailAddress, projectName, starStr);
@@ -139,5 +122,6 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
             Fx.runOnFxThread(() ->
                     GUIUtils.affirm(r));
         });
+        stage.close();
     }
 }
