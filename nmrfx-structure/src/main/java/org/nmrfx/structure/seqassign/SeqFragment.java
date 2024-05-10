@@ -90,6 +90,7 @@ public class SeqFragment {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         SeqFragment result = null;
+        boolean newFrozen = false;
         if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
             result = new SeqFragment();
             result.spinSystemMatches.add(spinSysMatch);
@@ -98,18 +99,31 @@ public class SeqFragment {
                 result = spinSysA.fragment.get();
                 result.spinSystemMatches.add(spinSysMatch);
                 result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
+                if (spinSysA.fragment.get().isFrozen() || spinSysB.fragment.get().isFrozen()) {
+                    newFrozen = true;
+                }
             }
 
         } else if (spinSysA.fragment.isPresent()) {
             result = spinSysA.fragment.get();
             result.spinSystemMatches.add(spinSysMatch);
+            if (spinSysA.fragment.get().isFrozen()) {
+                newFrozen = true;
+            }
 
         } else {
             result = spinSysB.fragment.get();
             result.spinSystemMatches.add(0, spinSysMatch);
+            if (spinSysB.fragment.get().isFrozen()) {
+                newFrozen = true;
+            }
         }
         if ((result != null) && !testMode) {
             result.updateFragment();
+            System.out.println("join is frozen " + newFrozen);
+            if (newFrozen) {
+                result.setFrozen(true);
+            }
         }
         return result;
 
@@ -206,6 +220,10 @@ public class SeqFragment {
         for (SpinSystemMatch spinSysMatch : spinSystemMatches) {
             spinSysMatch.spinSystemA.fragment = Optional.of(this);
             spinSysMatch.spinSystemB.fragment = Optional.of(this);
+        }
+        var resSeqScores = scoreFragment(Molecule.getActive());
+        if (resSeqScores.size() == 1) {
+            setResSeqScore(resSeqScores.get(0));
         }
     }
 
