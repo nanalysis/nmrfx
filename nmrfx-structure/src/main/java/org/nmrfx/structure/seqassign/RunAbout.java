@@ -612,20 +612,22 @@ public class RunAbout implements SaveframeWriter {
                 if (seqFragment.isFrozen()) {
                     var spinSystemMatches = seqFragment.getSpinSystemMatches();
                     var resSeqScore = seqFragment.getResSeqScore();
-                    Residue residue = resSeqScore.getFirstResidue();
-                    for (int i = 0; i < resSeqScore.getNResidues(); i++) {
-                        int j = i < 3 ? 0 : i - 2;
-                        if (j < spinSystemMatches.size()) {
-                            var spinSystemMatch = spinSystemMatches.get(j);
-                            SpinSystem spinSystem;
-                            if (i < 2) {
-                                spinSystem = spinSystemMatch.getSpinSystemA();
-                            } else {
-                                spinSystem = spinSystemMatch.getSpinSystemB();
+                    if (resSeqScore != null) {
+                        Residue residue = resSeqScore.getFirstResidue();
+                        for (int i = 0; i < resSeqScore.getNResidues(); i++) {
+                            int j = i < 3 ? 0 : i - 2;
+                            if (j < spinSystemMatches.size()) {
+                                var spinSystemMatch = spinSystemMatches.get(j);
+                                SpinSystem spinSystem;
+                                if (i < 2) {
+                                    spinSystem = spinSystemMatch.getSpinSystemA();
+                                } else {
+                                    spinSystem = spinSystemMatch.getSpinSystemB();
+                                }
+                                residueSpinSystemsMap.put(residue, spinSystem);
                             }
-                            residueSpinSystemsMap.put(residue, spinSystem);
+                            residue = residue.getNext();
                         }
-                        residue = residue.getNext();
                     }
                 }
             });
