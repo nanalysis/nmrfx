@@ -137,6 +137,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     double seqCharHeight = 20;
     static double clusterCharHeight = 20.0;
 
+
+
     List<Color> paletteColors = new ArrayList<>();
     Map<SpinSystem, Color> spinSystemColorMap = new HashMap<>();
 
@@ -199,7 +201,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     class SeqPane extends Pane {
-
+        double gap = 2.0;
         double getResHeight() {
             Molecule mol = Molecule.getActive();
             double rectHeight = 20.0;
@@ -213,7 +215,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     int rows = (int) Math.floor(cHeight / iRectHeight);
                     int cols = (int) Math.floor(cWidth / iRectWidth);
                     if (rows * cols > nRectangles) {
-                        rectHeight = iRectHeight;
+                        rectHeight = iRectHeight - gap;
+
                         break;
                     }
                 }
@@ -285,6 +288,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     class ClusterPane extends Pane {
 
+        double gap = 2;
         double getRectHeight() {
             int nSys = runAbout.getSpinSystems().getSize();
 
@@ -303,7 +307,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 int rows = (int) Math.floor(cHeight / iRectHeight);
                 int cols = (int) Math.floor(cWidth / iRectWidth);
                 if (rows * cols > nRectangles) {
-                    rectHeight = iRectHeight - 2;
+                    rectHeight = iRectHeight - gap;
                     break;
                 }
             }
@@ -939,7 +943,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             Color color = Color.YELLOW.interpolate(Color.GREEN, score);
                             resLabel.showBottomLine(color);
                             if (resLabel.spinSystem == spinSys) {
-                                resLabel.setColor(Color.ORANGE);
+                                resLabel.setColor(Color.WHITE);
                             }
                             SpinSystem iSpinSystem = frag.getSpinSystem(iRes);
                             resLabel.setSpinSystem(iSpinSystem);
@@ -1158,6 +1162,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         SpinSystem spinSystem;
         Tooltip tooltip;
 
+        boolean isNumLabel = false;
+
         Color color = Color.LIGHTGRAY;
 
 
@@ -1201,7 +1207,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Tooltip.install(this, tooltip);
         }
 
-        void place(double x, double y, double width, double height) {
+        ResidueLabel(String label, boolean isNumLabel) {
+            this(label);
+            this.isNumLabel = isNumLabel;
+        }
+
+            void place(double x, double y, double width, double height) {
             rect.setWidth(width);
             rect.setHeight(height);
             line.setEndX(width);
@@ -1311,7 +1322,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
-    void updateCluster(ResidueLabel resLabel, double x, double y, SpinSystem spinSys) {
+    void updateCluster(ResidueLabel resLabel, XY xy, SpinSystem spinSys) {
         resLabel.setText(String.valueOf(spinSys.getRootPeak().getIdNum()));
         resLabel.setOnMouseClicked(e -> gotoCluster(resLabel));
         double width = clusterCharHeight * HEIGHT_WIDTH * resLabel.getTextLabel().length();
@@ -1320,7 +1331,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         resLabel.updateFontSize(clusterCharHeight * 0.9);
 
 
-        resLabel.place(x + xoffset, y, width, clusterCharHeight);
+        resLabel.place(xy.x + xoffset, xy.y, width, clusterCharHeight);
         resLabel.setSpinSystem(spinSys);
     }
 
@@ -1351,6 +1362,22 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         return paletteColors.get(i % (paletteColors.size() - 1));
     }
 
+    record XY(double x, double y) {
+
+    }
+
+    XY updateXY(ResidueLabel residueLabel, XY xy, double height) {
+        double width = clusterCharHeight * HEIGHT_WIDTH * residueLabel.getTextLabel().length();
+        double x = xy.x;
+        double y = xy.y;
+        x += width;
+        if (x > (clusterPane.getWidth() - 2.0 * width)) {
+            x = 25.0;
+            y += height + clusterPane.gap;
+        }
+        return new XY(x, y);
+
+    }
     void updateClusterCanvas() {
         List<SpinSystem> sortedSystems;
         boolean fragmentMode;
@@ -1372,47 +1399,37 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         List<Node> nodes = clusterGroup.getChildren();
 
         int i = 0;
-        double x = 25.0;
-        double y = 10.0;
-        double gap = 2;
+        XY xy = new XY(25.0, 10.0);
         double height = clusterCharHeight;
         int iColor = 0;
-        double width;
         spinSystemColorMap.clear();
         for (SpinSystem spinSys : sortedSystems) {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             if (fragmentMode && fragmentOpt.isPresent()) {
                 SeqFragment fragment = fragmentOpt.get();
+                ResidueSeqScore residueSeqScore = fragment.getResSeqScore();
+                System.out.println("fragment ");
+                if (residueSeqScore != null) {
+                    System.out.println("ress "  + fragment.getResSeqScore().getNResidues() + " " + fragment.getResSeqScore().getFirstResidue());
+                };
                 boolean frozen = fragment.isFrozen();
                 List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
                 ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
                 SpinSystem thisSystem = spinMatches.get(0).getSpinSystemA();
-                updateCluster(resLabel, x, y, thisSystem);
-                width = clusterCharHeight * HEIGHT_WIDTH * resLabel.getTextLabel().length();
-                x += width;
-                if (x > (clusterPane.getWidth() - 2.0 * width)) {
-                    x = 25.0;
-                    y += height + gap;
-                }
+                updateCluster(resLabel, xy, thisSystem);
+                xy = updateXY(resLabel, xy, height);
                 i++;
                 resLabel.setAndSaveColor(paletteColors.get(iColor));
                 resLabel.setTopLineVisible(frozen);
                 resLabel.setSpinSystem(thisSystem);
                 spinSystemColorMap.put(thisSystem, paletteColors.get(iColor));
 
-
                 for (SpinSystemMatch spinMatch : spinMatches) {
                     resLabel = (ResidueLabel) nodes.get(i);
                     SpinSystem aSystem = spinMatch.getSpinSystemB();
-                    updateCluster(resLabel, x, y, aSystem);
-                    width = clusterCharHeight * HEIGHT_WIDTH * resLabel.getTextLabel().length();
-                    x += width;
-                    if (x > (clusterPane.getWidth() - 2.0 * width)) {
-                        x = 25.0;
-                        y += height + gap;
-                    }
+                    updateCluster(resLabel, xy, aSystem);
+                    xy = updateXY(resLabel, xy, height);
                     i++;
-
                     resLabel.setAndSaveColor(getPaletteColor(iColor));
                     resLabel.setTopLineVisible(frozen);
                     resLabel.setSpinSystem(aSystem);
@@ -1421,13 +1438,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 iColor++;
             } else {
                 ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
-                updateCluster(resLabel, x, y, spinSys);
-                width = clusterCharHeight * HEIGHT_WIDTH * resLabel.getTextLabel().length();
-                x += width;
-                if (x > (clusterPane.getWidth() - 2.0 * width)) {
-                    x = 25.0;
-                    y += height + gap;
-                }
+                updateCluster(resLabel, xy, spinSys);
+                xy = updateXY(resLabel, xy, height);
                 i++;
                 resLabel.setAndSaveColor(paletteColors.get(paletteColors.size() - 1));
                 resLabel.setTopLineVisible(false);
@@ -1443,7 +1455,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (polymer.isPeptide()) {
                 for (Residue residue : polymer.getResidues()) {
                     if ((i % 10) == 0) {
-                        ResidueLabel resLabel = new ResidueLabel(String.valueOf(residue.getResNum()));
+                        ResidueLabel resLabel = new ResidueLabel(String.valueOf(residue.getResNum()), true);
                         drawingGroup.getChildren().add(resLabel);
                     }
                     ResidueLabel resLabel = new ResidueLabel(residue);
@@ -1474,26 +1486,39 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             for (Node node : drawingGroup.getChildren()) {
                 ResidueLabel resLabel = (ResidueLabel) node;
                 SpinSystem spinSystem = runAbout.getSpinSystemForResidue(resLabel.residue);
-                resLabel.setAndSaveColor(Color.WHITE);
+                resLabel.setAndSaveColor(paletteColors.get(paletteColors.size() - 1));
                 if (spinSystem != null) {
                     spinSystem.getFragment().ifPresent(fragment -> {
                         if (fragment.isFrozen()) {
                             resLabel.setSpinSystem(spinSystem);
                             Color color = spinSystemColorMap.get(spinSystem);
+                            if (spinSystem == currentSpinSystem) {
+                                color = Color.WHITE;
+                            }
                             resLabel.setAndSaveColor(color);
                         }
                     });
                 }
-                resLabel.setOnMouseClicked(e -> gotoResidue(resLabel));
                 double width = resLabel.getTextLabel().length() * seqCharHeight * HEIGHT_WIDTH;
                 double xoffset = (resLabel.getTextLabel().length() - 1) / 2.0 * seqCharHeight * HEIGHT_WIDTH;
-                resLabel.updateFontSize(seqCharHeight * 0.8);
+                if (resLabel.isNumLabel) {
+                    resLabel.updateFontSize(seqCharHeight * 0.8 * 0.8);
+                } else {
+                    resLabel.setOnMouseClicked(e -> gotoResidue(resLabel));
+                    resLabel.updateFontSize(seqCharHeight * 0.8);
+                }
+                if ((i > 0)) {
+                    ResidueLabel previousLabel= (ResidueLabel) drawingGroup.getChildren().get(i-1);
+                    if (previousLabel.isNumLabel) {
+                        previousLabel.setAndSaveColor(resLabel.color);
+                    }
+                }
                 resLabel.place(x + xoffset, y, width, height);
 
                 x += width;
                 if (x > (seqPane.getWidth() - 2.0 * width)) {
                     x = 25.0;
-                    y += height;
+                    y += height + seqPane.gap;
                 }
                 i++;
             }
@@ -1741,6 +1766,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             spinStatus.updateFragment(spinSys);
             refreshRefChart(currentSpinSystem.getRootPeak());
             updateActiveSystem();
+            if ((spinSys != null) && spinSys.getFragment().isEmpty()) {
+                spinSys.score();
+            }
         }
 
     }
@@ -2515,6 +2543,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             spinStatus.updateFragment(currentSpinSystem);
         });
+        updateClusterCanvas();
     }
 
     void thawSystem() {
@@ -2524,6 +2553,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             spinStatus.updateFragment(currentSpinSystem);
         });
+        updateClusterCanvas();
     }
 
     void thawAllSystems() {
