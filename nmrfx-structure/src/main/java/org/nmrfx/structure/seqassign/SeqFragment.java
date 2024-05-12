@@ -119,11 +119,12 @@ public class SeqFragment {
             }
         }
         if ((result != null) && !testMode) {
-            result.updateFragment();
-            System.out.println("join is frozen " + newFrozen);
             if (newFrozen) {
                 result.setFrozen(true);
+                result.updateScore();
             }
+            result.updateFragment();
+
         }
         return result;
 
@@ -216,6 +217,14 @@ public class SeqFragment {
         return index;
     }
 
+    void updateScore() {
+        var resSeqScores = scoreFragment(Molecule.getActive());
+        if (resSeqScores.size() == 1) {
+            freezeFragment(resSeqScores.get(0));
+            setResSeqScore(resSeqScores.get(0));
+        }
+
+    }
     void updateFragment() {
         for (SpinSystemMatch spinSysMatch : spinSystemMatches) {
             spinSysMatch.spinSystemA.fragment = Optional.of(this);
@@ -232,6 +241,15 @@ public class SeqFragment {
         if (spinSystemMatches.isEmpty() || (spinSysMatch.spinSystemA == spinSystemMatches.get(spinSystemMatches.size() - 1).spinSystemB)) {
             spinSystemMatches.add(spinSysMatch);
             result = true;
+        }
+        return result;
+    }
+
+    public static double[][] getShiftsForSystem(SpinSystem spinSystem) {
+        double[][] result = new double[2][SpinSystem.ATOM_TYPES.length];
+        for (int idx = 0; idx < SpinSystem.ATOM_TYPES.length; idx++) {
+            result[0][idx] = spinSystem.getValue(0, idx);
+            result[1][idx] = spinSystem.getValue(1, idx);
         }
         return result;
     }
@@ -275,7 +293,7 @@ public class SeqFragment {
         return result;
     }
 
-    List<List<AtomShiftValue>> getShiftValues(double[][] shifts, boolean useAll) {
+    static List<List<AtomShiftValue>> getShiftValues(double[][] shifts, boolean useAll) {
         List<List<AtomShiftValue>> result = new ArrayList<>();
         for (double[] shift : shifts) {
             List<AtomShiftValue> values = new ArrayList<>();
@@ -295,18 +313,26 @@ public class SeqFragment {
     }
 
     public List<ResidueSeqScore> scoreFragment(Molecule molecule) {
+        double[][] shifts = getShifts();
+        return scoreFragment(molecule, shifts);
+    }
+    public static List<ResidueSeqScore> scoreFragment(Molecule molecule, double[][] shifts) {
         List<ResidueSeqScore> result = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                result.addAll(scoreFragment(polymer));
+                result.addAll(scoreFragment(polymer, shifts));
             }
         }
         return result;
     }
 
-    public List<ResidueSeqScore> scoreFragment(Polymer polymer) {
-        double sDevMul = 2.0;
+    public  List<ResidueSeqScore> scoreFragment(Polymer polymer) {
         double[][] shifts = getShifts();
+        return scoreFragment(polymer, shifts);
+    }
+
+    public static List<ResidueSeqScore> scoreFragment(Polymer polymer, double[][] shifts) {
+        double sDevMul = 2.0;
         List<ResidueSeqScore> result = new ArrayList<>();
         List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, false);
         int winSize = atomShiftValues.size();

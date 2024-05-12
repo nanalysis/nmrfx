@@ -6,6 +6,7 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.peaks.*;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import smile.clustering.KMeans;
 
@@ -1181,6 +1182,15 @@ public class SpinSystem {
             if (match.getSpinSystemB() == spinSys) {
                 spinMatchS.remove(i);
             }
+        }
+    }
+
+    public void score() {
+        double[][] shifts = SeqFragment.getShiftsForSystem(this);
+        Molecule molecule = Molecule.getActive();
+        List<ResidueSeqScore>  residueSeqScores = SeqFragment.scoreFragment(molecule, shifts);
+        for (ResidueSeqScore residueSeqScore: residueSeqScores) {
+            System.out.println(residueSeqScore.getFirstResidue() + " " + residueSeqScore.getNResidues() + " " + residueSeqScore.getScore());
         }
     }
 
