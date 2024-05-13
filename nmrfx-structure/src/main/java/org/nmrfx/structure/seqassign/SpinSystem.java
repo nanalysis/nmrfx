@@ -1188,7 +1188,7 @@ public class SpinSystem {
     public void score() {
         double[][] shifts = SeqFragment.getShiftsForSystem(this);
         Molecule molecule = Molecule.getActive();
-        List<ResidueSeqScore>  residueSeqScores = SeqFragment.scoreFragment(molecule, shifts);
+        List<ResidueSeqScore>  residueSeqScores = SeqFragment.scoreShifts(molecule, shifts);
         for (ResidueSeqScore residueSeqScore: residueSeqScores) {
             System.out.println(residueSeqScore.getFirstResidue() + " " + residueSeqScore.getNResidues() + " " + residueSeqScore.getScore());
         }

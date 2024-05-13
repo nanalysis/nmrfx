@@ -13,7 +13,9 @@ import java.util.Optional;
  * @author brucejohnson
  */
 public class SeqFragment {
-    static private double fragmentScoreProbability = 0.02;
+    static private double spinSysProbability = 0.02;
+
+    static private double fragmentScoreProbability = 0.1;
     static private int lastID = -1;
     int id = 0;
     List<SpinSystemMatch> spinSystemMatches = new ArrayList<>();
@@ -218,7 +220,7 @@ public class SeqFragment {
     }
 
     void updateScore() {
-        var resSeqScores = scoreFragment(Molecule.getActive());
+        var resSeqScores = scoreShifts(Molecule.getActive());
         if (resSeqScores.size() == 1) {
             freezeFragment(resSeqScores.get(0));
             setResSeqScore(resSeqScores.get(0));
@@ -230,7 +232,7 @@ public class SeqFragment {
             spinSysMatch.spinSystemA.fragment = Optional.of(this);
             spinSysMatch.spinSystemB.fragment = Optional.of(this);
         }
-        var resSeqScores = scoreFragment(Molecule.getActive());
+        var resSeqScores = scoreShifts(Molecule.getActive());
         if (resSeqScores.size() == 1) {
             setResSeqScore(resSeqScores.get(0));
         }
@@ -312,26 +314,26 @@ public class SeqFragment {
         return result;
     }
 
-    public List<ResidueSeqScore> scoreFragment(Molecule molecule) {
+    public List<ResidueSeqScore> scoreShifts(Molecule molecule) {
         double[][] shifts = getShifts();
-        return scoreFragment(molecule, shifts);
+        return scoreShifts(molecule, shifts);
     }
-    public static List<ResidueSeqScore> scoreFragment(Molecule molecule, double[][] shifts) {
+    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, double[][] shifts) {
         List<ResidueSeqScore> result = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                result.addAll(scoreFragment(polymer, shifts));
+                result.addAll(scoreShifts(polymer, shifts));
             }
         }
         return result;
     }
 
-    public  List<ResidueSeqScore> scoreFragment(Polymer polymer) {
+    public  List<ResidueSeqScore> scoreShifts(Polymer polymer) {
         double[][] shifts = getShifts();
-        return scoreFragment(polymer, shifts);
+        return scoreShifts(polymer, shifts);
     }
 
-    public static List<ResidueSeqScore> scoreFragment(Polymer polymer, double[][] shifts) {
+    public static List<ResidueSeqScore> scoreShifts(Polymer polymer, double[][] shifts) {
         double sDevMul = 2.0;
         List<ResidueSeqScore> result = new ArrayList<>();
         List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, false);
@@ -344,7 +346,7 @@ public class SeqFragment {
             double pScore = 1.0;
             for (int j = 0; j < winSize; j++) {
                 Residue residue = residues.get(i + j);
-                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(fragmentScoreProbability, sDevMul, residue, atomShiftValues.get(j));
+                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(spinSysProbability, sDevMul, residue, atomShiftValues.get(j));
                 if (!ppmScore.ok()) {
                     ok = false;
                     break;
@@ -359,7 +361,7 @@ public class SeqFragment {
 
         if (!result.isEmpty()) {
             ResidueSeqScore.norm(result);
-            result.sort(null);
+            result = result.stream().sorted().filter(r -> r.getScore() > fragmentScoreProbability).toList();
         }
         return result;
     }
@@ -416,7 +418,7 @@ public class SeqFragment {
         Molecule molecule = Molecule.getActive();
         boolean ok = false;
         for (Polymer polymer : molecule.getPolymers()) {
-            List<ResidueSeqScore> resSeqScores = fragment.scoreFragment(polymer);
+            List<ResidueSeqScore> resSeqScores = fragment.scoreShifts(polymer);
             if (!resSeqScores.isEmpty()) {
                 ok = true;
                 break;

@@ -648,10 +648,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         toolBar.getItems().add(spinSysMenuButton);
 
-        Slider probSlider = new Slider(1, 100, 20.0);
+        Slider probSlider = new Slider(1, 100, 10.0);
+        probSlider.setBlockIncrement(1);
         Label probField = new Label();
         probField.setPrefWidth(100);
-        probField.setText("0.02");
+        probField.setText("0.1");
         toolBar.getItems().addAll(probSlider, probField);
         probSlider.valueProperty().addListener(v -> probSliderChanged(probSlider, probField));
 
@@ -930,7 +931,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             fragmentOpt.ifPresent(frag -> {
                 Molecule molecule = Molecule.getActive();
                 if (!frag.isFrozen()) {
-                    List<ResidueSeqScore> resSeqScores = frag.scoreFragment(molecule);
+                    List<ResidueSeqScore> resSeqScores = frag.scoreShifts(molecule);
                     if (resSeqScores.size() == 1) {
                         frag.setResSeqScore(resSeqScores.get(0));
                     }
@@ -1530,7 +1531,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void probSliderChanged(Slider slider, Label probField) {
         if (useSpinSystem) {
-            double prob = slider.getValue() / 1000.0;
+            double prob = slider.getValue() / 100.0;
             probField.setText(String.format("%.3f", prob));
             SeqFragment.setFragmentScoreProbability(prob);
             spinStatus.showScore(currentSpinSystem, false);
