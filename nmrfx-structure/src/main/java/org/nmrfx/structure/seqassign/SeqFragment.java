@@ -316,13 +316,13 @@ public class SeqFragment {
 
     public List<ResidueSeqScore> scoreShifts(Molecule molecule) {
         double[][] shifts = getShifts();
-        return scoreShifts(molecule, shifts);
+        return scoreShifts(molecule, shifts, this);
     }
-    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, double[][] shifts) {
+    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, double[][] shifts, SeqFragment seqFragment) {
         List<ResidueSeqScore> result = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                result.addAll(scoreShifts(polymer, shifts));
+                result.addAll(scoreShifts(polymer, shifts, seqFragment));
             }
         }
         return result;
@@ -330,10 +330,10 @@ public class SeqFragment {
 
     public  List<ResidueSeqScore> scoreShifts(Polymer polymer) {
         double[][] shifts = getShifts();
-        return scoreShifts(polymer, shifts);
+        return scoreShifts(polymer, shifts, this);
     }
 
-    public static List<ResidueSeqScore> scoreShifts(Polymer polymer, double[][] shifts) {
+    public static List<ResidueSeqScore> scoreShifts(Polymer polymer, double[][] shifts, SeqFragment fragment) {
         double sDevMul = 2.0;
         List<ResidueSeqScore> result = new ArrayList<>();
         List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, false);
@@ -344,6 +344,14 @@ public class SeqFragment {
         for (int i = 0; i < n; i++) {
             boolean ok = true;
             double pScore = 1.0;
+            boolean isCurrent = false;
+            if ((fragment != null) && (fragment.isFrozen())) {
+                if (fragment.getResSeqScore().getFirstResidue() != residues.get(i)) {
+                    continue;
+                } else {
+                    isCurrent = true;
+                }
+            }
             for (int j = 0; j < winSize; j++) {
                 Residue residue = residues.get(i + j);
                 PPMScore ppmScore = FragmentScoring.scoreAtomPPM(spinSysProbability, sDevMul, residue, atomShiftValues.get(j));
