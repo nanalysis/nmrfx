@@ -16,7 +16,7 @@ class NMRFxDatasetScripting:
 
     def open(self, fileName,writable=False):
         fileName = os.path.join(os.getcwd(), fileName)
-        dataset = Dataset(fileName,"",writable, False)
+        dataset = Dataset(fileName, "", writable, False, False)
         return dataset
 
     def names(self):
