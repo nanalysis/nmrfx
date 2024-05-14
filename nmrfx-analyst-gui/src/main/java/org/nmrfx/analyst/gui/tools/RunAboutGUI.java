@@ -1539,6 +1539,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     void filter() {
         var filterResult = runAbout.filterPeaks();
+        if (filterResult.isEmpty()) {
+            GUIUtils.warn("Runabout Filter", "No peaklists set up");
+            return;
+        }
         var console = AnalystApp.getConsoleController();
         console.write("Filter Peaks\n");
         for (var entry : filterResult.entrySet()) {

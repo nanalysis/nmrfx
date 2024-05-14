@@ -426,6 +426,10 @@ public class RunAbout implements SaveframeWriter {
 
     public Map<String, Integer> filterPeaks() {
         double tolScale = 3.0;
+        Map<String, Integer> result = new HashMap<>();
+        if (peakLists.isEmpty()) {
+            return result;
+        }
         PeakList refList = peakLists.get(0);
         refList.clearSearchDims();
         List<String> commonDimNames = new ArrayList<>();
@@ -436,7 +440,6 @@ public class RunAbout implements SaveframeWriter {
             refList.addSearchDim(dimName, sDim.getIdTol() * tolScale);
         }
 
-        Map<String, Integer> result = new HashMap<>();
         for (PeakList peakList : peakLists) {
             AtomicInteger nFiltered = new AtomicInteger();
             if (refList != peakList) {
