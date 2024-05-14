@@ -31,9 +31,9 @@ public class SpinSystem {
     List<PeakMatch> peakMatches = new ArrayList<>();
     List<SpinSystemMatch> spinMatchP = new ArrayList<>();
     List<SpinSystemMatch> spinMatchS = new ArrayList<>();
-    Optional<SpinSystemMatch> confirmP = Optional.empty();
-    Optional<SpinSystemMatch> confirmS = Optional.empty();
-    Optional<SeqFragment> fragment = Optional.empty();
+    private SpinSystemMatch confirmP = null;
+    private SpinSystemMatch confirmS = null;
+    private SeqFragment fragment = null;
     int fragmentPosition = -1;
 
     public enum AtomEnum {
@@ -165,10 +165,12 @@ public class SpinSystem {
             } else {
                 boolean dimOK = false;
                 for (int i = 0; i < atomEnums.length; i++) {
-                    String curName = atomEnums[i].name;
-                    if (aName.equalsIgnoreCase(curName) && (intraMode == intraResidue[i])) {
-                        dimOK = true;
-                        break;
+                    if (atomEnums[i] != null) {
+                        String curName = atomEnums[i].name;
+                        if (aName.equalsIgnoreCase(curName) && (intraMode == intraResidue[i])) {
+                            dimOK = true;
+                            break;
+                        }
                     }
                 }
                 ok = dimOK;
@@ -291,28 +293,67 @@ public class SpinSystem {
         return shiftValues[k];
     }
 
-    public double getValue(int dir, AtomEnum atomEnum) {
-        return shiftValues[dir].get(atomEnum).value;
+    public Optional<Double> getValue(int dir, AtomEnum atomEnum) {
+        Double value = null;
+        ShiftValue shiftValue =shiftValues[dir].getOrDefault(atomEnum, null);
+        if (shiftValue != null) {
+            value =  shiftValue.value;
+        }
+        return Optional.ofNullable(value);
     }
 
-    public double getRange(int dir, AtomEnum atomEnum) {
-        return shiftValues[dir].get(atomEnum).range;
+    public Optional<Double> getRange(int dir, AtomEnum atomEnum) {
+        Double range = null;
+        ShiftValue shiftValue =shiftValues[dir].getOrDefault(atomEnum, null);
+        if (shiftValue != null) {
+            range =  shiftValue.range;
+        }
+        return Optional.ofNullable(range);
     }
 
-    public int getNValues(int dir, AtomEnum atomEnum) {
-        return shiftValues[dir].get(atomEnum).n();
+    public Optional<Integer> getNValues(int dir, AtomEnum atomEnum) {
+        Integer nValues = null;
+        ShiftValue shiftValue =shiftValues[dir].getOrDefault(atomEnum, null);
+        if (shiftValue != null) {
+            nValues =  shiftValue.n();
+        }
+        return Optional.ofNullable(nValues);
+    }
+
+    public Optional<SpinSystemMatch> confirmP() {
+        return Optional.ofNullable(confirmP);
+    }
+
+    public void setConfirmP(SpinSystemMatch confirmP) {
+        this.confirmP = confirmP;
+    }
+
+    public Optional<SpinSystemMatch> confirmS() {
+        return Optional.ofNullable(confirmS);
+    }
+
+    public void setConfirmS(SpinSystemMatch confirmS) {
+        this.confirmS = confirmS;
+    }
+
+    public Optional<SeqFragment> fragment() {
+        return Optional.ofNullable(fragment);
+    }
+
+    public void setFragment(SeqFragment fragment) {
+        this.fragment = fragment;
     }
 
     public boolean confirmed(SpinSystemMatch spinSys, boolean prev) {
         boolean result = false;
         if (prev) {
-            if (confirmP.isPresent()) {
-                SpinSystemMatch prevMatch = confirmP.get();
+            if (confirmP().isPresent()) {
+                SpinSystemMatch prevMatch = confirmP().get();
                 result = prevMatch.spinSystemB == this && prevMatch.spinSystemA == spinSys.spinSystemA;
             }
         } else {
-            if (confirmS.isPresent()) {
-                SpinSystemMatch nextMatch = confirmS.get();
+            if (confirmS().isPresent()) {
+                SpinSystemMatch nextMatch = confirmS().get();
                 result = nextMatch.spinSystemA == this && nextMatch.spinSystemB == spinSys.spinSystemB;
             }
         }
@@ -320,7 +361,7 @@ public class SpinSystem {
     }
 
     public boolean confirmed(boolean prev) {
-        return prev ? confirmP.isPresent() : confirmS.isPresent();
+        return prev ? confirmP().isPresent() : confirmS().isPresent();
     }
 
     public void confirm(SpinSystemMatch spinSysMatch, boolean prev) {
@@ -329,12 +370,12 @@ public class SpinSystem {
         }
         if (prev) {
             SpinSystem target = spinSysMatch.spinSystemA;
-            confirmP = Optional.of(spinSysMatch);
-            target.confirmS = Optional.of(spinSysMatch);
+            setConfirmP(spinSysMatch);
+            target.setConfirmS(spinSysMatch);
         } else {
             SpinSystem target = spinSysMatch.spinSystemB;
-            confirmS = Optional.of(spinSysMatch);
-            target.confirmP = Optional.of(spinSysMatch);
+            setConfirmS(spinSysMatch);
+            target.setConfirmP(spinSysMatch);
         }
         SeqFragment fragment = SeqFragment.join(spinSysMatch, false);
         if (fragment != null) {
@@ -348,12 +389,12 @@ public class SpinSystem {
         }
         if (prev) {
             SpinSystem target = spinSysMatch.spinSystemA;
-            confirmP = Optional.empty();
-            target.confirmS = Optional.empty();
+            setConfirmP(null);
+            target.setConfirmS(null);
         } else {
             SpinSystem target = spinSysMatch.spinSystemB;
-            confirmS = Optional.empty();
-            target.confirmP = Optional.empty();
+            setConfirmS(null);
+            target.setConfirmP(null);
         }
         List<SeqFragment> fragments = SeqFragment.remove(spinSysMatch, false);
         for (SeqFragment fragment : fragments) {
@@ -365,7 +406,7 @@ public class SpinSystem {
     }
 
     public Optional<SeqFragment> getFragment() {
-        return fragment;
+        return fragment();
     }
 
     public static int[] getCounts(PeakList peakList) {
@@ -550,8 +591,10 @@ public class SpinSystem {
         double pCum = 1.0;
         boolean[] isGly = new boolean[2];
         for (int k = 0; k < 2; k++) {
-            if (!shiftList[k].get(AtomEnum.CA).isEmpty()) {
-                double caShift = shiftRange(shiftList[k].get(AtomEnum.CA))[0];
+            List<Double> shifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
+
+            if (!shifts.isEmpty()) {
+                double caShift = shiftRange(shifts)[0];
                 if (caShift < 50.0) {
                     isGly[k] = true;
                 }
@@ -608,7 +651,7 @@ public class SpinSystem {
 
         for (int k = 0; k < 2; k++) {
             for (AtomEnum atomEnum : AtomEnum.values()) {
-                List<Double> shifts = shiftList[k].get(atomEnum);
+                List<Double> shifts = shiftList[k].getOrDefault(atomEnum, Collections.emptyList());
                 int nShifts = shifts.size();
                 if (nShifts > 0) {
                     double[] range = shiftRange(shifts);
@@ -1031,18 +1074,18 @@ public class SpinSystem {
     }
 
     public int getConfirmedPrevious() {
-        if (spinMatchP.isEmpty() || confirmP.isEmpty()) {
+        if (spinMatchP.isEmpty() || confirmP().isEmpty()) {
             return 0;
         } else {
-            return spinMatchP.indexOf(confirmP.get());
+            return spinMatchP.indexOf(confirmP().get());
         }
     }
 
     public int getConfirmedNext() {
-        if (spinMatchS.isEmpty() || confirmS.isEmpty()) {
+        if (spinMatchS.isEmpty() || confirmS().isEmpty()) {
             return 0;
         } else {
-            return spinMatchS.indexOf(confirmS.get());
+            return spinMatchS.indexOf(confirmS().get());
         }
     }
 
@@ -1125,12 +1168,12 @@ public class SpinSystem {
             var spinB = spinMatch.getSpinSystemB();
             spinB.removeMatches(this);
         }
-        if (confirmP.isPresent()) {
-            var match = confirmP.get();
+        if (confirmP().isPresent()) {
+            var match = confirmP().get();
             match.getSpinSystemA().unconfirm(match, false);
         }
-        if (confirmS.isPresent()) {
-            var match = confirmS.get();
+        if (confirmS().isPresent()) {
+            var match = confirmS().get();
             match.getSpinSystemB().unconfirm(match, false);
         }
         for (var peakMatch : peakMatches) {
@@ -1152,14 +1195,14 @@ public class SpinSystem {
 
     public static void extend(SpinSystem startSys, double minScore) {
         SpinSystem spinSys = startSys;
-        while (spinSys.confirmP.isPresent()) {
-            SpinSystemMatch match = spinSys.confirmP.get();
+        while (spinSys.confirmP().isPresent()) {
+            SpinSystemMatch match = spinSys.confirmP().get();
             spinSys = match.getSpinSystemA();
         }
         extendPrevious(spinSys, minScore);
         spinSys = startSys;
-        while (spinSys.confirmS.isPresent()) {
-            SpinSystemMatch match = spinSys.confirmS.get();
+        while (spinSys.confirmS().isPresent()) {
+            SpinSystemMatch match = spinSys.confirmS().get();
             spinSys = match.getSpinSystemB();
         }
         extendNext(spinSys, minScore);
@@ -1167,7 +1210,7 @@ public class SpinSystem {
 
     private static void extendPrevious(SpinSystem startSys, double minScore) {
         SpinSystem spinSys = startSys;
-        while (spinSys.confirmP.isEmpty()) {
+        while (spinSys.confirmP().isEmpty()) {
             if (spinSys.getMatchToPrevious().isEmpty()) {
                 break;
             }
@@ -1188,7 +1231,7 @@ public class SpinSystem {
 
     private static void extendNext(SpinSystem startSys, double minScore) {
         SpinSystem spinSys = startSys;
-        while (spinSys.confirmS.isEmpty()) {
+        while (spinSys.confirmS().isEmpty()) {
             if (spinSys.getMatchToNext().isEmpty()) {
                 break;
             }
@@ -1231,10 +1274,10 @@ public class SpinSystem {
     }
 
     String getSystemSTARString() {
-        String confirmedPrev = confirmP.isPresent() ? String.valueOf(confirmP.get().getSpinSystemA().getId()) : ".";
-        String confirmedNext = confirmS.isPresent() ? String.valueOf(confirmS.get().getSpinSystemB().getId()) : ".";
-        String fragmentID = fragment.isPresent() ? String.valueOf(fragment.get().id) : ".";
-        String fragmentPos = fragment.isPresent() ? String.valueOf(fragmentPosition) : ".";
+        String confirmedPrev = confirmP().isPresent() ? String.valueOf(confirmP().get().getSpinSystemA().getId()) : ".";
+        String confirmedNext = confirmS().isPresent() ? String.valueOf(confirmS().get().getSpinSystemB().getId()) : ".";
+        String fragmentID = fragment().isPresent() ? String.valueOf(fragment().get().id) : ".";
+        String fragmentPos = fragment().isPresent() ? String.valueOf(fragmentPosition) : ".";
         return String.format("%3d %2d %3d %4s %4s %4s %3s", getId(), rootPeak.getPeakList().getId(),
                 rootPeak.getIdNum(), confirmedPrev, confirmedNext, fragmentID, fragmentPos);
     }

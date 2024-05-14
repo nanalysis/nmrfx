@@ -36,11 +36,11 @@ public class SeqFragment {
         SeqFragment result = new SeqFragment();
         SeqFragment fragmentA = null;
         SeqFragment fragmentB = null;
-        if (spinSysA.fragment.isPresent()) {
-            fragmentA = spinSysA.fragment.get();
+        if (spinSysA.fragment().isPresent()) {
+            fragmentA = spinSysA.fragment().get();
         }
-        if (spinSysB.fragment.isPresent()) {
-            fragmentB = spinSysB.fragment.get();
+        if (spinSysB.fragment().isPresent()) {
+            fragmentB = spinSysB.fragment().get();
         }
         if ((fragmentA != null) && (fragmentA == fragmentB)) {
             result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
@@ -93,30 +93,30 @@ public class SeqFragment {
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         SeqFragment result = null;
         boolean newFrozen = false;
-        if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
+        if (spinSysA.fragment().isEmpty() && spinSysB.fragment().isEmpty()) {
             result = new SeqFragment();
             result.spinSystemMatches.add(spinSysMatch);
-        } else if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            if (spinSysA.fragment.get() != spinSysB.fragment.get()) {
-                result = spinSysA.fragment.get();
+        } else if (spinSysA.fragment().isPresent() && spinSysB.fragment().isPresent()) {
+            if (spinSysA.fragment().get() != spinSysB.fragment().get()) {
+                result = spinSysA.fragment().get();
                 result.spinSystemMatches.add(spinSysMatch);
-                result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
-                if (spinSysA.fragment.get().isFrozen() || spinSysB.fragment.get().isFrozen()) {
+                result.spinSystemMatches.addAll(spinSysB.fragment().get().spinSystemMatches);
+                if (spinSysA.fragment().get().isFrozen() || spinSysB.fragment().get().isFrozen()) {
                     newFrozen = true;
                 }
             }
 
-        } else if (spinSysA.fragment.isPresent()) {
-            result = spinSysA.fragment.get();
+        } else if (spinSysA.fragment().isPresent()) {
+            result = spinSysA.fragment().get();
             result.spinSystemMatches.add(spinSysMatch);
-            if (spinSysA.fragment.get().isFrozen()) {
+            if (spinSysA.fragment().get().isFrozen()) {
                 newFrozen = true;
             }
 
         } else {
-            result = spinSysB.fragment.get();
+            result = spinSysB.fragment().get();
             result.spinSystemMatches.add(0, spinSysMatch);
-            if (spinSysB.fragment.get().isFrozen()) {
+            if (spinSysB.fragment().get().isFrozen()) {
                 newFrozen = true;
             }
         }
@@ -166,16 +166,16 @@ public class SeqFragment {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         List<SeqFragment> result = new ArrayList<>();
-        if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            SeqFragment currentFragment = spinSysA.fragment.get();
+        if (spinSysA.fragment().isPresent() && spinSysB.fragment().isPresent()) {
+            SeqFragment currentFragment = spinSysA.fragment().get();
             List<SpinSystemMatch> spinSystemMatches = currentFragment.spinSystemMatches;
 
             currentFragment.dump();
 
             SpinSystemMatch firstMatch = spinSystemMatches.get(0);
             SpinSystemMatch lastMatch = spinSystemMatches.get(spinSystemMatches.size() - 1);
-            spinSysMatch.spinSystemA.fragment = Optional.empty();
-            spinSysMatch.spinSystemB.fragment = Optional.empty();
+            spinSysMatch.spinSystemA.setFragment(null);
+            spinSysMatch.spinSystemB.setFragment(null);
             if (spinSysMatch == firstMatch) {
                 spinSystemMatches.remove(0);
                 result.add(null);
@@ -227,10 +227,11 @@ public class SeqFragment {
         }
 
     }
+
     void updateFragment() {
         for (SpinSystemMatch spinSysMatch : spinSystemMatches) {
-            spinSysMatch.spinSystemA.fragment = Optional.of(this);
-            spinSysMatch.spinSystemB.fragment = Optional.of(this);
+            spinSysMatch.spinSystemA.setFragment(this);
+            spinSysMatch.spinSystemB.setFragment(this);
         }
         var resSeqScores = scoreShifts(Molecule.getActive());
         if (resSeqScores.size() == 1) {
@@ -283,15 +284,19 @@ public class SeqFragment {
             result.add(values);
             for (SpinSystem.AtomEnum matchedAtom : spinMatch.matched) {
                 if (matchedAtom.resMatch) {
-                    double vA = spinSysA.getValue(1, matchedAtom);
-                    double vB = spinSysB.getValue(0, matchedAtom);
-                    double avg = (vA + vB) / 2.0;
-                    AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, avg, null);
-                    values.add(atomValue);
+                    Optional<Double> vAOpt = spinSysA.getValue(1, matchedAtom);
+                    Optional<Double> vBOpt = spinSysB.getValue(0, matchedAtom);
+                    if (vAOpt.isPresent() && vBOpt.isPresent()) {
+                        double avg = (vAOpt.get() + vBOpt.get()) / 2.0;
+                        AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, avg, null);
+                        values.add(atomValue);
+                    }
                 } else {
-                    AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, spinSysA.getValue(1, matchedAtom), null);
-                    values.add(atomValue);
-
+                    Optional<Double> vAOpt = spinSysA.getValue(1, matchedAtom);
+                    if (vAOpt.isPresent()) {
+                        AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, vAOpt.get(), null);
+                        values.add(atomValue);
+                    }
                 }
             }
             iSys++;
@@ -312,6 +317,7 @@ public class SeqFragment {
         List<List<AtomShiftValue>> shiftValues = getShifts();
         return scoreShifts(molecule, shiftValues, this);
     }
+
     public static List<ResidueSeqScore> scoreShifts(Molecule molecule, List<List<AtomShiftValue>> shiftValues, SeqFragment seqFragment) {
         List<ResidueSeqScore> result = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
@@ -322,7 +328,7 @@ public class SeqFragment {
         return result;
     }
 
-    public  List<ResidueSeqScore> scoreShifts(Polymer polymer) {
+    public List<ResidueSeqScore> scoreShifts(Polymer polymer) {
         List<List<AtomShiftValue>> shiftValues = getShifts();
         return scoreShifts(polymer, shiftValues, this);
     }

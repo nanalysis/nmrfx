@@ -835,16 +835,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         } else {
                             aName = aName.toUpperCase();
                         }
-                        double value = spinSystem.getValue(k, atomEnum);
-                        double range = spinSystem.getRange(k, atomEnum);
-                        int nValues = spinSystem.getNValues(k, atomEnum);
-                        if (!Double.isNaN(value)) {
+                        Optional<Double> valueOpt = spinSystem.getValue(k, atomEnum);
+                        Optional<Double> range = spinSystem.getRange(k, atomEnum);
+                        Optional<Integer> nValues = spinSystem.getNValues(k, atomEnum);
+                        if (valueOpt.isPresent() && range.isPresent() && nValues.isPresent()) {
+                            double value = valueOpt.get();
                             if (aName.equalsIgnoreCase("ca")) {
                                 ppms[k][0] = value;
                             } else if (aName.equalsIgnoreCase("cb")) {
                                 ppms[k][1] = value;
                             }
-                            setLabel(aName, value, range, nValues);
+                            setLabel(aName, value, range.get(), nValues.get());
                         }
                     }
                 }
@@ -1417,10 +1418,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 updateCluster(resLabel, xy, thisSystem);
                 xy = updateXY(resLabel, xy, height);
                 i++;
-                resLabel.setAndSaveColor(paletteColors.get(iColor));
+                resLabel.setAndSaveColor(getPaletteColor(iColor));
                 resLabel.setTopLineVisible(frozen);
                 resLabel.setSpinSystem(thisSystem);
-                spinSystemColorMap.put(thisSystem, paletteColors.get(iColor));
+                spinSystemColorMap.put(thisSystem, getPaletteColor(iColor));
 
                 for (SpinSystemMatch spinMatch : spinMatches) {
                     resLabel = (ResidueLabel) nodes.get(i);
@@ -1431,7 +1432,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     resLabel.setAndSaveColor(getPaletteColor(iColor));
                     resLabel.setTopLineVisible(frozen);
                     resLabel.setSpinSystem(aSystem);
-                    spinSystemColorMap.put(aSystem, paletteColors.get(iColor));
+                    spinSystemColorMap.put(aSystem, getPaletteColor(iColor));
                 }
                 iColor++;
             } else {
@@ -2309,6 +2310,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (peakDim != null) {
                 int iDim = peakDim.getSpectralDim();
                 SpinSystem.AtomEnum atomEnum = peakMatch.getIndex(iDim);
+                if (atomEnum == null) {
+                    continue;
+                }
                 String aName = atomEnum.name().toUpperCase();
                 if ((iDim >= atomPatterns.size()) || !atomPatterns.get(iDim).contains(aName)) {
                     continue;
@@ -2342,10 +2346,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     continue;
                 }
 
-                double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomEnum);
-                AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
-                annoSimpleLine.setStroke(color);
-                chart.addAnnotation(annoSimpleLine);
+                Optional<Double> ppmOpt = spinSystem.getValue(isIntra ? 1 : 0, atomEnum);
+                ppmOpt.ifPresent(ppm -> {
+                    AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                    annoSimpleLine.setStroke(color);
+                    chart.addAnnotation(annoSimpleLine);
+                });
             }
         }
     }

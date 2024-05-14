@@ -480,13 +480,15 @@ public class RunAbout implements SaveframeWriter {
                     } else {
                         aName = aName.toUpperCase();
                     }
-                    double value = spinSystem.getValue(k, atomEnum);
-                    if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
-                        if ((value < 50.0) && (value > 40.0)) {
-                            isGly = true;
+                    Optional<Double> valueOpt = spinSystem.getValue(k, atomEnum);
+                    if (valueOpt.isPresent()) {
+                        double value = valueOpt.get();
+                        if (aName.equalsIgnoreCase("ca")) {
+                            if ((value < 50.0) && (value > 40.0)) {
+                                isGly = true;
+                            }
                         }
-                    }
-                    if (Double.isNaN(value)) {
+                    } else {
                         if (!aName.equalsIgnoreCase("cb")) {
                             justCB = false;
                         }

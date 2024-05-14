@@ -427,8 +427,8 @@ public class SpinSystems {
     public List<SeqFragment> getSortedFragments() {
         Set<SeqFragment> fragments = new HashSet<>();
         for (SpinSystem spinSys : systems) {
-            if (spinSys.fragment.isPresent()) {
-                fragments.add(spinSys.fragment.get());
+            if (spinSys.fragment().isPresent()) {
+                fragments.add(spinSys.fragment().get());
             }
         }
         List<SeqFragment> sortedFragments = fragments.stream().sorted((e1, e2)
@@ -441,7 +441,7 @@ public class SpinSystems {
     public List<SpinSystem> getUnconnectedSpinSystems() {
         List<SpinSystem> unconnectedSystems = new ArrayList<>();
         for (SpinSystem spinSys : systems) {
-            if (spinSys.fragment.isEmpty()) {
+            if (spinSys.fragment().isEmpty()) {
                 unconnectedSystems.add(spinSys);
             }
         }
@@ -584,7 +584,7 @@ public class SpinSystems {
                 SpinSystem nextSystem = nextSystems.get(i);
                 SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
                 if (fragment != null) {
-                    system.fragment = Optional.of(fragment);
+                    system.setFragment(fragment);
                 }
                 if (nextSystem != null) {
                     // find match that is to next, confirm and add to a fragment
@@ -594,8 +594,8 @@ public class SpinSystems {
                                 throw new ParseException("Could not parse STAR saveframe. Fragment was null.");
                             }
                             fragment.getSpinSystemMatches().add(match);
-                            system.confirmS = Optional.of(match);
-                            nextSystem.confirmP = Optional.of(match);
+                            system.setConfirmS(match);
+                            nextSystem.setConfirmP(match);
                         }
                     }
                 }
@@ -606,7 +606,7 @@ public class SpinSystems {
 
     public void extendAll(double minScore) {
         for (SpinSystem spinSystem : systems) {
-            if (spinSystem.confirmP.isEmpty() || spinSystem.confirmS.isEmpty()) {
+            if (spinSystem.confirmP().isEmpty() || spinSystem.confirmS().isEmpty()) {
                 SpinSystem.extend(spinSystem, minScore);
             }
         }
@@ -622,9 +622,9 @@ public class SpinSystems {
 
     public void clearAll() {
         for (SpinSystem spinSystem : systems) {
-            spinSystem.confirmS = Optional.empty();
-            spinSystem.confirmP = Optional.empty();
-            spinSystem.fragment = Optional.empty();
+            spinSystem.setConfirmS(null);
+            spinSystem.setConfirmP(null);
+            spinSystem.setFragment(null);
         }
     }
 
