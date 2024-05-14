@@ -745,14 +745,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         void refresh() {
             pane1.getChildren().clear();
             labelMap.clear();
-            int nTypes = SpinSystem.getNAtomTypes();
             int col = 0;
             for (int k = 0; k < 2; k++) {
-                for (int i = 0; i < nTypes; i++) {
-                    int j = k == 1 ? i : nTypes - i - 1;
-                    int n = SpinSystem.getNPeaksForType(k, j);
+                for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
+                    int n = SpinSystem.getNPeaksForType(k, atomEnum);
                     if (n != 0) {
-                        String aName = SpinSystem.getAtomName(j);
+                        String aName = atomEnum.name();
                         if (k == 0) {
                             aName = aName.toLowerCase();
                         } else {
@@ -824,23 +822,22 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         void setLabels() {
             clearLabels();
             SpinSystem spinSystem = currentSpinSystem;
-            int nTypes = SpinSystem.getNAtomTypes();
             double[][] ppms = new double[2][2];
             for (int k = 0; k < 2; k++) {
                 ppms[k][0] = Double.NaN;
                 ppms[k][1] = Double.NaN;
-                for (int i = 0; i < nTypes; i++) {
-                    int n = SpinSystem.getNPeaksForType(k, i);
+                for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
+                    int n = SpinSystem.getNPeaksForType(k, atomEnum);
                     if (n != 0) {
-                        String aName = SpinSystem.getAtomName(i);
+                        String aName = atomEnum.name();
                         if (k == 0) {
                             aName = aName.toLowerCase();
                         } else {
                             aName = aName.toUpperCase();
                         }
-                        double value = spinSystem.getValue(k, i);
-                        double range = spinSystem.getRange(k, i);
-                        int nValues = spinSystem.getNValues(k, i);
+                        double value = spinSystem.getValue(k, atomEnum);
+                        double range = spinSystem.getRange(k, atomEnum);
+                        int nValues = spinSystem.getNValues(k, atomEnum);
                         if (!Double.isNaN(value)) {
                             if (aName.equalsIgnoreCase("ca")) {
                                 ppms[k][0] = value;
@@ -2311,8 +2308,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
             if (peakDim != null) {
                 int iDim = peakDim.getSpectralDim();
-                int atomIndex = peakMatch.getIndex(iDim);
-                String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
+                SpinSystem.AtomEnum atomEnum = peakMatch.getIndex(iDim);
+                String aName = atomEnum.name().toUpperCase();
                 if ((iDim >= atomPatterns.size()) || !atomPatterns.get(iDim).contains(aName)) {
                     continue;
 
@@ -2345,7 +2342,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     continue;
                 }
 
-                double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
+                double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomEnum);
                 AnnoSimpleLine annoSimpleLine = new AnnoSimpleLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
                 annoSimpleLine.setStroke(color);
                 chart.addAnnotation(annoSimpleLine);

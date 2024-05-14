@@ -10,7 +10,6 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author brucejohnson
@@ -54,7 +53,7 @@ public class FragmentScoring {
         var names = molecule.getPolymers().stream().
                 flatMap(poly -> poly.getResidues().
                         stream()).map(Residue::getName).
-                collect(Collectors.toList());
+                toList();
         for (String aaName : names) {
             double[] means;
             double[][] vars;
@@ -158,7 +157,7 @@ public class FragmentScoring {
         String resName = residue.getName();
         resName = resName.toLowerCase();
 
-        if (!atomName.equals("")) {
+        if (!atomName.isEmpty()) {
             if (!(resName.equalsIgnoreCase("gly")
                     && atomName.equalsIgnoreCase("cb"))) {
                 Atom atom = residue.getAtom(atomName);

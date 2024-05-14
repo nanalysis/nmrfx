@@ -34,6 +34,9 @@ public class RunAbout implements SaveframeWriter {
     Map<String, DatasetBase> datasetMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
+
+    EnumMap<SpinSystem.AtomEnum, Integer>[] countMap = new EnumMap[2];
+
     boolean active = false;
     Map<Residue, SpinSystem> residueSpinSystemsMap = new HashMap<>();
 
@@ -160,7 +163,7 @@ public class RunAbout implements SaveframeWriter {
         return choices;
     }
 
-    void setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
+    void setAtomCount(String typeName, List<String> patElems) {
         int[] dimCount = new int[patElems.size()];
         int i = 0;
         for (String elem : patElems) {
@@ -211,8 +214,10 @@ public class RunAbout implements SaveframeWriter {
                             sign = 1;
                         }
                         aName = aName.toLowerCase();
-                        int nameIdx = stdNames.indexOf(aName);
-                        counts[iDir][nameIdx] += dimMult[i];
+                        SpinSystem.AtomEnum atomEnum = SpinSystem.AtomEnum.valueOf(aName.toUpperCase());
+                        Integer count = countMap[iDir].getOrDefault(atomEnum, 0);
+                        count += dimMult[i];
+                        countMap[iDir].put(atomEnum, count);
                         intraResidue[j] = iDir == 1;
                         allNames[j] = aName;
                         signs[j] = sign;
@@ -236,8 +241,8 @@ public class RunAbout implements SaveframeWriter {
     public void setPeakLists(List<PeakList> lists) {
         refList = lists.get(0);
         PeakList.clusterOrigin = refList;
-        List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
-        int[][] counts = new int[2][stdNames.size()];
+        countMap[0] = new EnumMap<>(SpinSystem.AtomEnum.class);
+        countMap[1] = new EnumMap<>(SpinSystem.AtomEnum.class);
         peakLists.clear();
         peakListMap.clear();
         datasetMap.clear();
@@ -250,9 +255,8 @@ public class RunAbout implements SaveframeWriter {
             peakListTypes.put(peakList.getName(), typeName);
             datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
             List<String> patElems = getPatterns(peakList);
-            setAtomCount(typeName, patElems, counts, stdNames);
+            setAtomCount(typeName, patElems);
         }
-        SpinSystem.nAtmPeaks = counts;
         active = true;
     }
 
@@ -463,21 +467,20 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public boolean getHasAllAtoms(SpinSystem spinSystem) {
-        int nTypes = SpinSystem.getNAtomTypes();
         boolean ok = true;
         for (int k = 0; k < 2; k++) {
             boolean isGly = false;
             boolean justCB = true;
-            for (int i = 0; i < nTypes; i++) {
-                int n = SpinSystem.getNPeaksForType(k, i);
+            for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
+                int n = atomEnum.n(k);
                 if (n != 0) {
-                    String aName = SpinSystem.getAtomName(i);
+                    String aName = atomEnum.name();
                     if (k == 0) {
                         aName = aName.toLowerCase();
                     } else {
                         aName = aName.toUpperCase();
                     }
-                    double value = spinSystem.getValue(k, i);
+                    double value = spinSystem.getValue(k, atomEnum);
                     if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
                         if ((value < 50.0) && (value > 40.0)) {
                             isGly = true;
