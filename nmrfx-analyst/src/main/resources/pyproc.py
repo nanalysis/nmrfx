@@ -105,7 +105,6 @@ from java.util import ArrayList
 from java.util import HashMap
 import java.lang.Double as Double
 import java.lang.Integer as Integer
-import java.lang.System as System
 
 import psspecial
 from nmrpar import ppmToFrac
@@ -3973,28 +3972,21 @@ def ddoc(op,opList):
                    parMap.clear()
                    iArg += 1
                    pars = line.split(' : ')
-                   #ast.literal_eval
                    parName = pars[0].strip()
                    if ((parName != 'keywords') and (parName != argNames[iArg])):
                        print parName,' not equal to ',argNames[iArg]
                        exit()
                    iDefault = nArgs-iArg
                    hasDefault = True
-                   #print nArgs,iArg,iDefault,nDefaults
                    default = None
                    if (iDefault > nDefaults):
                        hasDefault = False
                    else:
                        default = defaults[-iDefault]
-#                   (parType,parOptional)= pars[1].split(',')
-                   System.out.println(pars)
                    parTypeList = ArrayList()
                    if (pars[1][0] == '{'):
                        parTypeString = pars[1].strip()
-                       #parTypeString = "set([" + parTypeString[1:-1] + "])"
                        parTypeString = "(" + parTypeString[1:-1] + ")"
-                       #print parTypeString
-                       #parTypes = ast.literal_eval(parTypeString)
                        parTypes = eval(parTypeString)
                        if isinstance(parTypes,tuple):
                           for parType in parTypes:
@@ -4010,21 +4002,16 @@ def ddoc(op,opList):
                    else:
                         parTypeList.add(pars[1].strip())
 
-                   #parOptional = parOptional.strip()=='optional'
                    parOptional = hasDefault;
-                   #print 'parName ',parName,'type ',parType,'optional ', parOptional
                    parMap.put('name',parName)
                    parMap.put('type',parTypeList)
                    parMap.put('optional',parOptional)
                else:
                    if line.find(' : ') == -1:
                        parMap.put('desc',line)
-                       #print 'desc',line
                        if hasDefault:
                            parMap.put('default',default)
-                           #print 'default ',default
                    else:
-                       #print 'opts',line
                        opts = line.split(' : ')
                        optName = opts[0].strip()
                        optValue = opts[1].strip()
