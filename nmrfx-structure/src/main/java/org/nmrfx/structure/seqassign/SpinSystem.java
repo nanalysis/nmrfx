@@ -561,7 +561,7 @@ public class SpinSystem {
             for (int k = 0; k < 2; k++) {
                 for (AtomEnum atomEnum : AtomEnum.values()) {
                     List<Double> shifts = shiftList[k].getOrDefault(atomEnum, Collections.EMPTY_LIST);
-                    int nExpected = atomEnum.n(k);
+                    int nExpected = spinSystems.runAbout.getExpected(k, atomEnum);
                     if (isGly[k] && (atomEnum == AtomEnum.CB)) {
                         nExpected = 0;
                     }
@@ -604,7 +604,9 @@ public class SpinSystem {
             for (AtomEnum atomEnum : AtomEnum.values()) {
                 List<Double> shifts = shiftList[k].getOrDefault(atomEnum, Collections.EMPTY_LIST);
                 int nShifts = shifts.size();
-                int nExpected = atomEnum.n(k);
+
+                int nExpected = spinSystems.runAbout.getExpected(k, atomEnum);
+
                 if (isGly[k] && (atomEnum == AtomEnum.CB)) {
                     nExpected = 0;
                 }
@@ -823,6 +825,12 @@ public class SpinSystem {
                         bestIndex = iter.getCount();
                     }
                 }
+            }
+            if (display && (bestIndex >= 0)) {
+                int[] pt = counter.getCounts(bestIndex);
+                boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
+                System.out.println("best is " + bestIndex);
+                dumpShifts(shiftList);
             }
             if (!display && (bestIndex >= 0)) {
                 int[] pt = counter.getCounts(bestIndex);

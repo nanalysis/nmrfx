@@ -603,6 +603,11 @@ public class SpinSystems {
         }
 
     }
+    public void trimAll() {
+        for (SpinSystem spinSystem : systems) {
+            runAbout.trim(spinSystem);
+        }
+    }
 
     public void extendAll(double minScore) {
         for (SpinSystem spinSystem : systems) {

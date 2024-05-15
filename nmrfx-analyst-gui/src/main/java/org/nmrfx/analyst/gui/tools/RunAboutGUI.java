@@ -626,6 +626,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         trimItem.setOnAction(e -> trimSystem());
         spinSysMenuButton.getItems().add(trimItem);
 
+        MenuItem trimAllItem = new MenuItem("Trim All");
+        trimAllItem.setOnAction(e -> trimSystems());
+        spinSysMenuButton.getItems().add(trimAllItem);
+
         MenuItem extendItem = new MenuItem("Extend");
         extendItem.setOnAction(e -> extendSystem());
         spinSysMenuButton.getItems().add(extendItem);
@@ -2530,6 +2534,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         runAbout.trim(spinSys);
         gotoSpinSystems();
         updateClusterCanvas();
+    }
+
+    void trimSystems() {
+        if (GUIUtils.affirm("Trim all systems")) {
+            runAbout.getSpinSystems().trimAll();
+            gotoSpinSystems();
+            updateClusterCanvas();
+        }
     }
 
     void extendSystem() {

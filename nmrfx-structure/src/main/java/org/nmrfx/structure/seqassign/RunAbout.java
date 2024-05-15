@@ -86,6 +86,10 @@ public class RunAbout implements SaveframeWriter {
         return typeInfoMap.get(typeName).nTotal;
     }
 
+    public int getExpected(int k, SpinSystem.AtomEnum atomEnum) {
+        return countMap[k].getOrDefault(atomEnum, 0);
+    }
+
     List<String> getPatterns(PeakList peakList) {
         double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
@@ -475,7 +479,7 @@ public class RunAbout implements SaveframeWriter {
             boolean isGly = false;
             boolean justCB = true;
             for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
-                int n = atomEnum.n(k);
+                int n = spinSystem.spinSystems.runAbout.getExpected(k, atomEnum);
                 if (n != 0) {
                     String aName = atomEnum.name();
                     if (k == 0) {

@@ -337,6 +337,9 @@ public class SeqFragment {
         double sDevMul = 2.0;
         List<ResidueSeqScore> result = new ArrayList<>();
         int winSize = shiftValues.size();
+        if (winSize < 1) {
+            return result;
+        }
         List<Residue> residues = polymer.getResidues();
         int nResidues = residues.size();
         int n = nResidues - winSize + 1;
