@@ -82,7 +82,6 @@ from org.nmrfx.processor.operations import Sign
 from org.nmrfx.processor.operations import SinebellApod
 from org.nmrfx.processor.operations import Sqrt
 from org.nmrfx.processor.operations import Stack
-# from org.nmrfx.processor.operations import DGRINSOp
 from org.nmrfx.processor.operations import TDCombine
 from org.nmrfx.processor.operations import TDPoly
 from org.nmrfx.processor.operations import Tilt45
@@ -106,6 +105,7 @@ from java.util import ArrayList
 from java.util import HashMap
 import java.lang.Double as Double
 import java.lang.Integer as Integer
+import java.lang.System as System
 
 import psspecial
 from nmrpar import ppmToFrac
@@ -119,6 +119,7 @@ from nmrpar import getFilterSize
 from nmrpar import getZfSize
 from nmrpar import refByRatio
 from nmrpar import getWaterPPM
+
 
 import re
 
@@ -2955,40 +2956,6 @@ def DEPT( disabled=False, dataset=None, process=None):
         process.addOperation(op)
     return op
 
-# def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None):
-#     ''' Experimental GRINS.
-#     Parameters
-#     ---------
-#     noise : real
-#         amin : 0.0
-#         Noise estimate
-# '''
-#     if disabled:
-#         return None
-#
-#     global fidInfo
-#
-#     if fidInfo == None or fidInfo.fidObj == None:
-#         schedule = None
-#     else:
-#         schedule = fidInfo.fidObj.getSampleSchedule()
-#         if logToFile:
-#             rootdir = fidInfo.fidObj.getFilePath()
-#             logDir = os.path.join(rootdir,"nesta")
-#             if not os.path.exists(logDir):
-#                 os.mkdir(logDir)
-#             logFileName = os.path.join(logDir,"log")
-#
-#     process = process or getCurrentProcess()
-#
-#     op = DGRINSOp(schedule, noise)
-#
-#     if (dataset != None):
-#         op.eval(dataset)
-#     else:
-#         process.addOperation(op)
-#     return op
-
 
 def GRINS(
     noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5,
@@ -3032,9 +2999,9 @@ def GRINS(
         Do Kaiser apodization during GRINS
     phase : []
         Array of phase values, 2 per indirect dimension.
-    negateImag
+    negateImag : []
         Array of booleans, 1 per indirect dimension.
-    negatePairs
+    negatePairs : []
         Array of booleans, 1 per indirect dimension.
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
@@ -4020,7 +3987,7 @@ def ddoc(op,opList):
                    else:
                        default = defaults[-iDefault]
 #                   (parType,parOptional)= pars[1].split(',')
-                   #print pars[1].strip()
+                   System.out.println(pars)
                    parTypeList = ArrayList()
                    if (pars[1][0] == '{'):
                        parTypeString = pars[1].strip()
