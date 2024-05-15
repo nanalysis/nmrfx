@@ -752,7 +752,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             int col = 0;
             for (int k = 0; k < 2; k++) {
                 for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
-                    int n = SpinSystem.getNPeaksForType(k, atomEnum);
+                    int n = runAbout.getExpected(k, atomEnum);
                     if (n != 0) {
                         String aName = atomEnum.name();
                         if (k == 0) {
@@ -831,7 +831,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 ppms[k][0] = Double.NaN;
                 ppms[k][1] = Double.NaN;
                 for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
-                    int n = SpinSystem.getNPeaksForType(k, atomEnum);
+                    int n = runAbout.getExpected(k, atomEnum);
                     if (n != 0) {
                         String aName = atomEnum.name();
                         if (k == 0) {

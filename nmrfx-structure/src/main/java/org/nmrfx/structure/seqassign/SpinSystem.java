@@ -37,32 +37,23 @@ public class SpinSystem {
     int fragmentPosition = -1;
 
     public enum AtomEnum {
-        H("h", 0, 7, 0.04, false),
-        N("n", 0, 7, 0.5, false),
-        C("c", 2, 1, 0.6, true),
-        HA("ha", 0, 0, 0.04, false),
-        CA("ca", 2, 1, 0.6, true),
-        CB("cb", 2, 1, 0.6, true);
+        H("h", 0.04, false),
+        N("n", 0.5, false),
+        C("c", 0.6, true),
+        HA("ha", 0.04, false),
+        CA("ca", 0.6, true),
+        CB("cb", 0.6, true);
 
         final String name;
-        final int nPrevious;
 
         double tol;
 
-        final int nThis;
-
         boolean resMatch;
 
-        AtomEnum(String name, int nPrevious, int nThis, double tol, boolean resMatch) {
+        AtomEnum(String name, double tol, boolean resMatch) {
             this.name = name;
-            this.nPrevious = nPrevious;
-            this.nThis = nThis;
             this.tol = tol;
             this.resMatch = resMatch;
-        }
-
-        int n(int k) {
-            return k == 0 ? nPrevious : nThis;
         }
 
         double tol() {
@@ -75,6 +66,7 @@ public class SpinSystem {
     }
 
     EnumMap<AtomEnum, ShiftValue>[] shiftValues = new EnumMap[2];
+
     record ShiftValue(int n, double value, double range) {
     }
 
@@ -285,37 +277,33 @@ public class SpinSystem {
         }
     }
 
-    public static int getNPeaksForType(int k, AtomEnum atomEnum) {
-        return k == 0 ? atomEnum.nPrevious : atomEnum.nThis;
-    }
-
     public EnumMap<AtomEnum, ShiftValue> getShiftValues(int k) {
         return shiftValues[k];
     }
 
     public Optional<Double> getValue(int dir, AtomEnum atomEnum) {
         Double value = null;
-        ShiftValue shiftValue =shiftValues[dir].getOrDefault(atomEnum, null);
+        ShiftValue shiftValue = shiftValues[dir].getOrDefault(atomEnum, null);
         if (shiftValue != null) {
-            value =  shiftValue.value;
+            value = shiftValue.value;
         }
         return Optional.ofNullable(value);
     }
 
     public Optional<Double> getRange(int dir, AtomEnum atomEnum) {
         Double range = null;
-        ShiftValue shiftValue =shiftValues[dir].getOrDefault(atomEnum, null);
+        ShiftValue shiftValue = shiftValues[dir].getOrDefault(atomEnum, null);
         if (shiftValue != null) {
-            range =  shiftValue.range;
+            range = shiftValue.range;
         }
         return Optional.ofNullable(range);
     }
 
     public Optional<Integer> getNValues(int dir, AtomEnum atomEnum) {
         Integer nValues = null;
-        ShiftValue shiftValue =shiftValues[dir].getOrDefault(atomEnum, null);
+        ShiftValue shiftValue = shiftValues[dir].getOrDefault(atomEnum, null);
         if (shiftValue != null) {
-            nValues =  shiftValue.n();
+            nValues = shiftValue.n();
         }
         return Optional.ofNullable(nValues);
     }

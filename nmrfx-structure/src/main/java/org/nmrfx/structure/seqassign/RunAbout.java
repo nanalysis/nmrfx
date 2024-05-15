@@ -91,7 +91,6 @@ public class RunAbout implements SaveframeWriter {
     }
 
     List<String> getPatterns(PeakList peakList) {
-        double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
         List<String> aTypes = new ArrayList<>();
         for (var sDim : peakList.getSpectralDims()) {
@@ -479,7 +478,7 @@ public class RunAbout implements SaveframeWriter {
             boolean isGly = false;
             boolean justCB = true;
             for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
-                int n = spinSystem.spinSystems.runAbout.getExpected(k, atomEnum);
+                int n = getExpected(k, atomEnum);
                 if (n != 0) {
                     String aName = atomEnum.name();
                     if (k == 0) {
