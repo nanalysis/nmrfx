@@ -542,15 +542,13 @@ public class SpinSystems {
                     systemMap.put(id, spinSystem);
                 }
             }
-            systems = systemMap.values().stream().
-                    sorted(Comparator.comparingInt(SpinSystem::getId)).collect(Collectors.toList());
             for (int i = 0; i < idColumn.size(); i++) {
                 Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
                 if (peakListOpt.isPresent()) {
                     Integer prev = previousIDColumn.get(i);
-                    SpinSystem prevSystem = prev != -1 ? systems.get(prev) : null;
+                    SpinSystem prevSystem = prev != -1 ? systemMap.get(prev) : null;
                     Integer next = nextIDColumn.get(i);
-                    SpinSystem nextSystem = next != -1 ? systems.get(next) : null;
+                    SpinSystem nextSystem = next != -1 ? systemMap.get(next) : null;
                     nextSystems.add(nextSystem);
                     previousSystems.add(prevSystem);
                 }
@@ -567,13 +565,15 @@ public class SpinSystems {
                 if (peakListOpt.isPresent()) {
                     PeakList peakList = peakListOpt.get();
                     Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                    SpinSystem spinSystem = systems.get(spinSystemIDColumn.get(i));
+                    SpinSystem spinSystem = systemMap.get(spinSystemIDColumn.get(i));
                     if (peak != spinSystem.rootPeak) {
                         double score = matchScoreColumn.get(i);
                         spinSystem.addPeak(peak, score);
                     }
                 }
             }
+            systems = systemMap.values().stream().
+                    sorted(Comparator.comparingInt(SpinSystem::getId)).collect(Collectors.toList());
             for (SpinSystem spinSystem : systems) {
                 spinSystem.updateSpinSystem();
             }
