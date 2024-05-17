@@ -305,7 +305,7 @@ public class SeqFragment {
             List<AtomShiftValue> values = new ArrayList<>();
             result.add(values);
 
-            for (var entry : spinSysB.getShiftValues(0).entrySet()) {
+            for (var entry : spinSysB.getShiftValues(1).entrySet()) {
                 AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
                 values.add(atomValue);
             }
