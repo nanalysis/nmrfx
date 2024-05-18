@@ -400,6 +400,8 @@ public class RunAbout implements SaveframeWriter {
 
     public void compare() {
         getSpinSystems().compare();
+        getSpinSystems().checkConfirmed();
+        getSpinSystems().updateFragments();
         getSpinSystems().dump();
     }
 

@@ -239,6 +239,16 @@ public class SeqFragment {
         }
     }
 
+    void updateSpinSystemMatches() {
+        List<SpinSystemMatch> newMatches = new ArrayList<>();
+        for (SpinSystemMatch spinSystemMatch : spinSystemMatches) {
+            SpinSystem systemA = spinSystemMatch.getSpinSystemA();
+            systemA.confirmS().ifPresent( match -> newMatches.add(match));
+        }
+        spinSystemMatches.clear();
+        spinSystemMatches.addAll(newMatches);
+    }
+
     boolean addNext(SpinSystemMatch spinSysMatch) {
         boolean result = false;
         if (spinSystemMatches.isEmpty() || (spinSysMatch.spinSystemA == spinSystemMatches.get(spinSystemMatches.size() - 1).spinSystemB)) {
@@ -291,12 +301,12 @@ public class SeqFragment {
                         AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, avg, null);
                         values.add(atomValue);
                     }
-                } else {
-                    Optional<Double> vAOpt = spinSysA.getValue(1, matchedAtom);
-                    if (vAOpt.isPresent()) {
-                        AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, vAOpt.get(), null);
-                        values.add(atomValue);
-                    }
+                }
+            }
+            for (var shiftValue : spinSysA.shiftValues[1].entrySet()) {
+                if (!shiftValue.getKey().resMatch) {
+                    AtomShiftValue atomValue = new AtomShiftValue(shiftValue.getKey().name, shiftValue.getValue().value(), null);
+                    values.add(atomValue);
                 }
             }
             iSys++;

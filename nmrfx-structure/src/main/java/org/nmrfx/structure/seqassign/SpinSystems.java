@@ -381,6 +381,37 @@ public class SpinSystems {
         }
     }
 
+
+    public void checkConfirmed() {
+        for (SpinSystem spinSys : systems) {
+            spinSys.confirmP().ifPresent(spinSystemMatch -> {
+                spinSys.setConfirmP(null);
+                for (SpinSystemMatch spinSystemMatch1: spinSys.spinMatchP) {
+                    if (spinSystemMatch1.spinSystemB == spinSys) {
+                        spinSys.setConfirmP(spinSystemMatch1);
+                        break;
+                    }
+                }
+            });
+            spinSys.confirmS().ifPresent(spinSystemMatch -> {
+                spinSys.setConfirmS(null);
+                for (SpinSystemMatch spinSystemMatch1: spinSys.spinMatchS) {
+                    if (spinSystemMatch1.spinSystemA == spinSys) {
+                        spinSys.setConfirmS(spinSystemMatch1);
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
+    public void updateFragments() {
+        var fragments = getSortedFragments();
+        for (SeqFragment seqFragment: fragments) {
+            seqFragment.updateSpinSystemMatches();
+        }
+    }
+
     public void dump() {
         for (SpinSystem spinSys : systems) {
             System.out.println(spinSys.toString());
