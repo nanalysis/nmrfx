@@ -947,7 +947,7 @@ public class SpinSystem {
             if (Double.isFinite(vA) && Double.isFinite(vB)) {
                 double delta = Math.abs(vA - vB);
                 ok = true;
-                if (delta > 2.0 * tolA) {
+                if (delta > 4.0 * tolA) {
                     ok = false;
                     break;
                 } else {
