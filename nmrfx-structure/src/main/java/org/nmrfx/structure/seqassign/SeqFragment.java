@@ -72,6 +72,28 @@ public class SeqFragment {
         this.resSeqScore = residueSeqScore;
     }
 
+    public void setResidueSeqScoreAtPosition(SpinSystem spinSys, Residue residue) {
+        Polymer polymer = residue.getPolymer();
+        Molecule molecule = (Molecule) polymer.molecule;
+        int iRes = polymer.getResidues().indexOf(residue);
+        if (isFrozen()) {
+            thawFragment();
+        }
+
+        List<SpinSystem> spinSystems = getSpinSystems();
+        int index = spinSystems.indexOf(spinSys);
+        List<ResidueSeqScore> resSeqScores = scoreShifts(molecule);
+        for (ResidueSeqScore residueSeqScore: resSeqScores) {
+            Residue firstResidue = residueSeqScore.getFirstResidue();
+            int jRes = polymer.getResidues().indexOf(firstResidue);
+            int deltaRes = iRes - jRes;
+            if (index == (deltaRes - 1)) {
+                setResSeqScore(residueSeqScore);
+                break;
+            }
+        }
+    }
+
     public void setId(int value) {
         id = value;
     }
@@ -243,7 +265,7 @@ public class SeqFragment {
         List<SpinSystemMatch> newMatches = new ArrayList<>();
         for (SpinSystemMatch spinSystemMatch : spinSystemMatches) {
             SpinSystem systemA = spinSystemMatch.getSpinSystemA();
-            systemA.confirmS().ifPresent( match -> newMatches.add(match));
+            systemA.confirmS().ifPresent(match -> newMatches.add(match));
         }
         spinSystemMatches.clear();
         spinSystemMatches.addAll(newMatches);
@@ -435,15 +457,7 @@ public class SeqFragment {
     public static boolean testFrag(SpinSystemMatch spinSystemMatch) {
         SeqFragment fragment = getTestFragment(spinSystemMatch);
         Molecule molecule = Molecule.getActive();
-        boolean ok = false;
-        for (Polymer polymer : molecule.getPolymers()) {
-            List<ResidueSeqScore> resSeqScores = fragment.scoreShifts(polymer);
-            if (!resSeqScores.isEmpty()) {
-                ok = true;
-                break;
-            }
-        }
-        return ok;
+        return !fragment.scoreShifts(molecule).isEmpty();
     }
 
     String getFragmentSTARString() {
