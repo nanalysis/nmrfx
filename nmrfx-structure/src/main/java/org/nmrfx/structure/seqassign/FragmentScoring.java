@@ -188,6 +188,10 @@ public class FragmentScoring {
         double resScore = 0.0;
         int nValues = 0;
         for (AtomShiftValue atomShiftValue : atomShiftValues) {
+            if (residue.getAtom(atomShiftValue.getAName()) == null) { // fail residues like proline without HN
+                nValues = 0;
+                break;
+            }
             Double score = scoreAtomPPM(residue, atomShiftValue.getAName(), atomShiftValue.getPPM(), sdevMul);
             if (score != null) {
                 resScore += score;

@@ -1411,10 +1411,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (fragmentMode && fragmentOpt.isPresent()) {
                 SeqFragment fragment = fragmentOpt.get();
                 ResidueSeqScore residueSeqScore = fragment.getResSeqScore();
-                System.out.println("fragment ");
-                if (residueSeqScore != null) {
-                    System.out.println("ress "  + fragment.getResSeqScore().getNResidues() + " " + fragment.getResSeqScore().getFirstResidue());
-                };
                 boolean frozen = fragment.isFrozen();
                 List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
                 ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
@@ -1475,7 +1471,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void updateSeqCanvas() {
-        System.out.println("update seq canvas");
         runAbout.mapSpinSystemToResidue();
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
