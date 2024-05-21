@@ -170,8 +170,6 @@ public class Molecule extends MoleculeBase {
                  IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
-        setActive();
-        storeMolecule();
     }
 
     final void storeMolecule() {

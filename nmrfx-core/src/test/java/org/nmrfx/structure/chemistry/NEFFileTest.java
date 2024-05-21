@@ -8,6 +8,8 @@ package org.nmrfx.structure.chemistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRNEFWriter;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -313,7 +315,8 @@ public class NEFFileTest {
         }
         String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
         if (orig.isEmpty()) {
-            NMRNEFReader.read(fileName);
+            MoleculeBase moleculeBase = NMRNEFReader.read(fileName);
+            MoleculeFactory.setActive(moleculeBase);
             NMRNEFWriter.writeAll(outFile);
             orig = convertFileLines(fileName);
             written = convertFileLines(outFile);

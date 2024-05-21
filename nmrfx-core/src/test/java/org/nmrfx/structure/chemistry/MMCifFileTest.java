@@ -8,6 +8,7 @@ package org.nmrfx.structure.chemistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.io.MMcifReader;
 import org.nmrfx.chemistry.io.MMcifWriter;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -454,6 +455,7 @@ public class MMCifFileTest {
         if (!tmpDir.exists()) {
             Files.createDirectory(tmpDir.toPath());
         }
+        MoleculeBase.removeAll();
         String outFile = String.join(File.separator, outPath, cifFileName + "_mmCif_outTest.cif");
         if (orig.isEmpty()) {
             MMcifReader.read(fileName);
