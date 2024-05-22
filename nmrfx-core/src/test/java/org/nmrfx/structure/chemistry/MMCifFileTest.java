@@ -98,11 +98,6 @@ public class MMCifFileTest {
         testAll();
     }
 
-    //    @Test
-//    public void testFile1PQX2() throws IOException {
-//        loadData("1pqx_2");
-//        testAll();
-//    }
     @Test
     public void testFile2K2E() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2k2e");
@@ -126,12 +121,6 @@ public class MMCifFileTest {
         loadData("2loy");
         testAll();
     }
-//    @Test
-//    public void testFile2LUZ() throws IOException {
-//        loadData("2luz");
-//        testAll();
-//    }
-//    
 
     @Test
     public void testFile2K07() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
@@ -144,11 +133,6 @@ public class MMCifFileTest {
         loadData("2kcu");
         testAll();
     }
-//    @Test
-//    public void testFile6NBN() throws IOException {
-//        loadData("6nbn");
-//        testAll();
-//    }
 
     @Test
     public void testFile3PUK() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
@@ -186,7 +170,7 @@ public class MMCifFileTest {
         testAll();
     }
 
-    private List<List<Object>> convertFileLines(String filePath) throws FileNotFoundException, IOException {
+    private List<List<Object>> convertFileLines(String filePath) throws IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         while (true) {
@@ -217,7 +201,7 @@ public class MMCifFileTest {
         Map<String, List<Object>> seqMap = new HashMap<>();
         boolean inSeq = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_entity_poly_seq")) {
                     inSeq = true;
                 }
@@ -248,13 +232,12 @@ public class MMCifFileTest {
         Map<String, List<Object>> typeMap = new HashMap<>();
         boolean inTypes = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().equals("_atom_type.symbol")) {
                     inTypes = true;
                 }
                 if (inTypes) {
-                    if (line.size() == 1 && line.get(0) instanceof String && !line.get(0).equals("#")) {
-                        String key = (String) line.get(0);
+                    if (line.size() == 1 && line.get(0) instanceof String key && !line.get(0).equals("#")) {
                         List<Object> values = new ArrayList<>();
                         values.add(line.get(0));
                         if (typeMap.containsKey(key)) {
@@ -275,7 +258,7 @@ public class MMCifFileTest {
         Map<String, List<Object>> siteMap = new HashMap<>();
         boolean inSites = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_atom_site.")) {
                     inSites = true;
                 }
@@ -308,7 +291,7 @@ public class MMCifFileTest {
         Map<String, List<Object>> compMap = new HashMap<>();
         boolean inComp = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_chem_comp.")) {
                     inComp = true;
                 }
@@ -344,7 +327,7 @@ public class MMCifFileTest {
         String key = "";
         List<Object> values = new ArrayList<>();
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_struct_asym")) {
                     inAsym = true;
                     if (line.size() == 1) {
@@ -390,9 +373,9 @@ public class MMCifFileTest {
     private Map<String, List<Object>> buildStructConfMap(List<List<Object>> dataArray) {
         Map<String, List<Object>> confMap = new HashMap<>();
         boolean inConf = false;
-        List<Object> values = new ArrayList<>();
+        List<Object> values;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_struct_conf")) {
                     inConf = true;
                 }
@@ -422,9 +405,9 @@ public class MMCifFileTest {
     private Map<String, List<Object>> buildSheetMap(List<List<Object>> dataArray) {
         Map<String, List<Object>> sheetMap = new HashMap<>();
         boolean inSheet = false;
-        List<Object> values = new ArrayList<>();
+        List<Object> values;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_struct_sheet_range")) {
                     inSheet = true;
                 }
@@ -483,8 +466,7 @@ public class MMCifFileTest {
                     for (int v = 0; v < origValues.size(); v++) {
                         if ((v == 1 || v == 3 || v == 4)
                                 && !origValues.get(v).equals(writtenValues.get(v))) {
-                            for (int l = 0; l < allValues.size(); l++) {
-                                List<Object> valList = allValues.get(l);
+                            for (List<Object> valList : allValues) {
                                 double val = (double) valList.get(v);
                                 if (val >= 180.0 && val < 360.0) {
                                     valList.set(v, val - 180.0);
@@ -499,7 +481,7 @@ public class MMCifFileTest {
                 }
                 for (int i = 0; i < origValues.size(); i++) {
                     if (!origValues.get(i).equals(writtenValues.get(i))) {
-                        System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
+                        System.out.println(mode + " " + key + " " + origValues + " " + writtenValues);
                         ok = false;
                     }
                 }
@@ -516,9 +498,9 @@ public class MMCifFileTest {
 
     }
 
-    public void testAll() throws IOException {
+    @Test
+    public void testAll() {
         testSeqBlock();
-//        testChemCompBlock();
         testStructAsymBlock();
         testStructConfBlock();
         testSheetBlock();
@@ -526,7 +508,8 @@ public class MMCifFileTest {
         testAtomSitesBlock();
     }
 
-    public void testSeqBlock() throws IOException {
+    @Test
+    public void testSeqBlock() {
         Map<String, List<Object>> origSeq = buildSequenceMap(orig);
         Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
         if (!origSeq.isEmpty() && !writtenSeq.isEmpty()) {
@@ -535,7 +518,8 @@ public class MMCifFileTest {
         }
     }
 
-    public void testAtomTypesBlock() throws IOException {
+    @Test
+    public void testAtomTypesBlock() {
         Map<String, List<Object>> origTypes = buildAtomTypesMap(orig);
         Map<String, List<Object>> writtenTypes = buildAtomTypesMap(written);
         if (!origTypes.isEmpty() && !writtenTypes.isEmpty()) {
@@ -544,7 +528,8 @@ public class MMCifFileTest {
         }
     }
 
-    public void testAtomSitesBlock() throws IOException {
+    @Test
+    public void testAtomSitesBlock() {
         Map<String, List<Object>> origSites = buildAtomSitesMap(orig);
         Map<String, List<Object>> writtenSites = buildAtomSitesMap(written);
         if (!origSites.isEmpty() && !writtenSites.isEmpty()) {
@@ -553,7 +538,8 @@ public class MMCifFileTest {
         }
     }
 
-    public void testChemCompBlock() throws IOException {
+    @Test
+    public void testChemCompBlock() {
         Map<String, List<Object>> origComp = buildChemCompMap(orig);
         Map<String, List<Object>> writtenComp = buildChemCompMap(written);
         if (!origComp.isEmpty() && !writtenComp.isEmpty()) {
@@ -562,7 +548,8 @@ public class MMCifFileTest {
         }
     }
 
-    public void testStructAsymBlock() throws IOException {
+    @Test
+    public void testStructAsymBlock() {
         Map<String, List<Object>> origAsym = buildStructAsymMap(orig);
         Map<String, List<Object>> writtenAsym = buildStructAsymMap(written);
         if (!origAsym.isEmpty() && !writtenAsym.isEmpty()) {
@@ -571,7 +558,8 @@ public class MMCifFileTest {
         }
     }
 
-    public void testStructConfBlock() throws IOException {
+    @Test
+    public void testStructConfBlock() {
         Map<String, List<Object>> origConf = buildStructConfMap(orig);
         Map<String, List<Object>> writtenConf = buildStructConfMap(written);
         if (!origConf.isEmpty() && !writtenConf.isEmpty()) {
@@ -580,7 +568,8 @@ public class MMCifFileTest {
         }
     }
 
-    public void testSheetBlock() throws IOException {
+    @Test
+    public void testSheetBlock() {
         Map<String, List<Object>> origSheet = buildSheetMap(orig);
         Map<String, List<Object>> writtenSheet = buildSheetMap(written);
         if (!origSheet.isEmpty() && !writtenSheet.isEmpty()) {
