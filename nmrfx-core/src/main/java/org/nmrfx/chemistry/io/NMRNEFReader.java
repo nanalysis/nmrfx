@@ -278,6 +278,74 @@ public class NMRNEFReader {
         return molecule;
     }
 
+    void setStereo(List<Atom> atoms, Atom atom, String atomName) {
+        if (atom.isMethyl()) {
+            if (atoms.size() == 3) {
+                if (atomName.contains("x") || atomName.contains("y")) {
+                    atom.setStereo(0);
+                } else {
+                    atom.setStereo(1);
+                }
+            } else if (atoms.size() == 6) {
+                atom.setStereo(0);
+            }
+        } else {
+            if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
+                atom.setStereo(0);
+            } else {
+                atom.setStereo(1);
+            }
+        }
+
+    }
+
+    void setPPM(Atom atom, String resIDStr, int ppmSet, String value, String valueErr) throws ParseException {
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        SpatialSet spSet = atom.spatialSet;
+        if (ppmSet < 0) {
+            ppmSet = 0;
+        }
+        int structureNum = ppmSet;
+        if (spSet == null) {
+            throw new ParseException("invalid spatial set in assignments saveframe \"" + atom.getFullName() + "\"");
+        }
+        try {
+            spSet.setPPM(structureNum, Double.parseDouble(value), false);
+            if (!valueErr.equals(".")) {
+                spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
+            }
+        } catch (NumberFormatException nFE) {
+            throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
+        }
+        if (hasResonances && !resIDStr.equals(".")) {
+            long resID = Long.parseLong(resIDStr);
+            if (resID >= 0) {
+                AtomResonance resonance = (AtomResonance) resFactory.get(resID);
+                if (resonance == null) {
+                    throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
+                }
+                atom.setResonance(resonance);
+                resonance.setAtom(atom);
+            }
+        }
+    }
+
+    Compound getCompound(Map<String, Compound> compoundMap, String chainCode, String sequenceCode) {
+        String mapID = chainCode + "." + sequenceCode;
+        Compound compound = compoundMap.get(mapID);
+        if (compound == null) {
+            for (int e = 1; e <= entities.size(); e++) {
+                chainCode = String.valueOf((char) (e + 'A' - 1));
+                mapID = chainCode + "." + sequenceCode;
+                compound = compoundMap.get(mapID);
+                if (compound != null) {
+                    break;
+                }
+            }
+        }
+        return compound;
+    }
+
     void processNEFChemicalShifts(MoleculeBase moleculeBase, Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_chemical_shift");
         if (loop != null) {
@@ -288,84 +356,26 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
-                String sequenceCode = (String) sequenceCodeColumn.get(i);
-                String chainCode = (String) chainCodeColumn.get(i);
-                String atomName = (String) atomColumn.get(i);
-                String value = (String) valColumn.get(i);
-                String valueErr = (String) valErrColumn.get(i);
+                String sequenceCode = sequenceCodeColumn.get(i);
+                String chainCode = chainCodeColumn.get(i);
+                String atomName = atomColumn.get(i);
+                String value = valColumn.get(i);
+                String valueErr = valErrColumn.get(i);
                 String resIDStr = ".";
                 if (resColumn != null) {
-                    resIDStr = (String) resColumn.get(i);
+                    resIDStr = resColumn.get(i);
                 }
-                String mapID = chainCode + "." + sequenceCode;
-                Compound compound = compoundMap.get(mapID);
+                Compound compound = getCompound(compoundMap, chainCode, sequenceCode);
                 if (compound == null) {
-                    for (int e = 1; e <= entities.size(); e++) {
-                        chainCode = String.valueOf((char) (e + 'A' - 1));
-                        mapID = chainCode + "." + sequenceCode;
-                        compound = compoundMap.get(mapID);
-                        if (compound != null) {
-                            break;
-                        }
-                    }
-                }
-                if (compound == null) {
-                    log.warn("invalid compound in assignments saveframe \"{}\"", mapID);
+                    log.warn("invalid compound in assignments saveframe \"{} {}\"", chainCode, sequenceCode);
                     continue;
                 }
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
                 List<Atom> atoms = MoleculeBase.getNEFMatchedAtoms(new MolFilter(fullAtom), moleculeBase);
                 for (Atom atom : atoms) {
-                    if (atom.isMethyl()) {
-                        if (atoms.size() == 3) {
-                            if (atomName.contains("x") || atomName.contains("y")) {
-                                atom.setStereo(0);
-                            } else {
-                                atom.setStereo(1);
-                            }
-                        } else if (atoms.size() == 6) {
-                            atom.setStereo(0);
-                        }
-                    } else {
-                        if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
-                            atom.setStereo(0);
-                        } else {
-                            atom.setStereo(1);
-                        }
-                    }
-                    if (atom == null) {
-                        throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
-                    }
-
-                    SpatialSet spSet = atom.spatialSet;
-                    if (ppmSet < 0) {
-                        ppmSet = 0;
-                    }
-                    int structureNum = ppmSet;
-                    if (spSet == null) {
-                        throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
-                    }
-                    try {
-                        spSet.setPPM(structureNum, Double.parseDouble(value), false);
-                        if (!valueErr.equals(".")) {
-                            spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
-                        }
-                    } catch (NumberFormatException nFE) {
-                        throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
-                    }
-                    if (hasResonances && !resIDStr.equals(".")) {
-                        long resID = Long.parseLong(resIDStr);
-                        if (resID >= 0) {
-                            AtomResonance resonance = (AtomResonance) resFactory.get(resID);
-                            if (resonance == null) {
-                                throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
-                            }
-                            atom.setResonance(resonance);
-                            resonance.setAtom(atom);
-                        }
-                    }
+                    setStereo(atoms, atom, atomName);
+                    setPPM(atom, resIDStr, ppmSet, value, valueErr);
                 }
             }
         }
