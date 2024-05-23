@@ -1,3 +1,4 @@
+import re
 import sys
 
 def get_os_version():
@@ -12,10 +13,10 @@ with open('target/myFilter.properties','r') as f1:
     f1.close()
 if 'windows' in get_os_version():
     props = props.replace('.\\','')
-    elems = props.split(';')
+    elems = re.split(r'[=;]', props)
 else:
     props = props.replace('./','')
-    elems = props.split(':')
+    elems = re.split(r'[=:]', props)
 for elem in elems[1:]:
      if elem.startswith("nmrfx-analyst"):
          print elem
@@ -29,5 +30,3 @@ with open('target/Manifest.txt','w') as f1:
     for elem in elems[1:]:
         f1.write("  "+elem+"\n")
     f1.write("\n")
-
-
