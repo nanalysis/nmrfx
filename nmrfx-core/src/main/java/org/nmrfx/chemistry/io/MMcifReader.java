@@ -21,7 +21,7 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.protein.ProteinHelix;
 import org.nmrfx.chemistry.protein.Sheet;
-import org.nmrfx.peaks.PeakDim;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
 import org.nmrfx.star.MMCIF;
 import org.nmrfx.star.ParseException;
@@ -62,12 +62,12 @@ public class MMcifReader {
         read(file);
     }
 
-    public static void read(File cifFile) throws ParseException {
+    public static MoleculeBase read(File cifFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(cifFile);
         } catch (FileNotFoundException ex) {
-            return;
+            return null;
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -79,8 +79,7 @@ public class MMcifReader {
             throw new ParseException(parseEx.getMessage() + " " + cif.getLastLine());
         }
         MMcifReader reader = new MMcifReader(cifFile, cif);
-        reader.process();
-
+        return reader.process();
     }
 
     public static void readChemComp(String cifFileName, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
@@ -437,7 +436,6 @@ public class MMcifReader {
             buildSheetRange(saveframe, molecule);
             molecule.updateSpatialSets();
             molecule.genCoords(false);
-
         }
         return molecule;
     }
@@ -535,7 +533,7 @@ public class MMcifReader {
                     molecule.setActiveStructures();
                 }
 
-                Atom atom = MoleculeBase.getAtomByName(fullAtom);
+                Atom atom = molecule.findAtom(fullAtom);
 
                 String pdbInsCode = pdbInsCodeColumn.get(i);
                 int authSeq = authSeqIDColumn.get(i);
@@ -622,7 +620,7 @@ public class MMcifReader {
                 }
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
 
-                Atom atom = MoleculeBase.getAtomByName(fullAtom);
+                Atom atom = molecule.findAtom(fullAtom);
 
                 if (atom == null) {
                     atom = Atom.genAtomWithElement(atomName, atomType);
@@ -681,8 +679,8 @@ public class MMcifReader {
                 String fullAtom1 = chainCode + ":" + sequenceCode + "." + atom1Name;
                 String fullAtom2 = chainCode + ":" + sequenceCode + "." + atom2Name;
 
-                Atom parent = MoleculeBase.getAtomByName(fullAtom1);
-                Atom refAtom = MoleculeBase.getAtomByName(fullAtom2);
+                Atom parent = molecule.findAtom(fullAtom1);
+                Atom refAtom = molecule.findAtom(fullAtom2);
 
                 if (parent == null) {
                     log.warn(INVALID_ATOM_WARN_MSG_TEMPLATE, mapID, atom1Name);
@@ -748,22 +746,23 @@ public class MMcifReader {
 
     }
 
-    void process() throws ParseException, IllegalArgumentException {
+    MoleculeBase process() throws ParseException, IllegalArgumentException {
         String[] argv = {};
-        process(argv);
+        return process(argv);
     }
 
-    public void process(String[] argv) throws ParseException, IllegalArgumentException {
+    public MoleculeBase process(String[] argv) throws ParseException, IllegalArgumentException {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
         var compoundMap = MoleculeBase.compoundMap();
+        MoleculeBase molecule = null;
 
         if (argv.length == 0) {
             hasResonances = false;
             compoundMap.clear();
             log.debug("process molecule");
-            MoleculeBase molecule = buildMolecule();
+            molecule = buildMolecule();
             molecule.setMethylRotationActive(true);
 
             log.debug("process atom sites");
@@ -773,13 +772,15 @@ public class MMcifReader {
             log.debug("process distances");
 //            buildDistanceRestraints(energyList);
             log.debug("process torsion angles");
+            ProjectBase.getActive().putMolecule(molecule);
 
         } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
-            MoleculeBase molecule = MoleculeFactory.getActive();
+            molecule = MoleculeFactory.getActive();
             buildAtomSites(molecule, fromSet, toSet);
         }
+        return molecule;
 
     }
 
