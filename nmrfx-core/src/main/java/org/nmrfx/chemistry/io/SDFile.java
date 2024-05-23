@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.io;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -405,6 +406,9 @@ public class SDFile {
             readStexts(lineReader);
             readProps(lineReader);
             readFreeForm(lineReader);
+            if (compound == null) {
+                ProjectBase.getActive().putMolecule(molecule);
+            }
         } catch (IOException ioE) {
             int iLine = lineReader == null ? -1 : lineReader.getLineNumber();
             throw new MoleculeIOException("error reading at line " + iLine);
