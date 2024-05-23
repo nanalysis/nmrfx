@@ -2466,7 +2466,9 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     if alg == 'nesta':
         op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, preserve, skipIndices)
+        negateImagList = ArrayList()
+        negatePairsList = ArrayList()
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, negateImagList, negatePairsList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
