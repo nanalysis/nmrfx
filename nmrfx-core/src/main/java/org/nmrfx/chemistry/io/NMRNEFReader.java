@@ -60,9 +60,8 @@ public class NMRNEFReader {
      *
      * @param nefFileName String. Name of the NEF file to read.
      * @throws ParseException when file can't be parsed properly
-     * @throws IOException when file can't be read
      */
-    public static MoleculeBase read(String nefFileName) throws ParseException, IOException {
+    public static MoleculeBase read(String nefFileName) throws ParseException {
         File file = new File(nefFileName);
         log.info("read {}", nefFileName);
         return read(file);
@@ -94,7 +93,7 @@ public class NMRNEFReader {
         return reader.processNEF();
     }
 
-    void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule, final String nomenclature) throws ParseException {
+    void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_sequence");
         if (loop == null) {
             throw new ParseException("No \"_nef_sequence\" loop");
@@ -228,10 +227,8 @@ public class NMRNEFReader {
     }
 
     void buildNEFChemShifts(MoleculeBase moleculeBase, int fromSet, final int toSet) throws ParseException {
-        Iterator iter = nef.getSaveFrames().values().iterator();
         int iSet = 0;
-        while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+        for (Saveframe saveframe: nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_chemical_shift_list")) {
                 log.debug("process chem shifts {}", saveframe.getName());
                 if (fromSet < 0) {
@@ -271,7 +268,7 @@ public class NMRNEFReader {
                 log.debug("process molecule >>{}<<", saveframe.getName());
                 String molName = "noname";
                 molecule = MoleculeFactory.newMolecule(molName);
-                buildNEFChains(saveframe, molecule, molName);
+                buildNEFChains(saveframe, molecule);
                 molecule.updateSpatialSets();
                 molecule.genCoords(false);
             }
@@ -586,7 +583,7 @@ public class NMRNEFReader {
      *
      * @param argv String[]. List of arguments. Default is empty.
      * @return Dihedral object.
-     * @throws ParseException
+     * @throws ParseException if NEF file can't be parsed
      * @throws IllegalArgumentException if invalid arguments for shift set
      */
     public MoleculeBase processNEF(String[] argv) throws ParseException, IllegalArgumentException {
@@ -608,9 +605,9 @@ public class NMRNEFReader {
             buildNEFDistanceRestraints(molecule);
             log.warn("process angle constraints");
             buildNEFDihedralConstraints(molecule);
-        } else if ("shifts".startsWith(argv[2])) {
-            int fromSet = Integer.parseInt(argv[3]);
-            int toSet = Integer.parseInt(argv[4]);
+        } else if ("shifts".startsWith(argv[0])) {
+            int fromSet = Integer.parseInt(argv[1]);
+            int toSet = Integer.parseInt(argv[2]);
             MoleculeBase moleculeBase = MoleculeFactory.getActive();
             buildNEFChemShifts(moleculeBase, fromSet, toSet);
         }
