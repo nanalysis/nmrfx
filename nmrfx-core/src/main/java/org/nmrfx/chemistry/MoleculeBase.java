@@ -1288,7 +1288,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void addCoordSet(String setName, int id, Entity entity) {
-        CoordSet coordSet = (CoordSet) coordSets.get(setName);
+        CoordSet coordSet = coordSets.get(setName);
 
         if (coordSet == null) {
             coordSet = new CoordSet(setName, id, entity);
