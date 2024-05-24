@@ -78,7 +78,6 @@ import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 public class RunAboutGUI implements PeakListener, ControllerTool {
 
     private static final Logger log = LoggerFactory.getLogger(RunAboutGUI.class);
-    private static final Font ACTIVE_FONT = Font.font(null, FontWeight.BOLD, 14);
     private static final Font REGULAR_FONT = Font.font(null, FontWeight.NORMAL, 14);
 
     private static final double HEIGHT_WIDTH = 0.8;
@@ -179,7 +178,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     int getNResidues() {
         if ((nResidues == 0) || (Molecule.getActive() != currentMolecule)) {
             currentMolecule = Molecule.getActive();
-            double resWidth = 20.0;
             nResidues = 0;
             if (currentMolecule != null) {
                 StringBuilder stringBuilder = new StringBuilder();
@@ -207,8 +205,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Molecule mol = Molecule.getActive();
             double rectHeight = 20.0;
             if (mol != null) {
-                int nResidues = getNResidues();
-                int nRectangles = nResidues + (nResidues / 10) * 3;
+                int nRes = getNResidues();
+                int nRectangles = nRes + (nRes / 10) * 3;
                 double cWidth = getWidth() - 30.0;
                 double cHeight = getHeight() - 10.0;
                 for (int iRectHeight = 30; iRectHeight >= 10; iRectHeight--) {
@@ -916,7 +914,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         void updateFragment(SpinSystem spinSys) {
             for (ResidueLabel resLabel : residueLabelMap.values()) {
-                //  resLabel.setInactive();
                 resLabel.setTopLineVisible(false);
                 var optResidue = resLabel.getResidue();
                 resLabel.hideBottomLine();
@@ -925,7 +922,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     if (atom != null) {
                         Double ppm = atom.getPPM();
                         if (ppm != null) {
-                            //            resLabel.setActive();
                             resLabel.setTopLineVisible(true);
                         }
                     }
@@ -1077,7 +1073,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     }
 
                     if (matches.size() > index) {
-                        SpinnerValueFactory.IntegerSpinnerValueFactory factory = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinners[i].getValueFactory();
                         selectedButtons[i].setDisable(false);
                         sysFields[i].setDisable(false);
                         spinners[i].setDisable(false);
@@ -1317,10 +1312,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             gotoSpinSystems();
 
             if (e.getClickCount() == 2) {
-                resLabel.getResidue().ifPresent(residue -> {
-                    freezeSystemAtPosition(residue);
-
-                });
+                resLabel.getResidue().ifPresent(this::freezeSystemAtPosition);
                 e.consume();
             }
         }
@@ -1421,7 +1413,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
             if (fragmentMode && fragmentOpt.isPresent()) {
                 SeqFragment fragment = fragmentOpt.get();
-                ResidueSeqScore residueSeqScore = fragment.getResSeqScore();
                 boolean frozen = fragment.isFrozen();
                 List<SpinSystemMatch> spinMatches = fragment.getSpinSystemMatches();
                 ResidueLabel resLabel = (ResidueLabel) nodes.get(i);
@@ -1674,11 +1665,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     atomYLabel.setText(peak.getPeakDim(1).getLabel());
                 }
             } else {
-                if (showAtoms) {
-                    atomXLabel.setText("");
-                    atomYLabel.setText("");
-                    intensityLabel.setText("");
-                }
+                atomXLabel.setText("");
+                atomYLabel.setText("");
+                intensityLabel.setText("");
             }
         }
     }
@@ -2086,7 +2075,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 chart.updateDatasets(List.of(dataset.getName()));
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 int[] iDims = runAbout.getIDims(dataset, refList, refList.getExperimentType(), List.of("H", "N"));
-                var sDims = runAbout.getPeakListDims(refList, dataset, iDims);
                 dataAttr.setDims(iDims);
                 List<String> peakLists = Collections.singletonList(refList.getName());
                 chart.updatePeakLists(peakLists);
@@ -2290,9 +2278,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (spinSystem == null) {
                 iChart++;
                 continue;
-            }
-            if (iChart == 0) {
-                //spinSystem.dumpPeakMatches();
             }
             Peak peak = spinSystem.getRootPeak();
             chart.clearAnnotations();
