@@ -529,7 +529,6 @@ public class NMRStarReader {
                         molecule.setProperty(tag.substring(9), propValue);
                     }
                 }
-
             }
         }
     }
@@ -1702,6 +1701,9 @@ public class NMRStarReader {
             buildExperiments();
             log.debug("process molecule");
             buildMolecule();
+            ProjectBase.getActive().putMolecule(molecule);
+            MoleculeFactory.setActive(molecule);
+
             log.debug("process peak lists");
             buildPeakLists();
             log.debug("process resonance lists");

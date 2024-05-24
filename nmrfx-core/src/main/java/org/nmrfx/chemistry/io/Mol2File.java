@@ -18,6 +18,7 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -300,6 +301,7 @@ public class Mol2File {
             int iLine = lineReader == null ? -1 : lineReader.getLineNumber();
             throw new MoleculeIOException("error reading at line " + iLine);
         }
+        ProjectBase.getActive().putMolecule(molecule);
         molecule.getAtomTypes();
         return molecule;
     }
