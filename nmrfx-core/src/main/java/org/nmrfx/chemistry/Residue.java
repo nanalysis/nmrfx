@@ -79,6 +79,59 @@ public class Residue extends Compound {
         END;
     }
 
+
+    public enum AngleAtoms {
+        DELTAP(new String[]{"C5'", "C4'", "C3'", "O3'"}, 4),
+        EPSILON(new String[]{"C4'", "C3'", "O3'", "P"}, 3),
+        ZETA(new String[]{"C3'", "O3'", "P", "O5'"}, 2),
+        ALPHA(new String[]{"O3'", "P", "O5'", "C5'"}, 1),
+        BETA(new String[]{"P", "O5'", "C5'", "C4'"}, 0),
+        GAMMA(new String[]{"O5'", "C5'", "C4'", "C3'"},0),
+        DELTA(new String[]{"C5'", "C4'", "C3'", "O3'"}, 0),
+        NU2(new String[]{"C1'", "C2'", "C3'", "C4'"}, 0);
+        private String[] atomNames;
+        private int nPrevious;
+        private Residue residue;
+
+        AngleAtoms(String[] atomNames, int nPrevious) {
+            this.atomNames = atomNames;
+            this.nPrevious = nPrevious;
+        }
+
+        private Atom[] getAtoms() {
+            Atom[] atoms = new Atom[4];
+            Residue previous = residue.getPrevious();
+            int i = 0;
+            for (String atomName : atomNames) {
+                if (i < nPrevious) {
+                    if (previous == null) {
+                        return null;
+                    }
+                    atoms[i] = previous.getAtom(atomName);
+                } else {
+                    atoms[i] = residue.getAtom(atomName);
+                }
+                if (atoms[i] == null) {
+                    return null;
+                }
+                i++;
+            }
+            return atoms;
+        }
+
+        public Double calcAngle(Residue residue) {
+            this.residue = residue;
+            Atom[] atoms = getAtoms();
+            int structureNum = 0;
+            try {
+                return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+            } catch (IllegalArgumentException iAE) {
+                return null;
+            }
+        }
+    }
+
+
     public Residue(String number, String name) {
         this.number = number;
         super.name = name;
