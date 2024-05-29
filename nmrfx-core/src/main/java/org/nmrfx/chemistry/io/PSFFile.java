@@ -19,6 +19,7 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,6 +136,6 @@ public class PSFFile {
         molecule.updateAtomArray();
         molecule.structures.add(structureNumber);
         molecule.resetActiveStructures();
-
+        ProjectBase.getActive().putMolecule(molecule);
     }
 }

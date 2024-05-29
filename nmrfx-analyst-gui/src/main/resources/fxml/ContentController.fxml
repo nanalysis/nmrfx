@@ -17,7 +17,7 @@
                     <TitledPane fx:id="datasetTitledPane" text="Datasets">
                         <VBox>
                             <children>
-                                <ListSelectionView fx:id="datasetView" orientation="VERTICAL" minHeight="250"
+                                <ListSelectionView fx:id="datasetSelectionView" orientation="VERTICAL" minHeight="250"
                                                    prefHeight="400"/>
                             </children>
                         </VBox>

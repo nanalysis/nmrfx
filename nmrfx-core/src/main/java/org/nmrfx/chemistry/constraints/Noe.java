@@ -20,7 +20,6 @@ package org.nmrfx.chemistry.constraints;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
 
-import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,7 @@ enum DisTypes {
             return noe.getDisStatAvg().getMean();
         }
     };
-    private String description;
+    final String description;
 
     public abstract double getDistance(Noe noe);
 
@@ -54,42 +53,37 @@ enum DisTypes {
     }
 }
 
-public class Noe extends DistanceConstraint implements Serializable {
+public class Noe extends DistanceConstraint {
     public static final int PPM_SET = 0;
-    private static final DistanceStat DEFAULT_STAT = new DistanceStat();
     private static final DisTypes DISTANCE_TYPE = DisTypes.MINIMUM;
     private static double tolerance = 0.2;
 
     private int idNum = 0;
-    public SpatialSetGroup spg1;
-    public SpatialSetGroup spg2;
-    public Peak peak = null;
+    private final SpatialSetGroup spg1;
+    private final SpatialSetGroup spg2;
+    public final Peak peak;
     private double intensity = 0.0;
     private double volume = 0.0;
-    private double scale = 1.0;
-    public double atomScale = 1.0;
-    public DistanceStat disStat = DEFAULT_STAT;
-    private DistanceStat disStatAvg = DEFAULT_STAT;
+    private double scale;
+    private double atomScale = 1.0;
     private double ppmError = 0.0;
     private short active = 1;
-    public boolean symmetrical = false;
+    private boolean symmetrical = false;
     private double contribution = 1.0;
     private double disContrib = 1.0;
     private int nPossible = 0;
     private double networkValue = 1;
     private boolean swapped = false;
     private boolean filterSwapped = false;
-    public Map resMap = null;
-    public EnumSet<Flags> activeFlags = null;
+    public Map<String, Noe> resMap = null;
+    public EnumSet<Flags> activeFlags;
     private GenTypes genType = GenTypes.MANUAL;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
         super(sp1, sp2);
-        SpatialSetGroup spg1t = new SpatialSetGroup(sp1);
-        SpatialSetGroup spg2t = new SpatialSetGroup(sp2);
-        this.spg1 = spg1t;
-        this.spg2 = spg2t;
-        if (spg1t.compare(spg2t) >= 0) {
+        spg1 = new SpatialSetGroup(sp1);
+        spg2 = new SpatialSetGroup(sp2);
+        if (spg1.compare(spg2) >= 0) {
             swapped = true;
         }
 
@@ -162,11 +156,6 @@ public class Noe extends DistanceConstraint implements Serializable {
         }
     }
 
-    @Override
-    public DistanceStat getStat() {
-        return disStat;
-    }
-
     public static int getSize(NoeSet noeSet) {
         return noeSet.getSize();
     }
@@ -195,10 +184,10 @@ public class Noe extends DistanceConstraint implements Serializable {
         String value = "";
         if (spg != null) {
             Entity entity = spg.getAnAtom().getEntity();
-            if (entity instanceof Residue) {
-                value = ((Residue) entity).polymer.getName();
+            if (entity instanceof Residue residue) {
+                value = residue.polymer.getName();
             } else {
-                value = ((Compound) entity).getName();
+                value = entity.getName();
             }
         }
         return value;
@@ -215,8 +204,10 @@ public class Noe extends DistanceConstraint implements Serializable {
         if (!sumAverage) {
             nMonomers = n;
         }
-        double distance = Math.pow((sum / nMonomers), 1.0 / expValue);
-        return distance;
+        if (nMonomers == 0) {
+            nMonomers = 1;
+        }
+        return Math.pow((sum / nMonomers), 1.0 / expValue);
 
     }
 
@@ -229,16 +220,14 @@ public class Noe extends DistanceConstraint implements Serializable {
             for (int j = 0; j < atoms[0].length; j++) {
                 int nProton = 0;
                 for (Atom[] atom : atoms) {
-                    if ((atom != null) && (j < atom.length)) {
-                        if (atom[j].aNum == 1) {
-                            if (nProton == 0) {
-                                protons[0][k] = atom[j];
-                                nProton++;
-                            } else if (nProton == 1) {
-                                protons[1][k] = atom[j];
-                                k++;
-                                nProton++;
-                            }
+                    if ((atom != null) && (j < atom.length) && (atom[j].aNum == 1)) {
+                        if (nProton == 0) {
+                            protons[0][k] = atom[j];
+                            nProton++;
+                        } else if (nProton == 1) {
+                            protons[1][k] = atom[j];
+                            k++;
+                            nProton++;
                         }
                     }
                 }
@@ -248,15 +237,7 @@ public class Noe extends DistanceConstraint implements Serializable {
     }
 
     public boolean isActive() {
-        boolean activeFlag = false;
-        if (activeFlags.isEmpty()) {
-            activeFlag = true;
-        } else if (activeFlags.size() == 1) {
-            if (getActivityFlags().equals("f")) {
-                activeFlag = true;
-            }
-        }
-        return activeFlag;
+        return activeFlags.isEmpty() || ((activeFlags.size() == 1) && getActivityFlags().equals("f"));
     }
 
     @Override
@@ -274,9 +255,7 @@ public class Noe extends DistanceConstraint implements Serializable {
 
     public String getActivityFlags() {
         StringBuilder result = new StringBuilder();
-        activeFlags.forEach((f) -> {
-            result.append(f.getCharDesc());
-        });
+        activeFlags.forEach(f -> result.append(f.getCharDesc()));
         return result.toString();
     }
 
@@ -418,30 +397,40 @@ public class Noe extends DistanceConstraint implements Serializable {
         return atoms;
     }
 
-    public static class NoeMatch {
+    public SpatialSetGroup getSpg1() {
+        return spg1;
+    }
 
-        public final SpatialSet sp1;
-        public final SpatialSet sp2;
-        public final Constraint.GenTypes type;
-        public final double error;
+    public SpatialSetGroup getSpg2() {
+        return spg2;
+    }
 
-        public NoeMatch(SpatialSet sp1, SpatialSet sp2, Constraint.GenTypes type, double error) {
-            this.sp1 = sp1;
-            this.sp2 = sp2;
-            this.type = type;
-            this.error = error;
-        }
+    public double getAtomScale() {
+        return atomScale;
+    }
+
+    public void setAtomScale(double atomScale) {
+        this.atomScale = atomScale;
+    }
+
+    public boolean getSymmetrical() {
+        return symmetrical;
+    }
+
+    public void setSymmetrical(boolean symmetrical) {
+        this.symmetrical = symmetrical;
+    }
+
+    public record NoeMatch(SpatialSet sp1, SpatialSet sp2, GenTypes type, double error) {
 
         @Override
-        public String toString() {
-            StringBuilder sBuilder = new StringBuilder();
-            sBuilder.append(sp1.atom.getShortName()).append("\t");
-            sBuilder.append(sp2.atom.getShortName()).append("\t");
-            sBuilder.append(type).append("\t");
-            sBuilder.append(error);
-            return sBuilder.toString();
+            public String toString() {
+                return sp1.atom.getShortName() + "\t" +
+                        sp2.atom.getShortName() + "\t" +
+                        type + "\t" +
+                        error;
+            }
         }
-    }
 
     /**
      * @return the intensity
@@ -602,11 +591,11 @@ public class Noe extends DistanceConstraint implements Serializable {
         int iRes1 = 0;
         int iRes2 = 0;
         // fixme what about multiple polymers or other entities
-        if (e1 instanceof Residue) {
-            iRes1 = ((Residue) e1).iRes;
+        if (e1 instanceof Residue residue) {
+            iRes1 = residue.iRes;
         }
-        if (e2 instanceof Residue) {
-            iRes2 = ((Residue) e2).iRes;
+        if (e2 instanceof Residue residue) {
+            iRes2 = residue.iRes;
         }
         return Math.abs(iRes1 - iRes2);
     }

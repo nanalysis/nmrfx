@@ -484,10 +484,17 @@ public class Dihedral {
      * Generates random angles
      */
     public void randomizeAngles() {
+        randomizeAngles(null);
+    }
+    public void randomizeAngles(Double frac) {
         getDihedrals();
         setBoundaries(0.1, false, Math.PI);
         for (int i = 0; i < angleValues.length; i++) {
-            angleValues[i] = 2.0 * Math.PI * (rand.nextDouble() - 0.5);
+            if (frac != null) {
+                angleValues[i] = angleValues[i] + frac * 2.0 * Math.PI * (rand.nextDouble() - 0.5);
+            } else {
+                angleValues[i] = 2.0 * Math.PI * (rand.nextDouble() - 0.5);
+            }
             angleValues[i] = Util.reduceAngle(angleValues[i]);
         }
         putDihedrals();

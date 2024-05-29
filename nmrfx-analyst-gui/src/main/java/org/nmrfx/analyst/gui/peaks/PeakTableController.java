@@ -27,6 +27,7 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.WeakMapChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -122,7 +123,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             updatePeakListMenu();
         };
 
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
     }
 
     public void updatePeakListMenu() {
