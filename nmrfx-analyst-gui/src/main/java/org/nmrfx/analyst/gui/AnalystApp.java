@@ -127,7 +127,11 @@ public class AnalystApp extends Application {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
-        ProjectBase.addPropertyChangeListener(evt -> getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton));
+        ProjectBase.addPropertyChangeListener(evt -> {
+            if (evt.getPropertyName() == "project") {
+                getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton);
+            }
+        });
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);

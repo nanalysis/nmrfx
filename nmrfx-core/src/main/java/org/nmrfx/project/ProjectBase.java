@@ -306,6 +306,10 @@ public class ProjectBase {
 
     public void setActiveMolecule(MoleculeBase molecule) {
         activeMol = molecule;
+        PropertyChangeEvent event = new PropertyChangeEvent(this, "molecule", null, activeMol);
+        if (pcs != null) {
+            pcs.firePropertyChange(event);
+        }
     }
 
     public void putMolecule(MoleculeBase molecule) {
