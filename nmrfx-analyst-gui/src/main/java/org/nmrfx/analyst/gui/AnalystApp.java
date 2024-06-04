@@ -416,11 +416,11 @@ public class AnalystApp extends Application {
 
         MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
         proteinMenu.getItems().add(runAboutToolItem);
-        runAboutToolItem.setOnAction(e -> showRunAboutTool());
+        runAboutToolItem.setOnAction(e -> controller.showRunAboutTool());
 
         MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
         proteinMenu.getItems().add(stripsToolItem);
-        stripsToolItem.setOnAction(e -> showStripsBar());
+        stripsToolItem.setOnAction(e -> controller.showStripsBar());
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
@@ -490,40 +490,6 @@ public class AnalystApp extends Application {
         controller.showScannerMenus();
     }
 
-    public void showRunAboutTool() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(RunAboutGUI.class)) {
-            TabPane tabPane = new TabPane();
-            controller.getBottomBox().getChildren().add(tabPane);
-            tabPane.setMinHeight(200);
-            RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
-            runaboutTool.initialize(tabPane);
-            controller.addTool(runaboutTool);
-        }
-    }
-
-    public Optional<RunAboutGUI> getRunAboutTool() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        ControllerTool tool = controller.getTool(RunAboutGUI.class);
-        if (tool instanceof RunAboutGUI runAboutGUI) {
-            return Optional.of(runAboutGUI);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    public StripController showStripsBar() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(StripController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            StripController stripsController = new StripController(controller, this::removeStripsBar);
-            stripsController.initialize(vBox);
-            controller.addTool(stripsController);
-        }
-        return (StripController) controller.getTool(StripController.class);
-    }
-
     public void removePeakPathTool(PathTool pathTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PathTool.class);
@@ -553,18 +519,6 @@ public class AnalystApp extends Application {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimFitMolController.class);
         controller.removeBottomBoxNode(simMolController.getBox());
-    }
-
-    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(RunAboutGUI.class);
-        controller.removeBottomBoxNode(runaboutTool.getTabPane());
-    }
-
-    public void removeStripsBar(StripController stripsController) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(StripController.class);
-        controller.removeBottomBoxNode(stripsController.getBox());
     }
 
     public void readMolecule(String type) {

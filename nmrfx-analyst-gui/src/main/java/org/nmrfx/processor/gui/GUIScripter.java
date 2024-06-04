@@ -518,13 +518,12 @@ public class GUIScripter {
     }
 
     public List<Integer> grid() throws InterruptedException, ExecutionException {
-        return Fx.runOnFxThreadAndWait(() -> gridOnFx());
+        return Fx.runOnFxThreadAndWait(() -> gridOnFx(getActiveController()));
     }
 
-    public List<Integer> gridOnFx() {
-        PolyChart chart = getChart();
-        int nRows = chart.getFXMLController().arrangeGetRows();
-        int nColumns = chart.getFXMLController().arrangeGetColumns();
+    public List<Integer> gridOnFx(FXMLController controller) {
+        int nRows = controller.arrangeGetRows();
+        int nColumns = controller.arrangeGetColumns();
         List<Integer> result = new ArrayList<>();
         result.add(nRows);
         result.add(nColumns);
@@ -677,12 +676,11 @@ public class GUIScripter {
     }
 
     public List<Double> geometry() throws InterruptedException, ExecutionException {
-        return Fx.runOnFxThreadAndWait(() -> geometryOnFx());
+        return Fx.runOnFxThreadAndWait(() -> geometryOnFx(getActiveController()));
     }
 
-    public List<Double> geometryOnFx() {
-        PolyChart chart = getChart();
-        Stage stage = chart.getFXMLController().getStage();
+    public List<Double> geometryOnFx(FXMLController controller) {
+        Stage stage = controller.getStage();
         double x = stage.getX();
         double y = stage.getY();
         double width = stage.getWidth();
