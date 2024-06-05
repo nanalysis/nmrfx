@@ -501,10 +501,9 @@ public class ScanTable {
                 // merge datasets into single pseudo-nd dataset
                 DatasetMerger merger = new DatasetMerger();
                 File mergedFile = new File(scanOutputDir, combineFileName);
-                String mergedFilepath = mergedFile.getAbsolutePath();
                 try {
                     // merge all the 1D files into a pseudo 2D file
-                    merger.merge(fileNames, mergedFilepath);
+                    merger.mergeFiles(fileNames, mergedFile);
                     // After merging, remove the 1D files
                     for (String fileName : fileNames) {
                         File file = new File(fileName);
@@ -547,6 +546,29 @@ public class ScanTable {
         }
     }
 
+    public void combineDatasets() {
+        List<Dataset> datasets = getDatasetAttributesList().stream().map(dAttr -> (Dataset) dAttr.getDataset()).toList();
+        if (currentChart.getDatasetAttributes().size() < 2) {
+            GUIUtils.warn("Combine", "Need more than one dataset to combine");
+        } else {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle(("Output File"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                DatasetMerger datasetMerger = new DatasetMerger();
+                try {
+                    datasetMerger.mergeDatasets(datasets, file);
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                    return;
+                }
+                AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(file, false, true);
+                loadFromDataset();
+            }
+        }
+    }
+
     public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
@@ -573,7 +595,7 @@ public class ScanTable {
             File file = new File(filePath);
             NMRData nmrData = null;
             try {
-                nmrData = NMRDataUtil.getFID(filePath);
+                nmrData = NMRDataUtil.getFID(file);
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
 
@@ -643,9 +665,16 @@ public class ScanTable {
 
     public void loadFromDataset() {
         PolyChart chart = scannerTool.getChart();
-        if ((chart.getDatasetAttributes().size() > 1) || !chart.is1D()) {
+        if (chart.getDatasetAttributes().size() > 1) {
             loadMultipleDatasets();
             return;
+        } else if (!chart.getDatasetAttributes().isEmpty()){
+            Dataset dataset = (Dataset) chart.getDataset();
+            if (!chart.is1D()  && ((dataset.getNDim() > 1) && (dataset.getNDim() == dataset.getNFreqDims()))) {
+                loadMultipleDatasets();
+                return;
+            }
+
         }
         DatasetBase dataset = chart.getDataset();
         if (dataset == null) {
@@ -662,9 +691,10 @@ public class ScanTable {
         tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
-        int nRows = dataset.getSizeTotal(1);
+        int nDim = dataset.getNDim();
+        int nRows = dataset.getSizeTotal(nDim - 1);
         HashMap<String, String> fieldMap = new HashMap<>();
-        double[] values = dataset.getValues(1);
+        double[] values = dataset.getValues(nDim - 1);
         for (int iRow = 0; iRow < nRows; iRow++) {
             double value = 0;
             if ((values != null) && (iRow < values.length)) {
@@ -783,7 +813,7 @@ public class ScanTable {
 
                             NMRData nmrData;
                             try {
-                                nmrData = NMRDataUtil.getFID(filePath.toString());
+                                nmrData = NMRDataUtil.getFID(filePath.toFile());
                             } catch (IOException ioE) {
                                 GUIUtils.warn("Load scan table", "Couldn't load this file: " + filePath);
                                 return;

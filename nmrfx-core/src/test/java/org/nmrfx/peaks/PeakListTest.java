@@ -3,6 +3,7 @@ package org.nmrfx.peaks;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.peaks.io.PeakReader;
@@ -27,6 +28,7 @@ public class PeakListTest {
         Sequence sequence = new Sequence();
         var seq = List.of("ALA", "ALA", "ALA", "ALA", "ALA", "ALA");
         var mol = sequence.read("A", seq, null);
+        MoleculeFactory.setActive(mol);
         PeakList peakList = getPeakList("testassigncount.xpk2");
         var map = peakList.getAssignmentStatus();
         for (var entry : map.entrySet()) {

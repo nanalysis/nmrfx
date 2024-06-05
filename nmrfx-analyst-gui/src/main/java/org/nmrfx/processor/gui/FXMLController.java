@@ -47,6 +47,8 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
@@ -62,6 +64,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
@@ -76,8 +79,8 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
-import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -207,6 +210,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
+        chartPane.getChildren().clear();
+        chartPane = null;
+        charts.clear();
     }
 
     public void saveDatasets() {
@@ -368,7 +374,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private NMRData getNMRData(String filePath) {
         NMRData nmrData = null;
         try {
-            nmrData = NMRDataUtil.loadNMRData(filePath, null);
+            File file = new File(filePath);
+            nmrData = NMRDataUtil.loadNMRData(file, null, true);
         } catch (IOException ioE) {
             log.error("Unable to load NMR file: {}", filePath, ioE);
             ExceptionDialog eDialog = new ExceptionDialog(ioE);
@@ -445,7 +452,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 processorController.cleanUp();
             }
             if (addDatasetToChart) {
-                addDataset(dataset, append, false);
+                addDataset(getActiveChart(), dataset, append, false);
             }
         } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);
@@ -483,15 +490,14 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
+    public void addDataset(PolyChart chart, DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
         if (dataset.getFile() != null) {
             PreferencesController.saveRecentFiles(dataset.getFile().toString());
         }
 
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        PolyChart polyChart = getActiveChart();
-        polyChart.getCrossHairs().setStates(true, true, true, true);
+        chart.getCrossHairs().setStates(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();
@@ -583,7 +589,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             try {
                 for (File selectedFile : selectedFiles) {
                     setInitialDirectory(selectedFile.getParentFile());
-                    NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
+                    NMRData nmrData = NMRDataUtil.getFID(selectedFile);
                     if (nmrData instanceof NMRViewData) {
                         PreferencesController.saveRecentFiles(selectedFile.toString());
                     }
@@ -1037,7 +1043,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void linkPeakDims() {
         PeakLinker linker = new PeakLinker();
-        linker.linkAllPeakListsByLabel();
+        linker.linkAllPeakListsByLabel("");
     }
 
     public void removeChart(PolyChart chart) {
@@ -1316,7 +1322,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
         DatasetAttributes activeAttr = firstAttributes.get();
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, null, false, "refList");
+        PeakPickParameters peakPickParameters = new PeakPickParameters();
+        peakPickParameters.listName = "refList";
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, null, peakPickParameters);
         if (refList == null) {
             return;
         }
@@ -1336,7 +1344,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, null, false, "movingList");
+                    PeakPickParameters peakPickParametersM = new PeakPickParameters();
+                    peakPickParametersM.listName = "movingList";
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, null, peakPickParametersM);
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
@@ -1464,7 +1474,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         phaser.setPhaseDim(phaseDim);
     }
 
-    protected int[] getExtractRegion(String vecDimName, int size) {
+    protected int[] getExtractRegion(ProcessingSection vecDimName, int size) {
         int start = 0;
         int end = size - 1;
         if (chartProcessor != null) {
@@ -1495,11 +1505,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return new int[]{start, end};
     }
 
-    protected ArrayList<Double> getBaselineRegions(String vecDimName) {
+    protected ArrayList<Double> getBaselineRegions(ProcessingSection section) {
         ArrayList<Double> fracs = new ArrayList<>();
         if (chartProcessor != null) {
             int currentIndex = chartProcessor.getProcessorController().getPropertyManager().getCurrentIndex();
-            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(vecDimName);
+            List<ProcessingOperationInterface> listItems = chartProcessor.getOperations(section);
             if (listItems != null) {
                 log.info("curr ind {}", currentIndex);
                 Map<String, String> values = null;
@@ -1565,7 +1575,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             viewProcessorControllerIfPossible = false;
         } else if (toolButton.isSelected()) {
             nmrControlRightSidePane.addContent(toolController);
-            toolController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
             boolean dataIsFID = false;
@@ -1899,6 +1908,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public boolean isScannerToolPresent() {
+        return (scannerTool != null) && scannerTool.scannerActive();
+    }
+
     public void showScannerTool() {
         BorderPane vBox;
         if (scannerTool != null) {
@@ -1932,11 +1945,64 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public Optional<RunAboutGUI>  showRunAboutTool() {
+        RunAboutGUI runAboutGUI;
+        if (!containsTool(RunAboutGUI.class)) {
+            TabPane tabPane = new TabPane();
+            getBottomBox().getChildren().add(tabPane);
+            tabPane.setMinHeight(200);
+            runAboutGUI = new RunAboutGUI(this, this::removeRunaboutTool);
+            runAboutGUI.initialize(tabPane);
+            addTool(runAboutGUI);
+            return Optional.of(runAboutGUI);
+        } else {
+            return getRunAboutTool();
+        }
+    }
+
+    public Optional<RunAboutGUI> getRunAboutTool() {
+        ControllerTool tool = getTool(RunAboutGUI.class);
+        if (tool instanceof RunAboutGUI runAboutGUI) {
+            return Optional.of(runAboutGUI);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        removeTool(RunAboutGUI.class);
+        removeBottomBoxNode(runaboutTool.getTabPane());
+    }
+
+    public StripController showStripsBar() {
+        if (!containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(this, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            addTool(stripsController);
+        }
+        return (StripController) getTool(StripController.class);
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        removeTool(StripController.class);
+        removeBottomBoxNode(stripsController.getBox());
+    }
+
     public void removeBottomBoxNode(Node node) {
         getBottomBox().getChildren().remove(node);
         if (getBottomBox().getChildren().isEmpty()) {
             splitPane.setDividerPosition(0, 1.0);
         }
+    }
+
+    public void setSplitPaneDivider(double f) {
+        splitPane.setDividerPosition(0, f);
+    }
+
+    public double getSplitPaneDivider() {
+        return splitPane.getDividerPositions()[0];
     }
 
 }

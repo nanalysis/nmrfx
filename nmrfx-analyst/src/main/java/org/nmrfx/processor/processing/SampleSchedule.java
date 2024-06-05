@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
  *
  * @author bfetler
  * @see #v_samples
- * @see Ist
+ * @see org.nmrfx.processor.math.GRINS
  * @since NMRViewJ 9.0
  */
 public class SampleSchedule {
@@ -102,6 +102,10 @@ public class SampleSchedule {
      * Optional flag used with fully acquired data set to simulate NUS.
      */
     private boolean demo = false;
+    /**
+     * Optional flag used with sample schedule that specifies individual phase points.
+     */
+    private boolean phaseMode = false;
 
     /**
      * Flag used to set schedule to be just zeros at end.
@@ -159,7 +163,7 @@ public class SampleSchedule {
      * @param nPoints  total number of points
      * @param path     full path file name
      * @param demo     set true if nmr dataset not NUS acquisition
-     * @see Ist
+     * @see org.nmrfx.processor.math.GRINS
      * @see #nSamples
      * @see #nPoints
      * @see #fpath
@@ -187,11 +191,12 @@ public class SampleSchedule {
      *
      * @param path full path file name
      * @param demo set true if nmr dataset not NUS acquisition
-     * @see Ist
+     * @see org.nmrfx.processor.math.GRINS
      * @see #fpath
      */
-    public SampleSchedule(String path, boolean demo) {
+    public SampleSchedule(String path, boolean demo, boolean phaseMode) {
         this.fpath = path;
+        this.phaseMode = phaseMode;
         readFile();
         this.demo = demo;
     }
@@ -336,6 +341,10 @@ public class SampleSchedule {
         return demo;
     }
 
+    public boolean isPhaseMode() {
+        return phaseMode;
+    }
+
     /**
      * Set output MultiVecCounter.
      *
@@ -369,6 +378,10 @@ public class SampleSchedule {
      * @see VecIndex
      */
     public VecIndex convertToNUSGroup(VecIndex fullIndex, int groupNum) {
+        return phaseMode ? convertToPhasedNUSGroup(fullIndex, groupNum) : convertToComplexNUSGroup(fullIndex, groupNum);
+    }
+
+    private VecIndex convertToComplexNUSGroup(VecIndex fullIndex, int groupNum) {
         int groupSize = fullIndex.inVecs.length;
         int[] inVecs = fullIndex.inVecs;
         boolean ok = true;
@@ -378,8 +391,7 @@ public class SampleSchedule {
         for (int i = 0; i < groupSize; i++) {
             int j = inVecs[i];
             int phOff = j % groupSize;
-            j /= groupSize;
-            int index = sampleIndices[groupNum];
+            int index = groupNum < sampleIndices.length ? sampleIndices[groupNum] : -1;
             if (index == -1) {
                 ok = false;
                 break;
@@ -395,6 +407,29 @@ public class SampleSchedule {
         return nusIndex;
     }
 
+    private VecIndex convertToPhasedNUSGroup(VecIndex fullIndex, int groupNum) {
+        int groupSize = fullIndex.inVecs.length;
+        int[] inVecs = fullIndex.inVecs;
+        boolean ok = true;
+        if (offsetMul == 0) {
+            offsetMul = groupSize;
+        }
+        for (int i = 0; i < groupSize; i++) {
+            int j = inVecs[i];
+            int index = j < sampleIndices.length ? sampleIndices[j] : -1;
+            if (index == -1) {
+                ok = false;
+                break;
+
+            }
+        }
+
+        VecIndex nusIndex = null;
+        if (ok) {
+            nusIndex = fullIndex;
+        }
+        return nusIndex;
+    }
     public synchronized boolean reloadFile(String path, int vecSize) {
         boolean recreate = false;
         if (!fpath.equals(path) || vecSize != nPoints) {
@@ -611,7 +646,6 @@ public class SampleSchedule {
                 calcDims();
                 calcSampleHash();
                 calcSampleIndices();
-                log.info("sample schedule read {} points from {}", nSamples, fpath);
             }
         } catch (IOException e) {
             throw new ProcessingException("error reading " + fpath);

@@ -924,6 +924,17 @@ public class PeakListTools {
         }
     }
 
+    public static void unifyWidths(Peak peak) {
+        PeakList peakList = peak.getPeakList();
+        int nDim = peakList.getNDim();
+        for (Peak targetPeak : peakList.peaks()) {
+            for (int i=0;i<nDim;i++) {
+                targetPeak.getPeakDim(i).setLineWidthValue(peak.getPeakDim(i).getLineWidthValue());
+                targetPeak.getPeakDim(i).setBoundsValue(peak.getPeakDim(i).getBoundsValue());
+            }
+        }
+    }
+
     final static class CenterRef {
 
         final int index;
@@ -994,6 +1005,7 @@ public class PeakListTools {
             quantifyPeaks(peakList, dataset, f, mode);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = nDataDim - 1;
+            scanDim = 1;
             int nPlanes = dataset.getSizeTotal(scanDim);
             quantifyPeaks(peakList, dataset, f, mode, nPlanes);
         } else if (nDim > nDataDim) {
@@ -1569,7 +1581,7 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                 }
             }
 
-            peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak], meanDimWidth);
+            peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak], meanDimWidth, 1.0);
 
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;

@@ -55,7 +55,10 @@ public class PeakMenuBar {
         MenuItem saveSparky = new MenuItem("Save Sparky...");
         saveSparky.setOnAction(e -> savePeaks("sparky", "txt"));
 
-        fileMenu.getItems().addAll(saveXPK2, saveXPK, saveSparky);
+        MenuItem saveNMRPipe = new MenuItem("Save nmrPipe...");
+        saveNMRPipe.setOnAction(e -> savePeaks("nmrpipe", "txt"));
+
+        fileMenu.getItems().addAll(saveXPK2, saveXPK, saveSparky, saveNMRPipe);
 
         MenuItem readListItem = new MenuItem("Open...");
         readListItem.setOnAction(e -> readList());
@@ -112,6 +115,11 @@ public class PeakMenuBar {
         MenuItem mirrorMenuItem = new MenuItem("Mirror 2D List");
         mirrorMenuItem.setOnAction(e -> mirror2DList());
         editMenu.getItems().add(mirrorMenuItem);
+
+
+        MenuItem unifyMenuItem = new MenuItem("Unify Widths");
+        unifyMenuItem.setOnAction(e -> unifyPeakWidths());
+        editMenu.getItems().add(unifyMenuItem);
 
         menuBar.getItems().add(editMenu);
 
@@ -271,6 +279,10 @@ public class PeakMenuBar {
                 }
             }
         }
+    }
+
+    void unifyPeakWidths() {
+        menuTarget.getPeak().ifPresent(peak -> PeakListTools.unifyWidths(peak));
     }
 
     void measureIntensities() {
@@ -434,14 +446,10 @@ public class PeakMenuBar {
                     try (FileWriter writer = new FileWriter(listFileName)) {
                         PeakWriter peakWriter = new PeakWriter();
                         switch (mode) {
-                            case "xpk":
-                                peakWriter.writePeaksXPK(writer, getPeakList());
-                                break;
-                            case "sparky":
-                                peakWriter.writePeaksToSparky(writer, getPeakList());
-                                break;
-                            default:
-                                peakWriter.writePeaksXPK2(writer, getPeakList());
+                            case "xpk" -> peakWriter.writePeaksXPK(writer, getPeakList());
+                            case "sparky" -> peakWriter.writePeaksToSparky(writer, getPeakList());
+                            case "nmrpipe" -> peakWriter.writePeakstoNMRPipe(writer, getPeakList());
+                            default -> peakWriter.writePeaksXPK2(writer, getPeakList());
                         }
                         writer.close();
                     }

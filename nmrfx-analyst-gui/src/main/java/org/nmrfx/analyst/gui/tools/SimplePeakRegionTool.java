@@ -26,6 +26,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -311,7 +312,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if ((regions == null) || regions.isEmpty()) {
                 analyzer.calculateThreshold();
                 double threshold = analyzer.getThreshold();
-                PeakPicking.peakPickActive(controller, threshold);
+                PeakPickParameters peakPickParameters = new PeakPickParameters();
+                peakPickParameters.level(threshold);
+                PeakPicking.peakPickActive(controller, peakPickParameters);
                 analyzer.setPeakList(chart.getPeakListAttributes().get(0).getPeakList());
             } else {
                 analyzer.peakPickRegions();

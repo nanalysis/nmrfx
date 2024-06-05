@@ -26,6 +26,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.MatrixType;
 import org.nmrfx.math.Bessel;
 import org.nmrfx.processor.processing.ProcessingException;
+import org.nmrfx.processor.processing.SampleSchedule;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -37,6 +38,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MatrixND implements MatrixType {
 
@@ -46,14 +48,20 @@ public class MatrixND implements MatrixType {
     private int[] strides;
     private double[] phases0;
     private double[] phases1;
+    private boolean[] negatePairss;
+    private boolean[] negateImags;
     final int nDim;
     private int nElems;
+
     /**
      * Output point to write matrix.
      */
     private int[][] pt = null;
 
     private int[] dim = null;
+
+    public SampleSchedule schedule = null;
+
 
     public MatrixND(int... sizes) {
         this.sizes = sizes.clone();
@@ -68,6 +76,8 @@ public class MatrixND implements MatrixType {
         vSizes = sizes.clone();
         phases0 = new double[nDim];
         phases1 = new double[nDim];
+        negateImags = new boolean[nDim];
+        negatePairss = new boolean[nDim];
     }
 
     public MatrixND(int[][] pt, int... sizes) {
@@ -104,6 +114,10 @@ public class MatrixND implements MatrixType {
 
     public int[] getVSizes() {
         return vSizes.clone();
+    }
+
+    public int getVSize(int iDim) {
+        return vSizes[iDim];
     }
 
     @Override
@@ -285,6 +299,8 @@ public class MatrixND implements MatrixType {
                 offset += index[k++] * strides[i];
             }
         }
+        Arrays.fill(riVec[0], 0.0);
+        Arrays.fill(riVec[1], 0.0);
         int n = sizes[axis] / 2;
         for (int i = 0; i < n; i++) {
             riVec[0][i] = data[offset];
@@ -450,7 +466,7 @@ public class MatrixND implements MatrixType {
         double offset = 0.5;
         double end = 0.99;
         double start = offset * Math.PI;
-        double power = 2.0;
+        double power = 1.0;
         double c = 0.5;
         double delta = ((end - offset) * Math.PI) / (apodSize - 1);
         for (int i = 0; i < apodSize; i++) {
@@ -555,6 +571,33 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public void doPhaseTD(double[] phaseValues, boolean[] negateImags, boolean[] negatePairss) {
+        for (int i = 0; i < nDim; i++) {
+            double ph0 = 0.0;
+            double ph1 = 0.0;
+            if (i * 2 < phaseValues.length) {
+                ph0 = phaseValues[i * 2];
+            }
+            if ((i * 2 + 1) < phaseValues.length) {
+                ph1 = phaseValues[i * 2 + 1];
+            }
+
+            boolean negateImag = false;
+            boolean negatePairs = false;
+            if (negateImags != null && i < negateImags.length) {
+                negateImag = negateImags[i];
+            }
+            if (negatePairss != null && i < negatePairss.length) {
+                negatePairs = negatePairss[i];
+            }
+            doPhaseTD(i, ph0, ph1, negateImag, negatePairs);
+            phases0[i] = ph0;
+            phases1[i] = ph1;
+            this.negateImags[i] = negateImag;
+            this.negatePairss[i] = negatePairs;
+        }
+    }
+
     public void apodize() {
         for (int i = 0; i < nDim; i++) {
             MatrixND.this.apodize(i);
@@ -571,7 +614,7 @@ public class MatrixND implements MatrixType {
             iterator.next();
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
-            kaiser(riVec, vSizes[axis]);
+            sineBell(riVec, vSizes[axis] / 2);
             putVectorRI(axis, riVec, counts);
         }
     }
@@ -626,6 +669,54 @@ public class MatrixND implements MatrixType {
                 ifft(riVec);
             }
             putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void doPhaseTD(int axis, double ph0, double ph1, boolean negateImag, boolean negatePairs) {
+        int[] subSizes = getSubSizes(axis);
+        int size = sizes[axis];
+        double[][] riVec = new double[2][size];
+        double tol = 0.0001;
+        if ((Math.abs(ph0) < tol) && (Math.abs(ph1) < tol)) {
+            return;
+        }
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            if (negateImag) {
+                negateImag(riVec, size);
+            }
+            if (negatePairs) {
+                negatePairs(riVec, size);
+            }
+            fft(riVec);
+            fftShuffle(riVec);
+            phase(riVec, ph0, ph1);
+            fftShuffle(riVec);
+            ifft(riVec);
+            if (negateImag) {
+                negateImag(riVec, size);
+            }
+            if (negatePairs) {
+                negatePairs(riVec, size);
+            }
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    private static void negatePairs(double[][] riVec, int size) {
+        for (int i = 1; i < size; i += 2) {
+            riVec[0][i] = -riVec[0][i];
+            riVec[1][i] = -riVec[1][i];
+        }
+    }
+
+    private static void negateImag(double[][] riVec, int size) {
+        for (int i = 0; i < size; ++i) {
+            riVec[1][i] = -riVec[1][i];
         }
     }
 
@@ -799,14 +890,17 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public double calcDifference(MatrixND source, int[] srcTargetMap) {
+    public record MatrixDiff(double mabs, double max) {};
+    public MatrixDiff calcDifference(MatrixND source, int[] srcTargetMap) {
         double sum = 0.0;
+        double max = 0.0;
         for (int i : srcTargetMap) {
             double v1 = source.data[i];
             double v2 = data[i];
+            max = Math.max(max, Math.abs(v1));
             sum += FastMath.abs(v1 - v2);
         }
-        return sum / srcTargetMap.length;
+        return new MatrixDiff(sum/srcTargetMap.length, max);
     }
 
     public double calcSumAbs() {
@@ -1020,6 +1114,53 @@ public class MatrixND implements MatrixType {
         return measures;
     }
 
+    public int[][] findZeros() {
+        int[] complexSizes = new int[sizes.length];
+        for (int i = 0; i < sizes.length; i++) {
+            complexSizes[i] = sizes[i] / 2;
+        }
+        int nComplex = (int) Math.round(Math.pow(2, getNDim()));
+        boolean[] validPositions = new boolean[getNElems()];
+
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(complexSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int nValid = 0;
+        while(iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            int[] complexSample = new int[counts.length];
+            for (int k = 0; k < nComplex; k++) {
+                int divisor = 1;
+                for (int j = 0; j < counts.length; j++) {
+                    int cDelta = (k / divisor) % 2;
+                    divisor *= 2;
+                    complexSample[counts.length - j - 1] = counts[counts.length - j - 1] * 2 + cDelta;
+                }
+                int offset = getOffset(complexSample);
+                if (Math.abs(data[offset]) > 1.0e-12){
+                    validPositions[offset] = true;
+                    nValid++;
+                }
+            }
+        }
+        int nZeros = getNElems() - nValid;
+        int[] zeroList = new int[nZeros];
+        int[] srcTargetMap = new int[nValid];
+        int i = 0;
+        int k = 0;
+        int iValid = 0;
+        for (boolean valid : validPositions) {
+            if (!valid) {
+                zeroList[k++] = i;
+            } else {
+                srcTargetMap[iValid++] = i;
+            }
+            i++;
+        }
+        int[][] result = {zeroList, srcTargetMap};
+        return result;
+    }
+
     public ArrayList<MatrixPeak> peakPick(double globalThreshold, double noiseThreshold, boolean includeNegative, boolean isComplex, double scale) {
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
@@ -1079,7 +1220,7 @@ public class MatrixND implements MatrixType {
                         intensities[kDim][1] = ptValue * sign;
                         int nBelowThresh = 0;
                         if (counts[jDim] > 0) {
-                            int index = i - strides[jDim] * step; // 2 assumes complex                       
+                            int index = i - strides[jDim] * step; // 2 assumes complex
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if ((ptValue < testValue)) {
@@ -1095,7 +1236,7 @@ public class MatrixND implements MatrixType {
                             intensities[kDim][0] = testValue * sign;
                         }
                         if (ok && counts[jDim] < (sizes[jDim] - 1)) {
-                            int index = i + strides[jDim] * step; // 2 assumes complex                       
+                            int index = i + strides[jDim] * step; // 2 assumes complex
                             double testValue = sign * data[index];
                             if (ptValue < testValue) {
                                 ok = false;
@@ -1118,4 +1259,14 @@ public class MatrixND implements MatrixType {
         }
         return peaks;
     }
+
+    public SampleSchedule schedule() {
+        return schedule;
+    }
+
+    public void schedule(SampleSchedule sampleSchedule) {
+        schedule = sampleSchedule;
+    }
+
+
 }

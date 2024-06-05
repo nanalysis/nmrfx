@@ -5,6 +5,8 @@
  */
 package org.nmrfx.structure.seqassign;
 
+import java.util.EnumSet;
+
 /**
  * @author brucejohnson
  */
@@ -12,7 +14,7 @@ public class SpinSystemMatch implements Comparable<SpinSystemMatch> {
 
     double score;
     final int n;
-    final boolean[] matched;
+    final EnumSet<SpinSystem.AtomEnum> matched;
 
     final SpinSystem spinSystemA;
     final SpinSystem spinSystemB;
@@ -37,7 +39,7 @@ public class SpinSystemMatch implements Comparable<SpinSystemMatch> {
         return spinSystemB;
     }
 
-    public SpinSystemMatch(SpinSystem spinSystemA, SpinSystem spinSystemB, double score, int nMatch, boolean[] matched) {
+    public SpinSystemMatch(SpinSystem spinSystemA, SpinSystem spinSystemB, double score, int nMatch, EnumSet<SpinSystem.AtomEnum> matched) {
         this.spinSystemA = spinSystemA;
         this.spinSystemB = spinSystemB;
         this.score = score;

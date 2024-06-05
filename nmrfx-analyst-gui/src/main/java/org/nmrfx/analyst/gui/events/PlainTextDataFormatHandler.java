@@ -2,12 +2,15 @@ package org.nmrfx.analyst.gui.events;
 
 import javafx.application.Platform;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,19 +50,28 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
         if (chart.getDataset() == null) {
             return false;
         }
-        if (!SDFile.inMolFileFormat(molString)) {
-            return false;
-        }
-        // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
-        String moleculeName = molString.split("\n")[0].trim();
-        if (moleculeName.isEmpty()) {
-            moleculeName = MoleculeUtils.moleculeNamePrompt();
-        }
-        try {
-            SDFile.read(moleculeName, molString);
-        } catch (MoleculeIOException e) {
-            log.error("Unable to read molecule file. {}", e.getMessage());
-            return false;
+        if (SDFile.inMolFileFormat(molString)) {
+            // Use the first line of the string as the molecule name if it is not blank, else prompt for a name
+            String moleculeName = molString.split("\n")[0].trim();
+            if (moleculeName.isEmpty()) {
+                moleculeName = MoleculeUtils.moleculeNamePrompt();
+            }
+            try {
+                SDFile.read(moleculeName, molString);
+            } catch (MoleculeIOException e) {
+                log.error("Unable to read molecule file. {}", e.getMessage());
+                return false;
+            }
+        } else {
+            try {
+                Molecule molecule = OpenChemLibConverter.parseSmiles("", molString);
+                String moleculeName = MoleculeUtils.moleculeNamePrompt();
+                MoleculeFactory.renameMolecule(molecule, moleculeName);
+                molecule.setActive();
+            } catch (IllegalArgumentException iAE) {
+                log.error("Unable to parse as SMILES. {}", iAE.getMessage());
+                return false;
+            }
         }
         PolyChartManager.getInstance().setActiveChart(chart);
         MoleculeUtils.addActiveMoleculeToCanvas();
@@ -84,7 +96,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
                     datasetsToAdd.forEach(d -> dimensions.add(d.getNDim()));
                     if (dimensions.size() == 1) {
                         for (Dataset datasetToAdd : datasetsToAdd) {
-                            chart.getFXMLController().addDataset(datasetToAdd, true, false);
+                            chart.getFXMLController().addDataset(chart, datasetToAdd, true, false);
                         }
                     } else {
                         List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());

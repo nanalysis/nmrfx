@@ -137,6 +137,10 @@ public class ScannerTool implements ControllerTool {
         borderPane.setTop(null);
     }
 
+    public boolean scannerActive() {
+        return borderPane.getTop() != null;
+    }
+
     @Override
     public void close() {
         closeAction.accept(this);
@@ -181,8 +185,10 @@ public class ScannerTool implements ControllerTool {
         processAndCombineItem.setOnAction(e -> processScanDirAndCombine());
         MenuItem processItem = new MenuItem("Process");
         processItem.setOnAction(e -> processScanDir());
+        MenuItem combineItem = new MenuItem("Combine");
+        combineItem.setOnAction(e -> combineDatasets());
         menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
-                processItem);
+                processItem, combineItem);
         return menu;
     }
 
@@ -259,6 +265,10 @@ public class ScannerTool implements ControllerTool {
         scanTable.processScanDir(chartProcessor, false);
     }
 
+    private void combineDatasets() {
+        scanTable.combineDatasets();
+    }
+
     private void scanDirAction() {
         scanTable.loadScanFiles();
     }
@@ -321,6 +331,10 @@ public class ScannerTool implements ControllerTool {
     }
 
     private void measure() {
+        measure(null);
+    }
+
+    public void measure(double[] ppms) {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
         Optional<String> columNameOpt = textInput.showAndWait();
@@ -332,7 +346,9 @@ public class ScannerTool implements ControllerTool {
                 alert.showAndWait();
                 return;
             }
-            double[] ppms = chart.getCrossHairs().getVerticalPositions();
+            if (ppms == null) {
+                ppms = chart.getCrossHairs().getVerticalPositions();
+            }
             double[] wppms = new double[2];
             wppms[0] = chart.getAxes().get(0).getLowerBound();
             wppms[1] = chart.getAxes().get(0).getUpperBound();
@@ -352,7 +368,7 @@ public class ScannerTool implements ControllerTool {
                 if (itemDataset == null) {
                     File datasetFile = new File(scanTable.getScanDir(), datasetName);
                     try {
-                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                     } catch (IOException ioE) {
                         GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
                         return;
@@ -403,7 +419,7 @@ public class ScannerTool implements ControllerTool {
             if (itemDataset == null) {
                 File datasetFile = new File(scanTable.getScanDir(), datasetName);
                 try {
-                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                 } catch (IOException ioE) {
                     GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
                     return;

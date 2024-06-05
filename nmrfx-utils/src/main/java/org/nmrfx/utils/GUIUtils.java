@@ -37,6 +37,13 @@ import java.util.function.UnaryOperator;
 //TODO add annotations once core and utils are merged
 // @PluginAPI({"parametric", "ring"})
 public class GUIUtils {
+    public enum AlertRespones {
+        YES,
+        NO,
+        CANCEL,
+        DELETE,
+        APPEND;
+    }
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
     public static class FixedDecimalFilter implements UnaryOperator<TextFormatter.Change> {
@@ -88,6 +95,20 @@ public class GUIUtils {
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
             result = true;
+        }
+        return result;
+    }
+
+    public static AlertRespones deleteAppendCancel(String message) {
+        ButtonType deleteType = new ButtonType("Delete");
+        ButtonType appendType = new ButtonType("Append");
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, deleteType, appendType);
+        AlertRespones result = AlertRespones.CANCEL;
+        Optional<ButtonType> response = alert.showAndWait();
+        if (response.isPresent() && (response.get() == deleteType)) {
+            result = AlertRespones.DELETE;
+        } else if (response.isPresent() && (response.get() == appendType)) {
+            result = AlertRespones.APPEND;
         }
         return result;
     }
@@ -336,6 +357,29 @@ public class GUIUtils {
         TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
         field.setTextFormatter(formatter);
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
+    public static void bindSliderField(Slider slider, TextField field, String pattern, double range) {
+        DecimalFormat numberFormat = new DecimalFormat(pattern);
+        FormatStringConverter<Number> converter = new FormatStringConverter<>(numberFormat);
+        TextFormatter<Number> formatter = new TextFormatter<>(converter, 0);
+        field.setTextFormatter(formatter);
+        formatter.valueProperty().addListener(e -> resetRange(formatter, slider, range));
+        slider.valueProperty().bindBidirectional(formatter.valueProperty());
+    }
+
+    private static void resetRange(TextFormatter<Number> formatter, Slider slider, double range) {
+        double formatterValue = formatter.getValue().doubleValue();
+        double sliderValue = slider.getValue();
+        double delta = Math.abs(formatterValue - sliderValue);
+        if (delta > 1.0) {
+            formatterValue = Math.round(formatterValue * 10) / 10.0;
+            double halfRange = range / 2.0;
+            double start = halfRange * Math.round(formatterValue / halfRange) - 2.0 * halfRange;
+            double end = start + 4 * halfRange;
+            slider.setMin(start);
+            slider.setMax(end);
+        }
+        slider.setValue(formatterValue);
     }
 
     public static TextField getDoubleTextField(SimpleDoubleProperty prop) {

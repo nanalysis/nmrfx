@@ -82,9 +82,9 @@ from org.nmrfx.processor.operations import Sign
 from org.nmrfx.processor.operations import SinebellApod
 from org.nmrfx.processor.operations import Sqrt
 from org.nmrfx.processor.operations import Stack
-from org.nmrfx.processor.operations import DGRINSOp
 from org.nmrfx.processor.operations import TDCombine
 from org.nmrfx.processor.operations import TDPoly
+from org.nmrfx.processor.operations import Tilt45
 from org.nmrfx.processor.operations import Tm
 from org.nmrfx.processor.operations import Tri
 from org.nmrfx.processor.operations import Tdss
@@ -118,6 +118,7 @@ from nmrpar import getFilterSize
 from nmrpar import getZfSize
 from nmrpar import refByRatio
 from nmrpar import getWaterPPM
+
 
 import re
 
@@ -167,9 +168,6 @@ StdCoefs={
 
 class FIDInfo:
     size=[]
-    sw=[]
-    sf=[]
-    ref=[]
     refpt=[]
     label=[]
     mapToFIDList=[]
@@ -179,20 +177,17 @@ class FIDInfo:
     acqOrder = []
     acqArray = []
     fidObj = None
-    
+
     def checkParDim(self,pars):
         nd = self.fidObj.getNDim()
         if (len(pars) > nd):
             raise Exception("Number of parameters must be < "+str(nd))
 
     def printInfo(self):
-        print "  sw",    self.sw
-        print "  sf",    self.sf
         print "  size",  self.size
         print "  useSize", self.useSize
         print "  acqArray", self.acqArray
         print "  label", self.label
-        print "  ref",   self.ref
         print "  refpt", self.refpt
         print "  flags", self.flags
         print "  acqOrder", self.acqOrder
@@ -208,72 +203,24 @@ class FIDInfo:
 
     def setFixDSP(self,value):
         self.fidObj.setFixDSP(value)
-        
+
+    def setZeroFreq(self,value):
+        self.fidObj.setZeroFreq(value)
+
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sw[i] = par
-            elif isinstance(par,int):
-                self.sw[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSW(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if isinstance(value,float):
-                    self.sw[i] = value
-            self.fidObj.setSW(i,self.sw[i])
+            self.fidObj.setSW(i,par)
 
     def setSF(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.sf[i] = par
-            elif isinstance(par,int):
-                self.sf[i] = float(par)
-            else:
-                if (par == ''):
-                    self.fidObj.resetSF(i)
-                    continue
-                value = self.fidObj.getParDouble(par)
-                if self.fidObj.getVendor() == "rs2d":
-                    value = value / 1.0e6
-                if isinstance(value,float):
-                    self.sf[i] = value
-            self.fidObj.setSF(i,self.sf[i])
+            self.fidObj.setSF(i,par)
 
     def setRef(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
-            if isinstance(par,float):
-                self.ref[i] = par
-            elif isinstance(par,int):
-                self.ref[i] = float(par)
-            else:
-                par = par.upper().strip()
-                if (par == ''):
-                    self.fidObj.resetRef(i)
-                    self.ref[i] = self.fidObj.getRef(i)
-                    continue
-                if (par == 'H2O'):
-                    temp = self.fidObj.getTempK()
-                    self.ref[i] = getWaterPPM(temp)
-                elif (par.find('@') != -1):
-                    (refValue,sfValue) = par.split('@')
-                    refValue = float(refValue)
-                    sfValue = float(sfValue)
-                    self.ref[i] = (self.sf[i]-sfValue)*1.e6/sfValue+refValue
-                elif ((i > 0) and (par in ('N','C','P','D','H'))):
-                    self.ref[i] = refByRatio(self.sf[0],self.ref[0],self.sf[i],par)
-                else:
-                    doubleValue = self.fidObj.getParDouble(par)
-                    if doubleValue == None:
-                        raise Exception("Cannot convert par "+par)
-                    self.ref[i] = doubleValue;
-            if self.size[i] != 0:
-                delRef = (self.size[i]/2) * self.sw[i] / self.sf[i] / self.size[i];
-                self.fidObj.setRef(i,self.ref[i])
+            self.fidObj.setRef(i, par)
 
     def setLabel(self,pars):
         self.checkParDim(pars)
@@ -379,10 +326,10 @@ def fixdsp(value):
     ''' Set whether to fix dsp charge-up when reading FID.  Only used for Bruker data.
     '''
     fidInfo.setFixDSP(value)
- 
+
 def sw(*pars):
     ''' Sweep width values to set for each dimension.<br>
-    Values can be either a numeric value (2000.0) or the name of a vendor specific parameter (in quotes). 
+    Values can be either a numeric value (2000.0) or the name of a vendor specific parameter (in quotes).
     <br>Examples:
        <ul>
        <li>sw(5000.0,2000.0) Numeric values</li>
@@ -394,7 +341,7 @@ def sw(*pars):
 
 def sf(*pars):
     ''' Spectrometer frequency at center of spectrum to set for each dimension.<br>
-    Values can be either a numeric value (2000.0) or the name of a vendor specific parameter (in quotes). 
+    Values can be either a numeric value (2000.0) or the name of a vendor specific parameter (in quotes).
     <br>Examples:
        <ul>
        <li>sf(5000.0,2000.0) Numeric values</li>
@@ -406,7 +353,7 @@ def sf(*pars):
 
 def tdcomplex(*pars):
     ''' Complex values to set for each dimension.<br>
-    Values can be True or False. 
+    Values can be True or False.
     <br>Examples:
        <ul>
        <li>tdcomplex(True,False) Boolean values</li>
@@ -414,9 +361,12 @@ def tdcomplex(*pars):
     '''
     fidInfo.setComplex(pars)
 
+def zerofreq(zf):
+    fidInfo.setZeroFreq(zf)
+
 def ref(*pars):
     ''' Reference position (in ppm) at center of spectrum to set for each dimension.<br>
-    Values can be either a numeric value (2000.0), the name of a vendor specific parameter (in quotes), or symbolic values. 
+    Values can be either a numeric value (2000.0), the name of a vendor specific parameter (in quotes), or symbolic values.
     If symbolic values ('h2o', 'C', 'N') are used the sf and sw values must already be set correctly.
     <br>Examples:
        <ul>
@@ -447,7 +397,7 @@ def flags(**keywords):
 # set acquisition order, e.g. acqOrder('p2','p1','d1','d2')
 def acqOrder(*order):
     ''' Set acquisiton order used by experiment, including phase and time increments.<br>
-    
+
     <br>Examples:
        <ul>
        <li>acqOrder('p1','d1','p2','d2')</li>
@@ -458,7 +408,7 @@ def acqOrder(*order):
     fidInfo.acqOrder = []
     for par in order:
         fidInfo.acqOrder.append(par)
-    fidInfo.fidObj.resetAcqOrder() 
+    fidInfo.fidObj.resetAcqOrder()
     fidInfo.fidObj.setAcqOrder(order)
     processor.setAcqOrder(fidInfo.fidObj.getAcqOrder())
 
@@ -541,7 +491,7 @@ def inMemory(mode=True):
     dataInfo.inMemory = mode
 
 def acqarray(*pars):
-    ''' Set acquired array size. 
+    ''' Set acquired array size.
     '''
     global fidInfo
     global dataInfo
@@ -561,9 +511,9 @@ def acqarray(*pars):
     size = list(fidInfo.maxSize)
     acqsize(size)
 
-# set fid size limits 
+# set fid size limits
 def acqsize(*pars):
-    ''' Set acquired size. This is not normally needed, but might be useful if the experiment did not run to completion 
+    ''' Set acquired size. This is not normally needed, but might be useful if the experiment did not run to completion
         and you need to specify the number of rows of data that were actually acquired.  Only the size for the indirect
         dimensions can be changed.  Specifying a value of 0, or an empty value indicates that the actual acquired size
         should be used.
@@ -590,11 +540,11 @@ def acqsize(*pars):
     fidInfo.useSize = list(size)
     dataInfo.size = list(size)
     dataInfo.msize = initMSize(fidInfo, size)
-            
-# set fid size limits 
+
+# set fid size limits
 def tdsize(*size):
-    ''' Set time domain size that should actually be used.  Normally set to a value less than or equal to the acqsize value. 
-        Only the size for the indirect dimensions can be changed.  Specifying a value of 0, or an empty value indicates 
+    ''' Set time domain size that should actually be used.  Normally set to a value less than or equal to the acqsize value.
+        Only the size for the indirect dimensions can be changed.  Specifying a value of 0, or an empty value indicates
         that the actual acquired size should be used.  Useful if you want to see what the processed data would be like if fewer
         data rows were acquired, or if there is some corruption of data (by changes to sample or fault in instrument) after
         a certain point.
@@ -613,7 +563,7 @@ def tdsize(*size):
             fidInfo.useSize.append(par)
 
 def acqmode(*modes):
-    ''' Set the acquisition modes (complex, hypercomplex, echo-antiecho etc. for each dimension. 
+    ''' Set the acquisition modes (complex, hypercomplex, echo-antiecho etc. for each dimension.
     '''
     global fidInfo
     for i,par in enumerate(modes):
@@ -757,8 +707,8 @@ def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     Parameters
     ---------
     fidFileName : string
-        Name of the file to open. 
-    tdSize : array 
+        Name of the file to open.
+    tdSize : array
         Size of each time domain dimension.  Automatically determined from paramter files if not specified.
     keywords : keywords
         Optional list of arguments describing data
@@ -785,11 +735,10 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
     fidInfo.size = list(tdSize)
     fidInfo.useSize = list(tdSize)
 
-    fidInfo.fidObj = fidObj 
+    fidInfo.fidObj = fidObj
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
-    fidInfo.sw = []
     fidInfo.sf = []
     fidInfo.ref = []
     fidInfo.refpt = []
@@ -803,10 +752,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
 
     j = 0
     for i in range(fidInfo.nd):
-        fidInfo.sw.append(fidObj.getSW(i))
-        fidInfo.sf.append(fidObj.getSF(i))
-        fidInfo.ref.append(fidObj.getRef(i))
-        fidInfo.refpt.append(fidObj.getSize(i)/2)
         fidInfo.label.append('D'+str(i))
         fidInfo.maxSize.append(fidObj.getMaxSize(i))
         fidInfo.acqArray.append(0)
@@ -828,8 +773,8 @@ def CREATE(nvFileName, dSize=None, extra=0):
     Parameters
     ---------
     nvFileName : string
-        Name of the dataset file to create. 
-    dSize : array 
+        Name of the dataset file to create.
+    dSize : array
         The size of the dimensions.  If not specified the size automatically determined from processing script.
     '''
     global fidInfo
@@ -922,13 +867,10 @@ def setDataInfo(dSize):
         for iDim in range(nDim):
             fidDim = fidInfo.mapToFID0(iDim)
             if fidDim != -1:
-                if fidInfo.ref:
-                    dataset.setRefValue(iDim,fidInfo.ref[fidDim])
-                    dataset.setRefValue_r(iDim,fidInfo.ref[fidDim])
-                if fidInfo.sw:
-                    dataset.setSw(iDim,fidInfo.sw[fidDim])
-                if fidInfo.sf:
-                    dataset.setSf(iDim,fidInfo.sf[fidDim])
+                dataset.setRefValue(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setRefValue_r(iDim,fidInfo.fidObj.getRef(fidDim))
+                dataset.setSw(iDim,fidInfo.fidObj.getSW(fidDim))
+                dataset.setSf(iDim,fidInfo.fidObj.getSF(fidDim))
                 if fidInfo.label:
                     dataset.setLabel(iDim,fidInfo.label[fidDim])
         if fidInfo.label:
@@ -1037,7 +979,7 @@ def generic_operation(operation):
         arguments = ""
 
     #this makes a zip with tuples of the strings of the variable names, and the key value, so its ((variable_name_1, variable_1_default_value), ...)
-    #inspect.formatargspec will turn a list into a string 
+    #inspect.formatargspec will turn a list into a string
     name_val = inspect.formatargspec(zip(inspect.getargspec(operation)[0],
                                     inspect.getargspec(operation)[-1]))
 
@@ -1137,7 +1079,7 @@ def BCMED(frac=0.1,wrap=False, disabled=False, vector=None, process=None):
     else:
         process.addOperation(op)
     return op
-    
+
 
 def REGIONS(regions = None,type='frac', signal=False, disabled=False, vector=None, process=None):
     '''Baseline correction using a polynomial fit.
@@ -1209,7 +1151,7 @@ def BC(ratio=10.0, disabled=False, vector=None, process=None):
         min : 1.0
         max : 100.0
         Ratio relative to noise used in determining if region is signal or baseline, or percent baseline in cwtdf mode.
-    ''' 
+    '''
     if disabled:
         return None
     process = process or getCurrentProcess()
@@ -1238,12 +1180,12 @@ def BCPOLY(order=2, winSize=16, disabled=False, vector=None, process=None):
     if disabled:
         return None
     process = process or getCurrentProcess()
-            
+
     op = BcPoly(order, winSize)
     if (vector != None):
         op.eval(vector)
     else:
-        process.addOperation(op)   
+        process.addOperation(op)
     return op
 
 def BCSINE(order=1, winSize=16,  disabled=False, vector=None, process=None):
@@ -1401,7 +1343,7 @@ def TDCOMB(dim=2,coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, di
         nCoef = len(coef)
         numInVec = int(math.log(nCoef/2)/math.log(2))
         numOutVec=numInVec
-         
+
     op = TDCombine(dim-1,numInVec, numOutVec, coef)
     if (inVec != None): #and outVec != None):
         arrList = TDCombine.getArrayList()
@@ -1431,6 +1373,30 @@ def CSHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     return op
 
 @generic_operation
+def TILT45(disabled=False, vector=None, process=None):
+    '''Perform 45 degree shear (tilt) on a 2D dataset, as is commonly done on 2D J-Resolved
+    datasets.
+'''
+    if disabled:
+        return None
+
+    global fidInfo
+    global dataInfo
+    fidObj = fidInfo.fidObj
+    sw1 = fidObj.getSW(0)
+    sw2 = fidObj.getSW(1)
+    n1 = fidObj.getSize(0);
+    n2 = fidObj.getSize(1);
+
+    # The shift of each row n2 is given by round(m * n2 + c)
+    m = (sw2 * n1) / (sw1 * n2)
+    c = -(sw2 * n1) / (2 * sw1)
+
+    op = Tilt45(m, c)
+    return op
+
+
+@generic_operation
 def COADD(coef=None, disabled=False, vector=None, process=None):
     '''Coaddition of a set of vectors to yield one result vector.
     Parameters
@@ -1454,14 +1420,14 @@ def STACK(count=1,group=2,disabled=False):
     Parameters
     ---------
     count : int
-        amin : 1 
-        min : 1 
-        max : 32 
+        amin : 1
+        min : 1
+        max : 32
         Count of planes in stack.
     group : int
-        amin : 1 
-        min : 1 
-        max : 32 
+        amin : 1
+        min : 1
+        max : 32
         Number of vectors in group (kept in plane together).
 '''
     if disabled:
@@ -1557,8 +1523,8 @@ def SCHEDULE(fraction=0.05, endOnly=False, fileName="", disabled=False, vector =
     return op
 
 
-def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0, 
-    threshold=5, backward=True, forward=True, mirror=None,disabled=False,vector=None, 
+def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
+    threshold=5, backward=True, forward=True, mirror=None,disabled=False,vector=None,
     process=None):
     '''Extend the vector using Linear Prediction.
     Forward or backward linear prediction can be done.  If both are specified
@@ -1608,7 +1574,7 @@ def LP(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
     mirrorInt = 0
     if mirror:
        if mirror == "even":
-           mirrorInt = 2 
+           mirrorInt = 2
        elif mirror == "odd":
            mirrorInt = 1
        elif mirror == "ps90-180":
@@ -1731,7 +1697,7 @@ def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=No
     ---------
     start : int
         min : 0
-        max : size-1 
+        max : size-1
         Start point of region to extract
     end : int
         min : 0
@@ -1801,7 +1767,7 @@ def TRIM(ftrim=0.1, disabled=False, vector=None, process=None):
         process.addOperation(op)
 
 def DCFID(fraction=0.06, disabled=False, vector=None, process=None):
-    ''' Correct DC offset of FID real and imaginary channels 
+    ''' Correct DC offset of FID real and imaginary channels
     Parameters
     ---------
     fraction : real
@@ -2124,7 +2090,7 @@ def GF(gf=1.0, gfs=1.0, fPoint=1.0, inverse=False, disabled=False, vector=None, 
         amin : 0.0
         min : 0.0
         max : 20.0
-        gf: Gaussian broadening 
+        gf: Gaussian broadening
     gfs : double
         amin : 0.0
         min : 0.0
@@ -2172,7 +2138,7 @@ def GM(g1=1.0, g2=1.0, g3=0.0, fPoint=1.0, inverse=False, disabled=False, vector
         min : 0.0
         max : 1.0
         amax : 5.0
-        fpoint: First point multiplier 
+        fpoint: First point multiplier
 '''
     if disabled:
         return None
@@ -2213,7 +2179,7 @@ def GMB(gb=0.0, lb=0.0, fPoint=1.0, inverse=False, disabled=False, vector=None, 
     else:
         process.addOperation(op)
     return op
-    
+
 def APODIZE(lbOn=False,lb=0.5, gmOn=False, gm=1.0, sbOn=False, sbSqOn=False, sbOffset=0.5, fPoint=1.0, apodSize=0, inverse=False, disabled=False, vector=None, process=None):
     '''Lorentz-to-Gauss.
     Parameters
@@ -2324,7 +2290,7 @@ def SAMPLE_SCHEDULE(filename="/tmp/sample_schedule.txt", mode='read', dims=[], d
     fraction : real
         Fraction of total points that are sampled (create mode only).
     '''
-    
+
     global fidInfo
     fidObj = fidInfo.fidObj
     if (mode == 'create'):      # for 2D NUS
@@ -2377,7 +2343,7 @@ def ISTMATRIX(threshold=0.90, iterations=500, alg='std', phase=None, timeDomain=
     process.addOperation(op)
     return op
 
-def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph1=None, 
+def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph1=None,
     adjustThreshold=False, all=False, disabled=False, vector=None, process=None):
     '''Iterative Soft Threshold.
     Parameters
@@ -2447,7 +2413,7 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
 def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for extending data as alternative to Linear Prediction.
     This version requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
-  
+
     Parameters
     ---------
     alg : {'nesta','grins'}
@@ -2470,6 +2436,8 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     logToFile=False
     zeroAtStart=True
     threshold=0.0
+    nGrins=128
+    shapeFactor = 0.5
 
     noise = 0.0
     phase = None
@@ -2498,7 +2466,9 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     if alg == 'nesta':
         op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
-        op = GRINSOp(noise, scale, factor, phaseList, preserve, skipIndices)
+        negateImagList = ArrayList()
+        negatePairsList = ArrayList()
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, negateImagList, negatePairsList, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -2513,7 +2483,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
 def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
-   
+
     Parameters
     ---------
     nOuter : int
@@ -2586,7 +2556,7 @@ def NESTA_EX_SCR(iterations=30, execName='', disabled=False, vector=None, proces
         min : 1
         max : 2000
         Number of iterations to perform.
-    execName : string 
+    execName : string
         Full path to NESTANMR executable.
 '''
     global nestaExecutable
@@ -2837,7 +2807,7 @@ def GEN(freq=100.0,lw=1.0,amp=50.0,phase=0.0, disabled=False, vector=None, proce
         max : 100.0
         Amplitude of signal.
     phase : real
-        min : -180 
+        min : -180
         max : 180.0
         Phase of signal in degrees.
 '''
@@ -2859,8 +2829,12 @@ def PRINT(disabled=False, vector=None, process=None):
         process.addOperation(op)
     return op
 
-def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, process=None):
+def WRITE(index=-1, dimag=True, disabled=False, vector=None, process=None):
     '''Write vector to dataset (normally done automatically).
+    Parameters
+    ---------
+    index : int
+        Index of vector to write.  A value of -1 uses index stored in vector.
     dimag : bool
         Discard imaginary values (make vector real).
 '''
@@ -2983,68 +2957,57 @@ def DEPT( disabled=False, dataset=None, process=None):
         process.addOperation(op)
     return op
 
-def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None):
+
+def GRINS(
+    noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5,
+    apodize=True, phase=None, negateImag=None, negatePairs=None,
+    preserve=True, synthetic=False, logToFile=False, disabled=False,
+    dataset=None, process=None,
+):
     ''' Experimental GRINS.
     Parameters
     ---------
-    noise : real
-        amin : 0.0
-        Noise estimate
-'''
-    if disabled:
-        return None
-
-    global fidInfo
-
-    if fidInfo == None or fidInfo.fidObj == None:
-        schedule = None
-    else:
-        schedule = fidInfo.fidObj.getSampleSchedule()
-        if logToFile:
-            rootdir = fidInfo.fidObj.getFilePath()
-            logDir = os.path.join(rootdir,"nesta")
-            if not os.path.exists(logDir):
-                os.mkdir(logDir)
-            logFileName = os.path.join(logDir,"log")
-
-    process = process or getCurrentProcess()
-
-    op = DGRINSOp(schedule, noise)
-
-    if (dataset != None):
-        op.eval(dataset)
-    else:
-        process.addOperation(op)
-    return op
-
-
-def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
-    ''' Experimental GRINS.
-    Parameters
-    ---------
-    noise : real
-        amin : 0.0
-        min : 0.0
-        max : 100.0
-        Noise estimate
+    noiseRatio : real
+        amin : 2.0
+        min : 2.0
+        max : 10.0
+        Threshold calculated from noise * noiseRatio
     scale : real
         amin : 0.1
         min : 0.2
         max : 2.0
         amax : 10.0
-        Parabola to Lorentzian scale 
+        Parabola to Lorentzian scale
     zf : int
         amin : 0
         min : 0
         max : 2
         amax : 2
-        Zero fill factor 
+        Zero fill factor
+    iterations : int
+        amin : 1
+        min : 1
+        max : 512
+        amax : 512
+        Iterations
+    shapeFactor : real
+        amin : 0.0
+        min : 0.0
+        max : 1.0
+        amax : 1.0
+        Lineshape factor
+    apodize : bool
+        Do Kaiser apodization during GRINS
     phase : []
         Array of phase values, 2 per indirect dimension.
+    negateImag : []
+        Array of booleans, 1 per indirect dimension.
+    negatePairs : []
+        Array of booleans, 1 per indirect dimension.
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
-        Replace measured values with synthetic values. 
+        Replace measured values with synthetic values.
     logToFile : bool
         Write log files containing information about progress of NESTA.
 '''
@@ -3054,30 +3017,46 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
     global fidInfo
 
     phaseList = ArrayList()
-    if phase == None:
+    if phase is None:
         pass
     else:
         for value in phase:
             phaseList.add(float(value))
 
+    negateImagList = ArrayList()
+    if negateImag is not None:
+        for value in negateImag:
+            negateImagList.add(value)
+
+    negatePairsList = ArrayList()
+    if negatePairs is not None:
+        for value in negatePairs:
+            negatePairsList.add(value)
+
     logFileName = None
 
-    if fidInfo == None or fidInfo.fidObj == None:
+    if fidInfo is None or fidInfo.fidObj is None:
         schedule = None
     else:
         schedule = fidInfo.fidObj.getSampleSchedule()
         if logToFile:
             rootdir = fidInfo.fidObj.getFilePath()
-            logDir = os.path.join(rootdir,"nesta")
+            if not os.path.isdir(rootdir):
+                rootdir = os.path.dirname(rootdir)
+            logDir = os.path.join(rootdir,"grins_log")
             if not os.path.exists(logDir):
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, phaseList, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(
+        noiseRatio, scale, zf, iterations, shapeFactor, apodize,
+        phaseList, negateImagList, negatePairsList, preserve,
+        synthetic, schedule, logFileName,
+    )
 
-    if (dataset != None):
+    if (dataset is not None):
         op.eval(dataset)
     else:
         process.addOperation(op)
@@ -3106,7 +3085,7 @@ def PHASE(ph0=0.0, ph1=0.0, dimag=False, disabled=False, vector=None, process=No
     global fidInfo
     process = process or getCurrentProcess()
     if (ph0 == None):
-        
+
         try:
             gph0, gph1 = fidInfo.getPhases(dataInfo.curDim)
         except:
@@ -3173,7 +3152,7 @@ def RAND(disabled=False, vector=None, process=None):
         return None
     op = Rand()
     return op
-    
+
 
 @generic_operation
 def RANGE(value=0 + 0j, first=0, last=-1,  max=False, min=False, disabled=False, process=None, vector=None):
@@ -3184,7 +3163,7 @@ def RANGE(value=0 + 0j, first=0, last=-1,  max=False, min=False, disabled=False,
         Vector will have this value from the 'first' to 'last' elements
     first : int
         min : 0
-        max : size-1 
+        max : size-1
         The first point of the vector to set.
     last : int
         min : -1
@@ -3216,7 +3195,7 @@ def MERGE(disabled=False, process=None, vector=None):
     else:
         process.addOperation(op)
     return op
-    
+
 def REAL(disabled=False, process=None, vector=None):
     '''Make the vector real, discarding the imaginary part'''
     if disabled:
@@ -3317,7 +3296,7 @@ def SIGN(mode='i', disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+def SB(offset=0.5, end=1.0, power=2.0, c=1.0, apodSize=0, dim=0, inverse=False, disabled=False, vector=None, process=None):
     '''Sine Bell Apodization
     Parameters
     ---------
@@ -3348,11 +3327,13 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = SinebellApod(offset, end, power, c, apodSize, inverse)
+    op = SinebellApod(offset, end, power, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3397,7 +3378,7 @@ def BLACKMAN(offset=0.5,end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=F
         process.addOperation(op)
     return op
 
-def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
+def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=0, inverse=False,disabled=False, vector=None, process=None):
     '''Kaiser Apodization
     Parameters
     ---------
@@ -3417,7 +3398,7 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
         min : 0.5
         max : 1.0
         amax : 1.0
-        End value of window 
+        End value of window
     c : real
         amin : 0.5
         min : 0.5
@@ -3428,8 +3409,8 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
-    dim : {1,2,3,4,5,6}
-        Dataset dimension to apodize. Only applicable for matrix operations.
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations. 0:do all dimensions
     '''
     if disabled:
         return None
@@ -3460,7 +3441,7 @@ def SHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     return op
 
 def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disabled=False, vector=None, process=None):
-    '''Execute a Python script as an Operation. Current vector is available as object named "vec". 
+    '''Execute a Python script as an Operation. Current vector is available as object named "vec".
     Parameters
     ---------
     script : wstring
@@ -3504,7 +3485,7 @@ def TDPOLY(order=4, winSize=32, start=0, disabled=False, vector=None, process=No
         return None
     op = TDPoly(order, winSize, start)
     return op
-    
+
 
 def TM(pt1=0, pt2=-1, inverse=False, disabled=False, vector=None, process=None):
     '''Trapezoid Multiply.
@@ -3607,7 +3588,7 @@ def ZEROS(disabled=False, process=None, vector=None):
     return op
 
 def ZF(factor=1, size=-1, pad=-1, disabled=False, process=None, vector=None):
-    '''Zero Fill. 
+    '''Zero Fill.
 factor is the 'factor' power of 2 that the vector size is increased to, so if the vector has 513 elements and factor = 1, it will increase to 1024, the next power of 2, but if factor = 2, it will increase to 2048, which is two powers of two greater.
 A size can be specified instead of a factor which will be the exact number of points the vector will have, and the increased elements will all be zero.
     Parameters
@@ -3723,7 +3704,7 @@ def list_vectors(process=None):
     return process.getVectorString()
 
 def status(process=None):
-    '''Return status of a process''' 
+    '''Return status of a process'''
     process = process or getCurrentProcess()
     return process.getStatus()
 
@@ -3798,7 +3779,7 @@ def convertUnitStringToObject(unitString):
     num = filter(lambda x: x != '', re.findall('[\d.\-]*', unitString))
     if len(num) != 1:
         raise Exception("Poorly formatted Unit String.  Cannot convert %s.  Unit must be supplied as a number followed by f, h, p, or s." % unitString)
-    
+
     if (len(token)):
         token = token[0]
     else:
@@ -3808,7 +3789,7 @@ def convertUnitStringToObject(unitString):
 
     if token == 'f':
         unit = Fraction(num)
-    
+
     elif token == 'h':
         unit = Frequency(num)
 
@@ -3870,6 +3851,7 @@ def genScript(arrayed=False):
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
+            script += 'SB(dim=0, c=0.5)\n'
             script += 'NESTA()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
@@ -3946,7 +3928,7 @@ def ddoc(op,opList):
    else:
        nDefaults = len(defaults)
    inPar = False
-   s=op.__doc__.split('\n') 
+   s=op.__doc__.split('\n')
    iArg = -1
    opDesc = ''
    opMap = HashMap()
@@ -3974,7 +3956,7 @@ def ddoc(op,opList):
    for line in s:
        n4space = line.count('    ')
        line = line.strip()
-       
+
        if line.startswith('----'):
            continue
        if line == '':
@@ -3992,28 +3974,21 @@ def ddoc(op,opList):
                    parMap.clear()
                    iArg += 1
                    pars = line.split(' : ')
-                   #ast.literal_eval
                    parName = pars[0].strip()
                    if ((parName != 'keywords') and (parName != argNames[iArg])):
                        print parName,' not equal to ',argNames[iArg]
                        exit()
                    iDefault = nArgs-iArg
                    hasDefault = True
-                   #print nArgs,iArg,iDefault,nDefaults
                    default = None
                    if (iDefault > nDefaults):
                        hasDefault = False
                    else:
                        default = defaults[-iDefault]
-#                   (parType,parOptional)= pars[1].split(',')
-                   #print pars[1].strip()
                    parTypeList = ArrayList()
                    if (pars[1][0] == '{'):
                        parTypeString = pars[1].strip()
-                       #parTypeString = "set([" + parTypeString[1:-1] + "])"
                        parTypeString = "(" + parTypeString[1:-1] + ")"
-                       #print parTypeString
-                       #parTypes = ast.literal_eval(parTypeString)
                        parTypes = eval(parTypeString)
                        if isinstance(parTypes,tuple):
                           for parType in parTypes:
@@ -4028,22 +4003,17 @@ def ddoc(op,opList):
                         parMap.put('listTypes', listTypeList)
                    else:
                         parTypeList.add(pars[1].strip())
-                          
-                   #parOptional = parOptional.strip()=='optional'
+
                    parOptional = hasDefault;
-                   #print 'parName ',parName,'type ',parType,'optional ', parOptional
                    parMap.put('name',parName)
                    parMap.put('type',parTypeList)
                    parMap.put('optional',parOptional)
                else:
                    if line.find(' : ') == -1:
                        parMap.put('desc',line)
-                       #print 'desc',line
                        if hasDefault:
                            parMap.put('default',default)
-                           #print 'default ',default
                    else:
-                       #print 'opts',line
                        opts = line.split(' : ')
                        optName = opts[0].strip()
                        optValue = opts[1].strip()
@@ -4072,7 +4042,7 @@ def getOperationList():
     #add to the list as well.)
     exclude_operations = []
     exclude_operations += ['ISTCL',] #currently broken
-    
+
     #return all operations that are not excluded
     opList = filter(lambda op: op not in exclude_operations, operation_list)
     opList.sort()
@@ -4097,5 +4067,29 @@ def parseFileArgs():
     fidInfo = FID(fidDir)
     datasetInfo = CREATE(datasetName)
     return fidInfo,datasetInfo
+
+def setTestLocations(fidHome, tmpHome):
+    global FIDHOME
+    global TMPHOME
+    FIDHOME = fidHome
+    TMPHOME = tmpHome
+
+def getTestLocations():
+    global FIDHOME
+    global TMPHOME
+    try:
+        fidHome = FIDHOME
+        tmpHome = TMPHOME
+    except NameError:
+        fidHome = os.getenv("FIDHOME")
+        tmpHome = os.getenv("TMPHOME")
+        if fidHome == None:
+            fidHome = "../../nmrfx-test-data/testfids"
+        if tmpHome == None:
+            tmpHome = "../../nmrfx-test-data-gen"
+            if not os.path.exists(tmpHome):
+                tmpHome = None
+
+    return (fidHome, tmpHome)
 
 dataInfo = DataInfo()

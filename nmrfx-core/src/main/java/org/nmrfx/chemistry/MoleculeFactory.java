@@ -86,10 +86,12 @@ public class MoleculeFactory {
                 log.warn(e.getMessage(), e);
             }
         }
-        if (moleculeBase != null) {
-            ProjectBase.getActive().putMolecule(moleculeBase);
-            setActive(moleculeBase);
-        }
         return moleculeBase;
+    }
+
+    public static void renameMolecule(MoleculeBase molecule, String newName) {
+        removeMolecule(molecule.getName());
+        molecule.name = newName;
+        putMolecule(molecule);
     }
 }

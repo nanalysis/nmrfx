@@ -16,8 +16,11 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.rna.RNALabels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +43,7 @@ public class PeakGeneratorGUI {
     private Label subTypeLabel;
     private GridPane peakListParsPane;
     TextField[][] peakListParFields;
-    private HBox optionBox;
+    private VBox optionBox;
     Button generateButton;
     Button inspectButton;
     Button tableButton;
@@ -50,6 +53,7 @@ public class PeakGeneratorGUI {
     private final Slider distanceSlider = new Slider(2, 7.0, 5.0);
     private final ChoiceBox<Integer> transferLimitChoice = new ChoiceBox<>();
     private final CheckBox useNCheckBox = new CheckBox("UseN");
+    private final CheckBox requireActiveCheckBox = new CheckBox("Require Active");
     PeakGeneratorTypes peakGeneratorType = null;
     double sfH = 700.0;
 
@@ -94,7 +98,7 @@ public class PeakGeneratorGUI {
         subTypeLabel.setMinWidth(150);
         hBox.getChildren().addAll(typeLabel, subTypeLabel);
         peakListParsPane = new GridPane();
-        optionBox = new HBox();
+        optionBox = new VBox();
         vBox.getChildren().addAll(hBox, peakListParsPane, optionBox);
         Label listLabel = new Label("List Name");
         simPeakListNameField = new TextField();
@@ -261,15 +265,24 @@ public class PeakGeneratorGUI {
             switch (peakGeneratorType) {
                 case TOCSY -> {
                     Label label = new Label("Transfers");
-                    optionBox.getChildren().add(label);
-                    optionBox.getChildren().add(transferLimitChoice);
+                    HBox hBox = new HBox();
+                    hBox.setSpacing(10);
+                    hBox.getChildren().add(label);
+                    hBox.getChildren().add(transferLimitChoice);
+                    optionBox.getChildren().add(hBox);
                     labels.add("H");
                     labels.add("H2");
                 }
                 case NOESY -> {
                     Label label = new Label("Distance");
-                    optionBox.getChildren().add(label);
-                    optionBox.getChildren().add(distanceSlider);
+                    HBox hBox = new HBox();
+                    hBox.setSpacing(10);
+                    hBox.getChildren().add(label);
+                    hBox.getChildren().add(distanceSlider);
+                    optionBox.getChildren().add(hBox);
+                    optionBox.getChildren().add(useNCheckBox);
+                    optionBox.getChildren().add(requireActiveCheckBox);
+
                     labels.add("H");
                     labels.add("H2");
                 }
@@ -285,8 +298,11 @@ public class PeakGeneratorGUI {
                 }
                 case HMBC -> {
                     Label label = new Label("Transfers");
-                    optionBox.getChildren().add(label);
-                    optionBox.getChildren().add(transferLimitChoice);
+                    HBox hBox = new HBox();
+                    hBox.setSpacing(10);
+                    hBox.getChildren().add(label);
+                    hBox.getChildren().add(transferLimitChoice);
+                    optionBox.getChildren().add(hBox);
                     labels.add("H");
                     labels.add("C");
                     ratios[1] = 10.0;
@@ -424,9 +440,26 @@ public class PeakGeneratorGUI {
                 case Proton_1D -> makeProton1D(newPeakList);
             }
             statusLabel.setText(String.format("Created %d peaks", newPeakList.size()));
+            PeakLinker linker = new PeakLinker();
+            linker.linkAllPeakListsByLabel("sim");
+            newPeakList.setSlideable(true);
         }
     }
 
+    void setSelectedAtoms() {
+        String name = simDatasetNameField.getValue();
+        if (name != null) {
+            if (!name.equals("Sim")) {
+                Dataset dataset = Dataset.getDataset(name);
+                Molecule molecule = Molecule.getActive();
+                if ((dataset != null) && (molecule != null)){
+                    String labelScheme = dataset.getProperty("labelScheme");
+                    RNALabels rnaLabels = new RNALabels();
+                    rnaLabels.parseSelGroups(molecule, labelScheme);
+                }
+            }
+        }
+    }
     private void makeProteinPeakList(Dataset dataset, PeakList peakList, PeakGeneratorTypes expType) {
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateProteinPeaks(dataset, peakList, expType);
@@ -465,7 +498,10 @@ public class PeakGeneratorGUI {
         peakList.getSpectralDim(0).setPattern("i.H*");
         peakList.getSpectralDim(1).setPattern("j.H*");
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
-        peakGenerator.generateNOESY(peakList, tol);
+        if (requireActiveCheckBox.isSelected()) {
+            setSelectedAtoms();
+        }
+        peakGenerator.generateNOESY(peakList, tol, useNCheckBox.isSelected(), requireActiveCheckBox.isSelected());
     }
 
     private void makeRNANOESYSecStr(Dataset dataset, PeakList peakList) {

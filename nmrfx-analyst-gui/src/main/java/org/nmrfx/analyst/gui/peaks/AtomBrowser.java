@@ -29,7 +29,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
-import org.nmrfx.processor.project.Project;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -389,7 +389,7 @@ public class AtomBrowser {
         final boolean useOrder = true;
         List<Peak> peaks = new ArrayList<>();
 
-        Project.getActive().getPeakLists().stream().forEach(peakList -> {
+        ProjectBase.getActive().getPeakLists().stream().forEach(peakList -> {
             if (Util.stringMatch(peakList.getName(), listPattern)) {
                 List<Peak> listPeaks = peakList.matchPeaks(matchStrings, useRegexp, useOrder);
                 peaks.addAll(listPeaks);

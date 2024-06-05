@@ -543,6 +543,11 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         peakNavigator.setPeakList();
     }
 
+    public Optional<Peak> getPeak() {
+        Peak peak = peakNavigator.getPeak();
+        return Optional.ofNullable(peak);
+    }
+
     public PeakList getPeakList() {
         return peakList;
     }

@@ -31,20 +31,18 @@ public interface RelaxationValues {
 
     String[] getParNames();
 
-    String getName();
-
     Double getValue(String name);
 
     Double getError(String name);
 
     ResonanceSource getResonanceSource();
 
-    public static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format) {
-        stringBuilder.append("\t");
+    public static void appendValueErrorWithSep(StringBuilder stringBuilder, Double val, Double err, String format, String sepChar) {
+        stringBuilder.append(sepChar);
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         }
-        stringBuilder.append("\t");
+        stringBuilder.append(sepChar);
         if (err != null) {
             stringBuilder.append(String.format(format, err));
         }

@@ -197,13 +197,12 @@ public class NMRPipeData implements NMRData {
         tbytes = np * ebytes;
     }
 
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
+    public static boolean findFID(File file) {
+        return findFIDFiles(file);
     }
 
-    public static boolean findFIDFiles(String dpath) {
+    public static boolean findFIDFiles(File file) {
         boolean found = false;
-        File file = new File(dpath);
         String dirName = file.getParent();
         String fileName = file.getName();
         if (fileName.contains("%")) {
@@ -823,10 +822,12 @@ public class NMRPipeData implements NMRData {
         }
         boolean gotSchedule = false;
         if (nusFile == null) {
-            nusFile = new File(fpath + File.separator + "nuslist");
+            File fidFile = new File(fpath);
+            Path nusPath = fidFile.getParentFile().toPath().resolve("nuslist");
+            nusFile = nusPath.toFile();
         }
         if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), false);
+            readSampleSchedule(nusFile.getPath(), true, false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {

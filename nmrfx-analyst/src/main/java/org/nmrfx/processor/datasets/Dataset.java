@@ -92,7 +92,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *                     closed)
      * @throws IOException if an I/O error occurs
      */
-    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
+    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile, boolean saveToProject)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, writable, useCacheFile);
@@ -137,7 +137,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
 
         log.info("new dataset {}", fileName);
-        addFile(fileName);
+        if (saveToProject) {
+            addFile(fileName);
+        }
         loadLSCatalog();
     }
 
@@ -529,7 +531,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         log.info(fullName);
         String fileString = Files.readString(linkFile.toPath());
         log.info(fileString);
-        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
+        NMRData nmrData = NMRDataUtil.getNMRData(new File(fileString));
         log.info("{}", nmrData);
         if (nmrData instanceof BrukerData brukerData) {
             return brukerData.toDataset(name);
@@ -1315,10 +1317,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
-        point[dim[nDim - 1]] = pt[nDim - 1][0];
-        int[] mPoint = new int[nDim - 1];
-        // fixme should mPoint be pt +1 
-        for (int i = 0; i < nDim - 1; i++) {
+        int mDims = matrix.getNDim();
+        for (int i=mDims;i<nDim;i++) {
+            point[dim[i]] = pt[i][0];
+        }
+        int[] mPoint = new int[mDims];
+        for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
         }
 
@@ -1379,11 +1383,19 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     public void writeMatrixNDToDatasetFile(int[] dim, MatrixND matrix) throws IOException {
         int[][] pt = matrix.getPt();
         int[] point = new int[nDim];
-        point[dim[nDim - 1]] = pt[nDim - 1][0];
-        int[] mPoint = new int[nDim - 1];
-        int[] matVSizes = matrix.getVSizes();
-        for (int i = 0; i < nDim - 1; i++) {
+
+        int mDims = matrix.getNDim();
+        for (int i=mDims;i<nDim;i++) {
+            point[dim[i]] = pt[i][0];
+        }
+        int[] mPoint = new int[mDims];
+        for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
+        }
+
+
+        int[] matVSizes = matrix.getVSizes();
+        for (int i = 0; i < mDims; i++) {
             setVSize(dim[i], matVSizes[i]);
             setPh0(dim[i], matrix.getPh0(i));
             setPh1(dim[i], matrix.getPh1(i));

@@ -66,7 +66,7 @@ public class PeakGenerator {
         if (assignIndex >= 0) {
             ppmV = atom.getPPM(assignIndex);
         }
-        if ((ppmV == null) || !ppmV.isValid()) {
+        if ((refIndex >= 0) && ((ppmV == null) || !ppmV.isValid())) {
             ppmV = atom.getRefPPM(refIndex);
         }
         return ppmV;
@@ -333,12 +333,12 @@ public class PeakGenerator {
 
      */
 
-    public void generateNOESY(PeakList peakList, double tol) throws InvalidMoleculeException {
+    public void generateNOESY(PeakList peakList, double tol, boolean useN, boolean requireActive) throws InvalidMoleculeException {
         int nDim = peakList.getNDim();
         double hWidth = getHWidth();
         Atom[] atoms = new Atom[nDim];
         molecule.selectAtoms("*.H*");
-        var protonPairs = molecule.getDistancePairs(tol, false);
+        var protonPairs = molecule.getDistancePairs(tol, requireActive);
         int[] indices = new int[atoms.length];
         Arrays.fill(indices, -1);
         int aNum = 1;
@@ -368,14 +368,24 @@ public class PeakGenerator {
         protonPairs.forEach(aP -> {
             atoms[indices[0]] = aP.getAtom1();
             atoms[indices[1]] = aP.getAtom2();
-            final boolean ok;
+            Atom parent0 = atoms[indices[0]].getParent();
+            Atom parent1 = atoms[indices[1]].getParent();
+            boolean ok;
             if (indices.length == 2) {
                 ok = true;
             } else {
                 if ((indices[2] != -1)) {
                     atoms[indices[2]] = atoms[indices[0]].getParent();
-                    ok = (atoms[indices[2]] != null) && (atoms[indices[2]].getElementNumber() == testANum);
+                    ok = (atoms[indices[2]] != null) && (atoms[indices[2]].getAtomicNumber() == testANum);
                 } else {
+                    ok = false;
+                }
+            }
+            if (!useN) {
+                if ((parent0 != null) && (parent0.getAtomicNumber() == 7)) {
+                    ok = false;
+                }
+                if ((parent1 != null) && (parent1.getAtomicNumber() == 7)) {
                     ok = false;
                 }
             }
@@ -383,6 +393,10 @@ public class PeakGenerator {
                 double distance = Math.max(2.0, Math.abs(aP.getDistance()));
                 double intensity = 100.0 * Math.pow(distance, exponent) / scale;
                 addPeak(peakList, hWidth, intensity, atoms);
+                if (atoms.length == 2) {
+                    Atom[] atomsSwap = {atoms[1], atoms[0]};
+                    addPeak(peakList, hWidth, intensity, atomsSwap);
+                }
             }
         });
     }

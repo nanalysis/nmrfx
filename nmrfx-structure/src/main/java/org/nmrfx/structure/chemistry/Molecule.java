@@ -170,8 +170,6 @@ public class Molecule extends MoleculeBase {
                  IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
-        setActive();
-        storeMolecule();
     }
 
     final void storeMolecule() {
@@ -571,6 +569,13 @@ public class Molecule extends MoleculeBase {
         CoordinateGenerator.prepareAtoms(atoms, fillCoords);
     }
 
+    public List<List<Atom>> getAtomTree() {
+        if (atomTree == null) {
+            AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+            atomTree = aTreeGen.genTree(this, null, null);
+        }
+        return atomTree;
+    }
     public void dumpCoordsGen() {
         if (genVecs == null) {
             return;
@@ -907,13 +912,9 @@ public class Molecule extends MoleculeBase {
 
             return (globalSelected.size());
         } else {
-            if (append) {
-                j = globalSelected.size();
-            } else {
-                j = 0;
+            if (!append) {
+                globalSelected.clear();
             }
-
-            globalSelected.clear();
 
             for (i = 0; i < selected.size(); i++) {
                 spatialSet = (SpatialSet) selected.get(i);

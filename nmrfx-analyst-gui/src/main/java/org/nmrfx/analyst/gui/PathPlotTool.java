@@ -32,11 +32,14 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.checkerframework.checker.units.qual.C;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.peaks.PeakPath;
+import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +61,7 @@ public class PathPlotTool {
     Stage stage = null;
     XYCanvasChart activeChart = null;
     BorderPane borderPane = new BorderPane();
+    ChoiceBox<PeakPaths.BINDINGMODE> bindingmodeChoiceBox;
     TableView<PeakPath> tableView;
     Scene stageScene = new Scene(borderPane, 500, 500);
     List<String> colNames;
@@ -78,9 +82,12 @@ public class PathPlotTool {
             MenuItem exportTableButton = new MenuItem("Export Table");
             fileMenu.getItems().addAll(exportSVGButton, exportTableButton);
 
+            bindingmodeChoiceBox = new ChoiceBox<>();
+            bindingmodeChoiceBox.getItems().addAll(PeakPaths.BINDINGMODE.values());
+            bindingmodeChoiceBox.setValue(PeakPaths.BINDINGMODE.SINGLE_SITE);
             Button fitButton = new Button("Fit ");
             Button fitGroupButton = new Button("Fit Group");
-            toolBar.getItems().addAll(fileMenu, fitButton, fitGroupButton);
+            toolBar.getItems().addAll(fileMenu, bindingmodeChoiceBox, fitButton, fitGroupButton);
 
             //Create the Scatter chart
             XYChartPane chartPane = new XYChartPane();
@@ -88,8 +95,8 @@ public class PathPlotTool {
 
             exportSVGButton.setOnAction(e -> activeChart.exportSVG());
             exportTableButton.setOnAction(e -> savePathTable());
-            fitButton.setOnAction(e -> pathTool.fitPathsIndividual());
-            fitGroupButton.setOnAction(e -> pathTool.fitPathsGrouped());
+            fitButton.setOnAction(e -> fitPathsIndividual());
+            fitGroupButton.setOnAction(e -> fitPathsGrouped());
 
             borderPane.setTop(toolBar);
             tableView = new TableView<PeakPath>();
@@ -102,6 +109,14 @@ public class PathPlotTool {
         }
         stage.show();
         stage.toFront();
+    }
+
+    private void fitPathsIndividual() {
+        pathTool.fitPathsIndividual(bindingmodeChoiceBox.getValue());
+    }
+
+    private void fitPathsGrouped() {
+        pathTool.fitPathsGrouped(bindingmodeChoiceBox.getValue());
     }
 
     public XYCanvasChart getChart() {
@@ -144,18 +159,34 @@ public class PathPlotTool {
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         for (String colName : colNames) {
-            TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
             if (colName.equals("Peak")) {
+                TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
                 col.setCellValueFactory(new PropertyValueFactory<>(colName));
+                tableView.getColumns().add(col);
+            } else if (colName.equals("Atom")) {
+                TableColumn<PeakPath, String> atomCol = new TableColumn<>(colName);
+                atomCol.setCellValueFactory(new PropertyValueFactory<>(colName));
+                tableView.getColumns().add(atomCol);
             } else {
+                TableColumn<PeakPath, Number> col = new TableColumn<>(colName);
                 col.setCellValueFactory(new Callback<CellDataFeatures<PeakPath, Number>, ObservableValue<Number>>() {
                     public ObservableValue<Number> call(CellDataFeatures<PeakPath, Number> p) {
                         // p.getValue() returns the Path instance for a particular TableView row
                         int iProp = colNames.indexOf(colName);
-                        iProp--;  // account for Peak column
+                        iProp -= 2;  // account for Peak and Atom column
                         boolean isErr = iProp % 2 == 1;
                         iProp /= 2;  // account for Dev columns
                         if (p.getValue().hasPars()) {
+                            int nPars = p.getValue().getFitPars().length;
+                            int jProp = iProp / 2;
+                            int iState = iProp % 2;
+                            int nStates = nPars / 2;
+                            if (iState >= nStates) {
+                                return null;
+                            }
+                            if (nStates < 2) {
+                                iProp /= 2;
+                            }
                             double v = isErr ? p.getValue().getErr(iProp) : p.getValue().getPar(iProp);
                             ObservableValue<Number> ov = new SimpleDoubleProperty(v);
                             return ov;
@@ -176,12 +207,15 @@ public class PathPlotTool {
                         }
                     }
                 });
+                tableView.getColumns().add(col);
             }
-
-            tableView.getColumns().add(col);
-
         }
 
+        tableView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                gotoSelection();
+            }
+        });
         tableView.setOnKeyPressed(e
                         -> {
                     if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
@@ -193,6 +227,10 @@ public class PathPlotTool {
         );
     }
 
+    public void clearSelection() {
+        tableView.getSelectionModel().clearSelection();
+    }
+
     public void selectRow(PeakPath path) {
         tableView.getSelectionModel().clearSelection();
         tableView.getSelectionModel().select(path);
@@ -202,7 +240,7 @@ public class PathPlotTool {
         List<PeakPath> paths = new ArrayList<>();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         for (Integer index : selected) {
-            PeakPath path = (PeakPath) tableView.getItems().get(index);
+            PeakPath path = tableView.getItems().get(index);
             paths.add(path);
         }
         return paths;
@@ -213,10 +251,18 @@ public class PathPlotTool {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         int iSeries = 0;
         for (Integer index : selected) {
-            PeakPath path = (PeakPath) tableView.getItems().get(index);
+            PeakPath path = tableView.getItems().get(index);
             Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
             pathTool.showXYPath(path, color);
             iSeries++;
+        }
+    }
+
+    final protected void gotoSelection() {
+        PeakPath peakPath = tableView.getSelectionModel().getSelectedItem();
+        if (peakPath != null) {
+            int peakID = peakPath.getPeak();
+            pathTool.peakNavigator.gotoPeakId(peakID);
         }
     }
 
@@ -232,51 +278,8 @@ public class PathPlotTool {
     private void savePathTable(File file) {
         Charset charset = Charset.forName("US-ASCII");
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
-            boolean first = true;
-            for (TableColumn column : tableView.getColumns()) {
-                String header = column.getText();
-                if (!first) {
-                    writer.write('\t');
-                } else {
-                    first = false;
-                }
-                writer.write(header, 0, header.length());
-            }
-            for (PeakPath item : tableView.getItems()) {
-                StringBuilder sBuilder = new StringBuilder();
-                sBuilder.append('\n');
-                for (String colName : colNames) {
-                    if (sBuilder.length() != 1) {
-                        sBuilder.append('\t');
-                    }
-                    switch (colName) {
-                        case "Peak":
-                            sBuilder.append(item.getPeak());
-                            break;
-                        case "A":
-                            sBuilder.append(String.format("%.4f", item.getA()));
-                            break;
-                        case "K":
-                            sBuilder.append(String.format("%.4f", item.getK()));
-                            break;
-                        case "C":
-                            sBuilder.append(String.format("%.4f", item.getC()));
-                            break;
-                        case "ADev":
-                            sBuilder.append(String.format("%.4f", item.getADev()));
-                            break;
-                        case "KDev":
-                            sBuilder.append(String.format("%.4f", item.getKDev()));
-                            break;
-                        case "CDev":
-                            sBuilder.append(String.format("%.4f", item.getCDev()));
-                            break;
-                    }
-
-                }
-                String s = sBuilder.toString();
-                writer.write(s, 0, s.length());
-            }
+            String text = TableUtils.getTableAsString(tableView, true);
+            writer.write(text);
         } catch (IOException x) {
             log.warn(x.getMessage(), x);
         }

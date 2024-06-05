@@ -1,7 +1,9 @@
 import os
 from pyproc import *
-FID(FIDHOME+'bruker/hnconus/7')
-CREATE(TMPHOME+'tst_hnconus_nesta.nv')
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'bruker/hnconus/7'))
+CREATE(os.path.join(TMPHOME,'tst_hnconus_nesta.nv'))
+
 acqOrder('321')
 skip(0,0,0)
 label('1H','15N','13C')

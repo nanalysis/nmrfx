@@ -220,7 +220,8 @@ public class ProcessOps implements Callable<Object> {
                         if ((acquisitionType != null) && acquisitionType == AcquisitionType.HYPER) {
                             continue;
                         }
-                        if ((acquisitionType == null) && nmrData.getSymbolicCoefs(i).equalsIgnoreCase("hyper")) {
+                        String symCoef = nmrData.getSymbolicCoefs(i);
+                        if ((acquisitionType == null) && ((symCoef == null) || symCoef.equalsIgnoreCase("hyper"))) {
                             continue;
                         }
                         double[] coef = acquisitionType != null ? acquisitionType.getCoefficients() : nmrData.getCoefs(i);

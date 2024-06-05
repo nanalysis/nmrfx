@@ -1,8 +1,9 @@
 import os
 from pyproc import *
 procOpts(nprocess=7)
-FID(FIDHOME+'bruker/gb1_tract1d/6')
-CREATE(TMPHOME+'tst_gb1_tract1d.nv')
+FIDHOME, TMPHOME = getTestLocations()
+FID(os.path.join(FIDHOME,'bruker/gb1_tract1d/6'))
+CREATE(os.path.join(TMPHOME,'tst_gb1_tract1d.nv'))
 acqOrder('21')
 acqarray(0,0)
 fixdsp(True)

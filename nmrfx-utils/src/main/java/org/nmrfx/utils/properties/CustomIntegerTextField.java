@@ -44,7 +44,7 @@ public class CustomIntegerTextField extends CustomTextField {
     }
 
     public CustomIntegerTextField() {
-        this(new Integer(0));
+        this(Integer.valueOf(0));
     }
 
     public CustomIntegerTextField(Integer value) {

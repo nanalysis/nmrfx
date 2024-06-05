@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,27 +29,37 @@ import java.util.Arrays;
 public class PeakPickParameters {
 
     private static final Logger log = LoggerFactory.getLogger(PeakPickParameters.class);
-    public Dataset theFile;
-    public String listName;
+    public Dataset theFile = null;
+    public String listName = null;
+    public PeakList filterList = null;
+    public boolean filter = false;
+    public double filterWidth;
     public String mode = "new";
     public String region = "box";
+    public boolean useCrossHairs;
+    public boolean refineLS = false;
+    public boolean saveFile = false;
     public boolean fixedPick = false;
     public int[][] pt = null;
     public int[][] ptMax;
     public double[] cpt;
     public int[] dim;
-    public double level;
+    public Double level = null;
     public double regionWidth = 0;
     public int thickness = 0;
-    boolean useAll = false;
+    public boolean useAll = false;
     public double sDevN = 0.0;
     public int nPeakDim = 0;
     public int posNeg = 1;
     public double noiseLimit = 0.0;
 
+    public boolean useNoise = false;
+
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
         this.listName = listName;
+    }
+    public PeakPickParameters() {
     }
 
     public PeakPickParameters mode(String mode) {
@@ -100,10 +111,6 @@ public class PeakPickParameters {
     }
 
     public void calcRange() {
-        int iDim = 0;
-        int j = 0;
-        String arg;
-        boolean ptMode = true;
         int dataDim = theFile.getNDim();
         pt = new int[dataDim][2];
         cpt = new double[dataDim];
@@ -175,23 +182,21 @@ public class PeakPickParameters {
         }
 
         if (nPeakDim > 1) {
-            int flatDim = 0;
-            int bigDim = 0;
             int nDims = 0;
             DimSizes[] dimSizes = new DimSizes[dataDim];
             for (int i = 0; i < dataDim; i++) {
+                if (!theFile.getFreqDomain(i)) {
+                    pt[i][0] = pt[i][1] = 0;
+                }
                 int dimSize = Math.abs(pt[i][1] - pt[i][0]) + 1;
 
                 if ((dimSize > 1) || (region.equalsIgnoreCase("point"))) {
                     nDims++;
-                } else {
-                    flatDim = i;
                 }
 
                 dimSizes[i] = new DimSizes(i, dimSize);
                 if (dimSize > maxSize) {
                     maxSize = dimSize;
-                    bigDim = i;
                 }
             }
             Arrays.sort(dimSizes);
@@ -222,7 +227,7 @@ public class PeakPickParameters {
         }
     }
 
-    private class DimSizes implements Comparable {
+    private static class DimSizes implements Comparable {
 
         final int iDim;
         final int dimSize;
@@ -235,15 +240,7 @@ public class PeakPickParameters {
         @Override
         public int compareTo(Object o2) {
             DimSizes d2 = (DimSizes) o2;
-            int result;
-            if (dimSize < d2.dimSize) {
-                result = 1;
-            } else if (dimSize > d2.dimSize) {
-                result = -1;
-            } else {
-                result = 0;
-            }
-            return result;
+            return Integer.compare(d2.dimSize, dimSize);
         }
     }
 }

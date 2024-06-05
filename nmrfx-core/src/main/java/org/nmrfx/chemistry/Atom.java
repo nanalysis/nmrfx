@@ -22,16 +22,12 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
-import org.nmrfx.chemistry.relax.OrderPar;
-import org.nmrfx.chemistry.relax.RelaxationData;
-import org.nmrfx.chemistry.relax.RelaxationData.relaxTypes;
-import org.nmrfx.chemistry.relax.SpectralDensity;
+import org.nmrfx.chemistry.relax.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.vecmath.Point2d;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @PluginAPI({"residuegen", "ring"})
 public class Atom implements IAtom, Comparable<Atom> {
@@ -126,8 +122,8 @@ public class Atom implements IAtom, Comparable<Atom> {
     final boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
-    private Map<String, RelaxationData> relaxData = new HashMap<>();
-    private Map<String, OrderPar> orderPars = new HashMap<>();
+    private Map<RelaxationSet, RelaxationData> relaxData = new HashMap<>();
+    private Map<OrderParSet, OrderPar> orderPars = new HashMap<>();
     private Map<String, SpectralDensity> spectralDensities = new HashMap<>();
 
     public Atom(String name) {
@@ -333,7 +329,7 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public void changed() {
         if (entity != null) {
-            entity.changed();
+            entity.changed(this);
         }
     }
 
@@ -391,42 +387,24 @@ public class Atom implements IAtom, Comparable<Atom> {
         return spectralDensities.get(ID);
     }
 
-    public void addOrderPar(String name, OrderPar data) {
-        orderPars.put(name, data);
+    public void addOrderPar(OrderParSet orderParSet, OrderPar data) {
+        orderPars.put(orderParSet, data);
     }
 
-    public Map<String, OrderPar> getOrderPars() {
+    public Map<OrderParSet, OrderPar> getOrderPars() {
         return orderPars;
     }
 
-    public void addRelaxationData(String name, RelaxationData data) {
-        relaxData.put(name, data);
+    public void addRelaxationData(RelaxationSet relaxationSet, RelaxationData data) {
+        relaxData.put(relaxationSet, data);
     }
 
-    public Map<String, RelaxationData> getRelaxationData() {
+    public Map<RelaxationSet, RelaxationData> getRelaxationData() {
         return relaxData;
     }
 
-    public RelaxationData getRelaxationData(String ID) {
-        return relaxData.get(ID);
-    }
-
-    public Collection<RelaxationData> getRelaxationData(relaxTypes expType, Double field, Double temperature) {
-        List<RelaxationData> filtered = relaxData.values().stream()
-                .filter(r -> expType == null || r.getExpType() == null || expType.equals(r.getExpType()))
-                .filter(r -> field == null || field.equals(r.getField()))
-                .filter(r -> temperature == null || temperature.equals(r.getTemperature())).collect(Collectors.toList());
-
-        return filtered;
-    }
-
-    public Collection<RelaxationData> getRelaxationData(List<relaxTypes> expTypes, List<Double> fields, List<Double> temperatures) {
-        List<RelaxationData> filtered = relaxData.values().stream()
-                .filter(r -> expTypes == null || r.getExpType() == null || expTypes.contains(r.getExpType()))
-                .filter(r -> fields == null || fields.contains(r.getField()))
-                .filter(r -> temperatures == null || temperatures.contains(r.getTemperature())).collect(Collectors.toList());
-
-        return filtered;
+    public RelaxationData getRelaxationData(RelaxationSet relaxationSet) {
+        return relaxData.get(relaxationSet);
     }
 
     public List<Atom> getConnected() {

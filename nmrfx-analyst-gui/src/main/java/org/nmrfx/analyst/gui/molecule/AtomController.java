@@ -54,6 +54,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
@@ -72,7 +73,7 @@ import java.util.*;
 /**
  * @author johnsonb
  */
-public class AtomController implements Initializable, StageBasedController, FreezeListener {
+public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener {
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final Map<String, String> filterMap = new HashMap<>();
@@ -134,6 +135,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             }
         });
         PeakList.registerFreezeListener(this);
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol != null) {
+            activeMol.registerAtomTableListener(this);
+        }
         updateView();
     }
 
@@ -199,13 +204,13 @@ public class AtomController implements Initializable, StageBasedController, Free
         );
         MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
         getPPMItem.setOnAction(e -> {
-                    PeakList.resFactory().assignFrozenAtoms("sim");
+                    ProjectBase.activeResonanceFactory().assignFrozenAtoms("sim");
                     atomTableView.refresh();
                 }
         );
         MenuItem getAllPPMItem = new MenuItem("Get PPM");
         getAllPPMItem.setOnAction(e -> {
-                    PeakList.resFactory().assignFromPeaks(null);
+                    ProjectBase.activeResonanceFactory().assignFromPeaks(null);
                     atomTableView.refresh();
                 }
         );
@@ -597,6 +602,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         } else {
             System.out.println("Coudn't make predictor controller");
         }
+    }
+    @Override
+    public void moleculeChanged(MoleculeEvent e){
+        refreshAtomTable();
     }
 
 }

@@ -1,8 +1,13 @@
 package org.nmrfx.processor.gui;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.event.EventHandler;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
 
@@ -18,6 +23,7 @@ import java.util.Set;
  */
 public class FXMLControllerManager {
     // The active controller is the last one created, or the one that has focus
+    private static int nControllers = 0;
     private final SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
 
     // A collection of all known controllers.
@@ -113,8 +119,16 @@ public class FXMLControllerManager {
      *
      * @return the newly created controller.
      */
+    public FXMLController newController(Stage stage) {
+        return newController(stage, null);
+    }
+
     public FXMLController newController() {
-        return newController(new Stage(StageStyle.DECORATED));
+        return newController(new Stage(StageStyle.DECORATED), null);
+    }
+
+    public FXMLController newController(String title) {
+        return newController(new Stage(StageStyle.DECORATED), title);
     }
 
 
@@ -124,7 +138,11 @@ public class FXMLControllerManager {
      * @param stage the stage used to display the scene associated with this controller
      * @return the newly created controller.
      */
-    public FXMLController newController(Stage stage) {
+    public FXMLController newController(Stage stage, String title) {
+        nControllers++;
+        if (title == null) {
+            title = "NMRFx Spectra " + nControllers;
+        }
         FXMLController controller = Fxml.load(FXMLControllerManager.class, "NMRScene.fxml")
                 .withStage(stage)
                 .getController();
@@ -139,6 +157,7 @@ public class FXMLControllerManager {
             AnalystApp.removeStage(stage);
         });
         controller.initStageGeometry();
+        stage.setTitle(title);
         stage.show();
 
         return controller;
@@ -173,5 +192,30 @@ public class FXMLControllerManager {
         if (controller.getStage().isFocused()) {
             setActiveController(controller);
         }
+    }
+
+    public  void controllerTest(int nControllers, double delay) {
+
+        Timeline timeline = new Timeline();
+        timeline.setCycleCount(Animation.INDEFINITE);
+        final Integer[] timeSeconds = {nControllers};
+        final FXMLController[] fxmlControllers = new FXMLController[1];
+        // KeyFrame event handler
+        timeline.getKeyFrames().add(
+                new KeyFrame(Duration.seconds(delay),
+                        (EventHandler) event -> {
+                            timeSeconds[0]--;
+                            if (timeSeconds[0] <= 0) {
+                                timeline.stop();
+                            }
+                            if (fxmlControllers[0] != null) {
+                                Stage stage = fxmlControllers[0].getStage();
+                                closeController(fxmlControllers[0]);
+                                stage.close();
+                                AnalystApp.removeStage(stage);
+                            }
+                            fxmlControllers[0] = newController();
+                        }));
+        timeline.playFromStart();
     }
 }

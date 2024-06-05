@@ -456,7 +456,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         }
         boolean appendFile = false;
         for (DatasetBase dataset : datasets) {
-            controller.addDataset(dataset, appendFile, false);
+            controller.addDataset(chart, dataset, appendFile, false);
             appendFile = true;
         }
     }
@@ -474,7 +474,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             DatasetBase dataset = datasets.get(i);
             PolyChart chartActive = controller.getCharts().get(i);
             controller.setActiveChart(chartActive);
-            controller.addDataset(dataset, false, false);
+            controller.addDataset(chartActive, dataset, false, false);
         }
     }
 
@@ -529,7 +529,14 @@ public class DatasetsController implements Initializable, StageBasedController, 
         if (valueDataset != null) {
             double[] values = items.stream().mapToDouble(ValueItem::getValue).toArray();
             int nDim = valueDataset.getNDim();
-            valueDataset.setValues(nDim - 1, values);
+            int vDim = nDim - 1;
+            for (int i = 0; i < nDim; i++) {
+                double[] values2 = valueDataset.getValues(i);
+                if ((values2 != null) && (values2.length > 1)) {
+                    vDim = i;
+                }
+            }
+            valueDataset.setValues(vDim, values);
         }
     }
 
