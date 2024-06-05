@@ -618,7 +618,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
     @Override
     public void moleculeChanged(MoleculeEvent e){
-        updateView();
+        refreshAtomTable();
     }
 
 }
