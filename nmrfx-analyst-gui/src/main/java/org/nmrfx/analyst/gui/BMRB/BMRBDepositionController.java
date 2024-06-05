@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 
 public class BMRBDepositionController implements Initializable, StageBasedController {
     private Stage stage;
@@ -46,6 +47,13 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
     }
 
     private Stage getStage() { return this.stage;}
+
+    private static boolean validateEmail(String emailAddress) {
+        String regexPattern = "^(.+)@(\\S+)$";
+        return Pattern.compile(regexPattern)
+                .matcher(emailAddress)
+                .matches();
+    }
 
     void setUp() {
         Text title = new Text("Select data to deposit:");
@@ -99,6 +107,9 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
 
     void depositSTAR(Map<NMRStarWriter.StarTypes, SimpleBooleanProperty> starTypesMap ) {
         String emailAddress = emailField.getText();
+        if (!validateEmail(emailAddress)) {
+            Fx.runOnFxThread(() -> GUIUtils.warn("Invalid email address", "Invalid email address"));
+        }
 
         String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx_Project" :
                 GUIProject.getActive().getDirectory().getFileName().toString();

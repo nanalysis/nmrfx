@@ -68,6 +68,10 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem searchBMRBMenuItem = new MenuItem("Search BMRB");
         searchBMRBMenuItem.setOnAction(this::searchBMRB);
 
+        Menu STARMenu = new Menu("STAR3...");
+        STARMenu.getItems().addAll(openSTARMenuItem, openNEFMenuItem, saveSTARMenuItem, fetchSTARMenuItem,
+                depositSTARMenuItem, searchBMRBMenuItem);
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -81,8 +85,7 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
-                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem, fetchSTARMenuItem, openNEFMenuItem, depositSTARMenuItem, searchBMRBMenuItem);
+                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, STARMenu);
     }
 
     @Override
