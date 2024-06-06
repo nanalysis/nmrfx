@@ -243,6 +243,7 @@ public class GUIProject extends StructureProject {
 
         setProjectDir(projectDir);
         currentProject.setActive();
+        projectChanged(false);
     }
 
     @Override
@@ -337,7 +338,6 @@ public class GUIProject extends StructureProject {
     }
     public void projectChanged(boolean state) {
         projectChanged.set(state);
-        System.out.println("project changed");
     }
 
     public boolean projectChanged() {
