@@ -1316,7 +1316,7 @@ public class NMRStarWriter {
         if (ProjectBase.getActive().getDirectory() != null) {
             String filename = ProjectBase.getActive().getDirectory().getFileName().toString();
             if (!filename.isBlank()) {
-                projectName = filename;
+                projectName = filename.replace(' ', '_');
             }
         }
         chan.write("data_" + projectName + "\n\n");
