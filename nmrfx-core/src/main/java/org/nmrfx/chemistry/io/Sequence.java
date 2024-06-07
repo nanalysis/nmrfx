@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -821,6 +822,7 @@ public class Sequence {
         if (polymerType != null) {
             polymer.setPolymerType(polymerType);
         }
+        ProjectBase.getActive().putMolecule(molecule);
 
         return polymer;
     }

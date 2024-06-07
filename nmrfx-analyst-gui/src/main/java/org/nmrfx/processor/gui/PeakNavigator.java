@@ -4,6 +4,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -193,7 +194,7 @@ public class PeakNavigator implements PeakListener {
         });
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));

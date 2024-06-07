@@ -383,20 +383,20 @@ public class NOEAssign {
                         NoeSet noeSet = noeSetOpt.get();
                         for (Map.Entry<String, Noe.NoeMatch> entry : map.entrySet()) {
                             Noe.NoeMatch nM = entry.getValue();
-                            final Noe noe = new Noe(peak, nM.sp1, nM.sp2, scale);
+                            final Noe noe = new Noe(peak, nM.sp1(), nM.sp2(), scale);
                             double atomScale = 1.0;
-                            if (nM.sp1.getAtom().isMethyl()) {
+                            if (nM.sp1().getAtom().isMethyl()) {
                                 atomScale *= 3.0;
                             }
-                            if (nM.sp2.getAtom().isMethyl()) {
+                            if (nM.sp2().getAtom().isMethyl()) {
                                 atomScale *= 3.0;
                             }
-                            noe.atomScale = atomScale;
+                            noe.setAtomScale(atomScale);
                             noe.setIntensity(peak.getIntensity());
                             noe.setVolume(peak.getVolume1());
-                            noe.setPpmError(nM.error);
+                            noe.setPpmError(nM.error());
                             noe.setNPossible(nPossible);
-                            noe.setGenType(nM.type);
+                            noe.setGenType(nM.type());
                             noeSet.add(noe);
                         }
                     }
@@ -459,9 +459,9 @@ public class NOEAssign {
             if (matchCriteria[i] != null) {
                 matchCriteria[i].setPPM(noe.peak);
                 if (i == 0) {
-                    spSets[i] = noe.spg1.getSpatialSet();
+                    spSets[i] = noe.getSpg1().getSpatialSet();
                 } else if (i == 1) {
-                    spSets[i] = noe.spg2.getSpatialSet();
+                    spSets[i] = noe.getSpg2().getSpatialSet();
                 } else {
                     spSets[i] = spSets[i - 2].atom.getParent().spatialSet;
                 }

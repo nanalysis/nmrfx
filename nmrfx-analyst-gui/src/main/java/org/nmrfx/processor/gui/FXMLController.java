@@ -47,6 +47,8 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
@@ -77,7 +79,6 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
-import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
@@ -209,6 +210,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
+        chartPane.getChildren().clear();
+        chartPane = null;
+        charts.clear();
     }
 
     public void saveDatasets() {
@@ -370,7 +374,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private NMRData getNMRData(String filePath) {
         NMRData nmrData = null;
         try {
-            nmrData = NMRDataUtil.loadNMRData(filePath, null);
+            File file = new File(filePath);
+            nmrData = NMRDataUtil.loadNMRData(file, null, true);
         } catch (IOException ioE) {
             log.error("Unable to load NMR file: {}", filePath, ioE);
             ExceptionDialog eDialog = new ExceptionDialog(ioE);
@@ -447,7 +452,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 processorController.cleanUp();
             }
             if (addDatasetToChart) {
-                addDataset(dataset, append, false);
+                addDataset(getActiveChart(), dataset, append, false);
             }
         } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);
@@ -485,15 +490,14 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public void addDataset(DatasetBase dataset, boolean appendFile, boolean reload) {
+    public void addDataset(PolyChart chart, DatasetBase dataset, boolean appendFile, boolean reload) {
         isFID = false;
         if (dataset.getFile() != null) {
             PreferencesController.saveRecentFiles(dataset.getFile().toString());
         }
 
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
-        PolyChart polyChart = getActiveChart();
-        polyChart.getCrossHairs().setStates(true, true, true, true);
+        chart.getCrossHairs().setStates(true, true, true, true);
         getActiveChart().clearAnnotations();
         getActiveChart().clearPopoverTools();
         getActiveChart().removeProjections();
@@ -521,6 +525,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         getActiveChart().layoutPlotChildren();
         undoManager.clear();
+        ProjectBase.getActive().projectChanged(true);
     }
 
     /**
@@ -584,7 +589,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             try {
                 for (File selectedFile : selectedFiles) {
                     setInitialDirectory(selectedFile.getParentFile());
-                    NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
+                    NMRData nmrData = NMRDataUtil.getFID(selectedFile);
                     if (nmrData instanceof NMRViewData) {
                         PreferencesController.saveRecentFiles(selectedFile.toString());
                     }
@@ -1570,7 +1575,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             viewProcessorControllerIfPossible = false;
         } else if (toolButton.isSelected()) {
             nmrControlRightSidePane.addContent(toolController);
-            toolController.update();
             viewProcessorControllerIfPossible = false;
         } else if (processorButton.isSelected()) {
             boolean dataIsFID = false;
@@ -1939,6 +1943,51 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             scannerTool.setSplitPanePosition(dividerPositions[0]);
             removeBottomBoxNode(scannerTool.getBox());
         }
+    }
+
+    public Optional<RunAboutGUI>  showRunAboutTool() {
+        RunAboutGUI runAboutGUI;
+        if (!containsTool(RunAboutGUI.class)) {
+            TabPane tabPane = new TabPane();
+            getBottomBox().getChildren().add(tabPane);
+            tabPane.setMinHeight(200);
+            runAboutGUI = new RunAboutGUI(this, this::removeRunaboutTool);
+            runAboutGUI.initialize(tabPane);
+            addTool(runAboutGUI);
+            return Optional.of(runAboutGUI);
+        } else {
+            return getRunAboutTool();
+        }
+    }
+
+    public Optional<RunAboutGUI> getRunAboutTool() {
+        ControllerTool tool = getTool(RunAboutGUI.class);
+        if (tool instanceof RunAboutGUI runAboutGUI) {
+            return Optional.of(runAboutGUI);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        removeTool(RunAboutGUI.class);
+        removeBottomBoxNode(runaboutTool.getTabPane());
+    }
+
+    public StripController showStripsBar() {
+        if (!containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(this, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            addTool(stripsController);
+        }
+        return (StripController) getTool(StripController.class);
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        removeTool(StripController.class);
+        removeBottomBoxNode(stripsController.getBox());
     }
 
     public void removeBottomBoxNode(Node node) {

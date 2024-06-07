@@ -22,6 +22,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -217,7 +218,7 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(phaserButton);
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
-        PolyChartManager.getInstance().activeChartProperty().addListener(this::setChart);
+        PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
     }
 
     private void initCursorButtonGroup() {

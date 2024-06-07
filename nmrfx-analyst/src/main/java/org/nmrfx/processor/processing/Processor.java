@@ -398,7 +398,7 @@ public class Processor {
         String fileType = getFileType(fileName);
         if ("nv".equals(fileType)) {
             try {
-                dataset = new Dataset(fileName, fileName, writeable, true);
+                dataset = new Dataset(fileName, fileName, writeable, true, false);
             } catch (IOException ex) {
                 log.warn("Could not create dataset. {}", ex.getMessage(), ex);
                 return false;
@@ -767,8 +767,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open FID " + filename);
@@ -792,8 +793,9 @@ public class Processor {
         if (nusFileName != null) {
             nusFile = new File(nusFileName);
         }
+        File file = new File(filename);
         try {
-            nmrData = NMRDataUtil.getFID(filename, nusFile);
+            nmrData = NMRDataUtil.getFID(file, nusFile);
         } catch (IOException ex) {
             setProcessorAvailableStatus(true);
             throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());
@@ -1470,9 +1472,12 @@ public class Processor {
             runSimVecProcessor(simVecProcessor, dimProcesses);
         }
         long startTime = System.currentTimeMillis();
+        long startTimeDim, finishTimeDim;
+        double runTimeDim;
         clearProcessorError();
         int nDimsProcessed = 0;
         for (ProcessOps p : dimProcesses) {
+            startTimeDim = System.currentTimeMillis();
             p.firstProcess(!nvDataset);
             // check if this process corresponds to dimension that should be skipped
             if (mapToDataset(p.getDim()) == -1) {
@@ -1504,6 +1509,9 @@ public class Processor {
                 nDimsProcessed = Math.max(nDimsProcessed, p.getDim() + 1);
                 nvDataset = true;
             }
+            finishTimeDim = System.currentTimeMillis();
+            runTimeDim = (finishTimeDim - startTimeDim) / 1000.0;
+            log.info(String.format("Time elapsed for %s: %6.3f", p.getName(), runTimeDim));
         }
         dimProcesses.clear();
         elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;

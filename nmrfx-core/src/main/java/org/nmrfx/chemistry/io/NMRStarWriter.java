@@ -1267,10 +1267,6 @@ public class NMRStarWriter {
 
     public static void writeAll(Writer chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
 
-        Date date = new Date(System.currentTimeMillis());
-        chan.write("    ######################################\n");
-        chan.write("    # Saved " + date + " #\n");
-        chan.write("    ######################################\n");
         ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         resFactory.clean();
         
