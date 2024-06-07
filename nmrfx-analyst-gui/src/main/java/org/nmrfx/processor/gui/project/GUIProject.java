@@ -49,14 +49,12 @@ public class GUIProject extends StructureProject {
     private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     private static boolean commitActive = false;
 
-    private SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
 
     private Git git;
 
 
     private static double projectSaveInterval;
-
-    private static boolean projectSave;
 
     private static Timeline timeline = null;
 
@@ -117,9 +115,7 @@ public class GUIProject extends StructureProject {
         }
         KeyFrame save = new KeyFrame(
                 Duration.minutes(projectSaveInterval),
-                event -> {
-                    saveCheck();
-                }
+                event -> saveCheck()
         );
         timeline = new Timeline(save);
         timeline.setCycleCount(Animation.INDEFINITE);
@@ -128,16 +124,12 @@ public class GUIProject extends StructureProject {
 
     private static void saveCheck() {
         GUIProject activeProject = getActive();
-        if (activeProject != null) {
-            if (activeProject.projectChanged()) {
-                if (activeProject.hasDirectory()) {
-                    try {
-                        activeProject.saveProject();
-                    } catch (IOException ex) {
-                        ExceptionDialog dialog = new ExceptionDialog(ex);
-                        dialog.showAndWait();
-                    }
-                }
+        if (activeProject.projectChanged() && activeProject.hasDirectory()) {
+            try {
+                activeProject.saveProject();
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
             }
         }
     }
@@ -150,8 +142,8 @@ public class GUIProject extends StructureProject {
     public static void setupSave() {
         projectSave(PreferencesController.getProjectSave());
     }
-    public static void projectSave(boolean state) {
-        projectSave = state;
+
+    public static void projectSave(boolean projectSave) {
         projectSaveInterval = PreferencesController.getProjectSaveInterval();
         if (projectSave) {
             startTimer();
@@ -172,7 +164,7 @@ public class GUIProject extends StructureProject {
         if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
             return;
         }
-        boolean setUserHome = false;
+        boolean setUserHome;
         String home = getEnvironmentVariable("HOME");
         if (home != null) {
             setUserHome = isFileWritable(new File(home));
@@ -226,7 +218,7 @@ public class GUIProject extends StructureProject {
 
     public void close() {
         if (timeline != null) {
-            timeline.stop();;
+            timeline.stop();
         }
         clearAllMolecules();
         clearAllPeakLists();
@@ -282,7 +274,7 @@ public class GUIProject extends StructureProject {
     }
 
     void gitCommitOnThread() {
-        Task<Boolean> task = new Task<Boolean>() {
+        Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() {
                 return gitCommit();
@@ -297,21 +289,27 @@ public class GUIProject extends StructureProject {
         return commitActive;
     }
 
-    boolean gitCommit() {
-        boolean didSomething = false;
-        commitActive = true;
+    void makeGit() {
         if (git == null) {
             try {
                 git = Git.open(projectDir.toFile());
             } catch (IOException ioE) {
                 checkUserHomePath();
                 git = createAndInitializeGitObject(projectDir.toFile());
-                if (git == null) {
-                    return didSomething;
+                if (git != null) {
+                    writeIgnore();
                 }
-                writeIgnore();
             }
         }
+    }
+    boolean gitCommit() {
+        boolean didSomething = false;
+        commitActive = true;
+        makeGit();
+        if (git == null) {
+            return didSomething;
+        }
+
         try {
 
             DirCache index = git.add().addFilepattern(".").call();
@@ -354,10 +352,13 @@ public class GUIProject extends StructureProject {
         }
         return didSomething;
     }
+
+    @Override
     public void projectChanged(boolean state) {
         projectChanged.set(state);
     }
 
+    @Override
     public boolean projectChanged() {
         return projectChanged.get();
     }
