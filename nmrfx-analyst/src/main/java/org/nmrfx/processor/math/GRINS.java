@@ -52,6 +52,8 @@ public class GRINS {
 
     final int iterations;
     final double[] phase;
+    final boolean[] negateImag;
+    final boolean[] negatePairs;
     final String logFileName;
     final double shapeFactor;
 
@@ -61,7 +63,12 @@ public class GRINS {
     boolean calcStats = true;
     boolean tdMode = false;  // only freq mode is currently functional
 
-    public GRINS(MatrixND matrix, double noiseRatio, double scale, int iterations, double shapeFactor, boolean apodize, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
+    public GRINS(
+        MatrixND matrix, double noiseRatio, double scale, int iterations,
+        double shapeFactor, boolean apodize, double[] phase, boolean[] negateImag,
+        boolean[] negatePairs, boolean preserve, boolean synthetic,
+        int[] zeroList, int[] srcTargetMap, String logFileName
+    ) {
         this.matrix = matrix;
         this.noiseRatio = noiseRatio;
         this.scale = scale;
@@ -69,6 +76,8 @@ public class GRINS {
         this.shapeFactor = shapeFactor;
         this.apodize = apodize;
         this.phase = phase;
+        this.negateImag = negateImag;
+        this.negatePairs = negatePairs;
         this.preserve = preserve;
         this.synthetic = synthetic;
         this.zeroList = zeroList;
@@ -96,12 +105,11 @@ public class GRINS {
                     }
                 }
             }
-            if (doPhase) {
-                matrix.phase(phase);
-            }
-
             if (apodize) {
                 matrix.apodize();
+            }
+            if (doPhase) {
+                matrix.doPhaseTD(phase, negateImag, negatePairs);
             }
             // could just copy the actually sample values to vector
             MatrixND matrixCopy = new MatrixND(matrix);
@@ -306,8 +314,8 @@ public class GRINS {
         } catch (IOException ex) {
             log.warn(ex.getMessage(), ex);
         }
-
     }
+
     public double calculateOneSig(double[] positions, double amplitude, double[] freqs, double[] widths) {
         double y = 1.0;
         int nDim = freqs.length - 1;

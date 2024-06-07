@@ -5,10 +5,16 @@
  */
 package org.nmrfx.processor.gui.project;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
+import javafx.util.Duration;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -43,8 +49,14 @@ public class GUIProject extends StructureProject {
     private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     private static boolean commitActive = false;
 
+    private final SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
+
     private Git git;
 
+
+    private static double projectSaveInterval;
+
+    private static Timeline timeline = null;
 
     public GUIProject(String name) {
         super(name);
@@ -96,6 +108,51 @@ public class GUIProject extends StructureProject {
         }
     }
 
+    private static void startTimer() {
+        if (timeline != null) {
+            timeline.stop();
+            timeline = null;
+        }
+        KeyFrame save = new KeyFrame(
+                Duration.minutes(projectSaveInterval),
+                event -> saveCheck()
+        );
+        timeline = new Timeline(save);
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    private static void saveCheck() {
+        GUIProject activeProject = getActive();
+        if (activeProject.projectChanged() && activeProject.hasDirectory()) {
+            try {
+                activeProject.saveProject();
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+    public static void projectSaveInterval(double interval) {
+        projectSaveInterval = interval;
+        projectSave(PreferencesController.getProjectSave());
+    }
+
+    public static void setupSave() {
+        projectSave(PreferencesController.getProjectSave());
+    }
+
+    public static void projectSave(boolean projectSave) {
+        projectSaveInterval = PreferencesController.getProjectSaveInterval();
+        if (projectSave) {
+            startTimer();
+        } else if (timeline != null) {
+            timeline.stop();
+            timeline = null;
+        }
+    }
+
     /***
      * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
      * home path in the preference of XDG_CONFIG_HOME, HOME, (HOMEDRIVE, HOMEPATH) and HOMESHARE. If XDG_CONGIG_HOME is set, then that
@@ -107,7 +164,7 @@ public class GUIProject extends StructureProject {
         if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
             return;
         }
-        boolean setUserHome = false;
+        boolean setUserHome;
         String home = getEnvironmentVariable("HOME");
         if (home != null) {
             setUserHome = isFileWritable(new File(home));
@@ -160,6 +217,9 @@ public class GUIProject extends StructureProject {
     }
 
     public void close() {
+        if (timeline != null) {
+            timeline.stop();
+        }
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
@@ -191,6 +251,8 @@ public class GUIProject extends StructureProject {
 
         setProjectDir(projectDir);
         currentProject.setActive();
+        projectChanged(false);
+        setupSave();
     }
 
     @Override
@@ -207,10 +269,12 @@ public class GUIProject extends StructureProject {
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();
         currentProject.setActive();
+        projectChanged.set(false);
+        setupSave();
     }
 
     void gitCommitOnThread() {
-        Task<Boolean> task = new Task<Boolean>() {
+        Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() {
                 return gitCommit();
@@ -225,21 +289,27 @@ public class GUIProject extends StructureProject {
         return commitActive;
     }
 
-    boolean gitCommit() {
-        boolean didSomething = false;
-        commitActive = true;
+    void makeGit() {
         if (git == null) {
             try {
                 git = Git.open(projectDir.toFile());
             } catch (IOException ioE) {
                 checkUserHomePath();
                 git = createAndInitializeGitObject(projectDir.toFile());
-                if (git == null) {
-                    return didSomething;
+                if (git != null) {
+                    writeIgnore();
                 }
-                writeIgnore();
             }
         }
+    }
+    boolean gitCommit() {
+        boolean didSomething = false;
+        commitActive = true;
+        makeGit();
+        if (git == null) {
+            return didSomething;
+        }
+
         try {
 
             DirCache index = git.add().addFilepattern(".").call();
@@ -284,10 +354,21 @@ public class GUIProject extends StructureProject {
     }
 
     @Override
+    public void projectChanged(boolean state) {
+        projectChanged.set(state);
+    }
+
+    @Override
+    public boolean projectChanged() {
+        return projectChanged.get();
+    }
+
+    @Override
     public void addPeakList(PeakList peakList, String name) {
         super.addPeakList(peakList, name);
         PeakListUpdater updater = new PeakListUpdater(peakList);
         peakList.registerUpdater(updater);
+        projectChanged.set(true);
     }
 
     @Override
@@ -297,6 +378,7 @@ public class GUIProject extends StructureProject {
             peakList.removeUpdater();
         }
         super.removePeakList(name);
+        projectChanged.set(true);
 
     }
 

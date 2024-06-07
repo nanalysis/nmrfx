@@ -1248,6 +1248,10 @@ public class MoleculeBase implements Serializable, ITree {
         return (null);
     }
 
+    public void changed() {
+        ProjectBase.getActive().projectChanged(true);
+    }
+
     public void changed(Atom atom) {
         changed = true;
         if (atomUpdater != null) {

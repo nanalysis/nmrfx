@@ -140,7 +140,7 @@ public class Peak implements Comparable, PeakOrMulti {
     public PeakDim[] peakDims;
     protected float figureOfMerit = 1.0f;
     protected boolean valid = true;
-    protected int idNum;
+    private int idNum;
     protected float volume1;
     protected float volume1Err;
     protected float intensity;
@@ -461,6 +461,7 @@ public class Peak implements Comparable, PeakOrMulti {
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(targetPeak.peakDims[i]);
         }
+        targetPeak.peakUpdated(targetPeak);
         return targetPeak;
     }
 
@@ -871,6 +872,10 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public void setIdNum(int idNum) {
         this.idNum = idNum;
+        if (idNum >= peakList.idLast) {
+            peakList.idLast = idNum;
+
+        }
         peakUpdated(this);
     }
 
