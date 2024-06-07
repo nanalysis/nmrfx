@@ -253,6 +253,7 @@ public class PolyChart extends Region {
         regionMenu = new RegionMenu(this);
         integralMenu = new IntegralMenu(this);
         drawingLayers.requestFocus();
+        ProjectBase.getActive().projectChanged(true);
     }
 
     public String getName() {

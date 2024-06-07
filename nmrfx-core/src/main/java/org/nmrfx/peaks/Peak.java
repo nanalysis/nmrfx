@@ -460,6 +460,7 @@ public class Peak implements Comparable, PeakOrMulti {
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(targetPeak.peakDims[i]);
         }
+        targetPeak.peakUpdated(targetPeak);
         return targetPeak;
     }
 

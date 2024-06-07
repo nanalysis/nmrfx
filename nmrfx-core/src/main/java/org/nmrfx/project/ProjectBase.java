@@ -223,12 +223,14 @@ public class ProjectBase {
     public void addDataset(DatasetBase dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
+        projectChanged(true);
     }
 
     public void renameDataset(DatasetBase dataset, String newName) {
         datasetMap.remove(dataset.getFileName(), dataset);
         dataset.setFileName(newName);
         addDataset(dataset, newName);
+        projectChanged(true);
     }
 
     public boolean isDatasetPresent(File file) {
@@ -294,10 +296,12 @@ public class ProjectBase {
 
     public void removePeakList(String name) {
         peakLists.remove(name);
+        projectChanged(true);
     }
 
     public void clearAllPeakLists() {
         peakLists.clear();
+        projectChanged(true);
     }
 
     public MoleculeBase getActiveMolecule() {
@@ -310,6 +314,7 @@ public class ProjectBase {
 
     public void putMolecule(MoleculeBase molecule) {
         molecules.put(molecule.getName(), molecule);
+        projectChanged(true);
     }
 
     public MoleculeBase getMolecule(String name) {
@@ -336,11 +341,13 @@ public class ProjectBase {
         if (mol != null) {
             molecules.remove(name);
         }
+        projectChanged(true);
     }
 
     public void clearAllMolecules() {
         activeMol = null;
         molecules.clear();
+        projectChanged(true);
     }
 
 
@@ -683,5 +690,13 @@ public class ProjectBase {
         } else {
             return pcs.getPropertyChangeListeners();
         }
+    }
+
+    public void projectChanged(boolean state) {
+
+    }
+
+    public boolean projectChanged() {
+        return false;
     }
 }
