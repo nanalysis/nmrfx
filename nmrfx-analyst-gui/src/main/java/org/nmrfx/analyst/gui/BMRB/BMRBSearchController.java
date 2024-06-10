@@ -102,6 +102,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
                 BMRBSearchTableView.refresh();
             } catch (ExecutionException | InterruptedException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
+                Thread.currentThread().interrupt();
                 dialog.showAndWait();
             }
         }
