@@ -112,7 +112,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         }
 
         String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx_Project" :
-                GUIProject.getActive().getDirectory().getFileName().toString();
+                GUIProject.getActive().getDirectory().getFileName().toString().replace(' ','_');
 
         if (projectName.isBlank()) {
             projectName = "NMRFx_Project";
@@ -128,10 +128,10 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
             return;
         }
 
-        futureResponse.thenAccept(r -> {
+        futureResponse.thenAccept(r ->
             Fx.runOnFxThread(() ->
-                    GUIUtils.affirm(r));
-        });
+                    GUIUtils.affirm(r))
+        );
         stage.close();
     }
 }

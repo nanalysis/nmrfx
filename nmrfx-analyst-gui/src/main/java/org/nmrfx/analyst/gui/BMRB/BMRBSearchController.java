@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.BMRB;
 
+import berlin.yuna.typemap.model.TypeList;
 import javafx.application.HostServices;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -25,21 +26,15 @@ import org.nmrfx.star.BMRBio;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.utilities.BMRBSearchResult;
 import org.nmrfx.utils.GUIUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 public class BMRBSearchController implements Initializable, StageBasedController {
-    private static final Logger log = LoggerFactory.getLogger(BMRBSearchController.class);
     private Stage stage;
     @FXML
     private TextField searchField;
@@ -123,12 +118,12 @@ public class BMRBSearchController implements Initializable, StageBasedController
         dataSummaryCol.setCellValueFactory((TableColumn.CellDataFeatures<BMRBSearchResult, String> p) ->
         {
             BMRBSearchResult entry = p.getValue();
-            List<HashMap> summary = entry.getDataSummary();
+            TypeList summary = entry.getDataSummary();
             StringBuilder str = new StringBuilder();
             if (summary != null) {
-                for (HashMap<Object, Object> e : summary) {
-                    String type = e.get("type") instanceof String s ? s : null;
-                    String count = e.get("count") instanceof String s ? s : null;
+                for (Object e : summary) {
+                    String type = (String) summary.getMap(e).get("type");
+                    String count = (String) summary.getMap(e).get("count");
                     if (type != null && count != null) {
                         str.append(type.replace("_", " ")).append(": ");
                         str.append(count);
@@ -149,20 +144,18 @@ public class BMRBSearchController implements Initializable, StageBasedController
         entryTitleCol.setCellFactory(new Callback<>() {
             @Override
             public TableCell<BMRBSearchResult, String> call(TableColumn<BMRBSearchResult, String> param) {
-                final TableCell<BMRBSearchResult, String> cell = new TableCell<>() {
-                    private Text text;
+                return new TableCell<>() {
                     @Override
                     public void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
                         if (!isEmpty()) {
-                            text = new Text(item.toString());
+                            Text text = new Text(item);
                             text.wrappingWidthProperty().bind(getTableColumn().widthProperty());
                             setGraphic(text);
                         }
                     }
 
                 };
-                return cell;
             }
         });
         entryTitleCol.setMinWidth(300);
@@ -178,24 +171,21 @@ public class BMRBSearchController implements Initializable, StageBasedController
         authorsCol.setCellFactory(new Callback<>() {
             @Override
             public TableCell<BMRBSearchResult, String> call(TableColumn<BMRBSearchResult, String> param) {
-                final TableCell<BMRBSearchResult, String> cell = new TableCell<>() {
-                    private Text text;
+                return new TableCell<>() {
                     @Override
                     public void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
                         if (!isEmpty()) {
-                            text = new Text(item.toString());
+                            Text text = new Text(item);
                             text.wrappingWidthProperty().bind(getTableColumn().widthProperty());
                             setGraphic(text);
                         }
                     }
 
                 };
-                return cell;
             }
         });
         authorsCol.setMinWidth(300);
-
         BMRBSearchTableView.getColumns().addAll(entryIDCol, releaseDateCol, dataSummaryCol, entryTitleCol, authorsCol);
     }
 
@@ -203,7 +193,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
         var selected = BMRBSearchTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
             try {
-                int entryID = Integer.valueOf(selected.getEntryID());
+                int entryID = Integer.parseInt(selected.getEntryID());
                 fetchStar(entryID);
             } catch (Exception ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);

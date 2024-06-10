@@ -9,22 +9,21 @@ import org.nmrfx.utils.GUIUtils;
 
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class BMRBSearchResult {
-    private String entryID;
-    private String releaseDate;
-    private List<HashMap> dataSummary;
+    private final String entryID;
+    private final String releaseDate;
+    private final TypeList dataSummary;
     private String title;
     private List<String> authors;
 
     public BMRBSearchResult(LinkedTypeMap entry) {
         entryID = entry.get(String.class, "value");
         releaseDate = entry.get(String.class, "sub_date");
-        dataSummary = entry.getList(HashMap.class, "data_types");
+        dataSummary = entry.getList("data_types");
         title = entry.get(String.class, "label");
         authors = entry.get(List.class, "authors");
     }
@@ -33,24 +32,12 @@ public class BMRBSearchResult {
         return entryID;
     }
 
-    public void setEntryID(String entryID) {
-        this.entryID = entryID;
-    }
-
     public String getReleaseDate() {
         return releaseDate;
     }
 
-    public void setReleaseDate(String releaseDate) {
-        this.releaseDate = releaseDate;
-    }
-
-    public List<HashMap >getDataSummary() {
+    public TypeList getDataSummary() {
         return dataSummary;
-    }
-
-    public void setDataSummary(List<HashMap> dataSummary) {
-        this.dataSummary = dataSummary;
     }
 
     public String getTitle() {
@@ -70,7 +57,7 @@ public class BMRBSearchResult {
     }
 
     public static List<BMRBSearchResult> getSearchResults(String searchString) throws ExecutionException, InterruptedException {
-        CompletableFuture<HttpResponse<String>> response = null;
+        CompletableFuture<HttpResponse<String>> response;
         try {
             response = BMRBio.fetchSearchResults(searchString);
         } catch (Exception e) {
