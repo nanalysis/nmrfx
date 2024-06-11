@@ -68,7 +68,7 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem searchBMRBMenuItem = new MenuItem("Search BMRB");
         searchBMRBMenuItem.setOnAction(this::searchBMRB);
 
-        Menu STARMenu = new Menu("STAR3...");
+        Menu STARMenu = new Menu("STAR/NEF/BMRB");
         STARMenu.getItems().addAll(openSTARMenuItem, openNEFMenuItem, saveSTARMenuItem, fetchSTARMenuItem,
                 depositSTARMenuItem, searchBMRBMenuItem);
 
