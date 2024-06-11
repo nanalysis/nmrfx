@@ -31,9 +31,16 @@ import java.util.regex.Pattern;
 public class BMRBDepositionController implements Initializable, StageBasedController {
     private Stage stage;
 
+    public enum DepositionMode {
+        Production,
+        Test
+    }
+
     @FXML
     private VBox vBox = new VBox();
     TextField emailField = new TextField();
+
+    ChoiceBox<DepositionMode> modeChoice = new ChoiceBox<>();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -62,7 +69,13 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
     void setUp() {
         Text title = new Text("Select data to deposit:");
         GridPane gridPane = new GridPane();
-        vBox.getChildren().addAll(title, gridPane);
+        HBox modeBox = new HBox();
+        Label modeLabel = new Label("Mode");
+        modeBox.setSpacing(20);
+        modeBox.getChildren().addAll(modeLabel, modeChoice);
+        modeChoice.getItems().addAll(DepositionMode.Production, DepositionMode.Test);
+        modeChoice.setValue(DepositionMode.Production);
+        vBox.getChildren().addAll(title, modeBox, gridPane);
         vBox.setSpacing(10);
 
         ColumnConstraints col0 = new ColumnConstraints(125);
@@ -128,7 +141,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         StringWriter starStr = NMRStarWriter.writeToString(starTypesMap);
 
         try {
-            futureResponse = BMRBio.depositEntry(emailAddress, projectName, starStr);
+            futureResponse = BMRBio.depositEntry(modeChoice.getValue() == DepositionMode.Production, emailAddress, projectName, starStr);
         } catch (Exception e) {
             ExceptionDialog dialog = new ExceptionDialog(e);
             dialog.showAndWait();
