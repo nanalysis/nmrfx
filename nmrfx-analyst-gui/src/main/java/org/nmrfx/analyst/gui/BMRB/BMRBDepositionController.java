@@ -34,10 +34,12 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
     @FXML
     private VBox vBox = new VBox();
     TextField emailField = new TextField();
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setUp();
     }
+
     public static BMRBDepositionController create() {
         BMRBDepositionController controller = Fxml.load(BMRBDepositionController.class, "BMRBDepositionScene.fxml")
                 .withNewStage("Deposit to BMRB")
@@ -46,7 +48,9 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         return controller;
     }
 
-    private Stage getStage() { return this.stage;}
+    private Stage getStage() {
+        return this.stage;
+    }
 
     private static boolean validateEmail(String emailAddress) {
         String regexPattern = "^(.+)@(\\S+)$";
@@ -63,7 +67,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
 
         ColumnConstraints col0 = new ColumnConstraints(125);
         ColumnConstraints col1 = new ColumnConstraints(125);
-        gridPane.getColumnConstraints().addAll(col0,col1);
+        gridPane.getColumnConstraints().addAll(col0, col1);
         gridPane.setVgap(20);
 
         Map<NMRStarWriter.StarTypes, SimpleBooleanProperty> starTypesPropertiesMap = new HashMap<>();
@@ -103,16 +107,18 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
     }
 
     @Override
-    public void setStage(Stage stage) {this.stage = stage;}
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
 
-    void depositSTAR(Map<NMRStarWriter.StarTypes, SimpleBooleanProperty> starTypesMap ) {
+    void depositSTAR(Map<NMRStarWriter.StarTypes, SimpleBooleanProperty> starTypesMap) {
         String emailAddress = emailField.getText();
         if (!validateEmail(emailAddress)) {
             Fx.runOnFxThread(() -> GUIUtils.warn("Invalid email address", "Invalid email address"));
         }
 
         String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx_Project" :
-                GUIProject.getActive().getDirectory().getFileName().toString().replace(' ','_');
+                GUIProject.getActive().getDirectory().getFileName().toString().replace(' ', '_');
 
         if (projectName.isBlank()) {
             projectName = "NMRFx_Project";
@@ -129,9 +135,12 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         }
 
         futureResponse.thenAccept(r ->
-            Fx.runOnFxThread(() ->
-                    GUIUtils.affirm(r))
-        );
+                Fx.runOnFxThread(() -> {
+                    String[] parts = r.split(":");
+                    String depID = parts.length == 2 ? parts[1].replace("}","") : r;
+                    String message = "Check your email for a link to the deposition\n" + depID;
+                    GUIUtils.acknowledge(message);
+                }));
         stage.close();
     }
 }
