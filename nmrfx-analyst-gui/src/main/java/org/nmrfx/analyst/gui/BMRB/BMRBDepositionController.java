@@ -115,6 +115,7 @@ public class BMRBDepositionController implements Initializable, StageBasedContro
         String emailAddress = emailField.getText();
         if (!validateEmail(emailAddress)) {
             Fx.runOnFxThread(() -> GUIUtils.warn("Invalid email address", "Invalid email address"));
+            return;
         }
 
         String projectName = GUIProject.getActive().getDirectory() == null ? "NMRFx_Project" :
