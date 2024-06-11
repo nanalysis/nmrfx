@@ -39,8 +39,8 @@ public class BMRBio {
             bufferedWriter.write(starString.toString());
         }
 
-        String dev_url = productionMode ? "https://deposit.bmrb.io/deposition/new" : "https://dev-deposit.bmrb.io/deposition/new";
-        HttpPost httpPost = new HttpPost(dev_url);
+        String url = productionMode ? "https://deposit.bmrb.io/deposition/new" : "https://dev-deposit.bmrb.io/deposition/new";
+        HttpPost httpPost = new HttpPost(url);
 
         HttpEntity httpEntity = MultipartEntityBuilder.create()
                 .addPart("email",
