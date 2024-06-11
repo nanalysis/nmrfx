@@ -57,9 +57,9 @@ public class MMcifReader {
         }
     }
 
-    public static void read(String cifFileName) throws ParseException {
+    public static MoleculeBase read(String cifFileName) throws ParseException {
         File file = new File(cifFileName);
-        read(file);
+        return read(file);
     }
 
     public static MoleculeBase read(File cifFile) throws ParseException {
