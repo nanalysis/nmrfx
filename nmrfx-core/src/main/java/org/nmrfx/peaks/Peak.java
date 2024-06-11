@@ -6,7 +6,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
-import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 import org.nmrfx.utilities.ColorUtil;
 import org.nmrfx.utilities.Format;
 import org.nmrfx.utilities.NMRFxColor;
@@ -541,9 +541,9 @@ public class Peak implements Comparable, PeakOrMulti {
     public String toSTAR3LoopPeakString() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        result.append(String.valueOf(getIdNum())).append(sep);
-        result.append(String.valueOf(getFigureOfMerit())).append(sep);
-        result.append(STAR3.quote(getComment()));
+        result.append(getIdNum()).append(sep);
+        result.append(getFigureOfMerit()).append(sep);
+        result.append(STAR3Base.quote(getComment()));
         result.append(sep);
         result.append(typeToString());
         result.append(sep);
@@ -553,12 +553,12 @@ public class Peak implements Comparable, PeakOrMulti {
         if (colorName.equals("")) {
             result.append(".");
         } else {
-            result.append(STAR3.quote(colorName));
+            result.append(STAR3Base.quote(colorName));
         }
         result.append(sep);
         result.append(getFlag());
         result.append(sep);
-        result.append(STAR3.quote(String.valueOf(getCorner())));
+        result.append(STAR3Base.quote(String.valueOf(getCorner())));
         return result.toString();
     }
 
@@ -661,14 +661,14 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(0);
         }
 
-        result.append(sep).append(STAR3.quote(getComment())).append(sep);
-        result.append(STAR3.quote(String.valueOf(getCorner())));
+        result.append(sep).append(STAR3Base.quote(getComment())).append(sep);
+        result.append(STAR3Base.quote(String.valueOf(getCorner())));
         result.append(sep);
         result.append("\n");
 
         for (i = 0; i < getNDim(); i++) {
 
-            result.append(STAR3.quote(String.valueOf(peakDims[i].getLabel()))).append(sep);
+            result.append(STAR3Base.quote(String.valueOf(peakDims[i].getLabel()))).append(sep);
             result.append(String.valueOf(peakDims[i].getChemShiftValue())).append(sep);
             result.append(String.valueOf(peakDims[i].getLineWidthValue())).append(sep);
             result.append(String.valueOf(peakDims[i].getBoundsValue())).append(sep);
@@ -691,9 +691,9 @@ public class Peak implements Comparable, PeakOrMulti {
                 result.append(sep);
             }
 
-            result.append(STAR3.quote(String.valueOf(peakDims[i].getResonanceIDsAsString())));
+            result.append(STAR3Base.quote(String.valueOf(peakDims[i].getResonanceIDsAsString())));
             result.append(sep);
-            result.append(sep).append(STAR3.quote(peakDims[i].getUser())).append(sep);
+            result.append(sep).append(STAR3Base.quote(peakDims[i].getUser())).append(sep);
             result.append("\n");
         }
 
