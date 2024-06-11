@@ -260,7 +260,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName() == "molecule") {
+        if (Objects.equals(evt.getPropertyName(), "molecule")) {
             updateView();
             Molecule activeMol = Molecule.getActive();
             if (activeMol != null) {

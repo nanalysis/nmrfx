@@ -35,10 +35,9 @@ public class BMRBio {
 
     public static CompletableFuture<String> depositEntry(boolean productionMode, String email, String projectName, StringWriter starString) throws IOException {
         File tmpFile = File.createTempFile("star", ".str");
-        FileWriter fileWriter = new FileWriter(tmpFile, true);
-        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-        bufferedWriter.write(starString.toString());
-        bufferedWriter.close();
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(tmpFile, true))) {
+            bufferedWriter.write(starString.toString());
+        }
 
         String dev_url = productionMode ? "https://deposit.bmrb.io/deposition/new" : "https://dev-deposit.bmrb.io/deposition/new";
         HttpPost httpPost = new HttpPost(dev_url);

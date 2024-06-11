@@ -163,7 +163,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName() == "project") {
+        if (Objects.equals(evt.getPropertyName(), "project")) {
             List<DatasetBase> datasetList = ProjectBase.getActive().getDatasets();
             if (datasetList instanceof ObservableList) {
                 setDatasetList((ObservableList<DatasetBase>) datasetList);
