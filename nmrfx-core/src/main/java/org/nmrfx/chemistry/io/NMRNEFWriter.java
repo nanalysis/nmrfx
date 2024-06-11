@@ -42,9 +42,9 @@ public class NMRNEFWriter {
     static void writeMolSys(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n\n");
         chan.write("save_nef_molecular_system\n");
-        chan.write("    _nef_molecular_system.sf_category   ");
+        chan.write("    _nef_molecular_system.Sf_category   ");
         chan.write("nef_molecular_system\n");
-        chan.write("    _nef_molecular_system.sf_framecode  ");
+        chan.write("    _nef_molecular_system.Sf_framecode  ");
         chan.write("nef_molecular_system\n");
         chan.write("\n");
 
@@ -157,9 +157,9 @@ public class NMRNEFWriter {
     static void writePPM(MoleculeBase molecule, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
         chan.write("save_nef_chemical_shift_list\n"); //fixme dynamically get framecode
-        chan.write("    _nef_chemical_shift_list.sf_category                ");
+        chan.write("    _nef_chemical_shift_list.Sf_category                ");
         chan.write("nef_chemical_shift_list\n");
-        chan.write("    _nef_chemical_shift_list.sf_framecode               ");
+        chan.write("    _nef_chemical_shift_list.Sf_framecode               ");
         chan.write("nef_chemical_shift_list\n"); //fixme dynamically get framecode
         chan.write("\n");
 
@@ -258,9 +258,9 @@ public class NMRNEFWriter {
         String saveFrameName = distSet.getName();
         chan.write("\n");
         chan.write("save_" + saveFrameName + "\n"); //fixme dynamically get framecode
-        chan.write("    _nef_distance_restraint_list.sf_category       ");
+        chan.write("    _nef_distance_restraint_list.Sf_category       ");
         chan.write("nef_distance_restraint_list\n");
-        chan.write("    _nef_distance_restraint_list.sf_framecode      ");
+        chan.write("    _nef_distance_restraint_list.Sf_framecode      ");
         chan.write(saveFrameName + "\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.potential_type    ");
         chan.write(".\n");
@@ -395,9 +395,9 @@ public class NMRNEFWriter {
     static void writeDihedrals(MoleculeBase molecule, List<AngleConstraint> angleConstraints, FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
         chan.write("save_nef_dihedral_restraint_list\n"); //fixme dynamically get framecode
-        chan.write("    _nef_dihedral_restraint_list.sf_category       ");
+        chan.write("    _nef_dihedral_restraint_list.Sf_category       ");
         chan.write("nef_dihedral_restraint_list\n");
-        chan.write("    _nef_dihedral_restraint_list.sf_framecode      ");
+        chan.write("    _nef_dihedral_restraint_list.Sf_framecode      ");
         chan.write("nef_dihedral_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_dihedral_restraint_list.potential_type    ");
         chan.write(".\n");
@@ -511,9 +511,9 @@ public class NMRNEFWriter {
 
         chan.write("data_" + name + "\n\n");
         chan.write("save_nef_nmr_meta_data\n");
-        chan.write("    _nef_nmr_meta_data.sf_category           ");
+        chan.write("    _nef_nmr_meta_data.Sf_category           ");
         chan.write("nef_nmr_meta_data\n");
-        chan.write("    _nef_nmr_meta_data.sf_framecode          ");
+        chan.write("    _nef_nmr_meta_data.Sf_framecode          ");
         chan.write("nef_nmr_meta_data\n");
         chan.write("    _nef_nmr_meta_data.format_name           ");
         chan.write("nmr_exchange_format\n");

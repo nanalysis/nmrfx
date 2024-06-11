@@ -54,6 +54,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -63,6 +64,8 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -73,7 +76,7 @@ import java.util.*;
 /**
  * @author johnsonb
  */
-public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener {
+public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener, PropertyChangeListener {
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final Map<String, String> filterMap = new HashMap<>();
@@ -135,10 +138,7 @@ public class AtomController implements Initializable, StageBasedController, Free
             }
         });
         PeakList.registerFreezeListener(this);
-        Molecule activeMol = Molecule.getActive();
-        if (activeMol != null) {
-            activeMol.registerAtomTableListener(this);
-        }
+        ProjectBase.addPropertyChangeListener(this::propertyChange);
         updateView();
     }
 
@@ -256,6 +256,19 @@ public class AtomController implements Initializable, StageBasedController, Free
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         Fx.runOnFxThread(atomTableView::refresh);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (Objects.equals(evt.getPropertyName(), "molecule")) {
+            updateView();
+            Molecule activeMol = Molecule.getActive();
+            if (activeMol != null) {
+                AtomUpdater atomUpdater = new AtomUpdater(activeMol);
+                activeMol.registerUpdater(atomUpdater);
+                activeMol.registerAtomChangeListener(this);
+            }
+        }
     }
 
     class DoubleStringConverter4 extends DoubleStringConverter {
@@ -600,7 +613,7 @@ public class AtomController implements Initializable, StageBasedController, Free
             predictorController.getStage().show();
             predictorController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make predictor controller");
+            System.out.println("Couldn't make predictor controller");
         }
     }
     @Override

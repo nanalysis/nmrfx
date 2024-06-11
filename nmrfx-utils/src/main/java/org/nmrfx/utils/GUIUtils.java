@@ -98,6 +98,10 @@ public class GUIUtils {
         }
         return result;
     }
+    public static void acknowledge(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
+        alert.showAndWait();
+    }
 
     public static AlertRespones deleteAppendCancel(String message) {
         ButtonType deleteType = new ButtonType("Delete");

@@ -128,7 +128,11 @@ public class AnalystApp extends Application {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
-        ProjectBase.addPropertyChangeListener(evt -> getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton));
+        ProjectBase.addPropertyChangeListener(evt -> {
+            if (Objects.equals(evt.getPropertyName(), "project")) {
+                getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton);
+            }
+        });
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
@@ -305,7 +309,6 @@ public class AnalystApp extends Application {
     public void quit() {
         boolean projectChanged = ProjectBase.getActive().projectChanged();
         if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
-            System.out.println("quit");
             saveDatasets();
             waitForCommit();
             Platform.exit();

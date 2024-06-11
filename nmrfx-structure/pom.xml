@@ -85,6 +85,10 @@
             <groupId>com.actelion.research</groupId>
             <artifactId>openchemlib</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-slim</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
