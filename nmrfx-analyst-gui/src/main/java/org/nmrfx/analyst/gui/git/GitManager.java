@@ -1,7 +1,6 @@
 package org.nmrfx.analyst.gui.git;
 
 import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -15,8 +14,6 @@ import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevTree;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.nmrfx.chemistry.io.MoleculeIOException;
@@ -27,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -66,20 +64,6 @@ public class GitManager {
 
     public static boolean isCommitting() {
         return commitActive;
-    }
-
-    private static void listRepositoryContents(Repository repository) throws IOException {
-        Ref head = repository.findRef("HEAD");
-        RevWalk walk = new RevWalk(repository);
-        RevCommit commit = walk.parseCommit(head.getObjectId());
-        RevTree tree = commit.getTree();
-        System.out.println("tree: " + tree);
-        TreeWalk treeWalk = new TreeWalk(repository);
-        treeWalk.addTree(tree);
-        treeWalk.setRecursive(true);
-        while (treeWalk.next()) {
-            System.out.println("found: " + treeWalk.getPathString());
-        }
     }
 
     public void close() {
@@ -202,20 +186,7 @@ public class GitManager {
         } else {
             msg = "";
         }
-        boolean useThread = false;
-        if (useThread) {
-            Task<Boolean> task = new Task<>() {
-                @Override
-                protected Boolean call() {
-                    return gitCommit(msg);
-                }
-            };
-            Thread th = new Thread(task);
-            th.setDaemon(true);
-            th.start();
-        } else {
-            gitCommit(msg);
-        }
+        gitCommit(msg);
     }
 
     public boolean gitCommit(String msg) {
@@ -406,13 +377,11 @@ public class GitManager {
         }
     }
 
-    private void gitDeleteFile(String fileName) throws GitAPIException {
+    private void gitDeleteFile(String fileName) throws GitAPIException, IOException {
         git.rm().addFilepattern(fileName).call();
         String filePath = String.join(File.separator, projectDir.toString(), fileName);
         File file = new File(filePath);
-        if (file.exists()) {
-            file.delete();
-        }
+        Files.deleteIfExists(file.toPath());
     }
 
     /**
@@ -438,7 +407,7 @@ public class GitManager {
                 }
                 Ref resetRef = git.reset().setRef(commit.getName()).call();
                 reset = true;
-            } catch (GitAPIException ex) {
+            } catch (GitAPIException | IOException ex) {
                 log.error("Error reseting to commit", ex);
             }
         }
@@ -494,14 +463,10 @@ public class GitManager {
             if (git == null) {
                 gitOpen();
             }
-            GitHistoryController hold = historyController;
             Path oldProjectDir = projectDir;
             guiProject.close();
             git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
             guiProject.loadGUIProject(oldProjectDir);
-            if (hold != null) {
-                historyController = hold;
-            }
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Creating branch", ex);
             String message = ex.getMessage();
@@ -569,13 +534,16 @@ public class GitManager {
                 gitOpen();
             }
             Repository repo = git.getRepository();
-            ObjectReader reader = repo.newObjectReader();
-            CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
-            ObjectId newTree = repo.resolve("HEAD^{tree}");
-            oldTreeIter.reset(reader, newTree);
-            CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
-            ObjectId oldTree = repo.resolve(refName + "^{tree}");
-            newTreeIter.reset(reader, oldTree);
+            CanonicalTreeParser oldTreeIter;
+            CanonicalTreeParser newTreeIter;
+            try (ObjectReader reader = repo.newObjectReader()) {
+                oldTreeIter = new CanonicalTreeParser();
+                ObjectId newTree = repo.resolve("HEAD^{tree}");
+                oldTreeIter.reset(reader, newTree);
+                newTreeIter = new CanonicalTreeParser();
+                ObjectId oldTree = repo.resolve(refName + "^{tree}");
+                newTreeIter.reset(reader, oldTree);
+            }
 
             showDiffAction();
             GitDiffController diffInterface = getDiffController();
@@ -604,16 +572,12 @@ public class GitManager {
             if (git == null) {
                 gitOpen();
             }
-            GitHistoryController hold = historyController;
             Path oldProjectDir = projectDir;
             String projectName = guiProject.getName();
             guiProject.close();
             git.checkout().setName(name).call();
             GUIProject project = new GUIProject(projectName);
             guiProject.loadGUIProject(oldProjectDir);
-            if (hold != null) {
-                historyController = hold;
-            }
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Checkout", ex);
             String message = ex.getMessage();
@@ -650,22 +614,5 @@ public class GitManager {
             log.error("Merge", ex);
         }
     }
-
-    /**
-     * Add the appropriate actions for added, changed, removed, or missing files to the given map of status actions.
-     *
-     * @param actionMap Set<String>. The map of file actions.
-     * @param action    String. The action for the file: add, change, remove, or missing.
-     * @param file      String. The name of the file that was added, changed, removed, or missing.
-     * @throws GitAPIException
-     */
-    public void gitStatusAction(Set<String> actionMap, String action, String file) throws GitAPIException {
-        if (action.equals("remove") || action.equals("missing")) {
-            git.rm().addFilepattern(file).call();
-        }
-        action += ":" + Paths.get(file).getName(0);
-        actionMap.add(action);
-    }
-
 
 }

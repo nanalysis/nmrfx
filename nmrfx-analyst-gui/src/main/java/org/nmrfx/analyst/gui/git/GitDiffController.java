@@ -17,29 +17,24 @@
  */
 package org.nmrfx.analyst.gui.git;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
-
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  * This class shows an interface for looking at Git file differences for a project.
@@ -48,9 +43,10 @@ import org.nmrfx.analyst.gui.AnalystApp;
  *
  */
 public class GitDiffController implements Initializable {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(GitDiffController.class);
     GitManager gitManager;
     @FXML
-    ChoiceBox diffMenu = new ChoiceBox();
+    ChoiceBox<DiffEntry> diffMenu = new ChoiceBox<>();
     Stage stage;
     @FXML
     TextArea fileText = new TextArea();
@@ -60,11 +56,7 @@ public class GitDiffController implements Initializable {
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {        
-        diffMenu.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<DiffEntry>() {
-            public void changed(ObservableValue ov, DiffEntry value, DiffEntry newValue) {
-                viewEntry(newValue);
-            }
-        });
+        diffMenu.getSelectionModel().selectedItemProperty().addListener((ov, value, newValue) -> viewEntry(newValue));
     }
 
     public static GitDiffController create(GitManager gitManager) {
@@ -73,11 +65,10 @@ public class GitDiffController implements Initializable {
         Stage stage = new Stage(StageStyle.DECORATED);
 
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Scene scene = new Scene(loader.load());
             stage.setScene(scene);
-//            scene.getStylesheets().add("/styles/consolescene.css");
 
-            controller = loader.<GitDiffController>getController();
+            controller = loader.getController();
             controller.stage = stage;
             controller.gitManager = gitManager;
             Screen screen = Screen.getPrimary();
@@ -85,8 +76,7 @@ public class GitDiffController implements Initializable {
             stage.toFront();
             stage.setY(screenSize.getHeight() - stage.getHeight());
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.error(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -97,15 +87,14 @@ public class GitDiffController implements Initializable {
         try {
             if (entry != null) {
                 formatter.format(entry);
-                String text = "Entry:" + entry.toString() + "\nfrom: " + entry.getOldPath() + "\nto: " + entry.getNewPath() + "\n\n";
+                String text = "Entry:" + entry + "\nfrom: " + entry.getOldPath() + "\nto: " + entry.getNewPath() + "\n\n";
                 text += outputStream.toString();
                 fileText.setText(text);
                 formatter.flush();
                 outputStream.reset();
             }
         } catch (IOException ex) {
-            Logger.getLogger(GitDiffController.class.getName()).log(Level.SEVERE, null, ex);
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
         }
     }
     
@@ -117,12 +106,12 @@ public class GitDiffController implements Initializable {
         stage.show();
         stage.toFront();
     }
-    
+
     public Stage getStage() {
         return stage;
     }
     
-    public ChoiceBox getEntryMenu() {
+    public ChoiceBox<DiffEntry> getEntryMenu() {
         return diffMenu;
     }
     

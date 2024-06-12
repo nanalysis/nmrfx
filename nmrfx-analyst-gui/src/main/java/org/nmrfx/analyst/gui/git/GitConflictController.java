@@ -17,31 +17,24 @@
  */
 package org.nmrfx.analyst.gui.git;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.stream.Collectors;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
-
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.processor.gui.project.GUIProject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.net.URL;
+import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 /**
  * This class shows an interface for resolving Git file conflicts for a project.
@@ -50,22 +43,18 @@ import org.nmrfx.processor.gui.project.GUIProject;
  *
  */
 public class GitConflictController implements Initializable {
+    private static final Logger log = LoggerFactory.getLogger(GitConflictController.class);
     GitManager gitManager;
     @FXML
-    ChoiceBox fileMenu = new ChoiceBox();
+    ChoiceBox<String> fileMenu = new ChoiceBox<>();
     Stage stage;
-    GUIProject project = GUIProject.getActive();
     @FXML
     TextArea fileText = new TextArea();
     
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        fileMenu.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>() {
-            public void changed(ObservableValue ov, String value, String newValue) {
-                viewFile(newValue);
-            }
-        });
+        fileMenu.getSelectionModel().selectedItemProperty().addListener((ov, value, newValue) -> viewFile(newValue));
     }
 
     public static GitConflictController create(GitManager gitManager) {
@@ -74,11 +63,10 @@ public class GitConflictController implements Initializable {
         Stage stage = new Stage(StageStyle.DECORATED);
 
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Scene scene = new Scene(loader.load());
             stage.setScene(scene);
-//            scene.getStylesheets().add("/styles/consolescene.css");
 
-            controller = loader.<GitConflictController>getController();
+            controller = loader.getController();
             controller.stage = stage;
             controller.gitManager = gitManager;
             stage.setTitle("Resolve Git Conflicts");
@@ -88,8 +76,7 @@ public class GitConflictController implements Initializable {
             stage.toFront();
             stage.setY(screenSize.getHeight() - stage.getHeight());
         } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
+            log.error(ioE.getMessage(), ioE);
         }
 
         return controller;
@@ -98,25 +85,26 @@ public class GitConflictController implements Initializable {
     
     public void viewFile(String fileName)  {   
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(fileName));
-            String text = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            String text;
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                text = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            }
             fileText.setText(text);
-        } catch (IOException ex) { 
-            ex.printStackTrace();
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
         }
     }
     
     public void saveChanges(ActionEvent event) {
-        String fileName = fileMenu.getValue().toString();
+        String fileName = fileMenu.getValue();
         String contents = fileText.getText();
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-            writer.write(contents);
-            writer.flush();
-            writer.close();
-            System.out.println("Saved changes to file " + fileName);
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                writer.write(contents);
+                writer.flush();
+            }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            log.error(ex.getMessage(), ex);
         }
     }
     
@@ -133,7 +121,7 @@ public class GitConflictController implements Initializable {
         return stage;
     }
     
-    public ChoiceBox getFileMenu() {
+    public ChoiceBox<String> getFileMenu() {
         return fileMenu;
     }
     

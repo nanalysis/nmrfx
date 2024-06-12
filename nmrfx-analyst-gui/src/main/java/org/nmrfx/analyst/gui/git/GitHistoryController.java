@@ -135,13 +135,13 @@ public class GitHistoryController implements Initializable {
             try {
                 project.saveProject();
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                log.error(ex.getMessage(), ex);
             }
         });
     }
     
     private void initializeHistory()  {
-        TreeItem root = new TreeItem(new HistoryData("Branches"));
+        TreeItem<HistoryData> root = new TreeItem<>(new HistoryData("Branches"));
         historyTable.setRoot(root);
         historyTable.setShowRoot(false);
 
@@ -188,29 +188,29 @@ public class GitHistoryController implements Initializable {
             controller.stage.setTitle("Git History (Project = " + project.getName() + ", Current Branch = " + currentBranch + ")");
         }
 
-        TreeItem root = historyTable.getRoot();
+        TreeItem<HistoryData> root = historyTable.getRoot();
         root.getChildren().clear();
 
         List<Ref> branches = gitManager.gitBranches();
         for (Ref branch : branches) {
-            ObservableList<TreeItem> data = FXCollections.observableArrayList();
+            ObservableList<TreeItem<HistoryData>> data = FXCollections.observableArrayList();
             String branchName = branch.getName();
             List<RevCommit> gitLog = gitManager.gitLog(branchName);
 
-            TreeItem branchItem = new TreeItem(new HistoryData(branchName));
+            TreeItem<HistoryData> branchItem = new TreeItem<>(new HistoryData(branchName));
             root.getChildren().add(branchItem);
 
             int idx = gitLog.size();
             for (RevCommit entry : gitLog) {
                 HistoryData historyData = new HistoryData(entry, idx, branchName);
-                TreeItem rowItem = new TreeItem(historyData);
+                TreeItem<HistoryData> rowItem = new TreeItem<>(historyData);
                 data.addAll(rowItem);
                 idx--;
             }
             branchItem.getChildren().addAll(data);
         }
 
-        ObservableList<TreeItem> children = root.getChildren();
+        ObservableList<TreeItem<HistoryData>> children = root.getChildren();
         for (TreeItem<HistoryData> child : children) {
             String childBranch = child.getValue().getShortBranch();
             if (childBranch.equals(gitManager.gitCurrentBranch())) {
@@ -229,8 +229,6 @@ public class GitHistoryController implements Initializable {
             case MERGE -> gitMerge();
             case NEW -> gitCreateBranch();
             case DELETE -> gitDeleteBranch();
-            default -> {
-            }
         }
     }
     
@@ -267,8 +265,6 @@ public class GitHistoryController implements Initializable {
                 boolean reset = gitManager.gitResetToCommit(idx, commit, branch);
                 if (reset) {
                     updateHistory();
-                    // fixme
-                    //gitLoad(idx, branch, currentBranch);
                 }
             } else {
                 alert("Currently on the " + currentBranch + " branch. Cannot reset to a commit on the " + shortBranch + " branch.");
