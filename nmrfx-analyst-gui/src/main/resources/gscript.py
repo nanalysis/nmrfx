@@ -64,6 +64,10 @@ class NMRFxWindowScripting:
         self.cmd.grid(rows, columns)
         return self
 
+    def gridpos(self, chart, row=0, column=0, rowSpan=1, columnSpan=1):
+        self.cmd.grid(chart, row, column, rowSpan, columnSpan)
+        return self
+
     def getGrid(self):
         return self.cmd.grid()
 

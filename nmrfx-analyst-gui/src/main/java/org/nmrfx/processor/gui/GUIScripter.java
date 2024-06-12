@@ -599,6 +599,18 @@ public class GUIScripter {
         });
     }
 
+    public void grid(PolyChart chart, int row, int column, int rowSpan, int columnSpan) {
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            controller1.setChartDisable(true);
+            GridPaneCanvas gridPaneCanvas = controller1.getGridPaneCanvas();
+            gridPaneCanvas.setPosition(chart, row, column, rowSpan, columnSpan);
+            controller1.setChartDisable(false);
+            controller1.draw();
+        });
+    }
+
+
     public int nCharts() throws InterruptedException, ExecutionException {
         return Fx.runOnFxThreadAndWait(() -> {
             FXMLController controller = getActiveController();

@@ -1107,6 +1107,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         chartDrawingLayers.getGrid().calculateAndSetOrientation();
     }
 
+    public GridPaneCanvas getGridPaneCanvas() {
+        return chartDrawingLayers.getGrid();
+    }
     public void draw() {
         chartDrawingLayers.getGrid().layoutChildren();
     }

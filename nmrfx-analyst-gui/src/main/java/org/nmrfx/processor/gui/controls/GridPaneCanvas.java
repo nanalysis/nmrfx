@@ -175,6 +175,14 @@ public class GridPaneCanvas extends GridPane {
         layoutChildren();
     }
 
+    public void setPosition(PolyChart node, int iRow, int jColumn, int rowSpan, int columnSpan) {
+        setRowIndex(node, iRow * 2);
+        setRowSpan(node, rowSpan * 2);
+        setColumnIndex(node, jColumn * 2);
+        setColumnSpan(node, columnSpan * 2);
+
+    }
+
     public void addChart(PolyChart chart) {
         getChildren().add(chart);
         updateGrid();
