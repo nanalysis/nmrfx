@@ -37,18 +37,19 @@ public class RNAPropertyGenerator extends PropertyGenerator {
     public boolean getResidueProperties(Polymer polymer, Residue residue,
                                         int structureNum) {
         valueMap.clear();
-        for (String residueName : residueNames) {
-            valueMap.put(residueName, 0.0);
-        }
-        valueMap.put(residue.getName(), 1.0);
+        calcAngles(residue);
+        return true;
+    }
 
+    @Override
+    public boolean getAtomProperties(Atom atom, int structureNum) {
+        String atomSpec = atom.getFullName();
         try {
-            for(Residue.AngleAtoms angleName : Residue.AngleAtoms.values()) {
-                valueMap.put(angleName.toString(), angleName.calcAngle(residue));
-            }
-            valueMap.put("chi", residue.calcChi());
+            valueMap.put("ring", calcRingShift(atomSpec, structureNum));
+            double cs;
+            cs = getPPM(atomSpec);
+            valueMap.put("cs", cs);
         } catch (Exception e) {
-            System.out.println(e);
             log.warn(e.getMessage(), e);
             return false;
         }
@@ -73,13 +74,13 @@ public class RNAPropertyGenerator extends PropertyGenerator {
         valueMap.put("sin3"+name,checkAngles(angle) ? math.sin(3*angle) : 0.0);
     }
 
-    public boolean calcAngles() {
+    public boolean calcAngles(Residue residue) {
         for (Residue.AngleAtoms angleName : Residue.AngleAtoms.values()) {
             String name = angleName.toString().toLowerCase();
-            Double angle = valueMap.get(name);
+            Double angle = angleName.calcAngle(residue);
             calcAngle(name, angle);
         }
-        calcAngle("chi", valueMap.get("chi"));
+        calcAngle("chi", residue.calcChi());
         return true;
     }
 
