@@ -56,6 +56,9 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
         saveSTARMenuItem.setOnAction(this::writeSTAR);
 
+        MenuItem showHistoryAction = new MenuItem("GIT Manager...");
+        showHistoryAction.setOnAction(this::showHistory);
+
         MenuItem openNEFMenuItem = new MenuItem("Open NEF...");
         openNEFMenuItem.setOnAction(this::readNEF);
 
@@ -85,7 +88,7 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
-                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, STARMenu);
+                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, showHistoryAction, STARMenu);
     }
 
     @Override
@@ -138,8 +141,7 @@ public class ProjectMenuActions extends MenuActions {
         if (directoryFile != null) {
             GUIProject activeProject = (GUIProject) AnalystApp.getActive();
             if (activeProject != null) {
-                GUIProject newProject = GUIProject.replace(AnalystApp.getAppName(), activeProject);
-
+                GUIProject newProject = GUIProject.replace(directoryFile.getName(), activeProject);
                 try {
                     newProject.createProject(directoryFile.toPath());
                     newProject.saveProject();
@@ -249,5 +251,9 @@ public class ProjectMenuActions extends MenuActions {
                 interpreter.exec("sparky.loadProjectFile(sparkyFile)");
             }
         }
+    }
+
+    void showHistory(ActionEvent event) {
+        AnalystApp.getAnalystApp().showHistoryAction(event);
     }
 }

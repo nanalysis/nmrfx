@@ -14,14 +14,10 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
-import org.controlsfx.dialog.ExceptionDialog;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.dircache.DirCache;
-import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.util.FS;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.git.GitManager;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.datasets.DatasetBase;
@@ -38,8 +34,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Bruce Johnson
@@ -47,11 +41,9 @@ import java.util.Set;
 public class GUIProject extends StructureProject {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
     private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
-    private static boolean commitActive = false;
+    GitManager gitManager;
 
     private final SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
-
-    private Git git;
 
 
     private static double projectSaveInterval;
@@ -80,13 +72,8 @@ public class GUIProject extends StructureProject {
         return newProject;
     }
 
-    public Git createAndInitializeGitObject(File gitDirectory) {
-        try {
-            return Git.init().setDirectory(gitDirectory).call();
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-        return null;
+    public GitManager getGitManager() {
+        return gitManager;
     }
 
     public void createProject(Path projectDir) throws IOException {
@@ -102,10 +89,8 @@ public class GUIProject extends StructureProject {
         setProjectDir(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
         checkUserHomePath();
-        git = createAndInitializeGitObject(projectDir.toFile());
-        if (git != null) {
-            writeIgnore();
-        }
+        gitManager = new GitManager(this);
+        setActive();
     }
 
     private static void startTimer() {
@@ -160,7 +145,7 @@ public class GUIProject extends StructureProject {
      * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
      * property.
      */
-    private void checkUserHomePath() {
+    public static void checkUserHomePath() {
         if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
             return;
         }
@@ -189,11 +174,11 @@ public class GUIProject extends StructureProject {
         }
     }
 
-    private boolean isFileWritable(File file) {
+    private static boolean isFileWritable(File file) {
         return !file.exists() || (file.exists() && !file.canWrite());
     }
 
-    public String getEnvironmentVariable(String name) {
+    public static String getEnvironmentVariable(String name) {
         return System.getenv(name);
     }
 
@@ -205,15 +190,14 @@ public class GUIProject extends StructureProject {
         return (GUIProject) project;
     }
 
-    private void writeIgnore() {
-        if (git != null) {
-            Path path = Paths.get(projectDir.toString(), ".gitignore");
-            try (FileWriter writer = new FileWriter(path.toFile())) {
-                writer.write("*.nv\n*.ucsf");
-            } catch (IOException ioE) {
-                log.warn("{}", ioE.getMessage(), ioE);
-            }
+    public void writeIgnore() {
+        Path path = Paths.get(projectDir.toString(), ".gitignore");
+        try (FileWriter writer = new FileWriter(path.toFile())) {
+            writer.write("*.nv\n*.ucsf\njffi*\n");
+        } catch (IOException ioE) {
+            log.warn("{}", ioE.getMessage(), ioE);
         }
+
     }
 
     public void close() {
@@ -226,6 +210,10 @@ public class GUIProject extends StructureProject {
         AnalystApp.closeAll();
         // Clear the project directory or else a user may accidentally overwrite their previously closed project
         setProjectDir(null);
+        if (gitManager != null) {
+            gitManager.close();
+        }
+        clearActive();
     }
 
     public static boolean checkProjectActive(boolean includeDatasets) {
@@ -237,22 +225,25 @@ public class GUIProject extends StructureProject {
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, MoleculeIOException, IllegalStateException {
-        ProjectBase currentProject = getActive();
         setActive();
 
         loadProject(projectDir, "datasets");
+        gitManager = new GitManager(this);
+
         if (projectDir != null) {
             loadStructureSubDirs(projectDir);
             FileSystem fileSystem = FileSystems.getDefault();
             Path subDirectory = fileSystem.getPath(projectDir.toString(), "windows");
             loadWindows(subDirectory);
             PreferencesController.saveRecentProjects(projectDir.toString());
-        }
 
-        setProjectDir(projectDir);
-        currentProject.setActive();
-        projectChanged(false);
-        setupSave();
+            setProjectDir(projectDir);
+            gitManager.setProject(this);
+            gitManager.gitOpen();
+            PreferencesController.saveRecentProjects(projectDir.toString());
+            projectChanged(false);
+            setupSave();
+        }
     }
 
     @Override
@@ -265,92 +256,10 @@ public class GUIProject extends StructureProject {
         if (currentProject == this) {
             saveWindows(projectDir);
         }
-        gitCommitOnThread();
+
+        gitManager.gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();
-        currentProject.setActive();
-        projectChanged.set(false);
-        setupSave();
-    }
-
-    void gitCommitOnThread() {
-        Task<Boolean> task = new Task<>() {
-            @Override
-            protected Boolean call() {
-                return gitCommit();
-            }
-        };
-        Thread th = new Thread(task);
-        th.setDaemon(true);
-        th.start();
-    }
-
-    public static boolean isCommitting() {
-        return commitActive;
-    }
-
-    void makeGit() {
-        if (git == null) {
-            try {
-                git = Git.open(projectDir.toFile());
-            } catch (IOException ioE) {
-                checkUserHomePath();
-                git = createAndInitializeGitObject(projectDir.toFile());
-                if (git != null) {
-                    writeIgnore();
-                }
-            }
-        }
-    }
-    boolean gitCommit() {
-        boolean didSomething = false;
-        commitActive = true;
-        makeGit();
-        if (git == null) {
-            return didSomething;
-        }
-
-        try {
-
-            DirCache index = git.add().addFilepattern(".").call();
-            Status status = git.status().call();
-            StringBuilder sBuilder = new StringBuilder();
-            Set<String> actionMap = new HashSet<>();
-            if (!status.isClean() || status.hasUncommittedChanges()) {
-                Set<String> addedFiles = status.getAdded();
-                for (String addedFile : addedFiles) {
-                    String action = "add:" + Paths.get(addedFile).getName(0);
-                    actionMap.add(action);
-                }
-                Set<String> changedFiles = status.getChanged();
-                for (String changedFile : changedFiles) {
-                    String action = "change:" + Paths.get(changedFile).getName(0);
-                    actionMap.add(action);
-                }
-                Set<String> removedFiles = status.getRemoved();
-                for (String removedFile : removedFiles) {
-                    String action = "remove:" + Paths.get(removedFile).getName(0);
-                    actionMap.add(action);
-                    git.rm().addFilepattern(removedFile).call();
-                }
-                Set<String> missingFiles = status.getMissing();
-                for (String missingFile : missingFiles) {
-                    String action = "missing:" + Paths.get(missingFile).getName(0);
-                    actionMap.add(action);
-                    git.rm().addFilepattern(missingFile).call();
-                }
-                actionMap.forEach(action -> sBuilder.append(action).append(","));
-                RevCommit commit = git.commit().setMessage(sBuilder.toString()).call();
-                didSomething = true;
-            }
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        } finally {
-            git.close();
-            git = null;
-            commitActive = false;
-        }
-        return didSomething;
     }
 
     @Override
@@ -391,9 +300,11 @@ public class GUIProject extends StructureProject {
     }
 
     @Override
-    public void addPeakListListener(Object mapChangeListener) {
-        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-        obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
+    public void addPeakListListener(Object mapChangeObject) {
+        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
+            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+            obsMap.addListener(mapChangeListener);
+        }
     }
 
     public void removePeakListListener(Object mapChangeObject) {
