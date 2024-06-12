@@ -3300,7 +3300,7 @@ public class Molecule extends MoleculeBase {
 
     @Override
     public void addNonStandardResidue(Sequence sequence, Residue residue) {
-        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = residue.polymer.getPolymerType().contains("polypeptide");
         residue.setNonStandard();
         Atom startAtom;
         if (residue.isCompliant()) {

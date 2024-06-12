@@ -6,6 +6,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.RegionData;
+import org.nmrfx.star.STAR3Base;
 import org.nmrfx.utilities.ColorUtil;
 import org.nmrfx.utilities.Format;
 import org.nmrfx.utilities.NMRFxColor;
@@ -460,6 +461,7 @@ public class Peak implements Comparable, PeakOrMulti {
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(targetPeak.peakDims[i]);
         }
+        targetPeak.peakUpdated(targetPeak);
         return targetPeak;
     }
 
@@ -539,12 +541,9 @@ public class Peak implements Comparable, PeakOrMulti {
     public String toSTAR3LoopPeakString() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
-        result.append(String.valueOf(getIdNum())).append(sep);
-        result.append(String.valueOf(getFigureOfMerit())).append(sep);
-        result.append(stringQuote);
-        result.append(getComment());
-        result.append(stringQuote);
+        result.append(getIdNum()).append(sep);
+        result.append(getFigureOfMerit()).append(sep);
+        result.append(STAR3Base.quote(getComment()));
         result.append(sep);
         result.append(typeToString());
         result.append(sep);
@@ -554,23 +553,18 @@ public class Peak implements Comparable, PeakOrMulti {
         if (colorName.equals("")) {
             result.append(".");
         } else {
-            result.append(stringQuote);
-            result.append(colorName);
-            result.append(stringQuote);
+            result.append(STAR3Base.quote(colorName));
         }
         result.append(sep);
         result.append(getFlag());
         result.append(sep);
-        result.append(stringQuote);
-        result.append(String.valueOf(getCorner()));
-        result.append(stringQuote);
+        result.append(STAR3Base.quote(String.valueOf(getCorner())));
         return result.toString();
     }
 
     public String toSTAR3LoopSpectralTransitionString(int id) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(id).append(sep);
         result.append(String.valueOf(getIdNum())).append(sep);
         result.append(".").append(sep);
@@ -642,7 +636,6 @@ public class Peak implements Comparable, PeakOrMulti {
     public String toMyString() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(String.valueOf(getIdNum())).append(sep);
         result.append(String.valueOf(getIntensity())).append(sep);
         result.append(String.valueOf(getVolume1())).append(sep);
@@ -668,19 +661,14 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(0);
         }
 
-        result.append(sep).append(stringQuote).append(getComment()).
-                append(stringQuote).append(sep);
-        result.append(stringQuote);
-        result.append(String.valueOf(getCorner()));
-        result.append(stringQuote);
+        result.append(sep).append(STAR3Base.quote(getComment())).append(sep);
+        result.append(STAR3Base.quote(String.valueOf(getCorner())));
         result.append(sep);
         result.append("\n");
 
         for (i = 0; i < getNDim(); i++) {
 
-            result.append(stringQuote).
-                    append(String.valueOf(peakDims[i].getLabel())).
-                    append(stringQuote).append(sep);
+            result.append(STAR3Base.quote(String.valueOf(peakDims[i].getLabel()))).append(sep);
             result.append(String.valueOf(peakDims[i].getChemShiftValue())).append(sep);
             result.append(String.valueOf(peakDims[i].getLineWidthValue())).append(sep);
             result.append(String.valueOf(peakDims[i].getBoundsValue())).append(sep);
@@ -703,12 +691,9 @@ public class Peak implements Comparable, PeakOrMulti {
                 result.append(sep);
             }
 
-            result.append(stringQuote);
-            result.append(String.valueOf(peakDims[i].getResonanceIDsAsString()));
-            result.append(stringQuote);
+            result.append(STAR3Base.quote(String.valueOf(peakDims[i].getResonanceIDsAsString())));
             result.append(sep);
-            result.append(sep).append(stringQuote).append(peakDims[i].getUser()).
-                    append(stringQuote).append(sep);
+            result.append(sep).append(STAR3Base.quote(peakDims[i].getUser())).append(sep);
             result.append("\n");
         }
 

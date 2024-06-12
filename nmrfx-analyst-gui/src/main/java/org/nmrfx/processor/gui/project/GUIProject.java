@@ -5,10 +5,17 @@
  */
 package org.nmrfx.processor.gui.project;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
+import javafx.concurrent.Task;
+import javafx.util.Duration;
 import org.eclipse.jgit.util.FS;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.git.GitManager;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -36,6 +43,12 @@ public class GUIProject extends StructureProject {
     private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     GitManager gitManager;
 
+    private final SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
+
+
+    private static double projectSaveInterval;
+
+    private static Timeline timeline = null;
 
     public GUIProject(String name) {
         super(name);
@@ -78,6 +91,51 @@ public class GUIProject extends StructureProject {
         checkUserHomePath();
         gitManager = new GitManager(this);
         setActive();
+    }
+
+    private static void startTimer() {
+        if (timeline != null) {
+            timeline.stop();
+            timeline = null;
+        }
+        KeyFrame save = new KeyFrame(
+                Duration.minutes(projectSaveInterval),
+                event -> saveCheck()
+        );
+        timeline = new Timeline(save);
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    private static void saveCheck() {
+        GUIProject activeProject = getActive();
+        if (activeProject.projectChanged() && activeProject.hasDirectory()) {
+            try {
+                activeProject.saveProject();
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+    public static void projectSaveInterval(double interval) {
+        projectSaveInterval = interval;
+        projectSave(PreferencesController.getProjectSave());
+    }
+
+    public static void setupSave() {
+        projectSave(PreferencesController.getProjectSave());
+    }
+
+    public static void projectSave(boolean projectSave) {
+        projectSaveInterval = PreferencesController.getProjectSaveInterval();
+        if (projectSave) {
+            startTimer();
+        } else if (timeline != null) {
+            timeline.stop();
+            timeline = null;
+        }
     }
 
     /***
@@ -143,6 +201,9 @@ public class GUIProject extends StructureProject {
     }
 
     public void close() {
+        if (timeline != null) {
+            timeline.stop();
+        }
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
@@ -180,6 +241,8 @@ public class GUIProject extends StructureProject {
             gitManager.setProject(this);
             gitManager.gitOpen();
             PreferencesController.saveRecentProjects(projectDir.toString());
+            projectChanged(false);
+            setupSave();
         }
     }
 
@@ -200,10 +263,21 @@ public class GUIProject extends StructureProject {
     }
 
     @Override
+    public void projectChanged(boolean state) {
+        projectChanged.set(state);
+    }
+
+    @Override
+    public boolean projectChanged() {
+        return projectChanged.get();
+    }
+
+    @Override
     public void addPeakList(PeakList peakList, String name) {
         super.addPeakList(peakList, name);
         PeakListUpdater updater = new PeakListUpdater(peakList);
         peakList.registerUpdater(updater);
+        projectChanged.set(true);
     }
 
     @Override
@@ -213,6 +287,7 @@ public class GUIProject extends StructureProject {
             peakList.removeUpdater();
         }
         super.removePeakList(name);
+        projectChanged.set(true);
 
     }
 

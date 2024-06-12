@@ -7,28 +7,25 @@ import javafx.scene.control.MenuItem;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.BMRB.BMRBDepositionController;
+import org.nmrfx.analyst.gui.BMRB.BMRBSearchController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.NMRStarWriter;
-import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.project.GUIProject;
-import org.nmrfx.star.BMRBFetch;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +33,7 @@ public class ProjectMenuActions extends MenuActions {
     public ProjectMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
     }
+    BMRBSearchController searchController;
 
     @Override
     public void basic() {
@@ -67,6 +65,15 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem fetchSTARMenuItem = new MenuItem("Fetch STAR3...");
         fetchSTARMenuItem.setOnAction(this::fetchSTAR);
 
+        MenuItem depositSTARMenuItem = new MenuItem("Deposit STAR3...");
+        depositSTARMenuItem.setOnAction(this::depositSTAR);
+
+        MenuItem searchBMRBMenuItem = new MenuItem("Search BMRB");
+        searchBMRBMenuItem.setOnAction(this::searchBMRB);
+
+        Menu STARMenu = new Menu("STAR/NEF/BMRB");
+        STARMenu.getItems().addAll(openSTARMenuItem, openNEFMenuItem, saveSTARMenuItem, fetchSTARMenuItem,
+                depositSTARMenuItem, searchBMRBMenuItem);
 
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
@@ -81,9 +88,7 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
-                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,showHistoryAction,
-                openSTARMenuItem, saveSTARMenuItem, fetchSTARMenuItem, openNEFMenuItem);
-
+                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, showHistoryAction, STARMenu);
     }
 
     @Override
@@ -186,32 +191,19 @@ public class ProjectMenuActions extends MenuActions {
 
     @FXML
     void fetchSTAR(ActionEvent event) {
-        if (GUIProject.checkProjectActive(false)) {
-            GUIUtils.warn("Fetch BMRB Entry", "Project content already present.  Close existing first");
-            return;
-        }
+        BMRBSearchController.fetchStar(0);
+    }
+    @FXML
+    void depositSTAR(ActionEvent event) {
+        BMRBDepositionController.create();
+    }
 
-        String entryStr = GUIUtils.input("BMRB Entry:");
-        CompletableFuture<HttpResponse<String>> futureResponse = null;
-        try {
-            futureResponse = BMRBFetch.fetchEntryASync(Integer.parseInt(entryStr));
-        } catch (Exception e) {
-            ExceptionDialog dialog = new ExceptionDialog(e);
-            dialog.showAndWait();
-            return;
+    void searchBMRB(ActionEvent event) {
+        if (searchController == null) {
+            searchController = BMRBSearchController.create();
         }
-
-        futureResponse.thenApply(r -> {
-            Fx.runOnFxThread(() -> {
-                try {
-                    NMRStarReader.readFromString(r.body());
-                } catch (ParseException e) {
-                    ExceptionDialog dialog = new ExceptionDialog(e);
-                    dialog.showAndWait();
-                }
-            });
-            return true;
-        });
+        searchController.getStage().show();
+        searchController.getStage().toFront();
     }
 
     void writeSTAR(ActionEvent event) {

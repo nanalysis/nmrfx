@@ -43,6 +43,9 @@ public class CoordinateSTARWriter {
         chan.write(thisCategory + ".Sf_framecode   ");
         chan.write(saveFrameName + "\n");
 
+        chan.write(thisCategory + ".ID   ");
+        chan.write(setNum + "\n");
+
         chan.write(thisCategory + ".Details        ");
         chan.write(".\n");
 
