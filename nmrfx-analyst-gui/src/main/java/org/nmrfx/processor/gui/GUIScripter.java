@@ -94,7 +94,7 @@ public class GUIScripter {
         }
     }
 
-    PolyChart getChart() {
+    public PolyChart getChart() {
         return useChart != null ? useChart : getActiveController().getActiveChart();
     }
 
@@ -550,12 +550,11 @@ public class GUIScripter {
     public void grid(int rows, int columns) {
         Fx.runOnFxThread(() -> {
             FXMLController controller1 = getActiveController();
-            gridOnFx(controller1, rows, columns);
+            gridOnFx(controller1, rows, columns, rows * columns);
         });
     }
 
-    public void gridOnFx(FXMLController controller, int rows, int columns) {
-        int nCharts = rows * columns;
+    public void gridOnFx(FXMLController controller, int rows, int columns, int nCharts) {
         controller.setNCharts(nCharts);
         controller.arrange(rows);
 

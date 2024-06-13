@@ -10,6 +10,7 @@ import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.structure.seqassign.RunAbout;
 import org.yaml.snakeyaml.Yaml;
@@ -91,15 +92,12 @@ public class GUIScripterAdvanced extends GUIScripter {
         List<Object> spectra = new ArrayList<>();
         winMap.put(SPECTRA, spectra);
         int nCharts = controller.getCharts().size();
-        List<Integer> rc = gridOnFx(controller);
-        int columns = rc.get(1);
         for (int iChart = 0; iChart < nCharts; iChart++) {
             PolyChart chart = controller.getCharts().get(iChart);
             Map<String, Object> sd = new HashMap<>();
             spectra.add(sd);
-            int iRow = iChart / columns;
-            int iCol = iChart % columns;
-            sd.put("grid", List.of(iRow, iCol));
+            GridPaneCanvas.GridPosition gridValue = controller.getGridPaneCanvas().getGridLocation(chart);
+            sd.put("grid", List.of(gridValue.rows(), gridValue.columns(), gridValue.rowSpan(), gridValue.columnSpan()));
             sd.put("lim", limitOnFx(chart));
             sd.put(CCONFIG, chart.getChartProperties().getPublicPropertiesValues());
             List<CanvasAnnotation> annoTypes = chart.getCanvasAnnotations();
@@ -165,20 +163,19 @@ public class GUIScripterAdvanced extends GUIScripter {
             var geometry = (List<Double>) data.get(GEOMETRY);
             geometryOnFx(stage, geometry);
         }
-        int columns = 1;
+        List<Map<String, Object>> spectraList = new ArrayList<>();
+        if (data.containsKey(SPECTRA)) {
+             spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
+        }
         if (data.containsKey("grid")) {
             var grid = (List<Integer>) data.get("grid");
-            gridOnFx(controller, grid.get(0), grid.get(1));
-            columns = grid.get(1);
+            gridOnFx(controller, grid.get(0), grid.get(1), spectraList.size());
         }
         if (data.containsKey(SCONFIG)) {
             var map = (Map<String, Object>) data.get(SCONFIG);
             sconfigOnFx(controller, map);
         }
-        if (data.containsKey(SPECTRA)) {
-            var spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
-            processSpectraData(controller, spectraList, columns);
-        }
+        processSpectraData(controller, spectraList);
         if (data.containsKey(STRIPS)) {
             var stripData = (Map<String, Object>) data.get(STRIPS);
             String peakListName = stripData.get(PEAKLIST).toString();
@@ -211,23 +208,31 @@ public class GUIScripterAdvanced extends GUIScripter {
         return controller;
     }
 
-    private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList, int columns) {
+    private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList) {
+        int iWin = 0;
         for (var spectraMap : spectraList) {
             int iRow;
             int iCol;
+            int rowSpan = 1;
+            int columnSpan = 1;
             if (spectraMap.containsKey("grid")) {
                 var grid = (List<Integer>) spectraMap.get("grid");
                 iRow = grid.get(0);
                 iCol = grid.get(1);
+                if (grid.size() > 3) {
+                    rowSpan = grid.get(2);
+                    columnSpan = grid.get(3);
+                }
             } else {
                 iRow = 0;
                 iCol = 0;
             }
-            int iWin = iRow * columns + iCol;
             PolyChart chart = controller.getCharts().get(iWin);
+            grid(chart, iRow, iCol, rowSpan, columnSpan);
             controller.setActiveChart(chart);
             processChart(chart, spectraMap);
             chart.refresh();
+            iWin++;
         }
     }
 
