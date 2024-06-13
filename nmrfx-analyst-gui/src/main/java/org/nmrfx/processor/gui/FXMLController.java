@@ -1107,6 +1107,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         chartDrawingLayers.getGrid().calculateAndSetOrientation();
     }
 
+    public GridPaneCanvas getGridPaneCanvas() {
+        return chartDrawingLayers.getGrid();
+    }
     public void draw() {
         chartDrawingLayers.getGrid().layoutChildren();
     }
@@ -1280,11 +1283,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public int arrangeGetRows() {
-        return chartDrawingLayers.getGrid().getRows();
+        return chartDrawingLayers.getGrid().getGridSize().rows();
     }
 
     public int arrangeGetColumns() {
-        return chartDrawingLayers.getGrid().getColumns();
+        return chartDrawingLayers.getGrid().getGridSize().columns();
     }
 
     public void alignCenters() {
