@@ -243,7 +243,6 @@ public class GridPaneCanvas extends GridPane {
         column = column == null ? 0 : column / 2;
         row = row == null ? 0 : row / 2;
         return new GridPosition(row, column, rowSpan, columnSpan);
-
     }
 
     public void updateConstraints() {
