@@ -251,6 +251,9 @@ public class ResonanceFactory implements FreezeListener {
         chan.write("_Resonance_linker_list.Sf_framecode   ");
         chan.write("resonance_linker_list\n");
 
+        chan.write("_Resonance_linker_list.ID   ");
+        chan.write("1" + "\n"); //fixme how to get list ID
+
         chan.write("_Resonance_linker_list.Details        ");
         chan.write(".\n");
 

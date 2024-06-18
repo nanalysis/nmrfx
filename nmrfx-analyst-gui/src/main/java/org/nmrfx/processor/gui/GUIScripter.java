@@ -94,7 +94,7 @@ public class GUIScripter {
         }
     }
 
-    PolyChart getChart() {
+    public PolyChart getChart() {
         return useChart != null ? useChart : getActiveController().getActiveChart();
     }
 
@@ -550,12 +550,11 @@ public class GUIScripter {
     public void grid(int rows, int columns) {
         Fx.runOnFxThread(() -> {
             FXMLController controller1 = getActiveController();
-            gridOnFx(controller1, rows, columns);
+            gridOnFx(controller1, rows, columns, rows * columns);
         });
     }
 
-    public void gridOnFx(FXMLController controller, int rows, int columns) {
-        int nCharts = rows * columns;
+    public void gridOnFx(FXMLController controller, int rows, int columns, int nCharts) {
         controller.setNCharts(nCharts);
         controller.arrange(rows);
 
@@ -598,6 +597,18 @@ public class GUIScripter {
             controller1.setChartDisable(false);
         });
     }
+
+    public void grid(PolyChart chart, int row, int column, int rowSpan, int columnSpan) {
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            controller1.setChartDisable(true);
+            GridPaneCanvas gridPaneCanvas = controller1.getGridPaneCanvas();
+            gridPaneCanvas.setPosition(chart, row, column, rowSpan, columnSpan);
+            controller1.setChartDisable(false);
+            controller1.draw();
+        });
+    }
+
 
     public int nCharts() throws InterruptedException, ExecutionException {
         return Fx.runOnFxThreadAndWait(() -> {

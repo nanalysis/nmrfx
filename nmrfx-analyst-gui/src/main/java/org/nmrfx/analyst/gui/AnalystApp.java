@@ -34,6 +34,7 @@ import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController;
 import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
+import org.nmrfx.analyst.gui.git.*;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
@@ -128,7 +129,11 @@ public class AnalystApp extends Application {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
-        ProjectBase.addPropertyChangeListener(evt -> getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton));
+        ProjectBase.addPropertyChangeListener(evt -> {
+            if (Objects.equals(evt.getPropertyName(), "project")) {
+                getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton);
+            }
+        });
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
@@ -305,7 +310,6 @@ public class AnalystApp extends Application {
     public void quit() {
         boolean projectChanged = ProjectBase.getActive().projectChanged();
         if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
-            System.out.println("quit");
             saveDatasets();
             waitForCommit();
             Platform.exit();
@@ -356,7 +360,7 @@ public class AnalystApp extends Application {
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GUIProject.isCommitting() && (iTry < nTries)) {
+        while (GitManager.isCommitting() && (iTry < nTries)) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {
@@ -662,6 +666,14 @@ public class AnalystApp extends Application {
                 PreferencesController.getPeakShapeDirectFactor(),
                 PreferencesController.getPeakShapeIndirectFactor());
     }
+    public static void showHistoryAction(ActionEvent event) {
+        GUIProject guiProject = GUIProject.getActive();
+        if ((guiProject != null) && (guiProject.getGitManager() != null)) {
+            guiProject.getGitManager().showHistoryAction(event);
+        }
+    }
+
+
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
         AnalystApp.getAnalystApp().moleculeMap.addListener(listener);

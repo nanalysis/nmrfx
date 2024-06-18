@@ -576,7 +576,7 @@ public class Residue extends Compound {
             return this.getAtom(lastBackBoneAtomName);
         }
         String pType = polymer.getPolymerType();
-        String searchString = pType.equals("polypeptide") ? "C" : "O3'";
+        String searchString = pType.contains("polypeptide") ? "C" : "O3'";
         Atom atom = this.getAtom(searchString);
         return atom;
     }
@@ -609,7 +609,7 @@ public class Residue extends Compound {
          */
 
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
-        String[] atomStrings = pType.equals("polypeptide") ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
+        String[] atomStrings = pType.contains("polypeptide") ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
         for (String atomString : atomStrings) {
             Atom atom = this.getAtom(atomString);
             if (atom == null) {
@@ -621,7 +621,7 @@ public class Residue extends Compound {
     }
 
     Point3 getNBoundPoint() {
-        boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = this.polymer.getPolymerType().contains("polypeptide");
         Atom atom = this.getFirstBackBoneAtom();
         String preferedLookup = isProtein ? "H" : "OP1";
         String[] exclusionList = new String[2];
@@ -650,7 +650,7 @@ public class Residue extends Compound {
          * from the previous residue.
          *
          */
-        boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = this.polymer.getPolymerType().contains("polypeptide");
         String[] compliantArray = isProtein ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
         Point3[] pts = new Point3[4];
         for (int i = 0; i < compliantArray.length; i++) {

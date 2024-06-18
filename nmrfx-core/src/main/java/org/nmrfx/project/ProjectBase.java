@@ -122,6 +122,9 @@ public class ProjectBase {
         return fileNum;
     }
 
+    public final void clearActive() {
+        activeProject = null;
+    }
     public final void setActive() {
         PropertyChangeEvent event = new PropertyChangeEvent(this, "project", null, this);
         activeProject = this;
@@ -310,6 +313,10 @@ public class ProjectBase {
 
     public void setActiveMolecule(MoleculeBase molecule) {
         activeMol = molecule;
+        PropertyChangeEvent event = new PropertyChangeEvent(this, "molecule", null, activeMol);
+        if (pcs != null) {
+            pcs.firePropertyChange(event);
+        }
     }
 
     public void putMolecule(MoleculeBase molecule) {
