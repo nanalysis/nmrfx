@@ -66,7 +66,7 @@ class NMRFxWindowScripting:
 
     def gridpos(self, row=0, column=0, rowSpan=1, columnSpan=1, chart=None):
         if chart == None:
-            chart = self.active()
+            chart = self.cmd.getChart()
         elif isinstance(chart, basestring):
             self.cmd.active(chart)
             chart = self.cmd.getChart()
