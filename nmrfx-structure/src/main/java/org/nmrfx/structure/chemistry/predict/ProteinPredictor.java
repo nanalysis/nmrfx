@@ -6,7 +6,7 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.PDBAtomParser;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import org.nmrfx.structure.chemistry.energy.ProteinPropertyGenerator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class ProteinPredictor {
 
     static final Set<String> atomTypes = new HashSet<>();
 
-    PropertyGenerator propertyGenerator;
+    ProteinPropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
     Map<String, Double> rmsMap = new HashMap<>();
     Map<String, double[]> minMaxMap = new HashMap<>();
@@ -48,7 +48,7 @@ public class ProteinPredictor {
     String reportAtom = null;
 
     public void init(Molecule mol, int iStructure) throws InvalidMoleculeException, IOException {
-        propertyGenerator = new PropertyGenerator();
+        propertyGenerator = new ProteinPropertyGenerator();
         propertyGenerator.init(mol, iStructure);
         this.molecule = mol;
     }

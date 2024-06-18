@@ -18,7 +18,7 @@
 package org.nmrfx.structure.chemistry.predict;
 
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import org.nmrfx.structure.chemistry.energy.ProteinPropertyGenerator;
 
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.types.TFloat32;
@@ -27,7 +27,6 @@ import org.tensorflow.ndarray.NdArrays;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 
 /*
@@ -57,7 +56,7 @@ public class Protein2ndStructurePredictor {
         if (graphModel == null) {
             load();
         }
-        var pg = new PropertyGenerator();
+        var pg = new ProteinPropertyGenerator();
         for (var polymer : mol.getPolymers()) {
             for (var residue : polymer.getResidues()) {
                 double zIDR = ResidueProperties.calcZIDR(residue, 0, 0);

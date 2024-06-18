@@ -124,7 +124,7 @@ public class Residue extends Compound {
             Atom[] atoms = getAtoms();
             int structureNum = 0;
             try {
-                return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+                return atoms != null ? Atom.calcDihedral(atoms, structureNum) : 0.0;
             } catch (IllegalArgumentException iAE) {
                 return null;
             }
