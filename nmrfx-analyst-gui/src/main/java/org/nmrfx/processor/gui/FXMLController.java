@@ -1141,8 +1141,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         bordersGrid[5] = new double[nRows];
 
         for (PolyChart chart : charts) {
-            int iRow = iChild / nCols;
-            int iCol = iChild % nCols;
+            var gridPos = getGridPaneCanvas().getGridLocation(chart);
+            int iRow = gridPos.rows();
+            int iCol = gridPos.columns();
             if (minBorders.get()) {
                 chart.getAxes().setAxisState(iCol == 0, iRow == (nRows - 1));
             } else {
@@ -1182,8 +1183,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         iChild = 0;
         for (PolyChart chart : charts) {
-            int iRow = iChild / nCols;
-            int iCol = iChild % nCols;
+            var gridPos = getGridPaneCanvas().getGridLocation(chart);
+            int iRow = gridPos.rows();
+            int iCol = gridPos.columns();
             double minLeftBorder = bordersGrid[0][iCol];
             double minBottomBorder = bordersGrid[2][iRow];
             chart.setMinBorders(minBottomBorder, minLeftBorder);
