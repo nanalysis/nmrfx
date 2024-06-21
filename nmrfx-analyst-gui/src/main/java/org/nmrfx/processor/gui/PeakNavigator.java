@@ -12,6 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.peaks.PeakIDController;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -48,6 +49,7 @@ public class PeakNavigator implements PeakListener {
     Consumer<PeakNavigator> closeAction = null;
     boolean showAtoms = false;
     boolean addShowPeakButton = false;
+    boolean addIdPeakButton = false;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
     Label intensityFieldLabel;
@@ -56,6 +58,7 @@ public class PeakNavigator implements PeakListener {
     Label intensityLabel;
     ChoiceBox<String> assignModeChoice = new ChoiceBox<>();
 
+    PeakIDController idController = null;
     private PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
     }
@@ -76,6 +79,11 @@ public class PeakNavigator implements PeakListener {
 
     public PeakNavigator addShowPeakButton() {
         this.addShowPeakButton = true;
+        return this;
+    }
+
+    public PeakNavigator addIDPeakButton() {
+        this.addIdPeakButton = true;
         return this;
     }
 
@@ -155,6 +163,11 @@ public class PeakNavigator implements PeakListener {
             Button showPeakButton = new Button("Goto");
             showPeakButton.setOnAction(e -> PeakDisplayTool.gotoPeak(currentPeak));
             toolBar.getItems().add(showPeakButton);
+        }
+        if (addIdPeakButton) {
+            Button idPeakButton = new Button("Id");
+            idPeakButton.setOnAction(e -> idPeak(currentPeak));
+            toolBar.getItems().add(idPeakButton);
         }
 
         if (showAtoms) {
@@ -276,6 +289,9 @@ public class PeakNavigator implements PeakListener {
                 peakNavigable.refreshPeakListView(peakList);
             }
             updateDeleteStatus();
+            if ((idController != null) && (idController.getStage().isShowing())) {
+                idPeak(peak);
+            }
         }
         updateAtomLabels(peak);
     }
@@ -594,5 +610,14 @@ public class PeakNavigator implements PeakListener {
         if (peakEvent.getSource() instanceof PeakList sourceList && sourceList == peakList) {
             Fx.runOnFxThread(this::handlePeakListChangedEvent);
         }
+    }
+
+    void idPeak(Peak peak) {
+        if (idController == null) {
+            idController = PeakIDController.create();
+        }
+        idController.getStage().show();
+        idController.getStage().toFront();
+        idController.gotoPeak(peak);
     }
 }
