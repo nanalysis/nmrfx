@@ -308,6 +308,9 @@ public class ProjectBase {
     }
 
     public MoleculeBase getActiveMolecule() {
+        if ((activeMol == null) && !getMolecules().isEmpty()){
+            activeMol = getMolecules().stream().findFirst().orElse(null);
+        }
         return activeMol;
     }
 
