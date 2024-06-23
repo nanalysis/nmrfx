@@ -1422,6 +1422,11 @@ public class MoleculeBase implements Serializable, ITree {
         return secondaryStructure;
     }
 
+    public List<Atom> getAtoms(String selection) {
+        MolFilter molFilter = new MolFilter(selection);
+        return getMatchedAtoms(molFilter, this);
+    }
+
     public void setupRotGroups() {
     }
 

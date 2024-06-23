@@ -2268,11 +2268,6 @@ public class Molecule extends MoleculeBase {
 
     }
 
-    public ArrayList<Atom> getAtoms(String selection) {
-        MolFilter molFilter = new MolFilter(selection);
-        return getMatchedAtoms(molFilter, this);
-    }
-
     public void updateNames() {
         Residue firstResidue = null;
         Residue lastResidue = null;

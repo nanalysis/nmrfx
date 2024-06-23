@@ -90,29 +90,60 @@ public class PPMFiles {
                     }
                 }
                 String[] sfields = sline.split(separator, -1);
-                if (sfields.length > 1) {
-                    String atomRef = sfields[0];
-                    Atom atom = MoleculeBase.getAtomByName(atomRef);
-                    if (atom == null) {
-                        System.out.println("no atom " + atomRef);
-                    } else {
-                        double ppm = Double.parseDouble(sfields[1]);
-                        if (refMode) {
-                            atom.setRefPPM(ppmSet, ppm);
-                            if (sfields.length > 2) {
-                                double errValue = Double.parseDouble(sfields[2]);
-                                atom.setRefError(errValue);
-                            }
-                        } else {
-                            atom.setPPM(ppmSet, ppm);
-
-                        }
-                    }
+                if (sfields.length > 4) {
+                    parseXEASYLine(molecule, sfields, refMode, ppmSet);
+                } else {
+                    parseLine(sfields, refMode, ppmSet);
                 }
             }
         } catch (IOException ioE) {
             log.warn(ioE.getMessage(), ioE);
         }
+    }
+
+    public static void parseLine(String[] sfields, boolean refMode, int ppmSet) {
+        if (sfields.length > 1) {
+            String atomRef = sfields[0];
+            Atom atom = MoleculeBase.getAtomByName(atomRef);
+            if (atom == null) {
+                System.out.println("no atom " + atomRef);
+            } else {
+                double ppm = Double.parseDouble(sfields[1]);
+                if (refMode) {
+                    atom.setRefPPM(ppmSet, ppm);
+                    if (sfields.length > 2) {
+                        double errValue = Double.parseDouble(sfields[2]);
+                        atom.setRefError(errValue);
+                    }
+                } else {
+                    atom.setPPM(ppmSet, ppm);
+
+                }
+            }
+        }
+    }
+
+    public static void parseXEASYLine(MoleculeBase molecule, String[] sfields, boolean refMode, int ppmSet) {
+        if (sfields.length > 1) {
+            String aName = sfields[3];
+            String residue = sfields[4];
+            String atomRef = residue + "." + aName;
+            var atoms = molecule.getAtoms(atomRef);
+
+            for (Atom atom: atoms) {
+                if (atom == null) {
+                    System.out.println("no atom " + atomRef);
+                } else {
+                    double ppm = Double.parseDouble(sfields[1]);
+                    if (refMode) {
+                        atom.setRefPPM(ppmSet, ppm);
+                    } else {
+                        atom.setPPM(ppmSet, ppm);
+                    }
+                }
+            }
+        }
+
     }
 }
 /*

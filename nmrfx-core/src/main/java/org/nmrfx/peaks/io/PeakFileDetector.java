@@ -32,6 +32,8 @@ public class PeakFileDetector extends FileTypeDetector {
             type = "sparky_save";
         } else if (fileName.endsWith(".csv")) {
             type = "csv";
+        } else if (fileName.endsWith(".peaks")) {
+            type = "xeasy";
         } else {
             String firstLine = firstLine(path).strip();
             if (nmrPipeLine(firstLine)) {
