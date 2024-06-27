@@ -1540,8 +1540,8 @@ public class NMRStarReader {
             try {
                 AngleConstraint aCon = new AngleConstraint(atoms, lower, upper, name);
                 angleSet.add(aCon);
-            } catch (InvalidMoleculeException ex) {
-                throw new ParseException(ex.getLocalizedMessage());
+            } catch (IllegalArgumentException | InvalidMoleculeException ex) {
+                log.error(ex.getMessage(), ex);
             }
         }
     }
