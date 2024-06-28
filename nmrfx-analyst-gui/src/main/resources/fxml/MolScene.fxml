@@ -104,7 +104,10 @@
                             <center>
                             </center>
                             <bottom>
-                                <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+                                <HBox>
+                                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+                                    <ToolBar fx:id="lowerToolBar"/>
+                                </HBox>
                             </bottom>
                         </BorderPane>
                     </content>

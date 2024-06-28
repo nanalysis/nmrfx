@@ -290,6 +290,9 @@ public class MolViewer extends Pane {
         }
     }
 
+    public void clearAll() {
+        molGroup.getChildren().clear();
+    }
     public void deleteItems(String mode, String type) {
         if (mode.equals("delete")) {
             final Iterator<Node> iter = molGroup.getChildren().iterator();
@@ -300,6 +303,7 @@ public class MolViewer extends Pane {
                         iter.remove();
                     } else if (type.equalsIgnoreCase("all")) {
                         iter.remove();
+                        controller.clearModes();
                     } else if (type.equals(node.getId())) {
                         iter.remove();
                     } else {
@@ -438,6 +442,7 @@ public class MolViewer extends Pane {
         for (int iStructure : structures) {
             MolPrimitives mP = new MolPrimitives(molecule, iStructure);
             MolSpheres spheres = new MolSpheres(mP.mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, true, tag + " " + index++);
+            allSpheres.add(spheres);
         }
         boolean empty = molGroup.getChildren().isEmpty();
         molGroup.getChildren().addAll(allSpheres);

@@ -1,5 +1,8 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.WeakMapChangeListener;
@@ -21,6 +24,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.chemistry.*;
@@ -45,6 +49,7 @@ import org.nmrfx.structure.rna.RNALabels;
 import org.nmrfx.structure.rna.SSLayout;
 import org.nmrfx.structure.rna.SSPredictor;
 import org.nmrfx.utilities.ProgressUpdater;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +102,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     @FXML
     private StatusBar statusBar;
+    @FXML
+    private ToolBar lowerToolBar;
     private Circle statusCircle = new Circle(10.0, Color.GREEN);
     Throwable processingThrowable;
 
@@ -109,8 +116,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
+
+    SimpleIntegerProperty activeStructureProp = new SimpleIntegerProperty(-1);
     private StructureCalculator structureCalculator = new StructureCalculator(this);
     SSPredictor ssPredictor = null;
+
+    List<String> currentDrawingModes = new ArrayList<>();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -134,6 +145,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molBorderPane.widthProperty().addListener(ss -> molViewer.layoutChildren());
         molBorderPane.heightProperty().addListener(ss -> molViewer.layoutChildren());
         molViewer.addSelectionListener(this);
+        addStructureSelectionTools();
+
+
 
         // kluge to prevent tabpane from getting focus.  This allows key presses to go through to molviewer
         // see JDK bug JDK-8092266
@@ -259,6 +273,88 @@ public class MolSceneController implements Initializable, StageBasedController, 
         controller.stage.show();
         return controller;
     }
+
+    void addStructureSelectionTools() {
+        ArrayList<Button> dataButtons = new ArrayList<>();
+        Button allButton = new Button("All");
+        allButton.setOnAction(this::allStructures);
+        allButton.getStyleClass().add("toolButton");
+        dataButtons.add(allButton);
+        Button bButton;
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(this::firstStructure);
+        dataButtons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(this::previousStructure);
+        dataButtons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(this::nextStructure);
+        dataButtons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(this::lastStructure);
+        dataButtons.add(bButton);
+
+        TextField textField = GUIUtils.getIntegerTextField(activeStructureProp);
+        textField.setPrefWidth(40);
+        lowerToolBar.getItems().addAll( dataButtons);
+        lowerToolBar.getItems().add(textField);
+    }
+
+    void allStructures(ActionEvent event) {
+        activeStructureProp.set(-1);
+        refresh();
+    }
+    void firstStructure(ActionEvent event) {
+        activeStructureProp.set(getActiveStructures().get(0));
+        refresh();
+    }
+    void previousStructure(ActionEvent event) {
+        List<Integer> activeStructures = getActiveStructures();
+        int index = Math.max(0, activeStructures.indexOf(activeStructureProp.get()) - 1);
+
+        activeStructureProp.set(activeStructures.get(index));
+        refresh();
+    }
+
+    void nextStructure(ActionEvent event) {
+        List<Integer> activeStructures = getActiveStructures();
+        int n = activeStructures.size();
+        int index = Math.min(n - 1, activeStructures.indexOf(activeStructureProp.get()) + 1);
+        if (index < 0) {
+            index = 0;
+        }
+        activeStructureProp.set(activeStructures.get(index));
+        refresh();
+    }
+
+    void lastStructure(ActionEvent event) {
+        List<Integer> activeStructures = getActiveStructures();
+        int n =  activeStructures.size();
+        activeStructureProp.set(activeStructures.get(n - 1));
+        refresh();
+    }
+
+    void refresh()  {
+        molViewer.clearAll();
+        itemIndex = 0;
+        List<String> modes = new ArrayList<>();
+        modes.addAll(currentDrawingModes);
+        for (String mode : modes) {
+            switch (mode) {
+                case "lines" -> drawLines();
+                case "spheres" -> drawSpheres();
+                case "tube" -> {
+                    try {
+                        drawTubes();
+                    } catch (InvalidMoleculeException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                case "sticks" -> drawSticks();
+            }
+        }
+    }
+
 
     @FXML
     void getDotBracket() {
@@ -608,9 +704,16 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void drawSpheres() {
         molViewer.addSpheres(getStructures(), 0.8, "spheres", getIndex());
     }
-
-    public List<Integer> getStructures() {
+    public List<Integer> getActiveStructures() {
         return molViewer.getCurrentMolecule().getActiveStructureList();
+    }
+    public List<Integer> getStructures() {
+        List<Integer> structures = getActiveStructures();
+        if (activeStructureProp.get() == -1) {
+            return structures;
+        } else {
+            return List.of(activeStructureProp.get());
+        }
     }
 
     public int getFirstStructure() {
@@ -619,14 +722,14 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
     public void drawCartoon() throws InvalidMoleculeException {
         if (!molViewer.getCurrentMolecule().getPolymers().isEmpty()) {
-            molViewer.addTube(getStructures(), 0.7, "tubes", getIndex());
+            molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
         }
         selectLigand();
         drawSticks();
     }
 
     public void drawTubes() throws InvalidMoleculeException {
-        molViewer.addTube(getStructures(), 0.7, "tubes", getIndex());
+        molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
     }
 
     public void drawOrientationSpheresX() throws InvalidMoleculeException {
@@ -704,6 +807,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
         itemIndex = 0;
     }
 
+    public void clearModes() {
+        currentDrawingModes.clear();
+    }
+
     public void updateRemoveMenu(Collection<String> items) {
         removeMenuButton.getItems().clear();
         // items can be like "spheres 3", so we want to add an entry to get
@@ -716,6 +823,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 if (!added.contains(fields[0])) {
                     removeItems.add(fields[0]);
                     added.add(fields[0]);
+                }
+                if (!currentDrawingModes.contains(fields[0])) {
+                    currentDrawingModes.add(fields[0]);
                 }
             }
         }
@@ -1047,7 +1157,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
             processingThrowable = null;
         } else {
             statusCircle.setFill(Color.RED);
-            System.out.println("error: " + s);
             processingThrowable = throwable;
         }
         statusBar.setProgress(0.0);
