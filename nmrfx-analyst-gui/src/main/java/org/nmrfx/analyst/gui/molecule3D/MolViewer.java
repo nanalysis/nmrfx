@@ -268,7 +268,8 @@ public class MolViewer extends Pane {
             currentMolecule = Molecule.getActive();
             if (currentMolecule != null) {
                 try {
-                    var vec3Ds = currentMolecule.getCorner(0);
+                    int iStructure = controller.getFirstStructure();
+                    var vec3Ds = currentMolecule.getCorner(iStructure);
                     cornerDistance = vec3Ds[0].distance(vec3Ds[1]);
                 } catch (MissingCoordinatesException mE) {
                     cornerDistance = 100.0;
@@ -377,7 +378,7 @@ public class MolViewer extends Pane {
     }
 
     private void createItems(String type) throws InvalidMoleculeException {
-        int iStructure = 0;
+        int iStructure = controller.getFirstStructure();
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
@@ -390,13 +391,13 @@ public class MolViewer extends Pane {
 
         molGroup.getChildren().clear();
         if (type.equals("spheres")) {
-            addSpheres(0, 0.5, "spheres");
+            addSpheres(List.of(iStructure), 0.5, "spheres", 0);
         } else if (type.equals("lines")) {
-            addLines(0, "lines");
+            addLines(iStructure, "lines");
         } else if (type.equals("cyls")) {
-            addCyls(0, 0.2, 0.1, "cyls");
+            addCyls(List.of(iStructure), 0.2, 0.1, "cyls", 0);
         } else if (type.equals("tube")) {
-            addTube(0, 0.5, "tube");
+            addTube(List.of(iStructure), 0.5, "tube", 0);
         }
 
         try {
@@ -414,7 +415,7 @@ public class MolViewer extends Pane {
         if (molecule == null) {
             return;
         }
-        int iStructure = 0;
+        int iStructure = controller.getFirstStructure();
         try {
             center = molecule.getCenterOfSelected(iStructure);
             if (center != null) {
@@ -426,23 +427,29 @@ public class MolViewer extends Pane {
         }
     }
 
-    public void addSpheres(int iStructure, double sphereRadius, String tag) {
+    public void addSpheres(List<Integer> structures, double sphereRadius, String tag, int index) {
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
         }
         molecule.updateBondArray();
         molecule.updateAtomArray();
-        MolPrimitives mP = new MolPrimitives(molecule, iStructure);
-        MolSpheres spheres = new MolSpheres(mP.mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, true, tag);
+        List<MolSpheres> allSpheres = new ArrayList<>();
+        for (int iStructure : structures) {
+            MolPrimitives mP = new MolPrimitives(molecule, iStructure);
+            MolSpheres spheres = new MolSpheres(mP.mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, true, tag + " " + index++);
+        }
         boolean empty = molGroup.getChildren().isEmpty();
-        molGroup.getChildren().add(spheres);
+        molGroup.getChildren().addAll(allSpheres);
         if (empty) {
             centerOnSelection();
         }
     }
 
     public void addLines(int iStructure, String tag) {
+        addLines(List.of(iStructure), tag, 0);
+    }
+    public void addLines(List<Integer> structures, String tag, int index) {
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
@@ -451,10 +458,14 @@ public class MolViewer extends Pane {
 
         molecule.updateBondArray();
         molecule.updateAtomArray();
-        MolPrimitives mP = new MolPrimitives(molecule, iStructure);
-        MolCylinders cyls = new MolCylinders(mP.mol.getName(), mP.bonds, mP.bondLines, 0.0, tag);
+        List<MolCylinders> allCyls = new ArrayList<>();
+        for (Integer iStructure : structures) {
+            MolPrimitives mP = new MolPrimitives(molecule, iStructure);
+            MolCylinders cyls = new MolCylinders(mP.mol.getName(), mP.bonds, mP.bondLines, 0.0, tag + " " + index++);
+            allCyls.add(cyls);
+        }
         boolean empty = molGroup.getChildren().isEmpty();
-        molGroup.getChildren().add(cyls);
+        molGroup.getChildren().addAll(allCyls);
         if (empty) {
             centerOnSelection();
         }
@@ -526,7 +537,7 @@ public class MolViewer extends Pane {
         }
     }
 
-    public void addCyls(int iStructure, double cylRadius, double sphereRadius, String tag) {
+    public void addCyls(List<Integer> structures, double cylRadius, double sphereRadius, String tag, int index) {
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
             return;
@@ -535,14 +546,21 @@ public class MolViewer extends Pane {
 
         molecule.updateBondArray();
         molecule.updateAtomArray();
-        MolPrimitives mP = new MolPrimitives(molecule, iStructure);
-        MolCylinders cyls = new MolCylinders(mP.mol.getName(), mP.bonds, mP.bondLines, cylRadius, tag);
-        boolean empty = molGroup.getChildren().isEmpty();
-        molGroup.getChildren().add(cyls);
-        if (sphereRadius > 0.01) {
-            MolSpheres spheres = new MolSpheres(mP.mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, false, tag);
-            molGroup.getChildren().add(spheres);
+        List<MolCylinders> allCyls = new ArrayList<>();
+        List<MolSpheres> allSpheres = new ArrayList<>();
+        for (int iStructure : structures) {
+            MolPrimitives mP = new MolPrimitives(molecule, iStructure);
+            MolCylinders cyls = new MolCylinders(mP.mol.getName(), mP.bonds, mP.bondLines, cylRadius, tag + " " + index);
+            allCyls.add(cyls);
+            if (sphereRadius > 0.01) {
+                MolSpheres spheres = new MolSpheres(mP.mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, false, tag + " " + index);
+                allSpheres.add(spheres);
+            }
+            index++;
         }
+        boolean empty = molGroup.getChildren().isEmpty();
+        molGroup.getChildren().addAll(allCyls);
+        molGroup.getChildren().addAll(allSpheres);
         if (empty) {
             centerOnSelection();
         }
@@ -625,7 +643,7 @@ public class MolViewer extends Pane {
             double[][] endPts = {{1.0, 0, 0}, {0, 1.0, 0}, {0, 0, 1.0}};
             Color[] colors = new Color[3];
             RealMatrix axes = new Array2DRowRealMatrix(endPts);
-            RealMatrix svdAxes = mol.calcSVDAxes(endPts);
+            RealMatrix svdAxes = mol.calcSVDAxes(iStructure, endPts);
             double scale = 10.0;
 
             if (type.equals("rdc")) {
@@ -669,6 +687,7 @@ public class MolViewer extends Pane {
     }
 
     public void rotateSVDRDC(String type) {
+        int iStructure = controller.getFirstStructure();
         Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
@@ -677,7 +696,7 @@ public class MolViewer extends Pane {
         if (type.equals("rdc")) {
             rotMat = mol.getRDCRotationMatrix(false);
         } else if (type.equals("svd")) {
-            rotMat = mol.getSVDRotationMatrix(false);
+            rotMat = mol.getSVDRotationMatrix(iStructure,false);
         } else {
             return;
         }
@@ -696,7 +715,7 @@ public class MolViewer extends Pane {
         updateView();
     }
 
-    public void addTube(int iStructure, double sphereRadius, String tag) throws InvalidMoleculeException {
+    public void addTube(List<Integer> structures, double sphereRadius, String tag, int index) throws InvalidMoleculeException {
         Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
@@ -711,10 +730,13 @@ public class MolViewer extends Pane {
             }
             mol.setAtomProperty(Atom.DISPLAY, true);
             mol.updateAtomArray();
-            MolPrimitives mP = new MolPrimitives(mol, iStructure);
-
-            MolTube tube = new MolTube(mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, tag);
-            molGroup.getChildren().add(tube);
+            List<MolTube> allTubes = new ArrayList<>();
+            for (int iStructure : structures) {
+                MolPrimitives mP = new MolPrimitives(mol, iStructure);
+                MolTube tube = new MolTube(mol.getName(), mP.atoms, mP.atomSpheres, sphereRadius, tag + " " + index++);
+                allTubes.add(tube);
+            }
+            molGroup.getChildren().addAll(allTubes);
         }
 
     }

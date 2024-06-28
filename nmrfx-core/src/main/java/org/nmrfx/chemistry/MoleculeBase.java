@@ -912,6 +912,15 @@ public class MoleculeBase implements Serializable, ITree {
         }
     }
 
+    public List<Integer> getActiveStructureList() {
+        if (activeStructures == null) {
+            activeStructures = new ArrayList<>();
+            for (int i = 0; i < structures.size(); i++) {
+                activeStructures.add(i);
+            }
+        }
+        return activeStructures;
+    }
     public int[] getActiveStructures() {
         if (activeStructures == null) {
             activeStructures = new ArrayList<>();

@@ -594,57 +594,65 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     public void drawLines() {
-        molViewer.addLines(0, "lines " + getIndex());
+        molViewer.addLines(getStructures(), "lines", getIndex());
     }
 
     public void drawCyls() {
-        molViewer.addCyls(0, 0.1, 0.1, "lines " + getIndex());
+        molViewer.addCyls(getStructures(), 0.1, 0.1, "lines",  getIndex());
     }
 
     public void drawSticks() {
-        molViewer.addCyls(0, 0.3, 0.5, "sticks " + getIndex());
+        molViewer.addCyls(getStructures(), 0.3, 0.5, "sticks", getIndex());
     }
 
     public void drawSpheres() {
-        molViewer.addSpheres(0, 0.8, "spheres " + getIndex());
+        molViewer.addSpheres(getStructures(), 0.8, "spheres", getIndex());
     }
 
+    public List<Integer> getStructures() {
+        return molViewer.getCurrentMolecule().getActiveStructureList();
+    }
+
+    public int getFirstStructure() {
+        List<Integer> structures = getStructures();
+        return structures.isEmpty() ? 0 : structures.get(0);
+    }
     public void drawCartoon() throws InvalidMoleculeException {
         if (!molViewer.getCurrentMolecule().getPolymers().isEmpty()) {
-            molViewer.addTube(0, 0.7, "tubes " + getIndex());
+            molViewer.addTube(getStructures(), 0.7, "tubes", getIndex());
         }
         selectLigand();
         drawSticks();
     }
 
     public void drawTubes() throws InvalidMoleculeException {
-        molViewer.addTube(0, 0.7, "tubes " + getIndex());
+        molViewer.addTube(getStructures(), 0.7, "tubes", getIndex());
     }
 
     public void drawOrientationSpheresX() throws InvalidMoleculeException {
-        molViewer.addOrientationSphere(0, 122, 3.0, 0, "osphereX");
+        molViewer.addOrientationSphere(getFirstStructure(), 122, 3.0, 0, "osphereX");
     }
 
     public void drawOrientationSpheresY() throws InvalidMoleculeException {
-        molViewer.addOrientationSphere(0, 122, 3.0, 1, "osphereY");
+        molViewer.addOrientationSphere(getFirstStructure(), 122, 3.0, 1, "osphereY");
     }
 
     public void drawOrientationSpheresZ() throws InvalidMoleculeException {
-        molViewer.addOrientationSphere(0, 122, 3.0, 2, "osphereZ");
+        molViewer.addOrientationSphere(getFirstStructure(), 122, 3.0, 2, "osphereZ");
     }
 
     public void drawOrientationCyl() throws InvalidMoleculeException {
-        molViewer.addOrientationCyls(0, 122, 3.0, 2, "ocyls");
+        molViewer.addOrientationCyls(getFirstStructure(), 122, 3.0, 2, "ocyls");
     }
 
     public void drawBox() throws InvalidMoleculeException {
         molViewer.deleteItems("delete", "box");
-        molViewer.addBox(0, 0.3, "box " + getIndex());
+        molViewer.addBox(getFirstStructure(), 0.3, "box " + getIndex());
     }
 
     public void drawConstraints() {
         molViewer.deleteItems("delete", "constraints");
-        molViewer.addConstraintLines(0, "constraints " + getIndex());
+        molViewer.addConstraintLines(getFirstStructure(), "constraints " + getIndex());
     }
 
     public void drawTree() {
@@ -658,7 +666,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
      */
     public void drawAxes() throws InvalidMoleculeException {
         molViewer.deleteItems("delete", "axes");
-        molViewer.addAxes(0, 0.3, "axes " + getIndex(), "original");
+        molViewer.addAxes(getFirstStructure(), 0.3, "axes " + getIndex(), "original");
     }
 
     /**
@@ -668,7 +676,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
      */
     public void drawSVDAxes() throws InvalidMoleculeException {
         molViewer.deleteItems("delete", "svdaxes");
-        molViewer.addAxes(0, 0.3, "svdaxes " + getIndex(), "svd");
+        molViewer.addAxes(getFirstStructure(), 0.3, "svdaxes " + getIndex(), "svd");
     }
 
     /**
@@ -678,7 +686,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
      */
     public void drawRDCAxes() throws InvalidMoleculeException {
         molViewer.deleteItems("delete", "rdcaxes");
-        molViewer.addAxes(0, 0.3, "rdcaxes " + getIndex(), "rdc");
+        molViewer.addAxes(getFirstStructure(), 0.3, "rdcaxes " + getIndex(), "rdc");
     }
 
     public void rotateMoleculeRDC() throws InvalidMoleculeException {
