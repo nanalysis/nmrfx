@@ -1207,10 +1207,10 @@ public class NMRStarReader {
             atom.setPoint(structureNumber, pt);
         }
         if (molecule != null) {
-            molecule.setActiveStructures(selSet);
             for (Integer iStructure : selSet) {
                 molecule.genCoords(iStructure, true);
             }
+            molecule.setActiveStructures(selSet);
         }
     }
 
@@ -1713,6 +1713,7 @@ public class NMRStarReader {
                 noeSet.add(noe);
             }
         }
+        noeSet.updateNPossible(peakList);
         noeSet.setCalibratable(false);
     }
 
