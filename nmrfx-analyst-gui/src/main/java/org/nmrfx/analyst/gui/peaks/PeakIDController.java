@@ -3,6 +3,8 @@ package org.nmrfx.analyst.gui.peaks;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -17,6 +19,7 @@ import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.PeakNavigable;
 import org.nmrfx.processor.gui.PeakNavigator;
@@ -27,6 +30,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -38,6 +42,8 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
     @FXML
     TableView2<IdResult> tableView;
     PeakNavigator peakNavigator;
+
+    PeakNavigator originalNavigator;
     @FXML
     ToolBar menuBar;
 
@@ -65,26 +71,47 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
     }
 
 
-    public static PeakIDController create() {
+    public static PeakIDController create(PeakNavigator navigator) {
         PeakIDController controller = Fxml.load(PeakIDController.class, "PeakIDScene.fxml")
                 .withNewStage("Peak ID")
                 .getController();
         controller.stage.show();
+        controller.originalNavigator = navigator;
 
         return controller;
     }
 
     void initMenuBar() {
-
         peakNavigator = PeakNavigator.create(this).initialize(menuBar);
         peakNavigator.setPeakList();
+        Button button = new Button("Assign");
+        button.setOnAction(e -> assignPeaks());
+        menuBar.getItems().add(button);
 
     }
 
     void initTable() {
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns(2);
     }
 
+    void assignPeaks() {
+        var items = tableView.getSelectionModel().getSelectedItems();
+        Peak peak = peakNavigator.getPeak();
+        if (peak != null) {
+            PeakList peakList = peak.getPeakList();
+            for (int iDim = 0;iDim<peakList.getNDim();iDim++) {
+                PeakDim peakDim = peak.getPeakDim(iDim);
+                List<String> labels = new ArrayList<>();
+                for (var idResult : items) {
+                    SpatialSet spatialSet = idResult.getSpatialSet(iDim);
+                    Atom atom = spatialSet.getAtom();
+                    labels.add(atom.getShortName());
+                }
+                peakDim.setLabel(labels);
+            }
+        }
+    }
     public void gotoPeak(Peak peak) {
         peakNavigator.setPeak(peak);
     }
@@ -105,6 +132,7 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
             tableView.getItems().clear();
             tableView.getItems().addAll(results);
             tableView.sort();
+            originalNavigator.setPeak(peak);
         }
     }
 

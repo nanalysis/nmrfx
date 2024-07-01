@@ -276,6 +276,12 @@ public class PeakNavigator implements PeakListener {
     }
 
     public void setPeak(Peak peak) {
+        if (peak != currentPeak) {
+            currentPeak = peak;
+            if ((idController != null) && (idController.getStage().isShowing())) {
+                idPeak(peak);
+            }
+        }
         currentPeak = peak;
         setPeakIdField();
         peakNavigable.refreshPeakView(peak);
@@ -289,9 +295,6 @@ public class PeakNavigator implements PeakListener {
                 peakNavigable.refreshPeakListView(peakList);
             }
             updateDeleteStatus();
-            if ((idController != null) && (idController.getStage().isShowing())) {
-                idPeak(peak);
-            }
         }
         updateAtomLabels(peak);
     }
@@ -614,7 +617,7 @@ public class PeakNavigator implements PeakListener {
 
     void idPeak(Peak peak) {
         if (idController == null) {
-            idController = PeakIDController.create();
+            idController = PeakIDController.create(this);
         }
         idController.getStage().show();
         idController.getStage().toFront();
