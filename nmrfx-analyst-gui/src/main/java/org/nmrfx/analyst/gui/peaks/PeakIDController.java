@@ -100,6 +100,7 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
             List<IdResult> results = idPeak.getIdResults(matchList, matchCriteria);
             tableView.getItems().clear();
             tableView.getItems().addAll(results);
+            tableView.sort();
         }
     }
 
