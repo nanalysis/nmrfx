@@ -33,6 +33,17 @@ import java.util.*;
  * @author Dub
  */
 public class MolViewer extends Pane {
+    enum RenderType {
+        TUBE,
+        LINES,
+        CYLS,
+        STICKS,
+        SPHERES;
+        final String name;
+        RenderType() {
+            name = this.name().toLowerCase();
+        }
+    }
     private static final Logger log = LoggerFactory.getLogger(MolViewer.class);
 
     private double mousePosX;
@@ -45,7 +56,6 @@ public class MolViewer extends Pane {
     private final double cameraDistance = 100;
 
     MolSceneController controller;
-    private Group rootGroup;
     private SubScene subScene;
     private PerspectiveCamera camera;
     private final CameraTransformer cameraTransform = new CameraTransformer();
@@ -54,7 +64,6 @@ public class MolViewer extends Pane {
     Text text = null;
     double[] center = {0.0, 0.0, 0.0};
     Affine rotTransform = new Affine();
-    Affine transTransform = new Affine();
     List<LabelNode> labelNodes = new ArrayList<>();
     Pane twoDPane;
 
@@ -69,7 +78,7 @@ public class MolViewer extends Pane {
         this.twoDPane = twoDPane;
     }
 
-    class LabelNode {
+    static class LabelNode {
 
         final Node node;
         final Label label;
@@ -89,7 +98,7 @@ public class MolViewer extends Pane {
     }
 
     public final SubScene initScene(double width, double height) {
-        rootGroup = new Group();
+        Group rootGroup = new Group();
 
         subScene = new SubScene(rootGroup, width, height, true, SceneAntialiasing.BALANCED);
         subScene.setFill(Color.BLACK);
@@ -106,8 +115,6 @@ public class MolViewer extends Pane {
         camera.setFieldOfView(44);
         camera.setTranslateZ(-cameraDistance);
         subScene.setCamera(camera);
-        //cameraTransform.ry.setAngle(-45.0);
-        //cameraTransform.rx.setAngle(-10.0);
 
         //add a Point Light for better viewing of the grid coordinate system
         PointLight light = new PointLight(Color.WHITE);
@@ -124,12 +131,7 @@ public class MolViewer extends Pane {
         rootGroup.getChildren().add(cameraTransform);
         resetTransform();
         addHandlers(subScene, twoDPane);
-        ListChangeListener listener = new ListChangeListener() {
-            @Override
-            public void onChanged(ListChangeListener.Change c) {
-                molGroupChanged();
-            }
-        };
+        ListChangeListener listener = c -> molGroupChanged();
         molGroup.getChildren().addListener(listener);
         twoDPane.setMouseTransparent(true);
         try {
@@ -142,9 +144,6 @@ public class MolViewer extends Pane {
 
     void addHandlers(SubScene root, Pane twoDPane) {
 
-        //root.setFill(Color.TRANSPARENT);
-        // scene.setCamera(camera);
-        //First person shooter keyboard movement
         twoDPane.setOnKeyPressed(event -> {
             double change = 2.0;
             //Add shift modifier to simulate "Running Speed"
@@ -162,54 +161,46 @@ public class MolViewer extends Pane {
             }
 
         });
-        root.setOnMouseClicked((event) -> {
+        root.setOnMouseClicked(event -> {
             if (mouseMoved) {
                 return;
             }
             PickResult res = event.getPickResult();
             //you can get a reference to the clicked node like this 
             boolean clearIt = true;
-            if (res.getIntersectedNode() instanceof Node) {
-                Node node = (Node) res.getIntersectedNode();
-                if ((node != null) && (node.getParent() != null)) {
-                    if (!(node instanceof SubScene)) {
-                        Node parent = node.getParent().getParent();
-                        boolean append = event.isShiftDown();
-                        String name;
-                        if (parent instanceof MolItem) {
-                            clearIt = false;
-                            MolItem molItem = (MolItem) parent;
-                            Node selNode = molItem.getSelectorNode(node, res.getIntersectedPoint());
-                            addSelSphere(selNode, append);
-                            name = molItem.getNodeName(node, res.getIntersectedPoint());
-                            String[] fields = name.split(" ");
-                            Label label = new Label();
-                            label.setTextFill(Color.WHITE);
-                            if (fields.length > 1) {
-                                label.setText(fields[1]);
-                            } else {
-                                label.setText(name);
-                            }
-                            LabelNode labelNode = new LabelNode(node, label);
-
-                            labelNodes.add(labelNode);
-                            showLabels();
-                        } else {
-                            name = node.getId();
-                        }
-                        if (!clearIt) {
-                            selectionListeners.stream().forEach((listener) -> {
-                                listener.processSelection(name, event);
-                            });
-                        }
+            Node node = res.getIntersectedNode();
+            if ((node != null) && (node.getParent() != null) && !(node instanceof SubScene)) {
+                Node parent = node.getParent().getParent();
+                boolean append = event.isShiftDown();
+                String name;
+                if (parent instanceof MolItem molItem) {
+                    clearIt = false;
+                    Node selNode = molItem.getSelectorNode(node, res.getIntersectedPoint());
+                    addSelSphere(selNode, append);
+                    name = molItem.getNodeName(node, res.getIntersectedPoint());
+                    String[] fields = name.split(" ");
+                    Label label = new Label();
+                    label.setTextFill(Color.WHITE);
+                    if (fields.length > 1) {
+                        label.setText(fields[1]);
+                    } else {
+                        label.setText(name);
                     }
+                    LabelNode labelNode = new LabelNode(node, label);
+
+                    labelNodes.add(labelNode);
+                    showLabels();
+                } else {
+                    name = node.getId();
+                }
+                if (!clearIt) {
+                    selectionListeners.forEach(listener -> listener.processSelection(name, event));
                 }
             }
+
             if (clearIt) {
                 clearSelSpheres();
-                selectionListeners.stream().forEach((listener) -> {
-                    listener.processSelection("clear", event);
-                });
+                selectionListeners.forEach(listener -> listener.processSelection("clear", event));
                 labelNodes.clear();
                 showLabels();
 
@@ -263,7 +254,7 @@ public class MolViewer extends Pane {
 
     }
 
-    Molecule getCurrentMolecule()  {
+    Molecule getCurrentMolecule() {
         if (currentMolecule != Molecule.getActive()) {
             currentMolecule = Molecule.getActive();
             if (currentMolecule != null) {
@@ -278,6 +269,7 @@ public class MolViewer extends Pane {
         }
         return currentMolecule;
     }
+
     public void showLabels() {
         twoDPane.getChildren().clear();
         for (LabelNode labelNode : labelNodes) {
@@ -293,13 +285,14 @@ public class MolViewer extends Pane {
     public void clearAll() {
         molGroup.getChildren().clear();
     }
+
     public void deleteItems(String mode, String type) {
         if (mode.equals("delete")) {
             final Iterator<Node> iter = molGroup.getChildren().iterator();
             while (iter.hasNext()) {
                 Node node = iter.next();
                 if (node instanceof MolItem) {
-                    if (type.length() == 0) {
+                    if (type.isEmpty()) {
                         iter.remove();
                     } else if (type.equalsIgnoreCase("all")) {
                         iter.remove();
@@ -325,7 +318,7 @@ public class MolViewer extends Pane {
             for (Node node : molGroup.getChildren()) {
                 boolean matched = false;
                 if (node instanceof MolItem) {
-                    if (type.length() == 0) {
+                    if (type.isEmpty()) {
                         matched = true;
                     } else if (type.equalsIgnoreCase("all")) {
                         matched = true;
@@ -357,14 +350,14 @@ public class MolViewer extends Pane {
         }
         setCameraZ(-defaultScale * cornerDistance);
         if (!molecule.getPolymers().isEmpty()) {
-            createItems("tube");
+            createItems(RenderType.TUBE);
         } else {
-            createItems("lines");
+            createItems(RenderType.LINES);
         }
         resetTransform();
     }
 
-    class MolPrimitives {
+    static class MolPrimitives {
 
         final ArrayList<Bond> bonds;
         final ArrayList<Atom> atoms;
@@ -381,7 +374,7 @@ public class MolViewer extends Pane {
         }
     }
 
-    private void createItems(String type) throws InvalidMoleculeException {
+    private void createItems(RenderType renderType) throws InvalidMoleculeException {
         int iStructure = controller.getFirstStructure();
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
@@ -394,14 +387,11 @@ public class MolViewer extends Pane {
         molecule.colorAtomsByType();
 
         molGroup.getChildren().clear();
-        if (type.equals("spheres")) {
-            addSpheres(List.of(iStructure), 0.5, "spheres", 0);
-        } else if (type.equals("lines")) {
-            addLines(iStructure, "lines");
-        } else if (type.equals("cyls")) {
-            addCyls(List.of(iStructure), 0.2, 0.1, "cyls", 0);
-        } else if (type.equals("tube")) {
-            addTube(List.of(iStructure), 0.5, "tube", 0);
+        switch (renderType) {
+            case SPHERES -> addSpheres(List.of(iStructure), 0.5, renderType.name, 0);
+            case LINES -> addLines(iStructure, "lines");
+            case CYLS -> addCyls(List.of(iStructure), 0.2, 0.1, renderType.name, 0);
+            case TUBE -> addTube(List.of(iStructure), 0.5, renderType.name, 0);
         }
 
         try {
@@ -454,6 +444,7 @@ public class MolViewer extends Pane {
     public void addLines(int iStructure, String tag) {
         addLines(List.of(iStructure), tag, 0);
     }
+
     public void addLines(List<Integer> structures, String tag, int index) {
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
@@ -491,13 +482,13 @@ public class MolViewer extends Pane {
                 continue;
             }
             var v1 = startAtom.getPoint();
-            for (int i = 3;i< branch.size();i++) {
+            for (int i = 3; i < branch.size(); i++) {
                 Atom endAtom = branch.get(i);
                 var v2 = endAtom.getPoint();
                 boolean rotatable = endAtom.rotActive && endAtom.irpIndex > 0;
                 Color color;
                 if (rotatable) {
-                    color = color1.interpolate(color2, (double) iBranch/ atomTree.size());
+                    color = color1.interpolate(color2, (double) iBranch / atomTree.size());
                 } else {
                     color = Color.BLUE;
                 }
@@ -507,6 +498,7 @@ public class MolViewer extends Pane {
             iBranch++;
         }
     }
+
     public void addConstraintLines(int iStructure, String tag) {
         Molecule molecule = getCurrentMolecule();
         if (molecule == null) {
@@ -577,9 +569,8 @@ public class MolViewer extends Pane {
      * @param iStructure int Structure number
      * @param radius     double Radius of cylinder in plot
      * @param tag        String Tag applied to every associated object
-     * @throws InvalidMoleculeException
      */
-    public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
+    public void addBox(int iStructure, double radius, String tag) {
         Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
@@ -588,10 +579,6 @@ public class MolViewer extends Pane {
             Vector3D[] cornerVecs = mol.getCorner(iStructure);
             double[] minCorner = cornerVecs[0].toArray();
             double[] maxCorner = cornerVecs[1].toArray();
-            double[][] factors = {{1, 1, 1}, {-1, -1, -1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
-            double[][] begin = new double[factors.length][3];
-            double[][] end = new double[factors.length][3];
-            double[][] diffs = new double[factors.length][3];
             double[] v0 = new double[3];
             double[] v1 = new double[3];
             double[][] ends = new double[2][];
@@ -635,9 +622,8 @@ public class MolViewer extends Pane {
      * @param radius     double Radius of cylinder in plot
      * @param tag        String Tag applied to every associated object
      * @param type       String Axis type (rdc, svd, original).
-     * @throws InvalidMoleculeException
      */
-    public void addAxes(int iStructure, double radius, String tag, String type) throws InvalidMoleculeException {
+    public void addAxes(int iStructure, double radius, String tag, String type) {
         Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
@@ -701,7 +687,7 @@ public class MolViewer extends Pane {
         if (type.equals("rdc")) {
             rotMat = mol.getRDCRotationMatrix(false);
         } else if (type.equals("svd")) {
-            rotMat = mol.getSVDRotationMatrix(iStructure,false);
+            rotMat = mol.getSVDRotationMatrix(iStructure, false);
         } else {
             return;
         }
@@ -746,7 +732,7 @@ public class MolViewer extends Pane {
 
     }
 
-    public void addOrientationSphere(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
+    public void addOrientationSphere(int iStructure, int n, double sphereRadius, int orient, String tag) {
         Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
@@ -775,7 +761,7 @@ public class MolViewer extends Pane {
         molGroup.getChildren().add(spheres);
     }
 
-    public void addOrientationCyls(int iStructure, int n, double sphereRadius, int orient, String tag) throws InvalidMoleculeException {
+    public void addOrientationCyls(int iStructure, int n, double sphereRadius, int orient, String tag) {
         Molecule mol = getCurrentMolecule();
         if (mol == null) {
             return;
@@ -784,54 +770,14 @@ public class MolViewer extends Pane {
         aCalc.makeCylinder(100, 10.0, 15.0, 100.0);
         aCalc.center();
         Vector3D center = aCalc.getCenter();
-        double radius = aCalc.getRadius();
-        Vector3D initialVec;
         Color color = Color.RED;
         List<Vector3D> vecs = aCalc.getVectors();
         Spheres spheres = new Spheres(tag, vecs, color, 0.3, center, 1.1, tag);
         molGroup.getChildren().add(spheres);
     }
 
-    public void createItems(String mode, String[] args, ArrayList<Bond> bonds,
-                            List<BondLine> bondLines, List<Atom> atoms, List<AtomSphere> atomSpheres) {
-        String type = "";
-        String text = "";
-        double sphereRadius = 0.3;
-        double cylRadius = 0.2;
-        double[] begin = new double[3];
-        double[] end = new double[3];
-        String tag = getCurrentMolecule().getName();
-        Color color = Color.GREEN;
-        String molName = getCurrentMolecule().getName();
-        if (type.equals("molspheres")) {
-            MolSpheres spheres = new MolSpheres(molName, atoms, atomSpheres, sphereRadius, true, tag);
-            molGroup.getChildren().add(spheres);
-        } else if (type.equals("molcyls")) {
-            MolCylinders cyls = new MolCylinders(molName, bonds, bondLines, cylRadius, tag);
-            molGroup.getChildren().add(cyls);
-            if (sphereRadius > 0.01) {
-                MolSpheres spheres = new MolSpheres(molName, atoms, atomSpheres, sphereRadius, false, tag);
-                molGroup.getChildren().add(spheres);
-            }
-        } else if (type.equals("molcyl")) {
-            MolCylinder cyl = new MolCylinder(begin, end, cylRadius, color, tag);
-            molGroup.getChildren().add(cyl);
-        } else if (type.equals("molsphere")) {
-            MolSphere sphere = new MolSphere(begin, sphereRadius, color, tag);
-            molGroup.getChildren().add(sphere);
-        } else if (type.equals("moltube")) {
-            MolTube tube = new MolTube(molName, atoms, atomSpheres, sphereRadius, tag);
-            molGroup.getChildren().add(tube);
-        } else if (type.equals("text")) {
-            MolText molText = new MolText(begin, text, color, tag);
-            molGroup.getChildren().add(molText);
-        } else {
-            throw new IllegalArgumentException("invalid type " + type);
-        }
-    }
-
     public void refresh() {
-        for (var obj:molGroup.getChildren()) {
+        for (var obj : molGroup.getChildren()) {
             if (obj instanceof MolItem molItem) {
                 molItem.refresh();
             }
@@ -874,7 +820,7 @@ public class MolViewer extends Pane {
         updateView();
         Molecule molecule = getCurrentMolecule();
         if (molecule != null) {
-                setCameraZ(-defaultScale * cornerDistance);
+            setCameraZ(-defaultScale * cornerDistance);
         } else {
             camera.setTranslateZ(-cameraDistance);
         }
@@ -897,7 +843,7 @@ public class MolViewer extends Pane {
 
     void setCameraZ(double z) {
         z = Math.min(-10, z);
-        z= Math.max(-cornerDistance * 4, z);
+        z = Math.max(-cornerDistance * 4, z);
         camera.setTranslateZ(z);
     }
 

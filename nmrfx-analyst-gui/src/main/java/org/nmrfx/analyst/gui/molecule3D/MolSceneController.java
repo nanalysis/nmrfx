@@ -121,7 +121,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private StructureCalculator structureCalculator = new StructureCalculator(this);
     SSPredictor ssPredictor = null;
 
-    List<String> currentDrawingModes = new ArrayList<>();
+    List<MolViewer.RenderType> currentDrawingModes = new ArrayList<>();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -135,9 +135,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssViewer.getDrawProbabilitiesProp().bind(probabilitiesCheckBox.selectedProperty());
         ssViewer.getShowActiveProp().bind(activeCheckBox.selectedProperty());
         dotBracketField.setEditable(true);
-        dotBracketField.textProperty().addListener(e -> {
-            dotBracketFieldChanged();
-        });
+        dotBracketField.textProperty().addListener(e -> dotBracketFieldChanged());
         constraintTypeChoiceBox.getItems().addAll("All", "Intraresidue", "Interresidue");
         constraintTypeChoiceBox.setValue("All");
         ssViewer.getConstraintTypeProp().bind(constraintTypeChoiceBox.valueProperty());
@@ -158,9 +156,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ligandBorderPane.setCenter(ligandCanvasPane);
         ligandCanvasPane.widthProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
         ligandCanvasPane.heightProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
         ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         updatePeakListMenu();
@@ -206,7 +202,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             atomCheckItems.add(menuItem);
             atomMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms(name, c.booleanValue()));
+                    (a, b, c) -> updateAtoms(name, c));
         }
         Menu riboseMenu = new Menu("Ribose Atoms");
         atomMenu.getItems().add(riboseMenu);
@@ -337,20 +333,20 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void refresh()  {
         molViewer.clearAll();
         itemIndex = 0;
-        List<String> modes = new ArrayList<>();
+        List<MolViewer.RenderType> modes = new ArrayList<>();
         modes.addAll(currentDrawingModes);
-        for (String mode : modes) {
+        for (MolViewer.RenderType mode : modes) {
             switch (mode) {
-                case "lines" -> drawLines();
-                case "spheres" -> drawSpheres();
-                case "tube" -> {
+                case LINES -> drawLines();
+                case SPHERES -> drawSpheres();
+                case TUBE -> {
                     try {
                         drawTubes();
                     } catch (InvalidMoleculeException e) {
                         throw new RuntimeException(e);
                     }
                 }
-                case "sticks" -> drawSticks();
+                case STICKS -> drawSticks();
             }
         }
     }
@@ -820,12 +816,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
         for (String item : items) {
             String[] fields = item.split(" ");
             if (fields.length > 1) {
+                MolViewer.RenderType renderType = MolViewer.RenderType.valueOf(fields[0].toUpperCase());
                 if (!added.contains(fields[0])) {
                     removeItems.add(fields[0]);
                     added.add(fields[0]);
                 }
-                if (!currentDrawingModes.contains(fields[0])) {
-                    currentDrawingModes.add(fields[0]);
+                if (!currentDrawingModes.contains(renderType)) {
+                    currentDrawingModes.add(renderType);
                 }
             }
         }
