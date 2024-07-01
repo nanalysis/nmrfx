@@ -1577,8 +1577,8 @@ public class Molecule extends MoleculeBase {
      * @param inputAxes double[][] coordinates of the orginal axes
      * @return RealMatrix coordinates of the rotated axes
      */
-    public RealMatrix calcSVDAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix(true);
+    public RealMatrix calcSVDAxes(int iStructure, double[][] inputAxes) {
+        RealMatrix rotMat = getSVDRotationMatrix(iStructure,true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1639,17 +1639,17 @@ public class Molecule extends MoleculeBase {
 
     }
 
-    public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
+    public RealMatrix getSVDRotationMatrix(int iStructure, boolean scaleMat) {
         Point3 pt;
         double[] c = new double[3];
         try {
-            c = getCenter(0);
+            c = getCenter(iStructure);
         } catch (MissingCoordinatesException ex) {
             log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
-            pt = atom.getPoint();
+            pt = atom.getPoint(iStructure);
             if (pt != null) {
                 double[] aCoords = pt.toArray();
                 for (int i = 0; i < aCoords.length; i++) {

@@ -176,7 +176,7 @@ public class MoleculeMenuActions extends MenuActions {
     }
 
     public void readMolecule(String type) {
-        if (!checkForExisting()) {
+        if (!type.equals("pdb xyz") && !checkForExisting()) {
             return;
         }
 
@@ -197,7 +197,7 @@ public class MoleculeMenuActions extends MenuActions {
                     case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
                         molecule = Molecule.getActive();
-                        pdb.readCoordinates(molecule, file.getPath(), 0, false, true);
+                        pdb.readCoordinates(molecule, file.getPath(), -1, false, true);
                         molecule.updateAtomArray();
                     }
                     case "sdf", "mol" -> molecule = (Molecule) SDFile.read(file.toString(), null);
