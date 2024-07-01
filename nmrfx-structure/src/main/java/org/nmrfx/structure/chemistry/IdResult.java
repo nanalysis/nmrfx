@@ -49,6 +49,10 @@ public class IdResult {
     private double dismin = 0.0;
     private double dismax = 0.0;
     private double dis = 0.0;
+
+    private double disExp = 0.0;
+
+    private double contrib = 0.0;
     double[] dp;
     SpatialSet[] spatialSets;
     double inRange = 0;
@@ -64,6 +68,7 @@ public class IdResult {
         this.dis = dis;
         this.dismin = disMin;
         this.dismax = disMax;
+        this.disExp = dismax > 1.0-6 ? Math.pow(dismax, -6.0) : 1.0;
     }
     void setSpatialSet(int i, SpatialSet value) {
         spatialSets[i] = value;
@@ -94,6 +99,21 @@ public class IdResult {
         return Math.exp(-1.0 * sum / 2.0);
     }
 
+    public double disExp() {
+        return disExp;
+    }
+
+    public double inRange() {
+        return inRange;
+    }
+
+    public void setContrib(double value) {
+        this.contrib = value;
+    }
+
+    public double getContrib() {
+        return contrib;
+    }
     @Override
     public String toString() {
         StringBuilder strResult = new StringBuilder();

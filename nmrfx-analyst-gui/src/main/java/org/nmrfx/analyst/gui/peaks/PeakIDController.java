@@ -11,6 +11,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.controlsfx.control.tableview2.TableView2;
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.SpatialSet;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
@@ -98,12 +100,25 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
             }
             List<SpatialSet>[] matchList = idPeak.scan(matchCriteria);
             List<IdResult> results = idPeak.getIdResults(matchList, matchCriteria);
+            updateContributions(results);
+
             tableView.getItems().clear();
             tableView.getItems().addAll(results);
             tableView.sort();
         }
     }
 
+    void updateContributions(List<IdResult> idResults) {
+        double sum = 0.0;
+        for (var result: idResults) {
+            sum += result.disExp();
+        }
+        for (var result: idResults) {
+            double contrib = sum > 0.0 ? result.disExp() / sum : 0.0;
+            result.setContrib(contrib);
+        }
+
+    }
     @Override
     public void refreshPeakView() {
 
@@ -141,7 +156,22 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
 
 
         for (int i = 0; i < nDim; i++) {
-            DimTableColumn<IdResult, Integer> labelCol = new DimTableColumn<>("Res", i);
+            DimTableColumn<IdResult, String> resCol = new DimTableColumn<>("Res", i);
+            resCol.setCellValueFactory((TableColumn.CellDataFeatures<IdResult, String> p) -> {
+                IdResult idResult = p.getValue();
+                int iDim = resCol.peakDim;
+                SpatialSet spatialSet = idResult.getSpatialSet(iDim);
+                Atom atom = spatialSet.getAtom();
+                String oneChar = "";
+                if (atom.getEntity() instanceof Residue residue) {
+                    oneChar = String.valueOf(residue.getOneLetter());
+                }
+                return new ReadOnlyObjectWrapper<>(oneChar);
+            });
+            resCol.setPrefWidth(20);
+            tableView.getColumns().add(resCol);
+
+            DimTableColumn<IdResult, Integer> labelCol = new DimTableColumn<>("Seq", i);
             labelCol.setCellValueFactory((TableColumn.CellDataFeatures<IdResult, Integer> p) -> {
                 IdResult idResult = p.getValue();
                 int iDim = labelCol.peakDim;
@@ -149,9 +179,9 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
                 int residueNumber = spatialSet.getAtom().getResidueNumber();
                 return new ReadOnlyObjectWrapper<>(residueNumber);
             });
-
-
             labelCol.setPrefWidth(40);
+
+
             tableView.getColumns().add(labelCol);
             DimTableColumn<IdResult, String> atomCol = new DimTableColumn<>("Atm", i);
             atomCol.setCellValueFactory((TableColumn.CellDataFeatures<IdResult, String> p) -> {
@@ -186,6 +216,16 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
         tolCol.setPrefWidth(50);
         tableView.getColumns().add(tolCol);
 
+        TableColumn<IdResult, Double> inRangeCol = new TableColumn<>("Str%");
+        inRangeCol.setCellValueFactory((TableColumn.CellDataFeatures<IdResult, Double> p) -> {
+            IdResult idResult = p.getValue();
+            double delta = idResult.inRange();
+            return new ReadOnlyObjectWrapper<>(delta);
+        });
+        inRangeCol.setCellFactory(new PeakTableController.ColumnFormatter<>(new DecimalFormat(".0")));
+        inRangeCol.setPrefWidth(50);
+        tableView.getColumns().add(inRangeCol);
+
         TableColumn<IdResult, Double> avgCol = new TableColumn<>("Avg");
         avgCol.setCellValueFactory(new PropertyValueFactory<>("Dis"));
         avgCol.setCellFactory(new PeakTableController.ColumnFormatter<>(new DecimalFormat(".00")));
@@ -203,6 +243,12 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
         maxCol.setCellFactory(new PeakTableController.ColumnFormatter<>(new DecimalFormat(".00")));
         maxCol.setPrefWidth(50);
         tableView.getColumns().add(maxCol);
+
+        TableColumn<IdResult, Double> contribColumn = new TableColumn<>("Contrib");
+        contribColumn.setCellValueFactory(new PropertyValueFactory<>("Contrib"));
+        contribColumn.setCellFactory(new PeakTableController.ColumnFormatter<>(new DecimalFormat(".00")));
+        contribColumn.setPrefWidth(50);
+        tableView.getColumns().add(contribColumn);
 
 
     }
