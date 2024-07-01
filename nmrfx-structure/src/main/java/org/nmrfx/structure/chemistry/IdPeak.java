@@ -556,7 +556,7 @@ public class IdPeak {
                         int delta = 0;
                         int res = 0;
 
-                        if (mC.getResPat(k).length() == 0) {
+                        if (mC.getResPat(k).isEmpty()) {
                             res = ires;
                         } else if (mC.getResPat(k).charAt(0) == 'i') {
                             res = ires;

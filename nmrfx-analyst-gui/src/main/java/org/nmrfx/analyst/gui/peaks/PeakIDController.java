@@ -8,9 +8,6 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.controlsfx.control.tableview2.TableView2;
 import org.nmrfx.chemistry.Atom;
@@ -35,8 +32,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class PeakIDController implements Initializable, StageBasedController, PeakNavigable {
-    static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.RED, null, null));
-
     Stage stage;
 
     @FXML

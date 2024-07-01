@@ -543,7 +543,7 @@ public class PeakNavigator implements PeakListener {
             matchPeaks = Optional.empty();
             int id = Integer.MIN_VALUE;
             String idString = idField.getText().trim();
-            if (idString.length() != 0) {
+            if (!idString.isEmpty()) {
                 try {
                     id = Integer.parseInt(idString);
                 } catch (NumberFormatException nfE) {
