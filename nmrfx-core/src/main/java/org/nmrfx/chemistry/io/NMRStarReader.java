@@ -1207,10 +1207,10 @@ public class NMRStarReader {
             atom.setPoint(structureNumber, pt);
         }
         if (molecule != null) {
-            molecule.setActiveStructures(selSet);
             for (Integer iStructure : selSet) {
                 molecule.genCoords(iStructure, true);
             }
+            molecule.setActiveStructures(selSet);
         }
     }
 
@@ -1540,8 +1540,8 @@ public class NMRStarReader {
             try {
                 AngleConstraint aCon = new AngleConstraint(atoms, lower, upper, name);
                 angleSet.add(aCon);
-            } catch (InvalidMoleculeException ex) {
-                throw new ParseException(ex.getLocalizedMessage());
+            } catch (IllegalArgumentException | InvalidMoleculeException ex) {
+                log.error(ex.getMessage(), ex);
             }
         }
     }
@@ -1713,6 +1713,7 @@ public class NMRStarReader {
                 noeSet.add(noe);
             }
         }
+        noeSet.updateNPossible(peakList);
         noeSet.setCalibratable(false);
     }
 

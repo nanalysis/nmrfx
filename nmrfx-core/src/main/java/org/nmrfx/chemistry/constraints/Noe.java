@@ -245,10 +245,6 @@ public class Noe extends DistanceConstraint {
         return (active > 0);
     }
 
-    public int getActive() {
-        return active;
-    }
-
     public void setActive(int newState) {
         this.active = (short) newState;
     }

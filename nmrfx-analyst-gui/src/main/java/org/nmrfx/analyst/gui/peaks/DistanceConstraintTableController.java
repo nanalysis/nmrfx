@@ -45,7 +45,6 @@ import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.energy.AtomPair;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -255,6 +254,9 @@ public class DistanceConstraintTableController implements Initializable, StageBa
             double v = Math.round(distanceStat.getMean() * 10.0) / 10.0;
             return new ReadOnlyObjectWrapper<>(v);
         });
+
+
+
         tableView.getColumns().addAll(lowerCol, upperCol, meanCol);
 
     }

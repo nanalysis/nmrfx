@@ -192,7 +192,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         }
     }
 
-    private static class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+    static class ColumnFormatter<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
         private Format format;
 

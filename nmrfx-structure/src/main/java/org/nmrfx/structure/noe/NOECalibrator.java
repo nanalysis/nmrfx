@@ -92,6 +92,7 @@ public class NOECalibrator {
         this.useDistances = useDistances;
         inactivateDiagonal();
         updateDistances(requireActive);
+        updateDistanceContribs();
         findSymmetrical();
         findNetworks(false);
         calculateContributions(useDistances);
@@ -100,6 +101,7 @@ public class NOECalibrator {
         findNetworks(true);
         calculateContributions(useDistances);
         calibrateExp(null);
+
         findRedundant();
         noeSet.setDirty(false);
     }
@@ -176,7 +178,7 @@ public class NOECalibrator {
             SpatialSetGroup spg2;
             if (distanceConstraint instanceof Noe noe) {
                 spg1 = noe.getSpg1();
-                spg2 = noe.getSpg1();
+                spg2 = noe.getSpg2();
             } else {
                 spg1 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms1());
                 spg2 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms2());
@@ -754,24 +756,7 @@ public class NOECalibrator {
             noeCal.calibrate(noe);
         }
     }
-
-    public void updateNPossible(PeakList whichList) {
-        for (Map.Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().getPeakList();
-            if ((whichList != null) && (whichList != peakList)) {
-                continue;
-            }
-            List<Noe> noeList = entry.getValue();
-            NoeCalibration noeCal = getCalibration(peakList);
-            if (noeCal == null) {
-                noeCal = defaultCal(peakList);
-            }
-            for (Noe noe : noeList) {
-                noe.setNPossible(noeList.size());
-            }
-        }
-    }
-
+    
     public void findSymmetrical() {
         int nNoe = noeSet.getSize();
         Map<String, Noe> symMap = new HashMap<>();

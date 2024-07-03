@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.constraints;
 
 import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -215,6 +216,19 @@ public class NoeSet implements ConstraintSet, Iterable {
                     fileWriter.write(outputString);
                     i++;
                 }
+            }
+        }
+    }
+
+    public void updateNPossible(PeakList whichList) {
+        for (Map.Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
+            PeakList peakList = entry.getKey().getPeakList();
+            if ((whichList != null) && (whichList != peakList)) {
+                continue;
+            }
+            List<Noe> noeList = entry.getValue();
+            for (Noe noe : noeList) {
+                noe.setNPossible(noeList.size());
             }
         }
     }
