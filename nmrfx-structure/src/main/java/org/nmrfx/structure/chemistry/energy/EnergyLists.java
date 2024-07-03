@@ -1087,6 +1087,17 @@ public class EnergyLists {
                     }
                     if (ok) {
                         int nPairs = distancePair.getAtomPairs().length;
+                        boolean rotUnitOK = false;
+                        for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
+                            Atom atom1 = atomDistancePair.getAtoms1()[0];
+                            Atom atom2 = atomDistancePair.getAtoms2()[0];
+                            int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
+                            int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
+                            if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
+                                rotUnitOK = true;
+                            }
+                        }
+
                         for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
                             Atom atom1 = atomDistancePair.getAtoms1()[0];
                             Atom atom2 = atomDistancePair.getAtoms2()[0];
@@ -1095,7 +1106,7 @@ public class EnergyLists {
                                 int jAtom = atom2.eAtom;
                                 int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
                                 int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
-                                if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
+                                if (rotUnitOK) {
                                     eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.getLower(), distancePair.getUpper(), distancePair.isBond(),
                                             iGroup, weight / nPairs);
                                 }

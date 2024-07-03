@@ -43,10 +43,12 @@ def readPDB(fileName, isCompound = False, iStruct=0):
     pdb = PDBFile()
     if not isCompound:
         mol = pdb.readSequence(fileName,False, iStruct)
+        updateAtomArray(mol)
+        return mol
     else:
-        mol = pdb.readResidue(fileName, None, MoleculeFactory.getActive(), None)
-    updateAtomArray(mol)
-    return mol
+        cmpd = pdb.readResidue(fileName, None, MoleculeFactory.getActive(), None)
+        updateAtomArray(cmpd.molecule)
+        return cmpd
 
 def readPDBX(fileName, isCompound = False):
     ''' Reads a pdb file and modifies the static Molecule object.

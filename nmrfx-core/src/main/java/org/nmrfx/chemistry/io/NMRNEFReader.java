@@ -432,7 +432,7 @@ public class NMRNEFReader {
                 String atomName = atomNameColumns[atomIndex].get(i);
                 String chainCode = chainCodeColumns[atomIndex].get(i);
                 String sequenceCode = sequenceCodeColumns[atomIndex].get(i);
-                String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                String fullAtom = chainCode.equals(".") ? sequenceCode + "." + atomName : chainCode + ":" + sequenceCode + "." + atomName;
                 Compound compound = getCompound(compoundMap, chainCode, sequenceCode);
                 if (compound == null) {
                     log.warn("invalid compound in assignments saveframe \"{} {}\"", chainCode, sequenceCode);

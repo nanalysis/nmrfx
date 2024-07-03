@@ -35,7 +35,7 @@ def loadPDBModels(files):
     molecule = pdb.read(fileName)
     iFile = 0
     for file in files:
-        pdb.readCoordinates(file,iFile,False, False)
+        pdb.readCoordinates(molecule, file,iFile,False, False)
         iFile += 1
     return molecule
 

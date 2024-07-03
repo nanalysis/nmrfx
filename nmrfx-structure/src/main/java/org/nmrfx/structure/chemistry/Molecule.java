@@ -839,7 +839,7 @@ public class Molecule extends MoleculeBase {
 
     public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
-        List<SpatialSet> selected = matchAtoms(molFilter);
+        List<SpatialSet> selected = matchAtoms(molFilter, this);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
