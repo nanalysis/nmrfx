@@ -137,6 +137,7 @@ public class PDBFile {
                     molecule.structures.add(Integer.valueOf(structureNumber));
                     molecule.calcAllBonds();
                     molecule.getAtomTypes();
+                    ProjectBase.getActive().putMolecule(molecule);
                     return molecule;
                 }
 
