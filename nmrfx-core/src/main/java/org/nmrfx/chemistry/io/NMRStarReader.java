@@ -1585,6 +1585,25 @@ public class NMRStarReader {
         }
     }
 
+    public static PeakList getPeakList(String saveframeName, String peakListIDStr, PeakList peakList) throws ParseException {
+        if (peakListIDStr.equals(".")) {
+            if (peakList == null) {
+                peakList = new PeakList(saveframeName, 2);
+            }
+        } else {
+            try {
+                int peakListID = Integer.parseInt(peakListIDStr);
+                Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                if (peakListOpt.isPresent()) {
+                    peakList = peakListOpt.get();
+                }
+            } catch (NumberFormatException nFE) {
+                throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
+            }
+        }
+        return peakList;
+    }
+
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Gen_dist_constraint");
         if (loop == null) {
@@ -1665,21 +1684,7 @@ public class NMRStarReader {
             String peakID = peakIDColumn.get(i);
             String constraintID = constraintIDColumn.get(i);
             if (!peakListIDStr.equals(lastPeakListIDStr)) {
-                if (peakListIDStr.equals(".")) {
-                    if (peakList == null) {
-                        peakList = new PeakList("gendist", 2);
-                    }
-                } else {
-                    try {
-                        int peakListID = Integer.parseInt(peakListIDStr);
-                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
-                        if (peakListOpt.isPresent()) {
-                            peakList = peakListOpt.get();
-                        }
-                    } catch (NumberFormatException nFE) {
-                        throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
-                    }
-                }
+                peakList = getPeakList(saveframe.getName(), peakListIDStr, peakList);
             }
             lastPeakListIDStr = peakListIDStr;
             Peak peak;

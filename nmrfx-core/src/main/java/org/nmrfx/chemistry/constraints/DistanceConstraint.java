@@ -31,7 +31,7 @@ public class DistanceConstraint implements Constraint {
     private static final DistanceStat DEFAULT_STAT = new DistanceStat();
 
     private final AtomDistancePair[] atomPairs;
-    private final boolean isBond;
+    private boolean isBond;
     protected double lower;
     protected double upper;
     protected double weight;
@@ -176,6 +176,9 @@ public class DistanceConstraint implements Constraint {
 
     public boolean isBond() {
         return isBond;
+    }
+    public void isBond(boolean value) {
+        isBond = value;
     }
 
     public double getTargetErr() {

@@ -647,7 +647,7 @@ class refine:
 
     def getDistanceConstraintSet(self, name):
         molConstraints = self.molecule.getMolecularConstraints()
-        disCon = molConstraints.getDistanceSet(name, True)
+        disCon = molConstraints.getNoeSet(name, True)
         return disCon
 
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):

@@ -17,10 +17,12 @@
  */
 package org.nmrfx.chemistry.io;
 
+import org.checkerframework.checker.units.qual.A;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 
@@ -252,9 +254,23 @@ public class NMRNEFWriter {
         chan.write("    stop_\n");
         chan.write("save_\n");
     }
-
-    static void writeDistances(MoleculeBase molecule, DistanceConstraintSet distSet, FileWriter chan) throws IOException, InvalidMoleculeException {
-        List<DistanceConstraint> distList = distSet.get();
+    static List<AtomDistancePair> getAtomDistancePairs(List<Noe> noes) {
+        List<AtomDistancePair> atomDistancePairs = new ArrayList<>();
+        int i = 0;
+        for (Noe noe:noes) {
+            SpatialSetGroup spg1 = noe.getSpg1();
+            SpatialSetGroup spg2 = noe.getSpg2();
+            for (var sp1 : spg1.getSpSets()) {
+                for (var sp2 : spg2.getSpSets()) {
+                    AtomDistancePair atomDistancePair = new AtomDistancePair(sp1.getAtom(), sp2.getAtom());
+                    atomDistancePairs.add(atomDistancePair);
+                }
+            }
+        }
+        return atomDistancePairs;
+    }
+    static void writeDistances(MoleculeBase molecule, NoeSet distSet, FileWriter chan) throws IOException, InvalidMoleculeException {
+        List<Noe> distList = distSet.getConstraints();
         String saveFrameName = distSet.getName();
         chan.write("\n");
         chan.write("save_" + saveFrameName + "\n"); //fixme dynamically get framecode
@@ -278,15 +294,15 @@ public class NMRNEFWriter {
         int idx = 1;
         int restraintID = 1;
         String result;
-        for (int i = 0; i < distList.size(); i++) {
-            DistanceConstraint distPair = distList.get(i);
-            AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-            int nPairs = pairAtoms.length;
+        for (Map.Entry<Peak, List<Noe>> entry : distSet.getPeakMapEntries()) {
+            List<Noe> noes = entry.getValue();
+            List<AtomDistancePair> pairAtoms = getAtomDistancePairs(noes);
+            int nPairs = pairAtoms.size();
             int[][] collapse = new int[nPairs][2];
             boolean[] skipPair = new boolean[nPairs];
             Set<String> pairNames = new HashSet<>();
             for (int iPair = 0; iPair < nPairs; iPair++) {
-                AtomDistancePair pair = pairAtoms[iPair];
+                AtomDistancePair pair = pairAtoms.get(iPair);
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
                 String pairName = atom1.getFullName() + "_" + atom2.getFullName();
@@ -294,7 +310,7 @@ public class NMRNEFWriter {
             }
 
             for (int iPair = 0; iPair < nPairs; iPair++) {
-                AtomDistancePair pair = pairAtoms[iPair];
+                AtomDistancePair pair = pairAtoms.get(iPair);
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
                 if (atom1.isMethyl()) {
@@ -372,13 +388,13 @@ public class NMRNEFWriter {
                 }
             }
             for (int iPair = 0; iPair < nPairs; iPair++) {
-                AtomDistancePair pair = pairAtoms[iPair];
+                AtomDistancePair pair = pairAtoms.get(iPair);
                 if (skipPair[iPair]) {
                     continue;
                 }
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
-                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", distPair, atom1, atom2);
+                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", noes.get(0), atom1, atom2);
                 chan.write(result + "\n");
                 idx++;
 
@@ -534,7 +550,7 @@ public class NMRNEFWriter {
         if (molecule != null) {
             writeMolSys(molecule, chan);
             writePPM(molecule, chan);
-            for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets()) {
+            for (NoeSet distanceSet : molecule.getMolecularConstraints().noeSets()) {
                 writeDistances(molecule, distanceSet, chan);
             }
             for (AngleConstraintSet angleSet : molecule.getMolecularConstraints().angleSets()) {

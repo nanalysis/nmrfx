@@ -45,6 +45,13 @@ public class MolecularConstraints {
         activeNOESet(name);
         return noeSet;
     }
+    public NoeSet getNoeSet(String name, boolean create) {
+        NoeSet set = noeSets.get(name);
+        if ((set == null) && create) {
+            set = newNOESet(name);
+        }
+        return set;
+    }
 
     public Collection<NoeSet> noeSets() {
         return noeSets.values();
