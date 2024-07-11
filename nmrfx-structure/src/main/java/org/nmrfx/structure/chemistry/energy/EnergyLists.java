@@ -1041,6 +1041,7 @@ public class EnergyLists {
         boolean ok = false;
         SpatialSetGroup spatialSetGroup1 = noe.getSpg1();
         SpatialSetGroup spatialSetGroup2 = noe.getSpg2();
+        int nPairs = spatialSetGroup1.getSpSets().size() * spatialSetGroup2.getSpSets().size();
         for (SpatialSet spatialSet1 : spatialSetGroup1.getSpSets()) {
             for (SpatialSet spatialSet2 : spatialSetGroup2.getSpSets()) {
                 Atom atom1 = spatialSet1.getAtom();
@@ -1063,30 +1064,9 @@ public class EnergyLists {
                     int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
                     int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
                     if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
-                       // System.out.printf("ADDN %10s %10s %5d %7.2f %7.2f %b\n", atom1.getShortName(), atom2.getShortName(), iGroup, noe.getLower(), noe.getUpper(), true);
-
                         eCoords.addPair(iAtom, jAtom, iUnit, jUnit, noe.getLower(), noe.getUpper(), noe.isBond(),
-                                iGroup, weight);
+                                iGroup, weight / nPairs);
                     }
-                }
-            }
-        }
-    }
-    void addPairs(EnergyCoords eCoords, Noe noe, int iGroup, double weight) {
-        int nPairs = noe.getAtomPairs().length;
-        boolean rotUnitOK = rotGroupOK(noe);
-
-        for (AtomDistancePair atomDistancePair : noe.getAtomPairs()) {
-            Atom atom1 = atomDistancePair.getAtoms1()[0];
-            Atom atom2 = atomDistancePair.getAtoms2()[0];
-            if (true || !eCoords.fixedCurrent() || !eCoords.getFixed(atom1.eAtom, atom2.eAtom)) {
-                int iAtom = atom1.eAtom;
-                int jAtom = atom2.eAtom;
-                int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
-                int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
-                if (rotUnitOK) {
-                    eCoords.addPair(iAtom, jAtom, iUnit, jUnit, noe.getLower(), noe.getUpper(), noe.isBond(),
-                            iGroup, weight / nPairs);
                 }
             }
         }
@@ -1118,6 +1098,7 @@ public class EnergyLists {
             peakNoeMap.forEach(e -> {
                 int iGroup = iAGroup.getAndIncrement();
                 List<Noe> noes = e.getValue();
+                int nNoes = noes.size();
                 for (Noe noe : noes) {
                     double weight = noe.getWeight();
                     if (noe.isBond() || distanceSet.containsBonds()) {
@@ -1126,14 +1107,7 @@ public class EnergyLists {
                     if (stochasticMode && checkStochastic(noe)) {
                         continue;
                     }
-                    if (true || (noe.getAtomPairs().length == 1)) {
-                        addPair(eCoords, noe, iGroup, weight);
-                    } else {
-                        boolean ok = checkInRange(eCoords, noe);
-                        if (ok) {
-                            addPairs(eCoords, noe, iGroup, weight);
-                        }
-                    }
+                    addPair(eCoords, noe, iGroup, weight / nNoes);
                 }
             });
         }
