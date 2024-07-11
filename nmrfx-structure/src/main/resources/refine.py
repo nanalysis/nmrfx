@@ -653,12 +653,10 @@ class refine:
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
         if bond == False:
             disCon = self.getDistanceConstraintSet("noe_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper)
-            disCon.containsBonds(False)
         else:
             disCon = self.getDistanceConstraintSet("bond_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
-            disCon.containsBonds(True)
+        disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
+        disCon.containsBonds(bond)
 
     def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
