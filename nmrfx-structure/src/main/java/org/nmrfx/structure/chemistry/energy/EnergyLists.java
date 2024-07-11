@@ -1063,7 +1063,7 @@ public class EnergyLists {
                     int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
                     int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
                     if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
-                        System.out.printf("ADDN %10s %10s %5d %7.2f %7.2f %b\n", atom1.getShortName(), atom2.getShortName(), iGroup, noe.getLower(), noe.getUpper(), true);
+                       // System.out.printf("ADDN %10s %10s %5d %7.2f %7.2f %b\n", atom1.getShortName(), atom2.getShortName(), iGroup, noe.getLower(), noe.getUpper(), true);
 
                         eCoords.addPair(iAtom, jAtom, iUnit, jUnit, noe.getLower(), noe.getUpper(), noe.isBond(),
                                 iGroup, weight);
