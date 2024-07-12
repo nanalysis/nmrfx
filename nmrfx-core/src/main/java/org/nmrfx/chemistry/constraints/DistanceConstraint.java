@@ -40,31 +40,6 @@ public class DistanceConstraint implements Constraint {
     public DistanceStat disStat = DEFAULT_STAT;
     DistanceStat disStatAvg = DEFAULT_STAT;
 
-    public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-                              final double weight, final double targetValue, final double targetErr) {
-        if (atoms1.length != atoms2.length) {
-            throw new IllegalArgumentException("atom arrays are not of equal length");
-        }
-        atomPairs = new AtomDistancePair[atoms1.length];
-        for (int i = 0; i < atoms1.length; i++) {
-            AtomDistancePair atomPair = new AtomDistancePair(atoms1[i], atoms2[i]);
-            atomPairs[i] = atomPair;
-        }
-
-        this.lower = rLow;
-        this.upper = rUp;
-        this.isBond = isBond;
-        this.weight = weight;
-        this.target = targetValue;
-        this.targetErr = targetErr;
-    }
-
-    public DistanceConstraint(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
-
-        this(atoms1, atoms2, rLow, rUp, isBond, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
-
-    }
-
     public DistanceConstraint(SpatialSet sp1, SpatialSet sp2) {
         atomPairs = new AtomDistancePair[1];
         int i = 0;
@@ -148,30 +123,6 @@ public class DistanceConstraint implements Constraint {
 
     public double getTargetError() {
         return targetErr;
-    }
-
-    public Map<String, Set<Atom>> getUniqueAtoms(AtomDistancePair[] pairs, int atomNum) {
-        Map<String, Set<Atom>> atomsMap = new HashMap<>();
-        Set<Atom> atoms = new HashSet<>();
-        for (AtomDistancePair pair : pairs) {
-            Atom a = null;
-            if (atomNum == 1) {
-                a = pair.getAtoms1()[0];
-            } else if (atomNum == 2) {
-                a = pair.getAtoms2()[0];
-            }
-            if (a != null) {
-                int polymerID = ((Residue) a.entity).polymer.entityID;
-                int seqCode = ((Residue) a.entity).getIDNum();
-                String key = polymerID + ":" + seqCode;
-                if (!atomsMap.containsKey(key) && !atoms.isEmpty()) {
-                    atoms.clear();
-                }
-                atoms.add(a);
-                atomsMap.put(key, atoms);
-            }
-        }
-        return atomsMap;
     }
 
     public boolean isBond() {

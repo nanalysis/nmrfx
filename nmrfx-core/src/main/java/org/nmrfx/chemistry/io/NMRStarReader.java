@@ -1619,17 +1619,17 @@ public class NMRStarReader {
         entityIDColumns[0] = loop.getColumnAsList("Entity_ID_1");
         compIdxIDColumns[0] = loop.getColumnAsList("Comp_index_ID_1");
         atomColumns[0] = loop.getColumnAsList("Atom_ID_1");
-        resonanceColumns[0] = loop.getColumnAsList("Resonance_ID_1");
+        resonanceColumns[0] = loop.getColumnAsList("Resonance_ID_1", null);
         entityAssemblyIDColumns[1] = loop.getColumnAsList("Entity_assembly_ID_2");
         entityIDColumns[1] = loop.getColumnAsList("Entity_ID_2");
         compIdxIDColumns[1] = loop.getColumnAsList("Comp_index_ID_2");
         atomColumns[1] = loop.getColumnAsList("Atom_ID_2");
-        resonanceColumns[0] = loop.getColumnAsList("Resonance_ID_2");
+        resonanceColumns[1] = loop.getColumnAsList("Resonance_ID_2", null);
         List<String> constraintIDColumn = loop.getColumnAsList("ID");
         List<String> lowerColumn = loop.getColumnAsList("Distance_lower_bound_val");
         List<String> upperColumn = loop.getColumnAsList("Distance_upper_bound_val");
-        List<String> peakListIDColumn = loop.getColumnAsList("Spectral_peak_list_ID");
-        List<String> peakIDColumn = loop.getColumnAsList("Spectral_peak_ID");
+        List<String> peakListIDColumn = loop.getColumnAsList("Spectral_peak_list_ID", ".");
+        List<String> peakIDColumn = loop.getColumnAsList("Spectral_peak_ID", ".");
         Atom[] atoms = new Atom[2];
         SpatialSetGroup[] spSets = new SpatialSetGroup[2];
         String[] resIDStr = new String[2];
@@ -1648,7 +1648,7 @@ public class NMRStarReader {
                 String iRes = compIdxIDColumns[iAtom].get(i);
                 String atomName = atomColumns[iAtom].get(i);
                 resIDStr[iAtom] = ".";
-                if (resonanceColumns[iAtom] != null) {
+                if ((resonanceColumns[iAtom] != null) && (resonanceColumns[iAtom].get(i) != null)) {
                     resIDStr[iAtom] = resonanceColumns[iAtom].get(i);
                 }
                 if (entityAssemblyID.equals(".")) {

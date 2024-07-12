@@ -40,7 +40,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.checkerframework.checker.units.qual.C;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.tableview2.FilteredTableColumn;
@@ -59,6 +58,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
@@ -119,6 +119,23 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem maxDisItem;
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
+    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+
+        @Override
+        public TableCell<S, T> call(TableColumn<S, T> arg0) {
+            return new TableCell<>() {
+                @Override
+                protected void updateItem(T item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(new Label(format.format(item)));
+                    }
+                }
+            };
+        }
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -279,24 +296,6 @@ public class NOETableController implements Initializable, StageBasedController {
         }
     }
 
-    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        @Override
-        public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<>() {
-                @Override
-                protected void updateItem(T item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(new Label(format.format(item)));
-                    }
-                }
-            };
-        }
-    }
-
     void initTable() {
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -307,6 +306,31 @@ public class NOETableController implements Initializable, StageBasedController {
                 showPeakInfo(noe);
             }
         });
+    }
+    public static void addConstraintColumns(TableView tableView) {
+        TableColumn<? extends DistanceConstraint, Float> lowerCol = new TableColumn<>("Lower");
+        lowerCol.setCellValueFactory(new PropertyValueFactory<>("Lower"));
+        lowerCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
+        lowerCol.setPrefWidth(75);
+
+        TableColumn<DistanceConstraint, Float> upperCol = new TableColumn<>("Upper");
+        upperCol.setCellValueFactory(new PropertyValueFactory<>("Upper"));
+        upperCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
+        upperCol.setPrefWidth(75);
+
+        TableColumn<DistanceConstraint, Double> meanCol = new TableColumn<>("Mean");
+        meanCol.setCellValueFactory((CellDataFeatures<DistanceConstraint, Double> p) -> {
+            DistanceConstraint distanceConstraint = p.getValue();
+            NOECalibrator.updateDistanceStat(Molecule.getActive(), distanceConstraint);
+            DistanceStat distanceStat = distanceConstraint.getStat();
+            double v = Math.round(distanceStat.getMean() * 10.0) / 10.0;
+            return new ReadOnlyObjectWrapper<>(v);
+        });
+
+
+
+        tableView.getColumns().addAll(lowerCol, upperCol, meanCol);
+
     }
 
     void updateColumns() {
@@ -371,7 +395,7 @@ public class NOETableController implements Initializable, StageBasedController {
             tableView.getColumns().addAll(entityCol, resCol, atomCol);
         }
 
-        DistanceConstraintTableController.addConstraintColumns(tableView);
+        addConstraintColumns(tableView);
 
 
         TableColumn<Noe, Double> boundsColumn = new TableColumn<>("Bounds");

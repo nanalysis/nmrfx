@@ -41,7 +41,6 @@ public class EnergyLists {
     private List<Atom> refAtoms = new ArrayList<>();
     private List<BondPair> bondList = new ArrayList<>();
     private List<AngleConstraint> angleBoundList = new ArrayList<>();
-    private Map<String, Double> distanceMap = new HashMap<>();
     private int iStruct = 0;
     private List<Atom> angleAtoms = new ArrayList<Atom>();
     private CompoundSphere[] compoundArray = null;
@@ -940,68 +939,6 @@ public class EnergyLists {
         return energy;
     }
 
-    public double calcNOE(boolean calcDeriv) {
-        double totalEnergy = 0.0;
-        for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets.values()) {
-            List<DistanceConstraint> distanceList = distanceSet.get();
-            for (DistanceConstraint distancePair : distanceList) {
-                if (stochasticMode) {
-                    Atom atom1 = distancePair.getAtomPairs()[0].getAtoms1()[0];
-                    Atom atom2 = distancePair.getAtomPairs()[0].getAtoms2()[0];
-                    Compound compound1 = (Compound) atom1.entity;
-                    Compound compound2 = (Compound) atom2.entity;
-                    int iRes = Integer.parseInt(compound1.number);
-                    int jRes = Integer.parseInt(compound2.number);
-                    if ((stochasticResidues != null) && (!stochasticResidues[iRes] || !stochasticResidues[jRes])) {
-                        continue;
-                    }
-                }
-
-                boolean ok = false;
-                if ((distancePair.getAtomPairs().length == 1)) {
-                    if (deltaEnd == 0) {
-                        ok = true;
-                    } else {
-                        Atom atom1 = distancePair.getAtomPairs()[0].getAtoms1()[0];
-                        Atom atom2 = distancePair.getAtomPairs()[0].getAtoms2()[0];
-                        Compound compound1 = (Compound) atom1.entity;
-                        Compound compound2 = (Compound) atom2.entity;
-                        int iRes = Integer.parseInt(compound1.number);
-                        int jRes = Integer.parseInt(compound2.number);
-                        if (Math.abs(iRes - jRes) < deltaEnd) {
-                            ok = true;
-                        }
-                    }
-
-                } else if (deltaEnd == 0) {
-                    ok = true;
-                } else {
-                    for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
-                        Atom atom1 = atomDistancePair.getAtoms1()[0];
-                        Atom atom2 = atomDistancePair.getAtoms2()[0];
-                        Compound compound1 = (Compound) atom1.entity;
-                        Compound compound2 = (Compound) atom2.entity;
-                        int iRes = Integer.parseInt(compound1.number);
-                        int jRes = Integer.parseInt(compound2.number);
-                        if (Math.abs(iRes - jRes) < deltaEnd) {
-                            ok = true;
-                        }
-                    }
-                }
-                if (ok) {
-                    AtomEnergy energy = AtomMath.calcDistanceEnergy(distancePair, forceWeight, calcDeriv);
-                    totalEnergy += energy.getEnergy();
-                    if (calcDeriv) {
-                        for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
-                            addDeriv(atomDistancePair, energy.getDeriv());
-                        }
-                    }
-                }
-            }
-        }
-        return totalEnergy;
-    }
-
     boolean checkInRange(EnergyCoords eCoords, Noe noe) {
         boolean allInRange = true;
         if (deltaEnd > 0) {
@@ -1060,7 +997,6 @@ public class EnergyLists {
                 if (ok) {
                     int iAtom = atom1.eAtom;
                     int jAtom = atom2.eAtom;
-                    // fixme is this right  probably should use -1 for group
                     int iUnit = atom1.rotGroup == null ? -1 : atom1.rotGroup.rotUnit;
                     int jUnit = atom2.rotGroup == null ? -1 : atom2.rotGroup.rotUnit;
                     if (((iUnit != -1) || (jUnit != -1)) && (iUnit != jUnit)) {
@@ -1116,7 +1052,6 @@ public class EnergyLists {
 
     public void setupConstraints() {
         updateNOEPairs();
-        makeDistanceMap();
         constraintsSetup = true;
     }
 
@@ -1402,40 +1337,6 @@ public class EnergyLists {
         return df;
     }
 
-    public void makeAtomList() {
-        if (compoundArray == null) {
-            makeCompoundList(molecule);
-        }
-        for (int i = 0; i < compoundArray.length; i++) {
-            CompoundSphere cSphere = compoundArray[i];
-            double radius = getRadius(cSphere.compound, cSphere.atom.getPoint());
-            CompoundSphere cSphereNew = new CompoundSphere(cSphere.compound, cSphere.atom, radius, cSphere.sSets);
-            compoundArray[i] = cSphereNew;
-        }
-        atomList.clear();
-        double aLimit = distanceLimit;
-        double aLimit2 = aLimit * aLimit;
-        for (CompoundPair cPair : compoundPairList) {
-            Point3 pt1 = cPair.cSphere1.atom.getPoint();
-            Point3 pt2 = cPair.cSphere2.atom.getPoint();
-            double cutOff = distanceLimit + cPair.cSphere1.radius + cPair.cSphere2.radius;
-            double cutOffSq = cutOff * cutOff;
-            if (!AtomMath.atomLimit(pt1, pt2, cutOff, cutOffSq)) {
-                continue;
-            }
-            for (AtomPair atomPair : cPair.atomPairs) {
-                Point3 pt1a = atomPair.spSet1.getPoint();
-                Point3 pt2a = atomPair.spSet2.getPoint();
-                if (AtomMath.atomLimit(pt1a, pt2a, aLimit, aLimit2)) {
-                    if (getConstraintDistance(atomPair.spSet1.atom, atomPair.spSet2.atom) == null) {
-                        atomList.add(atomPair);
-                    }
-                }
-            }
-        }
-        makeAtomListFast();
-    }
-
     public void resetConstraints() {
         constraintsSetup = false;
     }
@@ -1529,43 +1430,5 @@ public class EnergyLists {
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
-    }
-
-    public void makeDistanceMap() {
-        distanceMap.clear();
-        for (DistanceConstraintSet distanceSet : molecule.getMolecularConstraints().distanceSets.values()) {
-            List<DistanceConstraint> distanceList = distanceSet.get();
-            for (DistanceConstraint distancePair : distanceList) {
-                for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
-                    if (distancePair.isBond()) {
-                        String atomName1 = atomDistancePair.getAtoms1()[0].getShortName();
-                        String atomName2 = atomDistancePair.getAtoms2()[0].getShortName();
-                        String atomNames;
-                        if (atomName1.compareTo(atomName2) < 0) {
-                            atomNames = atomName1 + "_" + atomName2;
-                        } else {
-                            atomNames = atomName2 + "_" + atomName1;
-                        }
-                        distanceMap.put(atomNames, distancePair.getUpper());
-                    }
-                }
-            }
-        }
-    }
-
-    public Double getConstraintDistance(Atom atom1, Atom atom2) {
-        if (distanceMap.isEmpty()) {
-            makeDistanceMap();
-        }
-        String atomName1 = atom1.getShortName();
-        String atomName2 = atom2.getShortName();
-        String atomNames;
-        if (atomName1.compareTo(atomName2) < 0) {
-            atomNames = atomName1 + "_" + atomName2;
-        } else {
-            atomNames = atomName2 + "_" + atomName1;
-        }
-        Double dis = distanceMap.get(atomNames);
-        return dis;
     }
 }

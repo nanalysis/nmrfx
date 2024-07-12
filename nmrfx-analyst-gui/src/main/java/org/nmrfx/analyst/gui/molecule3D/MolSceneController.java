@@ -1094,10 +1094,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
         Molecule molecule = Molecule.getActive();
         if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
             var molConstraints = molecule.getMolecularConstraints();
-            var disCon = molConstraints.getDistanceSet("noe_restraint_list", true);
+            var disCon = molConstraints.getNoeSet("noe_restraint_list", true);
             Atom atom1 = molecule.globalSelected.get(0).getAtom();
             Atom atom2 = molecule.globalSelected.get(1).getAtom();
-            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, upper);
+            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, upper, false);
         }
         drawConstraints();
     }

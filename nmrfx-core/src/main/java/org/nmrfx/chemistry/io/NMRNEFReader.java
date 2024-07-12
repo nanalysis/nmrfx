@@ -21,7 +21,6 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -34,9 +33,15 @@ import org.nmrfx.star.Saveframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.nio.file.FileSystems;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author brucejohnson, Martha

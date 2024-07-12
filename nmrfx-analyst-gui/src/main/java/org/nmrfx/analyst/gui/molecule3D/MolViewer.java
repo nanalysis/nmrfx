@@ -505,14 +505,13 @@ public class MolViewer extends Pane {
             return;
         }
         var molecularConstraints = molecule.getMolecularConstraints();
-        for (var disSet : molecularConstraints.distanceSets.values()) {
-            for (var disCon : disSet.get()) {
-                if (!disCon.isBond()) {
-
-                    for (var atomPair : disCon.getAtomPairs()) {
+        for (var disSet : molecularConstraints.noeSets.values()) {
+            for (var noe : disSet.getConstraints()) {
+                if (!noe.isBond()) {
+                    for (var atomPair : noe.getAtomPairs()) {
                         var center1 = atomPair.getCenter1();
                         var center2 = atomPair.getCenter2();
-                        double upper = disCon.getUpper();
+                        double upper = noe.getUpper();
                         double distance = atomPair.getDistanceToCenters();
                         if (distance > (upper + 0.1)) {
                             MolCylinder cyl0 = new MolCylinder(center1.toArray(), center2.toArray(), 0.05, Color.RED, tag);
