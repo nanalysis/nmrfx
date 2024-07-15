@@ -308,19 +308,19 @@ public class NOETableController implements Initializable, StageBasedController {
         });
     }
     public static void addConstraintColumns(TableView tableView) {
-        TableColumn<? extends DistanceConstraint, Float> lowerCol = new TableColumn<>("Lower");
+        TableColumn<? extends Noe, Float> lowerCol = new TableColumn<>("Lower");
         lowerCol.setCellValueFactory(new PropertyValueFactory<>("Lower"));
         lowerCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         lowerCol.setPrefWidth(75);
 
-        TableColumn<DistanceConstraint, Float> upperCol = new TableColumn<>("Upper");
+        TableColumn<Noe, Float> upperCol = new TableColumn<>("Upper");
         upperCol.setCellValueFactory(new PropertyValueFactory<>("Upper"));
         upperCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
         upperCol.setPrefWidth(75);
 
-        TableColumn<DistanceConstraint, Double> meanCol = new TableColumn<>("Mean");
-        meanCol.setCellValueFactory((CellDataFeatures<DistanceConstraint, Double> p) -> {
-            DistanceConstraint distanceConstraint = p.getValue();
+        TableColumn<Noe, Double> meanCol = new TableColumn<>("Mean");
+        meanCol.setCellValueFactory((CellDataFeatures<Noe, Double> p) -> {
+            Noe distanceConstraint = p.getValue();
             NOECalibrator.updateDistanceStat(Molecule.getActive(), distanceConstraint);
             DistanceStat distanceStat = distanceConstraint.getStat();
             double v = Math.round(distanceStat.getMean() * 10.0) / 10.0;

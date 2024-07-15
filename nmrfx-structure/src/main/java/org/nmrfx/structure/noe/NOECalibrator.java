@@ -150,13 +150,13 @@ public class NOECalibrator {
         return new String(violCharArray);
     }
 
-    public static void updateNOEListDistances(MoleculeBase mol, List<? extends DistanceConstraint> noeList) {
-        for (DistanceConstraint distanceConstraint : noeList) {
+    public static void updateNOEListDistances(MoleculeBase mol, List<? extends Noe> noeList) {
+        for (Noe distanceConstraint : noeList) {
             updateDistanceStat(mol, distanceConstraint);
          }
     }
 
-    public static void updateDistanceStat(MoleculeBase mol, DistanceConstraint distanceConstraint) {
+    public static void updateDistanceStat(MoleculeBase mol, Noe distanceConstraint) {
         int[] structures = mol.getActiveStructures();
         if (structures.length == 0) {
             structures = new int[1];
@@ -174,15 +174,9 @@ public class NOECalibrator {
                 violStructures = new BitSet(nStructures);
             }
             violStructures.clear();
-            SpatialSetGroup spg1;
-            SpatialSetGroup spg2;
-            if (distanceConstraint instanceof Noe noe) {
-                spg1 = noe.getSpg1();
-                spg2 = noe.getSpg2();
-            } else {
-                spg1 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms1());
-                spg2 = new SpatialSetGroup(distanceConstraint.getAtomPairs()[0].getAtoms2());
-            }
+            SpatialSetGroup spg1= distanceConstraint.getSpg1();
+            SpatialSetGroup spg2 = distanceConstraint.getSpg2();
+
             for (int iStruct : structures) {
                 double distance = Atom.calcWeightedDistance(spg1, spg2, iStruct, 6, false, sumAverage);
                 if (distance < bound) {
@@ -524,7 +518,7 @@ public class NOECalibrator {
                 if ((testNoe == null) || (testNoe.getContribution() < iNoe.getContribution())) {
                     resMap2.put(aName, iNoe);
                 }
-                iNoe.resMap = resMap2;
+                iNoe.setResMap(resMap2);
             }
         }
         long mid = System.currentTimeMillis();
@@ -551,7 +545,7 @@ public class NOECalibrator {
                         count2 = nAtoms2;
                         countMap.put(r2, count2);
                     }
-                    Map<String, Noe> resMap2 = iNoe.resMap;
+                    Map<String, Noe> resMap2 = iNoe.getResMap();
                     double scale = Math.sqrt(count1 * count2);
                     double sum = 0.01;
                     if (resMap2 != null) {

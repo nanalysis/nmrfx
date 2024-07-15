@@ -38,7 +38,8 @@ public class MolViewer extends Pane {
         LINES,
         CYLS,
         STICKS,
-        SPHERES;
+        SPHERES,
+        CONSTRAINTS;
         final String name;
         RenderType() {
             name = this.name().toLowerCase();
@@ -392,6 +393,7 @@ public class MolViewer extends Pane {
             case LINES -> addLines(iStructure, "lines");
             case CYLS -> addCyls(List.of(iStructure), 0.2, 0.1, renderType.name, 0);
             case TUBE -> addTube(List.of(iStructure), 0.5, renderType.name, 0);
+            case CONSTRAINTS -> addConstraintLines(controller.getFirstStructure(),  renderType.name);
         }
 
         try {

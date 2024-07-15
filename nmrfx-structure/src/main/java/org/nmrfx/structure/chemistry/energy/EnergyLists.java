@@ -1009,8 +1009,8 @@ public class EnergyLists {
     }
 
     boolean checkStochastic(Noe noe) {
-        Atom atom1 = noe.getAtomPairs()[0].getAtoms1()[0];
-        Atom atom2 = noe.getAtomPairs()[0].getAtoms2()[0];
+        Atom atom1 = noe.getSpg1().getAnAtom();
+        Atom atom2 = noe.getSpg2().getAnAtom();
         Compound compound1 = (Compound) atom1.entity;
         Compound compound2 = (Compound) atom2.entity;
         int iRes = Integer.parseInt(compound1.number);
