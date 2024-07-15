@@ -403,7 +403,7 @@ public class NMRStarReader {
 
     public void buildRDCConstraints() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
-            if (saveframe.getCategoryName().equals("RDCs")) {
+            if (saveframe.getCategoryName().equals("RDC_constraints")) {
                 log.debug("process RDC constraints {}", saveframe.getName());
                 processRDCConstraints(saveframe);
             }
@@ -1547,7 +1547,7 @@ public class NMRStarReader {
     }
 
     public void processRDCConstraints(Saveframe saveframe) throws ParseException {
-        Loop loop = saveframe.getLoop("_RDC");
+        Loop loop = saveframe.getLoop("_RDC_constraint");
         if (loop == null) {
             throw new ParseException("No \"_RDC\" loop");
         }
@@ -1563,24 +1563,33 @@ public class NMRStarReader {
             atomColumns[i - 1] = loop.getColumnAsList("Atom_ID_" + i);
             resonanceColumns[i - 1] = loop.getColumnAsList("Resonance_ID_" + i);
         }
-        List<Double> valColumn = loop.getColumnAsDoubleList("Val", null);
-        List<Double> errColumn = loop.getColumnAsDoubleList("Val_err", null);
+        List<Double> valColumn = loop.getColumnAsDoubleList("RDC_val", null);
+        List<Double> errColumn = loop.getColumnAsDoubleList("RDC_val_err", null);
         RDCConstraintSet rdcSet = molecule.getMolecularConstraints().newRDCSet(saveframe.getName().substring(5));
         for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
-            SpatialSet[] spSets = new SpatialSet[4];
+            SpatialSet[] spSets = new SpatialSet[2];
+            boolean ok = true;
             for (int iAtom = 0; iAtom < 2; iAtom++) {
                 SpatialSetGroup spG = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i);
                 if (spG != null) {
                     spSets[iAtom] = spG.getSpatialSet();
-                    if ((spSets[0] == null) || (spSets[1] == null)) {
+                    if (spSets[iAtom] == null) {
                         log.warn("null spset id  {} iatom {} {}", i, iAtom, spG.getFullName());
-                    } else {
-                        if (errColumn.get(i) != null) {
-                            RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), errColumn.get(i));
-                            rdcSet.add(aCon);
-                        }
+                        ok = false;
+                        break;
                     }
                 }
+            }
+            if (ok) {
+                double err;
+                if (errColumn.get(i) == null) {
+                    err = valColumn.get(i) * 0.05;
+                } else {
+                    err = errColumn.get(i);
+                }
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), err);
+                rdcSet.add(aCon);
+
             }
         }
     }
