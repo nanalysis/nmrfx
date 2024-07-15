@@ -34,6 +34,17 @@ def genNEFYaml(fileName):
     data = yaml.load(input)
     return data
 
+def genSTARYaml(fileName):
+
+    input = 'star : ' + fileName + '\n'
+    input += yamlStr
+
+    print input
+    
+    yaml = Yaml()
+    data = yaml.load(input)
+    return data
+
 def dumpStages(mode, nefFile):
     global refiner
     refiner=refine()
@@ -109,8 +120,12 @@ def parseArgs():
         data = readYaml(argFile)
     elif argFile.endswith('.nef'):
         data = genNEFYaml(argFile)
+    elif argFile.endswith('.str'):
+        data = genSTARYaml(argFile)
     elif sourceFile.endswith('.nef'):
         data = genNEFYaml(sourceFile)
+    elif sourceFile.endswith('.str'):
+        data = genSTARYaml(sourceFile)
 
     if data != None:
         global refiner
