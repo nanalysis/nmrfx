@@ -816,13 +816,20 @@ public class MolSceneController implements Initializable, StageBasedController, 
         for (String item : items) {
             String[] fields = item.split(" ");
             if (fields.length > 1) {
-                MolViewer.RenderType renderType = MolViewer.RenderType.valueOf(fields[0].toUpperCase());
+                MolViewer.RenderType renderType;
+                try {
+                    renderType = MolViewer.RenderType.valueOf(fields[0].toUpperCase());
+                } catch (IllegalArgumentException illegalArgumentException) {
+                    renderType = null;
+                }
                 if (!added.contains(fields[0])) {
                     removeItems.add(fields[0]);
                     added.add(fields[0]);
                 }
-                if (!currentDrawingModes.contains(renderType)) {
-                    currentDrawingModes.add(renderType);
+                if (renderType != null) {
+                    if (!currentDrawingModes.contains(renderType)) {
+                        currentDrawingModes.add(renderType);
+                    }
                 }
             }
         }
