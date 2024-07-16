@@ -250,13 +250,15 @@ public class NOETableController implements Initializable, StageBasedController {
         clearButton.setOnAction(e -> clearNOESet());
         Button calibrateButton = new Button("Calibrate");
         calibrateButton.setOnAction(e -> calibrate());
+        Button refreshButton = new Button("Refresh");
+        refreshButton.setOnAction(e -> update());
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Options");
         noeSetMenuItem.setOnContextMenuRequested(e -> updateNoeSetMenu());
 
         toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton,
-                calibrateButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
+                calibrateButton, refreshButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -541,6 +543,18 @@ public class NOETableController implements Initializable, StageBasedController {
             refresh();
         }
     }
+    void update() {
+        if (noeSet == null) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            noeSet = noeSetOpt.orElseGet(() -> molConstr.newNOESet("default"));
+        }
+        if (noeSet != null) {
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSet);
+            noeCalibrator.updateContributions(true, true, false);
+            setNoeSet(noeSet);
+            refresh();
+        }
+    }
 
     void extractPeakList(PeakList peakList) {
         if (NOEAssign.getProtonDims(peakList).isEmpty()) {
@@ -565,7 +579,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
             }
             NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
-            noeCalibrator.updateContributions(useDistancesItem.getValue(), false);
+            noeCalibrator.updateContributions(useDistancesItem.getValue(), false, true);
             noeSet = noeSetOpt.get();
             log.info("active {}", noeSet.getName());
 

@@ -88,7 +88,7 @@ public class NOECalibrator {
         }
     }
 
-    public void updateContributions(boolean useDistances, boolean requireActive) {
+    public void updateContributions(boolean useDistances, boolean requireActive, boolean calibrate) {
         this.useDistances = useDistances;
         inactivateDiagonal();
         updateDistances(requireActive);
@@ -100,7 +100,9 @@ public class NOECalibrator {
         calculateContributions(useDistances);
         findNetworks(true);
         calculateContributions(useDistances);
-        calibrateExp(null);
+        if (calibrate) {
+            calibrateExp(null);
+        }
 
         findRedundant();
         noeSet.setDirty(false);
@@ -834,7 +836,7 @@ public class NOECalibrator {
     public synchronized List<Noe> getConstraints(String filter, boolean requireActive) {
         List listCopy = new ArrayList();
         if (noeSet.isDirty()) {
-            updateContributions(useDistances, requireActive);
+            updateContributions(useDistances, requireActive, true);
         }
         if (filter.trim().length() == 0) {
             for (Noe noe : noeSet.getConstraints()) {
