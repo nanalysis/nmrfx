@@ -457,6 +457,8 @@ public class NOETableController implements Initializable, StageBasedController {
 
             return tableCell;
         });
+        boundsColumn.setPrefWidth(150);
+        boundsColumn.widthProperty().addListener(e -> tableView.refresh());
         TableColumn<Noe, Float> ppmCol = new TableColumn<>("PPM");
         ppmCol.setCellValueFactory(new PropertyValueFactory<>("PpmError"));
         ppmCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
