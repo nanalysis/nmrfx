@@ -14,9 +14,6 @@ public class MolecularConstraints {
     public final Map<String, NoeSet> noeSets = new HashMap<>();
     Optional<NoeSet> activeNOESet = Optional.empty();
 
-    public final Map<String, DistanceConstraintSet> distanceSets = new HashMap<>();
-    Optional<DistanceConstraintSet> activeDistanceSet = Optional.empty();
-
     public final Map<String, AngleConstraintSet> angleSets = new HashMap<>();
     Optional<AngleConstraintSet> activeAngleSet = Optional.empty();
 
@@ -44,6 +41,13 @@ public class MolecularConstraints {
         noeSets.put(noeSet.getName(), noeSet);
         activeNOESet(name);
         return noeSet;
+    }
+    public NoeSet getNoeSet(String name, boolean create) {
+        NoeSet set = noeSets.get(name);
+        if ((set == null) && create) {
+            set = newNOESet(name);
+        }
+        return set;
     }
 
     public Collection<NoeSet> noeSets() {
@@ -138,49 +142,6 @@ public class MolecularConstraints {
 
     public Collection<RDCConstraintSet> rdcSets() {
         return rdcSets.values();
-    }
-
-    public Optional<DistanceConstraintSet> activeDistanceSet() {
-        return activeDistanceSet;
-    }
-
-    public void activeDistanceSet(String name) {
-        activeDistanceSet = distanceSets.containsKey(name) ? Optional.of(distanceSets.get(name)) : Optional.empty();
-    }
-
-    public void addDistanceSet(DistanceConstraintSet distanceSet) {
-        distanceSets.put(distanceSet.getName(), distanceSet);
-    }
-
-    public DistanceConstraintSet newDistanceSet(String name) {
-        DistanceConstraintSet distanceSet = DistanceConstraintSet.newSet(this, name);
-        distanceSets.put(distanceSet.getName(), distanceSet);
-        activeDistanceSet(name);
-        return distanceSet;
-    }
-
-    public Collection<DistanceConstraintSet> distanceSets() {
-        return distanceSets.values();
-    }
-
-    public Set<String> getDistanceSetNames() {
-        return distanceSets.keySet();
-    }
-
-    public DistanceConstraintSet getDistanceSet(String name, boolean create) {
-        DistanceConstraintSet set = distanceSets.get(name);
-        if ((set == null) && create) {
-            set = newDistanceSet(name);
-        }
-        return set;
-    }
-
-    public void resetDistanceSets() {
-        distanceSets.entrySet().forEach((cSet) -> {
-            cSet.getValue().clear();
-        });
-        distanceSets.clear();
-        newDistanceSet("default");
     }
 
 }

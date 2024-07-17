@@ -816,13 +816,20 @@ public class MolSceneController implements Initializable, StageBasedController, 
         for (String item : items) {
             String[] fields = item.split(" ");
             if (fields.length > 1) {
-                MolViewer.RenderType renderType = MolViewer.RenderType.valueOf(fields[0].toUpperCase());
+                MolViewer.RenderType renderType;
+                try {
+                    renderType = MolViewer.RenderType.valueOf(fields[0].toUpperCase());
+                } catch (IllegalArgumentException illegalArgumentException) {
+                    renderType = null;
+                }
                 if (!added.contains(fields[0])) {
                     removeItems.add(fields[0]);
                     added.add(fields[0]);
                 }
-                if (!currentDrawingModes.contains(renderType)) {
-                    currentDrawingModes.add(renderType);
+                if (renderType != null) {
+                    if (!currentDrawingModes.contains(renderType)) {
+                        currentDrawingModes.add(renderType);
+                    }
                 }
             }
         }
@@ -1094,10 +1101,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
         Molecule molecule = Molecule.getActive();
         if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
             var molConstraints = molecule.getMolecularConstraints();
-            var disCon = molConstraints.getDistanceSet("noe_restraint_list", true);
+            var disCon = molConstraints.getNoeSet("noe_restraint_list", true);
             Atom atom1 = molecule.globalSelected.get(0).getAtom();
             Atom atom2 = molecule.globalSelected.get(1).getAtom();
-            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, upper);
+            disCon.addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), 1.8, upper, false);
         }
         drawConstraints();
     }

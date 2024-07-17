@@ -38,7 +38,8 @@ public class MolViewer extends Pane {
         LINES,
         CYLS,
         STICKS,
-        SPHERES;
+        SPHERES,
+        CONSTRAINTS;
         final String name;
         RenderType() {
             name = this.name().toLowerCase();
@@ -392,6 +393,7 @@ public class MolViewer extends Pane {
             case LINES -> addLines(iStructure, "lines");
             case CYLS -> addCyls(List.of(iStructure), 0.2, 0.1, renderType.name, 0);
             case TUBE -> addTube(List.of(iStructure), 0.5, renderType.name, 0);
+            case CONSTRAINTS -> addConstraintLines(controller.getFirstStructure(),  renderType.name);
         }
 
         try {
@@ -505,14 +507,13 @@ public class MolViewer extends Pane {
             return;
         }
         var molecularConstraints = molecule.getMolecularConstraints();
-        for (var disSet : molecularConstraints.distanceSets.values()) {
-            for (var disCon : disSet.get()) {
-                if (!disCon.isBond()) {
-
-                    for (var atomPair : disCon.getAtomPairs()) {
+        for (var disSet : molecularConstraints.noeSets.values()) {
+            for (var noe : disSet.getConstraints()) {
+                if (!noe.isBond()) {
+                    for (var atomPair : noe.getAtomPairs()) {
                         var center1 = atomPair.getCenter1();
                         var center2 = atomPair.getCenter2();
-                        double upper = disCon.getUpper();
+                        double upper = noe.getUpper();
                         double distance = atomPair.getDistanceToCenters();
                         if (distance > (upper + 0.1)) {
                             MolCylinder cyl0 = new MolCylinder(center1.toArray(), center2.toArray(), 0.05, Color.RED, tag);

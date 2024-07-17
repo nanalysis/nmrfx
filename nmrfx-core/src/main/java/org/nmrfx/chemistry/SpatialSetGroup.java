@@ -51,6 +51,13 @@ public class SpatialSetGroup {
         }
         name = atoms[0].spatialSet.getFullName();
     }
+    public SpatialSetGroup(List<Atom> atoms) {
+        spSets = new HashSet(1);
+        for (Atom atom : atoms) {
+            spSets.add(atom.spatialSet);
+        }
+        name = atoms.get(0).spatialSet.getFullName();
+    }
 
     public int getSize() {
         return spSets.size();
@@ -101,6 +108,13 @@ public class SpatialSetGroup {
                 atoms.forEach(atom2 -> spSets.add(atom2.spatialSet));
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        addToSTARString(stringBuilder);
+        return stringBuilder.toString();
     }
 
     public void addToSTARString(StringBuilder result) {

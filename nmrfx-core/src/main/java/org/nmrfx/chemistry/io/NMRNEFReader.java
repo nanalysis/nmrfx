@@ -21,7 +21,9 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
@@ -31,9 +33,15 @@ import org.nmrfx.star.Saveframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.nio.file.FileSystems;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author brucejohnson, Martha
@@ -228,7 +236,7 @@ public class NMRNEFReader {
 
     void buildNEFChemShifts(MoleculeBase moleculeBase, int fromSet, final int toSet) throws ParseException {
         int iSet = 0;
-        for (Saveframe saveframe: nef.getSaveFrames().values()) {
+        for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_chemical_shift_list")) {
                 log.debug("process chem shifts {}", saveframe.getName());
                 if (fromSet < 0) {
@@ -487,11 +495,12 @@ public class NMRNEFReader {
         ArrayList<String>[] atomNames = new ArrayList[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
-        DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().newDistanceSet(saveframe.getName());
+        NoeSet distanceSet = molecule.getMolecularConstraints().newNOESet(saveframe.getName());
         if (origin.contains("bond")) {
             distanceSet.containsBonds(true);
         }
 
+        PeakList peakList = NMRStarReader.getPeakList(saveframe.getName(), ".", null);
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
             int restraintIDValuePrev = restraintIDValue;
@@ -557,7 +566,8 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(), weight, target, targetErr);
+                    Peak peak = peakList.getNewPeak();
+                    distanceSet.addDistanceConstraint(peak, atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(), weight, target, targetErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
@@ -565,6 +575,7 @@ public class NMRNEFReader {
             }
             Util.setStrictlyNEF(false);
         }
+        distanceSet.updateNPossible(peakList);
     }
 
     /**
@@ -583,7 +594,7 @@ public class NMRNEFReader {
      *
      * @param argv String[]. List of arguments. Default is empty.
      * @return Dihedral object.
-     * @throws ParseException if NEF file can't be parsed
+     * @throws ParseException           if NEF file can't be parsed
      * @throws IllegalArgumentException if invalid arguments for shift set
      */
     public MoleculeBase processNEF(String[] argv) throws ParseException, IllegalArgumentException {

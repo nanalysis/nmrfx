@@ -40,7 +40,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.checkerframework.checker.units.qual.C;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.tableview2.FilteredTableColumn;
@@ -59,6 +58,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.noe.NOEAssign;
 import org.nmrfx.structure.noe.NOECalibrator;
 import org.nmrfx.utils.GUIUtils;
@@ -119,6 +119,23 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem maxDisItem;
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
+    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+
+        @Override
+        public TableCell<S, T> call(TableColumn<S, T> arg0) {
+            return new TableCell<>() {
+                @Override
+                protected void updateItem(T item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(new Label(format.format(item)));
+                    }
+                }
+            };
+        }
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -233,13 +250,15 @@ public class NOETableController implements Initializable, StageBasedController {
         clearButton.setOnAction(e -> clearNOESet());
         Button calibrateButton = new Button("Calibrate");
         calibrateButton.setOnAction(e -> calibrate());
+        Button refreshButton = new Button("Refresh");
+        refreshButton.setOnAction(e -> update());
         noeSetMenuItem = new MenuButton("NoeSets");
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Options");
         noeSetMenuItem.setOnContextMenuRequested(e -> updateNoeSetMenu());
 
         toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton,
-                calibrateButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
+                calibrateButton, refreshButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
         updateNoeSetMenu();
     }
 
@@ -279,24 +298,6 @@ public class NOETableController implements Initializable, StageBasedController {
         }
     }
 
-    private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
-
-        @Override
-        public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<>() {
-                @Override
-                protected void updateItem(T item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(new Label(format.format(item)));
-                    }
-                }
-            };
-        }
-    }
-
     void initTable() {
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -307,6 +308,31 @@ public class NOETableController implements Initializable, StageBasedController {
                 showPeakInfo(noe);
             }
         });
+    }
+    public static void addConstraintColumns(TableView tableView) {
+        TableColumn<? extends Noe, Float> lowerCol = new TableColumn<>("Lower");
+        lowerCol.setCellValueFactory(new PropertyValueFactory<>("Lower"));
+        lowerCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
+        lowerCol.setPrefWidth(75);
+
+        TableColumn<Noe, Float> upperCol = new TableColumn<>("Upper");
+        upperCol.setCellValueFactory(new PropertyValueFactory<>("Upper"));
+        upperCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
+        upperCol.setPrefWidth(75);
+
+        TableColumn<Noe, Double> meanCol = new TableColumn<>("Mean");
+        meanCol.setCellValueFactory((CellDataFeatures<Noe, Double> p) -> {
+            Noe distanceConstraint = p.getValue();
+            NOECalibrator.updateDistanceStat(Molecule.getActive(), distanceConstraint);
+            DistanceStat distanceStat = distanceConstraint.getStat();
+            double v = Math.round(distanceStat.getMean() * 10.0) / 10.0;
+            return new ReadOnlyObjectWrapper<>(v);
+        });
+
+
+
+        tableView.getColumns().addAll(lowerCol, upperCol, meanCol);
+
     }
 
     void updateColumns() {
@@ -371,7 +397,7 @@ public class NOETableController implements Initializable, StageBasedController {
             tableView.getColumns().addAll(entityCol, resCol, atomCol);
         }
 
-        DistanceConstraintTableController.addConstraintColumns(tableView);
+        addConstraintColumns(tableView);
 
 
         TableColumn<Noe, Double> boundsColumn = new TableColumn<>("Bounds");
@@ -433,6 +459,8 @@ public class NOETableController implements Initializable, StageBasedController {
 
             return tableCell;
         });
+        boundsColumn.setPrefWidth(150);
+        boundsColumn.widthProperty().addListener(e -> tableView.refresh());
         TableColumn<Noe, Float> ppmCol = new TableColumn<>("PPM");
         ppmCol.setCellValueFactory(new PropertyValueFactory<>("PpmError"));
         ppmCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
@@ -515,6 +543,18 @@ public class NOETableController implements Initializable, StageBasedController {
             refresh();
         }
     }
+    void update() {
+        if (noeSet == null) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            noeSet = noeSetOpt.orElseGet(() -> molConstr.newNOESet("default"));
+        }
+        if (noeSet != null) {
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSet);
+            noeCalibrator.updateContributions(true, true, false);
+            setNoeSet(noeSet);
+            refresh();
+        }
+    }
 
     void extractPeakList(PeakList peakList) {
         if (NOEAssign.getProtonDims(peakList).isEmpty()) {
@@ -539,7 +579,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
             }
             NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
-            noeCalibrator.updateContributions(useDistancesItem.getValue(), false);
+            noeCalibrator.updateContributions(useDistancesItem.getValue(), false, true);
             noeSet = noeSetOpt.get();
             log.info("active {}", noeSet.getName());
 

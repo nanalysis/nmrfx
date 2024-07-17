@@ -64,7 +64,8 @@ def loadPDBModels(files, yaml, out):
 
         datum = [inFileName,outFileName]
         refiner.molecule.updateVecCoords()
-        distanceEnergy=refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
+        refiner.molecule.getEnergyCoords().updateNOEPairs()
+        distanceEnergy=refiner.molecule.getEnergyCoords().energy()
         datum.append("%.1f" % (distanceEnergy))
         if ("shifts" in yaml):
             shiftEnergy = refiner.energyLists.calcShift(False)
