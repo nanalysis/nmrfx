@@ -21,9 +21,7 @@ import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -210,11 +208,8 @@ public class AtomResonance {
     public String toSTARResonanceString() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(getID()).append(sep);
-        result.append(stringQuote);
-        result.append(getName());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getName()));
         result.append(sep);
         if (resonanceSet == null) {
             result.append(".");

@@ -50,10 +50,8 @@ public class MoleculeBase implements Serializable, ITree {
     public static final int LABEL_NONHC = 19;
     private static final String ATOM_MATCH_WARN_MSG_TEMPLATE = "null spatialset while matching atom {} in coordset {}";
     public AtomicBoolean atomUpdated = new AtomicBoolean(false);
-    public AtomicBoolean atomTableUpdated = new AtomicBoolean(false);
     Updater atomUpdater = null;
     MoleculeListener atomChangeListener;
-    MoleculeListener atomTableListener;
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -914,6 +912,15 @@ public class MoleculeBase implements Serializable, ITree {
         }
     }
 
+    public List<Integer> getActiveStructureList() {
+        if (activeStructures == null) {
+            activeStructures = new ArrayList<>();
+            for (int i = 0; i < structures.size(); i++) {
+                activeStructures.add(i);
+            }
+        }
+        return activeStructures;
+    }
     public int[] getActiveStructures() {
         if (activeStructures == null) {
             activeStructures = new ArrayList<>();
@@ -1250,6 +1257,10 @@ public class MoleculeBase implements Serializable, ITree {
         return (null);
     }
 
+    public void changed() {
+        ProjectBase.getActive().projectChanged(true);
+    }
+
     public void changed(Atom atom) {
         changed = true;
         if (atomUpdater != null) {
@@ -1263,15 +1274,8 @@ public class MoleculeBase implements Serializable, ITree {
         this.atomChangeListener = newListener;
     }
 
-    public void registerAtomTableListener(MoleculeListener newListener){
-        this.atomTableListener = newListener;
-    }
-
     public void notifyAtomChangeListener() {
         atomChangeListener.moleculeChanged(new MoleculeEvent(this));
-    }
-    public void notifyAtomTableListener() {
-        atomTableListener.moleculeChanged(new MoleculeEvent(this));
     }
 
     public void clearChanged() {
@@ -1425,6 +1429,11 @@ public class MoleculeBase implements Serializable, ITree {
 
     public List<SecondaryStructure> getSecondaryStructure() {
         return secondaryStructure;
+    }
+
+    public List<Atom> getAtoms(String selection) {
+        MolFilter molFilter = new MolFilter(selection);
+        return getMatchedAtoms(molFilter, this);
     }
 
     public void setupRotGroups() {

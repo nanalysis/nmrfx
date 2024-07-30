@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.8-SNAPSHOT</version>
+        <version>11.4.10-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -366,6 +366,16 @@
             <artifactId>openchemlib</artifactId>
             <version>2023.3.3</version>
         </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>berlin.yuna</groupId>
+                <artifactId>type-map</artifactId>
+                <version>2.1.8</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

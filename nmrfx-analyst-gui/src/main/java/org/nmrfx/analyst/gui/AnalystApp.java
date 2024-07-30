@@ -20,7 +20,6 @@ package org.nmrfx.analyst.gui;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
-import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -29,13 +28,13 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.scene.control.*;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController;
 import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
+import org.nmrfx.analyst.gui.git.*;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
@@ -61,9 +60,9 @@ import org.nmrfx.processor.gui.log.LogConsoleController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
-import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +85,6 @@ public class AnalystApp extends Application {
     private final PopOverTools popoverTool = new PopOverTools();
     private DatasetBrowserController datasetBrowserController;
     private PreferencesController preferencesController;
-    private HostServices hostServices;
     private MenuBar mainMenuBar = null;
     private FileMenuActions fileMenuActions;
     private MoleculeMenuActions molMenuActions;
@@ -117,7 +115,6 @@ public class AnalystApp extends Application {
         getFXMLControllerManager().newController(stage, title);
 
         Platform.setImplicitExit(!isMac());
-        hostServices = getHostServices();
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(APP_NAME);
@@ -132,7 +129,11 @@ public class AnalystApp extends Application {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
-        ProjectBase.addPropertyChangeListener(evt -> getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton));
+        ProjectBase.addPropertyChangeListener(evt -> {
+            if (Objects.equals(evt.getPropertyName(), "project")) {
+                getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton);
+            }
+        });
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
@@ -140,6 +141,7 @@ public class AnalystApp extends Application {
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
         moleculeMap = FXCollections.observableHashMap();
         MoleculeFactory.setMoleculeMap(moleculeMap);
+        ProjectBase.getActive().projectChanged(false);
     }
 
     @Override
@@ -216,26 +218,8 @@ public class AnalystApp extends Application {
         viewMenuActions.basic();
 
         Menu helpMenu = new Menu("Help");
-
-        MenuItem webSiteMenuItem = new MenuItem("NMRFx Web Site");
-        webSiteMenuItem.setOnAction(this::showWebSiteAction);
-
-        MenuItem docsMenuItem = new MenuItem("Online Documentation");
-        docsMenuItem.setOnAction(this::showDocAction);
-
-        MenuItem versionMenuItem = new MenuItem("Check Version");
-        versionMenuItem.setOnAction(this::showVersionAction);
-
-        MenuItem mailingListItem = new MenuItem("Mailing List Site");
-        mailingListItem.setOnAction(this::showMailingListAction);
-
-        MenuItem refMenuItem = new MenuItem("NMRFx Publication");
-        refMenuItem.setOnAction(e -> hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6"));
-
-        MenuItem openSourceItem = new MenuItem("Open Source Libraries");
-        openSourceItem.setOnAction(this::showOpenSourceAction);
-
-        helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
+        HelpMenuActions helpMenuActions = new HelpMenuActions(this, helpMenu);
+        helpMenuActions.basic();
 
         PluginLoader pluginLoader = PluginLoader.getInstance();
         Menu pluginsMenu = new Menu("Plugins");
@@ -244,23 +228,37 @@ public class AnalystApp extends Application {
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
+        Menu spectraWindowMenu = new Menu("Spectra Windows");
+        Menu windowMenu = new Menu("Window");
+        windowMenu.setOnShown(e -> updateWindowMenu(spectraWindowMenu));
+
         if (tk != null) {
-            Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
-                    new SeparatorMenuItem(), tk.createBringAllToFrontItem());
+                    new SeparatorMenuItem(), tk.createBringAllToFrontItem(), spectraWindowMenu);
             menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
-            tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, helpMenu);
+            windowMenu.getItems().add(spectraWindowMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         if (startInAdvanced || advancedIsActive) {
             advanced(null);
         }
         return menuBar;
+    }
+
+    private void updateWindowMenu(Menu windowMenu) {
+        FXMLControllerManager manager = getFXMLControllerManager();
+        windowMenu.getItems().clear();
+        for (var fxmlController : manager.getControllers()) {
+            Stage stage = fxmlController.getStage();
+            MenuItem menuItem = new MenuItem(stage.getTitle());
+            menuItem.setOnAction(e -> stage.toFront());
+            windowMenu.getItems().add(menuItem);
+        }
     }
 
     String pluginCommand(String s) {
@@ -310,45 +308,16 @@ public class AnalystApp extends Application {
     }
 
     public void quit() {
-        saveDatasets();
-        waitForCommit();
-        Platform.exit();
-        System.exit(0);
-    }
-
-    private void showWebSiteAction(ActionEvent event) {
-        hostServices.showDocument("http://nmrfx.org");
-    }
-
-    private void showDocAction(ActionEvent event) {
-        hostServices.showDocument("http://docs.nmrfx.org");
-    }
-
-    private void showVersionAction(ActionEvent event) {
-        String onlineVersion = WebConnect.getVersion();
-        onlineVersion = onlineVersion.replace('_', '.');
-        String currentVersion = getVersion();
-        String text;
-        if (onlineVersion.isEmpty()) {
-            text = "Sorry, couldn't reach web site";
-        } else if (onlineVersion.equals(currentVersion)) {
-            text = "You're running the latest version: " + currentVersion;
-        } else {
-            text = "You're running " + currentVersion;
-            text += "\nbut the latest is: " + onlineVersion;
+        boolean projectChanged = ProjectBase.getActive().projectChanged();
+        if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
+            saveDatasets();
+            waitForCommit();
+            Platform.exit();
+            System.exit(0);
         }
-        Alert alert = new Alert(AlertType.INFORMATION, text);
-        alert.setTitle("NMRFx Analyst Version");
-        alert.showAndWait();
     }
 
-    private void showMailingListAction(ActionEvent event) {
-        hostServices.showDocument("https://groups.io/g/NMRFx");
-    }
 
-    private void showOpenSourceAction(ActionEvent event) {
-        hostServices.showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
-    }
 
     public void advanced(MenuItem startAdvancedItem) {
         if (molMenuActions != null) {
@@ -391,7 +360,7 @@ public class AnalystApp extends Application {
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GUIProject.isCommitting() && (iTry < nTries)) {
+        while (GitManager.isCommitting() && (iTry < nTries)) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {
@@ -456,11 +425,11 @@ public class AnalystApp extends Application {
 
         MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
         proteinMenu.getItems().add(runAboutToolItem);
-        runAboutToolItem.setOnAction(e -> showRunAboutTool());
+        runAboutToolItem.setOnAction(e -> controller.showRunAboutTool());
 
         MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
         proteinMenu.getItems().add(stripsToolItem);
-        stripsToolItem.setOnAction(e -> showStripsBar());
+        stripsToolItem.setOnAction(e -> controller.showStripsBar());
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
@@ -530,40 +499,6 @@ public class AnalystApp extends Application {
         controller.showScannerMenus();
     }
 
-    public void showRunAboutTool() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(RunAboutGUI.class)) {
-            TabPane tabPane = new TabPane();
-            controller.getBottomBox().getChildren().add(tabPane);
-            tabPane.setMinHeight(200);
-            RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
-            runaboutTool.initialize(tabPane);
-            controller.addTool(runaboutTool);
-        }
-    }
-
-    public Optional<RunAboutGUI> getRunAboutTool() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        ControllerTool tool = controller.getTool(RunAboutGUI.class);
-        if (tool instanceof RunAboutGUI runAboutGUI) {
-            return Optional.of(runAboutGUI);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    public StripController showStripsBar() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(StripController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            StripController stripsController = new StripController(controller, this::removeStripsBar);
-            stripsController.initialize(vBox);
-            controller.addTool(stripsController);
-        }
-        return (StripController) controller.getTool(StripController.class);
-    }
-
     public void removePeakPathTool(PathTool pathTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(PathTool.class);
@@ -593,24 +528,6 @@ public class AnalystApp extends Application {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.removeTool(SimFitMolController.class);
         controller.removeBottomBoxNode(simMolController.getBox());
-    }
-
-    public void removeScannerTool(ScannerTool scannerTool) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(ScannerTool.class);
-        controller.removeBottomBoxNode(scannerTool.getBox());
-    }
-
-    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(RunAboutGUI.class);
-        controller.removeBottomBoxNode(runaboutTool.getTabPane());
-    }
-
-    public void removeStripsBar(StripController stripsController) {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(StripController.class);
-        controller.removeBottomBoxNode(stripsController.getBox());
     }
 
     public void readMolecule(String type) {
@@ -749,6 +666,14 @@ public class AnalystApp extends Application {
                 PreferencesController.getPeakShapeDirectFactor(),
                 PreferencesController.getPeakShapeIndirectFactor());
     }
+    public static void showHistoryAction(ActionEvent event) {
+        GUIProject guiProject = GUIProject.getActive();
+        if ((guiProject != null) && (guiProject.getGitManager() != null)) {
+            guiProject.getGitManager().showHistoryAction(event);
+        }
+    }
+
+
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
         AnalystApp.getAnalystApp().moleculeMap.addListener(listener);

@@ -30,7 +30,6 @@ public class AtomUpdater implements Updater {
     @Override
     public void update(Object object) {
         molecule.atomUpdated.set(true);
-        molecule.atomTableUpdated.set(true);
         atomUpdated.set(true);
         startTimer();
     }
@@ -68,10 +67,6 @@ public class AtomUpdater implements Updater {
             if (molecule.atomUpdated.get()) {
                 molecule.atomUpdated.set(false);
                 molecule.notifyAtomChangeListener();
-            }
-            if (molecule.atomTableUpdated.get()) {
-                molecule.atomTableUpdated.set(false);
-                molecule.notifyAtomTableListener();
             }
         }
     }

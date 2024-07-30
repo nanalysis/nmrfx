@@ -59,7 +59,9 @@ public class PolyChartManager {
                 activeChart.set(allCharts.get(0));
             }
         }
-
+        if (allCharts.isEmpty()) {
+            activeChart.set(null);
+        }
         synchronizer.clearObsoleteSynchronizations();
     }
 

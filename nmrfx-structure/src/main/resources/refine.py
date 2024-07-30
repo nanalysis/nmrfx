@@ -647,18 +647,16 @@ class refine:
 
     def getDistanceConstraintSet(self, name):
         molConstraints = self.molecule.getMolecularConstraints()
-        disCon = molConstraints.getDistanceSet(name, True)
+        disCon = molConstraints.getNoeSet(name, True)
         return disCon
 
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
         if bond == False:
             disCon = self.getDistanceConstraintSet("noe_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper)
-            disCon.containsBonds(False)
         else:
             disCon = self.getDistanceConstraintSet("bond_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
-            disCon.containsBonds(True)
+            disCon.containsBonds(bond)
+        disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
     def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
@@ -1293,7 +1291,9 @@ class refine:
             if fileName.endswith('.pdb'):
                 molio.readPDB(fileName)
             elif fileName.endswith('.nef'):
-                self.NEFReader(fileName)
+                self.STARReader(fileName, True)
+            elif fileName.endswith('.str'):
+                self.STARReader(fileName, False)
             else:
                 raise ValueError("Filename must end in .pdb or .nef")
         else:
@@ -1303,7 +1303,10 @@ class refine:
             # in the YAML file.
             if 'nef' in data:
                 fileName = data['nef']
-                self.NEFReader(fileName)
+                self.STARReader(fileName, True)
+            elif 'star' in data:
+                fileName = data['star']
+                self.STARReader(fileName, False)
 
             # Checks if 'molecule' data block is specified.
             if 'molecule' in data:
@@ -1926,7 +1929,7 @@ class refine:
                     print "Error adding angle constraint",fullAtoms
                     pass
 
-    def NEFReader(self, fileName):
+    def STARReader(self, fileName, nefMode):
         from java.io import FileReader
         from java.io import BufferedReader
         from java.io import File
@@ -1939,8 +1942,13 @@ class refine:
         star = STAR3(bfR,'star3')
         star.scanFile()
         file = File(fileName)
-        reader = NMRNEFReader(file, star) # NMRStarReader(file, star)
-        molecule = reader.processNEF()
+        if nefMode:
+            reader = NMRNEFReader(file, star)
+            molecule = reader.processNEF()
+        else:
+            reader = NMRStarReader(file, star)
+            reader.process()
+            molecule = MoleculeFactory.getActive()
         self.molecule = molecule
         molecule.setMethylRotationActive(True);
         energyList = EnergyLists(molecule)

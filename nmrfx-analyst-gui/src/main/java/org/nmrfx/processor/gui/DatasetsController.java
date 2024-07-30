@@ -163,9 +163,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        List<DatasetBase> datasetList = ProjectBase.getActive().getDatasets();
-        if (datasetList instanceof ObservableList) {
-            setDatasetList((ObservableList<DatasetBase>) datasetList);
+        if (Objects.equals(evt.getPropertyName(), "project")) {
+            List<DatasetBase> datasetList = ProjectBase.getActive().getDatasets();
+            if (datasetList instanceof ObservableList) {
+                setDatasetList((ObservableList<DatasetBase>) datasetList);
+            }
         }
     }
 
@@ -456,7 +458,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         }
         boolean appendFile = false;
         for (DatasetBase dataset : datasets) {
-            controller.addDataset(dataset, appendFile, false);
+            controller.addDataset(chart, dataset, appendFile, false);
             appendFile = true;
         }
     }
@@ -474,7 +476,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             DatasetBase dataset = datasets.get(i);
             PolyChart chartActive = controller.getCharts().get(i);
             controller.setActiveChart(chartActive);
-            controller.addDataset(dataset, false, false);
+            controller.addDataset(chartActive, dataset, false, false);
         }
     }
 

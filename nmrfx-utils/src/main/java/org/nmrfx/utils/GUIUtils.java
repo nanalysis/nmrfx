@@ -7,6 +7,7 @@ package org.nmrfx.utils;
 
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
@@ -23,6 +24,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
+import javafx.util.converter.IntegerStringConverter;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,6 +99,10 @@ public class GUIUtils {
             result = true;
         }
         return result;
+    }
+    public static void acknowledge(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
+        alert.showAndWait();
     }
 
     public static AlertRespones deleteAppendCancel(String message) {
@@ -385,6 +391,13 @@ public class GUIUtils {
     public static TextField getDoubleTextField(SimpleDoubleProperty prop) {
         TextField textField = new TextField();
         TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+        textFormatter.valueProperty().bindBidirectional((Property) prop);
+        textField.setTextFormatter(textFormatter);
+        return textField;
+    }
+    public static TextField getIntegerTextField(SimpleIntegerProperty prop) {
+        TextField textField = new TextField();
+        TextFormatter<Integer> textFormatter = new TextFormatter<>(new IntegerStringConverter());
         textFormatter.valueProperty().bindBidirectional((Property) prop);
         textField.setTextFormatter(textFormatter);
         return textField;

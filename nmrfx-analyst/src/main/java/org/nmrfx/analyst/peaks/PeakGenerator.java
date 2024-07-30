@@ -66,7 +66,7 @@ public class PeakGenerator {
         if (assignIndex >= 0) {
             ppmV = atom.getPPM(assignIndex);
         }
-        if ((ppmV == null) || !ppmV.isValid()) {
+        if ((refIndex >= 0) && ((ppmV == null) || !ppmV.isValid())) {
             ppmV = atom.getRefPPM(refIndex);
         }
         return ppmV;

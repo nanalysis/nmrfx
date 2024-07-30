@@ -381,6 +381,37 @@ public class SpinSystems {
         }
     }
 
+
+    public void checkConfirmed() {
+        for (SpinSystem spinSys : systems) {
+            spinSys.confirmP().ifPresent(spinSystemMatch -> {
+                spinSys.setConfirmP(null);
+                for (SpinSystemMatch spinSystemMatch1: spinSys.spinMatchP) {
+                    if (spinSystemMatch1.spinSystemB == spinSys) {
+                        spinSys.setConfirmP(spinSystemMatch1);
+                        break;
+                    }
+                }
+            });
+            spinSys.confirmS().ifPresent(spinSystemMatch -> {
+                spinSys.setConfirmS(null);
+                for (SpinSystemMatch spinSystemMatch1: spinSys.spinMatchS) {
+                    if (spinSystemMatch1.spinSystemA == spinSys) {
+                        spinSys.setConfirmS(spinSystemMatch1);
+                        break;
+                    }
+                }
+            });
+        }
+    }
+
+    public void updateFragments() {
+        var fragments = getSortedFragments();
+        for (SeqFragment seqFragment: fragments) {
+            seqFragment.updateSpinSystemMatches();
+        }
+    }
+
     public void dump() {
         for (SpinSystem spinSys : systems) {
             System.out.println(spinSys.toString());
@@ -427,8 +458,8 @@ public class SpinSystems {
     public List<SeqFragment> getSortedFragments() {
         Set<SeqFragment> fragments = new HashSet<>();
         for (SpinSystem spinSys : systems) {
-            if (spinSys.fragment.isPresent()) {
-                fragments.add(spinSys.fragment.get());
+            if (spinSys.fragment().isPresent()) {
+                fragments.add(spinSys.fragment().get());
             }
         }
         List<SeqFragment> sortedFragments = fragments.stream().sorted((e1, e2)
@@ -441,7 +472,7 @@ public class SpinSystems {
     public List<SpinSystem> getUnconnectedSpinSystems() {
         List<SpinSystem> unconnectedSystems = new ArrayList<>();
         for (SpinSystem spinSys : systems) {
-            if (spinSys.fragment.isEmpty()) {
+            if (spinSys.fragment().isEmpty()) {
                 unconnectedSystems.add(spinSys);
             }
         }
@@ -511,7 +542,7 @@ public class SpinSystems {
                     int nResidues = nResiduesColumn.get(i);
                     double score = scoreColumn.get(i);
                     Polymer polymer = molecule.getPolymers().get(polymerID - 1);
-                    Residue residue = polymer.getResidue(residueID);
+                    Residue residue = polymer.getResidue(String.valueOf(residueID));
                     ResidueSeqScore residueSeqScore = new ResidueSeqScore(residue, nResidues, score);
                     fragment.setResSeqScore(residueSeqScore);
                     fragment.setFrozen(true);
@@ -542,15 +573,13 @@ public class SpinSystems {
                     systemMap.put(id, spinSystem);
                 }
             }
-            systems = systemMap.values().stream().
-                    sorted(Comparator.comparingInt(SpinSystem::getId)).collect(Collectors.toList());
             for (int i = 0; i < idColumn.size(); i++) {
                 Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
                 if (peakListOpt.isPresent()) {
                     Integer prev = previousIDColumn.get(i);
-                    SpinSystem prevSystem = prev != -1 ? systems.get(prev) : null;
+                    SpinSystem prevSystem = prev != -1 ? systemMap.get(prev) : null;
                     Integer next = nextIDColumn.get(i);
-                    SpinSystem nextSystem = next != -1 ? systems.get(next) : null;
+                    SpinSystem nextSystem = next != -1 ? systemMap.get(next) : null;
                     nextSystems.add(nextSystem);
                     previousSystems.add(prevSystem);
                 }
@@ -567,13 +596,15 @@ public class SpinSystems {
                 if (peakListOpt.isPresent()) {
                     PeakList peakList = peakListOpt.get();
                     Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                    SpinSystem spinSystem = systems.get(spinSystemIDColumn.get(i));
+                    SpinSystem spinSystem = systemMap.get(spinSystemIDColumn.get(i));
                     if (peak != spinSystem.rootPeak) {
                         double score = matchScoreColumn.get(i);
                         spinSystem.addPeak(peak, score);
                     }
                 }
             }
+            systems = systemMap.values().stream().
+                    sorted(Comparator.comparingInt(SpinSystem::getId)).collect(Collectors.toList());
             for (SpinSystem spinSystem : systems) {
                 spinSystem.updateSpinSystem();
             }
@@ -584,7 +615,7 @@ public class SpinSystems {
                 SpinSystem nextSystem = nextSystems.get(i);
                 SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
                 if (fragment != null) {
-                    system.fragment = Optional.of(fragment);
+                    system.setFragment(fragment);
                 }
                 if (nextSystem != null) {
                     // find match that is to next, confirm and add to a fragment
@@ -594,8 +625,8 @@ public class SpinSystems {
                                 throw new ParseException("Could not parse STAR saveframe. Fragment was null.");
                             }
                             fragment.getSpinSystemMatches().add(match);
-                            system.confirmS = Optional.of(match);
-                            nextSystem.confirmP = Optional.of(match);
+                            system.setConfirmS(match);
+                            nextSystem.setConfirmP(match);
                         }
                     }
                 }
@@ -603,10 +634,15 @@ public class SpinSystems {
         }
 
     }
+    public void trimAll() {
+        for (SpinSystem spinSystem : systems) {
+            runAbout.trim(spinSystem);
+        }
+    }
 
     public void extendAll(double minScore) {
         for (SpinSystem spinSystem : systems) {
-            if (spinSystem.confirmP.isEmpty() || spinSystem.confirmS.isEmpty()) {
+            if (spinSystem.confirmP().isEmpty() || spinSystem.confirmS().isEmpty()) {
                 SpinSystem.extend(spinSystem, minScore);
             }
         }
@@ -622,9 +658,9 @@ public class SpinSystems {
 
     public void clearAll() {
         for (SpinSystem spinSystem : systems) {
-            spinSystem.confirmS = Optional.empty();
-            spinSystem.confirmP = Optional.empty();
-            spinSystem.fragment = Optional.empty();
+            spinSystem.setConfirmS(null);
+            spinSystem.setConfirmP(null);
+            spinSystem.setFragment(null);
         }
     }
 

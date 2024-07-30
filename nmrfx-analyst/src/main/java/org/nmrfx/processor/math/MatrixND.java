@@ -48,6 +48,8 @@ public class MatrixND implements MatrixType {
     private int[] strides;
     private double[] phases0;
     private double[] phases1;
+    private boolean[] negatePairss;
+    private boolean[] negateImags;
     final int nDim;
     private int nElems;
 
@@ -74,6 +76,8 @@ public class MatrixND implements MatrixType {
         vSizes = sizes.clone();
         phases0 = new double[nDim];
         phases1 = new double[nDim];
+        negateImags = new boolean[nDim];
+        negatePairss = new boolean[nDim];
     }
 
     public MatrixND(int[][] pt, int... sizes) {
@@ -567,6 +571,33 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public void doPhaseTD(double[] phaseValues, boolean[] negateImags, boolean[] negatePairss) {
+        for (int i = 0; i < nDim; i++) {
+            double ph0 = 0.0;
+            double ph1 = 0.0;
+            if (i * 2 < phaseValues.length) {
+                ph0 = phaseValues[i * 2];
+            }
+            if ((i * 2 + 1) < phaseValues.length) {
+                ph1 = phaseValues[i * 2 + 1];
+            }
+
+            boolean negateImag = false;
+            boolean negatePairs = false;
+            if (negateImags != null && i < negateImags.length) {
+                negateImag = negateImags[i];
+            }
+            if (negatePairss != null && i < negatePairss.length) {
+                negatePairs = negatePairss[i];
+            }
+            doPhaseTD(i, ph0, ph1, negateImag, negatePairs);
+            phases0[i] = ph0;
+            phases1[i] = ph1;
+            this.negateImags[i] = negateImag;
+            this.negatePairss[i] = negatePairs;
+        }
+    }
+
     public void apodize() {
         for (int i = 0; i < nDim; i++) {
             MatrixND.this.apodize(i);
@@ -638,6 +669,54 @@ public class MatrixND implements MatrixType {
                 ifft(riVec);
             }
             putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void doPhaseTD(int axis, double ph0, double ph1, boolean negateImag, boolean negatePairs) {
+        int[] subSizes = getSubSizes(axis);
+        int size = sizes[axis];
+        double[][] riVec = new double[2][size];
+        double tol = 0.0001;
+        if ((Math.abs(ph0) < tol) && (Math.abs(ph1) < tol)) {
+            return;
+        }
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            if (negateImag) {
+                negateImag(riVec, size);
+            }
+            if (negatePairs) {
+                negatePairs(riVec, size);
+            }
+            fft(riVec);
+            fftShuffle(riVec);
+            phase(riVec, ph0, ph1);
+            fftShuffle(riVec);
+            ifft(riVec);
+            if (negateImag) {
+                negateImag(riVec, size);
+            }
+            if (negatePairs) {
+                negatePairs(riVec, size);
+            }
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    private static void negatePairs(double[][] riVec, int size) {
+        for (int i = 1; i < size; i += 2) {
+            riVec[0][i] = -riVec[0][i];
+            riVec[1][i] = -riVec[1][i];
+        }
+    }
+
+    private static void negateImag(double[][] riVec, int size) {
+        for (int i = 0; i < size; ++i) {
+            riVec[1][i] = -riVec[1][i];
         }
     }
 
@@ -1141,7 +1220,7 @@ public class MatrixND implements MatrixType {
                         intensities[kDim][1] = ptValue * sign;
                         int nBelowThresh = 0;
                         if (counts[jDim] > 0) {
-                            int index = i - strides[jDim] * step; // 2 assumes complex                       
+                            int index = i - strides[jDim] * step; // 2 assumes complex
                             double testValue = sign * data[index];
 //                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
                             if ((ptValue < testValue)) {
@@ -1157,7 +1236,7 @@ public class MatrixND implements MatrixType {
                             intensities[kDim][0] = testValue * sign;
                         }
                         if (ok && counts[jDim] < (sizes[jDim] - 1)) {
-                            int index = i + strides[jDim] * step; // 2 assumes complex                       
+                            int index = i + strides[jDim] * step; // 2 assumes complex
                             double testValue = sign * data[index];
                             if (ptValue < testValue) {
                                 ok = false;

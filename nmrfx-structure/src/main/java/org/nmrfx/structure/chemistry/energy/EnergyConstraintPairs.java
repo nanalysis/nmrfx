@@ -136,6 +136,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
             int j = i + 1;
             while (iGroups[j] == iGroups[i] && j < nPairs) {
                 groupSizes[i]++;
+                groupSizes[j] = 0;
                 j++;
             }
             i = j;
