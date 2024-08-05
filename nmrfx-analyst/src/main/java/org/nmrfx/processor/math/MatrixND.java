@@ -1,3 +1,8 @@
+//MatrixND.java
+//Simon Hulse
+//simonhulse@protonmail.com
+//Last Edited: Mon 05 Aug 2024 10:37:49 EDT
+
 /*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
@@ -572,29 +577,16 @@ public class MatrixND implements MatrixType {
     }
 
     public void doPhaseTD(double[] phaseValues, boolean[] negateImags, boolean[] negatePairss) {
+        double phase0 = 0.0;
+        double phase1 = 0.0;
+        boolean negateImag = false;
+        boolean negatePairs = false;
         for (int i = 0; i < nDim; i++) {
-            double ph0 = 0.0;
-            double ph1 = 0.0;
-            if (i * 2 < phaseValues.length) {
-                ph0 = phaseValues[i * 2];
-            }
-            if ((i * 2 + 1) < phaseValues.length) {
-                ph1 = phaseValues[i * 2 + 1];
-            }
-
-            boolean negateImag = false;
-            boolean negatePairs = false;
-            if (negateImags != null && i < negateImags.length) {
-                negateImag = negateImags[i];
-            }
-            if (negatePairss != null && i < negatePairss.length) {
-                negatePairs = negatePairss[i];
-            }
-            doPhaseTD(i, ph0, ph1, negateImag, negatePairs);
-            phases0[i] = ph0;
-            phases1[i] = ph1;
-            this.negateImags[i] = negateImag;
-            this.negatePairss[i] = negatePairs;
+            phase0 = phaseValues[i * 2];
+            phase1 = phaseValues[i * 2 + 1];
+            negateImag = negateImags[i];
+            negatePairs = negatePairss[i];
+            doPhaseTD(i, phase0, phase1, negateImag, negatePairs);
         }
     }
 
@@ -676,10 +668,10 @@ public class MatrixND implements MatrixType {
         int[] subSizes = getSubSizes(axis);
         int size = sizes[axis];
         double[][] riVec = new double[2][size];
-        double tol = 0.0001;
-        if ((Math.abs(ph0) < tol) && (Math.abs(ph1) < tol)) {
-            return;
-        }
+        // double tol = 0.0001;
+        // if ((Math.abs(ph0) < tol) && (Math.abs(ph1) < tol)) {
+        //     return;
+        // }
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
         while (iterator.hasNext()) {
@@ -697,12 +689,6 @@ public class MatrixND implements MatrixType {
             phase(riVec, ph0, ph1);
             fftShuffle(riVec);
             ifft(riVec);
-            if (negateImag) {
-                negateImag(riVec, size);
-            }
-            if (negatePairs) {
-                negatePairs(riVec, size);
-            }
             putVectorRI(axis, riVec, counts);
         }
     }

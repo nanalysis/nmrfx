@@ -1,3 +1,8 @@
+//GRINS.java
+//Simon Hulse
+//simonhulse@protonmail.com
+//Last Edited: Mon 05 Aug 2024 11:37:33 EDT
+
 /*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
@@ -31,6 +36,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+
+import java.util.Arrays;
 /**
  * @author Bruce Johnson
  */
@@ -95,22 +102,16 @@ public class GRINS {
                 noiseRatio = 2.0;
             }
             double noiseValue = 0.0;
-            boolean doPhase = false;
             int maxPeaks = 20;
-            if (phase != null) {
-                for (double phaseVal : phase) {
-                    if (Math.abs(phaseVal) > 1.0e-6) {
-                        doPhase = true;
-                        break;
-                    }
-                }
-            }
+
             if (apodize) {
                 matrix.apodize();
             }
-            if (doPhase) {
-                matrix.doPhaseTD(phase, negateImag, negatePairs);
-            }
+
+            // Even if all phases are 0.0, need to run this to apply FT with
+            // `negateImag` and `negatePairs` applied.
+            matrix.doPhaseTD(phase, negateImag, negatePairs);
+
             // could just copy the actually sample values to vector
             MatrixND matrixCopy = new MatrixND(matrix);
             double[] addBuffer = new double[matrix.getNElems()];

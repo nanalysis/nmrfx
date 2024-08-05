@@ -1,3 +1,8 @@
+//MatrixOperation.java
+//Simon Hulse
+//simonhulse@protonmail.com
+//Last Edited: Mon 05 Aug 2024 10:01:05 EDT
+
 /*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
