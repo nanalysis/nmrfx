@@ -1,3 +1,8 @@
+//GRINSOp.java
+//Simon Hulse
+//simonhulse@protonmail.com
+//Last Edited: Mon 05 Aug 2024 10:25:04 EDT
+
 /*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
@@ -93,6 +98,7 @@ public class GRINSOp extends MatrixOperation {
         this.apodize = apodize;
         this.synthetic = synthetic;
         this.sampleSchedule = schedule;
+        this.extendMode = extendMode;
 
         if (logHomeName == null) {
             this.logHome = null;
@@ -100,34 +106,61 @@ public class GRINSOp extends MatrixOperation {
             this.logHome = new File(logHomeName);
         }
 
-        if (!phaseList.isEmpty()) {
-            this.phase = new double[phaseList.size()];
-            for (int i = 0; i < phaseList.size(); i++) {
-                this.phase[i] = phaseList.get(i);
-            }
-        } else {
-            this.phase = null;
-        }
+        // TODO: these always need to be given explicitly at the moment.
+        // Alternatively, if there is a way of determining the number of indirect dimensions,
+        // could create deafault values:
+        // boolean[] negateImag = new boolean[nIndirect];
+        // boolean[] negatePairs = new boolean[nIndirect];
+        // double[] phases = new double[2 * nIndirect];
+        // For phases, storing zero and first order phases in same array hence doubled size
+        this.phase = listToArrayDouble(phaseList);
+        this.negateImag = listToArrayBoolean(negateImagList);
+        this.negatePairs = listToArrayBoolean(negatePairsList);
 
-        if (negateImagList != null && !negateImagList.isEmpty()) {
-            this.negateImag = new boolean[negateImagList.size()];
-            for (int i = 0; i < negateImagList.size(); i++) {
-                this.negateImag[i] = negateImagList.get(i);
-            }
-        } else {
-            this.negateImag = null;
-        }
+        // ** Ensure you have the following line at the top of the file **
+        // import java.util.Arrays;
+        System.out.println(
+            String.format(
+                "this.phase:\n%s",
+                Arrays.toString(this.phase)
+            )
+        );
+        // ** Ensure you have the following line at the top of the file **
+        // import java.util.Arrays;
+        System.out.println(
+            String.format(
+                "this.negateImag:\n%s",
+                Arrays.toString(this.negateImag)
+            )
+        );
+        // ** Ensure you have the following line at the top of the file **
+        // import java.util.Arrays;
+        System.out.println(
+            String.format(
+                "this.negatePairs:\n%s",
+                Arrays.toString(this.negatePairs)
+            )
+        );
+    }
 
-        if (negatePairsList != null && !negatePairsList.isEmpty()) {
-            this.negatePairs = new boolean[negatePairsList.size()];
-            for (int i = 0; i < negatePairsList.size(); i++) {
-                this.negatePairs[i] = negatePairsList.get(i);
-            }
-        } else {
-            this.negatePairs = null;
+    // TODO move somewhere more appropriate
+    static double[] listToArrayDouble(List<Double> list) {
+        int nVals = list.size();
+        double[] array = new double[nVals];
+        for (int i=0; i<nVals; i++) {
+            array[i] = list.get(i);
         }
+        return array;
+    }
 
-        this.extendMode = extendMode;
+    // TODO move somewhere more appropriate
+    static boolean[] listToArrayBoolean(List<Boolean> list) {
+        int nVals = list.size();
+        boolean[] array = new boolean[nVals];
+        for (int i=0; i<nVals; i++) {
+            array[i] = list.get(i);
+        }
+        return array;
     }
 
     public GRINSOp(
