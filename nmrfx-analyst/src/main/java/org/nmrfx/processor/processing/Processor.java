@@ -1472,9 +1472,12 @@ public class Processor {
             runSimVecProcessor(simVecProcessor, dimProcesses);
         }
         long startTime = System.currentTimeMillis();
+        long startTimeDim, finishTimeDim;
+        double runTimeDim;
         clearProcessorError();
         int nDimsProcessed = 0;
         for (ProcessOps p : dimProcesses) {
+            startTimeDim = System.currentTimeMillis();
             p.firstProcess(!nvDataset);
             // check if this process corresponds to dimension that should be skipped
             if (mapToDataset(p.getDim()) == -1) {
@@ -1506,6 +1509,9 @@ public class Processor {
                 nDimsProcessed = Math.max(nDimsProcessed, p.getDim() + 1);
                 nvDataset = true;
             }
+            finishTimeDim = System.currentTimeMillis();
+            runTimeDim = (finishTimeDim - startTimeDim) / 1000.0;
+            log.info(String.format("Time elapsed for %s: %6.3f", p.getName(), runTimeDim));
         }
         dimProcesses.clear();
         elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;

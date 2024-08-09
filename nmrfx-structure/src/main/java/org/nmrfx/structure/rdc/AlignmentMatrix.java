@@ -363,6 +363,7 @@ public class AlignmentMatrix {
         int iRow = 0;
         // calculate the direction cosines and construct the matrix A. Based on orderten_svd_dipole.c
         for (RDC rdcVec : rdcs) {
+            rdcVec.updateVector();
             Vector3D normVec = rdcVec.getVector().normalize();
             double dcosX = normVec.getX();
             double dcosY = normVec.getY();

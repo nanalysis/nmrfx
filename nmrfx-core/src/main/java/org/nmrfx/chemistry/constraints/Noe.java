@@ -20,9 +20,7 @@ package org.nmrfx.chemistry.constraints;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.Peak;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 enum DisTypes {
 
@@ -61,6 +59,8 @@ public class Noe extends DistanceConstraint {
     private int idNum = 0;
     private final SpatialSetGroup spg1;
     private final SpatialSetGroup spg2;
+
+    AtomDistancePair[] atomPairs = null;
     public final Peak peak;
     private double intensity = 0.0;
     private double volume = 0.0;
@@ -75,12 +75,12 @@ public class Noe extends DistanceConstraint {
     private double networkValue = 1;
     private boolean swapped = false;
     private boolean filterSwapped = false;
-    public Map<String, Noe> resMap = null;
+    private Map<String, Noe> resMap = null;
     public EnumSet<Flags> activeFlags;
     private GenTypes genType = GenTypes.MANUAL;
 
     public Noe(Peak p, SpatialSet sp1, SpatialSet sp2, double newScale) {
-        super(sp1, sp2);
+        super();
         spg1 = new SpatialSetGroup(sp1);
         spg2 = new SpatialSetGroup(sp2);
         if (spg1.compare(spg2) >= 0) {
@@ -94,7 +94,7 @@ public class Noe extends DistanceConstraint {
     }
 
     public Noe(Peak p, SpatialSetGroup spg1, SpatialSetGroup spg2, double newScale) {
-        super(spg1, spg2);
+        super();
         this.spg1 = spg1;
         this.spg2 = spg2;
         if (spg1.compare(spg2) > 0) {
@@ -104,6 +104,38 @@ public class Noe extends DistanceConstraint {
         scale = newScale;
         activeFlags = EnumSet.noneOf(Flags.class);
     }
+
+    public AtomDistancePair[] getAtomPairs() {
+        if (atomPairs == null) {
+            Set<SpatialSet> spSets1 = spg1.getSpSets();
+            Set<SpatialSet> spSets2 = spg2.getSpSets();
+            atomPairs = new AtomDistancePair[spSets1.size() * spSets2.size()];
+            int i = 0;
+            for (SpatialSet sp1 : spSets1) {
+                for (SpatialSet sp2 : spSets2) {
+                    Atom atom1 = sp1.getAtom();
+                    Atom atom2 = sp2.getAtom();
+                    AtomDistancePair atomPair = new AtomDistancePair(atom1, atom2);
+                    atomPairs[i++] = atomPair;
+                }
+            }
+        }
+        return atomPairs;
+    }
+
+    public Map<String, Noe> getResMap() {
+        return resMap;
+    }
+
+    public void setResMap(Map<String, Noe> resMap2) {
+        if (resMap == null) {
+            resMap = new HashMap<>();
+        } else {
+            resMap.clear();
+        }
+        resMap.putAll(resMap2);
+    }
+
 
     @Override
     public String toString() {
@@ -243,10 +275,6 @@ public class Noe extends DistanceConstraint {
     @Override
     public boolean isUserActive() {
         return (active > 0);
-    }
-
-    public int getActive() {
-        return active;
     }
 
     public void setActive(int newState) {
@@ -424,13 +452,13 @@ public class Noe extends DistanceConstraint {
     public record NoeMatch(SpatialSet sp1, SpatialSet sp2, GenTypes type, double error) {
 
         @Override
-            public String toString() {
-                return sp1.atom.getShortName() + "\t" +
-                        sp2.atom.getShortName() + "\t" +
-                        type + "\t" +
-                        error;
-            }
+        public String toString() {
+            return sp1.atom.getShortName() + "\t" +
+                    sp2.atom.getShortName() + "\t" +
+                    type + "\t" +
+                    error;
         }
+    }
 
     /**
      * @return the intensity

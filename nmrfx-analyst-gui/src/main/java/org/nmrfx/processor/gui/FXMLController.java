@@ -47,6 +47,8 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.spectra.StripController;
+import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.DatasetBase;
@@ -523,6 +525,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         getActiveChart().layoutPlotChildren();
         undoManager.clear();
+        ProjectBase.getActive().projectChanged(true);
     }
 
     /**
@@ -1104,6 +1107,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         chartDrawingLayers.getGrid().calculateAndSetOrientation();
     }
 
+    public GridPaneCanvas getGridPaneCanvas() {
+        return chartDrawingLayers.getGrid();
+    }
     public void draw() {
         chartDrawingLayers.getGrid().layoutChildren();
     }
@@ -1135,8 +1141,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         bordersGrid[5] = new double[nRows];
 
         for (PolyChart chart : charts) {
-            int iRow = iChild / nCols;
-            int iCol = iChild % nCols;
+            var gridPos = getGridPaneCanvas().getGridLocation(chart);
+            int iRow = gridPos.rows();
+            int iCol = gridPos.columns();
             if (minBorders.get()) {
                 chart.getAxes().setAxisState(iCol == 0, iRow == (nRows - 1));
             } else {
@@ -1176,8 +1183,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         iChild = 0;
         for (PolyChart chart : charts) {
-            int iRow = iChild / nCols;
-            int iCol = iChild % nCols;
+            var gridPos = getGridPaneCanvas().getGridLocation(chart);
+            int iRow = gridPos.rows();
+            int iCol = gridPos.columns();
             double minLeftBorder = bordersGrid[0][iCol];
             double minBottomBorder = bordersGrid[2][iRow];
             chart.setMinBorders(minBottomBorder, minLeftBorder);
@@ -1277,11 +1285,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public int arrangeGetRows() {
-        return chartDrawingLayers.getGrid().getRows();
+        return chartDrawingLayers.getGrid().getGridSize().rows();
     }
 
     public int arrangeGetColumns() {
-        return chartDrawingLayers.getGrid().getColumns();
+        return chartDrawingLayers.getGrid().getGridSize().columns();
     }
 
     public void alignCenters() {
@@ -1940,6 +1948,51 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             scannerTool.setSplitPanePosition(dividerPositions[0]);
             removeBottomBoxNode(scannerTool.getBox());
         }
+    }
+
+    public Optional<RunAboutGUI>  showRunAboutTool() {
+        RunAboutGUI runAboutGUI;
+        if (!containsTool(RunAboutGUI.class)) {
+            TabPane tabPane = new TabPane();
+            getBottomBox().getChildren().add(tabPane);
+            tabPane.setMinHeight(200);
+            runAboutGUI = new RunAboutGUI(this, this::removeRunaboutTool);
+            runAboutGUI.initialize(tabPane);
+            addTool(runAboutGUI);
+            return Optional.of(runAboutGUI);
+        } else {
+            return getRunAboutTool();
+        }
+    }
+
+    public Optional<RunAboutGUI> getRunAboutTool() {
+        ControllerTool tool = getTool(RunAboutGUI.class);
+        if (tool instanceof RunAboutGUI runAboutGUI) {
+            return Optional.of(runAboutGUI);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
+        removeTool(RunAboutGUI.class);
+        removeBottomBoxNode(runaboutTool.getTabPane());
+    }
+
+    public StripController showStripsBar() {
+        if (!containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(this, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            addTool(stripsController);
+        }
+        return (StripController) getTool(StripController.class);
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        removeTool(StripController.class);
+        removeBottomBoxNode(stripsController.getBox());
     }
 
     public void removeBottomBoxNode(Node node) {

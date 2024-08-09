@@ -34,6 +34,7 @@ import javafx.stage.Stage;
 import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.analyst.gui.datasetbrowser.DatasetBrowserController;
 import org.nmrfx.analyst.gui.events.DataFormatHandlerUtil;
+import org.nmrfx.analyst.gui.git.*;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.peaks.PeakAssignTool;
 import org.nmrfx.analyst.gui.peaks.PeakMenuActions;
@@ -61,6 +62,7 @@ import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.utils.FxPropertyChangeSupport;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.seqassign.RunAboutSaveFrameProcessor;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,7 +129,11 @@ public class AnalystApp extends Application {
         KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
         DataFormatHandlerUtil.addHandlersToController();
         ProjectBase.setPCS(new FxPropertyChangeSupport(this));
-        ProjectBase.addPropertyChangeListener(evt -> getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton));
+        ProjectBase.addPropertyChangeListener(evt -> {
+            if (Objects.equals(evt.getPropertyName(), "project")) {
+                getFXMLControllerManager().getControllers().forEach(FXMLController::enableFavoriteButton);
+            }
+        });
         PDBFile.setLocalResLibDir(AnalystPrefs.getLocalResidueDirectory());
         RunAboutSaveFrameProcessor runAboutSaveFrameProcessor = new RunAboutSaveFrameProcessor();
         ProjectBase.addSaveframeProcessor("runabout", runAboutSaveFrameProcessor);
@@ -135,6 +141,7 @@ public class AnalystApp extends Application {
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STARTUP, null);
         moleculeMap = FXCollections.observableHashMap();
         MoleculeFactory.setMoleculeMap(moleculeMap);
+        ProjectBase.getActive().projectChanged(false);
     }
 
     @Override
@@ -301,10 +308,13 @@ public class AnalystApp extends Application {
     }
 
     public void quit() {
-        saveDatasets();
-        waitForCommit();
-        Platform.exit();
-        System.exit(0);
+        boolean projectChanged = ProjectBase.getActive().projectChanged();
+        if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
+            saveDatasets();
+            waitForCommit();
+            Platform.exit();
+            System.exit(0);
+        }
     }
 
 
@@ -350,7 +360,7 @@ public class AnalystApp extends Application {
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GUIProject.isCommitting() && (iTry < nTries)) {
+        while (GitManager.isCommitting() && (iTry < nTries)) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {
@@ -401,11 +411,11 @@ public class AnalystApp extends Application {
 
         MenuItem runAboutToolItem = new MenuItem("Show RunAbout");
         proteinMenu.getItems().add(runAboutToolItem);
-        runAboutToolItem.setOnAction(e -> showRunAboutTool());
+        runAboutToolItem.setOnAction(e -> controller.showRunAboutTool());
 
         MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
         proteinMenu.getItems().add(stripsToolItem);
-        stripsToolItem.setOnAction(e -> showStripsBar());
+        stripsToolItem.setOnAction(e -> controller.showStripsBar());
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
@@ -447,40 +457,6 @@ public class AnalystApp extends Application {
     public void showScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.showScannerMenus();
-    }
-
-    public void showRunAboutTool() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(RunAboutGUI.class)) {
-            TabPane tabPane = new TabPane();
-            controller.getBottomBox().getChildren().add(tabPane);
-            tabPane.setMinHeight(200);
-            RunAboutGUI runaboutTool = new RunAboutGUI(controller, this::removeRunaboutTool);
-            runaboutTool.initialize(tabPane);
-            controller.addTool(runaboutTool);
-        }
-    }
-
-    public Optional<RunAboutGUI> getRunAboutTool() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        ControllerTool tool = controller.getTool(RunAboutGUI.class);
-        if (tool instanceof RunAboutGUI runAboutGUI) {
-            return Optional.of(runAboutGUI);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    public StripController showStripsBar() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(StripController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            StripController stripsController = new StripController(controller, this::removeStripsBar);
-            stripsController.initialize(vBox);
-            controller.addTool(stripsController);
-        }
-        return (StripController) controller.getTool(StripController.class);
     }
 
     public void removePeakPathTool(PathTool pathTool) {
@@ -650,6 +626,14 @@ public class AnalystApp extends Application {
                 PreferencesController.getPeakShapeDirectFactor(),
                 PreferencesController.getPeakShapeIndirectFactor());
     }
+    public static void showHistoryAction(ActionEvent event) {
+        GUIProject guiProject = GUIProject.getActive();
+        if ((guiProject != null) && (guiProject.getGitManager() != null)) {
+            guiProject.getGitManager().showHistoryAction(event);
+        }
+    }
+
+
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {
         AnalystApp.getAnalystApp().moleculeMap.addListener(listener);

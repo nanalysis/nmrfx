@@ -170,8 +170,6 @@ public class Molecule extends MoleculeBase {
                  IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
-        setActive();
-        storeMolecule();
     }
 
     final void storeMolecule() {
@@ -841,7 +839,7 @@ public class Molecule extends MoleculeBase {
 
     public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
-        List<SpatialSet> selected = matchAtoms(molFilter);
+        List<SpatialSet> selected = matchAtoms(molFilter, this);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
@@ -1579,8 +1577,8 @@ public class Molecule extends MoleculeBase {
      * @param inputAxes double[][] coordinates of the orginal axes
      * @return RealMatrix coordinates of the rotated axes
      */
-    public RealMatrix calcSVDAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix(true);
+    public RealMatrix calcSVDAxes(int iStructure, double[][] inputAxes) {
+        RealMatrix rotMat = getSVDRotationMatrix(iStructure,true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1641,17 +1639,17 @@ public class Molecule extends MoleculeBase {
 
     }
 
-    public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
+    public RealMatrix getSVDRotationMatrix(int iStructure, boolean scaleMat) {
         Point3 pt;
         double[] c = new double[3];
         try {
-            c = getCenter(0);
+            c = getCenter(iStructure);
         } catch (MissingCoordinatesException ex) {
             log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
-            pt = atom.getPoint();
+            pt = atom.getPoint(iStructure);
             if (pt != null) {
                 double[] aCoords = pt.toArray();
                 for (int i = 0; i < aCoords.length; i++) {
@@ -2268,11 +2266,6 @@ public class Molecule extends MoleculeBase {
             }
         }
 
-    }
-
-    public ArrayList<Atom> getAtoms(String selection) {
-        MolFilter molFilter = new MolFilter(selection);
-        return getMatchedAtoms(molFilter, this);
     }
 
     public void updateNames() {
@@ -3302,7 +3295,7 @@ public class Molecule extends MoleculeBase {
 
     @Override
     public void addNonStandardResidue(Sequence sequence, Residue residue) {
-        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = residue.polymer.getPolymerType().contains("polypeptide");
         residue.setNonStandard();
         Atom startAtom;
         if (residue.isCompliant()) {

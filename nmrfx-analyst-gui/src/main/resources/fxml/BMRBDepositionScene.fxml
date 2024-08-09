@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<BorderPane fx:id="attrBorderPane" prefHeight="280.0" prefWidth="300.0"
+            styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.analyst.gui.BMRB.BMRBDepositionController">
+    <top>
+    </top>
+    <center>
+        <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+            <top>
+            </top>
+            <center>
+                <HBox alignment="CENTER">
+                    <children>
+                        <VBox fx:id="vBox" />
+                    </children>
+                </HBox>
+            </center>
+        </BorderPane>
+    </center>
+</BorderPane>
+

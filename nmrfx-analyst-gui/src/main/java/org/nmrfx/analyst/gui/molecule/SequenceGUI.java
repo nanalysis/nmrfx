@@ -119,7 +119,7 @@ public class SequenceGUI {
         if (!seqList.isEmpty()) {
             try {
                 Molecule mol = (Molecule) sequence.read(polymerName, seqList, "", molName);
-
+                mol.setActive();
             } catch (MoleculeIOException ex) {
                 GUIUtils.warn("Sequence Error", ex.getMessage());
             }

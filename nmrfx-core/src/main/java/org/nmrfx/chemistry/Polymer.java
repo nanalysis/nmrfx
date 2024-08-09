@@ -219,8 +219,11 @@ public class Polymer extends Entity {
             } else if (isDNA()) {
                 return "polynucleotide";
             } else {
-                return "polypeptide";
+                return "polypeptide(L)";
             }
+        }
+        if (polymerType.equals("polypeptide")) { // fix for loading old NMRFx STAR files with polypeptide
+            polymerType = "polypeptide(L)";
         }
         return polymerType;
     }
