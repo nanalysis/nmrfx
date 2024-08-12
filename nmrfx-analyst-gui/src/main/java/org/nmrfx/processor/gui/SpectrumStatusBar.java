@@ -88,7 +88,7 @@ public class SpectrumStatusBar {
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     private final ToggleButton phaserButton = new ToggleButton("Phasing");
-    private CheckBox sliceStatusCheckBox = new CheckBox("Slices");
+    private final CheckBox sliceStatusCheckBox = new CheckBox("Slices");
 
 
 
@@ -107,64 +107,14 @@ public class SpectrumStatusBar {
         initCursorButtonGroup();
         setupTools();
 
-        for (int index = 0; index < 2; index++) {
-            for (int orientationIndex = 1; orientationIndex >= 0; orientationIndex--) {
-                Orientation orientation = Orientation.values()[orientationIndex];
-                crossText[index][orientationIndex] = new CustomNumberTextField();
-                crossText[index][orientationIndex].setPrefWidth(75.0);
-                crossText[index][orientationIndex].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, orientation));
-
-                primaryToolbar.getItems().add(crossText[index][orientationIndex]);
-                StackPane stackPane = makeIcon(index, orientation, false);
-                crossTextIcons[index][orientationIndex] = stackPane;
-                crossText[index][orientationIndex].setRight(stackPane);
-                StackPane stackPane2 = makeIcon(index, orientation, true);
-                limitTextIcons[index][orientationIndex] = stackPane2;
-
-                if (index == 1) {
-                    crossText[index][orientationIndex].setStyle("-fx-text-inner-color: red;");
-                } else {
-                    crossText[index][orientationIndex].setStyle("-fx-text-inner-color: black;");
-                }
-            }
-        }
+        initCrossText();
 
         Pane filler = createHorizontalSpacer();
         primaryToolbar.getItems().add(filler);
 
-        for (int i = 0; i < planeSpinner.length; i++) {
-            final int iDim = i + 2;
-            for (int j = 0; j < 2; j++) {
-                final int iSpin = j;
-                Spinner<Integer> spinner = new Spinner<>(0, 127, 63);
-                planeSpinner[i][j] = spinner;
-                spinner.setEditable(true);
-                spinner.getEditor().setPrefWidth(60);
-                spinner.setPrefWidth(80);
-                spinner.setOnScroll(e -> {
-                    spinner.setUserData(e.isShiftDown());
-                    scrollPlane(e, iDim - 2, iSpin);
-                });
-                spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
-                        e -> spinner.setUserData(e.isShiftDown()));
-                planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
-                    if (newValue != null && !newValue.equals(oldValue)) {
-                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
-                        if (iSpin == 1) {
-                            setPlaneRange(iDim);
-                        }
-                    }
-                };
-                SpinnerValueFactory<Integer> planeFactory = planeSpinner[i][j].getValueFactory();
-                planeFactory.valueProperty().addListener(planeListeners[i][j]);
-                SpinnerConverter converter = new SpinnerConverter(iDim, j);
-                planeFactory.setConverter(converter);
-            }
-            valueModeBox[i] = new CheckBox("V");
-            planeSpinner[i][0].editableProperty().bind(valueModeBox[i].selectedProperty().not());
-            planeSpinner[i][1].editableProperty().bind(valueModeBox[i].selectedProperty().not());
-            valueModeBox[i].setOnAction(e -> updateSpinner(iDim));
-        }
+        initSpinners();
+
+
         for (int i = 0; i < dimMenus.length; i++) {
             final int iAxis = i;
             String rowName = DIM_NAMES[iAxis];
@@ -227,6 +177,66 @@ public class SpectrumStatusBar {
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
         sliceStatusCheckBox.setOnAction(e -> updateSlices(true));
         sliceStatusCheckBox.selectedProperty().bindBidirectional(controller.sliceStatusProperty());
+    }
+
+    private void initCrossText() {
+        for (int index = 0; index < 2; index++) {
+            for (int orientationIndex = 1; orientationIndex >= 0; orientationIndex--) {
+                Orientation orientation = Orientation.values()[orientationIndex];
+                crossText[index][orientationIndex] = new CustomNumberTextField();
+                crossText[index][orientationIndex].setPrefWidth(75.0);
+                crossText[index][orientationIndex].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, orientation));
+
+                primaryToolbar.getItems().add(crossText[index][orientationIndex]);
+                StackPane stackPane = makeIcon(index, orientation, false);
+                crossTextIcons[index][orientationIndex] = stackPane;
+                crossText[index][orientationIndex].setRight(stackPane);
+                StackPane stackPane2 = makeIcon(index, orientation, true);
+                limitTextIcons[index][orientationIndex] = stackPane2;
+
+                if (index == 1) {
+                    crossText[index][orientationIndex].setStyle("-fx-text-inner-color: red;");
+                } else {
+                    crossText[index][orientationIndex].setStyle("-fx-text-inner-color: black;");
+                }
+            }
+        }
+    }
+
+    private void initSpinners() {
+        for (int i = 0; i < planeSpinner.length; i++) {
+            final int iDim = i + 2;
+            for (int j = 0; j < 2; j++) {
+                final int iSpin = j;
+                Spinner<Integer> spinner = new Spinner<>(0, 127, 63);
+                planeSpinner[i][j] = spinner;
+                spinner.setEditable(true);
+                spinner.getEditor().setPrefWidth(60);
+                spinner.setPrefWidth(80);
+                spinner.setOnScroll(e -> {
+                    spinner.setUserData(e.isShiftDown());
+                    scrollPlane(e, iDim - 2, iSpin);
+                });
+                spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
+                        e -> spinner.setUserData(e.isShiftDown()));
+                planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
+                    if (newValue != null && !newValue.equals(oldValue)) {
+                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
+                        if (iSpin == 1) {
+                            setPlaneRange(iDim);
+                        }
+                    }
+                };
+                SpinnerValueFactory<Integer> planeFactory = planeSpinner[i][j].getValueFactory();
+                planeFactory.valueProperty().addListener(planeListeners[i][j]);
+                SpinnerConverter converter = new SpinnerConverter(iDim, j);
+                planeFactory.setConverter(converter);
+            }
+            valueModeBox[i] = new CheckBox("V");
+            planeSpinner[i][0].editableProperty().bind(valueModeBox[i].selectedProperty().not());
+            planeSpinner[i][1].editableProperty().bind(valueModeBox[i].selectedProperty().not());
+            valueModeBox[i].setOnAction(e -> updateSpinner(iDim));
+        }
     }
 
     private void initCursorButtonGroup() {
@@ -815,19 +825,17 @@ public class SpectrumStatusBar {
     }
 
     private void dimAction(String rowName, String dimName) {
-        controller.getCharts().forEach(chart -> {
-            chart.getFirstDatasetAttributes().ifPresent(attr -> {
-                attr.setDim(rowName, dimName);
-                setPlaneRanges();
-                chart.updateProjections();
-                chart.updateProjectionBorders();
-                chart.updateProjectionScale();
-                for (int i = 0; i < chart.getNDim(); i++) {
-                    // fixme  should be able to swap existing limits, not go to full
-                    chart.full(i);
-                }
-            });
-        });
+        controller.getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
+            attr.setDim(rowName, dimName);
+            setPlaneRanges();
+            chart.updateProjections();
+            chart.updateProjectionBorders();
+            chart.updateProjectionScale();
+            for (int i = 0; i < chart.getNDim(); i++) {
+                // fixme  should be able to swap existing limits, not go to full
+                chart.full(i);
+            }
+        }));
     }
 
     private void updateXYMenu(MenuButton dimMenu, int iAxis) {
@@ -910,7 +918,7 @@ public class SpectrumStatusBar {
                 return spinner.getValueFactory().getValue();
             }
             try {
-                if (s.length() > 0) {
+                if (!s.isEmpty()) {
                     if (s.contains(".")) {
                         double planePPM = Double.parseDouble(s);
                         int planeIndex = findPlane(planePPM, axNum);
