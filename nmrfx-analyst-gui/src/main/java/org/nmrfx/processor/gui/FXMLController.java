@@ -97,6 +97,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.function.DoubleFunction;
 
 import static org.nmrfx.analyst.gui.AnalystApp.getFXMLControllerManager;
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
@@ -928,6 +929,30 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         statusBar.updateCursorBox();
     }
+
+     DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
+        return value -> {
+            PolyChart chart = getActiveChart();
+            if (CanvasCursor.isCrosshair(getCurrentCursor())) {
+                chart.getCrossHairs().updatePosition(crossHairNum, orientation, value);
+            } else {
+                int axNum = orientation == Orientation.VERTICAL ? 0 : 1;
+                final double v1;
+                final double v2;
+                if (crossHairNum == 0) {
+                    v1 = chart.getAxes().get(axNum).getLowerBound();
+                    v2 = value;
+                } else {
+                    v1 = value;
+                    v2 = chart.getAxes().get(axNum).getUpperBound();
+                }
+                chart.getAxes().setMinMax(axNum, v1, v2);
+                chart.refresh();
+            }
+            return null;
+        };
+    }
+
 
     public void setPhaser(Phaser phaser) {
         this.phaser = phaser;

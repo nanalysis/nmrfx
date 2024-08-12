@@ -3768,13 +3768,6 @@ public class PolyChart extends Region {
         return crossHairs;
     }
 
-    DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
-        return value -> {
-            crossHairs.updatePosition(crossHairNum, orientation, value);
-            return null;
-        };
-    }
-
     public void adjustLabels() {
         getFirstDatasetAttributes().ifPresent(attr -> {
             String[] dimNames;
