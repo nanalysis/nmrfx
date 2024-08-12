@@ -281,8 +281,6 @@
                     <TitledPane text="Slices" VBox.vgrow="ALWAYS">
                         <VBox>
                             <children>
-                                <CheckBox fx:id="sliceStatusCheckBox" mnemonicParsing="false"
-                                          onAction="#updateSlices" text="Show Slices"/>
                                 <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false"
                                           onAction="#sliceAction" text="Center slices at crosshair"/>
                                 <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false"

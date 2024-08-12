@@ -91,8 +91,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     private CheckBox useDatasetColorCheckBox;
     @FXML
-    private CheckBox sliceStatusCheckBox;
-    @FXML
     private CheckBox slice1StateCheckBox;
     @FXML
     private CheckBox slice2StateCheckBox;
@@ -251,7 +249,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
         AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
-        controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
         controller.itemChoiceState.setValue(SelectionChoice.CHART);
         controller.setChart(fxmlController.getActiveChart());
@@ -559,8 +556,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     @FXML
     private void updateSlices() {
-        final boolean status = sliceStatusCheckBox.isSelected();
-        fxmlController.getCharts().forEach(c -> c.setSliceStatus(status));
+        fxmlController.getStatusBar().updateSlices(false);
     }
 
     abstract class ChartSliderListener implements ChangeListener<Number> {

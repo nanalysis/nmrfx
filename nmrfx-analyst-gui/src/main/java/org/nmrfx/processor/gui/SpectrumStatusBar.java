@@ -27,6 +27,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
@@ -87,11 +88,15 @@ public class SpectrumStatusBar {
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     private final ToggleButton phaserButton = new ToggleButton("Phasing");
+    private CheckBox sliceStatusCheckBox = new CheckBox("Slices");
+
+
 
     private boolean arrayMode = false;
     private DataMode currentMode = DataMode.FID;
     private int currentModeDimensions = 0;
 
+    private Cursor preSliceCursor = null;
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
     }
@@ -212,6 +217,7 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(filler);
         primaryToolbar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatusChanged);
+        primaryToolbar.getItems().add(sliceStatusCheckBox);
         phaserButton.setOnAction(event -> controller.updatePhaser(phaserButton.isSelected()));
         phaserButton.disableProperty().bind(controller.processControllerVisibleProperty());
 
@@ -219,6 +225,8 @@ public class SpectrumStatusBar {
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
+        sliceStatusCheckBox.setOnAction(e -> updateSlices(true));
+        sliceStatusCheckBox.selectedProperty().bindBidirectional(controller.sliceStatusProperty());
     }
 
     private void initCursorButtonGroup() {
@@ -668,6 +676,9 @@ public class SpectrumStatusBar {
         if (currentMode == DataMode.FID) {
             nodes.add(complexStatus);
         }
+        if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
+            nodes.add(sliceStatusCheckBox);
+        }
         nodes.add(phaserButton);
 
         primaryToolbar.getItems().setAll(nodes);
@@ -936,5 +947,22 @@ public class SpectrumStatusBar {
         void setValueMode(boolean mode) {
             valueMode = mode;
         }
+    }
+    public void updateSlices(boolean saveState) {
+        final boolean status = sliceStatusCheckBox.isSelected();
+        if (saveState) {
+            if (status) {
+                Cursor crosshairCursor = CanvasCursor.CROSSHAIR.getCursor();
+                preSliceCursor = controller.getCurrentCursor();
+                if (preSliceCursor != crosshairCursor) {
+                    controller.setCursor(crosshairCursor);
+                }
+            } else {
+                if (preSliceCursor != null) {
+                    controller.setCursor(preSliceCursor);
+                }
+            }
+        }
+        controller.getCharts().forEach(c -> c.setSliceStatus(status));
     }
 }
