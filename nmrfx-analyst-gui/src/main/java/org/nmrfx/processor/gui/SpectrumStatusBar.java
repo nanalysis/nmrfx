@@ -107,7 +107,7 @@ public class SpectrumStatusBar {
                 Orientation orientation = Orientation.values()[orientationIndex];
                 crossText[index][orientationIndex] = new CustomNumberTextField();
                 crossText[index][orientationIndex].setPrefWidth(75.0);
-                crossText[index][orientationIndex].setFunction(controller.getActiveChart().getCrossHairUpdateFunction(index, orientation));
+                crossText[index][orientationIndex].setFunction(controller.getCrossHairUpdateFunction(index, orientation));
 
                 primaryToolbar.getItems().add(crossText[index][orientationIndex]);
                 StackPane stackPane = makeIcon(index, orientation, false);
@@ -251,6 +251,13 @@ public class SpectrumStatusBar {
                     && canvasCursor.getCursor() == controller.getCurrentCursor()) {
                 button.setSelected(true);
                 break;
+            }
+        }
+        if (!CanvasCursor.isCrosshair(controller.getCurrentCursor())) {
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    crossText[i][j].resetMinMax();
+                }
             }
         }
     }
@@ -501,8 +508,12 @@ public class SpectrumStatusBar {
     }
 
     public void setCrossTextRange(int index, Orientation orientation, double min, double max) {
-        crossText[index][orientation.ordinal()].setMin(min);
-        crossText[index][orientation.ordinal()].setMax(max);
+        if (CanvasCursor.isCrosshair(controller.getCurrentCursor())) {
+            crossText[index][orientation.ordinal()].setMin(min);
+            crossText[index][orientation.ordinal()].setMax(max);
+        } else {
+            crossText[index][orientation.ordinal()].resetMinMax();
+        }
     }
 
     private void setPlaneRanges(int iDim, int max) {
@@ -696,15 +707,16 @@ public class SpectrumStatusBar {
         if (value != null) {
             strValue = String.format("%.3f", value);
         }
-        crossText[index][orientation.ordinal()].setText(strValue);
         if (iconState != iconStates[index][orientation.ordinal()]) {
             iconStates[index][orientation.ordinal()] = iconState;
             if (iconState) {
                 crossText[index][orientation.ordinal()].setRight(limitTextIcons[index][orientation.ordinal()]);
+                crossText[index][orientation.ordinal()].resetMinMax();
             } else {
                 crossText[index][orientation.ordinal()].setRight(crossTextIcons[index][orientation.ordinal()]);
             }
         }
+        crossText[index][orientation.ordinal()].setText(strValue);
     }
 
     public void setIconState(int iCross, Orientation orientation, boolean state) {
