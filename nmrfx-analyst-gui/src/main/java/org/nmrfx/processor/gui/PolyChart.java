@@ -591,6 +591,37 @@ public class PolyChart extends Region {
             refresh();
         }
     }
+    public void sliceView(Orientation orientation) {
+        if (!is1D() && !datasetAttributesList.isEmpty() && (getDataset().getNDim() == 3)) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            int dim0 = datasetAttributes.getDim(0);
+            int dim1 = datasetAttributes.getDim(1);
+            int dim2 = datasetAttributes.getDim(2);
+            double v1 = crossHairs.getPosition(0, orientation);
+            double minX = axes.getX().getLowerBound();
+            double maxX = axes.getX().getUpperBound();
+            double minY = axes.getY().getLowerBound();
+            double maxY = axes.getY().getUpperBound();
+            double minZ = axes.get(2).getLowerBound();
+            double maxZ = axes.get(2).getUpperBound();
+            if (orientation == Orientation.VERTICAL) {
+                datasetAttributes.setDim(dim2, 0);
+                datasetAttributes.setDim(dim1, 1);
+                datasetAttributes.setDim(dim0, 2);
+                axes.getY().setMinMax(minY, maxY);
+                axes.get(2).setMinMax(v1, v1);
+                full(0);
+            } else {
+                datasetAttributes.setDim(dim0, 0);
+                datasetAttributes.setDim(dim2, 1);
+                datasetAttributes.setDim(dim1, 2);
+                axes.getX().setMinMax(minX, maxX);
+                full(1);
+                axes.get(2).setMinMax(v1, v1);
+            }
+            refresh();
+        }
+    }
 
     public void popView() {
         FXMLController newController = AnalystApp.getFXMLControllerManager().newController();

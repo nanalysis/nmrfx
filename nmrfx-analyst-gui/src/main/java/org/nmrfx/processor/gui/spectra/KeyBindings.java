@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.input.*;
 import org.nmrfx.processor.gui.CanvasCursor;
@@ -228,6 +229,14 @@ public class KeyBindings {
                 break;
             case "sv":
                 chart.pasteFromBuffer();
+                keyMonitor.clear();
+                break;
+            case "sx":
+                chart.sliceView(Orientation.VERTICAL);
+                keyMonitor.clear();
+                break;
+            case "sy":
+                chart.sliceView(Orientation.HORIZONTAL);
                 keyMonitor.clear();
                 break;
             case "v":
