@@ -227,6 +227,10 @@ public class KeyBindings {
                 chart.setToBuffer();
                 keyMonitor.clear();
                 break;
+            case "sd":
+                chart.getFXMLController().removeSelectedChart();
+                keyMonitor.clear();
+                break;
             case "sv":
                 chart.pasteFromBuffer();
                 keyMonitor.clear();
