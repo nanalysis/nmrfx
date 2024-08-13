@@ -273,6 +273,19 @@
                                                   prefWidth="75.0"
                                                   GridPane.columnIndex="1" GridPane.rowIndex="4"
                                                   GridPane.columnSpan="1"/>
+                                        <Label text="Number of planes "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="5"
+                                        />
+                                        <ComboBox fx:id="peakNPlanesComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="5"
+                                                  GridPane.columnSpan="1"/>
+                                        <Label text="Peak label font size" GridPane.columnIndex="0"
+                                               GridPane.rowIndex="6"/>
+                                        <ComboBox fx:id="peakFontSizeComboBox" editable="false"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="6"
+                                                  GridPane.columnSpan="1"/>
+
                                     </children>
                                 </GridPane>
                             </children>
