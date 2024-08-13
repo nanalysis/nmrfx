@@ -232,6 +232,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     private ComboBox<PeakDisplayParameters.LabelTypes> peakLabelModeComboBox;
     @FXML
     private ComboBox<Integer> peakNPlanesComboBox;
+    @FXML
+    private ComboBox<Integer> peakFontSizeComboBox;
     PeakOnColorListener peakOnColorListener = new PeakOnColorListener();
     PeakOffColorListener peakOffColorListener = new PeakOffColorListener();
     DrawPeaksListener drawPeaksListener = new DrawPeaksListener();
@@ -242,6 +244,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
 
     PeakNPlanesListener peakNPlanesListener = new PeakNPlanesListener();
+
+    PeakFontSizeListener peakFontSizeListener = new PeakFontSizeListener();
 
     Boolean accordionIn1D = null;
     PolyChart chart;
@@ -390,6 +394,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
         peakNPlanesComboBox.getItems().addAll(0, 1, 2, 3, 4);
         peakNPlanesComboBox.valueProperty().addListener(peakNPlanesListener);
+        peakFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        peakFontSizeComboBox.valueProperty().addListener(peakFontSizeListener);
     }
 
     public Pane getPane() {
@@ -986,6 +992,11 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             peakListAttr.setNplanes(value);
         }
     }
+    class PeakFontSizeListener extends PeakTypeListener<Integer> {
+        void update(PeakListAttributes peakListAttr, Integer value) {
+            peakListAttr.setFontSize(value);
+        }
+    }
 
     void setPeakDisplayComboBoxes() {
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
@@ -1002,6 +1013,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                     peakLabelModeComboBox.setValue(peakListAttr.getLabelType());
                 } else if (listener instanceof PeakNPlanesListener) {
                     peakNPlanesComboBox.setValue(peakListAttr.getNplanes());
+                } else if (listener instanceof PeakFontSizeListener) {
+                    peakFontSizeComboBox.setValue(peakListAttr.getFontSize());
                 }
                 listener.active = true;
             }

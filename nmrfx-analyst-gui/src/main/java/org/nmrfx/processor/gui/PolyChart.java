@@ -3021,10 +3021,6 @@ public class PolyChart extends Region {
             if (peakGC instanceof GraphicsContextProxy) {
                 peakGC.clearRect(xPos, yPos, width, height);
             }
-            if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
-                peakFont = new Font(FONT_FAMILY, PreferencesController.getPeakFontSize());
-            }
-            peakGC.setFont(peakFont);
 
             final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
             while (peakListIterator.hasNext()) {
@@ -3035,6 +3031,10 @@ public class PolyChart extends Region {
                 }
             }
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                if (peakFont.getSize() != peakListAttr.getFontSize()) {
+                    peakFont = new Font(FONT_FAMILY, peakListAttr.getFontSize());
+                }
+                peakGC.setFont(peakFont);
                 if (clear) {
                     peakListAttr.clearPeaksInRegion();
                 }
