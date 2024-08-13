@@ -767,6 +767,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void setDim(String rowName, String dimName) {
+        getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
+            attr.setDim(rowName, dimName);
+            getStatusBar().setPlaneRanges();
+            chart.updateProjections();
+            chart.updateProjectionBorders();
+            chart.updateProjectionScale();
+            for (int i = 0; i < chart.getNDim(); i++) {
+                // fixme  should be able to swap existing limits, not go to full
+                chart.full(i);
+            }
+        }));
+    }
     public SpectrumStatusBar getStatusBar() {
         return statusBar;
     }

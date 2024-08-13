@@ -387,7 +387,7 @@ public class SpectrumStatusBar {
         }
     }
 
-    private void setPlaneRanges() {
+    public void setPlaneRanges() {
         getDatasetAttributes().ifPresent(dataAttr -> {
             for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
                 int dDim = dataAttr.dim[axNum];
@@ -837,17 +837,7 @@ public class SpectrumStatusBar {
     }
 
     private void dimAction(String rowName, String dimName) {
-        controller.getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
-            attr.setDim(rowName, dimName);
-            setPlaneRanges();
-            chart.updateProjections();
-            chart.updateProjectionBorders();
-            chart.updateProjectionScale();
-            for (int i = 0; i < chart.getNDim(); i++) {
-                // fixme  should be able to swap existing limits, not go to full
-                chart.full(i);
-            }
-        }));
+        controller.setDim(rowName, dimName);
     }
 
     private void updateXYMenu(MenuButton dimMenu, int iAxis) {

@@ -220,7 +220,21 @@ public class KeyBindings {
                 chart.getFXMLController().redo();
                 keyMonitor.clear();
                 break;
+            case "s":
+                break;
+            case "sc":
+                chart.setToBuffer();
+                keyMonitor.clear();
+                break;
+            case "sv":
+                chart.pasteFromBuffer();
+                keyMonitor.clear();
+                break;
             case "v":
+                break;
+            case "vc":
+                chart.center();
+                keyMonitor.clear();
                 break;
             case "ve":
                 chart.expand();
@@ -238,6 +252,10 @@ public class KeyBindings {
                 chart.zoom(0.8);
                 keyMonitor.clear();
                 break;
+            case "vr":
+                chart.copyLimits();
+                keyMonitor.clear();
+                break;
             case "vs":
                 chart.swapView();
                 keyMonitor.clear();
@@ -245,6 +263,33 @@ public class KeyBindings {
             case "vp":
                 chart.popView();
                 keyMonitor.clear();
+                break;
+            case "vu":
+                chart.unifyLimits();
+                keyMonitor.clear();
+                break;
+            case "vw":
+                chart.pasteLimits();
+                keyMonitor.clear();
+                break;
+            case "vx":
+            case "vy":
+            case "vz":
+            case "va":
+                if (keyString.length()> 2) {
+                    String axisName = shortString.substring(1,2).toUpperCase();
+                    String dimNum = keyString.substring(2,3);
+                    if (Character.isDigit(dimNum.charAt(0))) {
+                        int iDim = Integer.parseInt(dimNum) - 1;
+                        if (iDim < chart.getDataset().getNDim()) {
+                            String dimName = chart.getDataset().getLabel(iDim);
+                            chart.getFXMLController().setDim(axisName, dimName);
+                            chart.refresh();
+                        }
+                    }
+                    keyMonitor.clear();
+                    break;
+                }
                 break;
             case "j":
                 break;

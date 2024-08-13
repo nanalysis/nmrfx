@@ -75,7 +75,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -142,7 +141,11 @@ public class PolyChart extends Region {
     private CrossHairs crossHairs;
     private List<ChartUndo> undos = new ArrayList<>();
     private List<ChartUndo> redos = new ArrayList<>();
-    private  MapChangeListener<String, PeakList> peakListMapChangeListener = change -> purgeInvalidPeakListAttributes();
+    private MapChangeListener<String, PeakList> peakListMapChangeListener = change -> purgeInvalidPeakListAttributes();
+
+    private static PolyChart chartBuffer = null;
+
+    private static ViewBuffer viewBuffer = null;
 
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
@@ -154,6 +157,32 @@ public class PolyChart extends Region {
         initChart();
         drawPeaks = new DrawPeaks(this, drawingLayers.getGraphicsContextFor(ChartDrawingLayers.Item.Peaks));
         setVisible(false);
+    }
+
+    class ViewBuffer {
+        int[] dim;
+        double[][] limits;
+
+        void save(PolyChart chart) {
+            if (!chart.datasetAttributesList.isEmpty()) {
+                DatasetAttributes datasetAttributes = chart.datasetAttributesList.get(0);
+                dim = datasetAttributes.dim.clone();
+                limits = chart.axes.getLimits();
+            }
+        }
+
+        void restore(PolyChart chart) {
+            if (!chart.datasetAttributesList.isEmpty()) {
+                DatasetAttributes datasetAttributes = chart.datasetAttributesList.get(0);
+                if (dim != null) {
+                    for (int i = 0; i < dim.length; i++) {
+                        datasetAttributes.dim[i] = dim[i];
+                        chart.axes.get(i).setLowerBound(limits[i][0]);
+                        chart.axes.get(i).setUpperBound(limits[i][1]);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -547,11 +576,16 @@ public class PolyChart extends Region {
     }
 
     public void swapView() {
-        if (!is1D()) {
+        if (!is1D() && !datasetAttributesList.isEmpty()) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            int dim0 = datasetAttributes.getDim(0);
+            int dim1 = datasetAttributes.getDim(1);
             double minX = axes.getX().getLowerBound();
             double maxX = axes.getX().getUpperBound();
             double minY = axes.getY().getLowerBound();
             double maxY = axes.getY().getUpperBound();
+            datasetAttributes.setDim(dim1, 0);
+            datasetAttributes.setDim(dim0, 1);
             axes.getX().setMinMax(minY, maxY);
             axes.getY().setMinMax(minX, maxX);
             refresh();
@@ -566,7 +600,54 @@ public class PolyChart extends Region {
         newChart.refresh();
     }
 
+    public void unifyLimits() {
+        viewBuffer = new ViewBuffer();
+        viewBuffer.save(this);
+        controller.getCharts().forEach(chart -> {
+            if (chart != this) {
+                viewBuffer.restore(chart);
+                chart.refresh();
+            }
+        });
+    }
+    public void copyLimits() {
+        viewBuffer = new ViewBuffer();
+        viewBuffer.save(this);
+    }
+
+    public void pasteLimits() {
+        if (viewBuffer != null) {
+            viewBuffer.restore(this);
+            refresh();
+        }
+    }
+    public void setToBuffer() {
+        chartBuffer = this;
+    }
+
+    public void pasteFromBuffer() {
+        if (chartBuffer != null) {
+            chartBuffer.copyTo(this);
+        }
+    }
+
+    public void pasteAxes() {
+        if (chartBuffer != null) {
+            DatasetAttributes copyAttributes = chartBuffer.getDatasetAttributes().get(0);
+            DatasetAttributes datasetAttributes = getDatasetAttributes().get(0);
+            for (int i = 0; i < copyAttributes.dim.length; i++) {
+                if (datasetAttributes.dim.length > i) {
+                    datasetAttributes.setDim(i, copyAttributes.getDim(i));
+                }
+            }
+            chartBuffer.axes.copyTo(axes);
+        }
+    }
+
     public void copyTo(PolyChart newChart) {
+        newChart.datasetAttributesList.clear();
+        newChart.peakListAttributesList.clear();
+        newChart.clearAnnotations();
         for (DatasetAttributes dataAttr : datasetAttributesList) {
             DatasetAttributes newDataAttr = newChart.setDataset(dataAttr.getDataset(), true, false);
             dataAttr.copyTo(newDataAttr);
@@ -766,6 +847,22 @@ public class PolyChart extends Region {
                 layoutPlotChildren();
             }
         }
+    }
+
+    public void center() {
+        Double[] positions;
+        if (is1D()) {
+            positions = new Double[1];
+        } else {
+            positions = new Double[2];
+        }
+        double v1 = getCrossHairs().getPosition(0, Orientation.VERTICAL);
+        positions[0] = v1;
+        if (!is1D()) {
+            double v2 = getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
+            positions[1] = v2;
+        }
+        moveTo(positions);
     }
 
     public void center(int axis) {
