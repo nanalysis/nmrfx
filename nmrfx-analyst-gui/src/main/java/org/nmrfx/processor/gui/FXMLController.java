@@ -636,6 +636,31 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return haltButton;
     }
 
+    public void exportGraphics() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to PNG");
+        fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
+        File selectedFile = fileChooser.showSaveDialog(null);
+        String name = selectedFile.getName();
+        int dot = name.lastIndexOf('.');
+        String extension = "";
+        if (dot != -1) {
+             extension = name.substring(dot+1);
+        }
+        switch (extension) {
+            case "svg" -> exportSVG(selectedFile);
+            case "pdf" -> exportPDF(selectedFile);
+            case "png" -> exportPNG(selectedFile);
+            default -> {
+                String fileName = selectedFile.toString() + ".svg";
+                exportSVG(fileName);
+            }
+        }
+    }
+
     public void exportPNG(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PNG");
@@ -654,6 +679,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             } finally {
                 chartDrawingLayers.getTopPane().setVisible(true);
             }
+        }
+    }
+
+    public void exportPNG(File selectedFile) {
+        try {
+            chartDrawingLayers.getTopPane().setVisible(false);
+            GUIUtils.snapNode(chartPane, selectedFile);
+        } catch (IOException ex) {
+            GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
+        } finally {
+            chartDrawingLayers.getTopPane().setVisible(true);
         }
     }
 

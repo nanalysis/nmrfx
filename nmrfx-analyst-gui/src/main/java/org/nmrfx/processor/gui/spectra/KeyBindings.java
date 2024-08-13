@@ -20,6 +20,9 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.input.*;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.CanvasCursor;
 import org.nmrfx.processor.gui.KeyMonitor;
 import org.nmrfx.processor.gui.PeakPicking;
@@ -229,6 +232,15 @@ public class KeyBindings {
                 break;
             case "sd":
                 chart.getFXMLController().removeSelectedChart();
+                keyMonitor.clear();
+                break;
+            case "sg":
+                chart.getFXMLController().exportGraphics();
+                keyMonitor.clear();
+                break;
+            case "sn":
+                Stage stage = new Stage(StageStyle.DECORATED);
+                AnalystApp.getFXMLControllerManager().newController(stage);
                 keyMonitor.clear();
                 break;
             case "sv":
