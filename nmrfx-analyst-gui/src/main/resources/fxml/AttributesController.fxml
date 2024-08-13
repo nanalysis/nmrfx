@@ -273,6 +273,13 @@
                                                   prefWidth="75.0"
                                                   GridPane.columnIndex="1" GridPane.rowIndex="4"
                                                   GridPane.columnSpan="1"/>
+                                        <Label text="Number of planes "
+                                               GridPane.columnIndex="0" GridPane.rowIndex="5"
+                                        />
+                                        <ComboBox fx:id="peakNPlanesComboBox" editable="false"
+                                                  prefWidth="75.0"
+                                                  GridPane.columnIndex="1" GridPane.rowIndex="5"
+                                                  GridPane.columnSpan="1"/>
                                     </children>
                                 </GridPane>
                             </children>
@@ -281,8 +288,6 @@
                     <TitledPane text="Slices" VBox.vgrow="ALWAYS">
                         <VBox>
                             <children>
-                                <CheckBox fx:id="sliceStatusCheckBox" mnemonicParsing="false"
-                                          onAction="#updateSlices" text="Show Slices"/>
                                 <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false"
                                           onAction="#sliceAction" text="Center slices at crosshair"/>
                                 <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false"

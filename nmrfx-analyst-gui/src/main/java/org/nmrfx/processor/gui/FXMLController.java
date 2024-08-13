@@ -97,6 +97,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.function.DoubleFunction;
 
 import static org.nmrfx.analyst.gui.AnalystApp.getFXMLControllerManager;
 import static org.nmrfx.processor.gui.controls.GridPaneCanvas.getGridDimensionInput;
@@ -635,6 +636,31 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return haltButton;
     }
 
+    public void exportGraphics() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to PNG");
+        fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.getExtensionFilters().addAll(
+                FileExtensionFilterType.ALL_FILES.getFilter()
+        );
+        File selectedFile = fileChooser.showSaveDialog(null);
+        String name = selectedFile.getName();
+        int dot = name.lastIndexOf('.');
+        String extension = "";
+        if (dot != -1) {
+             extension = name.substring(dot+1);
+        }
+        switch (extension) {
+            case "svg" -> exportSVG(selectedFile);
+            case "pdf" -> exportPDF(selectedFile);
+            case "png" -> exportPNG(selectedFile);
+            default -> {
+                String fileName = selectedFile.toString() + ".svg";
+                exportSVG(fileName);
+            }
+        }
+    }
+
     public void exportPNG(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PNG");
@@ -653,6 +679,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             } finally {
                 chartDrawingLayers.getTopPane().setVisible(true);
             }
+        }
+    }
+
+    public void exportPNG(File selectedFile) {
+        try {
+            chartDrawingLayers.getTopPane().setVisible(false);
+            GUIUtils.snapNode(chartPane, selectedFile);
+        } catch (IOException ex) {
+            GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
+        } finally {
+            chartDrawingLayers.getTopPane().setVisible(true);
         }
     }
 
@@ -766,6 +803,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void setDim(String rowName, String dimName) {
+        getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
+            attr.setDim(rowName, dimName);
+            getStatusBar().setPlaneRanges();
+            chart.updateProjections();
+            chart.updateProjectionBorders();
+            chart.updateProjectionScale();
+            for (int i = 0; i < chart.getNDim(); i++) {
+                // fixme  should be able to swap existing limits, not go to full
+                chart.full(i);
+            }
+        }));
+    }
     public SpectrumStatusBar getStatusBar() {
         return statusBar;
     }
@@ -928,6 +978,30 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
         statusBar.updateCursorBox();
     }
+
+     DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
+        return value -> {
+            PolyChart chart = getActiveChart();
+            if (CanvasCursor.isCrosshair(getCurrentCursor())) {
+                chart.getCrossHairs().updatePosition(crossHairNum, orientation, value);
+            } else {
+                int axNum = orientation == Orientation.VERTICAL ? 0 : 1;
+                final double v1;
+                final double v2;
+                if (crossHairNum == 0) {
+                    v1 = chart.getAxes().get(axNum).getLowerBound();
+                    v2 = value;
+                } else {
+                    v1 = value;
+                    v2 = chart.getAxes().get(axNum).getUpperBound();
+                }
+                chart.getAxes().setMinMax(axNum, v1, v2);
+                chart.refresh();
+            }
+            return null;
+        };
+    }
+
 
     public void setPhaser(Phaser phaser) {
         this.phaser = phaser;

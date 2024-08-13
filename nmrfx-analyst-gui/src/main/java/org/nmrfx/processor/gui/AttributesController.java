@@ -91,8 +91,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     private CheckBox useDatasetColorCheckBox;
     @FXML
-    private CheckBox sliceStatusCheckBox;
-    @FXML
     private CheckBox slice1StateCheckBox;
     @FXML
     private CheckBox slice2StateCheckBox;
@@ -232,6 +230,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     private ComboBox<PeakDisplayParameters.DisplayTypes> peakDisplayModeComboBox;
     @FXML
     private ComboBox<PeakDisplayParameters.LabelTypes> peakLabelModeComboBox;
+    @FXML
+    private ComboBox<Integer> peakNPlanesComboBox;
     PeakOnColorListener peakOnColorListener = new PeakOnColorListener();
     PeakOffColorListener peakOffColorListener = new PeakOffColorListener();
     DrawPeaksListener drawPeaksListener = new DrawPeaksListener();
@@ -240,6 +240,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     PeakDisplayTypeListener peakDisplayTypeListener = new PeakDisplayTypeListener();
     PeakColorTypeListener peakColorTypeListener = new PeakColorTypeListener();
     PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
+
+    PeakNPlanesListener peakNPlanesListener = new PeakNPlanesListener();
 
     Boolean accordionIn1D = null;
     PolyChart chart;
@@ -251,7 +253,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
         AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
-        controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
         controller.itemChoiceState.setValue(SelectionChoice.CHART);
         controller.setChart(fxmlController.getActiveChart());
@@ -387,6 +388,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         linkPeakDisplayCheckBox.selectedProperty().addListener(drawLinkPeaksListener);
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
+        peakNPlanesComboBox.getItems().addAll(0, 1, 2, 3, 4);
+        peakNPlanesComboBox.valueProperty().addListener(peakNPlanesListener);
     }
 
     public Pane getPane() {
@@ -559,8 +562,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     @FXML
     private void updateSlices() {
-        final boolean status = sliceStatusCheckBox.isSelected();
-        fxmlController.getCharts().forEach(c -> c.setSliceStatus(status));
+        fxmlController.getStatusBar().updateSlices(false);
     }
 
     abstract class ChartSliderListener implements ChangeListener<Number> {
@@ -979,12 +981,17 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             peakListAttr.setLabelType(value);
         }
     }
+    class PeakNPlanesListener extends PeakTypeListener<Integer> {
+        void update(PeakListAttributes peakListAttr, Integer value) {
+            peakListAttr.setNplanes(value);
+        }
+    }
 
     void setPeakDisplayComboBoxes() {
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
         if (!peakListAttrs.isEmpty()) {
             PeakListAttributes peakListAttr = peakListAttrs.get(0);
-            PeakTypeListener[] listeners = {peakDisplayTypeListener, peakLabelTypeListener, peakColorTypeListener};
+            PeakTypeListener[] listeners = {peakDisplayTypeListener, peakLabelTypeListener, peakColorTypeListener, peakNPlanesListener};
             for (var listener : listeners) {
                 listener.active = false;
                 if (listener instanceof PeakColorTypeListener) {
@@ -993,6 +1000,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                     peakDisplayModeComboBox.setValue(peakListAttr.getDisplayType());
                 } else if (listener instanceof PeakLabelTypeListener) {
                     peakLabelModeComboBox.setValue(peakListAttr.getLabelType());
+                } else if (listener instanceof PeakNPlanesListener) {
+                    peakNPlanesComboBox.setValue(peakListAttr.getNplanes());
                 }
                 listener.active = true;
             }
