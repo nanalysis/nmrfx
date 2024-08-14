@@ -82,7 +82,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
             String fileName = datasetSummary.getPath();
             File localFile = fileSystem.getPath(directoryTextField.getText(), fileName).toFile();
             if (!localFile.exists()) {
-                GUIUtils.warn("Fetch", "File doesn't exist: " + localFile.toString());
+                GUIUtils.warn("Fetch", "File doesn't exist: " + localFile);
                 return;
             }
             FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
