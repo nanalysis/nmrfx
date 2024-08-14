@@ -39,6 +39,7 @@ import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 public class MatrixND implements MatrixType {
 
@@ -550,6 +551,44 @@ public class MatrixND implements MatrixType {
         }
     }
 
+
+    void manipulateRIVecs(int axis, Consumer<double[][]> op) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorZF(axis, riVec, counts);
+            op.accept(riVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void doNegateImag(boolean[] negateImag) {
+        for (int i = 0; i < nDim; i++) {
+            if (negateImag[i]) {
+                manipulateRIVecs(i, RIVecOps::negateImag);
+            }
+        }
+    }
+
+    public void doNegatePairs(boolean[] negatePairs) {
+        for (int i = 0; i < nDim; i++) {
+            if (negatePairs[i]) {
+                manipulateRIVecs(i, RIVecOps::negatePairs);
+            }
+        }
+    }
+
+    // TODO: Needs to be power of 2
+    public void doFourierTransform() {
+        for (int i = 0; i < nDim; i++) {
+            manipulateRIVecs(i, RIVecOps::fourierTransform);
+        }
+    }
+
     @Override
     public void phase(double[] phase) {
         doPhaseTD(phase);
@@ -672,6 +711,14 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    private MultidimensionalCounter.Iterator axisIterator(int axis) {
+        int[] subSizes = getSubSizes(axis);
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        return iterator;
+    }
+
+
     public void doPhaseTD(int axis, double ph0, double ph1, boolean negateImag, boolean negatePairs) {
         int[] subSizes = getSubSizes(axis);
         int size = sizes[axis];
@@ -687,10 +734,10 @@ public class MatrixND implements MatrixType {
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
             if (negateImag) {
-                negateImag(riVec, size);
+                negateImag(riVec);
             }
             if (negatePairs) {
-                negatePairs(riVec, size);
+                negatePairs(riVec);
             }
             fft(riVec);
             fftShuffle(riVec);
@@ -698,23 +745,37 @@ public class MatrixND implements MatrixType {
             fftShuffle(riVec);
             ifft(riVec);
             if (negateImag) {
-                negateImag(riVec, size);
+                negateImag(riVec);
             }
             if (negatePairs) {
-                negatePairs(riVec, size);
+                negatePairs(riVec);
             }
             putVectorRI(axis, riVec, counts);
         }
     }
 
-    private static void negatePairs(double[][] riVec, int size) {
+    public void doNegatePairs(int axis) {
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        var iterator = axisIterator(axis);
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            negatePairs(riVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    private static void negatePairs(double[][] riVec) {
+        int size = riVec[0].length;
         for (int i = 1; i < size; i += 2) {
             riVec[0][i] = -riVec[0][i];
             riVec[1][i] = -riVec[1][i];
         }
     }
 
-    private static void negateImag(double[][] riVec, int size) {
+    private static void negateImag(double[][] riVec) {
+        int size = riVec[0].length;
         for (int i = 0; i < size; ++i) {
             riVec[1][i] = -riVec[1][i];
         }
@@ -1268,5 +1329,27 @@ public class MatrixND implements MatrixType {
         schedule = sampleSchedule;
     }
 
+}
 
+class RIVecOps {
+    private static int getSize(double[][] riVec) {
+        return riVec[0].length;
+    }
+
+    public static void negateImag(double[][] riVec) {
+        for (int i = 0; i < getSize(riVec); i++) {
+            riVec[1][i] *= -1.0;
+        }
+    }
+
+    public static void negatePairs(double[][] riVec) {
+        for (int i = 1; i < getSize(riVec); i += 2) {
+            riVec[0][i] *= -1.0;
+            riVec[1][i] *= -1.0;
+        }
+    }
+
+    public static void fourierTransform(double[][] riVec) {
+        FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.FORWARD);
+    }
 }
