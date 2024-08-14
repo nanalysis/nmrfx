@@ -4,6 +4,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.controlsfx.control.tableview2.TableView2;
@@ -20,6 +21,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     /* Keeps track of the summaries, new summaries are added to this list. */
     private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
     private Runnable datasetSelectionListener = null;
+    FilteredList<DatasetSummary> filteredList;
 
     public DatasetBrowserTableView(boolean addCacheColumn) {
         TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("FID");
@@ -51,7 +53,11 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         }
         getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol);
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        setItems(new FilteredList<>(unfilteredDatasetSummaries));
+        filteredList = new FilteredList<>(unfilteredDatasetSummaries);
+        SortedList<DatasetSummary> sortedData = new SortedList<>(filteredList);
+        sortedData.comparatorProperty().bind(comparatorProperty());
+
+        setItems(sortedData);
     }
 
     public void setDatasetSummaries(List<DatasetSummary> summaries) {
@@ -68,7 +74,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
      */
     public void setFilter(String filter) {
         String textFormatted = filter.trim().toLowerCase();
-        ((FilteredList<DatasetSummary>) getItems()).setPredicate(datasetSummary -> textFormatted.isEmpty()
+        filteredList.setPredicate(datasetSummary -> textFormatted.isEmpty()
                 || datasetSummary.getPath().toLowerCase().contains(textFormatted)
                 || datasetSummary.getTime().toLowerCase().contains(textFormatted)
                 || datasetSummary.getSeq().toLowerCase().contains(textFormatted)
