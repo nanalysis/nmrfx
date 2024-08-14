@@ -73,7 +73,9 @@ public class DatasetBrowserUtil {
             nmrDataPath = nmrDataPath.getParent();
         }
         datasetSummary.setPresent(true);
-        datasetSummary.setProcessed(paths.stream().map(nmrDataPath::relativize).map(Path::toString).toList());
+        datasetSummary.setProcessed(paths.stream()
+                .sorted((a,b) -> Long.compare(b.toFile().lastModified(),a.toFile().lastModified()))
+                .map(nmrDataPath::relativize).map(Path::toString).toList());
         return datasetSummary;
     }
 
