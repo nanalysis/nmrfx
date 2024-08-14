@@ -38,6 +38,7 @@ public class RemoteDatasetBrowserTabController extends DatasetBrowserTabControll
         addToolbarButton(fetchButton);
 
         directoryTextField.setText(AnalystPrefs.getRemoteDirectory());
+        bindButtons();
     }
 
     /**

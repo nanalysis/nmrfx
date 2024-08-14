@@ -37,6 +37,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
         Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
         button.setOnAction(e -> browseDirectory());
         hBox.getChildren().add(button);
+        bindButtons();
     }
 
     @Override

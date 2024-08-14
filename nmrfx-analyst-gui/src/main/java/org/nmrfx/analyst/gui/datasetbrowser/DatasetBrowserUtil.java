@@ -69,6 +69,9 @@ public class DatasetBrowserUtil {
         DatasetSummary datasetSummary = nmrData.getDatasetSummary();
         Path nmrDataPath = Paths.get(nmrData.getFilePath());
         datasetSummary.setPath(relativeDirectory.relativize(nmrDataPath).toString());
+        if (nmrDataPath.toFile().isFile()) {
+            nmrDataPath = nmrDataPath.getParent();
+        }
         datasetSummary.setPresent(true);
         datasetSummary.setProcessed(paths.stream().map(nmrDataPath::relativize).map(Path::toString).toList());
         return datasetSummary;
