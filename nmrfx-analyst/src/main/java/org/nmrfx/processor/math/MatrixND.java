@@ -39,6 +39,7 @@ import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class MatrixND implements MatrixType {
@@ -548,44 +549,6 @@ public class MatrixND implements MatrixType {
             getVectorZF(axis, riVec, counts);
             fft(riVec);
             putVectorReal(axis, riVec, counts);
-        }
-    }
-
-
-    void manipulateRIVecs(int axis, Consumer<double[][]> op) {
-        int[] subSizes = getSubSizes(axis);
-        double[][] riVec = new double[2][sizes[axis] / 2];
-        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
-        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            getVectorZF(axis, riVec, counts);
-            op.accept(riVec);
-            putVectorRI(axis, riVec, counts);
-        }
-    }
-
-    public void doNegateImag(boolean[] negateImag) {
-        for (int i = 0; i < nDim; i++) {
-            if (negateImag[i]) {
-                manipulateRIVecs(i, RIVecOps::negateImag);
-            }
-        }
-    }
-
-    public void doNegatePairs(boolean[] negatePairs) {
-        for (int i = 0; i < nDim; i++) {
-            if (negatePairs[i]) {
-                manipulateRIVecs(i, RIVecOps::negatePairs);
-            }
-        }
-    }
-
-    // TODO: Needs to be power of 2
-    public void doFourierTransform() {
-        for (int i = 0; i < nDim; i++) {
-            manipulateRIVecs(i, RIVecOps::fourierTransform);
         }
     }
 
@@ -1329,9 +1292,87 @@ public class MatrixND implements MatrixType {
         schedule = sampleSchedule;
     }
 
+    // *** Simon's additions ***
+
+    /** A generic method which operates on all RI vectors in a given dimension.
+     *
+     * `op` should be a `static void` method which accepts a riVec
+     * (of size [2, N], where N is the number of complex points in the
+     * dimension). Define `op` in the `RIVecOperations` class at the bottom of
+     * this file.
+     */
+    void manipulateRIVecs(int axis, Consumer<double[][]> op) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            op.accept(riVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+
+    <U> void manipulateRIVecs(int axis, U extraArgs, BiConsumer<double[][], U> op) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            op.accept(riVec, extraArgs);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void doNegateImag(boolean[] negateImag) {
+        for (int i = 0; i < nDim; i++) {
+            if (negateImag[i]) {
+                manipulateRIVecs(i, RIVecOperations::negateImag);
+            }
+        }
+    }
+
+    public void doNegatePairs(boolean[] negatePairs) {
+        for (int i = 0; i < nDim; i++) {
+            if (negatePairs[i]) {
+                manipulateRIVecs(i, RIVecOperations::negatePairs);
+            }
+        }
+    }
+
+    public void doFourierTransform(double[] cValues) {
+        double cValue;
+        for (int i = 0; i < nDim; i++) {
+            cValue = cValues[i];
+            manipulateRIVecs(i, cValue, RIVecOperations::fourierTransform);
+        }
+    }
+
+    public void doInverseFourierTransform() {
+        for (int i = 0; i < nDim; i++) {
+            manipulateRIVecs(i, RIVecOperations::inverseFourierTransform);
+        }
+    }
+
+    public void doPhaseCorrection(double[] ph0, double[] ph1) {
+        double[] axisPhases = new double[2];
+        for (int i = 0; i < nDim; i++) {
+            axisPhases[0] = ph0[i];
+            axisPhases[1] = ph1[i];
+            manipulateRIVecs(i, axisPhases, RIVecOperations::phaseCorrection);
+        }
+    }
 }
 
-class RIVecOps {
+class RIVecOperations {
+    private final static double degtorad = Math.PI / 180.0;
+
     private static int getSize(double[][] riVec) {
         return riVec[0].length;
     }
@@ -1349,7 +1390,39 @@ class RIVecOps {
         }
     }
 
-    public static void fourierTransform(double[][] riVec) {
+    public static void fourierTransform(double[][] riVec, double cValue) {
+        riVec[0][0] *= cValue;
+        riVec[1][0] *= cValue;
         FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.FORWARD);
+    }
+
+    public static void inverseFourierTransform(double[][] riVec) {
+        FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.INVERSE);
+    }
+
+    public static void phaseCorrection(double[][] riVec, double[] phases) {
+        double ph0 = phases[0];
+        double ph1 = phases[1];
+        double size = riVec[0].length;
+
+        double pReal;
+        double pImag;
+        double vReal;
+        double vImag;
+
+        double p = degtorad * ph0;
+        double delta = degtorad * (ph1 / (size - 1));
+
+        for (int n = 0; n < size; n++) {
+            pReal = FastMath.cos(p);
+            pImag = -FastMath.sin(p);
+            vReal = riVec[0][n];
+            vImag = riVec[1][n];
+
+            riVec[0][n] = vReal * pReal - vImag * pImag;
+            riVec[1][n] = vReal * pImag + vImag * pReal;
+
+            p += delta;
+        }
     }
 }

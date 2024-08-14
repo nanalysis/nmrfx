@@ -70,14 +70,21 @@ public class ProcIndirectOp extends MatrixOperation {
             ph0 = processAttributeDouble(ph0, nDim, "ph0");
             ph1 = processAttributeDouble(ph1, nDim, "ph1");
 
-            // negateImag
+            // If ph1 = 0 -> c = 0.5
+            // If ph1 = 180 -> c = 1.0
+            // For any ph1 value in between, c is interpolated
+            double[] cValues = new double[nDim];
+            for (int i = 0; i < nDim; i++) {
+                cValues[i] = (ph1[i] + 180.0) / 360.0;
+            }
+
             matrixND.doNegateImag(negateImag);
             matrixND.doNegatePairs(negatePairs);
-            matrixND.doFourierTransform();
-            // ** Ensure you have the following line at the top of the file **
-            // import java.util.Arrays;
-
-
+            // Zero fill to the next power of 2 (needed for FFT/IFFT)
+            matrixND.zeroFill(0);
+            matrixND.doFourierTransform(cValues);
+            matrixND.doPhaseCorrection(ph0, ph1);
+            matrixND.doInverseFourierTransform();
         } catch (Exception e) {
             log.error("Error in ProcIndirect", e);
             throw new ProcessingException(e.getLocalizedMessage());
