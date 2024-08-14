@@ -20,11 +20,15 @@ package org.nmrfx.analyst.gui.datasetbrowser;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.stage.Window;
+import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.processor.gui.FXMLController;
 
 
 import java.net.URL;
@@ -47,7 +51,7 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        LocalDatasetBrowserTabController localDatasetBrowserTabController = new LocalDatasetBrowserTabController(stageTitle -> stage.setTitle(stageTitle));
+        LocalDatasetBrowserTabController localDatasetBrowserTabController = new LocalDatasetBrowserTabController(stageTitle -> stage.setTitle(stageTitle), this);
         getTabs().add(localDatasetBrowserTabController.getTab());
         tabControllers.add(localDatasetBrowserTabController);
         remoteDatasetBrowserTabController = new RemoteDatasetBrowserTabController();
@@ -87,6 +91,23 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
     public void show() {
         stage.toFront();
         stage.show();
+    }
+
+    public void setPosition() {
+        FXMLController fxmlController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        Stage controllerStage = fxmlController.getStage();
+        Window window = controllerStage.getScene().getWindow();
+        double x = window.getX();
+        double y = window.getY();
+        Bounds boundsInScene = fxmlController.getGridPaneCanvas().localToScene(fxmlController.getGridPaneCanvas().getBoundsInLocal());
+        System.out.println(x + " " + y + " " + boundsInScene);
+        stage.setX(x + boundsInScene.getMinX() + 20);
+        stage.setY(y);
+        double width = Math.min(boundsInScene.getWidth(),900);
+        double height = Math.max(boundsInScene.getHeight()/2, 500);
+        stage.setWidth(width);
+        stage.setHeight(height);
+        stage.setAlwaysOnTop(true);
     }
 
     public static DatasetBrowserController create() {

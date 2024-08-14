@@ -5,6 +5,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fx;
@@ -27,7 +28,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
     private final FileSystem fileSystem = FileSystems.getDefault();
 
 
-    public LocalDatasetBrowserTabController(Consumer<String> taskStatusUpdater) {
+    public LocalDatasetBrowserTabController(Consumer<String> taskStatusUpdater, DatasetBrowserController datasetBrowserController) {
         super(TAB_NAME);
         setTableView(new DatasetBrowserTableView(false));
         this.taskStatusUpdater = taskStatusUpdater;
@@ -35,7 +36,12 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
 
         // Add extra button to open file browser to select directory
         Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
-        button.setOnAction(e -> browseDirectory());
+        button.setOnAction(e -> {
+                    datasetBrowserController.getStage().setAlwaysOnTop(false);
+                    browseDirectory();
+                    datasetBrowserController.getStage().setAlwaysOnTop(true);
+                }
+        );
         hBox.getChildren().add(button);
         bindButtons();
     }
@@ -58,7 +64,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
     private void scanTask() {
         final String scanDir = directoryTextField.getText();
         final Path outPath = Paths.get(scanDir, DatasetSummary.DATASET_SUMMARY_INDEX_FILENAME);
-        
+
         Task<List<DatasetSummary>> task = new Task<>() {
             @Override
             protected List<DatasetSummary> call() {
@@ -93,7 +99,7 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
                     baseFile = baseFile.getParentFile();
                 }
                 File localDataset = fileSystem.getPath(baseFile.toString(), selectedProcessedDataset.get()).toFile();
-                 if (localDataset.exists()) {
+                if (localDataset.exists()) {
                     controller.openDataset(localDataset, false, true);
                 }
             } else {

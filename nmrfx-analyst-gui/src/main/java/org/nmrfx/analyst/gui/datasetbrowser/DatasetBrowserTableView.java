@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -53,12 +54,15 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         sfCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_FREQUENCY));
         sfCol.setPrefWidth(70);
 
+        TableColumn<DatasetSummary, String> textCol = new TableColumn<>("Text");
+        textCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getText().replace("\n","  ").replace('\r', ' ')));
+        textCol.setPrefWidth(200);
+
         getColumns().addAll(pathCol, dateCol);
         if (addCacheColumn) {
             getColumns().add(presentCol);
         }
-        getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol);
-       // setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol, textCol);
         filteredList = new FilteredList<>(unfilteredDatasetSummaries);
         SortedList<DatasetSummary> sortedData = new SortedList<>(filteredList);
         sortedData.comparatorProperty().bind(comparatorProperty());
@@ -84,6 +88,7 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
                 || datasetSummary.getPath().toLowerCase().contains(textFormatted)
                 || datasetSummary.getTime().toLowerCase().contains(textFormatted)
                 || datasetSummary.getSeq().toLowerCase().contains(textFormatted)
+                || datasetSummary.getText().toLowerCase().contains(textFormatted)
                 || datasetSummary.getProcessed().stream().anyMatch(datasetPath -> datasetPath.toLowerCase().contains(textFormatted)));
     }
 
