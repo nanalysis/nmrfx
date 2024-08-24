@@ -1,7 +1,6 @@
 package org.nmrfx.structure.rna;
 
 import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
@@ -36,8 +35,12 @@ public class SSPredictor {
             throw new IllegalArgumentException("No model file location set");
         }
         if (graphModel == null) {
-            graphModel = SavedModelBundle.load(modelFilePath);
+            graphModel = SavedModelBundle.load(modelFilePath, "serve");
         }
+    }
+
+    public int  getIndex(int r, int c, int nCols, int d) {
+        return r * nCols - (r - 1) * (r - 1 + 1)/2 + c - d - r * (d+1);
     }
 
     public void predict(String rnaSequence) {
@@ -49,34 +52,22 @@ public class SSPredictor {
         String rnaTokens = "AUGC";
         int nCols = 512;
         int[] tokenized = new int[nCols];
-        int[] maskPositions = new int[nCols];
         for (int i = 0; i < rnaSequence.length(); i++) {
             tokenized[i] = rnaTokens.indexOf(rnaSequence.charAt(i)) + 2;
-            maskPositions[i] = i;
         }
         var inputTF = TInt32.vectorOf(tokenized);
-        var maskPositionsTensor = TInt32.vectorOf(maskPositions);
         var matrix1 = NdArrays.ofInts(Shape.of(1, nCols));
-        var matrix2 = NdArrays.ofInts(Shape.of(1, nCols));
-
 
         matrix1.set(inputTF, 0);
-        matrix2.set(maskPositionsTensor, 0);
 
         var inputs = TInt32.tensorOf(matrix1);
-        var maskInput = TInt32.tensorOf(matrix2);
-        Map<String, Tensor> inputMap = new HashMap<>();
-        inputMap.put("input_1", inputs);
-        inputMap.put("input_2", maskInput);
-        TFloat32 tensor0;
-        try (org.tensorflow.Result output = graphModel.function("serving_default").call(inputMap)) {
-            tensor0 = ((TFloat32) output.get(0));
-
+        int delta = 4;
+        try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
             int seqLen = rnaSequence.length();
             predictions = new double[seqLen][seqLen];
             for (int r = 0; r < seqLen; r++) {
-                for (int c = r + 2; c < seqLen; c++) {
-                    int index = r * nCols - (r - 1) * (r - 1 + 1) / 2 + c - 2 - r * 3;
+                for (int c = r + delta; c < seqLen; c++) {
+                    int index = getIndex(r, c, nCols, delta);
                     double prediction = tensor0.getFloat(0, index);
                     char rChar = rnaSequence.charAt(r);
                     char cChar = rnaSequence.charAt(c);
@@ -88,9 +79,7 @@ public class SSPredictor {
                 }
             }
         }
-
     }
-
     public List<BasePairProbability> getBasePairs(double pLimit) {
         int n = predictions.length;
         double[][] predicted = new double[n][n];
