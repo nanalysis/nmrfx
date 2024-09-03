@@ -9,6 +9,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.utils.GUIUtils;
@@ -120,6 +121,10 @@ public class PeakMenuBar {
         MenuItem unifyMenuItem = new MenuItem("Unify Widths");
         unifyMenuItem.setOnAction(e -> unifyPeakWidths());
         editMenu.getItems().add(unifyMenuItem);
+
+        MenuItem foldMenuItem = new MenuItem("Fold Peaks");
+        foldMenuItem.setOnAction(e -> foldPeaks());
+        editMenu.getItems().add(foldMenuItem);
 
         menuBar.getItems().add(editMenu);
 
@@ -264,6 +269,14 @@ public class PeakMenuBar {
                     }
                 }
             }
+        }
+    }
+
+    void foldPeaks(){
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            PeakFolder peakFolder = new PeakFolder();
+            peakFolder.checkPeakDensity(peakList);
         }
     }
 
