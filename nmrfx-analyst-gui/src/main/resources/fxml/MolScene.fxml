@@ -157,6 +157,7 @@
                                     <children>
                                         <Pane fx:id="dotBracketPane" minHeight="40" HBox.hgrow="ALWAYS"/>
                                         <TextField fx:id="dotBracketField" HBox.hgrow="ALWAYS"/>
+                                        <ChoiceBox fx:id="ssChoiceBox"/>
                                     </children>
                                 </VBox>
                             </bottom>

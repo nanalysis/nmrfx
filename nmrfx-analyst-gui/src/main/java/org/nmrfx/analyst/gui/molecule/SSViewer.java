@@ -153,11 +153,55 @@ public class SSViewer extends Pane {
 
     public void drawSS() {
         drawingGroup.getChildren().clear();
+        if (ssPredictor != null) {
+            drawProbabilityMap(0.4);
+        }
         try {
             layoutStructure(drawingGroup);
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
+
+    }
+
+    private void drawProbabilityMap(double threshold) {
+        double[][] predictions = ssPredictor.getPredictions();
+        int n = predictions.length;
+        scrollPaneWidth = scrollPane.getWidth();
+        scrollPaneHeight = scrollPane.getHeight();
+        double deltaX = scrollPaneWidth / n;
+        double deltaY = scrollPaneHeight / n;
+        double delta = Math.min(deltaX, deltaY);
+        drawingGroup.getChildren().clear();
+        for (int r=0;r<n;r++) {
+            for (int c=0;c<n;c++) {
+                double value = predictions[r][c];
+                if (value > threshold) {
+                    Rectangle rectangle = new Rectangle();
+                    rectangle.setX(c * delta);
+                    rectangle.setY(r*delta);
+                    rectangle.setWidth(delta);
+                    rectangle.setHeight(delta);
+                    rectangle.setFill(Color.LIGHTGREEN);
+                    drawingGroup.getChildren().add(rectangle);
+                }
+            }
+        }
+        var extentBasePairs = ssPredictor.getExtentBasePairs();
+        for (var bp:extentBasePairs) {
+            int r = bp.i();
+            int c = bp.j();
+            Rectangle rectangle = new Rectangle();
+            rectangle.setX(c * delta);
+            rectangle.setY(r*delta);
+            rectangle.setWidth(delta);
+            rectangle.setHeight(delta);
+            rectangle.setFill(Color.BLACK);
+            drawingGroup.getChildren().add(rectangle);
+
+        }
+
+
     }
 
     void updateScale() {

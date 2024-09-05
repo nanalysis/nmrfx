@@ -84,6 +84,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
     @FXML
     Pane dotBracketPane;
     @FXML
+    ChoiceBox<Integer> ssChoiceBox;
+    @FXML
     MenuButton removeMenuButton;
     @FXML
     MoleculeCanvas ligandCanvas;
@@ -224,6 +226,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
             menuItem.selectedProperty().addListener(
                     (ChangeListener<Boolean>) (a, b, c) -> updatePeaks());
         }
+        ssChoiceBox.setDisable(true);
+        ssChoiceBox.setOnAction(e -> {
+            showSelectedSS();
+        });
 
     }
 
@@ -1035,15 +1041,39 @@ public class MolSceneController implements Initializable, StageBasedController, 
             try {
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
-                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.30);
-                String dotBracket = ssPredictor.getDotBracket(basePairs);
-                molecule.setDotBracket(dotBracket);
-                layoutSS();
+                ssPredictor.findExtents(0.4);
+                showSS(0);
+                updateSSChoiceBox();
 
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
             }
+        }
+    }
+
+    void updateSSChoiceBox() {
+        ssChoiceBox.setDisable(false);
+        int n = ssPredictor.getNExtents();
+        for (int i=0;i<n;i++) {
+            ssChoiceBox.getItems().add(i);
+        }
+    }
+
+    void showSelectedSS() {
+        int i = ssChoiceBox.getValue();
+        try {
+            showSS(i);
+        } catch (InvalidMoleculeException e) {
+        }
+    }
+    void showSS(int index) throws InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        if ((molecule != null) && (ssPredictor != null)) {
+            Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(index);
+            String dotBracket = ssPredictor.getDotBracket(basePairsExt);
+            molecule.setDotBracket(dotBracket);
+            layoutSS();
 
         }
     }
