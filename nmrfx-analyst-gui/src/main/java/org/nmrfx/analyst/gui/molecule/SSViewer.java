@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ZoomEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -40,9 +41,11 @@ public class SSViewer extends Pane {
     }
 
     Group drawingGroup;
+    Group mapDrawingGroup;
     Group infoGroup;
     Pane pane;
     ScrollPane scrollPane;
+    Pane mapPane;
     SSLayout ssLayout;
 
     ArrayList<Point2D> points = new ArrayList<>();
@@ -66,6 +69,10 @@ public class SSViewer extends Pane {
     private final List<String> displayAtomTypes = new ArrayList<>();
     private final SimpleBooleanProperty hydrogenPredictionProp = new SimpleBooleanProperty(true);
 
+    private final SimpleBooleanProperty drawMapProp = new SimpleBooleanProperty(false);
+    private final SimpleBooleanProperty drawSSProp = new SimpleBooleanProperty(true);
+
+
     double centerX;
     double centerY;
     double paneCenterX;
@@ -83,15 +90,43 @@ public class SSViewer extends Pane {
         initScene();
     }
 
+    void updatePaneSizes() {
+        double scrollWidth = drawSSProp.get() ? this.getWidth() : 0.0;
+        double mapWidth = drawMapProp.get() ? this.getWidth() : 0.0;
+        if (drawMapProp.get()) {
+            scrollWidth /= 2.0;
+            mapPane.setVisible(true);
+        } else {
+            mapPane.setVisible(false);
+        }
+        if (drawSSProp.get()) {
+            mapWidth /= 2.0;
+            scrollPane.setVisible(true);
+        } else {
+            scrollPane.setVisible(false);
+        }
+        scrollPane.setPrefWidth(scrollWidth);
+        scrollPane.setPrefHeight(this.getHeight());
+        mapPane.setPrefWidth(mapWidth);
+        mapPane.setPrefHeight(this.getHeight());
+    }
+
     @Override
     public void layoutChildren() {
-        scrollPane.setPrefWidth(this.getWidth());
-        scrollPane.setPrefHeight(this.getHeight());
+        updatePaneSizes();
         super.layoutChildren();
     }
 
     public SimpleBooleanProperty getDrawNumbersProp() {
         return drawNumbersProp;
+    }
+
+    public SimpleBooleanProperty getDrawMapProp() {
+        return drawMapProp;
+    }
+
+    public SimpleBooleanProperty getDrawSSProp() {
+        return drawSSProp;
     }
     public SimpleBooleanProperty getDrawProbabilitiesProp() {
         return drawProbabilitiesProp;
@@ -117,7 +152,13 @@ public class SSViewer extends Pane {
     }
 
     public final void initScene() {
+        HBox hBox = new HBox();
         scrollPane = new ScrollPane();
+        mapPane = new Pane();
+        mapDrawingGroup = new Group();
+        mapPane.setPrefSize(400, 400);
+        mapPane.getChildren().add(mapDrawingGroup);
+
         pane = new Pane();
         drawingGroup = new Group();
         infoGroup = new Group();
@@ -126,8 +167,10 @@ public class SSViewer extends Pane {
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
         pane.setOnMousePressed(e -> revertToOriginal());
+
         scrollPane.setContent(pane);
-        this.getChildren().add(scrollPane);
+        hBox.getChildren().addAll(mapPane, scrollPane);
+        this.getChildren().add(hBox);
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
         constraintTypeProp.addListener(e -> drawSS());
@@ -140,7 +183,7 @@ public class SSViewer extends Pane {
             zoom(zoom);
         });
 
-        }
+    }
 
 
     public void clear() {
@@ -153,11 +196,13 @@ public class SSViewer extends Pane {
 
     public void drawSS() {
         drawingGroup.getChildren().clear();
-        if (ssPredictor != null) {
+        if ((ssPredictor != null) && drawMapProp.get()) {
             drawProbabilityMap(0.4);
         }
         try {
-            layoutStructure(drawingGroup);
+            if (drawSSProp.get()) {
+                layoutStructure(drawingGroup);
+            }
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
@@ -167,37 +212,71 @@ public class SSViewer extends Pane {
     private void drawProbabilityMap(double threshold) {
         double[][] predictions = ssPredictor.getPredictions();
         int n = predictions.length;
-        scrollPaneWidth = scrollPane.getWidth();
-        scrollPaneHeight = scrollPane.getHeight();
-        double deltaX = scrollPaneWidth / n;
-        double deltaY = scrollPaneHeight / n;
+        double mapPaneWidth = mapPane.getWidth();
+        double mapPaneHeight = mapPane.getHeight();
+        double border = 20.0;
+        double deltaX = (mapPaneWidth - 2.0 * border) / n;
+        double deltaY = (mapPaneHeight - 2 * border) / n;
         double delta = Math.min(deltaX, deltaY);
-        drawingGroup.getChildren().clear();
-        for (int r=0;r<n;r++) {
-            for (int c=0;c<n;c++) {
+        double deltaHalf = delta / 2.0;
+        double deltaSmall = delta / 5.0;
+        mapDrawingGroup.getChildren().clear();
+        double rightX = border + (n - 1) * delta + delta;
+        double bottomY = border + (n - 1) * delta + delta;
+        Line line = new Line(border, border, bottomY, bottomY);
+        line.setStrokeWidth(0.2);
+        line.setStroke(Color.BLUE);
+        mapDrawingGroup.getChildren().add(line);
+        Line lineTop = new Line(border, border, rightX, border);
+        lineTop.setStrokeWidth(0.2);
+        lineTop.setStroke(Color.BLUE);
+        mapDrawingGroup.getChildren().add(lineTop);
+        Line lineRight = new Line(rightX, border, rightX, bottomY);
+        lineRight.setStrokeWidth(0.2);
+        lineRight.setStroke(Color.BLUE);
+        mapDrawingGroup.getChildren().add(lineRight);
+        for (int r = 0; r < n; r++) {
+            Rectangle rectangle = new Rectangle();
+            rectangle.setX(border + r * delta + deltaHalf - deltaSmall);
+            rectangle.setY(border + r * delta + deltaHalf - deltaSmall);
+            rectangle.setWidth(deltaSmall * 2);
+            rectangle.setHeight(deltaSmall * 2);
+            rectangle.setFill(Color.GRAY);
+            mapDrawingGroup.getChildren().add(rectangle);
+        }
+        for (int r = 0; r < n; r++) {
+            for (int c = 0; c < n; c++) {
                 double value = predictions[r][c];
                 if (value > threshold) {
                     Rectangle rectangle = new Rectangle();
-                    rectangle.setX(c * delta);
-                    rectangle.setY(r*delta);
+                    rectangle.setX(border + c * delta);
+                    rectangle.setY(border + r * delta);
                     rectangle.setWidth(delta);
                     rectangle.setHeight(delta);
                     rectangle.setFill(Color.LIGHTGREEN);
-                    drawingGroup.getChildren().add(rectangle);
+                    mapDrawingGroup.getChildren().add(rectangle);
                 }
             }
         }
         var extentBasePairs = ssPredictor.getExtentBasePairs();
-        for (var bp:extentBasePairs) {
+        for (var bp : extentBasePairs) {
             int r = bp.i();
             int c = bp.j();
+            double x1 = border + c * delta + deltaHalf;
+            double y1 = border + r * delta + deltaHalf;
+            Line line2 = new Line(x1, y1, y1, y1);
+            line2.setStrokeWidth(0.2);
+            mapDrawingGroup.getChildren().add(line2);
+            Line line3 = new Line(x1, y1, x1, x1);
+            line3.setStrokeWidth(0.2);
+            mapDrawingGroup.getChildren().add(line3);
             Rectangle rectangle = new Rectangle();
-            rectangle.setX(c * delta);
-            rectangle.setY(r*delta);
+            rectangle.setX(border + c * delta);
+            rectangle.setY(border + r * delta);
             rectangle.setWidth(delta);
             rectangle.setHeight(delta);
             rectangle.setFill(Color.BLACK);
-            drawingGroup.getChildren().add(rectangle);
+            mapDrawingGroup.getChildren().add(rectangle);
 
         }
 
@@ -229,13 +308,14 @@ public class SSViewer extends Pane {
         centerY = (maxY + minY) / 2.0;
         double widthX = maxX - minX;
         double widthY = maxY - minY;
-        double scaleX = paneWidth  / widthX;
+        double scaleX = paneWidth / widthX;
         double scaleY = paneHeight / widthY;
         scale = Math.min(scaleX, scaleY);
         scale *= (0.85 - N_ATOMS * 0.02);
     }
 
-    void resizeWindow() {
+    public void resizeWindow() {
+        updatePaneSizes();
         updateScale();
         layoutChildren();
         drawSS();
@@ -268,7 +348,8 @@ public class SSViewer extends Pane {
 
     }
 
-    record NodeRecord(Circle circle, Text text, Node node, String label, Color color, int fontSize){}
+    record NodeRecord(Circle circle, Text text, Node node, String label, Color color, int fontSize) {
+    }
 
     public void selectResidue(int selectedResidue) {
         revertToOriginal();
@@ -307,8 +388,8 @@ public class SSViewer extends Pane {
         }
     }
 
-    void revertToOriginal(){
-        for (var entry : nodeRecordHashMap.entrySet()){
+    void revertToOriginal() {
+        for (var entry : nodeRecordHashMap.entrySet()) {
             NodeRecord nodeRecord = entry.getValue();
             Circle circle = nodeRecord.circle;
             Text text = nodeRecord.text;
@@ -347,7 +428,7 @@ public class SSViewer extends Pane {
         String atomSpec = resNum + aType + aName;
         Atom atom = MoleculeBase.getAtomByName(atomSpec);
         Color color = Color.LIGHTGRAY;
-        if (atom!= null) {
+        if (atom != null) {
             Double ppm = atom.getPPM();
             Double refPPM = atom.getRefPPM();
             Double stdDev = atom.getSDevRefPPM();

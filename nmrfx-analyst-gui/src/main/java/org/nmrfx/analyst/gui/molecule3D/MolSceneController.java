@@ -74,6 +74,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
     @FXML
     BorderPane ssBorderPane;
     @FXML
+    CheckBox ssDisplayCheckBox;
+    @FXML
+    CheckBox mapDisplayCheckBox;
+    @FXML
     BorderPane molBorderPane;
     @FXML
     BorderPane ligandBorderPane;
@@ -146,7 +150,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molBorderPane.heightProperty().addListener(ss -> molViewer.layoutChildren());
         molViewer.addSelectionListener(this);
         addStructureSelectionTools();
-
+        ssViewer.getDrawMapProp().bindBidirectional(mapDisplayCheckBox.selectedProperty());
+        ssViewer.getDrawSSProp().bindBidirectional(ssDisplayCheckBox.selectedProperty());
+        mapDisplayCheckBox.setSelected(false);
+        ssDisplayCheckBox.setSelected(true);
+        ssDisplayCheckBox.setOnAction(e -> ssViewer.resizeWindow());
+        mapDisplayCheckBox.setOnAction(e -> ssViewer.resizeWindow());
 
 
         // kluge to prevent tabpane from getting focus.  This allows key presses to go through to molviewer
