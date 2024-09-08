@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class SSLayout implements MultivariateFunction {
 
@@ -339,46 +340,121 @@ public class SSLayout implements MultivariateFunction {
                     }
                 }
             }
-            int startI = -1;
-            int startJ = -1;
-            int maxDelta = 0;
-            for (int i = 0; i < (nNuc - 1); i++) {
-                if (basePairs[i] != -1) {
-                    int j = basePairs[i];
-                    int delta = j - i;
-                    if (delta > maxDelta) {
-                        maxDelta = delta;
-                        startI = i;
-                        startJ = j;
+            HelixBounds startSearch = new HelixBounds(0, nNuc - 1);
+            var hStart = findStart(startSearch);
+            if (hStart.isPresent()) {
+                setXY(hStart.get().startI, 0.0, 0.0);
+                setXY(hStart.get().startJ, 0.0, -targetPairDistance);
+                doHelix(hStart.get());
+                int lastFill = fillPrevious(hStart.get().startI);
+                if (lastFill > 0) {
+                    var hStart2 = findPreviousHelix(lastFill);
+                    if (hStart2.isPresent()) {
+                        double lastX = coords[0][lastFill];
+                        double lastY = coords[1][lastFill];
+                        double dX = coords[0][lastFill + 1] - lastX;
+                        double dY = coords[1][lastFill + 1] - lastY;
+                        setXY(hStart2.get().startI, lastX - dX, lastY - dY);
+                        doHelix(hStart2.get());
                     }
                 }
-
-            }
-            List<Integer> helixStarts = new ArrayList<>();
-            helixStarts.add(startI);
-            helixStarts.add(startJ);
-
-            setXY(startI, 0.0, 0.0);
-            setXY(startJ, 0.0, -targetPairDistance);
-            ssClass[startI] = 1;
-            ssClass[startJ] = 1;
-
-            while (!helixStarts.isEmpty()) {
-                int i = helixStarts.get(0);
-                int j = helixStarts.get(1);
-                List<Integer> thisList = analyzeHelix(i, j);
-                helixStarts.remove(0);
-                helixStarts.remove(0);
-                helixStarts.addAll(thisList);
+                lastFill = fillNext(hStart.get().startJ);
+                if (lastFill < nNuc - 1) {
+                    var hStart2 = findNextHelix(lastFill);
+                    if (hStart2.isPresent()) {
+                        double lastX = coords[0][lastFill];
+                        double lastY = coords[1][lastFill];
+                        double dX = lastX - coords[0][lastFill - 1];
+                        double dY = lastX - coords[1][lastFill - 1];
+                        setXY(hStart2.get().startI, lastX + dX, lastY + dY);
+                        doHelix(hStart2.get());
+                    }
+                }
             }
             fillEnds();
+
             for (int i = 0; i < nNuc; i++) {
                 values[i * 2] = coords[0][i];
                 values[i * 2 + 1] = coords[1][i];
             }
-
         } catch (ArrayIndexOutOfBoundsException aiE) {
             log.warn(aiE.getMessage(), aiE);
+        }
+    }
+
+    record HelixBounds(int startI, int startJ) {
+    }
+
+    Optional<HelixBounds> findPreviousHelix(int start) {
+        int startI = -1;
+        int startJ = -1;
+        for (int j = start; j >= 0; j--) {
+            if (basePairs[j] != -1) {
+                startJ = j;
+                startI = basePairs[j];
+                break;
+            }
+        }
+        if (startI != -1) {
+            return Optional.of(new HelixBounds(startI, startJ));
+        } else {
+            return Optional.empty();
+        }
+    }
+    Optional<HelixBounds> findNextHelix(int start) {
+        int startI = -1;
+        int startJ = -1;
+        for (int j = start; j < nNuc; j++) {
+            if (basePairs[j] != -1) {
+                startI = j;
+                startJ = basePairs[j];
+                break;
+            }
+        }
+        if (startI != -1) {
+            return Optional.of(new HelixBounds(startI, startJ));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    Optional<HelixBounds> findStart(HelixBounds lastStart) {
+        int startI = -1;
+        int startJ = -1;
+        int maxDelta = 0;
+        for (int i = lastStart.startI; i <= lastStart.startJ; i++) {
+            if (basePairs[i] != -1) {
+                int j = basePairs[i];
+                int delta = j - i;
+                if (delta > maxDelta) {
+                    maxDelta = delta;
+                    startI = i;
+                    startJ = j;
+                }
+            }
+        }
+        if (startI != -1) {
+            return Optional.of(new HelixBounds(startI, startJ));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    void doHelix(HelixBounds helixBounds) {
+        List<Integer> helixStarts = new ArrayList<>();
+        helixStarts.add(helixBounds.startI);
+        helixStarts.add(helixBounds.startJ);
+
+        ssClass[helixBounds.startI] = 1;
+        ssClass[helixBounds.startJ] = 1;
+
+        while (!helixStarts.isEmpty()) {
+            int i = helixStarts.get(0);
+            int j = helixStarts.get(1);
+            List<Integer> thisList = analyzeHelix(i, j);
+            helixStarts.remove(0);
+            helixStarts.remove(0);
+            helixStarts.addAll(thisList);
         }
     }
 
@@ -392,7 +468,7 @@ public class SSLayout implements MultivariateFunction {
     List<Integer> analyzeHelix(int startI, int startJ) {
         List<Integer> loopBPList = new ArrayList<>();
         int j = startJ;
-        for (int i = startI; i < (nNuc - 1); i++) {
+        for (int i = startI; i <= startJ; i++) {
             if (nSet >= nNuc) {
                 break;
             }
@@ -484,6 +560,46 @@ public class SSLayout implements MultivariateFunction {
                 ssClass[b2] = 2;
             }
         }
+    }
+
+    int fillPrevious(int firstSet) {
+        int lastFill = 0;
+        if ((nSet < nNuc)) {
+            for (int j = firstSet - 1; j >= 0; j--) {
+                double x0 = coords[0][j + 2];
+                double x1 = coords[0][j + 1];
+                double x2 = x1 + (x1 - x0);
+                double y0 = coords[1][j + 2];
+                double y1 = coords[1][j + 1];
+                double y2 = y1 + (y1 - y0);
+                setXY(j, x2, y2);
+                if (basePairs[j] != -1) {
+                    lastFill = j;
+                    break;
+                }
+            }
+        }
+        return lastFill;
+    }
+    int fillNext(int lastSet) {
+        int lastFill = nNuc - 1;
+        if ((nSet < nNuc)) {
+            for (int j = lastSet + 1; j < nNuc; j++) {
+                double x0 = coords[0][j - 2];
+                double x1 = coords[0][j - 1];
+                double x2 = x1 + (x1 - x0);
+                double y0 = coords[1][j - 2];
+                double y1 = coords[1][j - 1];
+                double y2 = y1 + (y1 - y0);
+                setXY(j, x2, y2);
+                if (basePairs[j] != -1) {
+                    lastFill = j;
+                    break;
+                }
+
+            }
+        }
+        return lastFill;
     }
 
     void fillEnds() {
