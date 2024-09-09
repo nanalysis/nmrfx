@@ -1140,7 +1140,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
     void showSS(SecondaryStructureEntry secondaryStructureEntry) throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
-        if (molecule != null &&) {
+        if (molecule != null) {
             String dotBracket = "";
             if ((ssPredictor != null) && (secondaryStructureEntry.type == SSOrigin.PRED || secondaryStructureEntry.type == SSOrigin.BOTH)) {
                 Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex);
