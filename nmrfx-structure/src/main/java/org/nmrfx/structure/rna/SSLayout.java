@@ -14,7 +14,6 @@ import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.Precision;
-import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -54,7 +53,6 @@ public class SSLayout implements MultivariateFunction {
     private int nSet;
     private final int[] nucChain;
     int limit = 10;
-    int nHelices = 0;
     int nLoops = 0;
     List<List<String>> sequences;
     public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
@@ -100,7 +98,7 @@ public class SSLayout implements MultivariateFunction {
     }
 
 
-    public static SSLayout createLayout(Molecule mol) throws InvalidMoleculeException {
+    public static SSLayout createLayout(Molecule mol) {
         List<List<String>> sequences = setupSequence(mol);
         int[] seqLens = new int[sequences.size()];
         int i = 0;
@@ -118,7 +116,7 @@ public class SSLayout implements MultivariateFunction {
 
     }
 
-    class Loop implements StructureType {
+    static class Loop implements StructureType {
 
         final List<Integer> bases;
         final List<Integer> helices;
@@ -137,23 +135,7 @@ public class SSLayout implements MultivariateFunction {
         }
     }
 
-    class Helix implements StructureType {
-
-        final List<Integer> bases;
-        final int id;
-
-        Helix(List<Integer> bases, int iHelix) {
-            this.bases = new ArrayList<>();
-            this.bases.addAll(bases);
-            id = iHelix;
-        }
-
-        public int getID() {
-            return id;
-        }
-    }
-
-    public static List<List<String>> setupSequence(Molecule mol) throws InvalidMoleculeException {
+    public static List<List<String>> setupSequence(Molecule mol) {
         List<List<String>> sequences = new ArrayList<>();
         for (Polymer polymer : mol.getPolymers()) {
             if (polymer.isRNA()) {
@@ -291,10 +273,10 @@ public class SSLayout implements MultivariateFunction {
     }
 
     private void doNoBasePairs() {
-        double a = nNuc / 2;
+        double a = nNuc / 2.0;
         double b = a / 1.5;
         double angle = Math.PI - Math.PI / 4;
-        double deltaAngle = (2.0 * Math.PI - Math.PI / 2) / nNuc;
+        double deltaAngle = (2.0 * Math.PI - Math.PI / 2.0) / nNuc;
         for (int i = 0; i < nNuc; i++) {
             double x = a * Math.cos(angle);
             double y = b * Math.sin(angle);
@@ -328,15 +310,13 @@ public class SSLayout implements MultivariateFunction {
         try {
             for (int i = 0; i < (nNuc - 1); i++) {
                 for (int j = i + 2; j < nNuc; j++) {
-                    if (interactions[i][j] == 1) {
-                        if (interactions[i + 1][j - 1] == 1) {
-                            interactions[i + 1][j] = 2;
-                            interactions[j][i + 1] = 2;
-                            basePairs2[i + 1] = j;
-                            interactions[i][j - 1] = 2;
-                            interactions[j - 1][i] = 2;
-                            basePairs2[j - 1] = i;
-                        }
+                    if ((interactions[i][j] == 1) && (interactions[i + 1][j - 1] == 1)) {
+                        interactions[i + 1][j] = 2;
+                        interactions[j][i + 1] = 2;
+                        basePairs2[i + 1] = j;
+                        interactions[i][j - 1] = 2;
+                        interactions[j - 1][i] = 2;
+                        basePairs2[j - 1] = i;
                     }
                 }
             }
@@ -401,6 +381,7 @@ public class SSLayout implements MultivariateFunction {
             return Optional.empty();
         }
     }
+
     Optional<HelixBounds> findNextHelix(int start) {
         int startI = -1;
         int startJ = -1;
@@ -478,7 +459,6 @@ public class SSLayout implements MultivariateFunction {
                 }
                 setHelixCoords(i + 1, j - 1);
                 j--;
-                continue;
             } else {
                 Loop loop = findLoop(i, loopBPList);
                 setLoopCoords(loop.bases);
@@ -492,7 +472,6 @@ public class SSLayout implements MultivariateFunction {
     Loop findLoop(int i, List<Integer> loopBPList) {
         List<Integer> bases = new ArrayList<>();
         loopBPList.clear();
-        int loopSize = 0;
         bases.add(i);
         int k = i + 1;
         while (basePairs[k] != i) {
@@ -501,10 +480,8 @@ public class SSLayout implements MultivariateFunction {
                 loopBPList.add(k);
                 loopBPList.add(basePairs[k]);
                 bases.add(basePairs[k]);
-                loopSize++;
                 k = basePairs[k];
             }
-            loopSize++;
             k++;
         }
         bases.add(k);
@@ -531,8 +508,6 @@ public class SSLayout implements MultivariateFunction {
     }
 
     void setLoopCoords(List<Integer> bases) {
-        int first = bases.get(0);
-        int last = bases.get(bases.size() - 1);
         int loopSize = bases.size();
         for (int i = 0, iL = bases.size() - 1; i < iL; i++) {
             int b0 = i == 0 ? bases.get(loopSize - 1) : bases.get(i - 1);
@@ -581,6 +556,7 @@ public class SSLayout implements MultivariateFunction {
         }
         return lastFill;
     }
+
     int fillNext(int lastSet) {
         int lastFill = nNuc - 1;
         if ((nSet < nNuc)) {
@@ -640,7 +616,7 @@ public class SSLayout implements MultivariateFunction {
         }
     }
 
-    private void setBoundaries(double sigma) {
+    private void setBoundaries() {
         for (int i = 1; i < (nNuc - 1); i++) {
             for (int j = i + 2; j < nNuc; j++) {
                 if (interactions[i][j] == 1) {
@@ -696,9 +672,7 @@ public class SSLayout implements MultivariateFunction {
     }
 
     private void setSigma(double sigma) {
-        for (int i = 0; i < inputSigma.length; i++) {
-            inputSigma[i] = sigma;
-        }
+        Arrays.fill(inputSigma, sigma);
     }
 
     public void dumpAngles(double[] pars) {
@@ -715,10 +689,8 @@ public class SSLayout implements MultivariateFunction {
         int j = 0;
         for (int i = 0; i < angleValues.length; i++) {
             angleValues[i] = angleTargets[i];
-            if (!angleFixed[i]) {
-                if (j < pars.length) {
-                    angleValues[i] = pars[j++];
-                }
+            if (!angleFixed[i] && (j < pars.length)) {
+                angleValues[i] = pars[j++];
             }
         }
         for (int i = 0; i < angleValues.length; i++) {
@@ -786,18 +758,16 @@ public class SSLayout implements MultivariateFunction {
         for (int i = 0; i < limit; i++) {
             if (basePairs[i] != -1) {
                 int j = basePairs[i];
-                if (j < limit) {
-                    if (i < j) {
-                        double x1 = values[i * 2];
-                        double y1 = values[i * 2 + 1];
-                        double x2 = values[j * 2];
-                        double y2 = values[j * 2 + 1];
-                        double deltaX = x2 - x1;
-                        double deltaY = y2 - y1;
-                        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                        double delta = Math.abs(distance - targetPairDistance);
-                        sumPairError += delta * delta;
-                    }
+                if ((j < limit) && (i < j)) {
+                    double x1 = values[i * 2];
+                    double y1 = values[i * 2 + 1];
+                    double x2 = values[j * 2];
+                    double y2 = values[j * 2 + 1];
+                    double deltaX = x2 - x1;
+                    double deltaY = y2 - y1;
+                    double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    double delta = Math.abs(distance - targetPairDistance);
+                    sumPairError += delta * delta;
                 }
             }
             if (basePairs2[i] != -1) {
@@ -816,9 +786,12 @@ public class SSLayout implements MultivariateFunction {
             }
 
         }
+
         double xSum = 0.0;
         double ySum = 0.0;
-        for (int i = 0; i < limit; i++) {
+        for (
+                int i = 0;
+                i < limit; i++) {
             boolean intersects = false;
             double x1 = values[i * 2];
             double y1 = values[i * 2 + 1];
@@ -832,42 +805,38 @@ public class SSLayout implements MultivariateFunction {
                     double deltaY = y2 - y1;
                     if (Math.abs(deltaY) < 10.0 * targetNBDistance) {
                         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                        if ((distance < 2 * targetSeqDistance) && !intersects && (j < (limit - 1))) {
-                            if (nIntersections(i, j)) {
-                                intersects = true;
-                                nIntersections++;
-                            }
+                        if ((distance < 2 * targetSeqDistance) && !intersects && (j < (limit - 1)) && nIntersections(i, j)) {
+                            intersects = true;
+                            nIntersections++;
                         }
-                        if (interactions[i][j] == 0) {
-                            if (distance < targetNBDistance) {
-                                double delta = Math.abs(distance - targetNBDistance);
-                                sumNBError += delta * delta;
-                            }
+                        if ((interactions[i][j] == 0) && (distance < targetNBDistance)) {
+                            double delta = Math.abs(distance - targetNBDistance);
+                            sumNBError += delta * delta;
                         }
                     }
                 }
             }
         }
+
         double xCenter = xSum / limit;
         double yCenter = ySum / limit;
-        for (int i = 0; i < limit; i++) {
+        for (
+                int i = 0;
+                i < limit; i++) {
             double x1 = values[i * 2];
             double y1 = values[i * 2 + 1];
             double deltaX = x1 - xCenter;
             double deltaY = y1 - yCenter;
-            double dis2 = (deltaX * deltaX + deltaY * deltaY);
         }
+
         double sumAngle = 0.0;
-        double value = sumPairError + sumNBError + sumAngle + nIntersections * 100.0;
-        return value;
+        return sumPairError + sumNBError + sumAngle + nIntersections * 100.0;
     }
 
     public PointValuePair refineCMAES(int nSteps, double stopFitness, final double sigma, final double lambdaMul, final int diagOnly) {
-        setBoundaries(0.1);
+        setBoundaries();
         double[] guess = new double[nFree];
-        for (int i = 0; i < guess.length; i++) {
-            guess[i] = -1.0 * Math.PI / angleValues.length / 5;
-        }
+        Arrays.fill(guess, -1.0 * Math.PI / angleValues.length / 5);
         double value = value(guess);
         log.info("start value {} free {}", value, nFree);
         PointValuePair result = null;
@@ -875,9 +844,6 @@ public class SSLayout implements MultivariateFunction {
             int startLimit = ((nNuc % 2) == 1) ? 5 : 6;
             double lastValue = 0.0;
             for (limit = startLimit; limit <= nNuc; limit += 8) {
-                if (limit > nNuc) {
-                    limit = nNuc;
-                }
                 if (limit == nNuc) {
                     stopFitness = stopFitness / 12.0;
                     nSteps = nSteps * 4;
@@ -949,8 +915,7 @@ public class SSLayout implements MultivariateFunction {
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];
-                        int end = i;
-                        addPair(start, end);
+                        addPair(start, i);
 
                     }
                 }
@@ -979,10 +944,9 @@ public class SSLayout implements MultivariateFunction {
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];
-                        int end = i;
-                        addPair(start, end);
-                        res.get(start).pairedTo = res.get(end);
-                        res.get(end).pairedTo = res.get(start);
+                        addPair(start, i);
+                        res.get(start).pairedTo = res.get(i);
+                        res.get(i).pairedTo = res.get(start);
 
                     }
                 }
@@ -1000,19 +964,5 @@ public class SSLayout implements MultivariateFunction {
 
     public int[] getBasePairs() {
         return basePairs.clone();
-    }
-
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            System.exit(1);
-        }
-        String vienna = args[0];
-
-        SSLayout ssLayout = new SSLayout(vienna.length());
-        ssLayout.interpVienna(vienna);
-        ssLayout.dumpPairs();
-        ssLayout.fillPairs();
-        System.out.println("nf " + ssLayout.nFree);
-
     }
 }
