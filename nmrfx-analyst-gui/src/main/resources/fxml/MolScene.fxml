@@ -125,6 +125,8 @@
                                                         prefWidth="87.0" text="Draw"/>
                                                 <MenuButton mnemonicParsing="false" text="Sec. Structure">
                                                     <items>
+                                                        <MenuItem mnemonicParsing="false" onAction="#loadFromFile"
+                                                                  text="Open..."/>
                                                         <MenuItem mnemonicParsing="false" onAction="#ssFrom3D"
                                                                   text="From 3D"/>
                                                         <MenuItem mnemonicParsing="false" onAction="#seqTo2D"

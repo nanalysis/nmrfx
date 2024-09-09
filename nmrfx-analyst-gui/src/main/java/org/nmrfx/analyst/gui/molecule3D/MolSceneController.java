@@ -3,7 +3,6 @@ package org.nmrfx.analyst.gui.molecule3D;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
@@ -21,6 +20,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -54,7 +54,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode.*;
@@ -88,7 +90,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     @FXML
     Pane dotBracketPane;
     @FXML
-    ChoiceBox<Integer> ssChoiceBox;
+    ChoiceBox<SecondaryStructureEntry> ssChoiceBox;
     @FXML
     MenuButton removeMenuButton;
     @FXML
@@ -127,8 +129,24 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private StructureCalculator structureCalculator = new StructureCalculator(this);
     SSPredictor ssPredictor = null;
 
+    List<String> fileSecondaryStructures = new ArrayList<>();
+
     List<MolViewer.RenderType> currentDrawingModes = new ArrayList<>();
 
+    enum SSOrigin {
+        PRED,
+        FILE,
+        BOTH
+    }
+    record SecondaryStructureEntry(String dotBracket, SSOrigin type, int pIindex, int fIndex) {
+        public String toString() {
+            return switch (type) {
+                case PRED -> type + ":" + pIindex;
+                case FILE -> type + ":" + fIndex;
+                case BOTH -> SSOrigin.PRED + ":" + pIindex + " " + SSOrigin.FILE + ":" + fIndex;
+            };
+        }
+    }
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         ssViewer = new SSViewer();
@@ -222,7 +240,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             atomCheckItems.add(menuItem);
             riboseMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms());
+                    (a, b, c) -> updateAtoms());
         }
         Menu peakClassMenu = new Menu("Peak Intensities");
         modeMenuButton.getItems().add(peakClassMenu);
@@ -233,7 +251,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             peakClassCheckItems.add(menuItem);
             peakClassMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a, b, c) -> updatePeaks());
+                    (a, b, c) -> updatePeaks());
         }
         ssChoiceBox.setDisable(true);
         ssChoiceBox.setOnAction(e -> {
@@ -391,6 +409,29 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molViewer.drawMol();
     }
 
+    @FXML
+    void loadFromFile() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                List<String> lines = Files.readAllLines(file.toPath());
+                storeSecondaryStructures(lines);
+                updateSSChoiceBox();
+            } catch (IOException e) {
+                GUIUtils.warn("Error reading Secondary Structure File", e.getMessage());
+            }
+        }
+    }
+
+    void storeSecondaryStructures(List<String> lines) {
+        fileSecondaryStructures.clear();
+        for (String line:lines) {
+            if (!line.isBlank()) {
+                fileSecondaryStructures.add(line.trim());
+            }
+        }
+    }
     @FXML
     void ssFrom3D() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
@@ -1051,8 +1092,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
                 ssPredictor.findExtents(0.4);
-                showSS(0);
                 updateSSChoiceBox();
+                showSS(ssChoiceBox.getItems().get(0));
 
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
@@ -1062,28 +1103,53 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     void updateSSChoiceBox() {
-        ssChoiceBox.setDisable(false);
-        int n = ssPredictor.getNExtents();
-        for (int i=0;i<n;i++) {
-            ssChoiceBox.getItems().add(i);
+        ssChoiceBox.getItems().clear();
+        Set<String> commonEntries = new HashSet<>();
+        if (ssPredictor != null) {
+            int n = ssPredictor.getNExtents();
+            for (int i = 0; i < n; i++) {
+                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(i);
+                String dotBracket = ssPredictor.getDotBracket(basePairsExt);
+                int fileIndex = fileSecondaryStructures.indexOf(dotBracket);
+                SSOrigin origin = fileIndex != -1 ? SSOrigin.BOTH : SSOrigin.PRED;
+                SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, origin, i, fileIndex);
+                ssChoiceBox.getItems().add(secondaryStructureEntry);
+                if (fileIndex != -1) {
+                    commonEntries.add(dotBracket);
+                }
+            }
         }
+        int i = 0;
+        for (String dotBracket : fileSecondaryStructures) {
+            if (!commonEntries.contains(dotBracket)) {
+                SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, SSOrigin.FILE, -1, i);
+                ssChoiceBox.getItems().add(secondaryStructureEntry);
+            }
+            i++;
+        }
+        ssChoiceBox.setValue(ssChoiceBox.getItems().get(0));
+        ssChoiceBox.setDisable(false);
     }
 
     void showSelectedSS() {
-        int i = ssChoiceBox.getValue();
+        SecondaryStructureEntry secondaryStructureEntry = ssChoiceBox.getValue();
         try {
-            showSS(i);
+            showSS(secondaryStructureEntry);
         } catch (InvalidMoleculeException e) {
         }
     }
-    void showSS(int index) throws InvalidMoleculeException {
+    void showSS(SecondaryStructureEntry secondaryStructureEntry) throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
-        if ((molecule != null) && (ssPredictor != null)) {
-            Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(index);
-            String dotBracket = ssPredictor.getDotBracket(basePairsExt);
+        if (molecule != null &&) {
+            String dotBracket = "";
+            if ((ssPredictor != null) && (secondaryStructureEntry.type == SSOrigin.PRED || secondaryStructureEntry.type == SSOrigin.BOTH)) {
+                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex);
+                dotBracket = ssPredictor.getDotBracket(basePairsExt);
+            } else {
+                dotBracket = secondaryStructureEntry.dotBracket;
+            }
             molecule.setDotBracket(dotBracket);
             layoutSS();
-
         }
     }
     private void get2D(double pLimit) throws InvalidMoleculeException {
