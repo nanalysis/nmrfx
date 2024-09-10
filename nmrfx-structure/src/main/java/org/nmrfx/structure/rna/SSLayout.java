@@ -326,28 +326,41 @@ public class SSLayout implements MultivariateFunction {
                 setXY(hStart.get().startI, 0.0, 0.0);
                 setXY(hStart.get().startJ, 0.0, -targetPairDistance);
                 doHelix(hStart.get());
-                int lastFill = fillPrevious(hStart.get().startI);
-                if (lastFill > 0) {
-                    var hStart2 = findPreviousHelix(lastFill);
-                    if (hStart2.isPresent()) {
-                        double lastX = coords[0][lastFill];
-                        double lastY = coords[1][lastFill];
-                        double dX = coords[0][lastFill + 1] - lastX;
-                        double dY = coords[1][lastFill + 1] - lastY;
-                        setXY(hStart2.get().startI, lastX - dX, lastY - dY);
-                        doHelix(hStart2.get());
+                int lastFill = 0;
+                int start = hStart.get().startI;
+                while (true) {
+                    lastFill = fillPrevious(start);
+                    if (lastFill > 0) {
+                        var hStart2 = findPreviousHelix(lastFill);
+                        if (hStart2.isPresent()) {
+                            double lastX = coords[0][lastFill];
+                            double lastY = coords[1][lastFill];
+                            double dX = coords[0][lastFill + 1] - lastX;
+                            double dY = coords[1][lastFill + 1] - lastY;
+                            setXY(hStart2.get().startI, lastX - dX, lastY - dY);
+                            doHelix(hStart2.get());
+                            start = hStart2.get().startI;
+                        }
+                    } else {
+                        break;
                     }
                 }
-                lastFill = fillNext(hStart.get().startJ);
-                if (lastFill < nNuc - 1) {
-                    var hStart2 = findNextHelix(lastFill);
-                    if (hStart2.isPresent()) {
-                        double lastX = coords[0][lastFill];
-                        double lastY = coords[1][lastFill];
-                        double dX = lastX - coords[0][lastFill - 1];
-                        double dY = lastX - coords[1][lastFill - 1];
-                        setXY(hStart2.get().startI, lastX + dX, lastY + dY);
-                        doHelix(hStart2.get());
+                start = hStart.get().startJ;
+                while (true) {
+                    lastFill = fillNext(start);
+                    if (lastFill < nNuc - 1) {
+                        var hStart2 = findNextHelix(lastFill);
+                        if (hStart2.isPresent()) {
+                            double lastX = coords[0][lastFill];
+                            double lastY = coords[1][lastFill];
+                            double dX = lastX - coords[0][lastFill - 1];
+                            double dY = lastY - coords[1][lastFill - 1];
+                            setXY(hStart2.get().startJ, lastX + dX, lastY + dY);
+                            doHelix(hStart2.get());
+                            start = hStart2.get().startJ;
+                        }
+                    } else {
+                        break;
                     }
                 }
             }
