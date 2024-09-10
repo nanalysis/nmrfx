@@ -68,6 +68,7 @@ from org.nmrfx.processor.operations import Ones
 from org.nmrfx.processor.operations import Phase
 from org.nmrfx.processor.operations import Phase2d
 from org.nmrfx.processor.operations import Power
+from org.nmrfx.processor.operations import ProcIndirectOp
 from org.nmrfx.processor.operations import PythonScript
 from org.nmrfx.processor.operations import Rand
 from org.nmrfx.processor.operations import RandN
@@ -4093,3 +4094,47 @@ def getTestLocations():
     return (fidHome, tmpHome)
 
 dataInfo = DataInfo()
+
+
+def PROCINDIRECT(
+    ph0, ph1, negateImag, negatePairs,
+    disabled=False, dataset=None, process=None,
+):
+    """
+    Process the indirect dimensions of a multidimensional dataset prior to NUS.
+
+    Parameters
+    ----------
+
+    ph0: List[int]
+        Zero-order phase corrections.
+
+    ph1: List[int]
+        First-order phase corrections.
+
+    negateImag: List[bool]
+        If `True` each complex datapoint in the specified dimension has its
+        negative component multiplied by -1.
+
+    negatePairs: List[bool]
+        If `True` every second complex datapoint in the specified dimension is
+        multiplied by -1.
+
+    apodize: bool
+        If `True`, the data is apodized using a sine-bell window before ZF, FT,
+        and phasing.
+    """
+    if disabled:
+        return None
+
+    process = process or getCurrentProcess()
+
+    # TODO include apodization?
+    op = ProcIndirectOp(ph0, ph1, negateImag, negatePairs)
+
+    if (dataset is not None):
+        op.eval(dataset)
+    else:
+        process.addOperation(op)
+
+    return op
