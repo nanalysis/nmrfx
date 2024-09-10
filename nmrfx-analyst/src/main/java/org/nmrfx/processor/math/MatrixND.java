@@ -1330,42 +1330,59 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    // TODO: check negateImag as same number of values as dimensions in the matrix
     public void doNegateImag(boolean[] negateImag) {
-        for (int i = 0; i < nDim; i++) {
-            if (negateImag[i]) {
-                manipulateRIVecs(i, RIVecOperations::negateImag);
-            }
+        for (int axis = 0; axis < nDim; axis++) {
+            doNegateImag(axis, negateImag[axis]);
+        }
+    }
+
+    public void doNegateImag(int axis, boolean negateImag) {
+        if (negateImag) {
+            manipulateRIVecs(axis, RIVecOperations::negateImag);
         }
     }
 
     public void doNegatePairs(boolean[] negatePairs) {
-        for (int i = 0; i < nDim; i++) {
-            if (negatePairs[i]) {
-                manipulateRIVecs(i, RIVecOperations::negatePairs);
-            }
+        for (int axis = 0; axis < nDim; axis++) {
+            doNegatePairs(axis, negatePairs[axis]);
         }
+    }
+
+    public void doNegatePairs(int axis, boolean negatePairs) {
+        if (negatePairs) {
+            manipulateRIVecs(axis, RIVecOperations::negatePairs);
+        }
+    }
+
+    public void doFourierTransform(int axis, double cValue) {
+        manipulateRIVecs(axis, cValue, RIVecOperations::fourierTransform);
     }
 
     public void doFourierTransform(double[] cValues) {
-        double cValue;
-        for (int i = 0; i < nDim; i++) {
-            cValue = cValues[i];
-            manipulateRIVecs(i, cValue, RIVecOperations::fourierTransform);
+        for (int axis = 0; axis < nDim; axis++) {
+            double cValue = cValues[axis];
+            doFourierTransform(axis, cValue);
         }
+    }
+
+    public void doInverseFourierTransform(int axis) {
+        manipulateRIVecs(axis, RIVecOperations::inverseFourierTransform);
     }
 
     public void doInverseFourierTransform() {
-        for (int i = 0; i < nDim; i++) {
-            manipulateRIVecs(i, RIVecOperations::inverseFourierTransform);
+        for (int axis = 0; axis < nDim; axis++) {
+            doInverseFourierTransform(axis);
         }
     }
 
+    public void doPhaseCorrection(int axis, double ph0, double ph1) {
+        manipulateRIVecs(axis, new double[]{ph0, ph1}, RIVecOperations::phaseCorrection);
+    }
+
     public void doPhaseCorrection(double[] ph0, double[] ph1) {
-        double[] axisPhases = new double[2];
-        for (int i = 0; i < nDim; i++) {
-            axisPhases[0] = ph0[i];
-            axisPhases[1] = ph1[i];
-            manipulateRIVecs(i, axisPhases, RIVecOperations::phaseCorrection);
+        for (int axis = 0; axis < nDim; axis++) {
+            doPhaseCorrection(axis, ph0[axis], ph1[axis]);
         }
     }
 }
@@ -1401,8 +1418,8 @@ class RIVecOperations {
     }
 
     public static void phaseCorrection(double[][] riVec, double[] phases) {
-        double ph0 = phases[0];
-        double ph1 = phases[1];
+        double ph0 = degtorad * phases[0];
+        double ph1 = degtorad * phases[1];
         double size = riVec[0].length;
 
         double pReal;
@@ -1410,8 +1427,8 @@ class RIVecOperations {
         double vReal;
         double vImag;
 
-        double p = degtorad * ph0;
-        double delta = degtorad * (ph1 / (size - 1));
+        double p = ph0;
+        double delta = ph1 / (size - 1);
 
         for (int n = 0; n < size; n++) {
             pReal = FastMath.cos(p);

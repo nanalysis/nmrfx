@@ -1,3 +1,8 @@
+//nmrfx-analyst/src/main/java/org/nmrfx/processor/operations/ProcIndirectOp.java
+//Simon Hulse
+//simonhulse@protonmail.com
+//Last Edited: Tue 10 Sep 2024 15:32:37 EDT
+
 /*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
@@ -78,13 +83,15 @@ public class ProcIndirectOp extends MatrixOperation {
                 cValues[i] = (ph1[i] + 180.0) / 360.0;
             }
 
-            matrixND.doNegateImag(negateImag);
-            matrixND.doNegatePairs(negatePairs);
             // Zero fill to the next power of 2 (needed for FFT/IFFT)
             matrixND.zeroFill(0);
-            matrixND.doFourierTransform(cValues);
-            matrixND.doPhaseCorrection(ph0, ph1);
-            matrixND.doInverseFourierTransform();
+            for (int axis = 0; axis < nDim; axis++) {
+                matrixND.doNegateImag(axis, negateImag[axis]);
+                matrixND.doNegatePairs(axis, negatePairs[axis]);
+                matrixND.doFourierTransform(axis, cValues[axis]);
+                matrixND.doPhaseCorrection(axis, ph0[axis], ph1[axis]);
+                matrixND.doInverseFourierTransform(axis);
+            }
         } catch (Exception e) {
             log.error("Error in ProcIndirect", e);
             throw new ProcessingException(e.getLocalizedMessage());
