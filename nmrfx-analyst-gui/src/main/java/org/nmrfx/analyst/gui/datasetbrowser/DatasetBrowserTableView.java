@@ -1,9 +1,11 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import org.controlsfx.control.tableview2.TableView2;
@@ -20,13 +22,16 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
     /* Keeps track of the summaries, new summaries are added to this list. */
     private final ObservableList<DatasetSummary> unfilteredDatasetSummaries = FXCollections.observableArrayList();
     private Runnable datasetSelectionListener = null;
+    FilteredList<DatasetSummary> filteredList;
 
     public DatasetBrowserTableView(boolean addCacheColumn) {
         TableColumn<DatasetSummary, String> pathCol = new TableColumn<>("FID");
         pathCol.setCellValueFactory(new PropertyValueFactory<>("Path"));
+        pathCol.setMinWidth(150);
 
         TableColumn<DatasetSummary, String> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("Time"));
+        dateCol.setPrefWidth(150);
 
         TableColumn<DatasetSummary, Boolean> presentCol = new TableColumn<>("InCache");
         presentCol.setCellValueFactory(new PropertyValueFactory<>("Present"));
@@ -34,24 +39,35 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
         TableColumn<DatasetSummary, List<String>> processedCol = new TableColumn<>("Dataset");
         processedCol.setCellValueFactory(new PropertyValueFactory<>("Processed"));
         processedCol.setCellFactory(column -> new ProcessedDatasetComboBoxTableCell());
+        processedCol.setPrefWidth(150);
 
         TableColumn<DatasetSummary, String> sequenceCol = new TableColumn<>("Sequence");
         sequenceCol.setCellValueFactory(new PropertyValueFactory<>("Seq"));
+        sequenceCol.setPrefWidth(150);
 
         TableColumn<DatasetSummary, Integer> ndCol = new TableColumn<>("NDim");
         ndCol.setCellValueFactory(new PropertyValueFactory<>("nd"));
+        ndCol.setPrefWidth(50);
 
         TableColumn<DatasetSummary, Double> sfCol = new TableColumn<>("Frequency");
         sfCol.setCellValueFactory(new PropertyValueFactory<>("sf"));
         sfCol.setCellFactory(column -> new DoubleTableCell<>(NUMBER_DECIMAL_PLACES_FREQUENCY));
+        sfCol.setPrefWidth(70);
+
+        TableColumn<DatasetSummary, String> textCol = new TableColumn<>("Text");
+        textCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getText().replace("\n","  ").replace('\r', ' ')));
+        textCol.setPrefWidth(200);
 
         getColumns().addAll(pathCol, dateCol);
         if (addCacheColumn) {
             getColumns().add(presentCol);
         }
-        getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol);
-        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        setItems(new FilteredList<>(unfilteredDatasetSummaries));
+        getColumns().addAll(processedCol, sequenceCol, ndCol, sfCol, textCol);
+        filteredList = new FilteredList<>(unfilteredDatasetSummaries);
+        SortedList<DatasetSummary> sortedData = new SortedList<>(filteredList);
+        sortedData.comparatorProperty().bind(comparatorProperty());
+
+        setItems(sortedData);
     }
 
     public void setDatasetSummaries(List<DatasetSummary> summaries) {
@@ -68,10 +84,11 @@ public class DatasetBrowserTableView extends TableView2<DatasetSummary> {
      */
     public void setFilter(String filter) {
         String textFormatted = filter.trim().toLowerCase();
-        ((FilteredList<DatasetSummary>) getItems()).setPredicate(datasetSummary -> textFormatted.isEmpty()
+        filteredList.setPredicate(datasetSummary -> textFormatted.isEmpty()
                 || datasetSummary.getPath().toLowerCase().contains(textFormatted)
                 || datasetSummary.getTime().toLowerCase().contains(textFormatted)
                 || datasetSummary.getSeq().toLowerCase().contains(textFormatted)
+                || datasetSummary.getText().toLowerCase().contains(textFormatted)
                 || datasetSummary.getProcessed().stream().anyMatch(datasetPath -> datasetPath.toLowerCase().contains(textFormatted)));
     }
 
