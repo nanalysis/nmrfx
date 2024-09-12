@@ -18,6 +18,7 @@
 package org.nmrfx.peaks.io;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
 import org.python.util.PythonInterpreter;
 import java.io.BufferedReader;
@@ -595,6 +596,11 @@ public class PeakReader {
                         peak.setIntensity(1.0f);
                     }
 
+                    HashMap<String, Integer> atomDim = new HashMap<>();
+                    atomDim.put("H",0);
+                    atomDim.put("N",0);
+                    atomDim.put("C",0);
+
                     for (int i = 0; i < nDim; i++) {
                         float ppm = Float.parseFloat(fields[i + 1]);
                         PeakDim peakDim = peak.getPeakDim(i);
@@ -627,17 +633,20 @@ public class PeakReader {
                                 sf = 600.0;
                                 sw = 5000.0;
 
-                                peakList.getSpectralDim(i).setDimName("1H");
+                                peakList.getSpectralDim(i).setDimName("1H" + "_" + atomDim.merge("H",1,(a,b) -> a+b));
+                                peakList.getSpectralDim(i).setNucleus("1H");
                             } else if (atomName.startsWith("N")) {
                                 sf = 60.0;
                                 sw = 2000.0;
                                 widthHz = 30.0f;
-                                peakList.getSpectralDim(i).setDimName("15N");
+                                peakList.getSpectralDim(i).setDimName("15N" + "_" + atomDim.merge("N",1,(a,b) -> a+b));
+                                peakList.getSpectralDim(i).setNucleus("15N");
                             } else if (atomName.startsWith("C")) {
                                 widthHz = 30.0f;
                                 sf = 150.0;
                                 sw = 4000.0;
-                                peakList.getSpectralDim(i).setDimName("13C");
+                                peakList.getSpectralDim(i).setDimName("13C" + "_" + atomDim.merge("C",1,(a,b) -> a+b));
+                                peakList.getSpectralDim(i).setNucleus("13C");
                             }
                             peakList.getSpectralDim(i).setSf(sf);
                             peakList.getSpectralDim(i).setSw(sw);

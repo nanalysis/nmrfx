@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -852,7 +853,17 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     t.getRowValue().setSpatialRelation(value == null ? "" : value);
                 });
 
-        referenceTableView.getColumns().setAll(labelCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol);
+        TableColumn<SpectralDim, String> foldCol = new TableColumn<>("Folded");
+        foldCol.setCellValueFactory(new PropertyValueFactory("FoldMode"));
+        foldCol.setCellFactory(ComboBoxTableCell.forTableColumn(new String[]{"folded", "aliased", "none"}));
+        foldCol.setOnEditCommit(
+                (CellEditEvent<SpectralDim, String> t) -> {
+                    String value = t.getNewValue();
+                    t.getRowValue().setFoldMode(value == null ? 'n' : value.charAt(0));
+                    t.getRowValue().setFoldCount(1);
+                });
+
+        referenceTableView.getColumns().setAll(labelCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol, foldCol);
     }
 
     void renamePeakList() {
@@ -873,6 +884,18 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         if (peakList != null) {
             String name = (String) datasetNameField.getValue();
             peakList.setDatasetName(name);
+            Dataset dataset = Dataset.getDataset(name);
+            //fixme need to give option to not use these?
+            if (dataset != null) {
+                peakList.getSpectralDims().forEach((dim) -> {
+                    dim.setSf(dataset.getSf(dim.getSDim()));
+                    dim.setSw(dataset.getSw(dim.getSDim()));
+                    dataset.setLabel(dim.getSDim(),dim.getDimName());
+                });
+
+                referenceTableView.refresh();
+                refreshPeakView();
+            }
         }
     }
 
