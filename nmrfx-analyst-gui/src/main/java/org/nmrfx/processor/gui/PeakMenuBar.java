@@ -276,8 +276,8 @@ public class PeakMenuBar {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
-            int[] iDims = new int[]{1};
-            peakFolder.unfoldPeakList(peakList, iDims,true);
+            String[] dims = new String[]{"1H_1"};
+            peakFolder.unfoldPeakList(peakList, dims,true);
         }
     }
 
