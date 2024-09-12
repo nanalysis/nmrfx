@@ -1090,7 +1090,7 @@ public class MoleculeBase implements Serializable, ITree {
                 for (int j = 0, n = atoms.size(); j < n; j++) {
                     Atom atom = atoms.get(j);
                     SpatialSet spSet = atom.spatialSet;
-                    if (atom.isCoarse()) {
+                    if (atom.isCoarse() || atom.isConnector() || atom.isPlanarity()) {
                         continue;
                     }
                     atom.iAtom = i;
