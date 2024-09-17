@@ -2465,11 +2465,11 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
 
 
     if alg == 'nesta':
-        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
+        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
         negateImagList = ArrayList()
         negatePairsList = ArrayList()
-        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, negateImagList, negatePairsList, preserve, skipIndices)
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -2960,10 +2960,18 @@ def DEPT( disabled=False, dataset=None, process=None):
 
 
 def GRINS(
-    noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5,
-    apodize=True, phase=None, negateImag=None, negatePairs=None,
-    preserve=True, synthetic=False, logToFile=False, disabled=False,
-    dataset=None, process=None,
+    noiseRatio=5.0,
+    scale=0.25,
+    zf=0,
+    iterations=64,
+    shapeFactor=0.5,
+    apodize=True,
+    preserve=True,
+    synthetic=False,
+    logToFile=False,
+    disabled=False,
+    dataset=None,
+    process=None,
 ):
     ''' Experimental GRINS.
     Parameters
@@ -2999,12 +3007,6 @@ def GRINS(
         Lineshape factor
     apodize : bool
         Do Kaiser apodization during GRINS
-    phase : []
-        Array of phase values, 2 per indirect dimension.
-    negateImag : []
-        Array of booleans, 1 per indirect dimension.
-    negatePairs : []
-        Array of booleans, 1 per indirect dimension.
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
@@ -3016,23 +3018,6 @@ def GRINS(
         return None
 
     global fidInfo
-
-    phaseList = ArrayList()
-    if phase is None:
-        pass
-    else:
-        for value in phase:
-            phaseList.add(float(value))
-
-    negateImagList = ArrayList()
-    if negateImag is not None:
-        for value in negateImag:
-            negateImagList.add(value)
-
-    negatePairsList = ArrayList()
-    if negatePairs is not None:
-        for value in negatePairs:
-            negatePairsList.add(value)
 
     logFileName = None
 
@@ -3052,9 +3037,16 @@ def GRINS(
     process = process or getCurrentProcess()
 
     op = GRINSOp(
-        noiseRatio, scale, zf, iterations, shapeFactor, apodize,
-        phaseList, negateImagList, negatePairsList, preserve,
-        synthetic, schedule, logFileName,
+        noiseRatio,
+        scale,
+        zf,
+        iterations,
+        shapeFactor,
+        apodize,
+        preserve,
+        synthetic,
+        schedule,
+        logFileName,
     )
 
     if (dataset is not None):
@@ -4097,8 +4089,13 @@ dataInfo = DataInfo()
 
 
 def PROCINDIRECT(
-    ph0, ph1, negateImag, negatePairs,
-    disabled=False, dataset=None, process=None,
+    ph0=None,
+    ph1=None,
+    negateImag=None,
+    negatePairs=None,
+    disabled=False,
+    dataset=None,
+    process=None,
 ):
     """
     Process the indirect dimensions of a multidimensional dataset prior to NUS.

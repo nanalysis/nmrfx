@@ -1,8 +1,3 @@
-//nmrfx-analyst/src/main/java/org/nmrfx/processor/math/MatrixND.java
-//Simon Hulse
-//simonhulse@protonmail.com
-//Last Edited: Wed 11 Sep 2024 14:45:36 EDT
-
 /*
  * NMRFx Processor : A Program for Processing NMR Data
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
