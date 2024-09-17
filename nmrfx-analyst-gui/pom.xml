@@ -263,6 +263,28 @@
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>3.0.0</version>
             </plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-dependency-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>copy-dependencies</id>
+            <phase>prepare-package</phase>
+            <goals>
+                <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>target/classpath-jars</outputDirectory>
+                <includeScope>runtime</includeScope>
+
+                <!-- Exclude JavaFX because we'll get that from JMODs if we need to. -->
+                <excludeGroupIds>org.openjfx</excludeGroupIds>
+
+                <!-- Exclude anything else here where the artifacts are machine specific. We'll add them back later. -->
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
         </plugins>
     </build>
 
