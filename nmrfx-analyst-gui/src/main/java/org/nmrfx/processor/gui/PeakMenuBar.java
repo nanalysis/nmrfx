@@ -6,6 +6,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.Dataset;
@@ -20,11 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -276,7 +274,10 @@ public class PeakMenuBar {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
-            String[] dims = new String[]{"1H_1"};
+            List<SpectralDim> spectralDims = peakList.getFoldedDims();
+            if (spectralDims.isEmpty()) {GUIUtils.warn("Spectral dimensions not found!", "Spectral dimensions not found!");}
+            String[] dims = new String[spectralDims.size()];
+            for(int i = 0; i < spectralDims.size(); i++) {dims[i] = spectralDims.get(i).getDimName();}
             peakFolder.unfoldPeakList(peakList, dims,true);
         }
     }

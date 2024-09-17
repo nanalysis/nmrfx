@@ -887,10 +887,14 @@ public class PeakAttrController implements Initializable, StageBasedController, 
             Dataset dataset = Dataset.getDataset(name);
             //fixme need to give option to not use these?
             if (dataset != null) {
+                int[] pdim = peakList.getDimsForDataset(dataset, true);
                 peakList.getSpectralDims().forEach((dim) -> {
-                    dim.setSf(dataset.getSf(dim.getSDim()));
-                    dim.setSw(dataset.getSw(dim.getSDim()));
-                    dataset.setLabel(dim.getSDim(),dim.getDimName());
+                    int datasetDim = pdim[dim.getIndex()];
+                    if (datasetDim != -1) {
+                        dim.setSf(dataset.getSf(datasetDim));
+                        dim.setSw(dataset.getSw(datasetDim));
+                        dataset.setLabel(datasetDim, dim.getDimName());
+                    }
                 });
 
                 referenceTableView.refresh();

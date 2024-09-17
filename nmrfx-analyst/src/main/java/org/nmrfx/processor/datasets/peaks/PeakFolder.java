@@ -71,20 +71,24 @@ public class PeakFolder {
         double[][] bounds = new double[labels.length][2];
         if (dataset != null) {
             for (int i = 0; i < labels.length; i++) {
+                int iDim = dataset.getDim(labels[i]);
                 int size = dataset.getSizeReal(i);
-                bounds[i][0] = dataset.pointToPPM(i, 0);
-                bounds[i][1] = dataset.pointToPPM(i, size - 1);
+                bounds[i][0] = dataset.pointToPPM(iDim, 0);
+                bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
             }
+            int[] peakListToCluster = new int[peakList.getNDim()];
             Pattern pattern = Pattern.compile("([CH])");
+            peakList.getSpectralDims().stream().forEach((peakDim) -> {
+                Matcher matcher = pattern.matcher(peakDim.getDimName());
+                if (matcher.find()) {
+                    String group = matcher.group(1);
+                    peakListToCluster[peakDim.getIndex()] = dimLabels.indexOf(group);
+                }});
             for (Peak peak : peakList.peaks()) {
+                //set shifts according to dimensions of dimLabels
                 double[] shifts = new double[peak.getNDim()];
                 for (PeakDim peakDim : peak.getPeakDims()) {
-                    Matcher matcher = pattern.matcher(peakDim.getDimName());
-                    if (matcher.find()) {
-                        String group = matcher.group(1);
-                        int index = dimLabels.indexOf(group);
-                        shifts[index] = peakDim.getChemShiftValue();
-                    }
+                    shifts[peakListToCluster[peakDim.getSpectralDim()]] = peakDim.getChemShiftValue();
                 }
                 double density = getDensity(shifts);
                 for (int i = 0; i < labels.length; i++) {
@@ -97,15 +101,35 @@ public class PeakFolder {
                     double shift = shifts[iDim];
                     double lowerLim = bounds[i][0];
                     double upperLim = bounds[i][1];
-                    if (shift < lowerLim) {
-                        shifts[iDim] = alias ? upperLim - (lowerLim - shift) : lowerLim + (lowerLim - shift);
-                    } else if (shift > upperLim) {
-                        shifts[iDim] = alias ? lowerLim + (shift - upperLim) : upperLim - (shift - upperLim);
+                    double bestDensity = density;
+                    double bestShift = shift;
+                    if (alias) {
+                        shifts[iDim] = upperLim - (lowerLim - shift);
+                        if (getDensity(shifts) > bestDensity) {
+                            bestShift = shifts[iDim];
+                            bestDensity = getDensity(shifts);
+                        }
+                        shifts[iDim] = lowerLim + (shift - upperLim);
+                        if (getDensity(shifts) > bestDensity) {
+                            bestShift = shifts[iDim];
+                            bestDensity = getDensity(shifts);
+                        }
+                    } else {
+                        shifts[iDim] = lowerLim + (lowerLim - shift);
+                        if (getDensity(shifts) > bestDensity) {
+                            bestShift = shifts[iDim];
+                            bestDensity = getDensity(shifts);
+                        }
+                        shifts[iDim] = upperLim - (shift - upperLim);
+                        if (getDensity(shifts) > bestDensity) {
+                            bestShift = shifts[iDim];
+                            bestDensity = getDensity(shifts);
+                        }
                     }
-                    double foldDensity = getDensity(shifts);
-                    if (foldDensity > density) {
-                        peak.getPeakDim(i).setChemShiftValue((float) shifts[peak.getPeakDim(label).getSpectralDim()]);
-                        System.out.println(peak.getIndex() + " " + density + " " + foldDensity);
+
+                    if (bestDensity != density) {
+                        peak.getPeakDim(label).setChemShiftValue((float) bestShift);
+                        System.out.println(peak.getIdNum() + " " +density + " " + bestDensity + " " + bestShift);
                     }}
                 }
             }
