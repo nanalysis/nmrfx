@@ -277,8 +277,12 @@ public class PeakMenuBar {
             List<SpectralDim> spectralDims = peakList.getFoldedDims();
             if (spectralDims.isEmpty()) {GUIUtils.warn("Spectral dimensions not found!", "Spectral dimensions not found!");}
             String[] dims = new String[spectralDims.size()];
-            for(int i = 0; i < spectralDims.size(); i++) {dims[i] = spectralDims.get(i).getDimName();}
-            peakFolder.unfoldPeakList(peakList, dims,true);
+            boolean[] alias = new boolean[spectralDims.size()];
+            for(int i = 0; i < spectralDims.size(); i++) {
+                dims[i] = spectralDims.get(i).getDimName();
+                alias[i] = spectralDims.get(i).getFoldMode() == 'a';
+            }
+            peakFolder.unfoldPeakList(peakList, dims,alias);
         }
     }
 

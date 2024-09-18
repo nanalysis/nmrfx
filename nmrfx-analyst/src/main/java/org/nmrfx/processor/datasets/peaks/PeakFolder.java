@@ -1,6 +1,6 @@
 package org.nmrfx.processor.datasets.peaks;
+
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
-import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
@@ -13,8 +13,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PeakFolder {
     MixtureMultivariateNormalDistribution MVN;
@@ -29,7 +29,7 @@ public class PeakFolder {
 
     void loadComponents() {
         InputStream iStream = this.getClass().getResourceAsStream("/data/peakClusters.txt");
-        ArrayList<String> lines = new ArrayList();
+        ArrayList<String> lines = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {
                 String line = reader.readLine();
@@ -66,74 +66,64 @@ public class PeakFolder {
         return MVN.density(peaks);
     }
 
-    public void unfoldPeakList(PeakList peakList, String[] labels, boolean alias) {
+    public void unfoldPeakList(PeakList peakList, String[] labels, boolean[] alias) {
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         double[][] bounds = new double[labels.length][2];
         if (dataset != null) {
             for (int i = 0; i < labels.length; i++) {
                 int iDim = dataset.getDim(labels[i]);
-                int size = dataset.getSizeReal(i);
+                int size = dataset.getSizeReal(iDim);
                 bounds[i][0] = dataset.pointToPPM(iDim, 0);
                 bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
             }
+
             int[] peakListToCluster = new int[peakList.getNDim()];
             Pattern pattern = Pattern.compile("([CH])");
-            peakList.getSpectralDims().stream().forEach((peakDim) -> {
+            peakList.getSpectralDims().forEach((peakDim) -> {
                 Matcher matcher = pattern.matcher(peakDim.getDimName());
                 if (matcher.find()) {
                     String group = matcher.group(1);
                     peakListToCluster[peakDim.getIndex()] = dimLabels.indexOf(group);
-                }});
-            for (Peak peak : peakList.peaks()) {
-                //set shifts according to dimensions of dimLabels
+                }
+            });
+
+            for (Peak peak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
                 double[] shifts = new double[peak.getNDim()];
                 for (PeakDim peakDim : peak.getPeakDims()) {
                     shifts[peakListToCluster[peakDim.getSpectralDim()]] = peakDim.getChemShiftValue();
                 }
                 double density = getDensity(shifts);
+
                 for (int i = 0; i < labels.length; i++) {
                     String label = labels[i];
-                    Matcher matcher = pattern.matcher(label);
-                    if (matcher.find()) {
-                        String group = matcher.group(1);
-                        int iDim = dimLabels.indexOf(group);
+                    int iDim = peakListToCluster[peak.getPeakDim(label).getSpectralDim()];
 
                     double shift = shifts[iDim];
                     double lowerLim = bounds[i][0];
                     double upperLim = bounds[i][1];
                     double bestDensity = density;
                     double bestShift = shift;
-                    if (alias) {
-                        shifts[iDim] = upperLim - (lowerLim - shift);
-                        if (getDensity(shifts) > bestDensity) {
+                    double[] foldedShifts = new double[2]; //two possible positions to test
+
+                    foldedShifts[0] = alias[i] ? upperLim - (lowerLim - shift) : upperLim - (shift - upperLim);
+                    foldedShifts[1] = alias[i] ? lowerLim + (shift - upperLim) : lowerLim + (lowerLim - shift);
+                    for (double foldedShift : foldedShifts) {
+                        shifts[iDim] = foldedShift;
+                        double newDensity = getDensity(shifts);
+                        if (newDensity > bestDensity) {
                             bestShift = shifts[iDim];
-                            bestDensity = getDensity(shifts);
-                        }
-                        shifts[iDim] = lowerLim + (shift - upperLim);
-                        if (getDensity(shifts) > bestDensity) {
-                            bestShift = shifts[iDim];
-                            bestDensity = getDensity(shifts);
-                        }
-                    } else {
-                        shifts[iDim] = lowerLim + (lowerLim - shift);
-                        if (getDensity(shifts) > bestDensity) {
-                            bestShift = shifts[iDim];
-                            bestDensity = getDensity(shifts);
-                        }
-                        shifts[iDim] = upperLim - (shift - upperLim);
-                        if (getDensity(shifts) > bestDensity) {
-                            bestShift = shifts[iDim];
-                            bestDensity = getDensity(shifts);
+                            bestDensity = newDensity;
+
                         }
                     }
 
                     if (bestDensity != density) {
                         peak.getPeakDim(label).setChemShiftValue((float) bestShift);
-                        System.out.println(peak.getIdNum() + " " +density + " " + bestDensity + " " + bestShift);
-                    }}
+                    }
                 }
             }
         }
+
     }
 
 
