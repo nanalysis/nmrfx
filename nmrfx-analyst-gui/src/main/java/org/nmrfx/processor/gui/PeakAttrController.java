@@ -886,8 +886,14 @@ public class PeakAttrController implements Initializable, StageBasedController, 
             peakList.setDatasetName(name);
             Dataset dataset = Dataset.getDataset(name);
             //fixme need to give option to not use these?
+            int[] pdim;
             if (dataset != null) {
-                int[] pdim = peakList.getDimsForDataset(dataset, true);
+                try {
+                    pdim = peakList.getDimsForDataset(dataset, true);
+                } catch (Exception e) {
+                    GUIUtils.warn("Dimensions do not match", "Check dataset dimension nuclei");
+                    return;
+                }
                 peakList.getSpectralDims().forEach((dim) -> {
                     int datasetDim = pdim[dim.getIndex()];
                     if (datasetDim != -1) {

@@ -2,7 +2,6 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
 import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 
@@ -66,18 +65,22 @@ public class PeakFolder {
         return MVN.density(peaks);
     }
 
-    public void unfoldPeakList(PeakList peakList, String[] labels, boolean[] alias) {
+    public void unfoldPeakList(PeakList peakList, String[] dimToFold, boolean[] alias) {
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        double[][] bounds = new double[labels.length][2];
+        double[][] bounds = new double[dimToFold.length][2];
+        int[] bondedDims = new int[dimToFold.length];
+
         if (dataset != null) {
-            for (int i = 0; i < labels.length; i++) {
-                int iDim = dataset.getDim(labels[i]);
+            for (int i = 0; i < dimToFold.length; i++) {
+                int iDim = dataset.getDim(dimToFold[i]);
                 int size = dataset.getSizeReal(iDim);
                 bounds[i][0] = dataset.pointToPPM(iDim, 0);
                 bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
+                String relationDim = peakList.getSpectralDim(dimToFold[i]).getRelationDim();
+                bondedDims[i] = peakList.getSpectralDim(relationDim).getIndex();
             }
 
-            int[] peakListToCluster = new int[peakList.getNDim()];
+            int[] peakListToCluster = new int[peakList.getNDim()]; //map peakList dims to mvn dims
             Pattern pattern = Pattern.compile("([CH])");
             peakList.getSpectralDims().forEach((peakDim) -> {
                 Matcher matcher = pattern.matcher(peakDim.getDimName());
@@ -88,15 +91,15 @@ public class PeakFolder {
             });
 
             for (Peak peak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
-                double[] shifts = new double[peak.getNDim()];
-                for (PeakDim peakDim : peak.getPeakDims()) {
-                    shifts[peakListToCluster[peakDim.getSpectralDim()]] = peakDim.getChemShiftValue();
-                }
-                double density = getDensity(shifts);
-
-                for (int i = 0; i < labels.length; i++) {
-                    String label = labels[i];
+                double[] shifts = new double[dimLabels.size()];
+                for (int i = 0; i < dimToFold.length; i++) {
+                    String label = dimToFold[i];
                     int iDim = peakListToCluster[peak.getPeakDim(label).getSpectralDim()];
+                    int bondedDim = peakListToCluster[peak.getPeakDim(bondedDims[i]).getSpectralDim()];
+                    shifts[iDim] = peak.getPeakDim(label).getChemShiftValue();
+                    shifts[bondedDim] = peak.getPeakDim(bondedDims[i]).getChemShiftValue();
+
+                    double density = getDensity(shifts);
 
                     double shift = shifts[iDim];
                     double lowerLim = bounds[i][0];
@@ -113,7 +116,6 @@ public class PeakFolder {
                         if (newDensity > bestDensity) {
                             bestShift = shifts[iDim];
                             bestDensity = newDensity;
-
                         }
                     }
 
