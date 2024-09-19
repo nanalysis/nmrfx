@@ -2344,6 +2344,9 @@ public class Atom implements IAtom, Comparable<Atom> {
         return name.charAt(nameLen - 1) == 'p';
     }
 
+    public boolean isConnector() {
+        return type.equals("XX");
+    }
     @Override
     public Point2d getPoint2d() {
         return new Point2d(getPoint().getX(), getPoint().getY());
