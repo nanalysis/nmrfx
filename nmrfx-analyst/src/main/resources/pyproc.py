@@ -27,6 +27,7 @@ from org.nmrfx.processor.operations import Bucket
 from org.nmrfx.processor.operations import Bz
 from org.nmrfx.processor.operations import CShift
 from org.nmrfx.processor.operations import CoAdd
+from org.nmrfx.processor.operations import Complex
 from org.nmrfx.processor.operations import Cwtd
 from org.nmrfx.processor.operations import Combine
 from org.nmrfx.processor.operations import Dc
@@ -91,6 +92,8 @@ from org.nmrfx.processor.operations import Tdss
 from org.nmrfx.processor.operations import VecRef
 from org.nmrfx.processor.operations import WriteVector
 from org.nmrfx.processor.operations import Zeros
+from org.nmrfx.processor.operations import ZImag
+from org.nmrfx.processor.operations import ZReal
 from org.nmrfx.processor.operations import Zf
 from org.nmrfx.processor.processing.processes import ProcessOps
 from org.nmrfx.processor.processing import Processor
@@ -3202,6 +3205,39 @@ def REAL(disabled=False, process=None, vector=None):
         return None
     process = process or getCurrentProcess()
     op = Real()
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+def COMPLEX(disabled=False, process=None, vector=None):
+    '''Make the vector complex, setting the imaginary part to 0.0'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = Complex()
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+def ZIMAG(disabled=False, process=None, vector=None):
+    '''Make the vector complex if not, and set the imaginary part to 0.0'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = ZImag()
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+def ZREAL(disabled=False, process=None, vector=None):
+    '''Make the vector complex if not, and set the real part to 0.0'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = ZReal()
     if (vector != None):
         op.eval(vector)
     else:
