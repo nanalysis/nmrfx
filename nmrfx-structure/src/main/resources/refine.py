@@ -464,6 +464,7 @@ class refine:
         self.NEFfile = ''
         self.energyLists = None
         self.dihedral = None
+        self.ssGen = None
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
@@ -1350,7 +1351,11 @@ class refine:
 
 
         if 'rna' in data:
-            self.addHelicesRestraints()
+            if not self.ssGen:
+                self.findRNAHelices(data['rna'])
+            if 'vienna' in data['rna']:
+                self.vienna = data['rna']['vienna']
+                self.addHelicesRestraints(self.vienna)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
                 rnaLinks,rnaBonds = self.findSSLinks()
                 molData['link'] = rnaLinks
@@ -1815,6 +1820,8 @@ class refine:
 
     def readRNADict(self, data):
         rnaDict = data['rna']
+        if 'vienna' in rnaDict:
+            self.vienna = rnaDict['vienna']
         if 'ribose' in rnaDict:
             if not 'tree' in data and rnaDict['ribose'] == "Constrain":
                 polymers = self.molecule.getPolymers()
@@ -2418,21 +2425,20 @@ class refine:
        
 
     def findHelices(self,vienna):
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
         self.ssGen = SSGen(self.molecule, vienna)
         self.ssGen.secondaryStructGen()
 
-    def addHelicesRestraints(self):
-        vienna = self.vienna
+    def addHelicesRestraints(self, vienna):
         for ss in self.ssGen.structures:
             if ss.getName() == "Helix":
                 residues = ss.getResidues()
                 self.addHelix(residues)
                 self.addHelixPP(residues)
 
+        polymers = self.molecule.getPolymers()
+        allResidues = []
+        for polymer in polymers:
+            allResidues += polymer.getResidues()
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
             start = m.start()+1
