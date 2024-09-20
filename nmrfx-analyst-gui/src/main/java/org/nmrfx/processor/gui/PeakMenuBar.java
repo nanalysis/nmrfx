@@ -3,8 +3,6 @@ package org.nmrfx.processor.gui;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.peaks.PeakTableController;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
@@ -15,7 +13,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.processor.gui.undo.PeakListUndo;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -271,15 +268,6 @@ public class PeakMenuBar {
                 }
             }
         }
-    }
-
-    PeakListUndo getPeakListUndo() {
-        PeakList peakList = getPeakList();
-        PeakListUndo undo = null;
-        if (peakList != null) {
-            undo = new PeakListUndo(peakList);
-        }
-        return undo;
     }
 
     void foldPeaks(){
