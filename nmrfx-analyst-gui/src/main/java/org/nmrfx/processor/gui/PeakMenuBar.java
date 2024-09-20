@@ -3,6 +3,8 @@ package org.nmrfx.processor.gui;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.peaks.PeakTableController;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
@@ -13,6 +15,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.undo.PeakListUndo;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -270,13 +273,22 @@ public class PeakMenuBar {
         }
     }
 
+    PeakListUndo getPeakListUndo() {
+        PeakList peakList = getPeakList();
+        PeakListUndo undo = null;
+        if (peakList != null) {
+            undo = new PeakListUndo(peakList);
+        }
+        return undo;
+    }
+
     void foldPeaks(){
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
             List<SpectralDim> spectralDims = peakList.getFoldedDims();
             if (spectralDims.isEmpty()) {
-                GUIUtils.warn("Spectral dimensions not found!", "Spectral dimensions not found!");
+                GUIUtils.warn("Spectral dimensions not found!", "Indicate dimensions to fold");
             }
             String[] dims = new String[spectralDims.size()];
             boolean[] alias = new boolean[spectralDims.size()];
@@ -284,7 +296,12 @@ public class PeakMenuBar {
                 dims[i] = spectralDims.get(i).getDimName();
                 alias[i] = spectralDims.get(i).getFoldMode() == 'a';
             }
-            peakFolder.unfoldPeakList(peakList, dims,alias);
+            try {
+                peakFolder.unfoldPeakList(peakList, dims, alias);
+            } catch (Exception e) {
+                GUIUtils.warn("Assign bonded dimensions in Peak Tool", "Assign bonded dimensions in Peak Tool");
+            }
+
         }
     }
 

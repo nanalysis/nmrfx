@@ -891,7 +891,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 try {
                     pdim = peakList.getDimsForDataset(dataset, true);
                 } catch (Exception e) {
-                    GUIUtils.warn("Dimensions do not match", "Check dataset dimension nuclei");
+                    GUIUtils.warn("Unable to match Dataset with Peak List dimensions", "Check nuclei in all Dataset dimensions");
                     return;
                 }
                 peakList.getSpectralDims().forEach((dim) -> {

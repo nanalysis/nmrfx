@@ -3,6 +3,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 
 import java.io.BufferedReader;
@@ -12,8 +13,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PeakFolder {
     MixtureMultivariateNormalDistribution MVN;
@@ -77,18 +76,30 @@ public class PeakFolder {
                 bounds[i][0] = dataset.pointToPPM(iDim, 0);
                 bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
                 String relationDim = peakList.getSpectralDim(dimToFold[i]).getRelationDim();
+                if (relationDim.isBlank()) {
+                    if (peakList.getNDim() == 2 &&
+                            peakList.getSpectralDims().stream()
+                                    .map(SpectralDim::getNucleus)
+                                    .map(s -> s.substring(s.length()-1))
+                                    .toList().containsAll(dimLabels)) {
+                        String currentDim = peakList.getSpectralDim(dimToFold[i]).getDimName();
+                        relationDim = peakList.getSpectralDims().stream()
+                                .filter((spectralDim -> spectralDim.getDimName() != currentDim)).toList().get(0).getDimName();
+                    } else {
+                        throw new NullPointerException();
+                    }
+
+                }
                 bondedDims[i] = peakList.getSpectralDim(relationDim).getIndex();
             }
 
             int[] peakListToCluster = new int[peakList.getNDim()]; //map peakList dims to mvn dims
-            Pattern pattern = Pattern.compile("([CH])");
             peakList.getSpectralDims().forEach((peakDim) -> {
-                Matcher matcher = pattern.matcher(peakDim.getDimName());
-                if (matcher.find()) {
-                    String group = matcher.group(1);
-                    peakListToCluster[peakDim.getIndex()] = dimLabels.indexOf(group);
+                    String nucleus = peakDim.getNucleus();
+                    String nucleusName = nucleus.substring(nucleus.length()-1);
+                    peakListToCluster[peakDim.getIndex()] = dimLabels.indexOf(nucleusName);
                 }
-            });
+            );
 
             for (Peak peak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
                 double[] shifts = new double[dimLabels.size()];
