@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class PeakFolder {
@@ -78,13 +79,13 @@ public class PeakFolder {
                 String relationDim = peakList.getSpectralDim(dimToFold[i]).getRelationDim();
                 if (relationDim.isBlank()) {
                     if (peakList.getNDim() == 2 &&
-                            peakList.getSpectralDims().stream()
+                            new HashSet<>(peakList.getSpectralDims().stream()
                                     .map(SpectralDim::getNucleus)
-                                    .map(s -> s.substring(s.length()-1))
-                                    .toList().containsAll(dimLabels)) {
+                                    .map(s -> s.substring(s.length() - 1))
+                                    .toList()).containsAll(dimLabels)) {
                         String currentDim = peakList.getSpectralDim(dimToFold[i]).getDimName();
                         relationDim = peakList.getSpectralDims().stream()
-                                .filter((spectralDim -> spectralDim.getDimName() != currentDim)).toList().get(0).getDimName();
+                                .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().get(0).getDimName();
                     } else {
                         throw new NullPointerException();
                     }

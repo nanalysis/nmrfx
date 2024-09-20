@@ -308,7 +308,7 @@ public class PeakMenuBar {
     }
 
     void unifyPeakWidths() {
-        menuTarget.getPeak().ifPresent(peak -> PeakListTools.unifyWidths(peak));
+        menuTarget.getPeak().ifPresent(PeakListTools::unifyWidths);
     }
 
     void measureIntensities() {
@@ -411,7 +411,6 @@ public class PeakMenuBar {
                     try (FileWriter writer = new FileWriter(listFileName)) {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeaksXPK2(writer, getPeakList());
-                        writer.close();
                     }
                     if (getPeakList().hasMeasures()) {
                         if (listFileName.endsWith(".xpk2")) {
@@ -419,7 +418,6 @@ public class PeakMenuBar {
                             try (FileWriter writer = new FileWriter(measureFileName)) {
                                 PeakWriter peakWriter = new PeakWriter();
                                 peakWriter.writePeakMeasures(writer, getPeakList());
-                                writer.close();
                             }
                         }
                     }
@@ -477,7 +475,6 @@ public class PeakMenuBar {
                             case "nmrpipe" -> peakWriter.writePeakstoNMRPipe(writer, getPeakList());
                             default -> peakWriter.writePeaksXPK2(writer, getPeakList());
                         }
-                        writer.close();
                     }
                 }
 
