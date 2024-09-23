@@ -1,10 +1,12 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -122,6 +124,12 @@ public class PeakFolder {
 
                     foldedShifts[0] = alias[i] ? upperLim - (lowerLim - shift) : upperLim - (shift - upperLim);
                     foldedShifts[1] = alias[i] ? lowerLim + (shift - upperLim) : lowerLim + (lowerLim - shift);
+
+//                    String assignment = peak.getPeakDim(0).getLabel();
+//                    Atom atom = Molecule.getAtomByName(assignment);
+//                    if (atom != null) {
+//                        atom.getResidueName();
+//                    }
                     for (double foldedShift : foldedShifts) {
                         shifts[iDim] = foldedShift;
                         double newDensity = getDensity(shifts);
