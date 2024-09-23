@@ -11,6 +11,9 @@ import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.undo.ChartUndo;
+import org.nmrfx.processor.gui.undo.GroupUndo;
+import org.nmrfx.processor.gui.undo.PeakListUndo;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -19,11 +22,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -31,6 +31,8 @@ import java.util.function.Consumer;
  */
 public class PeakMenuBar {
     private static final Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
+    private List<ChartUndo> undos = new ArrayList<>();
+    private List<ChartUndo> redos = new ArrayList<>();
 
     private final PeakMenuTarget menuTarget;
     private MenuButton peakListMenu = null;
@@ -171,7 +173,42 @@ public class PeakMenuBar {
             editMenu.getItems().add(menuItem);
         }
     }
+    void doUndoRedo( Consumer<PeakList> consumer) {
+        resetUndoGroup();
+        PeakList peakList = getPeakList();
+        addPeakListUndo(peakList);
+        consumer.accept(peakList);
+        addPeakListRedo(peakList);
+        addUndoGroup("Tweak Peaks");
 
+    }
+    void addPeakListUndo(PeakList peakList) {
+        if (undos.isEmpty()) {
+            redos.clear();
+        }
+        PeakListUndo undo = new PeakListUndo(peakList);
+        undos.add(undo);
+    }
+
+    void addPeakListRedo(PeakList peakList) {
+        PeakListUndo undo = new PeakListUndo(peakList);
+        redos.add(undo);
+    }
+
+    void addUndoGroup(String label) {
+        if (!undos.isEmpty() && (undos.size() == redos.size())) {
+            GroupUndo groupUndo = new GroupUndo(undos);
+            GroupUndo groupRedo = new GroupUndo(redos);
+            undos.clear();
+            redos.clear();
+            getUndoManager().add(label, groupUndo, groupRedo);
+        }
+    }
+
+    void resetUndoGroup() {
+        undos.clear();
+        redos.clear();
+    }
     public MenuButton getPeakListMenu() {
         return peakListMenu;
     }
@@ -323,7 +360,7 @@ public class PeakMenuBar {
         if (getPeakList() != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
             alert.showAndWait().ifPresent(response -> {
-                getPeakList().compress();
+                doUndoRedo(PeakList::compress);
                 refreshChangedListView();
             });
         }
@@ -333,8 +370,10 @@ public class PeakMenuBar {
         if (getPeakList() != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
             alert.showAndWait().ifPresent(response -> {
-                getPeakList().reNumber();
-                refreshChangedListView();
+                doUndoRedo( peakList -> {
+                    peakList.reNumber();
+                    refreshChangedListView();
+                });
             });
         }
     }
