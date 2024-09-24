@@ -31,7 +31,7 @@
                                 <Label text="Aspect ratio:" minWidth="35"/>
                                 <HBox>
                                     <Slider fx:id="aspectSlider" prefWidth="150"/>
-                                    <Label fx:id="aspectRatioValue" minWidth="35" maxWidth="35"/>
+                                    <TextField fx:id="aspectRatioValue" minWidth="50" maxWidth="50"/>
                                 </HBox>
                             </children>
                         </VBox>
