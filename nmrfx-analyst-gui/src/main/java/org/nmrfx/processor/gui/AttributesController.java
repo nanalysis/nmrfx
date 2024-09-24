@@ -86,7 +86,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     Slider aspectSlider;
     @FXML
-    Label aspectRatioValue;
+    TextField aspectRatioValue;
     @FXML
     Slider scaleSlider;
     @FXML
@@ -329,6 +329,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         aspectSlider.setValue(1.0);
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+        aspectSlider.disableProperty().bind(aspectCheckBox.selectedProperty().not());
+        GUIUtils.bindSliderField(aspectSlider, aspectRatioValue, "##0.00");
 
         stackXSlider.setMin(0.0);
         stackXSlider.setMax(1.00);
@@ -1261,11 +1263,12 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     void updateAspectRatio() {
         List<PolyChart> applyCharts = getCharts(allCharts());
         for (PolyChart applyChart : applyCharts) {
-            applyChart.getChartProperties().setAspect(aspectCheckBox.isSelected());
-            double aspectRatio = aspectSlider.getValue();
-            applyChart.getChartProperties().setAspectRatio(aspectRatio);
-            aspectRatioValue.setText(String.format("%.2f", aspectRatio));
-            applyChart.refresh();
+            if (applyChart != null) {
+                applyChart.getChartProperties().setAspect(aspectCheckBox.isSelected());
+                double aspectRatio = aspectSlider.getValue();
+                applyChart.getChartProperties().setAspectRatio(aspectRatio);
+                applyChart.refresh();
+            }
         }
     }
 
