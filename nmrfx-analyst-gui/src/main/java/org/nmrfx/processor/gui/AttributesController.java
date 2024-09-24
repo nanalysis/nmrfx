@@ -18,6 +18,7 @@ import org.controlsfx.control.RangeSlider;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -56,6 +57,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     ScrollPane attributeScrollPane;
     @FXML
     ChoiceBox<SelectionChoice> itemChoiceState;
+    @FXML
+    Button storeButton;
     @FXML
     Accordion attributesAccordion;
     @FXML
@@ -265,6 +268,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        storeButton.setOnAction(e -> storeAttributes());
+
         ticFontSizeComboBox.getItems().addAll(5, 6, 7, 8, 9,
                 10, 11, 12, 14, 16, 18, 20, 22, 24, 26,
                 28, 32, 36);
@@ -400,6 +405,26 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     public Pane getPane() {
         return attributesVBox;
+    }
+
+    private void storeAttributes() {
+        for (PolyChart chart : getCharts(true)) {
+            for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
+                Dataset dataset = (Dataset) datasetAttributes.getDataset();
+                dataset.setLvl(datasetAttributes.getLvl());
+                int posNeg = 0;
+                if (datasetAttributes.getPos()) {
+                    posNeg += 1;
+                }
+                if (datasetAttributes.getNeg()) {
+                    posNeg += 2;
+                }
+                dataset.setPosneg(posNeg);
+                dataset.setPosColor(datasetAttributes.getPosColor().toString());
+                dataset.setNegColor(datasetAttributes.getNegColor().toString());
+                dataset.writeParFile();
+            }
+        }
     }
 
     private void unBindChart(PolyChart polyChart) {
