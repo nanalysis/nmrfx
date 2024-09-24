@@ -13,7 +13,9 @@ public class PeakListUndo extends ChartUndo {
     public PeakListUndo(PeakList peakList) {
         this.peakList = peakList;
         for (var peak : peakList.peaks()) {
-            savedPeaks.add(peak.copy());
+            Peak peakCopy = peak.copy();
+            peakCopy.setIdNum(peak.getIdNum());
+            savedPeaks.add(peakCopy);
         }
     }
 
