@@ -83,11 +83,18 @@ public class UndoManager {
         redoable.set(index < (queue.size() - 1));
     }
 
-    public String getFirstInQueueName() {
-        if (queue.size() == 0) {
+    public String getUndoLabelName() {
+        if (index < 0) {
             return "";
         }
-        return queue.get(0).name;
+        return queue.get(index).name;
+    }
+
+    public String getRedoLabelName() {
+        if ((index + 1) > queue.size() - 1) {
+            return "";
+        }
+        return queue.get(index+1).name;
     }
 
 }

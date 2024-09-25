@@ -878,7 +878,11 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getName() {
-        return peakList.getName() + "." + getIdNum();
+        if (peakList != null) {
+            return peakList.getName() + "." + getIdNum();
+        } else {
+            return "." + idNum;
+        }
     }
 
     public int getIdNum() {
