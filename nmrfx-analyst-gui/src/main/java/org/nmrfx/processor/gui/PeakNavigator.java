@@ -191,9 +191,6 @@ public class PeakNavigator implements PeakListener {
                 }
             }
         });
-//        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-
- //       ProjectBase.getActive().addPeakListListener(mapChangeListener);
 
         peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
         // The different control items end up with different heights based on font and icon size,
