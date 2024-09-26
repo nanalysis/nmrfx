@@ -12,20 +12,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class PeakFolder {
     MixtureMultivariateNormalDistribution MVN;
-    double[] weights;
-    double[][] means;
-    double[][][] covariances;
     List<String> dimLabels = Arrays.asList("H","C");
+    HashMap<String, MixtureMultivariateNormalDistribution> mvns = new HashMap<>();
     public PeakFolder() {
         loadComponents();
-        MVN = new MixtureMultivariateNormalDistribution(weights,means,covariances);
+    }
+
+    public void initialize() {
+        MVN = new MixtureMultivariateNormalDistribution(weights, means, covariances);
     }
 
     void loadComponents() {
@@ -42,23 +40,40 @@ public class PeakFolder {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+
         int nLines = lines.size();
         int nDim = dimLabels.size();
-        weights = new double[nLines];
-        means = new double[nLines][nDim];
-        covariances = new double[nLines][nDim][nDim];
+        List<Double> weights = new ArrayList<>();
+        List<double[]> means = new ArrayList<>();
+        List<double[][]> covariances = new ArrayList<>();
+        String currentGroup = null;
         for (int i = 0; i < nLines; i++) {
             String line = lines.get(i);
             String[] fields = line.split(" ");
-            int indexer = 2; //skip first two columns which are identifiers
-            weights[i] = Double.parseDouble(fields[indexer++]);
-            for (int j = 0; j < nDim; j++) {
-                means[i][j] = Double.parseDouble(fields[indexer++]);
-            }
-            for (int k = 0; k < nDim; k++) {
-                for (int l = 0; l < nDim; l++) {
-                    covariances[i][k][l] = Double.parseDouble(fields[indexer++]);
+            int indexer = 1; //skip first column with experiment name
+            String[] groups = fields[indexer++].split("-");
+            String residueType = groups[1];
+            String atomType = groups.length > 2 ? groups[2] : "";
+            String groupName = residueType + "." + atomType;
+            if (currentGroup.isBlank()) {currentGroup = groupName;}
+            if(groupName.equals(currentGroup)) {
+                weights.add(Double.parseDouble(fields[indexer++]));
+                double[] mean = new double[nDim];
+                for (int j = 0; j < nDim; j++) {
+                    mean[j] = Double.parseDouble(fields[indexer++]);
                 }
+                means.add(mean);
+                double[][] covarianceMatrix = new double[nDim][nDim];
+                for (int k = 0; k < nDim; k++) {
+                    for (int l = 0; l < nDim; l++) {
+                        covarianceMatrix[k][l] = Double.parseDouble(fields[indexer++]);
+                    }
+                }
+                covariances.add(covarianceMatrix);
+            } else {
+                double[] w = weights.stream().mapToDouble(Double::doubleValue).toArray();
+                MVN = new MixtureMultivariateNormalDistribution(w, means, covariances);
+                mvns.put(groupName, MVN);
             }
         }
     }
@@ -125,11 +140,13 @@ public class PeakFolder {
                     foldedShifts[0] = alias[i] ? upperLim - (lowerLim - shift) : upperLim - (shift - upperLim);
                     foldedShifts[1] = alias[i] ? lowerLim + (shift - upperLim) : lowerLim + (lowerLim - shift);
 
-//                    String assignment = peak.getPeakDim(0).getLabel();
-//                    Atom atom = Molecule.getAtomByName(assignment);
-//                    if (atom != null) {
-//                        atom.getResidueName();
-//                    }
+                        String assignment = peak.getPeakDim(label).getLabel();
+                        Atom atom = Molecule.getAtomByName(assignment);
+                        if (atom != null) {
+                            String residueName = atom.getResidueName();
+                            String atomName = atom.getName();
+                            }
+
                     for (double foldedShift : foldedShifts) {
                         shifts[iDim] = foldedShift;
                         double newDensity = getDensity(shifts);
