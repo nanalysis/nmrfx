@@ -3741,7 +3741,8 @@ public class PolyChart extends Region {
                 }
                 newChart.clearDataAndPeaks();
                 newChart.updateDatasets(sliceDatasets);
-                sliceController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
+                getFXMLController().getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
+                newChart.disDimProp.set(DISDIM.OneDX);
                 newChart.autoScale();
                 double lvl = newChart.getDatasetAttributes().get(0).getLvl();
                 double offset = newChart.getDatasetAttributes().get(0).getOffset();
