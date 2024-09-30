@@ -113,11 +113,11 @@ public class OpenChemLibConverter {
         molecule.structures.add(0);
         compound.molecule = molecule;
         molecule.addEntity(compound, molName);
-        convertFromStereoMolecule(stereoMolecule, compound);
+        convertFromStereoMolecule(stereoMolecule, compound, null);
         return molecule;
     }
 
-    public static void convertFromStereoMolecule(StereoMolecule stereoMolecule, Compound compound) {
+    public static void convertFromStereoMolecule(StereoMolecule stereoMolecule, Compound compound, List<Point3> points) {
         stereoMolecule.ensureHelperArrays(StereoMolecule.cHelperNeighbours);
         compound.removeAllAtoms();
         int structureNumber = 0;
@@ -130,6 +130,11 @@ public class OpenChemLibConverter {
             double y = stereoMolecule.getAtomY(i);
             double z = stereoMolecule.getAtomZ(i);
             Point3 pt = new Point3(x, y, z);
+            if ((points != null) && (i < points.size())) {
+                atom.setFlatPoint(points.get(i));
+            } else if (points == null) {
+                atom.setFlatPoint(pt);
+            }
             atom.setPoint(structureNumber, pt);
             if (stereoMolecule.isAromaticAtom(i)) {
                 atom.setFlag(Atom.AROMATIC, true);
@@ -211,14 +216,26 @@ public class OpenChemLibConverter {
         return stereoMolecule;
     }
 
+    static List<Point3> getCoords(StereoMolecule stereoMolecule) {
+        int nAtoms = stereoMolecule.getAllAtoms();
+        List<Point3> points = new ArrayList<>();
+        for (int i = 0; i < nAtoms; i++) {
+            double x = stereoMolecule.getAtomX(i);
+            double y = stereoMolecule.getAtomY(i);
+            double z = stereoMolecule.getAtomZ(i);
+            points.add(new Point3(x, y, z));
+        }
+        return points;
+    }
     public static void to3D(Molecule molecule) {
         for (var ligand : molecule.getLigands()) {
             StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand);
+            ConformerGenerator.addHydrogenAtoms(sMol);
+            List<Point3> points = getCoords(sMol);
             ConformerGenerator cg = new ConformerGenerator();
             var conf = cg.getOneConformer(sMol);
             var mol3D = conf.toMolecule(sMol);
-            ConformerGenerator.addHydrogenAtoms(mol3D);
-            OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand);
+            OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand, points);
         }
         molecule.inactivateAtoms();
         molecule.updateAtomArray();

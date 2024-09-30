@@ -1167,9 +1167,8 @@ public class Molecule extends MoleculeBase {
 
                 if ((atomB != null) && (atomE != null)) {
 
-                    SpatialSet spatialSet = atomB.spatialSet;
-                    ptB = atomB.getPoint(iStructure);
-                    ptE = atomE.getPoint(iStructure);
+                    ptB = atomB.getFlatPoint(iStructure);
+                    ptE = atomE.getFlatPoint(iStructure);
 
                     if ((ptB != null) && (ptE != null)) {
                         j = i;
@@ -1358,8 +1357,8 @@ public class Molecule extends MoleculeBase {
                 if ((atomB != null) && (atomE != null)) {
 
                     SpatialSet spatialSet = atomB.spatialSet;
-                    Point3 ptB = atomB.getPoint(iStructure);
-                    Point3 ptE = atomE.getPoint(iStructure);
+                    Point3 ptB = atomB.getFlatPoint(iStructure);
+                    Point3 ptE = atomE.getFlatPoint(iStructure);
 
                     if ((ptB != null) && (ptE != null)) {
 
@@ -1749,7 +1748,7 @@ public class Molecule extends MoleculeBase {
             atom.unsetProperty(Atom.LABEL);
 
             if (atom.getProperty(Atom.DISPLAY)) {
-                pt = atom.getPoint(iStructure);
+                pt = atom.getFlatPoint(iStructure);
 
                 if (pt != null) {
                     atom.setProperty(Atom.LABEL);
@@ -1775,7 +1774,7 @@ public class Molecule extends MoleculeBase {
         updateAtomArray();
         for (Atom atom : atoms) {
             if (atom.getProperty(Atom.LABEL)) {
-                pt = atom.getPoint(iStructure);
+                pt = atom.getFlatPoint(iStructure);
 
                 if (pt != null) {
                     coords[i++] = (float) pt.getX();
@@ -1806,7 +1805,7 @@ public class Molecule extends MoleculeBase {
             int selected = spatialSet1.getSelected();
 
             if (selected > 0) {
-                ptB = spatialSet1.getPoint(iStructure);
+                ptB = spatialSet1.atom.getFlatPoint(iStructure);
 
                 if (ptB != null) {
                     if ((k + 1) < n) {
@@ -1835,7 +1834,7 @@ public class Molecule extends MoleculeBase {
                         coords[i++] = (float) ptB.getZ();
                         levels[j++] = selected;
                     } else {
-                        ptE = spatialSet2.getPoint(iStructure);
+                        ptE = spatialSet2.atom.getFlatPoint(iStructure);
 
                         if (ptE != null) {
                             float dx = (float) (ptE.getX() - ptB.getX());

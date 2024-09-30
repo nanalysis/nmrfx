@@ -111,6 +111,8 @@ public class Atom implements IAtom, Comparable<Atom> {
     public float value = 0.0f;
     private boolean active = true;
     public ArrayList<AtomEquivalency> equivAtoms = null;
+
+    private Point3 flatPoint;
     public SpatialSet spatialSet;
     AtomResonance resonance = null;
     public int irpIndex = 0;
@@ -707,6 +709,13 @@ public class Atom implements IAtom, Comparable<Atom> {
         return list;
     }
 
+    public Point3 getFlatPoint(int i) {
+        return flatPoint == null  || i != 0 ? getPoint() : flatPoint;
+    }
+
+    public void setFlatPoint(Point3 pt) {
+        flatPoint = new Point3(pt);
+    }
     public void setPoint(int i, Point3 pt) {
         spatialSet.setPoint(i, pt);
     }

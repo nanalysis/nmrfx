@@ -183,6 +183,8 @@ public class SDFile {
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            atom.setFlatPoint(pt);
+            atom.setFlatPoint(pt);
 
             String massDiffString = string.substring(34, 36).trim();
             int massDiff = 0;
