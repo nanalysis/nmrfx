@@ -1600,7 +1600,6 @@ public class ScanTable {
         List<DatasetAttributes> datasetAttributesList = getSelectedDatasetAttributesList();
         if (value != null) {
             datasetAttributesList.forEach(datasetAttributes -> {
-                System.out.println(datasetAttributes.getDataset().getName() + " " + value);
                 attrColumn.setValue(datasetAttributes, value);
             });
             PolyChart chart = scannerTool.getChart();
