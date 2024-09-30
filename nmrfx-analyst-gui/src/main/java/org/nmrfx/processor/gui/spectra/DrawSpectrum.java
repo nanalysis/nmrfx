@@ -354,7 +354,8 @@ public class DrawSpectrum {
     private double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
         double height = axes.getY().getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
-        double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
+        double dOffset = dataAttributes.getOffset();
+        double dataOffset = height * (dOffset - firstOffset);
         double fraction = getOffsetFraction(i1D, n1D);
         double delta = height * fraction * stackY;
         if (n1D > 0) {
