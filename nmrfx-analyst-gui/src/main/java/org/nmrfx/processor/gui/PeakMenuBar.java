@@ -204,13 +204,7 @@ public class PeakMenuBar {
     }
 
     void cleanUndManagers() {
-        var iterator = undoManagers.keySet().iterator();
-        while (iterator.hasNext()) {
-            PeakList peakList = iterator.next();
-            if (PeakList.get(peakList.getName()) == null) {
-                iterator.remove();
-            }
-        }
+        undoManagers.keySet().removeIf(peakList -> PeakList.get(peakList.getName()) == null);
     }
 
     Optional<UndoManager> getUndoManager() {
@@ -296,7 +290,7 @@ public class PeakMenuBar {
     boolean checkDataset() {
         boolean ok = false;
         String datasetName = getPeakList().getDatasetName();
-        if ((datasetName == null) || datasetName.equals("")) {
+        if ((datasetName == null) || datasetName.isEmpty()) {
             PolyChart chart = PolyChartManager.getInstance().getActiveChart();
             DatasetBase dataset = chart.getDataset();
             if (dataset != null) {
@@ -325,19 +319,19 @@ public class PeakMenuBar {
 
     void mirror2DList() {
         if (getPeakList() != null) {
-            doUndoRedo(peakList -> PeakListTools.addMirroredPeaks(peakList), "mirror 2D");
+            doUndoRedo(PeakListTools::addMirroredPeaks, "mirror 2D");
         }
     }
 
     void autoCouplePeakList() {
         if (getPeakList() != null) {
-            doUndoRedo(peakList -> PeakListTools.autoCoupleHomoNuclear(peakList), "autoCouple");
+            doUndoRedo(PeakListTools::autoCoupleHomoNuclear, "autoCouple");
         }
     }
 
     void removeDiagonal() {
         if (getPeakList() != null) {
-            doUndoRedo(peakList -> PeakListTools.removeDiagonalPeaks(peakList), "remove diagonal");
+            doUndoRedo(PeakListTools::removeDiagonalPeaks, "remove diagonal");
         }
     }
 
@@ -395,9 +389,7 @@ public class PeakMenuBar {
     }
 
     void unifyPeakWidths() {
-        menuTarget.getPeak().ifPresent(peak -> {
-            doUndoRedo(peakList -> PeakListTools.unifyWidths(peak), "unify peak widths");
-        });
+        menuTarget.getPeak().ifPresent(peak -> doUndoRedo(peakList -> PeakListTools.unifyWidths(peak), "unify peak widths"));
     }
 
     void measureIntensities() {
@@ -483,8 +475,7 @@ public class PeakMenuBar {
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
                     PeakList.remove(getPeakList().getName());
-                    PeakList list = null;
-                    setPeakList(list);
+                    setPeakList(null);
                 }
             });
         }
@@ -513,13 +504,11 @@ public class PeakMenuBar {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeaksXPK2(writer, getPeakList());
                     }
-                    if (getPeakList().hasMeasures()) {
-                        if (listFileName.endsWith(".xpk2")) {
-                            String measureFileName = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
-                            try (FileWriter writer = new FileWriter(measureFileName)) {
-                                PeakWriter peakWriter = new PeakWriter();
-                                peakWriter.writePeakMeasures(writer, getPeakList());
-                            }
+                    if (getPeakList().hasMeasures() && listFileName.endsWith(".xpk2")) {
+                        String measureFileName = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
+                        try (FileWriter writer = new FileWriter(measureFileName)) {
+                            PeakWriter peakWriter = new PeakWriter();
+                            peakWriter.writePeakMeasures(writer, getPeakList());
                         }
                     }
                 }
