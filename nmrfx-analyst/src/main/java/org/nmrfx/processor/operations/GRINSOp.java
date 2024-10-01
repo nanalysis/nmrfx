@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
@@ -52,6 +53,8 @@ public class GRINSOp extends MatrixOperation {
 
     private final boolean apodize;
     private final double[] phase;  // init zero values
+    private final boolean[] negateImag;  // init false
+    private final boolean[] negatePairs;  // init false
     /**
      * Preserve the residual noise
      */
@@ -74,10 +77,13 @@ public class GRINSOp extends MatrixOperation {
 
     private final File logHome;
 
-    public GRINSOp(double noise, double scale, int zfFactor, int iterations, double shapeFactor, boolean apodize,
-                   List<Double> phaseList, boolean preserve, boolean synthetic, boolean extendMode,
-                   SampleSchedule schedule, String logHomeName)
-            throws ProcessingException {
+    public GRINSOp(
+            double noise, double scale, int zfFactor, int iterations,
+            double shapeFactor, boolean apodize, List<Double> phaseList,
+            List<Boolean> negateImagList, List<Boolean> negatePairsList,
+            boolean preserve, boolean synthetic, boolean extendMode,
+            SampleSchedule schedule, String logHomeName
+    ) throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
@@ -93,30 +99,58 @@ public class GRINSOp extends MatrixOperation {
         } else {
             this.logHome = new File(logHomeName);
         }
+
         if (!phaseList.isEmpty()) {
             this.phase = new double[phaseList.size()];
             for (int i = 0; i < phaseList.size(); i++) {
                 this.phase[i] = phaseList.get(i);
             }
         } else {
-            phase = null;
+            this.phase = null;
         }
+
+        if (negateImagList != null && !negateImagList.isEmpty()) {
+            this.negateImag = new boolean[negateImagList.size()];
+            for (int i = 0; i < negateImagList.size(); i++) {
+                this.negateImag[i] = negateImagList.get(i);
+            }
+        } else {
+            this.negateImag = null;
+        }
+
+        if (negatePairsList != null && !negatePairsList.isEmpty()) {
+            this.negatePairs = new boolean[negatePairsList.size()];
+            for (int i = 0; i < negatePairsList.size(); i++) {
+                this.negatePairs[i] = negatePairsList.get(i);
+            }
+        } else {
+            this.negatePairs = null;
+        }
+
         this.extendMode = extendMode;
     }
 
-    public GRINSOp(double noise, double scale, int zfFactor, int iterations, double shapeFactor, boolean apodize,
-                   List<Double> phaseList, boolean preserve, boolean synthetic,
-                   SampleSchedule schedule, String logHomeName) {
-        this(noise, scale, zfFactor, iterations, shapeFactor, apodize, phaseList, preserve, synthetic, false,
-                schedule, logHomeName);
-
+    public GRINSOp(
+            double noise, double scale, int zfFactor, int iterations, double shapeFactor,
+            boolean apodize, List<Double> phaseList, List<Boolean> negateImag,
+            List<Boolean> negatePairs, boolean preserve, boolean synthetic,
+            SampleSchedule schedule, String logHomeName
+    ) {
+        this(
+            noise, scale, zfFactor, iterations, shapeFactor, apodize, phaseList, negateImag,
+            negatePairs, preserve, synthetic, false, schedule, logHomeName
+        );
     }
 
-    public GRINSOp(double noise, double scale, int zfFactor, int iterations, double shapeFactor, boolean apodize,
-                   List<Double> phaseList, boolean preserve, List<int[]> skipList)
-            throws ProcessingException {
-        this(noise, scale, zfFactor, iterations, shapeFactor, apodize, phaseList, preserve, false, true,
-                null, null);
+    public GRINSOp(
+            double noise, double scale, int zfFactor, int iterations, double shapeFactor,
+            boolean apodize, List<Double> phaseList, List<Boolean> negateImag,
+            List<Boolean> negatePairs, boolean preserve, List<int[]> skipList
+    ) throws ProcessingException {
+        this(
+            noise, scale, zfFactor, iterations, shapeFactor, apodize, phaseList, negateImag,
+            negatePairs, preserve, false, true, null, null
+        );
         this.skipList = skipList;
     }
 
@@ -156,7 +190,11 @@ public class GRINSOp extends MatrixOperation {
             int[] srcTargetMap = IstMatrix.genZFSrcTargetMap(matrixND, origSizes, false);
             int[] zeroList = IstMatrix.genZFList(matrixND, origSizes, true, skipList);
 
-            GRINS grins = new GRINS(matrixND, noise, scale, iterations, shapeFactor, apodize, phase, preserve, synthetic, zeroList, srcTargetMap, null);
+            GRINS grins = new GRINS(
+                matrixND, noise, scale, iterations, shapeFactor, apodize,
+                phase, negateImag, negatePairs, preserve, synthetic, zeroList,
+                srcTargetMap, null
+            );
             grins.exec();
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
@@ -201,7 +239,11 @@ public class GRINSOp extends MatrixOperation {
                 srcTargetMap = zeroTarget[1];
             }
 
-            GRINS grins = new GRINS(matrixND, noise, scale, iterations, shapeFactor, apodize, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            GRINS grins = new GRINS(
+                matrixND, noise, scale, iterations, shapeFactor, apodize, phase,
+                negateImag, negatePairs, preserve, synthetic, zeroList,
+                srcTargetMap, logFile
+            );
             grins.exec();
 
             for (int i = 0; i < vector.getSize(); i++) {
@@ -232,7 +274,11 @@ public class GRINSOp extends MatrixOperation {
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
-            GRINS grins = new GRINS(matrixND, noise, scale, iterations, shapeFactor, apodize, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            GRINS grins = new GRINS(
+                    matrixND, noise, scale, iterations, shapeFactor, apodize, phase,
+                    negateImag, negatePairs, preserve, synthetic, zeroList,
+                    srcTargetMap, logFile
+            );
             grins.exec();
             matrixND.setVSizes(newSizes);
         } catch (Exception e) {
@@ -270,7 +316,11 @@ public class GRINSOp extends MatrixOperation {
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
-            GRINS grins = new GRINS(matrixND, noise, scale, iterations, shapeFactor, apodize, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            GRINS grins = new GRINS(
+                    matrixND, noise, scale, iterations, shapeFactor, apodize, phase,
+                    negateImag, negatePairs, preserve, synthetic, zeroList,
+                    srcTargetMap, logFile
+            );
             grins.exec();
         } catch (Exception e) {
             log.error("Error in GRINS extend", e);

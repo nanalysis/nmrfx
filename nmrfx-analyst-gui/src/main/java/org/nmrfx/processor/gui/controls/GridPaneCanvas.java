@@ -94,8 +94,7 @@ public class GridPaneCanvas extends GridPane {
             gC.fillRect(0, 0, width, height);
         }
         for (var child : getChildren()) {
-            if (child instanceof PolyChart) {
-                PolyChart chart = (PolyChart) child;
+            if (child instanceof PolyChart chart) {
                 chart.refresh();
             }
         }
@@ -175,6 +174,16 @@ public class GridPaneCanvas extends GridPane {
         layoutChildren();
     }
 
+    public void setPosition(PolyChart node, int iRow, int jColumn, int rowSpan, int columnSpan) {
+        setRowIndex(node, iRow * 2);
+        setRowSpan(node, rowSpan * 2);
+        setColumnIndex(node, jColumn * 2);
+        setColumnSpan(node, columnSpan * 2);
+        updateConstraints();
+        disableCharts(false);
+        layoutChildren();
+    }
+
     public void addChart(PolyChart chart) {
         getChildren().add(chart);
         updateGrid();
@@ -197,10 +206,15 @@ public class GridPaneCanvas extends GridPane {
         }
     }
 
-    public void updateConstraints() {
-        disableCharts(true);
-        int nColumns = 0;
-        int nRows = 0;
+    public record GridValue(int rows, int columns) {
+    }
+
+    public record GridPosition(int rows, int columns, int rowSpan, int columnSpan) {
+    }
+
+    public GridValue getGridSize() {
+        int columns = 0;
+        int rows = 0;
         for (var node : getChildren()) {
             Integer column = getColumnIndex(node);
             Integer row = getRowIndex(node);
@@ -211,15 +225,35 @@ public class GridPaneCanvas extends GridPane {
             Integer rowSpan = getRowSpan(node);
             columnSpan = columnSpan == null ? 1 : columnSpan;
             rowSpan = rowSpan == null ? 1 : rowSpan;
-            nColumns = Math.max(nColumns, column + columnSpan);
-            nRows = Math.max(nRows, row + rowSpan);
+            columns = Math.max(columns, column + columnSpan);
+            rows = Math.max(rows, row + rowSpan);
         }
-        if ((nColumns > 0) && (nRows > 0)) {
-            int nChartColumns = nColumns / 2;
-            int nChartRows = nRows / 2;
+
+        return new GridValue(rows / 2, columns / 2);
+
+    }
+
+    public GridPosition getGridLocation(PolyChart chart) {
+        Integer column = getColumnIndex(chart);
+        Integer row = getRowIndex(chart);
+        Integer columnSpan = getColumnSpan(chart);
+        columnSpan = columnSpan == null ? 1 : columnSpan / 2;
+        Integer rowSpan = getRowSpan(chart);
+        rowSpan = rowSpan == null ? 1 : rowSpan / 2;
+        column = column == null ? 0 : column / 2;
+        row = row == null ? 0 : row / 2;
+        return new GridPosition(row, column, rowSpan, columnSpan);
+    }
+
+    public void updateConstraints() {
+        disableCharts(true);
+        GridValue gridSize = getGridSize();
+        int nChartColumns = gridSize.columns;
+        int nChartRows = gridSize.rows;
+        if ((nChartColumns > 0) && (nChartRows > 0)) {
             getRowConstraints().clear();
             getColumnConstraints().clear();
-            double[][] borderGrid = controller.prepareChildren(getRows(), getColumns());
+            double[][] borderGrid = controller.prepareChildren(nChartRows, nChartColumns);
             for (int i = 0; i < nChartColumns; i++) {
                 ColumnConstraints borderConstraint = new ColumnConstraints();
                 borderConstraint.setPrefWidth(borderGrid[0][i]);
@@ -242,8 +276,8 @@ public class GridPaneCanvas extends GridPane {
 
     private void disableCharts(boolean state) {
         for (var node : getChildren()) {
-            if (node instanceof PolyChart) {
-                ((PolyChart) node).setChartDisabled(state);
+            if (node instanceof PolyChart chart) {
+                chart.setChartDisabled(state);
             }
         }
     }

@@ -102,19 +102,13 @@ public class BMRBSearchController implements Initializable, StageBasedController
                 BMRBSearchTableView.refresh();
             } catch (ExecutionException | InterruptedException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
+                Thread.currentThread().interrupt();
                 dialog.showAndWait();
             }
         }
     }
 
-    public void initTable() {
-        TableColumn<BMRBSearchResult, String> entryIDCol = new TableColumn<>("Entry ID");
-        entryIDCol.setCellValueFactory(new PropertyValueFactory<>("entryID"));
-
-        TableColumn<BMRBSearchResult, String> releaseDateCol = new TableColumn<>("Release Date");
-        releaseDateCol.setCellValueFactory(new PropertyValueFactory<>("releaseDate"));
-
-        TableColumn<BMRBSearchResult, String> dataSummaryCol = new TableColumn<>("Data Summary");
+    private void setupDataSummaryCol(TableColumn<BMRBSearchResult, String> dataSummaryCol) {
         dataSummaryCol.setCellValueFactory((TableColumn.CellDataFeatures<BMRBSearchResult, String> p) ->
         {
             BMRBSearchResult entry = p.getValue();
@@ -138,6 +132,17 @@ public class BMRBSearchController implements Initializable, StageBasedController
             return new SimpleStringProperty(str.toString());
         });
         dataSummaryCol.setMinWidth(200);
+    }
+
+    public void initTable() {
+        TableColumn<BMRBSearchResult, String> entryIDCol = new TableColumn<>("Entry ID");
+        entryIDCol.setCellValueFactory(new PropertyValueFactory<>("entryID"));
+
+        TableColumn<BMRBSearchResult, String> releaseDateCol = new TableColumn<>("Release Date");
+        releaseDateCol.setCellValueFactory(new PropertyValueFactory<>("releaseDate"));
+
+        TableColumn<BMRBSearchResult, String> dataSummaryCol = new TableColumn<>("Data Summary");
+        setupDataSummaryCol(dataSummaryCol);
 
         TableColumn<BMRBSearchResult, String> entryTitleCol = new TableColumn<>("Entry Title");
         entryTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));

@@ -165,7 +165,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         MenuButton peakListMenuButton = initMenuBar();
-        peakNavigator = PeakNavigator.create(this).addShowPeakButton().initialize(peakNavigatorToolBar, peakListMenuButton);
+        peakNavigator = PeakNavigator.create(this).addShowPeakButton().addIDPeakButton().initialize(peakNavigatorToolBar, peakListMenuButton);
         initTable();
         initReferenceTable();
         setFieldActions();
