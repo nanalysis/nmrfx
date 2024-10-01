@@ -13,6 +13,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -270,25 +271,45 @@ public class PeakMenuBar {
         }
     }
 
-    void foldPeaks(){
+    void foldPeaks() {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
-            List<SpectralDim> spectralDims = peakList.getFoldedDims();
-            if (spectralDims.isEmpty()) {
-                GUIUtils.warn("Spectral dimensions not found!", "Indicate dimensions to fold");
+            List dimLabels = peakFolder.dimLabels;
+            List<SpectralDim> dimsToFold = peakList.getFoldedDims();
+            if (dimsToFold.isEmpty()) {
+                GUIUtils.warn("Assign dimension to fold", "Indicate which dimension to fold in Peak Tool's Reference tab");
             }
-            String[] dims = new String[spectralDims.size()];
-            boolean[] alias = new boolean[spectralDims.size()];
-            for(int i = 0; i < spectralDims.size(); i++) {
-                dims[i] = spectralDims.get(i).getDimName();
-                alias[i] = spectralDims.get(i).getFoldMode() == 'a';
+            // if the peaklist is only 2 dimensions, ensure that they are H and C
+            // otherwise user is required to set the bonded dimension
+            for (int i = 0; i < dimsToFold.size(); i++) {
+                String bondedDim = dimsToFold.get(i).getRelationDim();
+                if (bondedDim.isBlank()) {
+                    if (peakList.getNDim() == 2 &&
+                            new HashSet<>(peakList.getSpectralDims().stream()
+                                    .map(SpectralDim::getNucleus)
+                                    .map(s -> s.substring(s.length() - 1))
+                                    .toList()).containsAll(dimLabels)) {
+                        String currentDim = dimsToFold.get(i).getDimName();
+                        bondedDim = peakList.getSpectralDims().stream()
+                                .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().get(0).getDimName();
+                        dimsToFold.get(i).setRelation(bondedDim);
+                    } else {
+                        GUIUtils.warn("Set bonded dimension", "Assign bonded dimension in Peak Tool's reference tab");
+                    }
+                }
             }
-            try {
-                peakFolder.unfoldPeakList(peakList, dims, alias);
-            } catch (Exception e) {
-                GUIUtils.warn("Assign bonded dimensions in Peak Tool", "Assign bonded dimensions in Peak Tool");
+            String[] dims = new String[dimsToFold.size()];
+            boolean[] alias = new boolean[dimsToFold.size()];
+            for (int i = 0; i < dimsToFold.size(); i++) {
+                dims[i] = dimsToFold.get(i).getDimName();
+                alias[i] = dimsToFold.get(i).getFoldMode() == 'a';
             }
+
+            if (Molecule.getActive() == null) {
+                GUIUtils.warn("No Active Molecule", "Load a molecule");
+            }
+            peakFolder.unfoldPeakList(peakList, dims, alias);
 
         }
     }

@@ -4,7 +4,6 @@ import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistributi
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.Molecule;
 
@@ -13,9 +12,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PeakFolder {
-    List<String> dimLabels = Arrays.asList("H","C");
+    public List<String> dimLabels = Arrays.asList("H","C");
     HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
     public PeakFolder() {
         loadComponents();
@@ -59,8 +59,8 @@ public class PeakFolder {
         for (Map.Entry<String, ArrayList<String[]>> entry : clusters.entrySet()) {
             createMixtureModel(entry.getKey(), entry.getValue());
         }
-        List<String[]> allLines = clusters.values().stream().flatMap(Collection::stream).toList();
-        createMixtureModel("all", (ArrayList<String[]>) allLines);
+        ArrayList<String[]> allLines = clusters.values().stream().flatMap(Collection::stream).collect(Collectors.toCollection(ArrayList::new));
+        createMixtureModel("all", allLines);
     }
 
     private void createMixtureModel(String groupName, ArrayList<String[]> clusterLines) {
@@ -98,20 +98,6 @@ public class PeakFolder {
                 bounds[i][0] = dataset.pointToPPM(iDim, 0);
                 bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
                 String relationDim = peakList.getSpectralDim(dimToFold[i]).getRelationDim();
-                if (relationDim.isBlank()) {
-                    if (peakList.getNDim() == 2 &&
-                            new HashSet<>(peakList.getSpectralDims().stream()
-                                    .map(SpectralDim::getNucleus)
-                                    .map(s -> s.substring(s.length() - 1))
-                                    .toList()).containsAll(dimLabels)) {
-                        String currentDim = peakList.getSpectralDim(dimToFold[i]).getDimName();
-                        relationDim = peakList.getSpectralDims().stream()
-                                .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().get(0).getDimName();
-                    } else {
-                        throw new NullPointerException();
-                    }
-
-                }
                 bondedDims[i] = peakList.getSpectralDim(relationDim).getIndex();
             }
 
