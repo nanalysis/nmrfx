@@ -170,7 +170,7 @@ public class PeakMenuBar {
 
         for (Entry<String, Consumer<PeakList>> entry : extras.entrySet()) {
             MenuItem menuItem = new MenuItem(entry.getKey());
-            Consumer consumer = entry.getValue();
+            Consumer<PeakList> consumer = entry.getValue();
             menuItem.setOnAction(e -> consumer.accept(getPeakList()));
             editMenu.getItems().add(menuItem);
         }
@@ -275,25 +275,25 @@ public class PeakMenuBar {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
-            List dimLabels = peakFolder.dimLabels;
+            List<String> dimLabels = peakFolder.dimLabels;
             List<SpectralDim> dimsToFold = peakList.getFoldedDims();
             if (dimsToFold.isEmpty()) {
                 GUIUtils.warn("Assign dimension to fold", "Indicate which dimension to fold in Peak Tool's Reference tab");
             }
             // if the peaklist is only 2 dimensions, ensure that they are H and C
             // otherwise user is required to set the bonded dimension
-            for (int i = 0; i < dimsToFold.size(); i++) {
-                String bondedDim = dimsToFold.get(i).getRelationDim();
+            for (SpectralDim dim : dimsToFold) {
+                String bondedDim = dim.getRelationDim();
                 if (bondedDim.isBlank()) {
                     if (peakList.getNDim() == 2 &&
                             new HashSet<>(peakList.getSpectralDims().stream()
                                     .map(SpectralDim::getNucleus)
                                     .map(s -> s.substring(s.length() - 1))
                                     .toList()).containsAll(dimLabels)) {
-                        String currentDim = dimsToFold.get(i).getDimName();
+                        String currentDim = dim.getDimName();
                         bondedDim = peakList.getSpectralDims().stream()
                                 .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().get(0).getDimName();
-                        dimsToFold.get(i).setRelation(bondedDim);
+                        dim.setRelation(bondedDim);
                     } else {
                         GUIUtils.warn("Set bonded dimension", "Assign bonded dimension in Peak Tool's reference tab");
                     }
