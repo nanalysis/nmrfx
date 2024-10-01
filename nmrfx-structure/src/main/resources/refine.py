@@ -464,6 +464,7 @@ class refine:
         self.NEFfile = ''
         self.energyLists = None
         self.dihedral = None
+        self.ssGen = None
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
@@ -647,18 +648,16 @@ class refine:
 
     def getDistanceConstraintSet(self, name):
         molConstraints = self.molecule.getMolecularConstraints()
-        disCon = molConstraints.getDistanceSet(name, True)
+        disCon = molConstraints.getNoeSet(name, True)
         return disCon
 
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
         if bond == False:
             disCon = self.getDistanceConstraintSet("noe_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper)
-            disCon.containsBonds(False)
         else:
             disCon = self.getDistanceConstraintSet("bond_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
-            disCon.containsBonds(True)
+            disCon.containsBonds(bond)
+        disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
     def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
@@ -1293,7 +1292,9 @@ class refine:
             if fileName.endswith('.pdb'):
                 molio.readPDB(fileName)
             elif fileName.endswith('.nef'):
-                self.NEFReader(fileName)
+                self.STARReader(fileName, True)
+            elif fileName.endswith('.str'):
+                self.STARReader(fileName, False)
             else:
                 raise ValueError("Filename must end in .pdb or .nef")
         else:
@@ -1303,7 +1304,10 @@ class refine:
             # in the YAML file.
             if 'nef' in data:
                 fileName = data['nef']
-                self.NEFReader(fileName)
+                self.STARReader(fileName, True)
+            elif 'star' in data:
+                fileName = data['star']
+                self.STARReader(fileName, False)
 
             # Checks if 'molecule' data block is specified.
             if 'molecule' in data:
@@ -1347,7 +1351,11 @@ class refine:
 
 
         if 'rna' in data:
-            self.findRNAHelices(data['rna'])
+            if not self.ssGen:
+                self.findRNAHelices(data['rna'])
+            if 'vienna' in data['rna']:
+                self.vienna = data['rna']['vienna']
+                self.addHelicesRestraints(self.vienna)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
                 rnaLinks,rnaBonds = self.findSSLinks()
                 molData['link'] = rnaLinks
@@ -1438,7 +1446,7 @@ class refine:
             self.readShiftDict(data['shifts'],residues)
 
         if 'rna' in data:
-            self.readRNADict(data['rna'])
+            self.readRNADict(data)
         self.readSuiteAngles()
 
         self.readAngleFiles()
@@ -1452,6 +1460,14 @@ class refine:
             self.initializeData = (data['initialize'])
         else:
             self.initializeData = None
+
+    def initAnneal(self, data):
+        seed = 0
+        self.setup('./',seed,writeTrajectory=False, usePseudo=False)
+        self.energy()
+        self.setSeed(0)
+        if 'anneal' in data:
+            self.dOpt = self.readAnnealDict(data['anneal'])
 
     def prepAngles(self):
         print 'Initializing angles'
@@ -1802,9 +1818,12 @@ class refine:
             self.findHelices(rnaDict['vienna'])
             self.vienna = rnaDict['vienna']
 
-    def readRNADict(self, rnaDict):
+    def readRNADict(self, data):
+        rnaDict = data['rna']
+        if 'vienna' in rnaDict:
+            self.vienna = rnaDict['vienna']
         if 'ribose' in rnaDict:
-            if rnaDict['ribose'] == "Constrain":
+            if not 'tree' in data and rnaDict['ribose'] == "Constrain":
                 polymers = self.molecule.getPolymers()
                 for polymer in polymers:
                     self.addRiboseRestraints(polymer)
@@ -1918,7 +1937,7 @@ class refine:
                     print "Error adding angle constraint",fullAtoms
                     pass
 
-    def NEFReader(self, fileName):
+    def STARReader(self, fileName, nefMode):
         from java.io import FileReader
         from java.io import BufferedReader
         from java.io import File
@@ -1931,8 +1950,13 @@ class refine:
         star = STAR3(bfR,'star3')
         star.scanFile()
         file = File(fileName)
-        reader = NMRNEFReader(file, star) # NMRStarReader(file, star)
-        molecule = reader.processNEF()
+        if nefMode:
+            reader = NMRNEFReader(file, star)
+            molecule = reader.processNEF()
+        else:
+            reader = NMRStarReader(file, star)
+            reader.process()
+            molecule = MoleculeFactory.getActive()
         self.molecule = molecule
         molecule.setMethylRotationActive(True);
         energyList = EnergyLists(molecule)
@@ -2401,18 +2425,20 @@ class refine:
        
 
     def findHelices(self,vienna):
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
         self.ssGen = SSGen(self.molecule, vienna)
         self.ssGen.secondaryStructGen()
+
+    def addHelicesRestraints(self, vienna):
         for ss in self.ssGen.structures:
             if ss.getName() == "Helix":
                 residues = ss.getResidues()
                 self.addHelix(residues)
                 self.addHelixPP(residues)
 
+        polymers = self.molecule.getPolymers()
+        allResidues = []
+        for polymer in polymers:
+            allResidues += polymer.getResidues()
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
             start = m.start()+1
@@ -3075,18 +3101,20 @@ class refine:
         if save:
             self.output()
 
-    def refine(self,dOpt=None):
+    def refine(self,dOpt=None,mode='refine'):
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
-        self.mode = 'refine'
-
+        self.restart()
+        self.mode = mode
+        if mode == 'cff':
+            dOpt['cffSteps'] = 1000
         self.rDyn = self.rinertia()
         self.rDyn.setKinEScale(dOpt['kinEScale'])
         energy = self.energy()
-        print 'start energy is', energy
+        print('start energy is', energy)
 
-        stages = getAnnealStages(dOpt, self.settings,'refine')
+        stages = getAnnealStages(dOpt, self.settings,mode)
         for stageName in stages:
             stage = stages[stageName]
             runStage(stage, self, self.rDyn)

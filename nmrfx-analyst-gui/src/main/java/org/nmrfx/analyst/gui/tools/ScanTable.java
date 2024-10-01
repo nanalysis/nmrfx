@@ -595,7 +595,7 @@ public class ScanTable {
             File file = new File(filePath);
             NMRData nmrData = null;
             try {
-                nmrData = NMRDataUtil.getFID(filePath);
+                nmrData = NMRDataUtil.getFID(file);
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
 
@@ -813,7 +813,7 @@ public class ScanTable {
 
                             NMRData nmrData;
                             try {
-                                nmrData = NMRDataUtil.getFID(filePath.toString());
+                                nmrData = NMRDataUtil.getFID(filePath.toFile());
                             } catch (IOException ioE) {
                                 GUIUtils.warn("Load scan table", "Couldn't load this file: " + filePath);
                                 return;
@@ -1089,7 +1089,9 @@ public class ScanTable {
         unifyOffsetItem.setOnAction(e -> unifyOffset());
         MenuItem rampOffsetItem = new MenuItem("ramp");
         rampOffsetItem.setOnAction(e -> rampOffset());
-        offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem);
+        MenuItem popOffsetItem = new MenuItem("pop");
+        popOffsetItem.setOnAction(e -> popOffset());
+        offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem, popOffsetItem);
         offsetCol.setContextMenu(offsetMenu);
         offsetCol.setPrefWidth(50);
         columnMenus.put(offsetCol, offsetMenu);
@@ -1686,6 +1688,24 @@ public class ScanTable {
                     dataAttr.setOffset(offset);
                     offset += offsetIncr;
                 }
+            }
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
+    void popOffset() {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            int nItems = datasetAttributesList.size();
+            if (nItems > 0) {
+                double min = datasetAttributesList.stream().mapToDouble(d -> d.getOffset()).min().orElse(0.0);
+                for (DatasetAttributes dataAttr : datasetAttributesList) {
+                    dataAttr.setOffset(min);
+                }
+                double offset = (1.0 - min) / 2.0 + min;
+                dataAttr0.setOffset(offset);
             }
             tableView.refresh();
             PolyChart chart = scannerTool.getChart();

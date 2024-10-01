@@ -68,7 +68,7 @@ public class RS2DDataTest {
         }
         Path procNumPath = Path.of(tmpHome, "Proc", "1");
         File outFile = procNumPath.resolve("data.dat").toFile();
-        RS2DData rs2DData = new RS2DData(inFile.toString(), null);
+        RS2DData rs2DData = new RS2DData(inFile, null);
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
@@ -83,7 +83,7 @@ public class RS2DDataTest {
         assumeFalse(ERR_MSG + inFileDat, testFilesMissing(inFileDat));
         Path procNumPath = Path.of(tmpHome, "Proc", "2");
         File outFile = procNumPath.resolve("data.dat").toFile();
-        RS2DData rs2DData = new RS2DData(inFile.toString(), null);
+        RS2DData rs2DData = new RS2DData(inFile, null);
         var dataset = rs2DData.toDataset("test.nv");
         rs2DData.writeOutputFile(dataset, procNumPath);
         long compareResult = DatasetCompare.compare(inFileDat, outFile);
@@ -98,7 +98,7 @@ public class RS2DDataTest {
         File inFile = Path.of(fidHome, "rs2d/1Dproton/680").toFile();
         assumeFalse(ERR_MSG + inFile, testFilesMissing(inFile));
         File outHeader = Path.of(tmpHome, "header_mod.xml").toFile();
-        RS2DData rs2DData = new RS2DData(inFile.toString(), null);
+        RS2DData rs2DData = new RS2DData(inFile, null);
 
         Header header = rs2DData.getHeader();
         header.<NumberValue>get(Parameter.MATRIX_DIMENSION_1D).setValue(555);

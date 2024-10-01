@@ -46,9 +46,13 @@ public class IdResult {
         return dis;
     }
 
-    public double dismin = 0.0;
-    public double dismax = 0.0;
-    public double dis = 0.0;
+    private double dismin = 0.0;
+    private double dismax = 0.0;
+    private double dis = 0.0;
+
+    private double disExp = 0.0;
+
+    private double contrib = 0.0;
     double[] dp;
     SpatialSet[] spatialSets;
     double inRange = 0;
@@ -60,6 +64,12 @@ public class IdResult {
         spatialSets = new SpatialSet[nDim];
     }
 
+    public void setDistances(double dis, double disMin, double disMax) {
+        this.dis = dis;
+        this.dismin = disMin;
+        this.dismax = disMax;
+        this.disExp = dismax > 1.0-6 ? Math.pow(dismax, -6.0) : 1.0;
+    }
     void setSpatialSet(int i, SpatialSet value) {
         spatialSets[i] = value;
     }
@@ -68,16 +78,42 @@ public class IdResult {
         return spatialSets[i];
     }
 
+    public double getDP(int i) {
+        return dp[i];
+    }
+
+    public double getDPAvg() {
+        double sum = 0.0;
+        for (double v:dp) {
+            sum += v*v;
+        }
+        return Math.sqrt(sum);
+    }
+
     public double getPPMError(double weight) {
         double sum = 0.0;
         weight = weight * weight;
-        for (int j = 0; j < dp.length; j++) {
-            sum += ((dp[j] / 100.0) * (dp[j] / 100.0)) / weight;
+        for (double v : dp) {
+            sum += ((v / 100.0) * (v / 100.0)) / weight;
         }
-        double result = Math.exp(-1.0 * sum / 2.0);
-        return result;
+        return Math.exp(-1.0 * sum / 2.0);
     }
 
+    public double disExp() {
+        return disExp;
+    }
+
+    public double inRange() {
+        return inRange;
+    }
+
+    public void setContrib(double value) {
+        this.contrib = value;
+    }
+
+    public double getContrib() {
+        return contrib;
+    }
     @Override
     public String toString() {
         StringBuilder strResult = new StringBuilder();
@@ -88,32 +124,32 @@ public class IdResult {
             String aName = spatialSets[j].atom.name;
             String cName = "X";
             char oneLetter = 'X';
-            if ((spatialSets[j].atom.entity instanceof Residue) && ((Residue) spatialSets[j].atom.entity).isStandard()) {
-                oneLetter = ((Residue) spatialSets[j].atom.entity).getOneLetter();
-                cName = ((Residue) spatialSets[j].atom.entity).polymer.getName();
+            if ((spatialSets[j].atom.entity instanceof Residue residue) && residue.isStandard()) {
+                oneLetter = residue.getOneLetter();
+                cName = residue.polymer.getName();
             }
             strResult.append(String.format("%s", cName)).append(" ");
-            strResult.append(String.format("%s", oneLetter) + " ");
-            strResult.append(String.format("%3s", rNum) + ".");
-            strResult.append(String.format("%-4s", aName) + " ");
+            strResult.append(String.format("%s", oneLetter)).append(" ");
+            strResult.append(String.format("%3s", rNum)).append(".");
+            strResult.append(String.format("%-4s", aName)).append(" ");
         }
 
         for (int j = 0; j < nDim; j++) {
             long longVal = (long) (dp[j] + 0.5);
-            strResult.append(Format.format30(longVal) + " ");
+            strResult.append(Format.format30(longVal)).append(" ");
         }
         if (hasDistances) {
             long longVal = (long) (inRange + 0.5);
-            strResult.append(Format.format30(longVal) + " ");
-            strResult.append(Format.format2(dis) + " ");
-            strResult.append(Format.format2(dismin) + " ");
-            strResult.append(Format.format2(dismax) + " ");
+            strResult.append(Format.format30(longVal)).append(" ");
+            strResult.append(Format.format2(dis)).append(" ");
+            strResult.append(Format.format2(dismin)).append(" ");
+            strResult.append(Format.format2(dismax)).append(" ");
         } else {
             strResult.append("{} {} {} {} ");
         }
         double delta = 0.0;
-        for (int i = 0; i < dp.length; i++) {
-            delta += dp[i] * dp[i];
+        for (double v : dp) {
+            delta += v * v;
         }
         delta = Math.sqrt(delta);
 

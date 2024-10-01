@@ -4,12 +4,12 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfx</artifactId>
-    <version>11.4.8-SNAPSHOT</version>
+    <version>11.4.11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.organization>nanalysis</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>

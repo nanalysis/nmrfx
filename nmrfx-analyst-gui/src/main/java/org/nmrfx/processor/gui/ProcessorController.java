@@ -605,7 +605,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     public void viewDatasetInApp(Dataset dataset) {
         Dataset currentDataset = (Dataset) chart.getDataset();
         if (dataset != null) {
-            chart.getFXMLController().addDataset(dataset, false, false);
+            chart.getFXMLController().addDataset(chart, dataset, false, false);
             if ((currentDataset != null) && (currentDataset != dataset)) {
                 currentDataset.close();
             }

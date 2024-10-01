@@ -39,15 +39,15 @@ public class DatasetBrowserUtil {
             return items;
         }
         // Need to handle the JCAMP files differently
-        Map<Boolean, List<String>> partitionedFiles = files.stream().collect(Collectors.partitioningBy(f -> JCAMPData.findFID(new StringBuilder(f))));
+        Map<Boolean, List<String>> partitionedFiles = files.stream().collect(Collectors.partitioningBy(f -> JCAMPData.findFID(new File(f))));
         items.addAll(handleJcampFiles(path1, partitionedFiles.get(Boolean.TRUE)));
         for (String fileName : partitionedFiles.get(Boolean.FALSE)) {
             try {
-                NMRData data = NMRDataUtil.getFID(fileName);
+                NMRData data = NMRDataUtil.getFID(new File(fileName));
                 DatasetSummary datasetSummary = createDatasetSummary(path1, data, getProcessedDataset(Paths.get(fileName).toFile()));
                 items.add(datasetSummary);
-            } catch (IOException | IllegalArgumentException ex) {
-                log.warn(ex.getMessage(), ex);
+            } catch (Exception ex) {
+                log.error(ex.getMessage() + " " + fileName, ex);
             }
         }
         if (savePath != null) {
@@ -69,8 +69,13 @@ public class DatasetBrowserUtil {
         DatasetSummary datasetSummary = nmrData.getDatasetSummary();
         Path nmrDataPath = Paths.get(nmrData.getFilePath());
         datasetSummary.setPath(relativeDirectory.relativize(nmrDataPath).toString());
+        if (nmrDataPath.toFile().isFile()) {
+            nmrDataPath = nmrDataPath.getParent();
+        }
         datasetSummary.setPresent(true);
-        datasetSummary.setProcessed(paths.stream().map(nmrDataPath::relativize).map(Path::toString).toList());
+        datasetSummary.setProcessed(paths.stream()
+                .sorted((a,b) -> Long.compare(b.toFile().lastModified(),a.toFile().lastModified()))
+                .map(nmrDataPath::relativize).map(Path::toString).toList());
         return datasetSummary;
     }
 
@@ -89,7 +94,7 @@ public class DatasetBrowserUtil {
         // Convert the filepath strings to JCAMPData
         List<JCAMPData> nmrData = new ArrayList<>(jcampFilepathStrings.stream().map(filepath -> {
             try {
-                return NMRDataUtil.getNMRData(filepath);
+                return NMRDataUtil.getNMRData(new File(filepath));
             } catch (IOException e) {
                 log.warn(e.getMessage(), e);
                 return null;
@@ -135,7 +140,7 @@ public class DatasetBrowserUtil {
         paths.forEach(p -> {
             if (!pathDatasetBaseCache.containsKey(p)) {
                 try {
-                    NMRData data = NMRDataUtil.loadNMRData(p.toString(), null);
+                    NMRData data = NMRDataUtil.loadNMRData(p.toFile(), null, false);
                     if (data instanceof NMRViewData nmrViewData) {
                         pathDatasetBaseCache.put(p, nmrViewData.getDataset());
                     }

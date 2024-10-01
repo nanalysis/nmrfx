@@ -56,15 +56,12 @@ public class NMRViewData implements NMRData {
     /**
      * open NMRView parameter and data files
      *
-     * @param path : full path to the .fid directory, fid file or spectrum
+     * @param file : full path to the .fid directory, fid file or spectrum
      * @throws IOException if an I/O error occurs
      */
-    public NMRViewData(String path) throws IOException {
-        if (path.endsWith(File.separator)) {
-            path = path.substring(0, path.length() - 1);
-        }
-        this.fpath = path;
-        openDataFile(path);
+    public NMRViewData(File file, boolean saveToProject) throws IOException {
+        this.fpath = file.toString();
+        openDataFile(file.toString(), saveToProject);
     }
 
     @Override
@@ -72,15 +69,15 @@ public class NMRViewData implements NMRData {
         dataset.close();
     }
 
-    public static boolean findFID(StringBuilder bpath) {
-        return findFIDFiles(bpath.toString());
+    public static boolean findFID(File file) {
+        return findFIDFiles(file);
     }
 
-    private static boolean findFIDFiles(String dpath) {
+    private static boolean findFIDFiles(File file) {
         boolean found = false;
-        if (dpath.endsWith(".nv")) {
+        if (file.getName().endsWith(".nv")) {
             found = true;
-        } else if (dpath.endsWith(".ucsf")) {
+        } else if (file.getName().endsWith(".ucsf")) {
             found = true;
         }
         return found;
@@ -537,16 +534,14 @@ public class NMRViewData implements NMRData {
     }
 
     // open NMRView data file, read header
-    private void openDataFile(String datapath) throws IOException {
-        System.out.println("open data file " + datapath);
+    private void openDataFile(String datapath, boolean saveToProject) throws IOException {
         File file = new File(datapath);
 
         List<DatasetBase> currentDatasets = ProjectBase.getActive().getDatasetsWithFile(file);
         if (!currentDatasets.isEmpty()) {
-            System.out.println("already open");
             dataset = (Dataset) currentDatasets.get(0);
         } else {
-            dataset = new Dataset(datapath, datapath, true, false);
+            dataset = new Dataset(datapath, datapath, true, false, saveToProject);
         }
     }
 

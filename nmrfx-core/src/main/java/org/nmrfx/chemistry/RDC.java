@@ -100,10 +100,7 @@ public class RDC {
     public RDC(Atom atom1, Atom atom2) {
         this.atom1 = atom1;
         this.atom2 = atom2;
-        this.vector = atom2.getPoint().subtract(atom1.getPoint());
-        String elemName1 = atom1.getElementName();
-        String elemName2 = atom2.getElementName();
-        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
+        updateVector();
     }
 
     public RDC(Atom atom1, Atom atom2, Vector3D vector) {
@@ -115,6 +112,12 @@ public class RDC {
         maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
     }
 
+    public void updateVector() {
+        vector = atom2.getPoint().subtract(atom1.getPoint());
+        String elemName1 = atom1.getElementName();
+        String elemName2 = atom2.getElementName();
+        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
+    }
     public Double getRDC() {
         return rdcPred;
     }

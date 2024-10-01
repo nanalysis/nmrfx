@@ -4,6 +4,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -11,6 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.peaks.PeakIDController;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -47,6 +49,7 @@ public class PeakNavigator implements PeakListener {
     Consumer<PeakNavigator> closeAction = null;
     boolean showAtoms = false;
     boolean addShowPeakButton = false;
+    boolean addIdPeakButton = false;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
     Label intensityFieldLabel;
@@ -55,6 +58,7 @@ public class PeakNavigator implements PeakListener {
     Label intensityLabel;
     ChoiceBox<String> assignModeChoice = new ChoiceBox<>();
 
+    PeakIDController idController = null;
     private PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
     }
@@ -75,6 +79,11 @@ public class PeakNavigator implements PeakListener {
 
     public PeakNavigator addShowPeakButton() {
         this.addShowPeakButton = true;
+        return this;
+    }
+
+    public PeakNavigator addIDPeakButton() {
+        this.addIdPeakButton = true;
         return this;
     }
 
@@ -155,6 +164,11 @@ public class PeakNavigator implements PeakListener {
             showPeakButton.setOnAction(e -> PeakDisplayTool.gotoPeak(currentPeak));
             toolBar.getItems().add(showPeakButton);
         }
+        if (addIdPeakButton) {
+            Button idPeakButton = new Button("Id");
+            idPeakButton.setOnAction(e -> idPeak(currentPeak));
+            toolBar.getItems().add(idPeakButton);
+        }
 
         if (showAtoms) {
             atomXFieldLabel = new Label("X:");
@@ -193,7 +207,7 @@ public class PeakNavigator implements PeakListener {
         });
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
 
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
@@ -262,6 +276,12 @@ public class PeakNavigator implements PeakListener {
     }
 
     public void setPeak(Peak peak) {
+        if (peak != currentPeak) {
+            currentPeak = peak;
+            if ((idController != null) && (idController.getStage().isShowing())) {
+                idPeak(peak);
+            }
+        }
         currentPeak = peak;
         setPeakIdField();
         peakNavigable.refreshPeakView(peak);
@@ -523,7 +543,7 @@ public class PeakNavigator implements PeakListener {
             matchPeaks = Optional.empty();
             int id = Integer.MIN_VALUE;
             String idString = idField.getText().trim();
-            if (idString.length() != 0) {
+            if (!idString.isEmpty()) {
                 try {
                     id = Integer.parseInt(idString);
                 } catch (NumberFormatException nfE) {
@@ -593,5 +613,14 @@ public class PeakNavigator implements PeakListener {
         if (peakEvent.getSource() instanceof PeakList sourceList && sourceList == peakList) {
             Fx.runOnFxThread(this::handlePeakListChangedEvent);
         }
+    }
+
+    void idPeak(Peak peak) {
+        if (idController == null) {
+            idController = PeakIDController.create(this);
+        }
+        idController.getStage().show();
+        idController.getStage().toFront();
+        idController.gotoPeak(peak);
     }
 }

@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.io;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,6 +183,8 @@ public class SDFile {
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            atom.setFlatPoint(pt);
+            atom.setFlatPoint(pt);
 
             String massDiffString = string.substring(34, 36).trim();
             int massDiff = 0;
@@ -405,6 +408,9 @@ public class SDFile {
             readStexts(lineReader);
             readProps(lineReader);
             readFreeForm(lineReader);
+            if (compound == null) {
+                ProjectBase.getActive().putMolecule(molecule);
+            }
         } catch (IOException ioE) {
             int iLine = lineReader == null ? -1 : lineReader.getLineNumber();
             throw new MoleculeIOException("error reading at line " + iLine);

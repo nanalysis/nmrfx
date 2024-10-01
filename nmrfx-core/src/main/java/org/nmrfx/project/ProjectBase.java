@@ -45,6 +45,8 @@ import static java.util.Objects.requireNonNullElse;
  */
 @PluginAPI("parametric")
 public class ProjectBase {
+    private static final String PEAKS = "peaks";
+    private static final String PROJECT_DIR_NOT_SET = "Project directory not set";
     private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 
     private static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
@@ -120,6 +122,9 @@ public class ProjectBase {
         return fileNum;
     }
 
+    public final void clearActive() {
+        activeProject = null;
+    }
     public final void setActive() {
         PropertyChangeEvent event = new PropertyChangeEvent(this, "project", null, this);
         activeProject = this;
@@ -221,12 +226,14 @@ public class ProjectBase {
     public void addDataset(DatasetBase dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
+        projectChanged(true);
     }
 
     public void renameDataset(DatasetBase dataset, String newName) {
         datasetMap.remove(dataset.getFileName(), dataset);
         dataset.setFileName(newName);
         addDataset(dataset, newName);
+        projectChanged(true);
     }
 
     public boolean isDatasetPresent(File file) {
@@ -292,22 +299,32 @@ public class ProjectBase {
 
     public void removePeakList(String name) {
         peakLists.remove(name);
+        projectChanged(true);
     }
 
     public void clearAllPeakLists() {
         peakLists.clear();
+        projectChanged(true);
     }
 
     public MoleculeBase getActiveMolecule() {
+        if ((activeMol == null) && !getMolecules().isEmpty()){
+            activeMol = getMolecules().stream().findFirst().orElse(null);
+        }
         return activeMol;
     }
 
     public void setActiveMolecule(MoleculeBase molecule) {
         activeMol = molecule;
+        PropertyChangeEvent event = new PropertyChangeEvent(this, "molecule", null, activeMol);
+        if (pcs != null) {
+            pcs.firePropertyChange(event);
+        }
     }
 
     public void putMolecule(MoleculeBase molecule) {
         molecules.put(molecule.getName(), molecule);
+        projectChanged(true);
     }
 
     public MoleculeBase getMolecule(String name) {
@@ -334,11 +351,13 @@ public class ProjectBase {
         if (mol != null) {
             molecules.remove(name);
         }
+        projectChanged(true);
     }
 
     public void clearAllMolecules() {
         activeMol = null;
         molecules.clear();
+        projectChanged(true);
     }
 
 
@@ -382,21 +401,12 @@ public class ProjectBase {
     public void addDatasetListListener(Object mapChangeListener) {
     }
 
-    public void loadProject(Path projectDir) throws IOException, IllegalStateException {
-
-        String[] subDirTypes = {"datasets", "peaks"};
-        for (String subDir : subDirTypes) {
-            loadProject(projectDir, subDir);
-        }
-
-    }
-
     public void loadProject(Path projectDir, String subDir) throws IOException, IllegalStateException {
         ProjectBase currentProject = getActive();
         setActive();
         boolean mpk2Mode = false;
         if (subDir.equals("mpk2")) {
-            subDir = "peaks";
+            subDir = PEAKS;
             mpk2Mode = true;
         }
         FileSystem fileSystem = FileSystems.getDefault();
@@ -405,7 +415,7 @@ public class ProjectBase {
             if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
                 switch (subDir) {
                     case "datasets" -> loadDatasets(subDirectory);
-                    case "peaks" -> {
+                    case PEAKS -> {
                         if (mpk2Mode) {
                             loadMPKs(subDirectory);
                         } else {
@@ -425,7 +435,7 @@ public class ProjectBase {
         ProjectBase currentProject = getActive();
         setActive();
         if (getDirectory() == null) {
-            throw new IllegalArgumentException("Project directory not set");
+            throw new IllegalArgumentException(PROJECT_DIR_NOT_SET);
         }
         savePeakLists();
         saveDatasets();
@@ -477,10 +487,10 @@ public class ProjectBase {
         FileSystem fileSystem = FileSystems.getDefault();
 
         if (getDirectory() == null) {
-            throw new IllegalArgumentException("Project directory not set");
+            throw new IllegalArgumentException(PROJECT_DIR_NOT_SET);
         }
         Path projDir = this.getDirectory();
-        Path peakDirPath = Paths.get(projDir.toString(), "peaks");
+        Path peakDirPath = Paths.get(projDir.toString(), PEAKS);
         try (Stream<Path> files = Files.list(peakDirPath)) {
             files.forEach(path -> {
                 String fileName = path.getFileName().toString();
@@ -499,8 +509,8 @@ public class ProjectBase {
         }
 
         for (PeakList peakListObj : peakLists.values()) {
-            Path peakFilePath = fileSystem.getPath(projDir.toString(), "peaks", peakListObj.getName() + ".xpk2");
-            Path measureFilePath = fileSystem.getPath(projDir.toString(), "peaks", peakListObj.getName() + ".mpk2");
+            Path peakFilePath = fileSystem.getPath(projDir.toString(), PEAKS, peakListObj.getName() + ".xpk2");
+            Path measureFilePath = fileSystem.getPath(projDir.toString(), PEAKS, peakListObj.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
             try {
                 try (FileWriter writer = new FileWriter(peakFilePath.toFile())) {
@@ -574,7 +584,7 @@ public class ProjectBase {
 
     public void saveDatasets() throws IOException {
         if (projectDir == null) {
-            throw new IllegalArgumentException("Project directory not set");
+            throw new IllegalArgumentException(PROJECT_DIR_NOT_SET);
         }
         Path datasetDir = projectDir.resolve("datasets");
 
@@ -690,5 +700,13 @@ public class ProjectBase {
         } else {
             return pcs.getPropertyChangeListeners();
         }
+    }
+
+    public void projectChanged(boolean state) {
+
+    }
+
+    public boolean projectChanged() {
+        return false;
     }
 }
