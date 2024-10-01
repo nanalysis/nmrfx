@@ -414,7 +414,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     @Override
     public void setPeakList(PeakList peakList) {
         if (this.peakList != null) {
-            peakList.removePeakChangeListener(this);
+            this.peakList.removePeakChangeListener(this);
         }
         this.peakList = peakList;
         if (tableView == null) {
