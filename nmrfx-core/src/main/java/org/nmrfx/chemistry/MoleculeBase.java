@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @PluginAPI("ring")
@@ -315,7 +317,7 @@ public class MoleculeBase implements Serializable, ITree {
 
     public final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     protected final List<Bond> bselected = new ArrayList<>(1024);
-    public Set<Integer> structures = new TreeSet();
+    public Set<Integer> structures = new ConcurrentSkipListSet<>();
     public String name;
 
     public String title = null;
@@ -325,7 +327,7 @@ public class MoleculeBase implements Serializable, ITree {
     public LinkedHashMap<String, Entity> entities;
     public LinkedHashMap<String, Entity> chains;
     public LinkedHashMap<String, Entity> entityLabels = null;
-    protected List<Integer> activeStructures = null;
+    protected List<Integer> activeStructures = new CopyOnWriteArrayList<>();
     Map<String, Atom> atomMap = new HashMap<>();
     protected List<Atom> atoms = new ArrayList<>();
     protected List<Bond> bonds = new ArrayList<Bond>();
@@ -913,8 +915,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public List<Integer> getActiveStructureList() {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();
+        if (activeStructures.isEmpty()) {
             for (int i = 0; i < structures.size(); i++) {
                 activeStructures.add(i);
             }
@@ -922,8 +923,7 @@ public class MoleculeBase implements Serializable, ITree {
         return activeStructures;
     }
     public int[] getActiveStructures() {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();
+        if (activeStructures.isEmpty()) {
             for (int i = 0; i < structures.size(); i++) {
                 activeStructures.add(i);
             }
@@ -1582,11 +1582,11 @@ public class MoleculeBase implements Serializable, ITree {
 
     public void clearStructures() {
         structures.clear();
-        activeStructures = null;
+        activeStructures.clear();
     }
 
     public void resetActiveStructures() {
-        activeStructures = null;
+        activeStructures.clear();
     }
 
     public void clearActiveStructure(int iStruct) {
@@ -1594,9 +1594,6 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void setActiveStructures(TreeSet selSet) {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();
-        }
         activeStructures.clear();
         for (Object obj : selSet) {
             activeStructures.add((Integer) obj);
@@ -1604,7 +1601,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void setActiveStructures() {
-        activeStructures = new ArrayList<>();
+        activeStructures.clear();
         structures.forEach((istruct) -> {
             activeStructures.add(istruct);
         });
