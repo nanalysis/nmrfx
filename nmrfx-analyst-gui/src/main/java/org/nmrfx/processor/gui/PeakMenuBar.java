@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  */
 public class PeakMenuBar {
     private static final Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
-    private final UndoManager undoManager = new UndoManager();
+    private final HashMap<PeakList, UndoManager> undoManagers = new HashMap<>();
     private final List<ChartUndo> undos = new ArrayList<>();
     private final List<ChartUndo> redos = new ArrayList<>();
 
@@ -73,26 +73,27 @@ public class PeakMenuBar {
         MenuButton editMenu = new MenuButton("Edit");
 
         Menu undoMenu = new Menu("Undo");
-        undoMenu.disableProperty().bind(undoManager.undoable.not());
 
         Menu redoMenu = new Menu("Redo");
-        redoMenu.disableProperty().bind(undoManager.redoable.not());
 
         editMenu.setOnShowing(e -> {
+            cleanUndManagers();
             undoMenu.getItems().clear();
-            String lastAction = undoManager.getUndoLabelName();
-            MenuItem undoMenuItem = new MenuItem("Undo " + lastAction);
-            undoMenuItem.disableProperty().bind(undoManager.undoable.not());
-            undoMenuItem.setOnAction(event -> undo());
-            undoMenu.getItems().add(undoMenuItem);
+            var optManager = getUndoManager();
+            optManager.ifPresent(undoManager -> {
+                String lastAction = undoManager.getUndoLabelName();
+                MenuItem undoMenuItem = new MenuItem("Undo " + lastAction);
+                undoMenuItem.setOnAction(event -> undo());
+                undoMenu.getItems().add(undoMenuItem);
 
-            redoMenu.getItems().clear();
-            lastAction = undoManager.getRedoLabelName();
-            MenuItem redoMenuItem = new MenuItem("Redo " + lastAction);
-            redoMenuItem.disableProperty().bind(undoManager.redoable.not());
-            redoMenuItem.setOnAction(event -> redo());
-            redoMenu.getItems().add(redoMenuItem);
+                redoMenu.getItems().clear();
+                lastAction = undoManager.getRedoLabelName();
+                MenuItem redoMenuItem = new MenuItem("Redo " + lastAction);
+                redoMenuItem.setOnAction(event -> redo());
+                redoMenu.getItems().add(redoMenuItem);
+            });
         });
+
 
         editMenu.getItems().add(undoMenu);
         editMenu.getItems().add(redoMenu);
@@ -196,12 +197,32 @@ public class PeakMenuBar {
 
         for (Entry<String, Consumer<PeakList>> entry : extras.entrySet()) {
             MenuItem menuItem = new MenuItem(entry.getKey());
-            Consumer consumer = entry.getValue();
+            Consumer<PeakList> consumer = entry.getValue();
             menuItem.setOnAction(e -> consumer.accept(getPeakList()));
             editMenu.getItems().add(menuItem);
         }
     }
-    void doUndoRedo( Consumer<PeakList> consumer, String label) {
+
+    void cleanUndManagers() {
+        var iterator = undoManagers.keySet().iterator();
+        while (iterator.hasNext()) {
+            PeakList peakList = iterator.next();
+            if (PeakList.get(peakList.getName()) == null) {
+                iterator.remove();
+            }
+        }
+    }
+
+    Optional<UndoManager> getUndoManager() {
+        PeakList peakList = getPeakList();
+        if (peakList == null) {
+            return Optional.empty();
+        } else {
+            return Optional.of(undoManagers.computeIfAbsent(peakList, peakList1 -> new UndoManager()));
+        }
+    }
+
+    void doUndoRedo(Consumer<PeakList> consumer, String label) {
         resetUndoGroup();
         PeakList peakList = getPeakList();
         addPeakListUndo(peakList);
@@ -211,16 +232,21 @@ public class PeakMenuBar {
     }
 
     void undo() {
-        undoManager.undo();
-        refreshPeakView();
-        refreshChangedListView();
+        getUndoManager().ifPresent(undoManger -> {
+            undoManger.undo();
+            refreshPeakView();
+            refreshChangedListView();
+        });
     }
 
     void redo() {
-        undoManager.redo();
-        refreshPeakView();
-        refreshChangedListView();
+        getUndoManager().ifPresent(undoManger -> {
+            undoManger.redo();
+            refreshPeakView();
+            refreshChangedListView();
+        });
     }
+
     void addPeakListUndo(PeakList peakList) {
         if (undos.isEmpty()) {
             redos.clear();
@@ -235,19 +261,22 @@ public class PeakMenuBar {
     }
 
     void addUndoGroup(String label) {
-        if (!undos.isEmpty() && (undos.size() == redos.size())) {
-            GroupUndo groupUndo = new GroupUndo(undos);
-            GroupUndo groupRedo = new GroupUndo(redos);
-            undos.clear();
-            redos.clear();
-            undoManager.add(label, groupUndo, groupRedo);
-        }
+        getUndoManager().ifPresent(undoManger -> {
+            if (!undos.isEmpty() && (undos.size() == redos.size())) {
+                GroupUndo groupUndo = new GroupUndo(undos);
+                GroupUndo groupRedo = new GroupUndo(redos);
+                undos.clear();
+                redos.clear();
+                undoManger.add(label, groupUndo, groupRedo);
+            }
+        });
     }
 
     void resetUndoGroup() {
         undos.clear();
         redos.clear();
     }
+
     public MenuButton getPeakListMenu() {
         return peakListMenu;
     }
@@ -312,15 +341,15 @@ public class PeakMenuBar {
         }
     }
 
-    void deletePeaks(){
+    void deletePeaks() {
         if (getPeakList() != null) {
-            doUndoRedo(peakList -> menuTarget.deletePeaks(),"delete peaks");
+            doUndoRedo(peakList -> menuTarget.deletePeaks(), "delete peaks");
         }
     }
 
-    void restorePeaks(){
+    void restorePeaks() {
         if (getPeakList() != null) {
-            doUndoRedo(peakList -> menuTarget.restorePeaks(),"restore peaks");
+            doUndoRedo(peakList -> menuTarget.restorePeaks(), "restore peaks");
         }
     }
 
