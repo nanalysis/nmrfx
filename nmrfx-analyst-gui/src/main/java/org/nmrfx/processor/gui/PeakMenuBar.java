@@ -72,13 +72,31 @@ public class PeakMenuBar {
 
         MenuButton editMenu = new MenuButton("Edit");
 
-        MenuItem undoMenuItem = new MenuItem("Undo");
-        undoMenuItem.setOnAction(e -> undo());
-        editMenu.getItems().add(undoMenuItem);
+        Menu undoMenu = new Menu("Undo");
+        undoMenu.disableProperty().bind(undoManager.undoable.not());
 
-        MenuItem redoMenuItem = new MenuItem("Redo");
-        redoMenuItem.setOnAction(e -> redo());
-        editMenu.getItems().add(redoMenuItem);
+        Menu redoMenu = new Menu("Redo");
+        redoMenu.disableProperty().bind(undoManager.redoable.not());
+
+        editMenu.setOnShowing(e -> {
+            undoMenu.getItems().clear();
+            String lastAction = undoManager.getUndoLabelName();
+            MenuItem undoMenuItem = new MenuItem("Undo " + lastAction);
+            undoMenuItem.disableProperty().bind(undoManager.undoable.not());
+            undoMenuItem.setOnAction(event -> undo());
+            undoMenu.getItems().add(undoMenuItem);
+
+            redoMenu.getItems().clear();
+            lastAction = undoManager.getRedoLabelName();
+            MenuItem redoMenuItem = new MenuItem("Redo " + lastAction);
+            redoMenuItem.disableProperty().bind(undoManager.redoable.not());
+            redoMenuItem.setOnAction(event -> redo());
+            redoMenu.getItems().add(redoMenuItem);
+        });
+
+        editMenu.getItems().add(undoMenu);
+        editMenu.getItems().add(redoMenu);
+
 
         MenuItem copyMenu = new MenuItem("Copy");
         copyMenu.setOnAction(e -> menuTarget.copyPeakTableView());
@@ -97,11 +115,11 @@ public class PeakMenuBar {
         editMenu.getItems().add(compressAndDegapMenuItem);
 
         MenuItem deletePeakMenuItem = new MenuItem("Delete Peaks");
-        deletePeakMenuItem.setOnAction(e -> menuTarget.deletePeaks());
+        deletePeakMenuItem.setOnAction(e -> deletePeaks());
         editMenu.getItems().add(deletePeakMenuItem);
 
         MenuItem restorePeakMenuItem = new MenuItem("Restore Peaks");
-        restorePeakMenuItem.setOnAction(e -> menuTarget.restorePeaks());
+        restorePeakMenuItem.setOnAction(e -> restorePeaks());
         editMenu.getItems().add(restorePeakMenuItem);
 
         MenuItem deleteMenuItem = new MenuItem("Delete List");
@@ -194,11 +212,13 @@ public class PeakMenuBar {
 
     void undo() {
         undoManager.undo();
+        refreshPeakView();
         refreshChangedListView();
     }
 
     void redo() {
         undoManager.redo();
+        refreshPeakView();
         refreshChangedListView();
     }
     void addPeakListUndo(PeakList peakList) {
@@ -289,6 +309,18 @@ public class PeakMenuBar {
     void removeDiagonal() {
         if (getPeakList() != null) {
             doUndoRedo(peakList -> PeakListTools.removeDiagonalPeaks(peakList), "remove diagonal");
+        }
+    }
+
+    void deletePeaks(){
+        if (getPeakList() != null) {
+            doUndoRedo(peakList -> menuTarget.deletePeaks(),"delete peaks");
+        }
+    }
+
+    void restorePeaks(){
+        if (getPeakList() != null) {
+            doUndoRedo(peakList -> menuTarget.restorePeaks(),"restore peaks");
         }
     }
 
