@@ -437,6 +437,7 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.status = status;
         newPeak.comment = comment;
         newPeak.flag = flag.clone();
+        newPeak.idNum = idNum;
         newPeak.corner = new Corner(corner.getCornerChars());
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(newPeak.peakDims[i]);
