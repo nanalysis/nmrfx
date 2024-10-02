@@ -38,6 +38,7 @@ import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -129,6 +130,10 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     PeakList peakList;
     Peak currentPeak;
+
+    PeakDim currentPeakDim = null;
+
+
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
 
     enum PEAK_NORM {
@@ -630,6 +635,21 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         }
     }
 
+    void aliasPeak(double direction) {
+        if (currentPeakDim != null) {
+            double ppm = currentPeakDim.getChemShiftValue();
+            double sw = currentPeakDim.getSpectralDimObj().getSw();
+            double sf = currentPeakDim.getSpectralDimObj().getSf();
+            double deltaPPM = sw / sf;
+            ppm += direction * deltaPPM;
+            currentPeakDim.setChemShiftValue((float) ppm);
+        }
+    }
+
+    void showFoldingMenu(TableCell tableCell, MouseEvent e, ContextMenu contextMenu, PeakDim peakDim) {
+        currentPeakDim = peakDim;
+        contextMenu.show(tableCell, e.getScreenX(), e.getScreenY());
+    }
     void initTable() {
         FloatStringConverter fsConverter = new FloatStringConverter2();
         peakTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
@@ -641,6 +661,12 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         TableColumn<PeakDim, String> labelCol = new TableColumn<>("Label");
         labelCol.setCellValueFactory(new PropertyValueFactory("Label"));
         labelCol.setCellFactory(tc -> new TextFieldTableCellPeakLabel(new DefaultStringConverter()));
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem itemUp = new MenuItem("Alias Up");
+        itemUp.setOnAction(e -> aliasPeak(1.0));
+        MenuItem itemDown = new MenuItem("Alias Down");
+        itemDown.setOnAction(e -> aliasPeak(-1.0));
+        contextMenu.getItems().addAll(itemUp, itemDown);
 
         labelCol.setEditable(true);
         labelCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
@@ -662,7 +688,24 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
         TableColumn<PeakDim, Float> ppmCol = new TableColumn<>("PPM");
         ppmCol.setCellValueFactory(new PropertyValueFactory("ChemShift"));
-        ppmCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        ppmCol.setCellFactory(tc -> {
+            TableCell<PeakDim, Float> cell = new TextFieldTableCellFloat(fsConverter);
+            cell.setOnMousePressed(e -> {
+                if (e.isPopupTrigger()) {
+                    TableRow<PeakDim> tableRow = cell.getTableRow();
+                    PeakDim peakDim = tableRow == null ? null : tableRow.getItem();
+                    showFoldingMenu(cell, e, contextMenu, peakDim);
+                }
+            });
+            cell.setOnMouseReleased(e -> {
+                if (e.isPopupTrigger()) {
+                    TableRow<PeakDim> tableRow = cell.getTableRow();
+                    PeakDim peakDim = tableRow == null ? null : tableRow.getItem();
+                    showFoldingMenu(cell, e, contextMenu, peakDim);
+                }
+            });
+            return cell;
+        });
         ppmCol.setOnEditCommit(
                 (CellEditEvent<PeakDim, Float> t) -> {
                     Float value = t.getNewValue();
