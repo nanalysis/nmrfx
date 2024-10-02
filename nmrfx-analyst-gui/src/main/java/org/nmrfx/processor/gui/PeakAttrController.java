@@ -29,9 +29,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.ScatterChart;
-import javafx.scene.chart.XYChart;
-import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.cell.ComboBoxTableCell;
@@ -52,6 +49,7 @@ import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.chart.XYValue;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.*;
@@ -67,10 +65,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -107,9 +102,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     @FXML
     private ChoiceBox<String> peakListTypeChoice;
     @FXML
-    private ComboBox datasetNameField;
+    private ComboBox<String> datasetNameField;
     @FXML
-    private ComboBox conditionField;
+    private ComboBox<String> conditionField;
     @FXML
     private ToolBar peakReferenceToolBar;
     @FXML
@@ -175,13 +170,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         initReferenceTable();
         setFieldActions();
         datasetNameField.setOnShowing(e -> updateDatasetNames());
-        datasetNameField.setOnAction(e -> {
-            selectDataset();
-        });
+        datasetNameField.setOnAction(e -> selectDataset());
         conditionField.setOnShowing(e -> updateConditionNames());
-        conditionField.setOnAction(e -> {
-            setCondition();
-        });
+        conditionField.setOnAction(e -> setCondition());
         conditionField.setEditable(true);
 
         peakListNameField.setOnKeyReleased(kE -> {
@@ -289,16 +280,13 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     public void refreshPeakView(Peak peak) {
         if (peakTableView == null) {
-            System.out.println("null table");
             return;
         }
         boolean clearIt = true;
         if (peak != null) {
             if (peak != currentPeak) {
                 ObservableList<PeakDim> peakDimList = FXCollections.observableArrayList();
-                for (PeakDim peakDim : peak.getPeakDims()) {
-                    peakDimList.add(peakDim);
-                }
+                Collections.addAll(peakDimList, peak.getPeakDims());
                 peakTableView.setItems(peakDimList);
             }
             peakTableView.refresh();
@@ -423,7 +411,6 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 if (peakBBOpt.isPresent()) {
                     var peakAB = peakABOpt.get().getPeak();
                     var peakBB = peakBBOpt.get().getPeak();
-                    double[][] measuresAA;
                     Peak[] peaks = {currentPeak, peakBB, peakAB, peakBA};
                     double[] xValues = currentPeak.getPeakList().getMeasureValues();
                     scatterChart.getData().clear();
@@ -483,9 +470,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     public void updateDatasetNames() {
         datasetNameField.getItems().clear();
-        Dataset.datasets().stream().forEach(d -> {
-            datasetNameField.getItems().add(d.getName());
-        });
+        DatasetBase.datasets().forEach(d -> datasetNameField.getItems().add(d.getName()));
         if (peakList != null) {
             datasetNameField.setValue(peakList.getDatasetName());
         }
@@ -494,11 +479,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     public void updateConditionNames() {
         conditionField.getItems().clear();
         Set<String> conditions = PeakList.peakLists().stream().
-                map(peakList -> peakList.getSampleConditionLabel()).
-                filter(label -> label != null).collect(Collectors.toSet());
-        conditions.stream().sorted().forEach(s -> {
-            conditionField.getItems().add(s);
-        });
+                map(PeakList::getSampleConditionLabel).
+                filter(Objects::nonNull).collect(Collectors.toSet());
+        conditions.stream().sorted().forEach(s -> conditionField.getItems().add(s));
         if (peakList != null) {
             conditionField.setValue(peakList.getSampleConditionLabel());
         }
@@ -506,7 +489,6 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     public void refreshPeakListView(PeakList refreshPeakList) {
         if (referenceTableView == null) {
-            System.out.println("null table");
             return;
         }
         // fixme  need to update datasets upon dataset list change
@@ -646,27 +628,61 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         }
     }
 
-    void showFoldingMenu(TableCell tableCell, MouseEvent e, ContextMenu contextMenu, PeakDim peakDim) {
+    void showFoldingMenu(TableCell<PeakDim, Float> tableCell, MouseEvent e, ContextMenu contextMenu, PeakDim peakDim) {
         currentPeakDim = peakDim;
         contextMenu.show(tableCell, e.getScreenX(), e.getScreenY());
     }
-    void initTable() {
-        FloatStringConverter fsConverter = new FloatStringConverter2();
-        peakTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        peakTableView.setEditable(true);
-        TableColumn<PeakDim, String> dimNameCol = new TableColumn<>("Dim");
-        dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
-        dimNameCol.setEditable(false);
 
-        TableColumn<PeakDim, String> labelCol = new TableColumn<>("Label");
-        labelCol.setCellValueFactory(new PropertyValueFactory("Label"));
-        labelCol.setCellFactory(tc -> new TextFieldTableCellPeakLabel(new DefaultStringConverter()));
+    void initTable() {
         ContextMenu contextMenu = new ContextMenu();
         MenuItem itemUp = new MenuItem("Alias Up");
         itemUp.setOnAction(e -> aliasPeak(1.0));
         MenuItem itemDown = new MenuItem("Alias Down");
         itemDown.setOnAction(e -> aliasPeak(-1.0));
         contextMenu.getItems().addAll(itemUp, itemDown);
+
+        FloatStringConverter fsConverter = new FloatStringConverter2();
+        peakTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        peakTableView.setEditable(true);
+        TableColumn<PeakDim, String> dimNameCol = new TableColumn<>("Dim");
+        dimNameCol.setCellValueFactory(new PropertyValueFactory<>("DimName"));
+        dimNameCol.setEditable(false);
+
+        TableColumn<PeakDim, String> labelCol = makeLabelColumn();
+
+        TableColumn<PeakDim, Float> ppmCol = makePPMColumn(fsConverter, contextMenu);
+
+        TableColumn<PeakDim, Float> widthCol = makeWidthColumn(fsConverter);
+
+        TableColumn<PeakDim, Float> boundsCol = makeBoundsColumn(fsConverter);
+
+        TableColumn<PeakDim, Float> shapeCol = makeShapeColumn(fsConverter);
+
+        TableColumn<PeakDim, String> resonanceColumn = new TableColumn<>("ResID");
+        resonanceColumn.setCellValueFactory(new PropertyValueFactory<>("ResonanceIDsAsString"));
+        resonanceColumn.setEditable(false);
+
+        TableColumn<PeakDim, String> userCol = makeUserColumn();
+
+        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, shapeCol, resonanceColumn, userCol);
+    }
+
+    private static TableColumn<PeakDim, String> makeUserColumn() {
+        TableColumn<PeakDim, String> userCol = new TableColumn<>("User");
+        userCol.setCellValueFactory(new PropertyValueFactory<>("User"));
+        userCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        userCol.setEditable(true);
+        userCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
+            String value = t.getNewValue();
+            t.getRowValue().setUser(value == null ? "" : value);
+        });
+        return userCol;
+    }
+
+    private static TableColumn<PeakDim, String> makeLabelColumn() {
+        TableColumn<PeakDim, String> labelCol = new TableColumn<>("Label");
+        labelCol.setCellValueFactory(new PropertyValueFactory<>("Label"));
+        labelCol.setCellFactory(tc -> new TextFieldTableCellPeakLabel(new DefaultStringConverter()));
 
         labelCol.setEditable(true);
         labelCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
@@ -676,7 +692,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 value = "";
             }
             AtomResPattern.assignDim(peakDim, value);
-            TablePosition tPos = t.getTablePosition();
+            TablePosition<PeakDim, String> tPos = t.getTablePosition();
             int row = tPos.getRow();
             row++;
             if (row < t.getTableView().getItems().size()) {
@@ -685,9 +701,59 @@ public class PeakAttrController implements Initializable, StageBasedController, 
             }
 
         });
+        return labelCol;
+    }
 
+    private static TableColumn<PeakDim, Float> makeShapeColumn(FloatStringConverter fsConverter) {
+        TableColumn<PeakDim, Float> shapeCol = new TableColumn<>("Shape");
+        shapeCol.setCellValueFactory(new PropertyValueFactory<>("ShapeFactor"));
+        shapeCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        shapeCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setShapeFactorValue(value);
+                    }
+                });
+
+        shapeCol.setEditable(true);
+        return shapeCol;
+    }
+
+    private static TableColumn<PeakDim, Float> makeBoundsColumn(FloatStringConverter fsConverter) {
+        TableColumn<PeakDim, Float> boundsCol = new TableColumn<>("Bounds");
+        boundsCol.setCellValueFactory(new PropertyValueFactory<>("BoundsHz"));
+        boundsCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        boundsCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setBoundsHz(value);
+                    }
+                });
+
+        boundsCol.setEditable(true);
+        return boundsCol;
+    }
+
+    private static TableColumn<PeakDim, Float> makeWidthColumn(FloatStringConverter fsConverter) {
+        TableColumn<PeakDim, Float> widthCol = new TableColumn<>("Width");
+        widthCol.setCellValueFactory(new PropertyValueFactory<>("LineWidthHz"));
+        widthCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        widthCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setLineWidthHz(value);
+                    }
+                });
+        widthCol.setEditable(true);
+        return widthCol;
+    }
+
+    private TableColumn<PeakDim, Float> makePPMColumn(FloatStringConverter fsConverter, ContextMenu contextMenu) {
         TableColumn<PeakDim, Float> ppmCol = new TableColumn<>("PPM");
-        ppmCol.setCellValueFactory(new PropertyValueFactory("ChemShift"));
+        ppmCol.setCellValueFactory(new PropertyValueFactory<>("ChemShift"));
         ppmCol.setCellFactory(tc -> {
             TableCell<PeakDim, Float> cell = new TextFieldTableCellFloat(fsConverter);
             cell.setOnMousePressed(e -> {
@@ -715,95 +781,36 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 });
 
         ppmCol.setEditable(true);
-
-        TableColumn<PeakDim, Float> widthCol = new TableColumn<>("Width");
-        widthCol.setCellValueFactory(new PropertyValueFactory("LineWidthHz"));
-        widthCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
-        widthCol.setOnEditCommit(
-                (CellEditEvent<PeakDim, Float> t) -> {
-                    Float value = t.getNewValue();
-                    if (value != null) {
-                        t.getRowValue().setLineWidthHz(value);
-                    }
-                });
-        widthCol.setEditable(true);
-
-        TableColumn<PeakDim, Float> boundsCol = new TableColumn<>("Bounds");
-        boundsCol.setCellValueFactory(new PropertyValueFactory("BoundsHz"));
-        boundsCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
-        boundsCol.setOnEditCommit(
-                (CellEditEvent<PeakDim, Float> t) -> {
-                    Float value = t.getNewValue();
-                    if (value != null) {
-                        t.getRowValue().setBoundsHz(value);
-                    }
-                });
-
-        boundsCol.setEditable(true);
-
-        TableColumn<PeakDim, Float> shapeCol = new TableColumn<>("Shape");
-        shapeCol.setCellValueFactory(new PropertyValueFactory("ShapeFactor"));
-        shapeCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
-        shapeCol.setOnEditCommit(
-                (CellEditEvent<PeakDim, Float> t) -> {
-                    Float value = t.getNewValue();
-                    if (value != null) {
-                        t.getRowValue().setShapeFactorValue(value);
-                    }
-                });
-
-        shapeCol.setEditable(true);
-
-        TableColumn<PeakDim, String> resonanceColumn = new TableColumn<>("ResID");
-        resonanceColumn.setCellValueFactory(new PropertyValueFactory("ResonanceIDsAsString"));
-        resonanceColumn.setEditable(false);
-
-        TableColumn<PeakDim, String> userCol = new TableColumn<>("User");
-        userCol.setCellValueFactory(new PropertyValueFactory("User"));
-        userCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        userCol.setEditable(true);
-        userCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
-            String value = t.getNewValue();
-            t.getRowValue().setUser(value == null ? "" : value);
-        });
-
-        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, shapeCol, resonanceColumn, userCol);
+        return ppmCol;
     }
 
     private void setFieldActions() {
         commentField.setOnKeyPressed(e -> {
-            if (currentPeak != null) {
-                if (e.getCode() == KeyCode.ENTER) {
-                    currentPeak.setComment(commentField.getText().trim());
-
-                }
+            if (currentPeak != null && e.getCode() == KeyCode.ENTER) {
+                currentPeak.setComment(commentField.getText().trim());
             }
         });
         intensityField.setOnKeyPressed(e -> {
-            if (currentPeak != null) {
-                if (e.getCode() == KeyCode.ENTER) {
-                    try {
-                        float value = Float.parseFloat(intensityField.getText().trim());
-                        currentPeak.setIntensity(value);
-                    } catch (NumberFormatException nfE) {
-                        log.warn("Unable to parse intensity field.", nfE);
-                    }
-
+            if (currentPeak != null && e.getCode() == KeyCode.ENTER) {
+                try {
+                    float value = Float.parseFloat(intensityField.getText().trim());
+                    currentPeak.setIntensity(value);
+                } catch (NumberFormatException nfE) {
+                    log.warn("Unable to parse intensity field.", nfE);
                 }
             }
         });
         volumeField.setOnKeyPressed(e -> {
-            if (currentPeak != null) {
-                if (e.getCode() == KeyCode.ENTER) {
-                    try {
-                        float value = Float.parseFloat(volumeField.getText().trim());
-                        currentPeak.setVolume1(value);
-                    } catch (NumberFormatException nfE) {
-                        log.warn("Unable to parse volume field.", nfE);
-                    }
-
+            if (currentPeak != null && e.getCode() == KeyCode.ENTER) {
+                try {
+                    float value = Float.parseFloat(volumeField.getText().trim());
+                    currentPeak.setVolume1(value);
+                } catch (NumberFormatException nfE) {
+                    log.warn("Unable to parse volume field.", nfE);
                 }
+
             }
+
         });
     }
 
@@ -811,11 +818,11 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         DoubleStringConverter dsConverter = new DoubleStringConverter();
         referenceTableView.setEditable(true);
         TableColumn<SpectralDim, String> dimNameCol = new TableColumn<>("Dim");
-        dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
+        dimNameCol.setCellValueFactory(new PropertyValueFactory<>("DimName"));
         dimNameCol.setEditable(false);
 
         TableColumn<SpectralDim, String> labelCol = new TableColumn<>("Name");
-        labelCol.setCellValueFactory(new PropertyValueFactory("DimName"));
+        labelCol.setCellValueFactory(new PropertyValueFactory<>("DimName"));
         labelCol.setCellFactory(TextFieldTableCell.forTableColumn());
         labelCol.setEditable(true);
         labelCol.setOnEditCommit((CellEditEvent<SpectralDim, String> t) -> {
@@ -824,7 +831,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         });
 
         TableColumn<SpectralDim, String> nucCol = new TableColumn<>("Nucleus");
-        nucCol.setCellValueFactory(new PropertyValueFactory("Nucleus"));
+        nucCol.setCellValueFactory(new PropertyValueFactory<>("Nucleus"));
         nucCol.setCellFactory(TextFieldTableCell.forTableColumn());
         nucCol.setEditable(true);
         nucCol.setOnEditCommit((CellEditEvent<SpectralDim, String> t) -> {
@@ -833,7 +840,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         });
 
         TableColumn<SpectralDim, Double> sfCol = new TableColumn<>("SF");
-        sfCol.setCellValueFactory(new PropertyValueFactory("Sf"));
+        sfCol.setCellValueFactory(new PropertyValueFactory<>("Sf"));
         sfCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
         sfCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, Double> t) -> {
@@ -845,7 +852,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
         sfCol.setEditable(true);
         TableColumn<SpectralDim, Double> swCol = new TableColumn<>("SW");
-        swCol.setCellValueFactory(new PropertyValueFactory("Sw"));
+        swCol.setCellValueFactory(new PropertyValueFactory<>("Sw"));
         swCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
         swCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, Double> t) -> {
@@ -858,7 +865,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         swCol.setEditable(true);
 
         TableColumn<SpectralDim, Double> tolCol = new TableColumn<>("Tol");
-        tolCol.setCellValueFactory(new PropertyValueFactory("IdTol"));
+        tolCol.setCellValueFactory(new PropertyValueFactory<>("IdTol"));
         tolCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
         tolCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, Double> t) -> {
@@ -871,7 +878,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         tolCol.setEditable(true);
 
         TableColumn<SpectralDim, String> patternCol = new TableColumn<>("Pattern");
-        patternCol.setCellValueFactory(new PropertyValueFactory("Pattern"));
+        patternCol.setCellValueFactory(new PropertyValueFactory<>("Pattern"));
         patternCol.setCellFactory(TextFieldTableCell.forTableColumn());
         patternCol.setEditable(true);
         patternCol.setOnEditCommit((CellEditEvent<SpectralDim, String> t) -> {
@@ -880,7 +887,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         });
 
         TableColumn<SpectralDim, String> relCol = new TableColumn<>("Bonded");
-        relCol.setCellValueFactory(new PropertyValueFactory("RelationDim"));
+        relCol.setCellValueFactory(new PropertyValueFactory<>("RelationDim"));
         relCol.setCellFactory(ComboBoxTableCell.forTableColumn(relationChoiceItems));
         relCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, String> t) -> {
@@ -888,7 +895,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     t.getRowValue().setRelation(value == null ? "" : value);
                 });
         TableColumn<SpectralDim, String> spatialCol = new TableColumn<>("Spatial");
-        spatialCol.setCellValueFactory(new PropertyValueFactory("SpatialRelationDim"));
+        spatialCol.setCellValueFactory(new PropertyValueFactory<>("SpatialRelationDim"));
         spatialCol.setCellFactory(ComboBoxTableCell.forTableColumn(relationChoiceItems));
         spatialCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, String> t) -> {
@@ -897,7 +904,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 });
 
         TableColumn<SpectralDim, String> foldCol = new TableColumn<>("Folded");
-        foldCol.setCellValueFactory(new PropertyValueFactory("FoldMode"));
+        foldCol.setCellValueFactory(new PropertyValueFactory<>("FoldMode"));
         foldCol.setCellFactory(ComboBoxTableCell.forTableColumn(new String[]{"folded", "aliased", "none"}));
         foldCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, String> t) -> {
@@ -925,7 +932,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     void selectDataset() {
         if (peakList != null) {
-            String name = (String) datasetNameField.getValue();
+            String name = datasetNameField.getValue();
             peakList.setDatasetName(name);
             Dataset dataset = Dataset.getDataset(name);
             //fixme need to give option to not use these?
@@ -937,7 +944,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     GUIUtils.warn("Unable to match Dataset with Peak List dimensions", "Check nuclei in all Dataset dimensions");
                     return;
                 }
-                peakList.getSpectralDims().forEach((dim) -> {
+                peakList.getSpectralDims().forEach(dim -> {
                     int datasetDim = pdim[dim.getIndex()];
                     if (datasetDim != -1) {
                         dim.setSf(dataset.getSf(datasetDim));
@@ -954,7 +961,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
 
     void setCondition() {
         if (peakList != null) {
-            String condition = (String) conditionField.getValue();
+            String condition = conditionField.getValue();
             if (condition == null) {
                 condition = "";
             }
