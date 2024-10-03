@@ -136,7 +136,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             createDataFile(raFile, writable);
         }
 
-        log.info("new dataset {}", fileName);
         if (saveToProject) {
             addFile(fileName);
         }
