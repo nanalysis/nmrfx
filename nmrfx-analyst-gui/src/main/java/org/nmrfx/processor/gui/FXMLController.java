@@ -591,8 +591,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 for (File selectedFile : selectedFiles) {
                     setInitialDirectory(selectedFile.getParentFile());
                     NMRData nmrData = NMRDataUtil.getFID(selectedFile);
-                    if (nmrData instanceof NMRViewData) {
+                    if (nmrData instanceof NMRViewData nmrviewData) {
                         PreferencesController.saveRecentFiles(selectedFile.toString());
+                        Dataset dataset = nmrviewData.getDataset();
+                        dataset.addFile();
                     }
                 }
             } catch (IllegalArgumentException | IOException iaE) {

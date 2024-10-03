@@ -288,6 +288,7 @@ public class ScannerTool implements ControllerTool {
     }
 
     private void loadFromDataset() {
+        chart = controller.getActiveChart();
         scanTable.loadFromDataset();
         scanTable.setChart();
     }
