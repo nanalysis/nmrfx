@@ -248,7 +248,7 @@ public class ScanTable {
         boolean singleData = datasetAttributesList.size() == 1;
         if (singleData) {
             DatasetAttributes dataAttr = datasetAttributesList.get(0);
-            dataAttr.setMapColor(0, dataAttr.getMapColor(0)); // ensure colorMap is not empty
+            dataAttr.clearColors();
         }
         showRows.forEach(fileTableItem -> {
                     var dataAttr = fileTableItem.getDatasetAttributes();
@@ -1066,15 +1066,19 @@ public class ScanTable {
         TableColumn<FileTableItem, Color> posColorCol = makeColorColumns(scannerTool, true);
         TableColumn<FileTableItem, Color> negColorCol = makeColorColumns(scannerTool, false);
 
-        TableColumn<FileTableItem, Number> groupColumn = makeGroupColumn();
         TableColumn<FileTableItem, Boolean> posDrawOnCol = makePosDrawColumn(scannerTool, true);
         TableColumn<FileTableItem, Boolean> negDrawOnCol = makePosDrawColumn(scannerTool, false);
+
 
         TableColumn<FileTableItem, TableColumn> posColumn = new TableColumn<>(POSITIVE_COLUMN_NAME);
         TableColumn<FileTableItem, TableColumn> negColumn = new TableColumn<>(NEGATIVE_COLUMN_NAME);
         posColumn.getColumns().addAll(posDrawOnCol, posColorCol);
         negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
+
+        TableColumn<FileTableItem, Number> groupColumn = makeGroupColumn();
+
         tableView.getColumns().addAll(posColumn, negColumn, groupColumn);
+
         updateFilter();
 
         for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
