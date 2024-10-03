@@ -692,7 +692,8 @@ public class ScanTable {
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
         int nDim = dataset.getNDim();
-        int nRows = dataset.getSizeTotal(nDim - 1);
+        int nDataRows = dataset.getSizeTotal(nDim - 1);
+        int nRows = (dataset.getNFreqDims() == 0) || (dataset.getNFreqDims() == dataset.getNDim()) ? 1 : nDataRows;
         HashMap<String, String> fieldMap = new HashMap<>();
         double[] values = dataset.getValues(nDim - 1);
         for (int iRow = 0; iRow < nRows; iRow++) {
@@ -722,15 +723,14 @@ public class ScanTable {
         List<Integer> rows = new ArrayList<>();
         rows.add(0);
         // Load from Dataset assumes an arrayed dataset
-        dataset.setNFreqDims(dataset.getNDim() - 1);
-        if (dataset.getNDim() > 2) {
-            chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
-        } else {
-            chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
-        }
-        chart.setDrawlist(rows);
-        chart.full();
-        chart.autoScale();
+            if ((dataset.getNFreqDims() > 2) || (dataset.getNFreqDims() == 0) && (dataset.getNDim() > 1)) {
+                chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
+            } else {
+                chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
+                chart.setDrawlist(rows);
+            }
+
+        setDatasetAttributes();
     }
 
     private void loadScanTable(File file) {
