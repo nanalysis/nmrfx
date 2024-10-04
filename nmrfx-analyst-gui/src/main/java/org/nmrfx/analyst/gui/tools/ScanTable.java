@@ -234,6 +234,12 @@ public class ScanTable {
         }
     }
 
+    boolean arrayed(DatasetAttributes datasetAttributes) {
+        Dataset dataset = (Dataset) datasetAttributes.getDataset();
+        int nFreqDim = dataset.getNFreqDims();
+        int nDim = dataset.getNDim();
+        return (nFreqDim != 0) && (nFreqDim < nDim);
+    }
     private void setDatasetVisibility(List<FileTableItem> showRows, Double curLvl) {
         if (activeDatasetAttributes.isEmpty()) {
             ensureAllDatasetsAdded();
@@ -248,7 +254,11 @@ public class ScanTable {
         boolean singleData = datasetAttributesList.size() == 1;
         if (singleData) {
             DatasetAttributes dataAttr = datasetAttributesList.get(0);
-            dataAttr.clearColors();
+            if (arrayed(dataAttr)) {
+                dataAttr.setMapColor(0, dataAttr.getMapColor(0)); // ensure colorMap is not empty
+            } else {
+                dataAttr.clearColors();
+            }
         }
         showRows.forEach(fileTableItem -> {
                     var dataAttr = fileTableItem.getDatasetAttributes();
