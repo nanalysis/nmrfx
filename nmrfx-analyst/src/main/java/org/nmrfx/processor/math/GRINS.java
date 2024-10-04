@@ -51,9 +51,6 @@ public class GRINS {
     final double scale;
 
     final int iterations;
-    final double[] phase;
-    final boolean[] negateImag;
-    final boolean[] negatePairs;
     final String logFileName;
     final double shapeFactor;
 
@@ -64,20 +61,24 @@ public class GRINS {
     boolean tdMode = false;  // only freq mode is currently functional
 
     public GRINS(
-        MatrixND matrix, double noiseRatio, double scale, int iterations,
-        double shapeFactor, boolean apodize, double[] phase, boolean[] negateImag,
-        boolean[] negatePairs, boolean preserve, boolean synthetic,
-        int[] zeroList, int[] srcTargetMap, String logFileName
+        MatrixND matrix,
+        double noiseRatio,
+        double scale,
+        int iterations,
+        double shapeFactor,
+        boolean apodize,
+        boolean preserve,
+        boolean synthetic,
+        int[] zeroList,
+        int[] srcTargetMap,
+        String logFileName
     ) {
         this.matrix = matrix;
-        this.noiseRatio = noiseRatio;
+        this.noiseRatio = Math.max(noiseRatio, 2.0);
         this.scale = scale;
         this.iterations = iterations;
         this.shapeFactor = shapeFactor;
         this.apodize = apodize;
-        this.phase = phase;
-        this.negateImag = negateImag;
-        this.negatePairs = negatePairs;
         this.preserve = preserve;
         this.synthetic = synthetic;
         this.zeroList = zeroList;
@@ -88,33 +89,20 @@ public class GRINS {
     public void exec() {
         try (FileWriter fileWriter = logFileName == null ? null : new FileWriter(logFileName)) {
             matrix.zeroValues(zeroList);
-            double preValue = 0.0;
-            double postValue = 0.0;
-            boolean calcNoise = true;
-            if (noiseRatio < 2.0) {
-                noiseRatio = 2.0;
-            }
-            double noiseValue = 0.0;
-            boolean doPhase = false;
-            int maxPeaks = 20;
-            if (phase != null) {
-                for (double phaseVal : phase) {
-                    if (Math.abs(phaseVal) > 1.0e-6) {
-                        doPhase = true;
-                        break;
-                    }
-                }
-            }
+            double preValue = 0.0, postValue = 0.0, noiseValue = 0.0;
+            int nPeaks = 0, maxPeaks = 20;
+
+            // TODO: This is always true, why is it needed?
+            // boolean calcNoise = true;
+
             if (apodize) {
                 matrix.apodize();
             }
-            if (doPhase) {
-                matrix.doPhaseTD(phase, negateImag, negatePairs);
-            }
+
             // could just copy the actually sample values to vector
             MatrixND matrixCopy = new MatrixND(matrix);
             double[] addBuffer = new double[matrix.getNElems()];
-            int nPeaks = 0;
+
             int iteration;
 
             for (iteration = 0; iteration < iterations; iteration++) {
@@ -122,15 +110,14 @@ public class GRINS {
                 if ((iteration == 0) && (calcStats)) {
                     preValue = matrix.calcSumAbs();
                 }
-                if (calcNoise) {
-                    double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
-                    for (int i = 0; i < 5; i++) {
-                        measure = matrix.measure(false, measure[2], measure[3]);
-                    }
-                    noiseValue = measure[3];
-                }
 
+                // TODO: This was wrapped in a conditional: if(calcNoise){...}
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
+                for (int i = 0; i < 5; i++) {
+                    measure = matrix.measure(false, measure[2], measure[3]);
+                }
+                noiseValue = measure[3];
+
                 double max = Math.max(FastMath.abs(measure[0]), FastMath.abs(measure[1]));
                 double noiseThreshold = noiseValue * noiseRatio;
                 if (max < noiseThreshold) {
@@ -151,20 +138,30 @@ public class GRINS {
                 double max2 = Math.max(FastMath.abs(measure2[0]), FastMath.abs(measure2[1]));
 
                 if (fileWriter != null) {
-                    String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f %10.3f%n", iteration, nPeaksTemp, globalThreshold, noiseThreshold, max, max2);
+                    String outLine = String.format(
+                        "%4d %4d %10.3f %10.3f %10.3f %10.3f%n",
+                        iteration,
+                        nPeaksTemp,
+                        globalThreshold,
+                        noiseThreshold,
+                        max,
+                        max2);
                     fileWriter.write(outLine);
                     for (MatrixPeak peak : peaks) {
                         fileWriter.write(peak.toString() + '\n');
                     }
                 }
+
                 if (iteration < iterations - 1) {
                     matrix.doHIFT(0.5);
                     matrix.zeroValues(zeroList);
                 }
+
                 if (tdMode && !peaks.isEmpty()) {
                     doPeaks(peaks, matrix);
                 }
             }
+
             if (!residual) {
                 if (preserve) {
                     matrix.addDataFrom(addBuffer);
@@ -183,7 +180,14 @@ public class GRINS {
                 deltaToOrig = new MatrixND.MatrixDiff(0.0, 1.0);
             }
             if (fileWriter != null) {
-                String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f %10.3f %n", (iteration + 1), nPeaks, preValue, postValue, deltaToOrig.mabs() / deltaToOrig.max(), deltaToOrig.max());
+                String outLine = String.format(
+                    "%4d %4d %10.3f %10.3f %10.3f %10.3f %n",
+                    (iteration + 1),
+                    nPeaks,
+                    preValue,
+                    postValue,
+                    deltaToOrig.mabs() / deltaToOrig.max(),
+                    deltaToOrig.max());
                 fileWriter.write(outLine);
             }
             if (!residual && !synthetic) {
@@ -193,7 +197,6 @@ public class GRINS {
         } catch (IOException ioE) {
             throw new ProcessingException(ioE.getMessage());
         }
-
     }
 
     ArrayList<MatrixPeak> filterPeaks(ArrayList<MatrixPeak> peaks, int maxPeaks) {

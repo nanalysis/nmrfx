@@ -1388,36 +1388,52 @@ public class MatrixND implements MatrixType {
 }
 
 class RIVecOperations {
-    private final static double degtorad = Math.PI / 180.0;
+    final static double degtorad = Math.PI / 180.0;
 
-    private static int getSize(double[][] riVec) {
+    static int getSize(double[][] riVec) {
         return riVec[0].length;
     }
 
-    public static void negateImag(double[][] riVec) {
+    static void negateImag(double[][] riVec) {
         for (int i = 0; i < getSize(riVec); i++) {
             riVec[1][i] *= -1.0;
         }
     }
 
-    public static void negatePairs(double[][] riVec) {
+    static void negatePairs(double[][] riVec) {
         for (int i = 1; i < getSize(riVec); i += 2) {
             riVec[0][i] *= -1.0;
             riVec[1][i] *= -1.0;
         }
     }
 
-    public static void fourierTransform(double[][] riVec, double cValue) {
+    static void fftShift(double[][] riVec) {
+        int middleIdx = riVec[0].length / 2;
+        int oldIdx = 0, newIdx = middleIdx;
+        double tmp;
+        while (oldIdx < middleIdx) {
+            for (int dim = 0; dim < 2; dim++) {
+                tmp = riVec[dim][oldIdx];
+                riVec[dim][oldIdx] = riVec[dim][newIdx];
+                riVec[dim][newIdx] = tmp;
+            }
+            oldIdx++; newIdx++;
+        }
+    }
+
+    static void fourierTransform(double[][] riVec, double cValue) {
         riVec[0][0] *= cValue;
         riVec[1][0] *= cValue;
         FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.FORWARD);
+        fftShift(riVec);
     }
 
-    public static void inverseFourierTransform(double[][] riVec) {
+    static void inverseFourierTransform(double[][] riVec) {
+        fftShift(riVec);
         FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.INVERSE);
     }
 
-    public static void phaseCorrection(double[][] riVec, double[] phases) {
+    static void phaseCorrection(double[][] riVec, double[] phases) {
         double ph0 = degtorad * phases[0];
         double ph1 = degtorad * phases[1];
         double size = riVec[0].length;
