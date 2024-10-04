@@ -25,6 +25,7 @@ package org.nmrfx.processor.gui.spectra;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.LineTo;
@@ -102,7 +103,7 @@ public class DrawSpectrum {
             contoursGeneration.cancel();
             contoursDrawing.cancel();
         });
-        button.disableProperty().bind(contoursGeneration.stateProperty().isNotEqualTo(Task.State.RUNNING));
+        button.disableProperty().bind(contoursGeneration.stateProperty().isNotEqualTo(Worker.State.RUNNING));
     }
 
     public void setClipRect(double x, double y, double width, double height) {
@@ -353,7 +354,8 @@ public class DrawSpectrum {
     private double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
         double height = axes.getY().getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
-        double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
+        double dOffset = dataAttributes.getOffset();
+        double dataOffset = height * (dOffset - firstOffset);
         double fraction = getOffsetFraction(i1D, n1D);
         double delta = height * fraction * stackY;
         if (n1D > 0) {
