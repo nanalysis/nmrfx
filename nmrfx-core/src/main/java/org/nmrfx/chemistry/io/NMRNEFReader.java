@@ -377,7 +377,12 @@ public class NMRNEFReader {
                     log.warn("invalid compound in assignments saveframe \"{} {}\"", chainCode, sequenceCode);
                     continue;
                 }
-                String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                String fullAtom;
+                if (chainCode.isBlank() || chainCode.equals(".")) {
+                    fullAtom = sequenceCode + "." + atomName;
+                } else {
+                    fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                }
                 List<Atom> atoms = MoleculeBase.getNEFMatchedAtoms(new MolFilter(fullAtom), moleculeBase);
                 for (Atom atom : atoms) {
                     setStereo(atoms, atom, atomName);

@@ -42,7 +42,7 @@ def readPDB(fileName, isCompound = False, iStruct=0):
     compound = None
     pdb = PDBFile()
     if not isCompound:
-        mol = pdb.readSequence(fileName,False, iStruct)
+        mol = pdb.readSequence(fileName, iStruct)
         updateAtomArray(mol)
         return mol
     else:

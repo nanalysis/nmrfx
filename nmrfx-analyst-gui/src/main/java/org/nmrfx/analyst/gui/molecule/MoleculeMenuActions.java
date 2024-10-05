@@ -14,6 +14,7 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.io.*;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
@@ -205,6 +206,7 @@ public class MoleculeMenuActions extends MenuActions {
                         List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
                         if (!molecules.isEmpty()) {
                             molecule = molecules.get(0);
+                            ProjectBase.getActive().putMolecule(molecule);
                         }
                     }
                     default -> {
@@ -256,6 +258,7 @@ public class MoleculeMenuActions extends MenuActions {
                 try {
                     Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
                     molecule.setActive();
+                    ProjectBase.getActive().putMolecule(molecule);
                 } catch (IllegalArgumentException iaE) {
                     GUIUtils.warn("SMILES Parser", iaE.getMessage());
                     return;

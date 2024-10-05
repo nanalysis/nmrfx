@@ -136,7 +136,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             createDataFile(raFile, writable);
         }
 
-        log.info("new dataset {}", fileName);
         if (saveToProject) {
             addFile(fileName);
         }
@@ -633,6 +632,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         layout.setSize(iDim, size);
     }
 
+
+    public void addFile() {
+        addFile(this.fileName);
+    }
     private void addFile(String datasetName) {
         ProjectBase.getActive().addDataset(this, datasetName);
     }

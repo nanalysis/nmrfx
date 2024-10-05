@@ -170,6 +170,7 @@ public class StructureCalculator {
                     force :
                         tors : 0.1
                         irp : 0.0
+                        tors : 0.1
                     stage4.1 :
                         nStepVal : 5000
                         tempVal : [100.0]

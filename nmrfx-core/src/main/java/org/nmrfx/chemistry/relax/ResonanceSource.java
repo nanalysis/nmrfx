@@ -9,7 +9,6 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.peaks.Peak;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -47,12 +46,7 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 13 * hash + Objects.hashCode(this.peak);
-        for (var atom : atoms) {
-            hash = 13 * hash + Objects.hash(atom);
-        }
-        return hash;
+        return Objects.hashCode(getAtomKey());
     }
 
     @Override
@@ -67,10 +61,7 @@ public class ResonanceSource implements Comparable<ResonanceSource> {
             return false;
         }
         final ResonanceSource other = (ResonanceSource) obj;
-        if (!Objects.equals(this.peak, other.peak)) {
-            return false;
-        }
-        return Arrays.deepEquals(this.atoms, other.atoms);
+        return Objects.equals(this.getAtomKey(), other.getAtomKey());
     }
 
     private String makeAtomKey(Atom[] keyAtoms) {

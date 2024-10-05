@@ -437,6 +437,7 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.status = status;
         newPeak.comment = comment;
         newPeak.flag = flag.clone();
+        newPeak.idNum = idNum;
         newPeak.corner = new Corner(corner.getCornerChars());
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(newPeak.peakDims[i]);
@@ -863,7 +864,11 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getName() {
-        return peakList.getName() + "." + getIdNum();
+        if (peakList != null) {
+            return peakList.getName() + "." + getIdNum();
+        } else {
+            return "." + idNum;
+        }
     }
 
     public int getIdNum() {

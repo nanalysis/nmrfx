@@ -537,6 +537,7 @@ public class AnalystApp extends Application {
     public DatasetBrowserController getOrCreateDatasetBrowserController() {
         if (datasetBrowserController == null) {
             datasetBrowserController = DatasetBrowserController.create();
+            datasetBrowserController.setPosition();
         }
         return datasetBrowserController;
     }

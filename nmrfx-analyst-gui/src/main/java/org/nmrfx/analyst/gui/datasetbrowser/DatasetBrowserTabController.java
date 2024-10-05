@@ -1,9 +1,6 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import org.nmrfx.utilities.DatasetSummary;
 import javafx.scene.layout.*;
@@ -19,6 +16,8 @@ public abstract class DatasetBrowserTabController {
     protected final TextField filterTextField = new TextField();
     protected final TextField directoryTextField = new TextField();
     protected DatasetBrowserTableView tableView;
+    Button datasetButton;
+    Button fidButton;
 
     protected DatasetBrowserTabController(String tabName) {
         tab = new Tab(tabName, borderPane);
@@ -38,10 +37,16 @@ public abstract class DatasetBrowserTabController {
     private void initToolbar() {
         Button retrieveIndexButton = new Button("Index");
         retrieveIndexButton.setOnAction(e -> retrieveIndex());
+        datasetButton = new Button("Dataset");
+        datasetButton.setDisable(true);
+        datasetButton.setOnAction(e -> openFile(false));
+        fidButton = new Button("FID");
+        fidButton.setOnAction(e -> openFile(true));
         HBox.setHgrow(toolbarSpacer, Priority.ALWAYS);
+        Label filterLabel = new Label("Filter:");
         filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filterChanged());
         filterTextField.setPrefWidth(200);
-        toolBar.getItems().addAll(retrieveIndexButton, toolbarSpacer, filterTextField);
+        toolBar.getItems().addAll(retrieveIndexButton, fidButton, datasetButton, toolbarSpacer, filterLabel, filterTextField);
     }
 
     /**
@@ -64,6 +69,15 @@ public abstract class DatasetBrowserTabController {
                 }
             }
         });
+        tableView.getSelectionModel().selectedIndexProperty().addListener(e -> {
+                    DatasetSummary datasetSummary = tableView.getSelectionModel().getSelectedItem();
+                    if (datasetSummary != null) {
+                        datasetButton.setDisable(datasetSummary.getProcessed().isEmpty());
+                    } else {
+                        datasetButton.setDisable(true);
+                    }
+                }
+        );
     }
 
     /**
@@ -74,6 +88,7 @@ public abstract class DatasetBrowserTabController {
 
     /**
      * Opens the selected file.
+     *
      * @param isFid Whether to open as FID or not
      */
     protected abstract void openFile(boolean isFid);
@@ -90,5 +105,9 @@ public abstract class DatasetBrowserTabController {
         if (tableView != null) {
             tableView.setFilter(filterTextField.getText());
         }
+    }
+
+    protected void bindButtons() {
+        fidButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
     }
 }

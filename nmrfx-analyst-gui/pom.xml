@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.10-SNAPSHOT</version>
+        <version>11.4.11-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -22,7 +22,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.4.10-SNAPSHOT</version>
+                <version>11.4.11-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -33,12 +33,12 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-analyst</artifactId>
-            <version>11.4.10-SNAPSHOT</version>
+            <version>11.4.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-plugin-api</artifactId>
-            <version>11.4.10-SNAPSHOT</version>
+            <version>11.4.11-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.fxmisc.richtext</groupId>
