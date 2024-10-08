@@ -2,7 +2,9 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -15,14 +17,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PeakFolder {
-    public List<String> dimLabels = Arrays.asList("H","C");
+    List<String> dimLabels = Arrays.asList("H","C");
     HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
     public PeakFolder() {
         loadComponents();
-    }
-
-    private String getGroupName (String residueName, String atomName) {
-        return residueName + '.' + atomName;
     }
 
     private void loadComponents() {
@@ -44,10 +42,7 @@ public class PeakFolder {
         for (String line : lines) {
             String[] fields = line.split(" ");
             int nameCol = 0;
-            String[] groups = fields[nameCol].split("-");
-            String residueType = groups[1];
-            String atomType = groups.length > 2 ? groups[2] : "";
-            String groupName = getGroupName(residueType, atomType);
+            String groupName = fields[nameCol];
             if (clusters.containsKey(groupName)) {
                 clusters.get(groupName).add(fields);
             } else {
@@ -89,7 +84,6 @@ public class PeakFolder {
     public void unfoldPeakList(PeakList peakList, String[] dimToFold, boolean[] alias) {
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         double[][] bounds = new double[dimToFold.length][2];
-        int[] bondedDims = new int[dimToFold.length];
 
         if (dataset != null) {
             for (int i = 0; i < dimToFold.length; i++) {
@@ -97,8 +91,6 @@ public class PeakFolder {
                 int size = dataset.getSizeReal(iDim);
                 bounds[i][0] = dataset.pointToPPM(iDim, 0);
                 bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
-                String relationDim = peakList.getSpectralDim(dimToFold[i]).getRelationDim();
-                bondedDims[i] = peakList.getSpectralDim(relationDim).getIndex();
             }
 
             int[] peakListToCluster = new int[peakList.getNDim()]; //map peakList dims to mvn dims
@@ -109,26 +101,36 @@ public class PeakFolder {
                 }
             );
 
-            for (Peak peak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
-                double[] shifts = new double[dimLabels.size()];
+            for (Peak peak : peakList.peaks()) {
+                double[] shifts = new double[peakList.getNDim()];
+                String groupName = "";
+
+                for (PeakDim dim : peak.getPeakDims()) { //set shifts according to dimensions of dimLabels
+                    int iDim = peakListToCluster[dim.getSpectralDim()];
+                    shifts[iDim] = dim.getChemShiftValue();
+
+                    String assignment = dim.getLabel();
+                    String residueName = ".";
+                    String atomName = ".";
+                    if (MoleculeFactory.getActive() != null) {
+                        Atom atom = Molecule.getAtomByName(assignment);
+                        if (atom != null) {
+                            residueName = atom.getResidueName();
+                            atomName = atom.getName();
+                        }
+                    }
+                    if (!groupName.isBlank()) { groupName += "-";}
+                    groupName += residueName + "-" + atomName;
+                }
+
+                MixtureMultivariateNormalDistribution mvn = MMVNs.get("all");
+                if (MMVNs.containsKey(groupName)) {
+                    mvn = MMVNs.get(groupName);
+                }
+
                 for (int i = 0; i < dimToFold.length; i++) {
                     String label = dimToFold[i];
                     int iDim = peakListToCluster[peak.getPeakDim(label).getSpectralDim()];
-                    int bondedDim = peakListToCluster[peak.getPeakDim(bondedDims[i]).getSpectralDim()];
-                    shifts[iDim] = peak.getPeakDim(label).getChemShiftValue();
-                    shifts[bondedDim] = peak.getPeakDim(bondedDims[i]).getChemShiftValue();
-
-                    MixtureMultivariateNormalDistribution mvn = MMVNs.get("all");
-                    String assignment = peak.getPeakDim(label).getLabel();
-                    Atom atom = Molecule.getAtomByName(assignment);
-                    if (atom != null) {
-                        String residueName = atom.getResidueName();
-                        String atomName = atom.getName();
-                        String groupName = getGroupName(residueName, atomName);
-                        if (MMVNs.containsKey(groupName)) {
-                            mvn = MMVNs.get(groupName);
-                        }
-                    }
 
                     double density = mvn.density(shifts);
 
@@ -158,6 +160,4 @@ public class PeakFolder {
             }
         }
     }
-
-
 }
