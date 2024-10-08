@@ -15,27 +15,92 @@ public class SimData {
 
     private static final Map<String, SimData> simDataMap = new TreeMap<>();
 
-    double ppmScale = 20.0;
-    double jScale = 250.0;
+    static double ppmScale = 20.0;
+    static double jScale = 250.0;
     final String name;
     final String id;
-    final short[][] ppms;
-    final short[][] jValues;
-    final short[][] jPairs;
-    final int[][] ids;
 
-    final int[][][] equiv;
-
+    AtomBlock[] blocks;
     double[][][] matrices = null;
 
     public SimData(String name, String id, int nBlocks) {
         this.name = name;
         this.id = id;
-        ppms = new short[nBlocks][];
-        jValues = new short[nBlocks][];
-        jPairs = new short[nBlocks][];
-        ids = new int[nBlocks][];
-        equiv = new int[nBlocks][][];
+        blocks = new AtomBlock[nBlocks];
+        for (int i = 0; i < nBlocks; i++) {
+            blocks[i] = new AtomBlock();
+        }
+    }
+
+    public static class AtomBlock {
+        List<int[]> ppmList = new ArrayList<>();
+        List<Short> sppms = new ArrayList<>();
+        List<Short> jValues = new ArrayList<>();
+        List<Short> jPairs = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>();
+
+        public int nPPMs() {
+            return ppmList.size();
+        }
+
+        public double ppm(int i) {
+            int[] j = ppmList.get(i);
+            return sppms.get(j[0]) * ppmScale / Short.MAX_VALUE;
+        }
+
+        public void ppm(int i, double value) {
+            int[] iPPMs = ppmList.get(i);
+            double f = value / ppmScale;
+            short sppm = (short) Math.round(f * Short.MAX_VALUE);
+            for (int iPPM : iPPMs) {
+                sppms.set(iPPM, sppm);
+            }
+        }
+        public Double j(int i, int j) {
+            for (int k=0;k<jValues.size();k++) {
+                int iTest = jPairs.get(k * 2);
+                int jTest = jPairs.get(k*2 +1);
+                if (((i == iTest) && (j == jTest)) || ((j == iTest) && (i == jTest))){
+                    return jValues.get(k) * jScale / Short.MAX_VALUE;
+                }
+            }
+            return 0.0;
+        }
+
+        public void j(int i, int j, double value) {
+            double f = value / jScale;
+            short jValue = (short) Math.round(f * Short.MAX_VALUE);
+            for (int k=0;k<jValues.size();k++) {
+                int iTest = jPairs.get(k * 2);
+                int jTest = jPairs.get(k*2 +1);
+                if (((i == iTest) && (j == jTest)) || ((j == iTest) && (i == jTest))){
+                    jValues.set(k, jValue);
+                }
+            }
+        }
+
+        public int id(int i) {
+            return ids.get(i);
+        }
+    }
+
+    public SimData copy() {
+        int nBlocks = nBlocks();
+        SimData simData = new SimData(name, id, nBlocks);
+        for (int i = 0; i < nBlocks; i++) {
+            AtomBlock newBlock = simData.blocks[i];
+            AtomBlock oldBlock = blocks[i];
+            newBlock.ppmList.addAll(oldBlock.ppmList);
+            newBlock.sppms.addAll(oldBlock.sppms);
+            newBlock.jValues.addAll(oldBlock.jValues);
+            newBlock.jPairs.addAll(oldBlock.jPairs);
+            newBlock.ids.addAll(oldBlock.ids);
+        }
+        return simData;
+    }
+
+    public AtomBlock atomBlock(int i) {
+        return blocks[i];
     }
 
     public static boolean loaded() {
@@ -43,13 +108,14 @@ public class SimData {
     }
 
     public int nBlocks() {
-        return ppms.length;
+        return blocks.length;
     }
 
     public void setMatrices(double[][][] matrices) {
         this.matrices = matrices;
     }
 
+/*
     public double[][][] getMatrices() {
         int nBlocks = ppms.length;
         double[][][] matrix = new double[nBlocks][][];
@@ -73,76 +139,92 @@ public class SimData {
         }
         return matrix;
     }
+*/
 
     public void setIDs(int iBlock, List<Integer> names) {
-        ids[iBlock] = new int[names.size()];
-        for (int i = 0; i < ids[iBlock].length; i++) {
-            ids[iBlock][i] = names.get(i);
-        }
+        AtomBlock block = blocks[iBlock];
+        block.ids.addAll(names);
     }
 
-    public int[] getIDs(int iBlock) {
-        return ids[iBlock];
+    public List<Integer> getIDs(int iBlock) {
+        return blocks[iBlock].ids;
     }
 
-    public int[][] getEquiv(int iBlock) {
-        return equiv[iBlock];
-    }
     public void setPPMs(int iBlock, List<Double> values) {
-        ppms[iBlock] = new short[values.size()];
-        double tol = 0.002;
-        equiv[iBlock] = new int[ppms[iBlock].length][0];
-
-        for (int i=0;i<ppms[iBlock].length - 2;i++) {
-                double d1 = Math.abs(values.get(i) - values.get(i+1));
-                double d2 = Math.abs(values.get(i) - values.get(i+2));
-                if ((d1 < tol) && (d2 < tol)) {
-                    equiv[iBlock][i] = new int[]{i+1,i+2};
-                    equiv[iBlock][i+1] = new int[]{i};
-                    equiv[iBlock][i+2] = new int[]{i};
-                }
+        AtomBlock block = blocks[iBlock];
+        double tol = 0.004;
+        block.sppms.clear();
+        block.ppmList.clear();
+        for (double value : values) {
+            double f = value / ppmScale;
+            short sppm = (short) Math.round(f * Short.MAX_VALUE);
+            block.sppms.add(sppm);
         }
-        for (int i = 0; i < ppms[iBlock].length; i++) {
-            double f = values.get(i) / ppmScale;
-            ppms[iBlock][i] = (short) Math.round(f * Short.MAX_VALUE);
+
+        int nPPMS = values.size();
+        boolean[] used = new boolean[nPPMS];
+        for (int i = 0; i < nPPMS; i++) {
+            if (used[i]) {
+                continue;
+            }
+            double v1 = values.get(i);
+            List<Integer> matches = new ArrayList<>();
+            matches.add(i);
+            used[i] = true;
+            for (int j = i + 1; j < nPPMS; j++) {
+                double v2 = values.get(j);
+                double delta = Math.abs(v2 - v1);
+                if (delta < tol) {
+                    matches.add(j);
+                    used[j] = true;
+                }
+            }
+            int[] matchArray = new int[matches.size()];
+            for (int j = 0; j < matchArray.length; j++) {
+                matchArray[j] = matches.get(j);
+            }
+            block.ppmList.add(matchArray);
         }
     }
 
     public double[] getPPMs(int iBlock) {
-        double[] values = new double[ppms[iBlock].length];
+        AtomBlock block = blocks[iBlock];
+        double[] values = new double[block.sppms.size()];
         for (int i = 0; i < values.length; i++) {
-            values[i] = ppms[iBlock][i] * ppmScale / Short.MAX_VALUE;
+            values[i] = block.sppms.get(i) * ppmScale / Short.MAX_VALUE;
         }
         return values;
     }
 
     public void setJValues(int iBlock, List<Double> values) {
-        jValues[iBlock] = new short[values.size()];
-        for (int i = 0; i < jValues[iBlock].length; i++) {
-            double f = values.get(i) / jScale;
-            jValues[iBlock][i] = (short) Math.round((f * Short.MAX_VALUE));
+        AtomBlock block = blocks[iBlock];
+        for (Double value : values) {
+            double f = value / jScale;
+            block.jValues.add((short) Math.round((f * Short.MAX_VALUE)));
         }
     }
 
     public double[] getJValues(int iBlock) {
-        double[] values = new double[jValues[iBlock].length];
+        AtomBlock block = blocks[iBlock];
+        double[] values = new double[block.jValues.size()];
         for (int i = 0; i < values.length; i++) {
-            values[i] = jValues[iBlock][i] * jScale / Short.MAX_VALUE;
+            values[i] = block.jValues.get(i) * jScale / Short.MAX_VALUE;
         }
         return values;
     }
 
     public void setJPairs(int iBlock, List<Integer> values) {
-        jPairs[iBlock] = new short[values.size()];
-        for (int i = 0; i < jPairs[iBlock].length; i++) {
-            jPairs[iBlock][i] = values.get(i).shortValue();
+        AtomBlock block = blocks[iBlock];
+        for (Integer value : values) {
+            block.jPairs.add((short) (value - 1));
         }
     }
 
     public int[] getJPairs(int iBlock) {
-        int[] values = new int[jPairs[iBlock].length];
+        AtomBlock block = blocks[iBlock];
+        int[] values = new int[block.jPairs.size()];
         for (int i = 0; i < values.length; i++) {
-            values[i] = jPairs[iBlock][i];
+            values[i] = block.jPairs.get(i);
         }
         return values;
     }
@@ -167,7 +249,7 @@ public class SimData {
         pattern = pattern.trim();
         List<String> names = new ArrayList<>();
         boolean startsWith = false;
-        if (pattern.length() > 0) {
+        if (!pattern.isEmpty()) {
             if (Character.isUpperCase(pattern.charAt(0))
                     || Character.isDigit(pattern.charAt(0))) {
                 startsWith = true;
@@ -208,12 +290,11 @@ public class SimData {
         dataset.setLabel(0, pars.getLabel());
         return dataset;
     }
-//    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
-    public static CompoundData genCompoundData(String cmpdID, String name, SimDataVecPars pars, double lb,
+    public static CompoundData genCompoundData(String cmpdID, String name, SimData simData, SimDataVecPars pars, double lb,
                                                double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
-        List<Region> regions = genVec(name, vec, lb);
+        List<Region> regions = genVec(simData, vec, lb);
         CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);
         cData.setVec(vec);
         return cData;
@@ -238,17 +319,9 @@ public class SimData {
         return Optional.ofNullable(data);
     }
 
-    public static List<Region> genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
-        SimData data = simDataMap.get(name);
-        if (data == null) {
-            throw new IllegalArgumentException("Can't find data for \"" + name + "\"");
-        }
-        return genVec(data, vec, lb);
-    }
-
     public static List<Region> genVec(SimData data, Vec vec, double lb) throws IllegalArgumentException {
         vec.zeros();
-        int nBlocks = data.ppms.length;
+        int nBlocks = data.blocks.length;
         List<double[]> regions = new ArrayList<>();
         for (int i = 0; i < nBlocks; i++) {
             double[] shifts = data.getPPMs(i);
@@ -258,7 +331,7 @@ public class SimData {
                 double min = shifts[j];
                 double max = shifts[j];
                 for (int k = 0; k < couplings.length; k++) {
-                    if ((pairs[k * 2] - 1 == j) || (pairs[k * 2 + 1] - 1 == j)) {
+                    if ((pairs[k * 2] == j) || (pairs[k * 2 + 1] == j)) {
                         double delta = Math.abs(couplings[k]) / vec.getSF();
                         min = min - delta / 2;
                         max = max + delta / 2;
@@ -270,7 +343,7 @@ public class SimData {
             SimShifts simShifts;
             if (data.matrices != null) {
                 simShifts = new SimShifts(data.matrices[i], vec.getSF());
-            }  else {
+            } else {
                 simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
             }
             simShifts.diag();
@@ -289,8 +362,8 @@ public class SimData {
                     continue;
                 } else {
                     overlaps = true;
-                    fRegion.min = min < fRegion.min ? min : fRegion.min;
-                    fRegion.max = max > fRegion.max ? max : fRegion.max;
+                    fRegion.min = Math.min(min, fRegion.min);
+                    fRegion.max = Math.max(max, fRegion.max);
                     fRegion.nProtons++;
                     break;
                 }

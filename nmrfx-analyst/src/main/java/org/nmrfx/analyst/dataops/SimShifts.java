@@ -43,8 +43,8 @@ public class SimShifts {
             matrix[i][i] = shifts[i];
         }
         for (int i = 0; i < pairs.length; i += 2) {
-            int r = pairs[i] - 1;
-            int c = pairs[i + 1] - 1;
+            int r = pairs[i];
+            int c = pairs[i + 1];
             double coupling = couplings[i / 2];
             matrix[r][c] = coupling;
             matrix[c][r] = coupling;

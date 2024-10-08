@@ -1,10 +1,14 @@
 package org.nmrfx.processor.gui;
 
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -27,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -48,6 +53,15 @@ public class ChemicalLibraryController {
     CheckBox activeBox;
     TextField shiftField;
     TextField scaleField;
+    GridPane gridPane;
+    Slider ppmSlider;
+    Slider couplingSlider;
+
+    ToggleGroup atomToggleGroup = new ToggleGroup();
+    ToggleGroup jToggleGroup = new ToggleGroup();
+    List<SimpleDoubleProperty> ppmProperties = new ArrayList<>();
+    List<SimpleDoubleProperty> jProperties = new ArrayList<>();
+
     CompoundMatch activeMatch = null;
     double sliderRange = 100.0;
     ComboBox<String> activeField;
@@ -56,6 +70,7 @@ public class ChemicalLibraryController {
     CompoundMatcher cmpdMatcher = new CompoundMatcher();
     SimpleObjectProperty<SimData> currentSimData = new SimpleObjectProperty<>();
 
+    ChangeListener propChangeListener;
     enum LIBRARY_MODE {
         GISSMO,
         SEGMENTS
@@ -124,6 +139,7 @@ public class ChemicalLibraryController {
 
         HBox fitBar2 = new HBox();
         fitBar2.setAlignment(Pos.CENTER_LEFT);
+        gridPane = new GridPane();
         adjusterBox.getChildren().add(fitBar2);
         HBox fitBar3 = new HBox();
         fitBar3.setAlignment(Pos.CENTER_LEFT);
@@ -178,11 +194,42 @@ public class ChemicalLibraryController {
             }
         });
 
+        VBox gissmoBox = new VBox();
+        adjusterBox.getChildren().add(gissmoBox);
+        makeAdjuster(gissmoBox);
+
         activeBox = new CheckBox();
         fitBar.getChildren().add(activeBox);
         activeBox.setOnAction(e -> setActive());
         toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar)));
+        setupListeners();
 
+    }
+
+    private Slider createSlider(double min, double max, double value) {
+        Slider slider = new Slider(min, max, value);
+        slider.setBlockIncrement(0.5);
+        slider.setOrientation(Orientation.HORIZONTAL);
+        slider.setOnMouseReleased(e -> updateSliderRanges());
+        slider.setPrefWidth(200);
+        slider.setMaxWidth(200);
+        return slider;
+
+    }
+    private void makeAdjuster(VBox vBox) {
+        ppmSlider = createSlider(-sliderRange /2, sliderRange /2, 0);
+        couplingSlider = createSlider(0, 20, 10);
+        HBox ppmBox = new HBox();
+        Label ppmLabel = new Label("Shift");
+        ppmBox.setSpacing(10);
+        ppmBox.getChildren().addAll(ppmLabel, ppmSlider);
+        HBox jBox = new HBox();
+        Label jLabel = new Label("Coupling");
+        jBox.setSpacing(10);
+        jBox.getChildren().addAll(jLabel, couplingSlider);
+        vBox.getChildren().add(ppmBox);
+        vBox.getChildren().add(jBox);
+        vBox.getChildren().add(gridPane);
     }
 
     public VBox getvBox() {
@@ -437,6 +484,159 @@ public class ChemicalLibraryController {
         return currentSimData;
     }
 
+    private void updateGrid(SimData simData) {
+        gridPane.getChildren().clear();
+        int nBlocks = simData.nBlocks();
+        ppmProperties.clear();
+        jProperties.clear();
+        for (int iBlock = 0;iBlock<nBlocks;iBlock++) {
+            SimData.AtomBlock atomBlock = simData.atomBlock(iBlock);
+            int nPPMs = atomBlock.nPPMs();
+            for (int iPPM=0;iPPM<nPPMs;iPPM++) {
+                RadioButton ppmRadioButton = new RadioButton();
+                ppmRadioButton.setToggleGroup(atomToggleGroup);
+                ppmRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
+                ppmRadioButton.setUserData(iPPM);
+                gridPane.add(ppmRadioButton, 0, iPPM);
+                if (iPPM== 0) {
+                    atomToggleGroup.selectToggle(ppmRadioButton);
+                }
+                SimpleDoubleProperty ppmProperty = new SimpleDoubleProperty(atomBlock.ppm(iPPM));
+                ppmProperties.add(ppmProperty);
+                ppmProperty.addListener(propChangeListener);
+
+                TextField ppmField = GUIUtils.getDoubleTextField(ppmProperty, 3);
+                ppmField.setPrefWidth(70);
+                gridPane.add(ppmField, 1, iPPM);
+                SimpleDoubleProperty jProperty = new SimpleDoubleProperty(0.0);
+                jProperties.add(jProperty);
+                jProperty.addListener(propChangeListener);
+
+                TextField jField = GUIUtils.getDoubleTextField(jProperty, 2);
+                jField.setPrefWidth(70);
+                gridPane.add(jField, 2, iPPM);
+                RadioButton jRadioButton = new RadioButton();
+                jRadioButton.setUserData(iPPM);
+                jRadioButton.setToggleGroup(jToggleGroup);
+                jRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
+                gridPane.add(jRadioButton, 3, iPPM);
+
+            }
+        }
+    }
+
+    private void setupListeners() {
+        atomToggleGroup.selectedToggleProperty().addListener(e -> updateSelectedAtom(true));
+        jToggleGroup.selectedToggleProperty().addListener(e -> updateSelectedAtom(false));
+        propChangeListener = new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                updateActiveData();
+            }
+        };
+
+    }
+
+    private void updatePPMSlider(int iAtom) {
+        if ((iAtom >= 0) && (iAtom < ppmProperties.size())) {
+            for (var ppmProp : ppmProperties) {
+                ppmSlider.valueProperty().unbindBidirectional(ppmProp);
+            }
+            var ppmValue = ppmProperties.get(iAtom);
+            double shift = ppmValue.doubleValue();
+            double range = 0.5;
+            ppmSlider.setMin(shift - range / 2.0);
+            ppmSlider.setMax(shift + range / 2.0);
+            ppmSlider.setValue(shift);
+            ppmSlider.valueProperty().bindBidirectional(ppmValue);
+        }
+    }
+
+    private void updateJProperties(int iAtom, int iCoup) {
+        if (currentSimData.get() != null) {
+            SimData.AtomBlock block = currentSimData.get().atomBlock(0);
+            for (var couplingProp : jProperties) {
+                couplingSlider.valueProperty().unbindBidirectional(couplingProp);
+                couplingProp.removeListener(propChangeListener);
+            }
+            for (int jCoup = 0; jCoup < jProperties.size(); jCoup++) {
+                Double jValue = block.j(iAtom, jCoup);
+                jProperties.get(jCoup).set(jValue);
+            }
+            if (iCoup >= 0) {
+                couplingSlider.setValue(jProperties.get(iCoup).doubleValue());
+                jProperties.get(iCoup).bindBidirectional(couplingSlider.valueProperty());
+            }
+            for (var couplingProp : jProperties) {
+                couplingProp.addListener(propChangeListener);
+            }
+        }
+    }
+
+    private void updateCouplingSlider(int iAtom, int jAtom) {
+        if ((iAtom >= 0) && (iAtom < jProperties.size())) {
+            for (var couplingProp : jProperties) {
+                couplingSlider.valueProperty().unbindBidirectional(couplingProp);
+            }
+            var jProp = jProperties.get(jAtom);
+            jProp.removeListener(propChangeListener);
+            double jValue = jProp.doubleValue();
+            couplingSlider.setMin(0);
+            couplingSlider.setMax(20.0);
+            couplingSlider.setValue(jValue);
+            jProp.addListener(propChangeListener);
+            jProperties.get(jAtom).bindBidirectional(couplingSlider.valueProperty());
+        }
+    }
+
+    private void updateSelectedAtom(boolean ppmMode) {
+        int iAtom = -1;
+        int jAtom = -1;
+        RadioButton atomRadioButton = (RadioButton) atomToggleGroup.getSelectedToggle();
+        if (atomRadioButton != null) {
+            iAtom = (Integer) atomRadioButton.getUserData();
+        }
+        RadioButton jRadioButton = (RadioButton) jToggleGroup.getSelectedToggle();
+        if (jRadioButton != null) {
+            jAtom = (Integer) jRadioButton.getUserData();
+        }
+        if (ppmMode) {
+            updatePPMSlider(iAtom);
+            updateJProperties(iAtom, jAtom);
+        } else {
+            updateCouplingSlider(iAtom, jAtom);
+        }
+    }
+
+    void updateActiveData() {
+        Toggle atomToggle = atomToggleGroup.getSelectedToggle();
+        Toggle couplingToggle = jToggleGroup.getSelectedToggle();
+
+        int activeI = atomToggle != null ? (Integer) atomToggle.getUserData() : -1;
+        int activeJ = couplingToggle != null ? (Integer) couplingToggle.getUserData() : -1;
+        SimData simData = currentSimData.get();
+        if (simData != null) {
+            Dataset testDataset = Dataset.getDataset(simData.getName().toLowerCase());
+            if (testDataset != null) {
+                int j = 0;
+                for (int iBlock = 0; iBlock < simData.nBlocks(); iBlock++) {
+                    SimData.AtomBlock atomBlock = simData.atomBlock(iBlock);
+                    int nPPMs = atomBlock.nPPMs();
+                    for (int iPPM = 0; iPPM < nPPMs; iPPM++) {
+                        var ppmProp = ppmProperties.get(j);
+                        atomBlock.ppm(iPPM, ppmProp.doubleValue());
+                        var jProp = jProperties.get(j);
+                        if ((activeI != iPPM) && (iPPM == activeJ)) {
+                            atomBlock.j(activeI, iPPM, jProp.doubleValue());
+                        }
+                        j++;
+                    }
+                }
+                updateDataset(simData, testDataset);
+            }
+        }
+    }
+
     public void setMol() {
         ChemicalLibraryController.LIBRARY_MODE mode = modeChoiceBox.getValue();
         if (!loadData(mode)) {
@@ -446,10 +646,11 @@ public class ChemicalLibraryController {
         currentSimData.set(null);
         boolean dataInLibrary = mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS ? DBData.contains(name) : SimData.contains(name);
         if (dataInLibrary) {
-            Dataset newDataset = Dataset.getDataset(name);
+            Dataset testDataset = Dataset.getDataset(name);
             PolyChart chart = fxmlController.getActiveChart();
             boolean appendMode = false;
-            if (newDataset == null) {
+            final Dataset newDataset;
+            if (testDataset == null) {
                 Dataset currData = null;
                 for (PolyChart pChart : fxmlController.getCharts()) {
                     currData = (Dataset) pChart.getDataset();
@@ -461,14 +662,22 @@ public class ChemicalLibraryController {
                     appendMode = true;
                 }
                 newDataset = makeDataset(mode, currData, name);
+            } else {
+                newDataset = testDataset;
             }
             if (mode == LIBRARY_MODE.GISSMO) {
-                SimData.getSimData(name).ifPresent(simData -> currentSimData.set(simData));
+                SimData.getSimData(name).ifPresent(simData -> {
+                    SimData activeSimData = simData.copy();
+                    currentSimData.set(activeSimData);
+                    updateDataset(activeSimData, newDataset);
+                    updateGrid(activeSimData);
+                });
             }
 
             fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
             chart.setDataset(newDataset, appendMode, false);
-
+            activeField.getItems().add(name);
+            activeField.setValue(name);
             updateColors(chart);
             searchField.setText("");
             chart.refresh();
@@ -477,27 +686,15 @@ public class ChemicalLibraryController {
         }
     }
 
-    public void updateDataset(SimData simData, String name) {
-        Dataset newDataset = Dataset.getDataset(name);
+
+
+    public void updateDataset(SimData simData, Dataset newDataset) {
         PolyChart chart = fxmlController.getActiveChart();
         boolean appendMode = false;
-        if (newDataset == null) {
-            Dataset currData = null;
-            for (PolyChart pChart : fxmlController.getCharts()) {
-                currData = (Dataset) pChart.getDataset();
-                if (currData != null) {
-                    break;
-                }
-            }
-            if (currData != null) {
-                appendMode = true;
-            }
-            newDataset = makeDataset(currData, simData, name);
-        } else {
-            Vec vec = newDataset.getVec();
-            double lb = AnalystPrefs.getLibraryVectorLB();
-            SimData.genVec(simData, vec, lb);
-        }
+        Vec vec = newDataset.getVec();
+        double lb = AnalystPrefs.getLibraryVectorLB();
+        SimData.genVec(simData, vec, lb);
+
         fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
         chart.setDataset(newDataset, appendMode, false);
 
@@ -505,6 +702,7 @@ public class ChemicalLibraryController {
         searchField.setText("");
         chart.refresh();
     }
+
     public void createCmpdData() {
         ChemicalLibraryController.LIBRARY_MODE mode = modeChoiceBox.getValue();
         if (!loadData(mode)) {
@@ -515,7 +713,6 @@ public class ChemicalLibraryController {
         String name = searchField.getText().toLowerCase();
         List<String> names = Arrays.asList("sum", "current");
         Dataset[] datasets = new Dataset[names.size()];
-        System.out.println("Mol Name: " + name);
         boolean dataInLibrary = mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS ? DBData.contains(name) : SimData.contains(name);
         if (dataInLibrary) {
             PolyChart chart = fxmlController.getActiveChart();
@@ -538,8 +735,14 @@ public class ChemicalLibraryController {
             if (mode == LIBRARY_MODE.SEGMENTS) {
                 cData = DBData.makeData(name, pars);
             } else {
-                SimData.getSimData(name).ifPresent(simData -> currentSimData.set(simData));
-                cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc);
+                var simDataOpt = SimData.getSimData(name);
+                if (simDataOpt.isPresent()) {
+                    SimData simData = simDataOpt.get();
+                    currentSimData.set(simData);
+                    cData = SimData.genCompoundData(name, name, simData, pars, lb, refConc, cmpdConc);
+                } else {
+                    return;
+                }
             }
             CompoundData.put(cData, name);
             activeField.getItems().add(name);
