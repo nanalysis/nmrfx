@@ -572,8 +572,8 @@ public class PeakMenuBar {
 
     void readList() {
         FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
+        List<File> files = fileChooser.showOpenMultipleDialog(null);
+        for (File file : files) {
             String listFileName = file.getPath();
             try {
                 PeakReader peakReader = new PeakReader();
@@ -594,6 +594,7 @@ public class PeakMenuBar {
             } catch (IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
+                return;
             }
         }
     }
