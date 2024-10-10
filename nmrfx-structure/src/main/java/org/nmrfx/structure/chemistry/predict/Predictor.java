@@ -384,7 +384,7 @@ public class Predictor {
 
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
-        if ((molecule != null) && !molecule.getDotBracket().equals("")) {
+        if ((molecule != null) && !molecule.getDotBracket().isEmpty()) {
             try (PythonInterpreter interp = new PythonInterpreter()) {
                 interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
             }
@@ -628,43 +628,45 @@ public class Predictor {
                 if (line == null) {
                     break;
                 } else {
-                    if (!line.equals("")) {
+                    if (!line.isEmpty()) {
                         String[] fields = line.split("\t");
                         if (fields.length > 0) {
-                            if (fields[0].equals("rmax")) {
-                                setRMax(Double.parseDouble(fields[1]));
-                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
-                                // it was previously used to help set the typeIndex
-                                setIntraScale(Double.parseDouble(fields[3]));
-                            } else if (fields[0].equals("coef")) {
-                                state = "coef";
-                                nCoef = Integer.parseInt(fields[2]) + 1;
-                                if (!coefMap.containsKey(fields[1])) {
-                                    coefMap.put(fields[1], coefMap.size());
+                            switch (fields[0]) {
+                                case "rmax" -> {
+                                    setRMax(Double.parseDouble(fields[1]));
+                                    // For this line fields[2] is unused but its value is the atom type, e.g. H, C
+                                    // it was previously used to help set the typeIndex
+                                    setIntraScale(Double.parseDouble(fields[3]));
                                 }
-                                typeIndex = coefMap.get(fields[1]);
-                                alphas[typeIndex] = new double[nCoef];
-                                coefAtoms = new String[nCoef];
-                                alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
-                                coefAtoms[nCoef - 1] = "intercept";
-                            } else if (fields[0].equals("baseshifts")) {
-                                state = "baseshifts";
-                            } else if (fields[0].equals("mae")) {
-                                state = "mae";
-                            } else {
-                                switch (state) {
-                                    case "coef" -> {
-                                        int index = Integer.parseInt(fields[0]);
-                                        coefAtoms[index] = fields[1];
-                                        alphas[typeIndex][index] = Double.parseDouble(fields[2]);
+                                case "coef" -> {
+                                    state = "coef";
+                                    nCoef = Integer.parseInt(fields[2]) + 1;
+                                    if (!coefMap.containsKey(fields[1])) {
+                                        coefMap.put(fields[1], coefMap.size());
                                     }
-                                    case "baseshifts" -> {
-                                        double shift = Double.parseDouble(fields[1]);
-                                        baseShiftMap.put(fields[0], shift);
-                                    }
-                                    case "mae" -> {
-                                        double value = Double.parseDouble(fields[1]);
-                                        maeMap.put(fields[0], value);
+                                    typeIndex = coefMap.get(fields[1]);
+                                    alphas[typeIndex] = new double[nCoef];
+                                    coefAtoms = new String[nCoef];
+                                    alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
+                                    coefAtoms[nCoef - 1] = "intercept";
+                                }
+                                case "baseshifts" -> state = "baseshifts";
+                                case "mae" -> state = "mae";
+                                default -> {
+                                    switch (state) {
+                                        case "coef" -> {
+                                            int index = Integer.parseInt(fields[0]);
+                                            coefAtoms[index] = fields[1];
+                                            alphas[typeIndex][index] = Double.parseDouble(fields[2]);
+                                        }
+                                        case "baseshifts" -> {
+                                            double shift = Double.parseDouble(fields[1]);
+                                            baseShiftMap.put(fields[0], shift);
+                                        }
+                                        case "mae" -> {
+                                            double value = Double.parseDouble(fields[1]);
+                                            maeMap.put(fields[0], value);
+                                        }
                                     }
                                 }
                             }
@@ -704,7 +706,7 @@ public class Predictor {
                 if (line == null) {
                     break;
                 } else {
-                    if (!line.equals("")) {
+                    if (!line.isEmpty()) {
                         String[] fields = line.split("\t");
                         String aName1 = fields[0];
                         for (int i = 1; i < fields.length; i++) {

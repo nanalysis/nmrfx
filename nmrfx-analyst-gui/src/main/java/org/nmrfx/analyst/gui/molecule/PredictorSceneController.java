@@ -8,9 +8,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -89,7 +87,7 @@ public class PredictorSceneController implements Initializable, StageBasedContro
 
         try {
             int target = targetChoice.getValue();
-            int ppmSet = 0;
+            int ppmSet;
             if (targetType.getValue().equals("Ref Set")) {
                 ppmSet = -target - 1;
             } else {
@@ -106,12 +104,12 @@ public class PredictorSceneController implements Initializable, StageBasedContro
     }
 
     boolean checkDotBracket(Molecule molecule) {
-        if (molecule.getDotBracket().equals("")) {
+        if (molecule.getDotBracket().isEmpty()) {
             TextInputDialog textDialog = new TextInputDialog("Enter dot-bracket sequence");
             Optional<String> result = textDialog.showAndWait();
             if (result.isPresent()) {
                 String dotBracket = result.get().trim();
-                if (dotBracket.equals("")) {
+                if (dotBracket.isEmpty()) {
                     return false;
                 }
                 molecule.setDotBracket(dotBracket);

@@ -1,17 +1,18 @@
 package org.nmrfx.analyst.gui.tools;
 
-import javafx.fxml.FXML;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public class SliderLayout {
 
@@ -74,7 +75,7 @@ public class SliderLayout {
     }
 
     Optional<DatasetBase> getDatasetForType(String type) {
-        return Dataset.datasets().stream().filter(d -> d.getName().toLowerCase().contains(type)).findFirst();
+        return DatasetBase.datasets().stream().filter(d -> d.getName().toLowerCase().contains(type)).findFirst();
 
     }
 

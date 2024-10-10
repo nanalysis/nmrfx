@@ -41,9 +41,6 @@ public class RNAMatcher {
     record PeakMatch(String type, PeakList expList, PeakList simList) {
     }
 
-    public double[][][] getRegion(String name) {
-        return regions.get(name);
-    }
     public void predict() {
         Predictor predictor = new Predictor();
         Predictor.PredictionTypes predictionTypes =
@@ -110,12 +107,10 @@ public class RNAMatcher {
                 var simPeaks = peakMatch.simList.locatePeaks(bound, dims);
                 double[] scale = {bound[0][1] - bound[0][0],bound[1][1] - bound[1][0] };
                 double score = NUSConScore.normSymHausDorff(expPeaks, simPeaks, scale,0.05);
-                System.out.println(peakMatch.type + " " + expPeaks.size() + " " + simPeaks.size() + " " + score);
                 sumScore += score;
                 n++;
             }
         }
-        System.out.println("total score " + (sumScore / n));
-        return sumScore / n;
+        return n == 0 ? 0.0 : sumScore / n;
     }
 }
