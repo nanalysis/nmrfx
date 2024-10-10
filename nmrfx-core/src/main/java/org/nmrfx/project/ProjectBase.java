@@ -61,7 +61,7 @@ public class ProjectBase {
     protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
 
-    private ResonanceFactory resFactory;
+    protected ResonanceFactory resFactory;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
