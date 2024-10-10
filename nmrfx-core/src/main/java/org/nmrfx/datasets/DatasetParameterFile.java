@@ -283,6 +283,8 @@ public class DatasetParameterFile {
                 double pt = Double.parseDouble(fields[3]);
                 dataset.setRefPt(iDim, pt - 1);
                 dataset.setRefValue(iDim, value);
+                dataset.setRefPt_r(iDim, pt - 1);
+                dataset.setRefValue_r(iDim, value);
             }
             case "dim" -> {
                 int nDim = Integer.parseInt(fields[1]);
