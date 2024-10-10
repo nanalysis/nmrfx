@@ -100,14 +100,12 @@ public class DatasetBrowserController implements Initializable, StageBasedContro
         double x = window.getX();
         double y = window.getY();
         Bounds boundsInScene = fxmlController.getGridPaneCanvas().localToScene(fxmlController.getGridPaneCanvas().getBoundsInLocal());
-        System.out.println(x + " " + y + " " + boundsInScene);
         stage.setX(x + boundsInScene.getMinX() + 20);
         stage.setY(y);
         double width = Math.min(boundsInScene.getWidth(),900);
         double height = Math.max(boundsInScene.getHeight()/2, 500);
         stage.setWidth(width);
         stage.setHeight(height);
-        stage.setAlwaysOnTop(true);
     }
 
     public static DatasetBrowserController create() {
