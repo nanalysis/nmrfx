@@ -5,6 +5,8 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -155,6 +157,16 @@ public class Predictor {
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
+    public enum PredictionModes {
+        OFF,
+        RNA_ATTRIBUTES,
+        THREED_DIST,
+        THREED_RC,
+        THREED,
+        SHELL
+    }
+    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {}
+
     void clearRefPPMs(int iRef) {
         Molecule mol = Molecule.getActive();
         if (mol != null) {
@@ -296,6 +308,76 @@ public class Predictor {
             predictWithShells(entity, iRef);
             if (hasPolymer) {
                 predictLigandWithRingCurrent(entity, iRef);
+            }
+        }
+    }
+    boolean checkCoordinates(Molecule molecule) {
+        if (molecule == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
+            alert.showAndWait();
+            return false;
+        } else if (molecule.structures.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
+            alert.showAndWait();
+            return false;
+        } else {
+            return true;
+        }
+
+    }
+
+    boolean checkDotBracket(Molecule molecule) {
+        return !molecule.getDotBracket().isBlank();
+    }
+
+    public void predictAll(Molecule mol, PredictionTypes predictionTypes, int ppmSet) throws InvalidMoleculeException, IOException {
+        boolean hasPeptide = false;
+
+        for (Polymer polymer : mol.getPolymers()) {
+            if (polymer.isRNA()) {
+                switch (predictionTypes.rna) {
+                    case THREED_DIST:
+                        if (checkCoordinates(mol)) {
+                            predictRNAWithDistances(polymer, 0, ppmSet, false);
+                        }
+                        break;
+                    case THREED_RC:
+                        if (checkCoordinates(mol)) {
+                            predictRNAWithRingCurrent(polymer, 0, ppmSet);
+                        }
+                        break;
+                    case RNA_ATTRIBUTES:
+                        if (checkDotBracket(mol)) {
+                            predictRNAWithAttributes(ppmSet);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } else if (polymer.isPeptide()) {
+                hasPeptide = true;
+            }
+        }
+
+        if (hasPeptide) {
+            if (predictionTypes.protein == PredictionModes.THREED) {
+                if (checkCoordinates(mol)) {
+                    int iStructure = 0;
+                    predictProtein(mol, iStructure, ppmSet);
+                }
+            } else if (predictionTypes.protein == PredictionModes.SHELL) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    predictWithShells(polymer, ppmSet);
+                }
+            }
+        }
+        boolean hasPolymer = !mol.getPolymers().isEmpty();
+        for (Entity entity : mol.getLigands()) {
+            if (predictionTypes.smallMol == PredictionModes.SHELL) {
+                predictWithShells(entity, ppmSet);
+                if (hasPolymer) {
+                    predictLigandWithRingCurrent(entity, ppmSet);
+                }
             }
         }
     }

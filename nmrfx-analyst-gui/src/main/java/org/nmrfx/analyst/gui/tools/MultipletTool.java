@@ -383,7 +383,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 if (peakList != null) {
                     List<String> peakListNames = new ArrayList<>();
                     peakListNames.add(peakList.getName());
-                    chart.updatePeakLists(peakListNames);
+                    chart.updatePeakListsByName(peakListNames);
                     attrs = chart.getPeakListAttributes();
                     peakListOpt = Optional.of(attrs.get(0).getPeakList());
                 }

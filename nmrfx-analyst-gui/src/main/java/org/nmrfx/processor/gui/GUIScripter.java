@@ -682,7 +682,7 @@ public class GUIScripter {
     public void peakLists(List<String> peakListNames) {
         Fx.runOnFxThread(() -> {
             PolyChart chart = getChart();
-            chart.updatePeakLists(peakListNames);
+            chart.updatePeakListsByName(peakListNames);
         });
     }
 

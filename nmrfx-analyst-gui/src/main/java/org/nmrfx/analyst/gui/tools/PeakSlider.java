@@ -18,6 +18,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -73,6 +74,17 @@ public class PeakSlider implements ControllerTool {
     RandomDataGenerator rand = new RandomDataGenerator();
     private InvalidationListener selectedPeaksListener;
     private final ListChangeListener<PolyChart> chartsListener = this::updateKeyBindings;
+
+    enum PeakDisplayMode {
+        NONE ,
+        SIM,
+        EXP,
+        BOTH;
+
+        void set(PolyChart chart) {
+
+        }
+    }
 
     public PeakSlider(FXMLController controller, Consumer<PeakSlider> closeAction) {
         this.controller = controller;
@@ -146,6 +158,14 @@ public class PeakSlider implements ControllerTool {
         randomizeAllItem.setOnAction(e -> restoreAllPeaks(true));
         MenuItem restoreItem = new MenuItem("Restore Peaks");
         restoreItem.setOnAction(e -> restorePeaks());
+        Menu peakDisplayMenu = new Menu("Peak Lists");
+        for (var peakMode : PeakDisplayMode.values()) {
+            MenuItem modeMenuItem = new MenuItem(peakMode.name());
+            modeMenuItem.setOnAction(e -> setPeakMode(peakMode));
+            peakDisplayMenu.getItems().add(modeMenuItem);
+        }
+        Menu layoutMenu = new Menu("Layouts");
+
         Menu matchingMenu = new Menu("Perform Match");
         MenuItem matchColumnItem = new MenuItem("Do Match Columns");
         matchColumnItem.setOnAction(e -> matchClusters(0, true));
@@ -159,7 +179,12 @@ public class PeakSlider implements ControllerTool {
         autoItem.setOnAction(e -> autoAlign());
         matchingMenu.getItems().addAll(matchColumnItem, matchRowItem, clearMatchItem, autoItem, matchExpPredItem);
 
-        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, matchingMenu);
+        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, peakDisplayMenu, layoutMenu, matchingMenu);
+        actionMenu.showingProperty().addListener((a,b,c) -> {
+            if (c) {
+                updateLayoutMenu(layoutMenu);
+            }
+        });
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -193,6 +218,27 @@ public class PeakSlider implements ControllerTool {
         ((ObservableList<PolyChart>) controller.getCharts()).addListener(chartsListener);
     }
 
+    void updateLayoutMenu(Menu menu) {
+        var names = SliderLayout.getLayoutNames();
+        menu.getItems().clear();
+        MenuItem loadLayoutsItem = new MenuItem("Open...");
+        menu.getItems().add(loadLayoutsItem);
+        loadLayoutsItem.setOnAction(e -> SliderLayout.loadLayoutFromFile());
+        for (String name : names) {
+            MenuItem item = new MenuItem(name);
+            menu.getItems().add(item);
+            item.setOnAction(e -> loadLayout(name));
+        }
+    }
+    private void loadLayout(String name) {
+        SliderLayout sliderLayout = new SliderLayout();
+        try {
+            sliderLayout.apply(name, controller);
+        } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
+    }
     /**
      * Add key bindings to newly added charts.
      *
@@ -1361,5 +1407,42 @@ public class PeakSlider implements ControllerTool {
             gd = result.get();
         }
         return gd;
+    }
+
+    private void setPeakMode(PeakDisplayMode mode) {
+        for (PolyChart chart : controller.getCharts()) {
+            Dataset dataset = (Dataset) chart.getDataset();
+            String listName = PeakList.getNameForDataset(dataset.getName());
+            final String expName;
+            final String simName;
+            if (listName.endsWith("_sim")) {
+                simName = listName;
+                expName = listName.substring(0, listName.indexOf("_sim"));
+            } else {
+                simName = listName + "_sim";
+                expName = listName;
+            }
+            PeakList expList = PeakList.get(expName);
+            PeakList simList = PeakList.get(simName);
+            List<PeakList> peakLists = new ArrayList<>();
+            switch (mode) {
+                case EXP -> {
+                    if (expList != null) peakLists.add(expList);
+                }
+                case SIM -> {
+                    if (simList != null) peakLists.add(simList);
+                }
+
+                case BOTH -> {
+                    if (expList != null) peakLists.add(expList);
+                    if (simList != null) peakLists.add(simList);
+                }
+                case NONE -> {
+                }
+            }
+            chart.updatePeakLists(peakLists);
+            chart.refresh();
+            setupLists(true);
+        }
     }
 }

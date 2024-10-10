@@ -3,8 +3,6 @@ package org.nmrfx.analyst.gui.molecule3D;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.collections.MapChangeListener;
-import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -37,6 +35,7 @@ import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
+import org.nmrfx.processor.tools.RNAMatcher;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -124,6 +123,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
+    public Label rnaSecStructureScoreLabel;
 
     SimpleIntegerProperty activeStructureProp = new SimpleIntegerProperty(-1);
     private StructureCalculator structureCalculator = new StructureCalculator(this);
@@ -133,11 +133,14 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     List<MolViewer.RenderType> currentDrawingModes = new ArrayList<>();
 
+    Map<String, Double> rnaStructureScores = new HashMap<>();
+
     enum SSOrigin {
         PRED,
         FILE,
         BOTH
     }
+
     record SecondaryStructureEntry(String dotBracket, SSOrigin type, int pIindex, int fIndex) {
         public String toString() {
             return switch (type) {
@@ -147,6 +150,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             };
         }
     }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         ssViewer = new SSViewer();
@@ -185,9 +189,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ligandBorderPane.setCenter(ligandCanvasPane);
         ligandCanvasPane.widthProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
         ligandCanvasPane.heightProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
+        peakListMenuButton.showingProperty().addListener((a,b,c) -> {
+            if (c) {
+                updatePeakListMenu();
+            }
+        });
 
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(probabilitiesCheckBox);
@@ -325,7 +332,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
         TextField textField = GUIUtils.getIntegerTextField(activeStructureProp);
         textField.setPrefWidth(40);
-        lowerToolBar.getItems().addAll( dataButtons);
+        lowerToolBar.getItems().addAll(dataButtons);
         lowerToolBar.getItems().add(textField);
     }
 
@@ -333,10 +340,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         activeStructureProp.set(-1);
         refresh();
     }
+
     void firstStructure(ActionEvent event) {
         activeStructureProp.set(getActiveStructures().get(0));
         refresh();
     }
+
     void previousStructure(ActionEvent event) {
         List<Integer> activeStructures = getActiveStructures();
         int index = Math.max(0, activeStructures.indexOf(activeStructureProp.get()) - 1);
@@ -358,12 +367,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     void lastStructure(ActionEvent event) {
         List<Integer> activeStructures = getActiveStructures();
-        int n =  activeStructures.size();
+        int n = activeStructures.size();
         activeStructureProp.set(activeStructures.get(n - 1));
         refresh();
     }
 
-    void refresh()  {
+    void refresh() {
         molViewer.clearAll();
         itemIndex = 0;
         List<MolViewer.RenderType> modes = new ArrayList<>();
@@ -426,12 +435,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     void storeSecondaryStructures(List<String> lines) {
         fileSecondaryStructures.clear();
-        for (String line:lines) {
+        for (String line : lines) {
             if (!line.isBlank()) {
                 fileSecondaryStructures.add(line.trim());
             }
         }
     }
+
     @FXML
     void ssFrom3D() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
@@ -467,6 +477,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssViewer.clear();
         dotBracketField.clear();
     }
+
     @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
@@ -746,7 +757,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     public void drawCyls() {
-        molViewer.addCyls(getStructures(), 0.1, 0.1, "lines",  getIndex());
+        molViewer.addCyls(getStructures(), 0.1, 0.1, "lines", getIndex());
     }
 
     public void drawSticks() {
@@ -756,9 +767,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void drawSpheres() {
         molViewer.addSpheres(getStructures(), 0.8, "spheres", getIndex());
     }
+
     public List<Integer> getActiveStructures() {
         return molViewer.getCurrentMolecule().getActiveStructureList();
     }
+
     public List<Integer> getStructures() {
         List<Integer> structures = getActiveStructures();
         if (activeStructureProp.get() == -1) {
@@ -772,6 +785,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         List<Integer> structures = getStructures();
         return structures.isEmpty() ? 0 : structures.get(0);
     }
+
     public void drawCartoon() throws InvalidMoleculeException {
         if (!molViewer.getCurrentMolecule().getPolymers().isEmpty()) {
             molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
@@ -814,6 +828,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molViewer.deleteItems("delete", "tree");
         molViewer.drawAtomTree();
     }
+
     /**
      * Draws the original axes.
      *
@@ -1031,11 +1046,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
         structureCalculator.setMode(INIT);
         calcStructure();
     }
+
     @FXML
     private void refineCFFStructureAction() {
         structureCalculator.setMode(CFF);
         calcStructure();
     }
+
     @FXML
     private void calcStructureAction() {
         structureCalculator.setMode(ANNEAL);
@@ -1053,6 +1070,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         structureCalculator.setMode(RNA);
         calcStructure();
     }
+
     @FXML
     private void to3DAction() {
         to3D();
@@ -1082,7 +1100,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             StringBuilder seqBuilder = new StringBuilder();
             for (Polymer polymer : molecule.getPolymers()) {
                 if (polymer.isRNA()) {
-                    for (Residue residue: polymer.getResidues()) {
+                    for (Residue residue : polymer.getResidues()) {
                         seqBuilder.append(residue.getName());
                     }
                 }
@@ -1135,9 +1153,17 @@ public class MolSceneController implements Initializable, StageBasedController, 
         SecondaryStructureEntry secondaryStructureEntry = ssChoiceBox.getValue();
         try {
             showSS(secondaryStructureEntry);
+            showRNAPeakScore(secondaryStructureEntry.dotBracket);
         } catch (InvalidMoleculeException e) {
         }
     }
+
+    void showRNAPeakScore(String dotBracket) {
+        if (rnaStructureScores.containsKey(dotBracket)) {
+            rnaSecStructureScoreLabel.setText(String.format("Peak Match Score: %.2f", rnaStructureScores.get(dotBracket)));
+        }
+    }
+
     void showSS(SecondaryStructureEntry secondaryStructureEntry) throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
@@ -1152,6 +1178,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             layoutSS();
         }
     }
+
     private void get2D(double pLimit) throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule != null && ssPredictor != null) {
@@ -1172,6 +1199,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssViewer.zoom(0.95);
 
     }
+
     @FXML
     private void activateBondAction() {
         Molecule molecule = Molecule.getActive();
@@ -1196,12 +1224,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void addStrongDistanceConstraint() {
         addDistanceConstraint(3.0);
     }
+
     public void addMediumDistanceConstraint() {
         addDistanceConstraint(4.0);
     }
+
     public void addWeakDistanceConstraint() {
         addDistanceConstraint(5.0);
     }
+
     public void addDistanceConstraint(double upper) {
         Molecule molecule = Molecule.getActive();
         if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
@@ -1275,9 +1306,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
     }
-    public void moleculeChanged(MoleculeEvent e){
+
+    public void moleculeChanged(MoleculeEvent e) {
         Fx.runOnFxThread(ssViewer::drawSS);
     }
+
     @Override
     public void updateProgress(double f) {
     }
@@ -1289,6 +1322,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             updateView();
         });
     }
+
     void updateView() {
         removeAll();
         try {
@@ -1299,6 +1333,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
 
     }
+
     void setProcessingOff() {
 
     }
@@ -1306,4 +1341,30 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void setProcessingOn() {
 
     }
+
+    public void scoreSecStructures(ActionEvent event) {
+        RNAMatcher rnaMatcher = new RNAMatcher();
+        Molecule molecule = Molecule.getActive();
+        String currentDotBracket = molecule.getDotBracket();
+        rnaStructureScores.clear();
+        ssChoiceBox.getItems().forEach(ss -> {
+            molecule.setDotBracket(ss.dotBracket);
+            System.out.println(ss.dotBracket);
+            rnaMatcher.predict();
+            rnaMatcher.genPeaks();
+            double score = rnaMatcher.score();
+            rnaStructureScores.put(ss.dotBracket, score);
+        });
+        molecule.setDotBracket(currentDotBracket);
+        showRNAPeakScore(currentDotBracket);
+    }
+
+    public void selectSecStructure() {
+        Molecule molecule = Molecule.getActive();
+        molecule.setDotBracket(ssChoiceBox.getValue().dotBracket);
+        RNAMatcher rnaMatcher = new RNAMatcher();
+        rnaMatcher.predict();
+        rnaMatcher.genPeaks();
+    }
+
 }
