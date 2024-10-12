@@ -710,9 +710,13 @@ public class ScanTable {
             if ((values != null) && (iRow < values.length)) {
                 value = values[iRow];
             }
-            long eTime = (long) (value * 1000);
-            fileListItems.add(new FileTableItem(dataset.getName(), "", 1, eTime, iRow + 1, dataset.getName(), fieldMap));
+            FileTableItem fileTableItem = new FileTableItem(dataset.getName(), "", 1, 0, iRow + 1, dataset.getName(), fieldMap);
+            if (values != null) {
+                fileTableItem.setExtra("value", value);
+            }
+            fileListItems.add(fileTableItem);
         }
+
 
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         tableView.getItems().addListener(filterItemListener);
@@ -728,6 +732,9 @@ public class ScanTable {
             item.setDate(item.getDate() - firstDate);
         }
         initTable();
+        if (values != null) {
+            addTableColumn("value", "D");
+        }
         updateFilter();
         List<Integer> rows = new ArrayList<>();
         rows.add(0);
