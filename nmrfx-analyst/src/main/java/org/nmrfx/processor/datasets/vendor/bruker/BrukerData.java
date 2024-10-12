@@ -62,6 +62,9 @@ public class BrukerData implements NMRData {
     private static final String FID = "fid";
 
     private static final int MAXDIM = 10;
+
+    private static final String[] LIST_TYPES = {"vd", "vc", "vp", "fq2", "fq3", "diff"};
+
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
     private int dim = 0;                // from acqu[n]s files
@@ -964,8 +967,7 @@ public class BrukerData implements NMRData {
                 log.warn(ex.getMessage(), ex);
             }
         }
-        String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
-        for (String listType : listTypes) {
+        for (String listType : LIST_TYPES) {
             Path listPath = parDirFile.toPath().resolve(listType + "list");
             if (Files.exists(listPath)) {
                 List<String> lines = Files.readAllLines(listPath);
@@ -1084,9 +1086,8 @@ public class BrukerData implements NMRData {
         List<Double> result = new ArrayList<>();
         // kluge  find smallest dimension.  This is the most likely one to use an array of values
         if (parMap != null) {
-            String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
 
-            for (String listType : listTypes) {
+            for (String listType : LIST_TYPES) {
                 String parValue;
                 if ((parValue = parMap.get(listType)) != null) {
                     String[] sValues = parValue.split("\t");
