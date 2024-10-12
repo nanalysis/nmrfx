@@ -126,7 +126,7 @@ public class PeakPicking {
                         }
                         peakPickPar.limit(jDim, row, row);
                     }
-                } else if (peakPickPar.useCrossHairs) {
+                } else if (peakPickPar.useCrossHairs || (peakPickPar.region.equalsIgnoreCase("box") && chart.getCrossHairs().hasRegion())) {
                     Orientation orientation = iDim == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
                     peakPickPar.limit(jDim,
                             chart.getCrossHairs().getPosition(0, orientation),
