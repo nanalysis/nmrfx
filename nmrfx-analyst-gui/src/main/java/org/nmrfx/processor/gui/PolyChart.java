@@ -2663,10 +2663,18 @@ public class PolyChart extends Region {
         }
     }
 
-    public void updatePeakLists(List<String> targets) {
+    public void updatePeakListsByName(List<String> targets) {
         removeUnusedPeakLists(targets);
         for (String s : targets) {
             PeakList peakList = PeakList.get(s);
+            if (peakList != null) {
+                setupPeakListAttributes(peakList);
+            }
+        }
+    }
+    public void updatePeakLists(List<PeakList> targets) {
+        removeUnusedPeakLists(targets.stream().map(p -> p.getName()).toList());
+        for (PeakList peakList : targets) {
             if (peakList != null) {
                 setupPeakListAttributes(peakList);
             }
@@ -3005,7 +3013,7 @@ public class PolyChart extends Region {
             PeakList newPeakList = peakList.copy(newListName, false, false, true);
             if (newPeakList != null) {
                 newPeakList.setDatasetName(getDataset().getName());
-                updatePeakLists(Collections.singletonList(newPeakList.getName()));
+                updatePeakListsByName(Collections.singletonList(newPeakList.getName()));
             }
         }
     }
