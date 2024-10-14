@@ -4,6 +4,7 @@ import javafx.scene.input.MouseEvent;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.PeakPicking;
@@ -79,6 +80,10 @@ public class PeakPickHandler extends MouseHandler {
             }
         }
         if (completed) {
+            PeakList peakList = chart.getPeakListAttributes().get(0).getPeakList();
+            if (peakList.getNDim() == 1) {
+                PeakListTools.quantifyPeaks(peakList, "evolume");
+            }
             chart.drawPeakLists(true);
         }
     }

@@ -5,7 +5,6 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fx;

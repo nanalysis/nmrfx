@@ -86,6 +86,7 @@ public class ScannerTool implements ControllerTool {
 
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
+    TablePlotGUI diffusionGUI = null;
     MinerController miner;
     ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
 
@@ -239,9 +240,11 @@ public class ScannerTool implements ControllerTool {
         MenuButton menu = new MenuButton("Tools");
         MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
         plotMenuItem.setOnAction(e -> showPlotGUI());
+        MenuItem diffusionMenuItem = new MenuItem("Show Diffusion Tool");
+        diffusionMenuItem.setOnAction(e -> showDiffusionGUI());
         MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
         tractMenuItem.setOnAction(e -> showTRACTGUI());
-        menu.getItems().addAll(plotMenuItem, tractMenuItem);
+        menu.getItems().addAll(plotMenuItem, diffusionMenuItem, tractMenuItem);
         return menu;
     }
 
@@ -342,7 +345,7 @@ public class ScannerTool implements ControllerTool {
         if (columNameOpt.isPresent()) {
             String columnName = columNameOpt.get();
             columnName = columnName.replace(':', '_').replace(' ', '_');
-            if (!columnName.equals("") && hasColumnName(columnName)) {
+            if (!columnName.isEmpty() && hasColumnName(columnName)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
                 alert.showAndWait();
                 return;
@@ -799,9 +802,15 @@ public class ScannerTool implements ControllerTool {
 
     void showPlotGUI() {
         if (plotGUI == null) {
-            plotGUI = new TablePlotGUI(tableView);
+            plotGUI = new TablePlotGUI(tableView, null);
         }
         plotGUI.showPlotStage();
+    }
+    void showDiffusionGUI() {
+        if (diffusionGUI == null) {
+            diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION);
+        }
+        diffusionGUI.showPlotStage();
     }
 
     void showTRACTGUI() {

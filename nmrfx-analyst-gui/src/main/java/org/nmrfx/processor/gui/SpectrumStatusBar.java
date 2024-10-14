@@ -788,6 +788,7 @@ public class SpectrumStatusBar {
      */
     private void displayModeComboBoxSelectionChanged() {
         PolyChart chart = controller.getActiveChart();
+        boolean autoScale = true;
         OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
         if (maxNDim.isEmpty()) {
             log.warn("Unable to update display mode. No dimensions set.");
@@ -820,6 +821,7 @@ public class SpectrumStatusBar {
         } else if (selected == DisplayMode.CONTOURS) {
             chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
             chart.getDatasetAttributes().get(0).drawList.clear();
+            autoScale = !chart.getDatasetAttributes().get(0).getHasLevel();
             chart.updateProjections();
             chart.updateProjectionScale();
             int nDim = maxNDim.getAsInt();
@@ -827,7 +829,9 @@ public class SpectrumStatusBar {
         }
         chart.updateAxisType(true);
         chart.full();
-        chart.autoScale();
+        if (autoScale) {
+            chart.autoScale();
+        }
     }
 
     private boolean isStacked() {

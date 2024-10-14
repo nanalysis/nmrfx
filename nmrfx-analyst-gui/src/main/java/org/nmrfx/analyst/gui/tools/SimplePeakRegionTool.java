@@ -26,8 +26,10 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -320,11 +322,13 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 analyzer.peakPickRegions();
             }
             PeakList peakList = analyzer.getPeakList();
+            PeakListTools.quantifyPeaks(peakList, "evolume");
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
             chart.getChartProperties().setRegions(false);
             chart.getChartProperties().setIntegrals(true);
             chart.updatePeakListsByName(peakListNames);
+            chart.getPeakListAttributes().get(0).setLabelType(PeakDisplayParameters.LabelTypes.Atom);
             var dStat = peakList.widthDStats(0);
             double minWidth = dStat.getPercentile(10);
             double maxWidth = dStat.getPercentile(90);
@@ -366,12 +370,14 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 AnalystApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
+
                 List<String> peakListNames = new ArrayList<>();
                 peakListNames.add(peakList.getName());
                 PolyChart chart = getChart();
                 chart.getChartProperties().setRegions(false);
                 chart.getChartProperties().setIntegrals(true);
                 chart.updatePeakListsByName(peakListNames);
+                chart.getPeakListAttributes().get(0).setLabelType(PeakDisplayParameters.LabelTypes.Atom);
                 chart.refresh();
             } catch (IOException ex) {
                 log.error(ex.getMessage(), ex);
