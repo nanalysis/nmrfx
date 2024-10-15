@@ -25,6 +25,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
+import org.nmrfx.analyst.models.ModelFetcher;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
@@ -56,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode.*;
@@ -189,7 +191,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ligandBorderPane.setCenter(ligandCanvasPane);
         ligandCanvasPane.widthProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
         ligandCanvasPane.heightProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
-        peakListMenuButton.showingProperty().addListener((a,b,c) -> {
+        peakListMenuButton.showingProperty().addListener((a, b, c) -> {
             if (c) {
                 updatePeakListMenu();
             }
@@ -1076,13 +1078,33 @@ public class MolSceneController implements Initializable, StageBasedController, 
         to3D();
     }
 
+
+    boolean fetchSSModel() {
+        try {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            File outDirectory = directoryChooser.showDialog(null);
+            if (outDirectory != null) {
+                String modelName = "rna_bp_v1";
+                ModelFetcher.fetch(outDirectory.toPath(), modelName);
+                Path path = outDirectory.toPath().resolve(modelName);
+                PreferencesController.setRNAModelDirectory(path.toString());
+                ssPredictor.setModelFile(path.toString());
+                return true;
+            }
+        } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
+        return false;
+    }
+
     @FXML
     private void seqTo2D() {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             ssPredictor = new SSPredictor();
-            String rnModelDir = PreferencesController.getRNAModelDirectory();
-            if (rnModelDir.isEmpty()) {
+            String rnaModelDir = PreferencesController.getRNAModelDirectory();
+            if (rnaModelDir.isEmpty()) {
                 DirectoryChooser directoryChooser = new DirectoryChooser();
                 File file = directoryChooser.showDialog(null);
                 if (file == null) {
@@ -1092,10 +1114,16 @@ public class MolSceneController implements Initializable, StageBasedController, 
                     ssPredictor.setModelFile(file.toString());
                 }
             } else {
-                ssPredictor.setModelFile(rnModelDir);
+                ssPredictor.setModelFile(rnaModelDir);
             }
             if (!ssPredictor.hasValidModelFile()) {
-                return;
+                if (GUIUtils.affirm("No model in directory\nFetch one from NMRFx.org?")) {
+                    if (!fetchSSModel()) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
             }
             StringBuilder seqBuilder = new StringBuilder();
             for (Polymer polymer : molecule.getPolymers()) {
@@ -1151,10 +1179,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     void showSelectedSS() {
         SecondaryStructureEntry secondaryStructureEntry = ssChoiceBox.getValue();
-        try {
-            showSS(secondaryStructureEntry);
-            showRNAPeakScore(secondaryStructureEntry.dotBracket);
-        } catch (InvalidMoleculeException e) {
+        if (secondaryStructureEntry != null) {
+            try {
+                showSS(secondaryStructureEntry);
+                showRNAPeakScore(secondaryStructureEntry.dotBracket);
+            } catch (InvalidMoleculeException e) {
+            }
         }
     }
 
