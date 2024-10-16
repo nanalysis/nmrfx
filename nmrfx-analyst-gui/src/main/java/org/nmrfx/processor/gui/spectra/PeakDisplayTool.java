@@ -159,7 +159,7 @@ public class PeakDisplayTool {
                     FXMLController controller = AnalystApp.getFXMLControllerManager().newController();
                     PolyChart chart = controller.getActiveChart();
                     controller.addDataset(chart, dataset, false, false);
-                    chart.updatePeakLists(List.of(peakList.getName()));
+                    chart.updatePeakListsByName(List.of(peakList.getName()));
                     gotoPeak(peak, chart, getWidthScale(peak));
                 }
             }

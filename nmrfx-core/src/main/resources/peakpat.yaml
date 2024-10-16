@@ -45,7 +45,7 @@ types:
       - name: N
         pattern: i.N*
         bonds:
-  - name: 13N-HSQC
+  - name: 13C-HSQC
     dims:
       - name: H
         pattern: i.H*
