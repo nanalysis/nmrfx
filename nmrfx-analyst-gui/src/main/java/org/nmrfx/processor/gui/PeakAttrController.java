@@ -950,6 +950,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                         dim.setSf(dataset.getSf(datasetDim));
                         dim.setSw(dataset.getSw(datasetDim));
                         dataset.setLabel(datasetDim, dim.getDimName());
+                        dim.setNucleus(dataset.getNucleus(datasetDim).getNumberName());
                     }
                 });
 

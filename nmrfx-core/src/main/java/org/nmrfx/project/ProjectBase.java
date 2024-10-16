@@ -139,6 +139,7 @@ public class ProjectBase {
     public ResonanceFactory resonanceFactory() {
         if (resFactory == null) {
             resFactory = new ResonanceFactory();
+            resFactory.init();
         }
         return resFactory;
     }
