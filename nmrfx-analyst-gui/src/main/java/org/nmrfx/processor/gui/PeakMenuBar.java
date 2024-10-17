@@ -402,7 +402,7 @@ public class PeakMenuBar {
                                     .toList()).containsAll(dimLabels)) {
                         String currentDim = dim.getDimName();
                         bondedDim = peakList.getSpectralDims().stream()
-                                .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().get(0).getDimName();
+                                .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().getFirst().getDimName();
                         dim.setRelation(bondedDim);
                     } else {
                         GUIUtils.warn("Set bonded dimension", "Assign bonded dimension in Peak Tool's reference tab");

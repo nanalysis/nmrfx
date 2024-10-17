@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class PeakFolder {
     public List<String> dimLabels = Arrays.asList("H","C");
@@ -59,8 +58,6 @@ public class PeakFolder {
         for (Map.Entry<String, ArrayList<String[]>> entry : clusters.entrySet()) {
             createMixtureModel(entry.getKey(), entry.getValue());
         }
-        ArrayList<String[]> allLines = clusters.values().stream().flatMap(Collection::stream).collect(Collectors.toCollection(ArrayList::new));
-        createMixtureModel("all", allLines);
     }
 
     private void createMixtureModel(String groupName, ArrayList<String[]> clusterLines) {
@@ -118,7 +115,7 @@ public class PeakFolder {
                     shifts[iDim] = peak.getPeakDim(label).getChemShiftValue();
                     shifts[bondedDim] = peak.getPeakDim(bondedDims[i]).getChemShiftValue();
 
-                    MixtureMultivariateNormalDistribution mvn = MMVNs.get("all");
+                    MixtureMultivariateNormalDistribution mvn = null;
                     String assignment = peak.getPeakDim(label).getLabel();
                     Atom atom = Molecule.getAtomByName(assignment);
                     if (atom != null) {
@@ -129,8 +126,15 @@ public class PeakFolder {
                             mvn = MMVNs.get(groupName);
                         }
                     }
-
-                    double density = mvn.density(shifts);
+                    double density = 1e-10;
+                    if (mvn != null) {
+                        density = mvn.density(shifts);
+                    } else {
+                        for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
+                            double newDensity = distribution.density(shifts);
+                            if (newDensity > density) { density = newDensity;}
+                        }
+                    }
 
                     double shift = shifts[iDim];
                     double lowerLim = bounds[i][0];
@@ -144,10 +148,20 @@ public class PeakFolder {
 
                     for (double foldedShift : foldedShifts) {
                         shifts[iDim] = foldedShift;
-                        double newDensity = mvn.density(shifts);
-                        if (newDensity > bestDensity) {
-                            bestShift = shifts[iDim];
-                            bestDensity = newDensity;
+                        if (mvn != null) {
+                            double newDensity = mvn.density(shifts);
+                            if (newDensity > bestDensity) {
+                                bestShift = shifts[iDim];
+                                bestDensity = newDensity;
+                            }
+                        } else {
+                            for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
+                                double newDensity = distribution.density(shifts);
+                                if (newDensity > bestDensity) {
+                                    bestShift = shifts[iDim];
+                                    bestDensity = newDensity;
+                                }
+                            }
                         }
                     }
 
