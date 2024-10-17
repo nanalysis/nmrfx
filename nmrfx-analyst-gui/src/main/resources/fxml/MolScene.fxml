@@ -104,7 +104,10 @@
                             <center>
                             </center>
                             <bottom>
-                                <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+                                <HBox>
+                                    <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+                                    <ToolBar fx:id="lowerToolBar"/>
+                                </HBox>
                             </bottom>
                         </BorderPane>
                     </content>
@@ -122,6 +125,8 @@
                                                         prefWidth="87.0" text="Draw"/>
                                                 <MenuButton mnemonicParsing="false" text="Sec. Structure">
                                                     <items>
+                                                        <MenuItem mnemonicParsing="false" onAction="#loadFromFile"
+                                                                  text="Open..."/>
                                                         <MenuItem mnemonicParsing="false" onAction="#ssFrom3D"
                                                                   text="From 3D"/>
                                                         <MenuItem mnemonicParsing="false" onAction="#seqTo2D"
@@ -142,18 +147,31 @@
                             </top>
                             <center>
                             </center>
-                            <left>
-                                <VBox>
-                                    <Button text="-" onAction="#zoomOut"/>
-                                    <Button text="+" onAction="#zoomIn"/>
-
-                                </VBox>
-                            </left>
                             <bottom>
-                                <VBox HBox.hgrow="ALWAYS">
+                                <VBox HBox.hgrow="ALWAYS" >
                                     <children>
                                         <Pane fx:id="dotBracketPane" minHeight="40" HBox.hgrow="ALWAYS"/>
                                         <TextField fx:id="dotBracketField" HBox.hgrow="ALWAYS"/>
+                                        <HBox HBox.hgrow="ALWAYS" spacing="20" alignment="CENTER_LEFT">
+                                            <Label text="Sec. Structure Selector"/>
+                                            <ChoiceBox fx:id="ssChoiceBox"/>
+                                            <CheckBox fx:id="ssDisplayCheckBox" text="Sec. Struct."/>
+                                            <CheckBox fx:id="mapDisplayCheckBox" text="Map"/>
+                                            <MenuButton mnemonicParsing="false" text="Matching">
+                                            <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#scoreSecStructures"
+                                                          text="Match"/>
+                                                <MenuItem mnemonicParsing="false" onAction="#selectSecStructure"
+                                                          text="Select"/>
+                                            </items>
+                                            </MenuButton>
+
+                                            <Label fx:id="rnaSecStructureScoreLabel"/>
+                                            <Pane HBox.hgrow="ALWAYS"/>
+                                            <Label text="Zoom"/>
+                                            <Button text="-" onAction="#zoomOut"/>
+                                            <Button text="+" onAction="#zoomIn"/>
+                                        </HBox>
                                     </children>
                                 </VBox>
                             </bottom>

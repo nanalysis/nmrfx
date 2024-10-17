@@ -91,7 +91,7 @@ public class Util {
 
     public static boolean nefMatch(Atom atom, String pat) {
         boolean result = nefMatch(atom.name.toLowerCase(), pat);
-        if (result && ((pat.contains("x") && !pat.equals("oxt")) || pat.contains("y"))) {
+        if (result && ((pat.contains("x") && !pat.equals("oxt") && !pat.startsWith("x")) || pat.contains("y"))) {
             Optional<Atom> partner = Optional.empty();
             Atom atom1 = atom;
             if (atom.isMethylene()) {
@@ -117,7 +117,7 @@ public class Util {
 
     private static boolean nefMatch(String str, String pat) {
         boolean result = false;
-        int percentIndex = (pat.contains("x") && !pat.equals("oxt")) ? pat.indexOf("x") : (pat.contains("y") ? pat.indexOf("y") : pat.indexOf("%"));
+        int percentIndex = (pat.contains("x") && !pat.equals("oxt") && !pat.startsWith("x")) ? pat.indexOf("x") : (pat.contains("y") ? pat.indexOf("y") : pat.indexOf("%"));
         int singleWildIndex = pat.indexOf('#');
         int wildIndex = pat.indexOf('*');
         String rePat = null;

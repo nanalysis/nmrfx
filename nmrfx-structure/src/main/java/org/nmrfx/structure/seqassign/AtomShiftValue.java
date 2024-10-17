@@ -23,4 +23,7 @@ public class AtomShiftValue {
         return ppm;
     }
 
+    public String toString() {
+        return peakString + " " + aName + " " + ppm;
+    }
 }

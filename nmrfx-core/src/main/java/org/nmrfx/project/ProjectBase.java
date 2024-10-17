@@ -61,7 +61,7 @@ public class ProjectBase {
     protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
 
-    private ResonanceFactory resFactory;
+    protected ResonanceFactory resFactory;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
@@ -122,6 +122,9 @@ public class ProjectBase {
         return fileNum;
     }
 
+    public final void clearActive() {
+        activeProject = null;
+    }
     public final void setActive() {
         PropertyChangeEvent event = new PropertyChangeEvent(this, "project", null, this);
         activeProject = this;
@@ -136,6 +139,7 @@ public class ProjectBase {
     public ResonanceFactory resonanceFactory() {
         if (resFactory == null) {
             resFactory = new ResonanceFactory();
+            resFactory.init();
         }
         return resFactory;
     }
@@ -223,12 +227,14 @@ public class ProjectBase {
     public void addDataset(DatasetBase dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
         refreshDatasetList();
+        projectChanged(true);
     }
 
     public void renameDataset(DatasetBase dataset, String newName) {
         datasetMap.remove(dataset.getFileName(), dataset);
         dataset.setFileName(newName);
         addDataset(dataset, newName);
+        projectChanged(true);
     }
 
     public boolean isDatasetPresent(File file) {
@@ -294,13 +300,18 @@ public class ProjectBase {
 
     public void removePeakList(String name) {
         peakLists.remove(name);
+        projectChanged(true);
     }
 
     public void clearAllPeakLists() {
         peakLists.clear();
+        projectChanged(true);
     }
 
     public MoleculeBase getActiveMolecule() {
+        if ((activeMol == null) && !getMolecules().isEmpty()){
+            activeMol = getMolecules().stream().findFirst().orElse(null);
+        }
         return activeMol;
     }
 
@@ -314,6 +325,7 @@ public class ProjectBase {
 
     public void putMolecule(MoleculeBase molecule) {
         molecules.put(molecule.getName(), molecule);
+        projectChanged(true);
     }
 
     public MoleculeBase getMolecule(String name) {
@@ -340,11 +352,13 @@ public class ProjectBase {
         if (mol != null) {
             molecules.remove(name);
         }
+        projectChanged(true);
     }
 
     public void clearAllMolecules() {
         activeMol = null;
         molecules.clear();
+        projectChanged(true);
     }
 
 
@@ -687,5 +701,13 @@ public class ProjectBase {
         } else {
             return pcs.getPropertyChangeListeners();
         }
+    }
+
+    public void projectChanged(boolean state) {
+
+    }
+
+    public boolean projectChanged() {
+        return false;
     }
 }

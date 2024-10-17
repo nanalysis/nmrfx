@@ -14,6 +14,10 @@ import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.processor.gui.undo.ChartUndo;
+import org.nmrfx.processor.gui.undo.GroupUndo;
+import org.nmrfx.processor.gui.undo.PeakListUndo;
+import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
@@ -31,6 +35,9 @@ import java.util.function.Consumer;
  */
 public class PeakMenuBar {
     private static final Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
+    private final HashMap<PeakList, UndoManager> undoManagers = new HashMap<>();
+    private final List<ChartUndo> undos = new ArrayList<>();
+    private final List<ChartUndo> redos = new ArrayList<>();
 
     private final PeakMenuTarget menuTarget;
     private MenuButton peakListMenu = null;
@@ -68,6 +75,33 @@ public class PeakMenuBar {
 
         MenuButton editMenu = new MenuButton("Edit");
 
+        Menu undoMenu = new Menu("Undo");
+
+        Menu redoMenu = new Menu("Redo");
+
+        editMenu.setOnShowing(e -> {
+            cleanUndManagers();
+            undoMenu.getItems().clear();
+            var optManager = getUndoManager();
+            optManager.ifPresent(undoManager -> {
+                String lastAction = undoManager.getUndoLabelName();
+                MenuItem undoMenuItem = new MenuItem("Undo " + lastAction);
+                undoMenuItem.setOnAction(event -> undo());
+                undoMenu.getItems().add(undoMenuItem);
+
+                redoMenu.getItems().clear();
+                lastAction = undoManager.getRedoLabelName();
+                MenuItem redoMenuItem = new MenuItem("Redo " + lastAction);
+                redoMenuItem.setOnAction(event -> redo());
+                redoMenu.getItems().add(redoMenuItem);
+            });
+        });
+
+
+        editMenu.getItems().add(undoMenu);
+        editMenu.getItems().add(redoMenu);
+
+
         MenuItem copyMenu = new MenuItem("Copy");
         copyMenu.setOnAction(e -> menuTarget.copyPeakTableView());
         editMenu.getItems().add(copyMenu);
@@ -85,11 +119,11 @@ public class PeakMenuBar {
         editMenu.getItems().add(compressAndDegapMenuItem);
 
         MenuItem deletePeakMenuItem = new MenuItem("Delete Peaks");
-        deletePeakMenuItem.setOnAction(e -> menuTarget.deletePeaks());
+        deletePeakMenuItem.setOnAction(e -> deletePeaks());
         editMenu.getItems().add(deletePeakMenuItem);
 
         MenuItem restorePeakMenuItem = new MenuItem("Restore Peaks");
-        restorePeakMenuItem.setOnAction(e -> menuTarget.restorePeaks());
+        restorePeakMenuItem.setOnAction(e -> restorePeaks());
         editMenu.getItems().add(restorePeakMenuItem);
 
         MenuItem deleteMenuItem = new MenuItem("Delete List");
@@ -176,6 +210,74 @@ public class PeakMenuBar {
         }
     }
 
+    void cleanUndManagers() {
+        undoManagers.keySet().removeIf(peakList -> PeakList.get(peakList.getName()) == null);
+    }
+
+    Optional<UndoManager> getUndoManager() {
+        PeakList peakList = getPeakList();
+        if (peakList == null) {
+            return Optional.empty();
+        } else {
+            return Optional.of(undoManagers.computeIfAbsent(peakList, peakList1 -> new UndoManager()));
+        }
+    }
+
+    void doUndoRedo(Consumer<PeakList> consumer, String label) {
+        resetUndoGroup();
+        PeakList peakList = getPeakList();
+        addPeakListUndo(peakList);
+        consumer.accept(peakList);
+        addPeakListRedo(peakList);
+        addUndoGroup(label);
+    }
+
+    void undo() {
+        getUndoManager().ifPresent(undoManger -> {
+            undoManger.undo();
+            refreshPeakView();
+            refreshChangedListView();
+        });
+    }
+
+    void redo() {
+        getUndoManager().ifPresent(undoManger -> {
+            undoManger.redo();
+            refreshPeakView();
+            refreshChangedListView();
+        });
+    }
+
+    void addPeakListUndo(PeakList peakList) {
+        if (undos.isEmpty()) {
+            redos.clear();
+        }
+        PeakListUndo undo = new PeakListUndo(peakList);
+        undos.add(undo);
+    }
+
+    void addPeakListRedo(PeakList peakList) {
+        PeakListUndo undo = new PeakListUndo(peakList);
+        redos.add(undo);
+    }
+
+    void addUndoGroup(String label) {
+        getUndoManager().ifPresent(undoManger -> {
+            if (!undos.isEmpty() && (undos.size() == redos.size())) {
+                GroupUndo groupUndo = new GroupUndo(undos);
+                GroupUndo groupRedo = new GroupUndo(redos);
+                undos.clear();
+                redos.clear();
+                undoManger.add(label, groupUndo, groupRedo);
+            }
+        });
+    }
+
+    void resetUndoGroup() {
+        undos.clear();
+        redos.clear();
+    }
+
     public MenuButton getPeakListMenu() {
         return peakListMenu;
     }
@@ -195,7 +297,7 @@ public class PeakMenuBar {
     boolean checkDataset() {
         boolean ok = false;
         String datasetName = getPeakList().getDatasetName();
-        if ((datasetName == null) || datasetName.equals("")) {
+        if ((datasetName == null) || datasetName.isEmpty()) {
             PolyChart chart = PolyChartManager.getInstance().getActiveChart();
             DatasetBase dataset = chart.getDataset();
             if (dataset != null) {
@@ -218,35 +320,43 @@ public class PeakMenuBar {
 
     void unLinkPeakList() {
         if (getPeakList() != null) {
-            getPeakList().unLinkPeaks();
+            doUndoRedo(peakList -> getPeakList().unLinkPeaks(), "unlink list");
         }
     }
 
     void mirror2DList() {
-        PeakList peakList = getPeakList();
-        if (peakList != null) {
-            PeakListTools.addMirroredPeaks(peakList);
+        if (getPeakList() != null) {
+            doUndoRedo(PeakListTools::addMirroredPeaks, "mirror 2D");
         }
     }
 
     void autoCouplePeakList() {
-        PeakList peakList = getPeakList();
-        if (peakList != null) {
-            PeakListTools.autoCoupleHomoNuclear(peakList);
+        if (getPeakList() != null) {
+            doUndoRedo(PeakListTools::autoCoupleHomoNuclear, "autoCouple");
         }
     }
 
     void removeDiagonal() {
-        PeakList peakList = getPeakList();
-        if (peakList != null) {
-            PeakListTools.removeDiagonalPeaks(peakList);
+        if (getPeakList() != null) {
+            doUndoRedo(PeakListTools::removeDiagonalPeaks, "remove diagonal");
+        }
+    }
+
+    void deletePeaks() {
+        if (getPeakList() != null) {
+            doUndoRedo(peakList -> menuTarget.deletePeaks(), "delete peaks");
+        }
+    }
+
+    void restorePeaks() {
+        if (getPeakList() != null) {
+            doUndoRedo(peakList -> menuTarget.restorePeaks(), "restore peaks");
         }
     }
 
     void clusterPeakListDim(int dim) {
-        PeakList peakList = getPeakList();
-        if ((peakList != null) && (peakList.getNDim() > dim)) {
-            PeakListTools.clusterPeakColumns(peakList, dim);
+        if ((getPeakList() != null) && (getPeakList().getNDim() > dim)) {
+            doUndoRedo(peakList -> PeakListTools.clusterPeakColumns(peakList, dim), "cluster rows/cols");
         }
     }
 
@@ -329,7 +439,7 @@ public class PeakMenuBar {
     }
 
     void unifyPeakWidths() {
-        menuTarget.getPeak().ifPresent(PeakListTools::unifyWidths);
+        menuTarget.getPeak().ifPresent(peak -> doUndoRedo(peakList -> PeakListTools.unifyWidths(peak), "unify peak widths"));
     }
 
     void measureIntensities() {
@@ -368,31 +478,43 @@ public class PeakMenuBar {
 
     void compressPeakList() {
         if (getPeakList() != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Remove deleted peaks");
             alert.showAndWait().ifPresent(response -> {
-                getPeakList().compress();
-                refreshChangedListView();
+                if (response == ButtonType.OK) {
+                    doUndoRedo(peakList -> {
+                        peakList.compress();
+                        refreshChangedListView();
+                    }, "compress");
+                }
             });
         }
     }
 
     void renumberPeakList() {
         if (getPeakList() != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list");
             alert.showAndWait().ifPresent(response -> {
-                getPeakList().reNumber();
-                refreshChangedListView();
+                if (response == ButtonType.OK) {
+                    doUndoRedo(peakList -> {
+                        peakList.reNumber();
+                        refreshChangedListView();
+                    }, "degap");
+                }
             });
         }
     }
 
     void compressAndDegapPeakList() {
         if (getPeakList() != null) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Remove deleted peaks and renumber (permanent!)");
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Remove deleted peaks and renumber");
             alert.showAndWait().ifPresent(response -> {
-                getPeakList().compress();
-                getPeakList().reNumber();
-                refreshChangedListView();
+                if (response == ButtonType.OK) {
+                    doUndoRedo(peakList -> {
+                        getPeakList().compress();
+                        getPeakList().reNumber();
+                        refreshChangedListView();
+                    }, "compress and degap");
+                }
             });
         }
     }
@@ -403,8 +525,7 @@ public class PeakMenuBar {
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
                     PeakList.remove(getPeakList().getName());
-                    PeakList list = null;
-                    setPeakList(list);
+                    setPeakList(null);
                 }
             });
         }
@@ -415,7 +536,7 @@ public class PeakMenuBar {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Clear Assignments");
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    getPeakList().clearAtomLabels();
+                    doUndoRedo(peakList -> getPeakList().clearAtomLabels(), "clear all");
                 }
             });
         }
@@ -433,13 +554,11 @@ public class PeakMenuBar {
                         PeakWriter peakWriter = new PeakWriter();
                         peakWriter.writePeaksXPK2(writer, getPeakList());
                     }
-                    if (getPeakList().hasMeasures()) {
-                        if (listFileName.endsWith(".xpk2")) {
-                            String measureFileName = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
-                            try (FileWriter writer = new FileWriter(measureFileName)) {
-                                PeakWriter peakWriter = new PeakWriter();
-                                peakWriter.writePeakMeasures(writer, getPeakList());
-                            }
+                    if (getPeakList().hasMeasures() && listFileName.endsWith(".xpk2")) {
+                        String measureFileName = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
+                        try (FileWriter writer = new FileWriter(measureFileName)) {
+                            PeakWriter peakWriter = new PeakWriter();
+                            peakWriter.writePeakMeasures(writer, getPeakList());
                         }
                     }
                 }
@@ -453,8 +572,8 @@ public class PeakMenuBar {
 
     void readList() {
         FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
+        List<File> files = fileChooser.showOpenMultipleDialog(null);
+        for (File file : files) {
             String listFileName = file.getPath();
             try {
                 PeakReader peakReader = new PeakReader();
@@ -475,6 +594,7 @@ public class PeakMenuBar {
             } catch (IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
+                return;
             }
         }
     }

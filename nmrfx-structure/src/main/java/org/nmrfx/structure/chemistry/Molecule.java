@@ -839,7 +839,7 @@ public class Molecule extends MoleculeBase {
 
     public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
-        List<SpatialSet> selected = matchAtoms(molFilter);
+        List<SpatialSet> selected = matchAtoms(molFilter, this);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
@@ -1167,9 +1167,8 @@ public class Molecule extends MoleculeBase {
 
                 if ((atomB != null) && (atomE != null)) {
 
-                    SpatialSet spatialSet = atomB.spatialSet;
-                    ptB = atomB.getPoint(iStructure);
-                    ptE = atomE.getPoint(iStructure);
+                    ptB = atomB.getFlatPoint(iStructure);
+                    ptE = atomE.getFlatPoint(iStructure);
 
                     if ((ptB != null) && (ptE != null)) {
                         j = i;
@@ -1358,8 +1357,8 @@ public class Molecule extends MoleculeBase {
                 if ((atomB != null) && (atomE != null)) {
 
                     SpatialSet spatialSet = atomB.spatialSet;
-                    Point3 ptB = atomB.getPoint(iStructure);
-                    Point3 ptE = atomE.getPoint(iStructure);
+                    Point3 ptB = atomB.getFlatPoint(iStructure);
+                    Point3 ptE = atomE.getFlatPoint(iStructure);
 
                     if ((ptB != null) && (ptE != null)) {
 
@@ -1577,8 +1576,8 @@ public class Molecule extends MoleculeBase {
      * @param inputAxes double[][] coordinates of the orginal axes
      * @return RealMatrix coordinates of the rotated axes
      */
-    public RealMatrix calcSVDAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix(true);
+    public RealMatrix calcSVDAxes(int iStructure, double[][] inputAxes) {
+        RealMatrix rotMat = getSVDRotationMatrix(iStructure,true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1639,17 +1638,17 @@ public class Molecule extends MoleculeBase {
 
     }
 
-    public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
+    public RealMatrix getSVDRotationMatrix(int iStructure, boolean scaleMat) {
         Point3 pt;
         double[] c = new double[3];
         try {
-            c = getCenter(0);
+            c = getCenter(iStructure);
         } catch (MissingCoordinatesException ex) {
             log.warn(ex.getMessage(), ex);
         }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
-            pt = atom.getPoint();
+            pt = atom.getPoint(iStructure);
             if (pt != null) {
                 double[] aCoords = pt.toArray();
                 for (int i = 0; i < aCoords.length; i++) {
@@ -1749,7 +1748,7 @@ public class Molecule extends MoleculeBase {
             atom.unsetProperty(Atom.LABEL);
 
             if (atom.getProperty(Atom.DISPLAY)) {
-                pt = atom.getPoint(iStructure);
+                pt = atom.getFlatPoint(iStructure);
 
                 if (pt != null) {
                     atom.setProperty(Atom.LABEL);
@@ -1775,7 +1774,7 @@ public class Molecule extends MoleculeBase {
         updateAtomArray();
         for (Atom atom : atoms) {
             if (atom.getProperty(Atom.LABEL)) {
-                pt = atom.getPoint(iStructure);
+                pt = atom.getFlatPoint(iStructure);
 
                 if (pt != null) {
                     coords[i++] = (float) pt.getX();
@@ -1806,7 +1805,7 @@ public class Molecule extends MoleculeBase {
             int selected = spatialSet1.getSelected();
 
             if (selected > 0) {
-                ptB = spatialSet1.getPoint(iStructure);
+                ptB = spatialSet1.atom.getFlatPoint(iStructure);
 
                 if (ptB != null) {
                     if ((k + 1) < n) {
@@ -1835,7 +1834,7 @@ public class Molecule extends MoleculeBase {
                         coords[i++] = (float) ptB.getZ();
                         levels[j++] = selected;
                     } else {
-                        ptE = spatialSet2.getPoint(iStructure);
+                        ptE = spatialSet2.atom.getFlatPoint(iStructure);
 
                         if (ptE != null) {
                             float dx = (float) (ptE.getX() - ptB.getX());
@@ -2266,11 +2265,6 @@ public class Molecule extends MoleculeBase {
             }
         }
 
-    }
-
-    public ArrayList<Atom> getAtoms(String selection) {
-        MolFilter molFilter = new MolFilter(selection);
-        return getMatchedAtoms(molFilter, this);
     }
 
     public void updateNames() {
@@ -3300,7 +3294,7 @@ public class Molecule extends MoleculeBase {
 
     @Override
     public void addNonStandardResidue(Sequence sequence, Residue residue) {
-        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = residue.polymer.getPolymerType().contains("polypeptide");
         residue.setNonStandard();
         Atom startAtom;
         if (residue.isCompliant()) {

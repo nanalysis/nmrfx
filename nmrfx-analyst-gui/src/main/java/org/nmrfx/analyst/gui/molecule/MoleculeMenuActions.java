@@ -9,13 +9,12 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
-import org.nmrfx.analyst.gui.peaks.DistanceConstraintTableController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
 import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.io.*;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
@@ -31,7 +30,6 @@ public class MoleculeMenuActions extends MenuActions {
     private RDCGUI rdcGUI = null;
     private RNAPeakGeneratorSceneController rnaPeakGenController;
     private NOETableController noeTableController;
-    private DistanceConstraintTableController distanceConstraintTableController;
 
     public MoleculeMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -95,13 +93,10 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem noeTableMenuItem = new MenuItem("NOE Constraint Table...");
         noeTableMenuItem.setOnAction(e -> showNOETable());
 
-        MenuItem distanceConstraintTableMenuItem = new MenuItem("Distance Constraint Table...");
-        distanceConstraintTableMenuItem.setOnAction(e -> showDistanceConstraintTable());
-
         MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
-        molConstraintsMenu.getItems().addAll(noeTableMenuItem, distanceConstraintTableMenuItem, rdcMenuItem);
+        molConstraintsMenu.getItems().addAll(noeTableMenuItem, rdcMenuItem);
 
         MenuItem rnaPeakGenMenuItem = new MenuItem("RNA Label Scheme...");
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
@@ -176,7 +171,7 @@ public class MoleculeMenuActions extends MenuActions {
     }
 
     public void readMolecule(String type) {
-        if (!checkForExisting()) {
+        if (!type.equals("pdb xyz") && !checkForExisting()) {
             return;
         }
 
@@ -197,7 +192,7 @@ public class MoleculeMenuActions extends MenuActions {
                     case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
                         molecule = Molecule.getActive();
-                        pdb.readCoordinates(molecule, file.getPath(), 0, false, true);
+                        pdb.readCoordinates(molecule, file.getPath(), -1, false, true);
                         molecule.updateAtomArray();
                     }
                     case "sdf", "mol" -> molecule = (Molecule) SDFile.read(file.toString(), null);
@@ -211,6 +206,7 @@ public class MoleculeMenuActions extends MenuActions {
                         List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
                         if (!molecules.isEmpty()) {
                             molecule = molecules.get(0);
+                            ProjectBase.getActive().putMolecule(molecule);
                         }
                     }
                     default -> {
@@ -262,6 +258,7 @@ public class MoleculeMenuActions extends MenuActions {
                 try {
                     Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
                     molecule.setActive();
+                    ProjectBase.getActive().putMolecule(molecule);
                 } catch (IllegalArgumentException iaE) {
                     GUIUtils.warn("SMILES Parser", iaE.getMessage());
                     return;
@@ -285,19 +282,4 @@ public class MoleculeMenuActions extends MenuActions {
         noeTableController.getStage().toFront();
         noeTableController.updateNoeSetMenu();
     }
-    private void showDistanceConstraintTable() {
-        if (distanceConstraintTableController == null) {
-            distanceConstraintTableController = DistanceConstraintTableController.create();
-            if (distanceConstraintTableController == null) {
-                return;
-            }
-            Collection<DistanceConstraintSet> noeSets = MoleculeFactory.getActive().getMolecularConstraints().distanceSets();
-
-            noeSets.stream().findFirst().ifPresent(distanceConstraintTableController::setDistanceConstraintSet);
-        }
-        distanceConstraintTableController.getStage().show();
-        distanceConstraintTableController.getStage().toFront();
-        distanceConstraintTableController.updateDistanceSetMenu();
-    }
-
 }

@@ -13,18 +13,18 @@ from java.io import InputStreamReader
 
 
 
-def updateAtomArray():
+def updateAtomArray(mol=None):
     ''' Updates the molecule atom array '''
-    mol = MoleculeFactory.getActive()
+    if mol == None:
+        mol = MoleculeFactory.getActive()
     mol.updateAtomArray()
 
 def readMMCIF(fileName):
     ''' Reads a pdb file and modifies the static Molecule object.
     '''
     compound = None
-    MMcifReader.read(fileName)
-    mol = MoleculeFactory.getActive()
-    updateAtomArray()
+    mol = MMcifReader.read(fileName)
+    updateAtomArray(mol)
     return mol
 
 def readPDB(fileName, isCompound = False, iStruct=0):
@@ -42,12 +42,13 @@ def readPDB(fileName, isCompound = False, iStruct=0):
     compound = None
     pdb = PDBFile()
     if not isCompound:
-        pdb.readSequence(fileName,False, iStruct)
-        mol = MoleculeFactory.getActive()
+        mol = pdb.readSequence(fileName, iStruct)
+        updateAtomArray(mol)
+        return mol
     else:
-        mol = pdb.readResidue(fileName, None, MoleculeFactory.getActive(), None)
-    updateAtomArray()
-    return mol
+        cmpd = pdb.readResidue(fileName, None, MoleculeFactory.getActive(), None)
+        updateAtomArray(cmpd.molecule)
+        return cmpd
 
 def readPDBX(fileName, isCompound = False):
     ''' Reads a pdb file and modifies the static Molecule object.
@@ -64,7 +65,7 @@ def readPDBX(fileName, isCompound = False):
     compound = None # FIXME: This parameter is not used
     pdb = PDBFile()
     mol = pdb.read(fileName)
-    updateAtomArray()
+    updateAtomArray(mol)
     return mol
 
 def readPDBXCoords(fileName, structNum, noComplain, genCoords):
@@ -74,24 +75,27 @@ def readPDBXCoords(fileName, structNum, noComplain, genCoords):
         generating coordinates.
     '''
 
-    pdb = PDBFile()
-    pdb.readCoordinates(fileName, structNum, noComplain, genCoords)
-    updateAtomArray()
     mol = MoleculeFactory.getActive()
+    pdb = PDBFile()
+    pdb.readCoordinates(mol, fileName, structNum, noComplain, genCoords)
+    MoleculeFactory.setActive(mol)
+    updateAtomArray(mol)
     return mol
 
 def readSDF(fileName, newMolecule = False):
     sdf = SDFile()
     molecule = MoleculeFactory.getActive() if not newMolecule else None
     compound = sdf.read(fileName, None, molecule, None)
-    updateAtomArray()
+    updateAtomArray(compound.molecule)
+    MoleculeFactory.setActive(compound.molecule)
     return compound
 
 def readMol2(fileName, newMolecule = False):
     mol2 = Mol2File()
     molecule = MoleculeFactory.getActive() if not newMolecule else None
     compound = mol2.read(fileName, None, molecule, None)
-    updateAtomArray()
+    MoleculeFactory.setActive(compound.molecule)
+    updateAtomArray(compound.molecule)
     return compound
 
 def readSequenceString(polymerName, sequence, seqReader=None):
@@ -105,9 +109,9 @@ def readSequenceString(polymerName, sequence, seqReader=None):
     if (seqReader == None):
         seqReader = Sequence()
     seqReader.newPolymer()
-    seqReader.read(polymerName, seqAList, "")
-    updateAtomArray()
-    mol = MoleculeFactory.getActive()
+    mol = seqReader.read(polymerName, seqAList, "")
+    MoleculeFactory.setActive(mol)
+    updateAtomArray(mol)
     return mol
 
 
@@ -120,9 +124,9 @@ def readSequence(seqFile, convert=False, polymerName=None,seqReader=None):
     if (seqReader == None):
         seqReader = Sequence()
     seqReader.newPolymer()
-    seqReader.read(seqFile, polymerName) if polymerName else seqReader.read(seqFile)
-    updateAtomArray()
-    mol = MoleculeFactory.getActive()
+    mol = seqReader.read(seqFile, polymerName) if polymerName else seqReader.read(seqFile)
+    MoleculeFactory.setActive(mol)
+    updateAtomArray(mol)
     return mol
 
 def readYaml(file):

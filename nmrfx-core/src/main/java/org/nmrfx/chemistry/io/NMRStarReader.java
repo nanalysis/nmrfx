@@ -401,7 +401,7 @@ public class NMRStarReader {
 
     public void buildRDCConstraints() throws ParseException {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
-            if (saveframe.getCategoryName().equals("RDCs")) {
+            if (saveframe.getCategoryName().equals("RDC_constraints")) {
                 log.debug("process RDC constraints {}", saveframe.getName());
                 processRDCConstraints(saveframe);
             }
@@ -1193,10 +1193,10 @@ public class NMRStarReader {
             atom.setPoint(structureNumber, pt);
         }
         if (molecule != null) {
-            molecule.setActiveStructures(selSet);
             for (Integer iStructure : selSet) {
                 molecule.genCoords(iStructure, true);
             }
+            molecule.setActiveStructures(selSet);
         }
     }
 
@@ -1526,14 +1526,14 @@ public class NMRStarReader {
             try {
                 AngleConstraint aCon = new AngleConstraint(atoms, lower, upper, name);
                 angleSet.add(aCon);
-            } catch (InvalidMoleculeException ex) {
-                throw new ParseException(ex.getLocalizedMessage());
+            } catch (IllegalArgumentException | InvalidMoleculeException ex) {
+                log.error(ex.getMessage(), ex);
             }
         }
     }
 
     public void processRDCConstraints(Saveframe saveframe) throws ParseException {
-        Loop loop = saveframe.getLoop("_RDC");
+        Loop loop = saveframe.getLoop("_RDC_constraint");
         if (loop == null) {
             throw new ParseException("No \"_RDC\" loop");
         }
@@ -1549,26 +1549,54 @@ public class NMRStarReader {
             atomColumns[i - 1] = loop.getColumnAsList("Atom_ID_" + i);
             resonanceColumns[i - 1] = loop.getColumnAsList("Resonance_ID_" + i);
         }
-        List<Double> valColumn = loop.getColumnAsDoubleList("Val", null);
-        List<Double> errColumn = loop.getColumnAsDoubleList("Val_err", null);
+        List<Double> valColumn = loop.getColumnAsDoubleList("RDC_val", null);
+        List<Double> errColumn = loop.getColumnAsDoubleList("RDC_val_err", null);
         RDCConstraintSet rdcSet = molecule.getMolecularConstraints().newRDCSet(saveframe.getName().substring(5));
         for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
-            SpatialSet[] spSets = new SpatialSet[4];
+            SpatialSet[] spSets = new SpatialSet[2];
+            boolean ok = true;
             for (int iAtom = 0; iAtom < 2; iAtom++) {
                 SpatialSetGroup spG = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i);
                 if (spG != null) {
                     spSets[iAtom] = spG.getSpatialSet();
-                    if ((spSets[0] == null) || (spSets[1] == null)) {
+                    if (spSets[iAtom] == null) {
                         log.warn("null spset id  {} iatom {} {}", i, iAtom, spG.getFullName());
-                    } else {
-                        if (errColumn.get(i) != null) {
-                            RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), errColumn.get(i));
-                            rdcSet.add(aCon);
-                        }
+                        ok = false;
+                        break;
                     }
                 }
             }
+            if (ok) {
+                double err;
+                if (errColumn.get(i) == null) {
+                    err = valColumn.get(i) * 0.05;
+                } else {
+                    err = errColumn.get(i);
+                }
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), err);
+                rdcSet.add(aCon);
+
+            }
         }
+    }
+
+    public static PeakList getPeakList(String saveframeName, String peakListIDStr, PeakList peakList) throws ParseException {
+        if (peakListIDStr.equals(".")) {
+            if (peakList == null) {
+                peakList = new PeakList(saveframeName, 2);
+            }
+        } else {
+            try {
+                int peakListID = Integer.parseInt(peakListIDStr);
+                Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                if (peakListOpt.isPresent()) {
+                    peakList = peakListOpt.get();
+                }
+            } catch (NumberFormatException nFE) {
+                throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
+            }
+        }
+        return peakList;
     }
 
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
@@ -1586,17 +1614,17 @@ public class NMRStarReader {
         entityIDColumns[0] = loop.getColumnAsList("Entity_ID_1");
         compIdxIDColumns[0] = loop.getColumnAsList("Comp_index_ID_1");
         atomColumns[0] = loop.getColumnAsList("Atom_ID_1");
-        resonanceColumns[0] = loop.getColumnAsList("Resonance_ID_1");
+        resonanceColumns[0] = loop.getColumnAsList("Resonance_ID_1", null);
         entityAssemblyIDColumns[1] = loop.getColumnAsList("Entity_assembly_ID_2");
         entityIDColumns[1] = loop.getColumnAsList("Entity_ID_2");
         compIdxIDColumns[1] = loop.getColumnAsList("Comp_index_ID_2");
         atomColumns[1] = loop.getColumnAsList("Atom_ID_2");
-        resonanceColumns[0] = loop.getColumnAsList("Resonance_ID_2");
+        resonanceColumns[1] = loop.getColumnAsList("Resonance_ID_2", null);
         List<String> constraintIDColumn = loop.getColumnAsList("ID");
         List<String> lowerColumn = loop.getColumnAsList("Distance_lower_bound_val");
         List<String> upperColumn = loop.getColumnAsList("Distance_upper_bound_val");
-        List<String> peakListIDColumn = loop.getColumnAsList("Spectral_peak_list_ID");
-        List<String> peakIDColumn = loop.getColumnAsList("Spectral_peak_ID");
+        List<String> peakListIDColumn = loop.getColumnAsList("Spectral_peak_list_ID", ".");
+        List<String> peakIDColumn = loop.getColumnAsList("Spectral_peak_ID", ".");
         Atom[] atoms = new Atom[2];
         SpatialSetGroup[] spSets = new SpatialSetGroup[2];
         String[] resIDStr = new String[2];
@@ -1615,7 +1643,7 @@ public class NMRStarReader {
                 String iRes = compIdxIDColumns[iAtom].get(i);
                 String atomName = atomColumns[iAtom].get(i);
                 resIDStr[iAtom] = ".";
-                if (resonanceColumns[iAtom] != null) {
+                if ((resonanceColumns[iAtom] != null) && (resonanceColumns[iAtom].get(i) != null)) {
                     resIDStr[iAtom] = resonanceColumns[iAtom].get(i);
                 }
                 if (entityAssemblyID.equals(".")) {
@@ -1651,21 +1679,7 @@ public class NMRStarReader {
             String peakID = peakIDColumn.get(i);
             String constraintID = constraintIDColumn.get(i);
             if (!peakListIDStr.equals(lastPeakListIDStr)) {
-                if (peakListIDStr.equals(".")) {
-                    if (peakList == null) {
-                        peakList = new PeakList("gendist", 2);
-                    }
-                } else {
-                    try {
-                        int peakListID = Integer.parseInt(peakListIDStr);
-                        Optional<PeakList> peakListOpt = PeakList.get(peakListID);
-                        if (peakListOpt.isPresent()) {
-                            peakList = peakListOpt.get();
-                        }
-                    } catch (NumberFormatException nFE) {
-                        throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
-                    }
-                }
+                peakList = getPeakList(saveframe.getName(), peakListIDStr, peakList);
             }
             lastPeakListIDStr = peakListIDStr;
             Peak peak;
@@ -1699,6 +1713,7 @@ public class NMRStarReader {
                 noeSet.add(noe);
             }
         }
+        noeSet.updateNPossible(peakList);
         noeSet.setCalibratable(false);
     }
 
@@ -1720,9 +1735,10 @@ public class NMRStarReader {
             buildExperiments();
             log.debug("process molecule");
             buildMolecule();
-            ProjectBase.getActive().putMolecule(molecule);
-            MoleculeFactory.setActive(molecule);
-
+            if (molecule != null) {
+                ProjectBase.getActive().putMolecule(molecule);
+                MoleculeFactory.setActive(molecule);
+            }
             log.debug("process peak lists");
             buildPeakLists();
             log.debug("process resonance lists");

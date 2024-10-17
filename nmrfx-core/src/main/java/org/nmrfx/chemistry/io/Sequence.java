@@ -116,7 +116,7 @@ public class Sequence {
             residue.addBond(bond);
         }
         firstAtom.parent = parent;
-        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = residue.polymer.getPolymerType().contains("polypeptide");
         if (isProtein) {
             firstAtom.irpIndex = 0;
         }
@@ -714,7 +714,7 @@ public class Sequence {
                     polymerType = "nucleicacid";
                     setPolymerType = true;
                 } else if (AMINO_ACID_NAMES.contains(resName)) {
-                    polymerType = "polypeptide";
+                    polymerType = "polypeptide(L)";
                     setPolymerType = true;
                 }
                 if (setPolymerType) {

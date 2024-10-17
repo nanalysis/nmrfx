@@ -26,7 +26,7 @@ public class PeakFolder {
     }
 
     private void loadComponents() {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/peakClusters.txt");
+        InputStream iStream = this.getClass().getResourceAsStream("/data/HSQC_13C_clusters.txt");
         ArrayList<String> lines = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {

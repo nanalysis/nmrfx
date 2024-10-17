@@ -569,7 +569,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         } else {
             //copy rvec from 0 to size
             //(because from size to rvec.length is junk data that we don't want)
-            System.arraycopy(rvec, 0, newarr, 0, rvec.length);
+            int n = Math.min(newsize, rvec.length);
+            System.arraycopy(rvec, 0, newarr, 0, n);
         }
         rvec = newarr;
     }
@@ -579,7 +580,8 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         if (ivec == null) {
             ivec = newarr;
         } else {
-            System.arraycopy(ivec, 0, newarr, 0, ivec.length);
+            int n = Math.min(newsize, ivec.length);
+            System.arraycopy(ivec, 0, newarr, 0, n);
         }
         ivec = newarr;
     }
@@ -1892,6 +1894,24 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             for (int i = 0; i < size; ++i) {
                 rvec[i] = cvec[i].getReal();
             }
+        }
+    }
+    /**
+     * Make the vector complex if not, and set the imaginary values to zero.
+     */
+    public void zeroImag() {
+        resize(size, true);
+        for (int i = 0; i < size; ++i) {
+            setImag(i, 0.0);
+        }
+    }
+    /**
+     * Make the vector complex if not, and set the imaginary values to zero.
+     */
+    public void zeroReal() {
+        resize(size, true);
+        for (int i = 0; i < size; ++i) {
+            setReal(i, 0.0);
         }
     }
 

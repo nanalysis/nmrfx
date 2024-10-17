@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.9-SNAPSHOT</version>
+        <version>11.4.13-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -374,7 +374,7 @@
             <dependency>
                 <groupId>berlin.yuna</groupId>
                 <artifactId>type-map</artifactId>
-                <version>2.1.2</version>
+                <version>2.1.8</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

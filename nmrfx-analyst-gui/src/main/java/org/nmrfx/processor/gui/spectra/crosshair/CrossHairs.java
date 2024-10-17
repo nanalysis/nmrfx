@@ -199,25 +199,32 @@ public class CrossHairs {
 
     public void updatePosition(int index, Orientation orientation, double value) {
         getCrossHairLine(index, orientation).setPosition(value);
+        getCrossHairLine(index, orientation).setVisible(true);
+        update(index, orientation);
         refresh();
     }
 
     public void move(int index, Orientation orientation, double value) {
-        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-        if (dataAttrs.isEmpty()) {
-            return;
-        }
 
         value = valueInRange(index, orientation, value);
         setPosition(index, orientation, value);
         draw(index, orientation);
+        update(index, orientation);
+        chart.drawSlices();
+    }
+
+    void update(int index, Orientation orientation) {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        if (dataAttrs.isEmpty()) {
+            return;
+        }
         DatasetAttributes dataAttr = dataAttrs.get(0);
         int axisDim = orientation == Orientation.VERTICAL ? 0 : 1;
         String label = dataAttr.getLabel(axisDim);
 
         double position = getCrossHairLine(index, orientation).getPosition();
         updateAllCharts(chart, index, position, label);
-        chart.drawSlices();
+
     }
 
     private void sync(int index, String dimLabel, double value) {
