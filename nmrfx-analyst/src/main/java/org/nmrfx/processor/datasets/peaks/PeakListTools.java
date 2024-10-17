@@ -853,6 +853,52 @@ public class PeakListTools {
             }
         }
     }
+    public static void clusterPeakLists(List<PeakList> peakLists, int iDim, double limit) {
+        List<Peak> peaks = new ArrayList<>();
+        for (PeakList peakList : peakLists) {
+            if (peakList.getSpectralDim(iDim).getNucleus().equalsIgnoreCase("1H")) {
+                peakList.compress();
+                peakList.reIndex();
+                peaks.addAll(peakList.peaks());
+            }
+        }
+        int n = peaks.size();
+
+        double[][] proximity = new double[n][n];
+        int iA = 0;
+        for (Peak peakA : peaks) {
+            double shiftA = peakA.getPeakDim(iDim).getChemShiftValue();
+            int iB = 0;
+            for (Peak peakB : peaks) {
+                double shiftB = peakB.getPeakDim(iDim).getChemShiftValue();
+                double dis = Math.abs(shiftA - shiftB);
+                proximity[iA][iB] = dis;
+                iB++;
+            }
+            iA++;
+        }
+
+        CompleteLinkage linkage = new CompleteLinkage(proximity);
+        HierarchicalClustering clusterer = new HierarchicalClustering(linkage);
+        int[] partition = clusterer.partition(limit);
+        int nClusters = 0;
+        for (int i = 0; i < n; i++) {
+            if (partition[i] > nClusters) {
+                nClusters = partition[i];
+            }
+        }
+        nClusters++;
+        Peak[] roots = new Peak[nClusters];
+        for (int i = 0; i < n; i++) {
+            int cluster = partition[i];
+            if (roots[cluster] == null) {
+                roots[cluster] = peaks.get(i);
+            } else {
+                PeakList.linkPeaks(roots[cluster], iDim, peaks.get(i), iDim);
+            }
+        }
+    }
+
 
     // FIXME should check to see that nucleus is same
     // FIXME should check to see that nucleus is same

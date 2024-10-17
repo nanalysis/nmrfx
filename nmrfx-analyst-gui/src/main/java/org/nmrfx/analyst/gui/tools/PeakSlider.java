@@ -18,6 +18,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
@@ -27,8 +28,11 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -76,7 +80,7 @@ public class PeakSlider implements ControllerTool {
     private final ListChangeListener<PolyChart> chartsListener = this::updateKeyBindings;
 
     enum PeakDisplayMode {
-        NONE ,
+        NONE,
         SIM,
         EXP,
         BOTH;
@@ -158,6 +162,8 @@ public class PeakSlider implements ControllerTool {
         randomizeAllItem.setOnAction(e -> restoreAllPeaks(true));
         MenuItem restoreItem = new MenuItem("Restore Peaks");
         restoreItem.setOnAction(e -> restorePeaks());
+        MenuItem pickItem = new MenuItem("Pick Peaks");
+        pickItem.setOnAction(e -> pickDisplayedCharts());
         Menu peakDisplayMenu = new Menu("Peak Lists");
         for (var peakMode : PeakDisplayMode.values()) {
             MenuItem modeMenuItem = new MenuItem(peakMode.name());
@@ -179,8 +185,8 @@ public class PeakSlider implements ControllerTool {
         autoItem.setOnAction(e -> autoAlign());
         matchingMenu.getItems().addAll(matchColumnItem, matchRowItem, clearMatchItem, autoItem, matchExpPredItem);
 
-        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, peakDisplayMenu, layoutMenu, matchingMenu);
-        actionMenu.showingProperty().addListener((a,b,c) -> {
+        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, pickItem, peakDisplayMenu, layoutMenu, matchingMenu);
+        actionMenu.showingProperty().addListener((a, b, c) -> {
             if (c) {
                 updateLayoutMenu(layoutMenu);
             }
@@ -230,6 +236,7 @@ public class PeakSlider implements ControllerTool {
             item.setOnAction(e -> loadLayout(name));
         }
     }
+
     private void loadLayout(String name) {
         SliderLayout sliderLayout = new SliderLayout();
         try {
@@ -239,6 +246,7 @@ public class PeakSlider implements ControllerTool {
             exceptionDialog.showAndWait();
         }
     }
+
     /**
      * Add key bindings to newly added charts.
      *
@@ -1073,6 +1081,8 @@ public class PeakSlider implements ControllerTool {
         });
     }
 
+    record PeakListPair(PeakList experiental, PeakList predicted) {
+    }
 
     public void autoAlign() {
         Optional<PeakList> hmqcPredListOpt = Optional.empty();
@@ -1082,19 +1092,19 @@ public class PeakSlider implements ControllerTool {
         Optional<PeakList> noesyPredListOpt = Optional.empty();
         Optional<PeakList> noesyExpListOpt = Optional.empty();
         for (PeakList peakList : ProjectBase.getActive().getPeakLists()) {
-            if (peakList.getName().contains("hmqc")) {
+            if (peakList.getExperimentType().equalsIgnoreCase("13C-HSQC") || peakList.getName().contains("hmqc")) {
                 if (peakList.isSimulated()) {
                     hmqcPredListOpt = Optional.of(peakList);
                 } else {
                     hmqcExpListOpt = Optional.of(peakList);
                 }
-            } else if (peakList.getName().contains("tocsy")) {
+            } else if (peakList.getExperimentType().equalsIgnoreCase("COSY") || peakList.getName().contains("tocsy") || peakList.getName().contains("mlev")) {
                 if (peakList.isSimulated()) {
                     tocsyPredListOpt = Optional.of(peakList);
                 } else {
                     tocsyExpListOpt = Optional.of(peakList);
                 }
-            } else if (peakList.getName().contains("noesy")) {
+            } else if (peakList.getExperimentType().equalsIgnoreCase("NOESY") || peakList.getName().contains("noesy")) {
                 if (peakList.isSimulated()) {
                     noesyPredListOpt = Optional.of(peakList);
                 } else {
@@ -1102,10 +1112,13 @@ public class PeakSlider implements ControllerTool {
                 }
             }
         }
+        PeakListPair hmqcPair = new PeakListPair(hmqcExpListOpt.get(), hmqcPredListOpt.get());
         log.debug("{}", hmqcPredListOpt);
         log.debug("{}", hmqcExpListOpt);
         log.debug("{}", tocsyPredListOpt);
         log.debug("{}", tocsyExpListOpt);
+        log.debug("{}", noesyPredListOpt);
+        log.debug("{}", noesyExpListOpt);
         if (hmqcExpListOpt.isPresent() && hmqcPredListOpt.isPresent()) {
             log.debug("got hmqc");
             if (tocsyExpListOpt.isPresent() && tocsyPredListOpt.isPresent()) {
@@ -1443,6 +1456,36 @@ public class PeakSlider implements ControllerTool {
             chart.updatePeakLists(peakLists);
             chart.refresh();
             setupLists(true);
+        }
+    }
+
+    private void pickDisplayedCharts() {
+        if (!GUIUtils.affirm("Pick all charts\nthis will remove existing peaklists")) {
+            return;
+        }
+        var existingLists = PeakList.peakLists().stream().filter(peakList -> !peakList.isSimulated()).toList();
+        for (PeakList peakList : existingLists) {
+            peakList.remove();
+        }
+        List<PeakList> peakLists = new ArrayList<>();
+        for (PolyChart chart : controller.getCharts()) {
+            Dataset dataset = (Dataset) chart.getDataset();
+            PeakPickParameters peakPickParameters = new PeakPickParameters();
+            peakPickParameters.level(chart.getDatasetAttributes().get(0).getLvl());
+            peakPickParameters.mode = "appendif";
+            PeakList peaklist = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
+                    null, peakPickParameters);
+            peakLists.add(peaklist);
+        }
+        double widthScale = 0.25;
+
+        for (int iDim = 0;iDim < 2;iDim++) {
+            double widthPPM = Double.MAX_VALUE;
+            for (PeakList peakList : peakLists) {
+                DescriptiveStatistics dStat = peakList.widthDStats(iDim);
+                widthPPM = Math.min( widthPPM, dStat.getPercentile(50.0) / peakList.getSpectralDim(iDim).getSf());
+            }
+            PeakListTools.clusterPeakLists(peakLists, iDim, widthPPM * widthScale);
         }
     }
 }

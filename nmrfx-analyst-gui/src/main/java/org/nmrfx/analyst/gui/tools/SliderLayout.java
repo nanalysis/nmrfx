@@ -70,6 +70,7 @@ public class SliderLayout {
                 chart.getAxes().setMinMax(0, x.get(0), x.get(1));
                 var y = layout.y();
                 chart.getAxes().setMinMax(1, y.get(0), y.get(1));
+                chart.copyChartLimits();
             });
         }
     }
