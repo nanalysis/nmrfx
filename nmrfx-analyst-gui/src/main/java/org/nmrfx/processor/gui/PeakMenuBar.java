@@ -387,11 +387,9 @@ public class PeakMenuBar {
             PeakFolder peakFolder = new PeakFolder();
             List<String> dimLabels = peakFolder.DIMS;
             SpectralDim dimToFold = peakList.getFoldedDim();
-            if (dimToFold == null) {
-                GUIUtils.warn("Assign dimension to fold", "Indicate which dimension to fold in Peak Tool's Reference tab");
-            }
-            // if the peaklist is only 2 dimensions, ensure that they are H and C
-            // otherwise user is required to set the bonded dimension
+            if (dimToFold != null) {
+                // if the peaklist is only 2 dimensions, ensure that they are H and C
+                // otherwise user is required to set the bonded dimension
                 String bondedDim = dimToFold.getRelationDim();
                 if (bondedDim.isBlank()) {
                     if (peakList.getNDim() == 2 &&
@@ -407,8 +405,10 @@ public class PeakMenuBar {
                         GUIUtils.warn("Set bonded dimension", "Assign bonded dimension in Peak Tool's reference tab");
                     }
                 }
-            peakFolder.unfoldPeakList(peakList, dimToFold);
-
+                peakFolder.unfoldPeakList(peakList, dimToFold);
+            } else {
+                GUIUtils.warn("Assign dimension to fold", "Indicate the C13 dimension to fold in Peak Tool's Reference tab");
+            }
         }
     }
 
