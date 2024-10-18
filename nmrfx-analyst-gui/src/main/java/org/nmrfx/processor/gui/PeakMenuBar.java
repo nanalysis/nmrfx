@@ -156,8 +156,14 @@ public class PeakMenuBar {
         editMenu.getItems().add(unifyMenuItem);
 
         MenuItem foldMenuItem = new MenuItem("Fold Peaks");
-        foldMenuItem.setOnAction(e -> foldPeaks());
+        foldMenuItem.setOnAction(e -> foldPeaks(true, false));
         editMenu.getItems().add(foldMenuItem);
+        MenuItem foldNoAssignMenuItem = new MenuItem("Fold Peaks (no assign)");
+        foldNoAssignMenuItem.setOnAction(e -> foldPeaks(false, false));
+        editMenu.getItems().add(foldNoAssignMenuItem);
+        MenuItem foldPeakMenuItem = new MenuItem("Fold Peak (no assign)");
+        foldPeakMenuItem.setOnAction(e -> foldPeaks(false, true));
+        editMenu.getItems().add(foldPeakMenuItem);
 
         menuBar.getItems().add(editMenu);
 
@@ -381,7 +387,7 @@ public class PeakMenuBar {
         }
     }
 
-    void foldPeaks() {
+    void foldPeaks(boolean useAssign, boolean peakMode) {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
@@ -419,7 +425,13 @@ public class PeakMenuBar {
             if (Molecule.getActive() == null) {
                 GUIUtils.warn("No Active Molecule", "Load a molecule");
             }
-            peakFolder.unfoldPeakList(peakList, dims, alias);
+            if (peakMode) {
+                menuTarget.getPeak().ifPresent(peak -> {
+                    peakFolder.unfoldPeakList(peakList, dims, alias, useAssign, peak);
+                });
+            } else {
+                peakFolder.unfoldPeakList(peakList, dims, alias, useAssign, null);
+            }
 
         }
     }
