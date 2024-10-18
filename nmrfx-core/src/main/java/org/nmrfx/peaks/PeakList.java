@@ -725,7 +725,8 @@ public class PeakList {
     }
 
     public SpectralDim getFoldedDim(){
-        return Arrays.stream(spectralDims).filter((spectralDim) -> spectralDim.getFoldMode() != 'n').toList().getFirst();
+        List<SpectralDim> foldedDim = Arrays.stream(spectralDims).filter((spectralDim) -> spectralDim.getFoldMode() != 'n').toList();
+        return foldedDim.isEmpty() ? null : foldedDim.getFirst();
     }
 
     public List<SpectralDim> getSpectralDims() {
