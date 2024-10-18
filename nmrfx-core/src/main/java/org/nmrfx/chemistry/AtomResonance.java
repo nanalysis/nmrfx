@@ -88,6 +88,9 @@ public class AtomResonance {
         boolean result = true;
         if (!name.isBlank() && (molBase != null)) {
             Atom testAtom = molBase.findAtom(name);
+            if (testAtom == null) {
+                testAtom = molBase.findAtom(name + "1");
+            }
             result = testAtom != null;
         }
         return result;

@@ -2,10 +2,11 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public class PeakFolder {
-    public List<String> dimLabels = Arrays.asList("H", "C");
+    public List<String> DIMS = Arrays.asList("H", "C");
     HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
 
     public PeakFolder() {
@@ -62,7 +63,7 @@ public class PeakFolder {
     }
 
     private void createMixtureModel(String groupName, ArrayList<String[]> clusterLines) {
-        int nDim = dimLabels.size();
+        int nDim = DIMS.size();
         int nClusters = clusterLines.size();
         double[] weights = new double[nClusters];
         double[][] means = new double[nClusters][nDim];
@@ -84,124 +85,100 @@ public class PeakFolder {
         MMVNs.put(groupName, MVN);
     }
 
-    public void unfoldPeakList(PeakList peakList, String[] dimToFold, boolean[] alias, boolean useAssign, Peak peak) {
+    public void unfoldPeakList(PeakList peakList, SpectralDim dimToFold, boolean useAssign, Peak peak) {
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        double[][] bounds = new double[dimToFold.length][2];
-        int[] bondedDims = new int[dimToFold.length];
+        double[] bounds = new double[2];
+        boolean alias = dimToFold.getFoldMode() == 'a';
 
         if (dataset != null) {
-            for (int i = 0; i < dimToFold.length; i++) {
-                int iDim = dataset.getDim(dimToFold[i]);
-                int size = dataset.getSizeReal(iDim);
-                bounds[i][0] = dataset.pointToPPM(iDim, 0);
-                bounds[i][1] = dataset.pointToPPM(iDim, size - 1);
-                String relationDim = peakList.getSpectralDim(dimToFold[i]).getRelationDim();
-                bondedDims[i] = peakList.getSpectralDim(relationDim).getIndex();
-            }
+            int iDim = dataset.getDim(dimToFold.getDimName());
+            int size = dataset.getSizeReal(iDim);
+            bounds[0] = dataset.pointToPPM(iDim, 0);
+            bounds[1] = dataset.pointToPPM(iDim, size - 1);
+            String relationDim = peakList.getSpectralDim(dimToFold.getDimName()).getRelationDim();
+            int bondedDim = peakList.getSpectralDim(relationDim).getIndex();
+
 
             int[] peakListToCluster = new int[peakList.getNDim()]; //map peakList dims to mvn dims
-            peakList.getSpectralDims().forEach((peakDim) -> {
+            peakList.getSpectralDims().forEach(peakDim -> {
                         String nucleus = peakDim.getNucleus();
                         String nucleusName = nucleus.substring(nucleus.length() - 1);
-                        peakListToCluster[peakDim.getIndex()] = dimLabels.indexOf(nucleusName);
+                        peakListToCluster[peakDim.getIndex()] = DIMS.indexOf(nucleusName);
                     }
             );
-
             if (peak != null) {
-                foldPeak(peak, dimToFold, peakListToCluster, bondedDims, useAssign, bounds, alias);
+                unfoldPeak(peak, peakListToCluster, dimToFold, bondedDim, bounds, alias);
+
             } else {
                 for (Peak foldPeak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
-                    foldPeak(foldPeak, dimToFold, peakListToCluster, bondedDims, useAssign, bounds, alias);
+                    unfoldPeak(foldPeak, peakListToCluster, dimToFold, bondedDim, bounds, alias);
                 }
             }
         }
     }
 
+    void unfoldPeak(Peak peak, int[] peakListToCluster, SpectralDim dimToFold, int bondedDim, double[] bounds, boolean alias) {
+        double[] shifts = new double[DIMS.size()];
+        int pDim = peakListToCluster[peak.getPeakDim(dimToFold.getDimName()).getSpectralDim()];
+        int pBonded = peakListToCluster[peak.getPeakDim(bondedDim).getSpectralDim()];
+        shifts[pDim] = peak.getPeakDim(dimToFold.getDimName()).getChemShiftValue();
+        shifts[pBonded] = peak.getPeakDim(bondedDim).getChemShiftValue();
 
-    void foldPeak(Peak peak, String[] dimToFold, int[] peakListToCluster,
-                  int[] bondedDims, boolean useAssign, double[][] bounds, boolean[] alias) {
-        double[] shifts = new double[dimLabels.size()];
-        int hDim = 1;
-        int cDim = 0;
-        int iDim = 1;
-        for (int i = 0; i < dimToFold.length; i++) {
-            shifts[0] = peak.getPeakDim(hDim).getChemShiftValue();
-            shifts[1] = peak.getPeakDim(cDim).getChemShiftValue();
-//            String label = dimToFold[i];
-//            int iDim = peakListToCluster[peak.getPeakDim(label).getSpectralDim()];
-//            int bondedDim = peakListToCluster[peak.getPeakDim(bondedDims[i]).getSpectralDim()];
-//            shifts[iDim] = peak.getPeakDim(label).getChemShiftValue();
-//            shifts[bondedDim] = peak.getPeakDim(bondedDims[i]).getChemShiftValue();
-//
-            MixtureMultivariateNormalDistribution mvn = null;
-            if (useAssign) {
-                String assignment = peak.getPeakDim(cDim).getLabel();
-                Atom atom = Molecule.getAtomByName(assignment);
-                if (atom != null) {
-                    String residueName = atom.getResidueName();
-                    String atomName = atom.getName();
-                    String groupName = getGroupName(residueName, atomName);
-                    if (MMVNs.containsKey(groupName)) {
-                        mvn = MMVNs.get(groupName);
-                    }
+        MixtureMultivariateNormalDistribution mvn = null;
+        String assignment = peak.getPeakDim(dimToFold.getDimName()).getLabel();
+        Atom atom = MoleculeBase.getAtomByName(assignment);
+        if (atom != null) {
+            String residueName = atom.getResidueName();
+            String atomName = atom.getName();
+            String groupName = getGroupName(residueName, atomName);
+            if (MMVNs.containsKey(groupName)) {
+                mvn = MMVNs.get(groupName);
+            }
+        }
+        double density = 1e-10;
+        if (mvn != null) {
+            density = mvn.density(shifts);
+        } else {
+            for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
+                double newDensity = distribution.density(shifts);
+                if (newDensity > density) {
+                    density = newDensity;
                 }
             }
-            double density = 1e-10;
+        }
+
+        double shift = shifts[pDim];
+        double lowerLim = bounds[0];
+        double upperLim = bounds[1];
+        double bestDensity = density;
+        double bestShift = shift;
+        double[] foldedShifts = new double[2]; //two possible positions to test
+
+        foldedShifts[0] = alias ? upperLim - (lowerLim - shift) : upperLim - (shift - upperLim);
+        foldedShifts[1] = alias ? lowerLim + (shift - upperLim) : lowerLim + (lowerLim - shift);
+
+        for (double foldedShift : foldedShifts) {
+            shifts[pDim] = foldedShift;
             if (mvn != null) {
-                density = mvn.density(shifts);
+                double newDensity = mvn.density(shifts);
+                if (newDensity > bestDensity) {
+                    bestShift = shifts[pDim];
+                    bestDensity = newDensity;
+                }
             } else {
                 for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
                     double newDensity = distribution.density(shifts);
-                    if (newDensity > density) {
-                        density = newDensity;
-                    }
-                }
-            }
-            for (int j = 0;j<shifts.length;j++) {
-                System.out.println(shifts[j]);
-            }
-
-            double shift = shifts[iDim];
-            double lowerLim = bounds[i][0];
-            double upperLim = bounds[i][1];
-            double bestDensity = density;
-            double bestShift = shift;
-            double[] foldedShifts = new double[2]; //two possible positions to test
-            System.out.println(density + " " + shift + " " + useAssign + " " + mvn);
-
-            foldedShifts[0] = alias[i] ? upperLim - (lowerLim - shift) : upperLim - (shift - upperLim);
-            foldedShifts[1] = alias[i] ? lowerLim + (shift - upperLim) : lowerLim + (lowerLim - shift);
-
-            for (double foldedShift : foldedShifts) {
-                shifts[iDim] = foldedShift;
-                for (int j = 0;j<shifts.length;j++) {
-                    System.out.println(shifts[j]);
-                }
-                if (mvn != null) {
-                    double newDensity = mvn.density(shifts);
                     if (newDensity > bestDensity) {
-                        bestShift = shifts[iDim];
+                        bestShift = shifts[pDim];
                         bestDensity = newDensity;
                     }
-                    System.out.println(newDensity);
-                } else {
-   //                 for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
-                    for (var entry : MMVNs.entrySet()) {
-                        double newDensity = entry.getValue().density(shifts);
-                        if (newDensity > bestDensity) {
-                            bestShift = shifts[iDim];
-                            bestDensity = newDensity;
-                            System.out.println(bestDensity + " " + entry.getKey());
-                        }
-                    }
-                    System.out.println("best " + bestDensity);
                 }
             }
-            System.out.println(bestDensity + " " + bestShift);
+        }
 
-            if (bestDensity != density) {
-                peak.getPeakDim(cDim).setChemShiftValue((float) bestShift);
-            }
+        if (bestDensity != density) {
+            peak.getPeakDim(dimToFold.getDimName()).setChemShiftValue((float) bestShift);
         }
     }
 }
+

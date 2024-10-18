@@ -50,6 +50,7 @@ import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.chart.XYValue;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.*;
@@ -909,8 +910,14 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         foldCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, String> t) -> {
                     String value = t.getNewValue();
-                    t.getRowValue().setFoldMode(value == null ? 'n' : value.charAt(0));
-                    t.getRowValue().setFoldCount(1);
+                    if (value.equals("none")) {
+                        t.getRowValue().setFoldMode(value.charAt(0));
+                    } else if (Objects.equals(t.getRowValue().getNucleus(), Nuclei.C13.getNumberName())) {
+                        t.getRowValue().setFoldMode(value.charAt(0));
+                        t.getRowValue().setFoldCount(1);
+                    } else {
+                        GUIUtils.warn("Folding is only enabled for C13","Folding is only enabled for C13");
+                    }
                 });
 
         referenceTableView.getColumns().setAll(labelCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol, foldCol);
