@@ -21,8 +21,8 @@ public class PeakFolder {
         loadComponents();
     }
 
-    private String getGroupName (String residueName, String atomName) {
-        return residueName + '.' + atomName;
+    private String getGroupName (String residueName, String atomName1, String atomName2) {
+        return residueName + '.' + atomName1 + '.' + atomName2;
     }
 
     private void loadComponents() {
@@ -45,9 +45,10 @@ public class PeakFolder {
             String[] fields = line.split(" ");
             int nameCol = 0;
             String[] groups = fields[nameCol].split("-");
-            String residueType = groups[1];
-            String atomType = groups.length > 2 ? groups[2] : "";
-            String groupName = getGroupName(residueType, atomType);
+            String residueType = groups[0];
+            String atomType1 = groups[1];
+            String atomType2 = groups[2];
+            String groupName = getGroupName(residueType, atomType1, atomType2);
             if (clusters.containsKey(groupName)) {
                 clusters.get(groupName).add(fields);
             } else {
@@ -114,12 +115,18 @@ public class PeakFolder {
                 shifts[pBonded] = peak.getPeakDim(bondedDim).getChemShiftValue();
 
                 MixtureMultivariateNormalDistribution mvn = null;
-                String assignment = peak.getPeakDim(dimToFold.getDimName()).getLabel();
-                Atom atom = Molecule.getAtomByName(assignment);
-                if (atom != null) {
-                    String residueName = atom.getResidueName();
-                    String atomName = atom.getName();
-                    String groupName = getGroupName(residueName, atomName);
+                String assignment1 = peak.getPeakDim(dimToFold.getDimName()).getLabel();
+                String assignment2 = peak.getPeakDim(dimToFold.getRelationDim()).getLabel();
+
+                String[] atomNames = new String[DIMS.size()];
+
+                Atom atom1 = Molecule.getAtomByName(assignment1);
+                Atom atom2 = Molecule.getAtomByName(assignment2);
+                if (atom1 != null && atom2 != null) {
+                    String residueName = atom1.getResidueName();
+                    atomNames[pDim] = atom1.isMethyl() ? atom1.getName().substring(0, atom1.getName().length() - 1) : atom1.getName();
+                    atomNames[pBonded] = atom2.isMethyl() ? atom2.getName().substring(0, atom2.getName().length() -1) : atom2.getName();
+                    String groupName = getGroupName(residueName, atomNames[0], atomNames[1]);
                     if (MMVNs.containsKey(groupName)) {
                         mvn = MMVNs.get(groupName);
                     }
