@@ -5,6 +5,7 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.peaks.io.PeakReader;
@@ -419,12 +420,20 @@ public class PeakMenuBar {
                         GUIUtils.warn("Set bonded dimension", "Assign bonded dimension in Peak Tool's reference tab");
                     }
                 }
-                if (peakMode) {
-                    menuTarget.getPeak().ifPresent(peak -> {
-                        peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, peak);
-                    });
-                } else {
-                    peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, null);
+                try {
+                    if (peakMode) {
+                        if (menuTarget.getPeak().isPresent()) {
+                            Peak peak = menuTarget.getPeak().get();
+                            peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, peak);
+                        };
+                    } else {
+                        peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, null);
+                    }
+                } catch (IOException ioException) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(ioException);
+                    exceptionDialog.showAndWait();
+                    return;
+
                 }
             } else {
                 GUIUtils.warn("Assign dimension to fold", "Indicate the C13 dimension to fold in Peak Tool's Reference tab");

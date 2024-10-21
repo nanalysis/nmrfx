@@ -18,30 +18,24 @@ import java.util.*;
 
 public class PeakFolder {
     private static final Logger log = LoggerFactory.getLogger(PeakFolder.class);
-    public List<String> DIMS = Arrays.asList("H", "C");
-    HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
+    public static List<String> DIMS = Arrays.asList("H", "C");
+    static HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
 
     public PeakFolder() {
-        loadComponents();
     }
 
     private String getGroupName(String residueName, String atomName1, String atomName2) {
         return residueName + '.' + atomName1 + '.' + atomName2;
     }
 
-    private void loadComponents() {
+    private void loadComponents() throws IOException {
         InputStream iStream = this.getClass().getResourceAsStream("/data/C13HSQC_clusters.txt");
-        ArrayList<String> lines = new ArrayList<>();
+        if (iStream == null) {
+            throw new IOException("Couldn't read cluster file");
+        }
+        List<String> lines = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                lines.add(line);
-            }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            lines = reader.lines().toList();
         }
 
         HashMap<String, ArrayList<String[]>> clusters = new HashMap<>();
@@ -66,7 +60,7 @@ public class PeakFolder {
         }
     }
 
-    private void createMixtureModel(String groupName, ArrayList<String[]> clusterLines) {
+    private static void createMixtureModel(String groupName, ArrayList<String[]> clusterLines) {
         int nDim = DIMS.size();
         int nClusters = clusterLines.size();
         double[] weights = new double[nClusters];
@@ -89,7 +83,10 @@ public class PeakFolder {
         MMVNs.put(groupName, MVN);
     }
 
-    public void unfoldPeakList(PeakList peakList, SpectralDim dimToFold, boolean useAssign, Peak peak) {
+    public void unfoldPeakList(PeakList peakList, SpectralDim dimToFold, boolean useAssign, Peak peak) throws IOException {
+        if (MMVNs.isEmpty()) {
+            loadComponents();
+        }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         double[] bounds = new double[2];
         boolean alias = dimToFold.getFoldMode() == 'a';
