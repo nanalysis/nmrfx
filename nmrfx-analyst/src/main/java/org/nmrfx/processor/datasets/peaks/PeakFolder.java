@@ -7,6 +7,8 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +17,7 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public class PeakFolder {
+    private static final Logger log = LoggerFactory.getLogger(PeakFolder.class);
     public List<String> DIMS = Arrays.asList("H", "C");
     HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
 
@@ -46,8 +49,8 @@ public class PeakFolder {
             String[] fields = line.split(" ");
             int nameCol = 0;
             String[] groups = fields[nameCol].split("-");
-            String residueType = groups[1];
-            String atomType = groups.length > 2 ? groups[2] : "";
+            String residueType = groups[2];
+            String atomType = groups[3];
             String groupName = getGroupName(residueType, atomType);
             if (clusters.containsKey(groupName)) {
                 clusters.get(groupName).add(fields);
@@ -107,17 +110,17 @@ public class PeakFolder {
                     }
             );
             if (peak != null) {
-                unfoldPeak(peak, peakListToCluster, dimToFold, bondedDim, bounds, alias);
+                unfoldPeak(peak, peakListToCluster, dimToFold, bondedDim, bounds, alias, useAssign, true);
 
             } else {
                 for (Peak foldPeak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
-                    unfoldPeak(foldPeak, peakListToCluster, dimToFold, bondedDim, bounds, alias);
+                    unfoldPeak(foldPeak, peakListToCluster, dimToFold, bondedDim, bounds, alias, useAssign, false);
                 }
             }
         }
     }
 
-    void unfoldPeak(Peak peak, int[] peakListToCluster, SpectralDim dimToFold, int bondedDim, double[] bounds, boolean alias) {
+    void unfoldPeak(Peak peak, int[] peakListToCluster, SpectralDim dimToFold, int bondedDim, double[] bounds, boolean alias, boolean useAssign, boolean debugMode) {
         double[] shifts = new double[DIMS.size()];
         int pDim = peakListToCluster[peak.getPeakDim(dimToFold.getDimName()).getSpectralDim()];
         int pBonded = peakListToCluster[peak.getPeakDim(bondedDim).getSpectralDim()];
@@ -125,22 +128,27 @@ public class PeakFolder {
         shifts[pBonded] = peak.getPeakDim(bondedDim).getChemShiftValue();
 
         MixtureMultivariateNormalDistribution mvn = null;
-        String assignment = peak.getPeakDim(dimToFold.getDimName()).getLabel();
-        Atom atom = MoleculeBase.getAtomByName(assignment);
-        if (atom != null) {
-            String residueName = atom.getResidueName();
-            String atomName = atom.getName();
-            String groupName = getGroupName(residueName, atomName);
-            if (MMVNs.containsKey(groupName)) {
-                mvn = MMVNs.get(groupName);
+        if (useAssign) {
+            String assignment = peak.getPeakDim(dimToFold.getDimName()).getLabel();
+            Atom atom = MoleculeBase.getAtomByName(assignment);
+            if (atom != null) {
+                String residueName = atom.getResidueName();
+                String atomName = atom.getName();
+                String groupName = getGroupName(residueName, atomName);
+                if (MMVNs.containsKey(groupName)) {
+                    mvn = MMVNs.get(groupName);
+                }
             }
         }
         double density = 1e-10;
         if (mvn != null) {
             density = mvn.density(shifts);
         } else {
-            for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
-                double newDensity = distribution.density(shifts);
+            for (var entry : MMVNs.entrySet()) {
+                double newDensity = entry.getValue().density(shifts);
+                if (debugMode) {
+                    log.info("density {} {} {} {}", entry.getKey(), newDensity, shifts[0], shifts[1]);
+                }
                 if (newDensity > density) {
                     density = newDensity;
                 }
@@ -166,8 +174,12 @@ public class PeakFolder {
                     bestDensity = newDensity;
                 }
             } else {
-                for (MixtureMultivariateNormalDistribution distribution : MMVNs.values()) {
-                    double newDensity = distribution.density(shifts);
+                for (var entry : MMVNs.entrySet()) {
+                    double newDensity = entry.getValue().density(shifts);
+                    if (debugMode) {
+                        log.info("density {} {} {} {}", entry.getKey(), newDensity, shifts[0], shifts[1]);
+                    }
+
                     if (newDensity > bestDensity) {
                         bestShift = shifts[pDim];
                         bestDensity = newDensity;
