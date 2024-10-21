@@ -155,15 +155,17 @@ public class PeakMenuBar {
         unifyMenuItem.setOnAction(e -> unifyPeakWidths());
         editMenu.getItems().add(unifyMenuItem);
 
-        MenuItem foldMenuItem = new MenuItem("Fold Peaks");
+        Menu foldMenu = new Menu("Folding");
+        MenuItem foldMenuItem = new MenuItem("Use Assignments (if present)");
         foldMenuItem.setOnAction(e -> foldPeaks(true, false));
-        editMenu.getItems().add(foldMenuItem);
-        MenuItem foldNoAssignMenuItem = new MenuItem("Fold Peaks (no assign)");
+        foldMenu.getItems().add(foldMenuItem);
+        MenuItem foldNoAssignMenuItem = new MenuItem("Don't Use Assignments");
         foldNoAssignMenuItem.setOnAction(e -> foldPeaks(false, false));
-        editMenu.getItems().add(foldNoAssignMenuItem);
-        MenuItem foldPeakMenuItem = new MenuItem("Fold Peak (no assign)");
+        foldMenu.getItems().add(foldNoAssignMenuItem);
+        MenuItem foldPeakMenuItem = new MenuItem("Single Peak");
         foldPeakMenuItem.setOnAction(e -> foldPeaks(false, true));
-        editMenu.getItems().add(foldPeakMenuItem);
+        foldMenu.getItems().add(foldPeakMenuItem);
+        editMenu.getItems().add(foldMenu);
 
         menuBar.getItems().add(editMenu);
 
@@ -388,6 +390,12 @@ public class PeakMenuBar {
     }
 
     void foldPeaks(boolean useAssign, boolean peakMode) {
+        if (getPeakList() != null) {
+            doUndoRedo(peakList -> doFoldPeaks(useAssign, peakMode), "fold peaks");
+        }
+    }
+
+    void doFoldPeaks(boolean useAssign, boolean peakMode) {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
