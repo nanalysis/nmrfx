@@ -2,11 +2,11 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,11 +18,8 @@ import java.util.*;
 
 public class PeakFolder {
     private static final Logger log = LoggerFactory.getLogger(PeakFolder.class);
-    public static List<String> DIMS = Arrays.asList("H", "C");
-    static HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
-
-    public PeakFolder() {
-    }
+    public static final List<String> DIMS = Arrays.asList("H", "C");
+    static final HashMap<String, MixtureMultivariateNormalDistribution> MMVNs = new HashMap<>();
 
     private String getGroupName(String residueName, String atomName1, String atomName2) {
         return residueName + '.' + atomName1 + '.' + atomName2;
@@ -33,7 +30,7 @@ public class PeakFolder {
         if (iStream == null) {
             throw new IOException("Couldn't read cluster file");
         }
-        List<String> lines = new ArrayList<>();
+        List<String> lines;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             lines = reader.lines().toList();
         }
@@ -79,8 +76,8 @@ public class PeakFolder {
                 }
             }
         }
-        MixtureMultivariateNormalDistribution MVN = new MixtureMultivariateNormalDistribution(weights, means, covariances);
-        MMVNs.put(groupName, MVN);
+        MixtureMultivariateNormalDistribution mixtureMultivariateNormalDistribution = new MixtureMultivariateNormalDistribution(weights, means, covariances);
+        MMVNs.put(groupName, mixtureMultivariateNormalDistribution);
     }
 
     public void unfoldPeakList(PeakList peakList, SpectralDim dimToFold, boolean useAssign, Peak peak) throws IOException {
@@ -95,35 +92,22 @@ public class PeakFolder {
             int iDim = dataset.getDim(dimToFold.getDimName());
             int size = dataset.getSizeReal(iDim);
             bounds[0] = dataset.pointToPPM(iDim, 0);
-            bounds[1] = dataset.pointToPPM(iDim, size - 1);
+            bounds[1] = dataset.pointToPPM(iDim, size - 1.0);
             String relationDim = peakList.getSpectralDim(dimToFold.getDimName()).getRelationDim();
             int bondedDim = peakList.getSpectralDim(relationDim).getIndex();
 
 
-            int[] peakListToCluster = new int[peakList.getNDim()]; //map peakList dims to mvn dims
-            peakList.getSpectralDims().forEach(peakDim -> {
-                        String nucleus = peakDim.getNucleus();
-                        String nucleusName = nucleus.substring(nucleus.length() - 1);
-                        peakListToCluster[peakDim.getIndex()] = DIMS.indexOf(nucleusName);
-                    }
-            );
             if (peak != null) {
-                unfoldPeak(peak, peakListToCluster, dimToFold, bondedDim, bounds, alias, useAssign, true);
+                unfoldPeak(peak, dimToFold, bondedDim, bounds, alias, useAssign, true);
             } else {
                 for (Peak foldPeak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
-                    unfoldPeak(foldPeak, peakListToCluster, dimToFold, bondedDim, bounds, alias, useAssign, false);
+                    unfoldPeak(foldPeak, dimToFold, bondedDim, bounds, alias, useAssign, false);
                 }
             }
         }
     }
 
-    void unfoldPeak(Peak peak, int[] peakListToCluster, SpectralDim dimToFold, int bondedDim, double[] bounds, boolean alias, boolean useAssign, boolean debugMode) {
-        double[] shifts = new double[DIMS.size()];
-        int pDim = peakListToCluster[peak.getPeakDim(dimToFold.getDimName()).getSpectralDim()];
-        int pBonded = peakListToCluster[peak.getPeakDim(bondedDim).getSpectralDim()];
-        shifts[pDim] = peak.getPeakDim(dimToFold.getDimName()).getChemShiftValue();
-        shifts[pBonded] = peak.getPeakDim(bondedDim).getChemShiftValue();
-
+    MixtureMultivariateNormalDistribution getMMND(Peak peak, boolean useAssign, SpectralDim dimToFold, int pDim, int pBonded ) {
         MixtureMultivariateNormalDistribution mvn = null;
         if (useAssign) {
             String assignment1 = peak.getPeakDim(dimToFold.getDimName()).getLabel();
@@ -131,8 +115,8 @@ public class PeakFolder {
 
             String[] atomNames = new String[DIMS.size()];
 
-            Atom atom1 = Molecule.getAtomByName(assignment1);
-            Atom atom2 = Molecule.getAtomByName(assignment2);
+            Atom atom1 = MoleculeBase.getAtomByName(assignment1);
+            Atom atom2 = MoleculeBase.getAtomByName(assignment2);
             if (atom1 != null && atom2 != null) {
                 String residueName = atom1.getResidueName();
                 atomNames[pDim] = atom1.isMethyl() ? atom1.getName().substring(0, atom1.getName().length() - 1) : atom1.getName();
@@ -143,6 +127,17 @@ public class PeakFolder {
                 }
             }
         }
+        return  mvn;
+    }
+    void unfoldPeak(Peak peak,  SpectralDim dimToFold, int bondedDim, double[] bounds, boolean alias, boolean useAssign, boolean debugMode) {
+        double[] shifts = new double[DIMS.size()];
+        int pDim = 1;
+        int pBonded = 0;
+        shifts[pDim] = peak.getPeakDim(dimToFold.getDimName()).getChemShiftValue();
+        shifts[pBonded] = peak.getPeakDim(bondedDim).getChemShiftValue();
+
+        MixtureMultivariateNormalDistribution mvn = getMMND(peak, useAssign,dimToFold, pDim, pBonded);
+
         double density = 1e-10;
         if (mvn != null) {
             density = mvn.density(shifts);
