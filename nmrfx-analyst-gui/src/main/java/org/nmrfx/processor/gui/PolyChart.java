@@ -628,7 +628,9 @@ public class PolyChart extends Region {
         FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
         PolyChart newChart = newController.getActiveChart();
         copyTo(newChart);
+        newChart.copyLimits();
         newController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
+        newChart.pasteLimits();
         newChart.refresh();
     }
 
