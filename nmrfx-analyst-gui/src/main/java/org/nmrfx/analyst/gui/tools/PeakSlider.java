@@ -1475,7 +1475,22 @@ public class PeakSlider implements ControllerTool {
             peakPickParameters.mode = "appendif";
             PeakList peaklist = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
                     null, peakPickParameters);
+            String listName = peaklist.getName().toLowerCase();
+            String type = "";
+            if (listName.contains("noesy")) {
+                type = "NOESY";
+            } else if (listName.contains("mlev")) {
+                type = "COSY";
+            } else if (listName.contains("cosy")) {
+                type = "COSY";
+            } else if (listName.contains("tocsy")) {
+                type = "COSY";
+            } else if (listName.contains("hmqc")) {
+                type = "13C-HSQC";
+            }
+            peaklist.setExperimentType(type);
             peakLists.add(peaklist);
+            peaklist.setSlideable(true);
         }
         double widthScale = 0.25;
 
