@@ -47,6 +47,7 @@ public class ChartProperties implements PublicPropertyContainer {
     private final BooleanProperty grid;
     private final BooleanProperty regions;
     private final BooleanProperty integrals;
+    private final BooleanProperty integralValues;
     private final DoubleProperty integralLowPos;
     private final DoubleProperty integralHighPos;
     private final DoubleProperty aspectRatio;
@@ -75,6 +76,7 @@ public class ChartProperties implements PublicPropertyContainer {
         grid = add(new SimpleBooleanProperty(polyChart, "grid", false));
         regions = add(new SimpleBooleanProperty(polyChart, "regions", false));
         integrals = add(new SimpleBooleanProperty(polyChart, "integrals", false));
+        integralValues = add(new SimpleBooleanProperty(polyChart, "integralValues", false));
         integralLowPos = add(new SimpleDoubleProperty(polyChart, "integralLowPos", 0.8));
         integralHighPos = add(new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95));
         titles = add(new SimpleBooleanProperty(polyChart, "titles", true));
@@ -123,6 +125,7 @@ public class ChartProperties implements PublicPropertyContainer {
         destProps.setIntegralLowPos(getIntegralLowPos());
         destProps.setIntegralHighPos(getIntegralHighPos());
         destProps.setIntegrals(getIntegrals());
+        destProps.setIntegralValues(getIntegralValues());
         destProps.setTitles(getTitles());
         destProps.setParameters(getParameters());
         destProps.setAspectRatio(getAspectRatio());
@@ -294,10 +297,21 @@ public class ChartProperties implements PublicPropertyContainer {
     public boolean getIntegrals() {
         return integralsProperty().get();
     }
-
     public void setIntegrals(boolean value) {
         integralsProperty().set(value);
     }
+    public BooleanProperty integralValuesProperty() {
+        return integralValues;
+    }
+
+    public void setIntegralValues(boolean value) {
+        integralValuesProperty().set(value);
+    }
+
+    public boolean getIntegralValues() {
+        return integralValuesProperty().get();
+    }
+
 
     public double getIntegralLowPos() {
         return integralLowPosProperty().get();

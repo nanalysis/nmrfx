@@ -213,6 +213,7 @@
                     <TitledPane fx:id="integralsPane" text="Integrals">
                         <VBox>
                             <children>
+                                <CheckBox fx:id="integralValuesCheckBox" text="Show integral values"/>
                                 <CheckBox fx:id="integralCheckBox" text="Show integral profiles"/>
                                 <Label text="Integral display position:" minWidth="35"/>
                                 <HBox>

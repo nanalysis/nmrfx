@@ -74,6 +74,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     private CheckBox integralCheckBox;
     @FXML
+    private CheckBox integralValuesCheckBox;
+    @FXML
     private RangeSlider integralPosSlider;
     @FXML
     private Label integralLowValue;
@@ -312,6 +314,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         integralPosSlider.highValueProperty().addListener(e -> setIntegralSliderText());
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
+        integralValuesCheckBox.selectedProperty().addListener(e -> refreshLater());
         gridCheckBox.selectedProperty().addListener(e -> updateCharts());
         offsetTrackingCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
         useDatasetColorCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
@@ -453,6 +456,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         gridCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().gridProperty());
         regionCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().regionsProperty());
         integralCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralsProperty());
+        integralValuesCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralValuesProperty());
 
         integralPosSlider.lowValueProperty().unbindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
         integralPosSlider.highValueProperty().unbindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
@@ -524,6 +528,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         gridCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().gridProperty());
         regionCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().regionsProperty());
         integralCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralsProperty());
+        integralValuesCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralValuesProperty());
 
         integralPosSlider.lowValueProperty().bindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
         integralPosSlider.highValueProperty().bindBidirectional(polyChart.getChartProperties().integralHighPosProperty());

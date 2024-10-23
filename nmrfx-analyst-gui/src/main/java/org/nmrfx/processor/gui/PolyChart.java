@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -74,6 +75,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -2094,7 +2096,7 @@ public class PolyChart extends Region {
                             boolean selected = datasetAttributes.isSelected(rowIndex);
                             drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy, selected);
                             gC.setFill(datasetAttributes.getPosColor(rowIndex));
-                            if (chartProps.getIntegrals()) {
+                            if (chartProps.getIntegrals() || chartProps.getIntegralValues()) {
                                 draw1DIntegral(datasetAttributes, gC);
                             }
                             drawBaseLine(gC, bcPath);
@@ -2339,7 +2341,7 @@ public class PolyChart extends Region {
                 x2 = hold;
             }
             if (region == activeRegion.get()) {
-                gC.setFill(Color.YELLOW);
+                gC.setFill(Color.LIGHTYELLOW);
             } else {
                 gC.setFill(Color.LIGHTYELLOW);
             }
@@ -2357,7 +2359,11 @@ public class PolyChart extends Region {
         double xMax = axes.getX().getUpperBound();
         double norm = datasetAttr.getDataset().getNorm() / datasetAttr.getDataset().getScale();
         double integralMax = getIntegralMaxFromRegions(regions);
-        for (DatasetRegion region : regions) {
+        Font font = gC.getFont();
+        double vSpace = font.getSize() + 4;
+        double hSpace = 10.0;
+        double[] xOffsets = {Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
+        regions.stream().sorted().forEach(region -> {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
             double[] offsets = new double[2];
@@ -2375,14 +2381,45 @@ public class PolyChart extends Region {
                     int rowIndex = drawSpectrum.getRowIndex();
                     gC.setTextAlign(TextAlignment.CENTER);
                     gC.setTextBaseline(VPos.BASELINE);
-                    drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy, false);
-                    String text = String.format("%.1f", result.get() / norm);
-                    double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
-                    double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
-                    gC.fillText(text, xCenter, yCenter);
+                    if (chartProps.getIntegrals()) {
+                        try {
+                            drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy, false);
+                        } catch (GraphicsIOException e) {
+                        }
+                    }
+                    if (chartProps.getIntegralValues()) {
+                        String text = String.format("%.1f", result.get() / norm);
+                        double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
+                        double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
+                        boolean inProfile = false;
+                        double yOffset = 5;
+                        if (!peakListAttributesList.isEmpty()) {
+                            yOffset += 30;
+                        }
+                        if (inProfile) {
+                            gC.fillText(text, xCenter, yCenter);
+                        } else {
+                            double textWidth = GUIUtils.getTextWidth(text, font);
+                            double y = axes.getY().getHeight() - yOffset;
+                            double edge = xCenter + textWidth / 2.0 + hSpace;
+                            int pos = 0;
+                            if (edge < xOffsets[0]) {
+                                pos = 0;
+                            } else if (edge < xOffsets[1]) {
+                                pos = 1;
+                            } else if (edge < xOffsets[2]) {
+                                pos = 2;
+                            }
+                            y -= pos * vSpace;
+                            gC.fillText(text, xCenter, y);
+                            xOffsets[pos] = xCenter - textWidth / 2.0 - hSpace;
+                        }
+                    }
                 }
             }
-        }
+        });
+
+
         datasetAttr.getActiveRegion().ifPresent(r -> {
             try {
                 drawSpectrum.drawActiveRegion(gC, datasetAttr, r.getDatasetRegion());
