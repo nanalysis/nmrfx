@@ -2053,6 +2053,13 @@ public class PolyChart extends Region {
             firstLvl = firstAttr.getLvl();
             firstOffset = firstAttr.getOffset();
             updateAxisType(false);
+            if ( chartProps.getRegions()) {
+                try {
+                    drawRegions(firstAttr, gC);
+                } catch (GraphicsIOException e) {
+                    log.warn(e.getMessage(), e);
+                }
+            }
         }
         for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
             DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
@@ -2065,9 +2072,6 @@ public class PolyChart extends Region {
                 datasetAttributes.syncDims(firstAttr);
             }
             try {
-                if (chartProps.getRegions()) {
-                    drawRegions(datasetAttributes, gC);
-                }
                 gC.save();
                 double clipExtra = 1;
                 drawSpectrum.setClipRect(xPos + borders.getLeft() + clipExtra, yPos + borders.getTop() + clipExtra,
@@ -2097,7 +2101,8 @@ public class PolyChart extends Region {
                             drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy, selected);
                             gC.setFill(datasetAttributes.getPosColor(rowIndex));
                             if (chartProps.getIntegrals() || chartProps.getIntegralValues()) {
-                                draw1DIntegral(datasetAttributes, gC);
+                                double[] offsets = drawSpectrum.getOffset(datasetAttributes, firstOffset, i1D, n1D);
+                                draw1DIntegral(datasetAttributes, gC, offsets);
                             }
                             drawBaseLine(gC, bcPath);
                             if (iMode == 0) {
@@ -2341,7 +2346,7 @@ public class PolyChart extends Region {
                 x2 = hold;
             }
             if (region == activeRegion.get()) {
-                gC.setFill(Color.LIGHTYELLOW);
+                gC.setFill(Color.LIGHTYELLOW.saturate());
             } else {
                 gC.setFill(Color.LIGHTYELLOW);
             }
@@ -2350,7 +2355,7 @@ public class PolyChart extends Region {
         }
     }
 
-    void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
+    void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContextInterface gC, double[] offsets) throws GraphicsIOException {
         List<DatasetRegion> regions = datasetAttr.getDataset().getReadOnlyRegions();
         if (regions == null) {
             return;
@@ -2366,13 +2371,13 @@ public class PolyChart extends Region {
         regions.stream().sorted().forEach(region -> {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
-            double[] offsets = new double[2];
-            offsets[0] = region.getRegionStartIntensity(0);
-            offsets[1] = region.getRegionEndIntensity(0);
+            double[] regionOffsets = new double[2];
+            regionOffsets[0] = region.getRegionStartIntensity(0);
+            regionOffsets[1] = region.getRegionEndIntensity(0);
 
             if ((ppm2 > xMin) && (ppm1 < xMax)) {
                 Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
-                        ppm1, ppm2, offsets,
+                        ppm1, ppm2, regionOffsets,
                         integralMax, chartProps.getIntegralLowPos(),
                         chartProps.getIntegralHighPos());
                 if (result.isPresent()) {
@@ -2392,15 +2397,16 @@ public class PolyChart extends Region {
                         double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
                         double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
                         boolean inProfile = false;
-                        double yOffset = 5;
+                        double yOffset = font.getSize() + 5;
                         if (!peakListAttributesList.isEmpty()) {
                             yOffset += 30;
                         }
                         if (inProfile) {
                             gC.fillText(text, xCenter, yCenter);
                         } else {
+                            xCenter += offsets[0];
                             double textWidth = GUIUtils.getTextWidth(text, font);
-                            double y = axes.getY().getHeight() - yOffset;
+                            double y = axes.getY().getDisplayPosition(0.0) - offsets[1] + yOffset;
                             double edge = xCenter + textWidth / 2.0 + hSpace;
                             int pos = 0;
                             if (edge < xOffsets[0]) {
@@ -2410,7 +2416,7 @@ public class PolyChart extends Region {
                             } else if (edge < xOffsets[2]) {
                                 pos = 2;
                             }
-                            y -= pos * vSpace;
+                            y += pos * vSpace;
                             gC.fillText(text, xCenter, y);
                             xOffsets[pos] = xCenter - textWidth / 2.0 - hSpace;
                         }

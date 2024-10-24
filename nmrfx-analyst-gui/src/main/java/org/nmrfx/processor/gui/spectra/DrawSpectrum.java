@@ -351,7 +351,7 @@ public class DrawSpectrum {
         stackY = Math.min(1.00, Math.max(0.0, value));
     }
 
-    private double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
+    public double[] getOffset(DatasetAttributes dataAttributes, double firstOffset, int i1D, int n1D) {
         double height = axes.getY().getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
         double dOffset = dataAttributes.getOffset();
