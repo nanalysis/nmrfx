@@ -99,7 +99,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         // Some properties were not exposed before refactoring.
         // It's not clear whether this was by design or by error.
         // I've opted to keep the smallest set of properties possible exposed, so I've only kept the original list.
-        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg);
+        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg, offset);
     }
 
     public ColorProperty posColorProperty() {

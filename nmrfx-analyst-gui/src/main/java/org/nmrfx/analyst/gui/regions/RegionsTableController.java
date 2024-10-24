@@ -212,8 +212,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
                 AnalystApp.getShapePrefs(analyzer.getFitParameters());
                 analyzer.loadRegions(regionFile);
                 updateActiveChartRegions();
-                chart.getChartProperties().setIntegrals(true);
-                chart.getChartProperties().setRegions(true);
+                chart.getChartProperties().setIntegralValues(true);
                 chart.refresh();
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
@@ -279,8 +278,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
             return;
         }
         dataset.addRegion(region);
-        chart.getChartProperties().setRegions(true);
-        chart.getChartProperties().setIntegrals(true);
+        chart.getChartProperties().setIntegralValues(true);
         chart.refresh();
     }
 

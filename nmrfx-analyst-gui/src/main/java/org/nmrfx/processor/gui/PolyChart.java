@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -75,7 +74,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -148,6 +146,10 @@ public class PolyChart extends Region {
     private static PolyChart chartBuffer = null;
 
     private static ViewBuffer viewBuffer = null;
+
+    record IntegralLabelPosition(DatasetAttributes datasetAttributes, DatasetRegion region, BoundingBox boundingBox) {}
+
+    List<IntegralLabelPosition> integralLabelPositions = new ArrayList<>();
 
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
@@ -439,8 +441,7 @@ public class PolyChart extends Region {
         }
 
         if (addedRegion) {
-            chartProps.setRegions(true);
-            chartProps.setIntegrals(true);
+            chartProps.setIntegralValues(true);
         }
     }
 
@@ -1113,8 +1114,8 @@ public class PolyChart extends Region {
                     range = max;
                 }
             }
-            max += range / 20.0;
-            min -= range / 20.0;
+            max += range  * 0.10;
+            min -= range * 0.15;
 
             double delta = max - min;
             double fOffset = (0.0 - min) / delta;
@@ -2069,6 +2070,7 @@ public class PolyChart extends Region {
                 }
             }
         }
+        integralLabelPositions.clear();
         for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
             DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
             DatasetBase dataset = datasetAttributes.getDataset();
@@ -2375,7 +2377,10 @@ public class PolyChart extends Region {
         Font font = gC.getFont();
         double vSpace = font.getSize() + 4;
         double hSpace = 10.0;
-        double[] xOffsets = {Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
+        double ySpace = 10.0;
+        double lineSpace = 3;
+        double[] xOffsets = new double[4];
+        Arrays.fill(xOffsets, Double.MAX_VALUE);
         regions.stream().sorted().forEach(region -> {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
@@ -2400,33 +2405,41 @@ public class PolyChart extends Region {
                         } catch (GraphicsIOException e) {
                         }
                     }
-                    if (chartProps.getIntegralValues()) {
+                    if (chartProps.getIntegralValues() || chartProps.getIntegrals()) {
                         String text = String.format("%.1f", result.get() / norm);
                         double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
                         double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
                         boolean inProfile = false;
-                        double yOffset = font.getSize() + 5;
-                        if (!peakListAttributesList.isEmpty()) {
-                            yOffset += 30;
-                        }
-                        if (inProfile) {
+                        double yOffset = font.getSize() + ySpace + (xOffsets.length * lineSpace + 1);
+                        if (!chartProps.getIntegralValues()) {
                             gC.fillText(text, xCenter, yCenter);
                         } else {
                             xCenter += offsets[0];
+                            double y0 = axes.getY().getDisplayPosition(0.0) - offsets[1];
                             double textWidth = GUIUtils.getTextWidth(text, font);
-                            double y = axes.getY().getDisplayPosition(0.0) - offsets[1] + yOffset;
+                            double y = y0 + yOffset;
                             double edge = xCenter + textWidth / 2.0 + hSpace;
                             int pos = 0;
-                            if (edge < xOffsets[0]) {
-                                pos = 0;
-                            } else if (edge < xOffsets[1]) {
-                                pos = 1;
-                            } else if (edge < xOffsets[2]) {
-                                pos = 2;
+                            for (int iPos = 0; iPos < xOffsets.length; iPos++) {
+                                if (edge < xOffsets[iPos]) {
+                                    pos = iPos;
+                                    break;
+                                }
                             }
                             y += pos * vSpace;
                             gC.fillText(text, xCenter, y);
                             xOffsets[pos] = xCenter - textWidth / 2.0 - hSpace;
+                            BoundingBox boundingBox =
+                                    new BoundingBox(xCenter - textWidth / 2.0, y - vSpace / 2.0, textWidth, vSpace);
+                            IntegralLabelPosition integralLabelPosition =
+                                    new IntegralLabelPosition(datasetAttr, region, boundingBox);
+                            integralLabelPositions.add(integralLabelPosition);
+                            double y2 = y0 + ySpace + pos * (lineSpace + 1);
+
+                            gC.strokeLine(xy[0][0], y2 - lineSpace, xy[0][0], y2);
+                            gC.strokeLine(xy[0][0], y2, xy[0][nPoints -1], y2);
+                            gC.strokeLine(xy[0][nPoints -1], y2 - lineSpace, xy[0][nPoints -1], y2);
+
                         }
                     }
                 }
@@ -2443,12 +2456,25 @@ public class PolyChart extends Region {
         });
     }
 
+
     public Optional<IntegralHit> hitIntegral(double pickX, double pickY) {
         Optional<IntegralHit> hit = Optional.empty();
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             hit = hitIntegral(datasetAttr, pickX, pickY);
             if (hit.isPresent()) {
                 break;
+            }
+        }
+        if (hit.isEmpty()) {
+            for (IntegralLabelPosition integralLabelPosition : integralLabelPositions) {
+                if (integralLabelPosition.boundingBox.contains(pickX, pickY)) {
+                    IntegralHit integralHit =
+                            new IntegralHit(integralLabelPosition.datasetAttributes,
+                                    integralLabelPosition.region, -2, integralLabelPosition.boundingBox);
+                    hit = Optional.of(integralHit);
+                    System.out.println("hit " + hit);
+                    break;
+                }
             }
         }
         return hit;

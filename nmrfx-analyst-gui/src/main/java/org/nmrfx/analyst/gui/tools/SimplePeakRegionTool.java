@@ -194,6 +194,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 analyzer.clearAnalysis();
             }
             chart.getChartProperties().setRegions(false);
+            chart.getChartProperties().setIntegralValues(false);
             chart.getChartProperties().setIntegrals(false);
             AnalystApp.getAnalystApp().hidePopover(true);
             chart.refresh();
@@ -242,8 +243,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 dataset.setNormFromRegions(regions);
             }
             chart.refresh();
-            chart.getChartProperties().setRegions(true);
-            chart.getChartProperties().setIntegrals(true);
+            chart.getChartProperties().setIntegralValues(true);
             chart.setActiveRegion(null);
             chart.refresh();
         }
@@ -296,8 +296,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if (regionFile != null) {
                 try {
                     analyzer.loadRegions(regionFile);
-                    getChart().getChartProperties().setIntegrals(true);
-                    getChart().getChartProperties().setRegions(true);
+                    getChart().getChartProperties().setIntegralValues(true);
                     getChart().refresh();
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error reading regions file", ioE.getMessage());
@@ -326,7 +325,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
             chart.getChartProperties().setRegions(false);
-            chart.getChartProperties().setIntegrals(true);
+            chart.getChartProperties().setIntegralValues(true);
             chart.updatePeakListsByName(peakListNames);
             chart.getPeakListAttributes().get(0).setLabelType(PeakDisplayParameters.LabelTypes.Atom);
             var dStat = peakList.widthDStats(0);
@@ -375,7 +374,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 peakListNames.add(peakList.getName());
                 PolyChart chart = getChart();
                 chart.getChartProperties().setRegions(false);
-                chart.getChartProperties().setIntegrals(true);
+                chart.getChartProperties().setIntegralValues(true);
                 chart.updatePeakListsByName(peakListNames);
                 chart.getPeakListAttributes().get(0).setLabelType(PeakDisplayParameters.LabelTypes.Atom);
                 chart.refresh();
