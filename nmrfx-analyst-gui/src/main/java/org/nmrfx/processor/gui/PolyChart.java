@@ -2374,7 +2374,11 @@ public class PolyChart extends Region {
         double xMax = axes.getX().getUpperBound();
         double norm = firstAttr.getDataset().getNorm() / firstAttr.getDataset().getScale();
         double integralMax = getIntegralMaxFromRegions(regions);
+        if (gC.getFont().getSize() != chartProps.getIntegralFontSize()) {
+            gC.setFont( new Font(FONT_FAMILY, chartProps.getIntegralFontSize()));
+        }
         Font font = gC.getFont();
+
         double vSpace = font.getSize() + 4;
         double hSpace = 10.0;
         double ySpace = 10.0;

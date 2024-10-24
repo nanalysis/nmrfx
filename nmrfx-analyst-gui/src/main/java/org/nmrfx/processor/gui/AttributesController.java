@@ -43,6 +43,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     static {
         FORMATTER.setMaximumFractionDigits(3);
     }
+
+    public ComboBox integralFontSizeComboBox;
     @FXML
     private VBox attributesVBox;
 
@@ -315,6 +317,11 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralValuesCheckBox.selectedProperty().addListener(e -> refreshLater());
+        integralFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        integralFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
+
+
+
         gridCheckBox.selectedProperty().addListener(e -> updateCharts());
         offsetTrackingCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
         useDatasetColorCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
@@ -457,6 +464,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         regionCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().regionsProperty());
         integralCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralsProperty());
         integralValuesCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralValuesProperty());
+        integralFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().integralFontSizeProperty());
 
         integralPosSlider.lowValueProperty().unbindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
         integralPosSlider.highValueProperty().unbindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
@@ -529,6 +537,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         regionCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().regionsProperty());
         integralCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralsProperty());
         integralValuesCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralValuesProperty());
+        integralFontSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().integralFontSizeProperty());
 
         integralPosSlider.lowValueProperty().bindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
         integralPosSlider.highValueProperty().bindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
