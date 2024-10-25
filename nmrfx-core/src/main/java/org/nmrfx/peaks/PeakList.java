@@ -893,6 +893,15 @@ public class PeakList {
         peakListUpdated(this);
     }
 
+    public void reassignResonanceFactoryMap() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim: peak.getPeakDims()) {
+                AtomResonance resonance = peakDim.getResonance();
+                ProjectBase.activeResonanceFactory().reassignResonanceFactoryMap(resonance);
+            }
+        }
+    }
+
     /**
      * @return
      */

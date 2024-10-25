@@ -65,6 +65,11 @@ public class ResonanceFactory implements FreezeListener {
         return resonance;
     }
 
+    public void reassignResonanceFactoryMap(AtomResonance resonance) {
+        //map.clear();
+        map.put(resonance.getID(), resonance);
+    }
+
     public AtomResonance get(long id) {
         return map.get(id);
     }
@@ -217,6 +222,7 @@ public class ResonanceFactory implements FreezeListener {
 
         }
     }
+
 
     @Override
     public void freezeHappened(Peak peak, boolean state) {
