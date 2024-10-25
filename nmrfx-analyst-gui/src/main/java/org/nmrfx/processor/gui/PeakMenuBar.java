@@ -14,7 +14,6 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.processor.gui.undo.ChartUndo;
 import org.nmrfx.processor.gui.undo.GroupUndo;
 import org.nmrfx.processor.gui.undo.PeakListUndo;
@@ -400,7 +399,7 @@ public class PeakMenuBar {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             PeakFolder peakFolder = new PeakFolder();
-            List<String> dimLabels = peakFolder.DIMS;
+            List<String> dimLabels = PeakFolder.DIMS;
             SpectralDim dimToFold = peakList.getFoldedDim();
             if (dimToFold != null) {
                 // if the peaklist is only 2 dimensions, ensure that they are H and C
@@ -425,15 +424,13 @@ public class PeakMenuBar {
                         if (menuTarget.getPeak().isPresent()) {
                             Peak peak = menuTarget.getPeak().get();
                             peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, peak);
-                        };
+                        }
                     } else {
                         peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, null);
                     }
                 } catch (IOException ioException) {
                     ExceptionDialog exceptionDialog = new ExceptionDialog(ioException);
                     exceptionDialog.showAndWait();
-                    return;
-
                 }
             } else {
                 GUIUtils.warn("Assign dimension to fold", "Indicate the C13 dimension to fold in Peak Tool's Reference tab");
