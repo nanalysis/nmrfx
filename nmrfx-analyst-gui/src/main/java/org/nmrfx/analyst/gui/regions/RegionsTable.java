@@ -9,6 +9,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import org.nmrfx.analyst.gui.tools.IntegralTool;
 import org.nmrfx.analyst.gui.utitlity.DoubleTableCell;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.datasets.DatasetRegionListener;
 import org.nmrfx.processor.gui.PolyChart;
@@ -77,13 +78,14 @@ public class RegionsTable extends TableView<DatasetRegion> {
         };
 
         setEditable(true);
-        TableColumn<DatasetRegion, Integer> regionsLabelCol = new TableColumn<>("Region");
-        regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getIndex() + 1));
-        getColumns().add(regionsLabelCol);
 
-        TableColumn<DatasetRegion, Integer> groupCol = new TableColumn<>("Group");
+        TableColumn<DatasetRegion, Integer> groupCol = new TableColumn<>("Region");
         groupCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>( cellData.getValue().getGroup() + 1));
         getColumns().add(groupCol);
+
+        TableColumn<DatasetRegion, String> datasetCol = new TableColumn<>("Dataset");
+        datasetCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDatasetName()));
+        getColumns().add(datasetCol);
 
         TableColumn<DatasetRegion, Double> startPosCol = new TableColumn<>(REGION_START_COLUMN_NAME);
         startPosCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getRegionStart(0)));
@@ -156,7 +158,11 @@ public class RegionsTable extends TableView<DatasetRegion> {
             regionChanged.setRegionEnd(0, newRegionBound);
         }
         try {
-            regionChanged.measure(chart.getDataset());
+            for (DatasetRegion region : datasetRegions) {
+                if (region.getGroup() == regionChanged.getGroup()) {
+                    region.measure();
+                }
+            }
         } catch (IOException e) {
             log.warn("Error measuring new region bounds. {}", e.getMessage(), e);
         }

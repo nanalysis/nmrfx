@@ -24,6 +24,8 @@ public class DatasetRegion implements Comparator, Comparable {
     private int[] maxLocation;
     private boolean isAuto = false;
 
+    DatasetBase dataset = null;
+
     private int index = 0;
 
     private int group = 0;
@@ -410,6 +412,13 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
+    public DatasetBase getDataset() {
+        return dataset;
+    }
+
+    public String getDatasetName() {
+        return dataset != null ? dataset.getName() : "";
+    }
     @Override
     public int compareTo(Object o2) {
         return compare(this, o2);
@@ -522,7 +531,13 @@ public class DatasetRegion implements Comparator, Comparable {
         updateAllListeners();
     }
 
+    public void measure() throws IOException {
+        if (dataset != null) {
+            measure(dataset);
+        }
+    }
     public void measure(DatasetBase dataset) throws IOException {
+        this.dataset = dataset;
         int[] pt = new int[dataset.getNDim()];
         double start = getRegionStart(0);
         double end = getRegionEnd(0);

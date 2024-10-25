@@ -417,7 +417,7 @@ public class PolyChart extends Region {
         onRegionAdded = consumer;
     }
 
-    private void addRegion(double min, double max) {
+    public void addRegion(double min, double max) {
         boolean addedRegion = false;
         if (getFXMLController().isScannerToolPresent()) {
             double[] ppms = {min, max};

@@ -271,16 +271,8 @@ public class RegionsTableController implements Initializable, StageBasedControll
      * on the active chart.
      */
     public void addRegion() {
-        Dataset dataset = (Dataset) chart.getDataset();
         double[] ppms = chart.getCrossHairs().getVerticalPositions();
-        DatasetRegion region = new DatasetRegion(ppms[0], ppms[1]);
-        try {
-            region.measure(dataset);
-        } catch (IOException e) {
-            log.warn("Unable to add region. {}", e.getMessage(), e);
-            return;
-        }
-        dataset.addRegion(region);
+        chart.addRegion(ppms[0], ppms[1]);
         chart.getChartProperties().setIntegralValues(true);
         chart.refresh();
     }
