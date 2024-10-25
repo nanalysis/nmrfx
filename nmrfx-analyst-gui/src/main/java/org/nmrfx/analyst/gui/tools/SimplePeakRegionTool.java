@@ -29,6 +29,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -232,15 +233,22 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             analyzer.autoSetRegions();
             try {
                 analyzer.integrate();
+                List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
+                Dataset dataset = (Dataset) chart.getDataset();
+                if (!regions.isEmpty()) {
+                    dataset.setNormFromRegions(regions);
+                }
+                for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
+                    Dataset thisDataset = (Dataset) datasetAttributes.getDataset();
+                    if (dataset != thisDataset) {
+                        analyzer.integrate(thisDataset);
+                    }
+
+                }
             } catch (IOException ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
                 return;
-            }
-            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
-            Dataset dataset = (Dataset) chart.getDataset();
-            if (!regions.isEmpty()) {
-                dataset.setNormFromRegions(regions);
             }
             chart.refresh();
             chart.getChartProperties().setIntegralValues(true);

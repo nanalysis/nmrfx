@@ -416,15 +416,26 @@ public class PolyChart extends Region {
         onRegionAdded = consumer;
     }
 
-    private void addRegion(double min, double max, boolean firstDataset) {
+    private void addRegion(double min, double max) {
         boolean addedRegion = false;
         if (getFXMLController().isScannerToolPresent()) {
             double[] ppms = {min, max};
             getFXMLController().scannerTool.measure(ppms);
         } else {
+            DatasetRegion firstRegion = null;
+            DatasetBase firstDataset = null;
             for (DatasetAttributes datasetAttributes : datasetAttributesList) {
                 DatasetBase dataset = datasetAttributes.getDataset();
-                DatasetRegion newRegion = dataset.addRegion(min, max);
+                final DatasetRegion newRegion;
+                if (firstRegion == null) {
+                    newRegion = dataset.addRegion(min, max);
+                    firstRegion = newRegion;
+                    firstDataset = dataset;
+                } else {
+                    newRegion = new DatasetRegion(firstRegion);
+                    dataset.addRegion(newRegion);
+                    dataset.setNorm(firstDataset.getNorm());
+                }
                 try {
                     newRegion.measure(dataset);
                 } catch (IOException ex) {
@@ -432,9 +443,6 @@ public class PolyChart extends Region {
                 }
                 if (onRegionAdded != null) {
                     onRegionAdded.accept(newRegion);
-                }
-                if (firstDataset) {
-                    break;
                 }
             }
             addedRegion = true;
@@ -488,7 +496,7 @@ public class PolyChart extends Region {
         } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
             if (dX > MIN_MOVE) {
                 if (is1D()) {
-                    addRegion(limits[0][0], limits[0][1], true);
+                    addRegion(limits[0][0], limits[0][1]);
                     refresh();
                     completed = true;
                 }

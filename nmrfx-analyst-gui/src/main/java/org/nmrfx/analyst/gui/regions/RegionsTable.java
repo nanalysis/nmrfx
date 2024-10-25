@@ -78,7 +78,7 @@ public class RegionsTable extends TableView<DatasetRegion> {
 
         setEditable(true);
         TableColumn<DatasetRegion, String> regionsLabelCol = new TableColumn<>("Region");
-        regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>("Region " + (datasetRegions.indexOf(cellData.getValue()) + 1)));
+        regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>( String.valueOf((datasetRegions.indexOf(cellData.getValue()) + 1))));
         getColumns().add(regionsLabelCol);
 
 
