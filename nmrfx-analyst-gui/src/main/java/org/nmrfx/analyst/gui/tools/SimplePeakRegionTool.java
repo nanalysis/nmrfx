@@ -194,6 +194,9 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if (analyzer != null) {
                 analyzer.clearAnalysis();
             }
+            for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
+                datasetAttributes.getDataset().clearRegions();
+            }
             chart.getChartProperties().setRegions(false);
             chart.getChartProperties().setIntegralValues(false);
             chart.getChartProperties().setIntegrals(false);
@@ -241,6 +244,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
                     Dataset thisDataset = (Dataset) datasetAttributes.getDataset();
                     if (dataset != thisDataset) {
+                        dataset.copyRegionsTo(thisDataset);
                         analyzer.integrate(thisDataset);
                     }
 
@@ -254,6 +258,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             chart.getChartProperties().setIntegralValues(true);
             chart.setActiveRegion(null);
             chart.refresh();
+            RegionsTableController.updateIfExists();
         }
     }
 

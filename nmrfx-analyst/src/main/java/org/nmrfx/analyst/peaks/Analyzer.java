@@ -1156,14 +1156,6 @@ public class Analyzer {
         }
     }
 
-    public void findRegions() throws IOException {
-        calculateThreshold();
-        getThreshold();
-        autoSetRegions();
-        integrate();
-
-    }
-
     public void analyze() throws IOException {
         // clear
         //baselineCorrect();

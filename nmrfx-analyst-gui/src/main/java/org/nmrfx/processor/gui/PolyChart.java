@@ -38,6 +38,7 @@ import javafx.scene.text.TextAlignment;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
@@ -450,6 +451,7 @@ public class PolyChart extends Region {
 
         if (addedRegion) {
             chartProps.setIntegralValues(true);
+            RegionsTableController.updateIfExists();
         }
     }
 
@@ -2484,7 +2486,6 @@ public class PolyChart extends Region {
                             new IntegralHit(integralLabelPosition.datasetAttributes,
                                     integralLabelPosition.region, -2, integralLabelPosition.boundingBox);
                     hit = Optional.of(integralHit);
-                    System.out.println("hit " + hit);
                     break;
                 }
             }
@@ -2828,9 +2829,19 @@ public class PolyChart extends Region {
 
     public void dragRegion(IntegralHit regionHit, double x, double y) {
         double[] dragPos = {x, y};
-        for (DatasetAttributes datasetAttr : datasetAttributesList) {
-            if (datasetAttr.getActiveRegion().isPresent()) {
-                datasetAttr.moveRegion(regionHit, axes, dragPos);
+        DatasetRegion hitRegion = regionHit.getDatasetRegion();
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes firstAttr = datasetAttributesList.getFirst();
+            if (firstAttr.getActiveRegion().isPresent()) {
+                for (DatasetAttributes datasetAttr : datasetAttributesList) {
+                    if (firstAttr == datasetAttr) {
+                        datasetAttr.moveRegion(hitRegion, regionHit.getHandle(), axes, dragPos);
+                    } else {
+                        datasetAttr.getDataset().getLinkedRegion(hitRegion).ifPresent(region -> {
+                            datasetAttr.moveRegion(region, regionHit.getHandle(), axes, dragPos);
+                        });
+                    }
+                }
                 refresh();
             }
         }

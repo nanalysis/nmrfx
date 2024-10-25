@@ -59,7 +59,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
     private Button removeAllButton;
 
     private final ChangeListener<DatasetRegion> activeDatasetRegionListener = this::updateActiveRegion;
-    private final DatasetRegionsListListener datasetRegionsListListener = this::setRegions;
+    private final DatasetRegionsListListener datasetRegionsListListener = this::updateRegions;
 
     private ChangeListener<DatasetRegion> selectedRowRegionsTableListener;
 
@@ -72,6 +72,7 @@ public class RegionsTableController implements Initializable, StageBasedControll
     }
 
     public void show() {
+        updateActiveChartRegions();
         stage.show();
         stage.toFront();
     }
@@ -194,6 +195,9 @@ public class RegionsTableController implements Initializable, StageBasedControll
         chart.refresh();
     }
 
+    void updateRegions(List<DatasetRegion> regions) {
+        updateActiveChartRegions();
+    }
     public void setRegions(List<DatasetRegion> regions) {
         regionsTable.setRegions(regions);
     }
@@ -238,13 +242,12 @@ public class RegionsTableController implements Initializable, StageBasedControll
      */
     public void updateActiveChartRegions() {
         List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
-        List<DatasetRegion> regions;
-        if (!datasetAttributes.isEmpty()) {
-            regions = new ArrayList<>(datasetAttributes.get(0).getDataset().getReadOnlyRegions());
-        } else {
-            regions = new ArrayList<>();
+        List<DatasetRegion> allRegions = new ArrayList<>();
+        for (DatasetAttributes datasetAttribute : datasetAttributes) {
+            System.out.println(datasetAttribute.getDataset() + " " + datasetAttribute.getDataset().getReadOnlyRegions().size());
+            allRegions.addAll(datasetAttribute.getDataset().getReadOnlyRegions());
         }
-        setRegions(regions);
+        setRegions(allRegions);
     }
 
     /**
@@ -292,5 +295,11 @@ public class RegionsTableController implements Initializable, StageBasedControll
             regionsTableController = RegionsTableController.create();
         }
         return regionsTableController;
+    }
+
+    public static void updateIfExists() {
+        if (regionsTableController != null) {
+            regionsTableController.updateActiveChartRegions();
+        }
     }
 }

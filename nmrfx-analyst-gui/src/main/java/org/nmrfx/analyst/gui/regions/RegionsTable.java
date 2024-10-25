@@ -77,10 +77,13 @@ public class RegionsTable extends TableView<DatasetRegion> {
         };
 
         setEditable(true);
-        TableColumn<DatasetRegion, String> regionsLabelCol = new TableColumn<>("Region");
-        regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>( String.valueOf((datasetRegions.indexOf(cellData.getValue()) + 1))));
+        TableColumn<DatasetRegion, Integer> regionsLabelCol = new TableColumn<>("Region");
+        regionsLabelCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getIndex() + 1));
         getColumns().add(regionsLabelCol);
 
+        TableColumn<DatasetRegion, Integer> groupCol = new TableColumn<>("Group");
+        groupCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>( cellData.getValue().getGroup() + 1));
+        getColumns().add(groupCol);
 
         TableColumn<DatasetRegion, Double> startPosCol = new TableColumn<>(REGION_START_COLUMN_NAME);
         startPosCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getRegionStart(0)));
@@ -171,6 +174,19 @@ public class RegionsTable extends TableView<DatasetRegion> {
         datasetRegions.clear();
         regions.forEach(datasetRegion -> datasetRegion.addListener(regionListener));
         datasetRegions.addAll(regions);
+        int i = 0;
+        int group = 0;
+        for (var region : regions) {
+            if (region.getLinkRegion() == null) {
+                region.setGroup(group++);
+            }
+        }
+        for (var region:regions) {
+            region.setIndex(i++);
+            if (region.getLinkRegion() != null) {
+                region.setGroup(region.getLinkRegion().getGroup());
+            }
+        }
         datasetRegions.sort(startingComparator);
     }
 

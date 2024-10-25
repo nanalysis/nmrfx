@@ -1606,7 +1606,6 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
         return ppms;
     }
-
     public double[] getOffsetsAsArray() {
         List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] offsets = null;
@@ -1621,9 +1620,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, PolyChartAxes axes, double[] newValue) {
-        int handle = iHit.handle;
-        DatasetRegion r = iHit.getDatasetRegion();
+    public void moveRegion(DatasetRegion r, int handle, PolyChartAxes axes, double[] newValue) {
         double newX = axes.getX().getValueForDisplay(newValue[0]).doubleValue();
         double newY = axes.getY().getValueForDisplay(newValue[1]).doubleValue();
         switch (handle) {

@@ -14,7 +14,6 @@ import java.util.*;
 public class DatasetRegion implements Comparator, Comparable {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetRegion.class);
-
     DatasetRegion linkRegion = null;
     private final double[] xPriv;
     private final double[] startIntensity;
@@ -24,6 +23,10 @@ public class DatasetRegion implements Comparator, Comparable {
     private double max;
     private int[] maxLocation;
     private boolean isAuto = false;
+
+    private int index = 0;
+
+    private int group = 0;
     // Listeners for changes in this DatasetRegion
     private final Set<DatasetRegionListener> regionChangeListeners = new HashSet<>();
 
@@ -78,6 +81,9 @@ public class DatasetRegion implements Comparator, Comparable {
 
     }
 
+    public DatasetRegion getLinkRegion() {
+        return linkRegion;
+    }
     public double[] getX() {
         return linkRegion == null ? xPriv : linkRegion.xPriv;
     }
@@ -246,6 +252,7 @@ public class DatasetRegion implements Comparator, Comparable {
         xPriv = null;
         startIntensity = new double[linkRegion.startIntensity.length];
         endIntensity = new double[linkRegion.endIntensity.length];
+        isAuto = linkRegion.isAuto();
     }
 
     public DatasetRegion(final double x0, final double x1) {
@@ -558,5 +565,20 @@ public class DatasetRegion implements Comparator, Comparable {
             }
         }
         return closest;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int i) {
+        index = i;
+    }
+    public int getGroup() {
+        return group;
+    }
+
+    public void setGroup(int i) {
+        group = i;
     }
 }
