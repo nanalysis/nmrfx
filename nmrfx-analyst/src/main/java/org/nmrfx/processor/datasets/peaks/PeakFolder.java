@@ -93,15 +93,16 @@ public class PeakFolder {
             int size = dataset.getSizeReal(iDim);
             bounds[0] = dataset.pointToPPM(iDim, 0);
             bounds[1] = dataset.pointToPPM(iDim, size - 1.0);
+            double deltaPPM = Math.abs(dataset.pointToPPM(iDim, 0) - dataset.pointToPPM(iDim, size));
             String relationDim = peakList.getSpectralDim(dimToFold.getDimName()).getRelationDim();
             int bondedDim = peakList.getSpectralDim(relationDim).getIndex();
 
 
             if (peak != null) {
-                unfoldPeak(peak, dimToFold, bondedDim, bounds, alias, useAssign, true);
+                unfoldPeak(peak, dimToFold, bondedDim, bounds, deltaPPM, alias, useAssign, true);
             } else {
                 for (Peak foldPeak : peakList.peaks()) { //set shifts according to dimensions of dimLabels
-                    unfoldPeak(foldPeak, dimToFold, bondedDim, bounds, alias, useAssign, false);
+                    unfoldPeak(foldPeak, dimToFold, bondedDim, bounds, deltaPPM, alias, useAssign, false);
                 }
             }
         }
@@ -129,7 +130,7 @@ public class PeakFolder {
         }
         return  mvn;
     }
-    void unfoldPeak(Peak peak,  SpectralDim dimToFold, int bondedDim, double[] bounds, boolean alias, boolean useAssign, boolean debugMode) {
+    void unfoldPeak(Peak peak,  SpectralDim dimToFold, int bondedDim, double[] bounds, double deltaPPM, boolean alias, boolean useAssign, boolean debugMode) {
         double[] shifts = new double[DIMS.size()];
         int pDim = 1;
         int pBonded = 0;
@@ -160,8 +161,8 @@ public class PeakFolder {
         double bestShift = shift;
         double[] foldedShifts = new double[2]; //two possible positions to test
 
-        foldedShifts[0] = alias ? upperLim - (lowerLim - shift) : upperLim - (shift - upperLim);
-        foldedShifts[1] = alias ? lowerLim + (shift - upperLim) : lowerLim + (lowerLim - shift);
+        foldedShifts[0] = alias ? shift - deltaPPM : upperLim - (shift - upperLim);
+        foldedShifts[1] = alias ? shift + deltaPPM : lowerLim + (lowerLim - shift);
 
         for (double foldedShift : foldedShifts) {
             shifts[pDim] = foldedShift;
