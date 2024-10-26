@@ -293,11 +293,16 @@ public class SpectralDim {
 
     public void setAtomIsotopeValue(int iValue) {
         atomIsotope = iValue;
+        if (nucName.isEmpty()) {
+            Nuclei nuclei = Nuclei.findNuclei(getAtomTypeFromIsotope());
+            if (nuclei != null) {
+                nucName = nuclei.getNumberName();
+            }
+        }
     }
 
     public int getAtomIsotopeValue() {
-        int isotope = getAtomIsotope();
-        return isotope;
+        return getAtomIsotope();
     }
 
     public void setAtomType(String atomType) {
@@ -533,9 +538,11 @@ public class SpectralDim {
     }
 
     public void setRelation(String relation) {
-        int iDim = getPeakList().getListDim(relation);
-        if (iDim >= 0) {
-            relation = "D" + (iDim + 1);
+        if ((relation.length() != 2) || relation.charAt(0) != 'D' || !Character.isDigit(relation.charAt(1))) {
+            int iDim = getPeakList().getListDim(relation);
+            if (iDim >= 0) {
+                relation = "D" + (iDim + 1);
+            }
         }
         this.relation = relation;
         atomResPatterns = Optional.empty();
