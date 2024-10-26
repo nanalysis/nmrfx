@@ -473,7 +473,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
         datasetNameField.getItems().clear();
         DatasetBase.datasets().forEach(d -> datasetNameField.getItems().add(d.getName()));
         if (peakList != null) {
+            datasetNameField.setUserData(Boolean.TRUE);
             datasetNameField.setValue(peakList.getDatasetName());
+            datasetNameField.setUserData(Boolean.FALSE);
         }
     }
 
@@ -504,7 +506,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
             }
             referenceTableView.setItems(peakDimList);
             peakListNameField.setText(peakList.getName());
+            datasetNameField.setUserData(Boolean.TRUE);
             datasetNameField.setValue(peakList.getDatasetName());
+            datasetNameField.setUserData(Boolean.FALSE);
             conditionField.setValue(peakList.getSampleConditionLabel());
             peakListTypeChoice.setOnAction(null);
             peakListTypeChoice.setValue(peakList.getExperimentType());
@@ -938,6 +942,10 @@ public class PeakAttrController implements Initializable, StageBasedController, 
     }
 
     void selectDataset() {
+        if (datasetNameField.getUserData() == Boolean.TRUE) {
+            return;
+        }
+
         if (peakList != null) {
             String name = datasetNameField.getValue();
             peakList.setDatasetName(name);
@@ -956,7 +964,7 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     if (datasetDim != -1) {
                         dim.setSf(dataset.getSf(datasetDim));
                         dim.setSw(dataset.getSw(datasetDim));
-                        dataset.setLabel(datasetDim, dim.getDimName());
+                        dim.setDimName(dataset.getLabel(datasetDim));
                         dim.setNucleus(dataset.getNucleus(datasetDim).getNumberName());
                     }
                 });
