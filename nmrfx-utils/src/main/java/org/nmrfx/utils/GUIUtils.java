@@ -391,9 +391,9 @@ public class GUIUtils {
     public static TextField getDoubleTextField(SimpleDoubleProperty prop) {
         return getDoubleTextField(prop, 2);
     }
-        public static TextField getDoubleTextField(SimpleDoubleProperty prop, int nDecimals) {
+    public static TextField getDoubleTextField(SimpleDoubleProperty prop, int decimalPlaces) {
         TextField textField = new TextField();
-        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(nDecimals), 0.0, new FixedDecimalFilter());
+        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(decimalPlaces), 0.0, new FixedDecimalFilter());
         textFormatter.valueProperty().bindBidirectional((Property) prop);
         textField.setTextFormatter(textFormatter);
         return textField;

@@ -290,7 +290,7 @@ public class GUIScripterAdvanced extends GUIScripter {
             String name = peakListMap.get("name").toString();
             peakListNames.add(name);
         }
-        chart.updatePeakLists(peakListNames);
+        chart.updatePeakListsByName(peakListNames);
         for (var peakListMap : peakListList) {
             String name = peakListMap.get("name").toString();
             var peakConfigMap = (Map<String, Object>) peakListMap.get(CONFIG);

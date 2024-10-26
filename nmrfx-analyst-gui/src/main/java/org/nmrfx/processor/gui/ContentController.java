@@ -100,7 +100,7 @@ public class ContentController implements NmrControlRightSideContent {
 
     private void updateChartPeakLists() {
         ObservableList<String> peakListTargets = peakView.getTargetItems();
-        chart.updatePeakLists(peakListTargets);
+        chart.updatePeakListsByName(peakListTargets);
     }
 
     void updatePeakView() {

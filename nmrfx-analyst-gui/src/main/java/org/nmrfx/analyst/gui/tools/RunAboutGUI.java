@@ -2077,7 +2077,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 int[] iDims = runAbout.getIDims(dataset, refList, refList.getExperimentType(), List.of("H", "N"));
                 dataAttr.setDims(iDims);
                 List<String> peakLists = Collections.singletonList(refList.getName());
-                chart.updatePeakLists(peakLists);
+                chart.updatePeakListsByName(peakLists);
             }
         }
     }
@@ -2175,7 +2175,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes);
                             dataAttr.setDims(iDims);
                             List<String> peakLists = Collections.singletonList(peakList.getName());
-                            chart.updatePeakLists(peakLists);
+                            chart.updatePeakListsByName(peakLists);
                             updateChartPeakMenu(chart);
                             winPatterns.put(chart, sDims.stream().map(SpectralDim::getPattern).toList());
                         }

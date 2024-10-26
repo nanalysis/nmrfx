@@ -21,7 +21,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
-import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.processor.datasets.AcquisitionType;
@@ -34,6 +33,7 @@ import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
 import org.nmrfx.processor.datasets.vendor.varian.VarianData;
+import org.nmrfx.processor.gui.utils.FileNameDialog;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.*;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
@@ -823,13 +823,12 @@ public class ChartProcessor {
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 file = newProcPath.toFile();
             } else {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setInitialDirectory(directory);
-                fileChooser.setInitialFileName(datasetName);
-                file = fileChooser.showSaveDialog(null);
-                if (file == null) {
+                Optional<File> fileOpt = FileNameDialog.getFileName(datasetName, fxmlController.getStage());
+                if (fileOpt.isEmpty()) {
                     return emptyResult;
                 }
+                file = directory.toPath().resolve(fileOpt.get().toPath()).toFile();
+
                 Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
                 if (fileTypeOpt.isPresent() && fileTypeOpt.get() != getDatasetType()) {
                     GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
