@@ -32,7 +32,7 @@ public class SimDataVecPars {
         this.label = currData.getLabel(0);
         this.sf = currData.getSf(0);
         this.sw = currData.getSw(0);
-        this.n = currData.getSizeTotal(0);
+        this.n = currData.getSizeReal(0);
         this.ref = currData.pointToPPM(0, n / 2);
         this.vref = sw / sf / 2 + ref;
     }

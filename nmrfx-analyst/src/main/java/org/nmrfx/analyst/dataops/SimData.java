@@ -21,7 +21,8 @@ public class SimData {
     final String id;
 
     AtomBlock[] blocks;
-    double[][][] matrices = null;
+
+    SimShifts[] simShifts;
 
     public SimData(String name, String id, int nBlocks) {
         this.name = name;
@@ -30,6 +31,7 @@ public class SimData {
         for (int i = 0; i < nBlocks; i++) {
             blocks[i] = new AtomBlock();
         }
+        simShifts = new SimShifts[nBlocks];
     }
 
     public static class AtomBlock {
@@ -57,10 +59,12 @@ public class SimData {
             }
         }
         public Double j(int i, int j) {
+            int ii = ppmList.get(i)[0];
+            int jj = ppmList.get(j)[0];
             for (int k=0;k<jValues.size();k++) {
                 int iTest = jPairs.get(k * 2);
                 int jTest = jPairs.get(k*2 +1);
-                if (((i == iTest) && (j == jTest)) || ((j == iTest) && (i == jTest))){
+                if (((ii == iTest) && (jj == jTest)) || ((jj == iTest) && (ii == jTest))){
                     return jValues.get(k) * jScale / Short.MAX_VALUE;
                 }
             }
@@ -73,8 +77,15 @@ public class SimData {
             for (int k=0;k<jValues.size();k++) {
                 int iTest = jPairs.get(k * 2);
                 int jTest = jPairs.get(k*2 +1);
-                if (((i == iTest) && (j == jTest)) || ((j == iTest) && (i == jTest))){
-                    jValues.set(k, jValue);
+                for (int ii : ppmList.get(i)) {
+                    for (int jj : ppmList.get(j)) {
+                        if (((ii == iTest) && (jj == jTest)) || ((jj == iTest) && (ii == jTest))){
+                            if (jValues.get(k) < 0.0) {
+                                jValue *= -1;
+                            }
+                            jValues.set(k, jValue);
+                        }
+                    }
                 }
             }
         }
@@ -110,36 +121,6 @@ public class SimData {
     public int nBlocks() {
         return blocks.length;
     }
-
-    public void setMatrices(double[][][] matrices) {
-        this.matrices = matrices;
-    }
-
-/*
-    public double[][][] getMatrices() {
-        int nBlocks = ppms.length;
-        double[][][] matrix = new double[nBlocks][][];
-        for (int iBlock = 0;iBlock<nBlocks;iBlock++) {
-            double[] ppms2 = getPPMs(iBlock);
-            double[] j2 = getJValues(iBlock);
-            int[] jPairs2 = getJPairs(iBlock);
-            int n = ppms2.length;
-            matrix[iBlock] = new double[n][n];
-            double[][] subMatrix = matrix[iBlock];
-            for (int i = 0; i < n; i++) {
-                subMatrix[i][i] = ppms2[i];
-            }
-            for (int i = 0; i < jPairs2.length; i += 2) {
-                int r = jPairs2[i] - 1;
-                int c = jPairs2[i + 1] - 1;
-                double coupling = j2[i / 2];
-                subMatrix[r][c] = coupling;
-                subMatrix[c][r] = coupling;
-            }
-        }
-        return matrix;
-    }
-*/
 
     public void setIDs(int iBlock, List<Integer> names) {
         AtomBlock block = blocks[iBlock];
@@ -323,10 +304,10 @@ public class SimData {
         vec.zeros();
         int nBlocks = data.blocks.length;
         List<double[]> regions = new ArrayList<>();
-        for (int i = 0; i < nBlocks; i++) {
-            double[] shifts = data.getPPMs(i);
-            double[] couplings = data.getJValues(i);
-            int[] pairs = data.getJPairs(i);
+        for (int iBlock = 0; iBlock < nBlocks; iBlock++) {
+            double[] shifts = data.getPPMs(iBlock);
+            double[] couplings = data.getJValues(iBlock);
+            int[] pairs = data.getJPairs(iBlock);
             for (int j = 0; j < shifts.length; j++) {
                 double min = shifts[j];
                 double max = shifts[j];
@@ -340,13 +321,15 @@ public class SimData {
                 double[] region = {min - 3 * lb / vec.getSF(), max + 3 * lb / vec.getSF()};
                 regions.add(region);
             }
-            SimShifts simShifts;
-            if (data.matrices != null) {
-                simShifts = new SimShifts(data.matrices[i], vec.getSF());
-            } else {
+            SimShifts simShifts = data.simShifts[iBlock];
+            if (simShifts == null) {
                 simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
+                data.simShifts[iBlock] = simShifts;
             }
-            simShifts.diag();
+            if (!simShifts.isValid(shifts, couplings, vec.getSF())) {
+                simShifts.setValues(shifts, couplings, pairs, vec.getSF());
+                simShifts.diag();
+            }
             simShifts.makeSpec(vec);
         }
         regions.sort((a, b) -> Double.compare(a[0], b[0]));

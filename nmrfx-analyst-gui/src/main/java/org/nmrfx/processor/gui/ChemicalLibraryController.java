@@ -65,6 +65,9 @@ public class ChemicalLibraryController {
     ToggleGroup jToggleGroup = new ToggleGroup();
     List<SimpleDoubleProperty> ppmProperties = new ArrayList<>();
     List<SimpleDoubleProperty> jProperties = new ArrayList<>();
+    List<RadioButton> ppmButtons = new ArrayList<>();
+    List<RadioButton> coupButtons = new ArrayList<>();
+    List<BlockIndex> blockIndices = new ArrayList<>();
 
     CompoundMatch activeMatch = null;
     double sliderRange = 100.0;
@@ -222,7 +225,9 @@ public class ChemicalLibraryController {
     }
     private void makeAdjuster(VBox vBox) {
         ppmSlider = createSlider(-sliderRange /2, sliderRange /2, 0);
+        ppmSlider.setBlockIncrement(0.005);
         couplingSlider = createSlider(0, 20, 10);
+        couplingSlider.setBlockIncrement(0.1);
         HBox ppmBox = new HBox();
         Label ppmLabel = new Label("Shift");
         ppmBox.setSpacing(10);
@@ -372,8 +377,10 @@ public class ChemicalLibraryController {
     }
 
     void showActiveData() {
+        System.out.println("show active");
         if (currentDataset != null) {
             activeMatch = cmpdMatcher.getMatch(activeField.getValue());
+            System.out.println("show active " + activeMatch);
             showActiveData(activeMatch);
             SpinnerValueFactory.IntegerSpinnerValueFactory iFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinner.getValueFactory();
             iFactory.setMax(activeMatch.getData().getRegionCount() - 1);
@@ -471,11 +478,13 @@ public class ChemicalLibraryController {
         Dataset newDataset;
         String label = currData == null ? "1H" : currData.getLabel(0);
         SimDataVecPars pars;
+        System.out.println("make dataset " + currData);
         if (currData != null) {
             pars = new SimDataVecPars(currData);
         } else {
             pars = defaultPars();
         }
+        System.out.println(pars);
         if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
             CompoundData compoundData = DBData.makeData(name, pars);
             newDataset = new Dataset(compoundData.getVec());
@@ -509,20 +518,29 @@ public class ChemicalLibraryController {
         return currentSimData;
     }
 
+    record BlockIndex(int block, int index, int iProp) {}
+
     private void updateGrid(SimData simData) {
+        unBindProperties();
         gridPane.getChildren().clear();
         int nBlocks = simData.nBlocks();
         ppmProperties.clear();
         jProperties.clear();
+        blockIndices.clear();
+        ppmButtons.clear();
+        coupButtons.clear();
         int iRow = 0;
         for (int iBlock = 0;iBlock<nBlocks;iBlock++) {
             SimData.AtomBlock atomBlock = simData.atomBlock(iBlock);
             int nPPMs = atomBlock.nPPMs();
             for (int iPPM=0;iPPM<nPPMs;iPPM++) {
+                BlockIndex blockIndex = new BlockIndex(iBlock, iPPM, iRow);
+                blockIndices.add(blockIndex);
                 RadioButton ppmRadioButton = new RadioButton();
+                ppmButtons.add(ppmRadioButton);
                 ppmRadioButton.setToggleGroup(atomToggleGroup);
                 ppmRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
-                ppmRadioButton.setUserData(iRow);
+                ppmRadioButton.setUserData(blockIndex);
                 gridPane.add(ppmRadioButton, 0, iRow);
                 if (iPPM== 0) {
                     atomToggleGroup.selectToggle(ppmRadioButton);
@@ -542,7 +560,8 @@ public class ChemicalLibraryController {
                 jField.setPrefWidth(70);
                 gridPane.add(jField, 2, iRow);
                 RadioButton jRadioButton = new RadioButton();
-                jRadioButton.setUserData(iRow);
+                coupButtons.add(jRadioButton);
+                jRadioButton.setUserData(blockIndex);
                 jRadioButton.setToggleGroup(jToggleGroup);
                 jRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
                 gridPane.add(jRadioButton, 3, iRow);
@@ -564,14 +583,14 @@ public class ChemicalLibraryController {
 
     }
 
-    private void updatePPMSlider(int iAtom) {
-        if ((iAtom >= 0) && (iAtom < ppmProperties.size())) {
+    private void updatePPMSlider(BlockIndex atomBlockIndex) {
+        if ((atomBlockIndex != null) && (atomBlockIndex.iProp < ppmProperties.size())) {
             for (var ppmProp : ppmProperties) {
                 ppmSlider.valueProperty().unbindBidirectional(ppmProp);
             }
-            var ppmValue = ppmProperties.get(iAtom);
+            var ppmValue = ppmProperties.get(atomBlockIndex.iProp);
             double shift = ppmValue.doubleValue();
-            double range = 0.5;
+            double range = 0.1;
             ppmSlider.setMin(shift - range / 2.0);
             ppmSlider.setMax(shift + range / 2.0);
             ppmSlider.setValue(shift);
@@ -579,20 +598,28 @@ public class ChemicalLibraryController {
         }
     }
 
-    private void updateJProperties(int iAtom, int iCoup) {
+    private void updateJProperties(BlockIndex atomBlockIndex, BlockIndex coupBlockIndex) {
         if (currentSimData.get() != null) {
-            SimData.AtomBlock block = currentSimData.get().atomBlock(0);
+            SimData.AtomBlock block = currentSimData.get().atomBlock(atomBlockIndex.block);
             for (var couplingProp : jProperties) {
                 couplingSlider.valueProperty().unbindBidirectional(couplingProp);
                 couplingProp.removeListener(propChangeListener);
             }
-            for (int jCoup = 0; jCoup < jProperties.size(); jCoup++) {
-                Double jValue = block.j(iAtom, jCoup);
-                jProperties.get(jCoup).set(jValue);
+            for (BlockIndex blockIndex : blockIndices) {
+                Double jValue;
+                if (atomBlockIndex.block != blockIndex.block) {
+                    jValue = 0.0;
+                } else {
+                    jValue = block.j(atomBlockIndex.index, blockIndex.index);
+                }
+                jValue = Math.abs(jValue);
+                if (blockIndex.iProp < jProperties.size()) {
+                    jProperties.get(blockIndex.iProp).set(jValue);
+                }
             }
-            if (iCoup >= 0) {
-                couplingSlider.setValue(jProperties.get(iCoup).doubleValue());
-                jProperties.get(iCoup).bindBidirectional(couplingSlider.valueProperty());
+            if ((atomBlockIndex != null) && (coupBlockIndex != null) && (coupBlockIndex.iProp) < jProperties.size()) {
+                couplingSlider.setValue(jProperties.get(coupBlockIndex.iProp).doubleValue());
+                jProperties.get(coupBlockIndex.iProp).bindBidirectional(couplingSlider.valueProperty());
             }
             for (var couplingProp : jProperties) {
                 couplingProp.addListener(propChangeListener);
@@ -600,38 +627,72 @@ public class ChemicalLibraryController {
         }
     }
 
-    private void updateCouplingSlider(int iAtom, int jAtom) {
-        if ((iAtom >= 0) && (iAtom < jProperties.size())) {
+    private void unBindProperties() {
+        for (var ppmProp : ppmProperties) {
+            ppmSlider.valueProperty().unbindBidirectional(ppmProp);
+        }
+        for (var couplingProp : jProperties) {
+            couplingSlider.valueProperty().unbindBidirectional(couplingProp);
+            couplingProp.removeListener(propChangeListener);
+        }
+    }
+
+    private void updateCouplingSlider(BlockIndex atomBlockIndex, BlockIndex coupBlockIndex) {
+        if ((atomBlockIndex != null) && (atomBlockIndex.iProp < jProperties.size())) {
             for (var couplingProp : jProperties) {
                 couplingSlider.valueProperty().unbindBidirectional(couplingProp);
             }
-            var jProp = jProperties.get(jAtom);
+            var jProp = jProperties.get(coupBlockIndex.iProp);
             jProp.removeListener(propChangeListener);
             double jValue = jProp.doubleValue();
             couplingSlider.setMin(0);
             couplingSlider.setMax(20.0);
             couplingSlider.setValue(jValue);
             jProp.addListener(propChangeListener);
-            jProperties.get(jAtom).bindBidirectional(couplingSlider.valueProperty());
+            jProperties.get(coupBlockIndex.iProp).bindBidirectional(couplingSlider.valueProperty());
         }
     }
 
+    int getActiveJ(BlockIndex atomBlockIndex) {
+        int jMax = -1;
+        if (currentSimData.get() != null) {
+            SimData.AtomBlock block = currentSimData.get().atomBlock(atomBlockIndex.block);
+            int i = atomBlockIndex.index;
+            int nPPMs = block.nPPMs();
+            double maxJ = 0.0;
+            for (BlockIndex blockIndex : blockIndices) {
+                if (blockIndex.block == atomBlockIndex.block) {
+                    double jValue = block.j(i, blockIndex.index);
+                    if (jValue > maxJ) {
+                        maxJ = jValue;
+                        jMax = blockIndex.iProp;
+                    }
+                }
+            }
+        }
+        return jMax;
+    }
+
     private void updateSelectedAtom(boolean ppmMode) {
-        int iAtom = -1;
-        int jAtom = -1;
+        BlockIndex atomBlockIndex = null;
+        BlockIndex coupBlockIndex = null;
         RadioButton atomRadioButton = (RadioButton) atomToggleGroup.getSelectedToggle();
         if (atomRadioButton != null) {
-            iAtom = (Integer) atomRadioButton.getUserData();
+            atomBlockIndex = (BlockIndex) atomRadioButton.getUserData();
         }
         RadioButton jRadioButton = (RadioButton) jToggleGroup.getSelectedToggle();
         if (jRadioButton != null) {
-            jAtom = (Integer) jRadioButton.getUserData();
+            coupBlockIndex = (BlockIndex) jRadioButton.getUserData();
         }
         if (ppmMode) {
-            updatePPMSlider(iAtom);
-            updateJProperties(iAtom, jAtom);
+            updatePPMSlider(atomBlockIndex);
+            updateJProperties(atomBlockIndex, coupBlockIndex);
+            int jMax = getActiveJ(atomBlockIndex);
+            if ((jMax != -1) && (jMax < coupButtons.size())) {
+                coupButtons.get(jMax).setSelected(true);
+            }
         } else {
-            updateCouplingSlider(iAtom, jAtom);
+            updateCouplingSlider(atomBlockIndex, coupBlockIndex);
         }
     }
 
@@ -639,24 +700,24 @@ public class ChemicalLibraryController {
         Toggle atomToggle = atomToggleGroup.getSelectedToggle();
         Toggle couplingToggle = jToggleGroup.getSelectedToggle();
 
-        int activeI = atomToggle != null ? (Integer) atomToggle.getUserData() : -1;
-        int activeJ = couplingToggle != null ? (Integer) couplingToggle.getUserData() : -1;
+        BlockIndex atomBlockIndex = atomToggle != null ? (BlockIndex)  atomToggle.getUserData() : null;
+        BlockIndex couplingBlockIndex = couplingToggle != null ? (BlockIndex)  couplingToggle.getUserData() : null;
+
         SimData simData = currentSimData.get();
         if (simData != null) {
             Dataset testDataset = Dataset.getDataset(simData.getName().toLowerCase());
             if (testDataset != null) {
-                int j = 0;
-                for (int iBlock = 0; iBlock < simData.nBlocks(); iBlock++) {
-                    SimData.AtomBlock atomBlock = simData.atomBlock(iBlock);
-                    int nPPMs = atomBlock.nPPMs();
-                    for (int iPPM = 0; iPPM < nPPMs; iPPM++) {
-                        var ppmProp = ppmProperties.get(j);
-                        atomBlock.ppm(iPPM, ppmProp.doubleValue());
-                        var jProp = jProperties.get(j);
-                        if ((activeI != iPPM) && (iPPM == activeJ)) {
-                            atomBlock.j(activeI, iPPM, jProp.doubleValue());
-                        }
-                        j++;
+                for (BlockIndex blockIndex : blockIndices) {
+                    var ppmProp = ppmProperties.get(blockIndex.iProp);
+                    simData.atomBlock(blockIndex.block).ppm(blockIndex.index, ppmProp.doubleValue());
+                }
+                for (BlockIndex blockIndex : blockIndices) {
+                    int iBlock = atomBlockIndex.block;
+                    int iIndex = atomBlockIndex.index;
+                    int jBlock = blockIndex.block;
+                    int jIndex = blockIndex.index;
+                    if (iBlock == jBlock) {
+                        simData.atomBlock(iBlock).j(iIndex, jIndex, jProperties.get(blockIndex.iProp).doubleValue());
                     }
                 }
                 updateDataset(simData, testDataset);
@@ -688,8 +749,10 @@ public class ChemicalLibraryController {
                 if (currData != null) {
                     appendMode = true;
                 }
+                System.out.println("test null " + currData);
                 newDataset = makeDataset(mode, currData, name);
             } else {
+                System.out.println("test exists " + testDataset);
                 newDataset = testDataset;
             }
             if (mode == LIBRARY_MODE.GISSMO) {
@@ -719,11 +782,12 @@ public class ChemicalLibraryController {
         PolyChart chart = fxmlController.getActiveChart();
         boolean appendMode = false;
         Vec vec = newDataset.getVec();
+
         double lb = AnalystPrefs.getLibraryVectorLB();
         SimData.genVec(simData, vec, lb);
 
         fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
-        chart.setDataset(newDataset, appendMode, false);
+        //chart.setDataset(newDataset, appendMode, false);
 
         updateColors(chart);
         searchField.setText("");

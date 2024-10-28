@@ -22,9 +22,10 @@ import static org.nmrfx.analyst.dataops.KronProduct.kronProd;
  */
 public class SimShifts {
 
-    DMatrixRMaj ham;
-    DMatrixRMaj state;
-    DMatrixRMaj obs;
+    double[] shifts;
+    double[] couplings;
+
+    int[] pairs;
     double[][] matrix;
     double field;
     List<Double> ppms = new ArrayList<>();
@@ -36,6 +37,9 @@ public class SimShifts {
     }
 
     public SimShifts(double[] shifts, double[] couplings, int[] pairs, double field) {
+        this.shifts = shifts.clone();
+        this.couplings = couplings.clone();
+        this.pairs = pairs.clone();
         int n = shifts.length;
         matrix = new double[n][n];
         this.field = field;
@@ -51,6 +55,45 @@ public class SimShifts {
         }
     }
 
+    public void setValues(double[] shifts, double[] couplings, int[] pairs, double field) {
+        this.shifts = shifts.clone();
+        this.couplings = couplings.clone();
+        this.pairs = pairs.clone();
+        int n = shifts.length;
+        matrix = new double[n][n];
+        this.field = field;
+        for (int i = 0; i < n; i++) {
+            matrix[i][i] = shifts[i];
+        }
+        for (int i = 0; i < pairs.length; i += 2) {
+            int r = pairs[i];
+            int c = pairs[i + 1];
+            double coupling = couplings[i / 2];
+            matrix[r][c] = coupling;
+            matrix[c][r] = coupling;
+        }
+    }
+
+    boolean valuesValid(double[] current, double[] test) {
+        boolean ok = current.length == test.length;
+        if (ok) {
+            for (int i = 0; i < current.length; i++) {
+                if (Math.abs(current[i] - test[i]) > 1.0e-6) {
+                    ok = false;
+                    break;
+                }
+            }
+        }
+        return ok;
+    }
+    public boolean isValid(double[] testShifts, double[] testCouplings, double field) {
+        boolean fieldOk = Math.abs(this.field - field) < 1.0e-6;
+        boolean shiftsOK = valuesValid(this.shifts, testShifts);
+        boolean couplingsOK = valuesValid(this.couplings, testCouplings);
+        return fieldOk && shiftsOK && couplingsOK && !ppms.isEmpty();
+    }
+
+    record Matrices(DMatrixRMaj ham, DMatrixRMaj state, DMatrixRMaj obs) {}
     public List<Double> getPPMs() {
         return ppms;
     }
@@ -61,19 +104,19 @@ public class SimShifts {
 
     public void diag() {
         int nSpins = matrix.length;
-        DMatrixRMaj shifts = new DMatrixRMaj(nSpins, nSpins);
-        DMatrixRMaj couplings = new DMatrixRMaj(nSpins, nSpins);
+        DMatrixRMaj shiftMatrix = new DMatrixRMaj(nSpins, nSpins);
+        DMatrixRMaj couplingMatrix = new DMatrixRMaj(nSpins, nSpins);
         for (int i = 0; i < nSpins; i++) {
-            shifts.set(i, i, matrix[i][i] * field);
+            shiftMatrix.set(i, i, matrix[i][i] * field);
         }
         for (int i = 0; i < nSpins - 1; i++) {
             for (int j = i + 1; j < nSpins; j++) {
-                couplings.set(i, j, matrix[i][j]);
+                couplingMatrix.set(i, j, matrix[i][j]);
             }
         }
-        getMatrices(shifts, couplings);
-        EigenDecomposition_F64 eigDec = DecompositionFactory_DDRM.eig(ham.getNumCols(), true);
-        eigDec.decompose(ham);
+        Matrices matrices = getMatrices(shiftMatrix, couplingMatrix);
+        EigenDecomposition_F64 eigDec = DecompositionFactory_DDRM.eig(matrices.ham.getNumCols(), true);
+        eigDec.decompose(matrices.ham);
         int nEig = eigDec.getNumberOfEigenvalues();
         DMatrixRMaj eValues = new DMatrixRMaj(1, nEig);
         DMatrixRMaj eVecs = new DMatrixRMaj(nEig, nEig);
@@ -96,8 +139,8 @@ public class SimShifts {
         double threshold = max * 0.01;
         absThreshold(eVecs, threshold);
         SimpleMatrix vS = SimpleMatrix.wrap(eVecs);
-        SimpleMatrix obsS = SimpleMatrix.wrap(obs);
-        SimpleMatrix stateS = SimpleMatrix.wrap(state);
+        SimpleMatrix obsS = SimpleMatrix.wrap(matrices.obs);
+        SimpleMatrix stateS = SimpleMatrix.wrap(matrices.state);
         SimpleMatrix arS = vS.transpose().mult(obsS).mult(vS).elementMult(vS.transpose().mult(stateS).mult(vS));
         max = CommonOps_DDRM.elementMax(arS.getDDRM());
         threshold = max * 0.01;
@@ -159,7 +202,7 @@ public class SimShifts {
         return sortedIndices;
     }
 
-    public void getMatrices(DMatrixRMaj shifts, DMatrixRMaj couplings) {
+    public Matrices getMatrices(DMatrixRMaj shifts, DMatrixRMaj couplings) {
 
         DMatrixRMaj eMat = CommonOps_DDRM.identity(2, 2);
         DMatrixRMaj x = new DMatrixRMaj(2, 2);
@@ -174,9 +217,11 @@ public class SimShifts {
         y.set(0, 1, 0.0, 0.5);  // y = i*(z*x-x*z)
         y.set(1, 0, 0.0, -0.5);
 
-        ham = buildHamiltonian(x, y, z, shifts, couplings);
-        state = buildState(shifts.getNumCols(), x);
-        obs = buildOBservable(shifts.getNumCols(), y, state);
+        DMatrixRMaj ham = buildHamiltonian(x, y, z, shifts, couplings);
+        DMatrixRMaj state = buildState(shifts.getNumCols(), x);
+        DMatrixRMaj obs = buildOBservable(shifts.getNumCols(), y, state);
+        Matrices matrices = new Matrices(ham, state, obs);
+        return matrices;
     }
 
     public DMatrixRMaj buildOBservable(int n, ZMatrixRMaj y, DMatrixRMaj state) {
