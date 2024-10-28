@@ -110,6 +110,7 @@ public class SimShifts {
         ppms.clear();
         intensities.clear();
 
+        double sum = 0.0;
         for (int i = 0; i < nR; i++) {
             for (int j = 0; j < nC; j++) {
                 double v = arS.get(i, j);
@@ -119,12 +120,14 @@ public class SimShifts {
                     double ppm = Math.abs(sY - sX) / field;
                     ppms.add(ppm);
                     intensities.add(v);
+                    sum += v;
                     maxValue = Math.max(v, maxValue);
                 }
             }
         }
+        double norm = sum / nSpins;
         for (int i = 0; i < intensities.size(); i++) {
-            intensities.set(i, intensities.get(i) / maxValue);
+            intensities.set(i, intensities.get(i) / norm);
         }
     }
 
