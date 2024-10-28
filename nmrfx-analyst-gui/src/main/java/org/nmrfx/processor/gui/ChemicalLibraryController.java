@@ -16,6 +16,7 @@ import javafx.util.Callback;
 import org.apache.commons.math3.linear.RealVector;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.compounds.*;
 import org.nmrfx.analyst.dataops.DBData;
 import org.nmrfx.analyst.dataops.SimData;
@@ -29,7 +30,10 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -229,7 +233,9 @@ public class ChemicalLibraryController {
         jBox.getChildren().addAll(jLabel, couplingSlider);
         vBox.getChildren().add(ppmBox);
         vBox.getChildren().add(jBox);
-        vBox.getChildren().add(gridPane);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(gridPane);
+        vBox.getChildren().add(scrollPane);
     }
 
     public VBox getvBox() {
@@ -278,11 +284,30 @@ public class ChemicalLibraryController {
             return DBData.getNames(pattern);
         } else {
             if (!SimData.loaded()) {
-                SimData.load();
+                loadSimData();
             }
             return SimData.getNames(pattern);
 
         }
+    }
+
+    void loadSimData() {
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        InputStream istream = cl.getResourceAsStream("data/bmse.yaml");
+        SimData.load(istream);
+        String fileName = AnalystPrefs.getGissmoFile();
+        if (!fileName.isEmpty()) {
+            File file = new File(fileName);
+            if (file.exists()) {
+                try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                    SimData.load(fileInputStream);
+                } catch (IOException ioException) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(ioException);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
+
     }
 
     void sliderChanged() {
@@ -371,7 +396,7 @@ public class ChemicalLibraryController {
 
     List<String> getActiveNames(String pattern) {
         if (!SimData.loaded()) {
-            SimData.load();
+            loadSimData();
         }
 
         List<String> names = cmpdMatcher.getNames(pattern);
@@ -489,6 +514,7 @@ public class ChemicalLibraryController {
         int nBlocks = simData.nBlocks();
         ppmProperties.clear();
         jProperties.clear();
+        int iRow = 0;
         for (int iBlock = 0;iBlock<nBlocks;iBlock++) {
             SimData.AtomBlock atomBlock = simData.atomBlock(iBlock);
             int nPPMs = atomBlock.nPPMs();
@@ -496,8 +522,8 @@ public class ChemicalLibraryController {
                 RadioButton ppmRadioButton = new RadioButton();
                 ppmRadioButton.setToggleGroup(atomToggleGroup);
                 ppmRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
-                ppmRadioButton.setUserData(iPPM);
-                gridPane.add(ppmRadioButton, 0, iPPM);
+                ppmRadioButton.setUserData(iRow);
+                gridPane.add(ppmRadioButton, 0, iRow);
                 if (iPPM== 0) {
                     atomToggleGroup.selectToggle(ppmRadioButton);
                 }
@@ -507,19 +533,20 @@ public class ChemicalLibraryController {
 
                 TextField ppmField = GUIUtils.getDoubleTextField(ppmProperty, 3);
                 ppmField.setPrefWidth(70);
-                gridPane.add(ppmField, 1, iPPM);
+                gridPane.add(ppmField, 1, iRow);
                 SimpleDoubleProperty jProperty = new SimpleDoubleProperty(0.0);
                 jProperties.add(jProperty);
                 jProperty.addListener(propChangeListener);
 
                 TextField jField = GUIUtils.getDoubleTextField(jProperty, 2);
                 jField.setPrefWidth(70);
-                gridPane.add(jField, 2, iPPM);
+                gridPane.add(jField, 2, iRow);
                 RadioButton jRadioButton = new RadioButton();
-                jRadioButton.setUserData(iPPM);
+                jRadioButton.setUserData(iRow);
                 jRadioButton.setToggleGroup(jToggleGroup);
                 jRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
-                gridPane.add(jRadioButton, 3, iPPM);
+                gridPane.add(jRadioButton, 3, iRow);
+                iRow++;
 
             }
         }

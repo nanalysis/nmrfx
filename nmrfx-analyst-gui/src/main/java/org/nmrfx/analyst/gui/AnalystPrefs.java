@@ -36,6 +36,7 @@ public class AnalystPrefs {
     private static StringProperty remoteDirectory = null;
     private static StringProperty localDirectory = null;
     private static StringProperty localResidueDirectory = null;
+    private static StringProperty gissmoFileProp = null;
 
     private AnalystPrefs() {
         throw new IllegalAccessError("Utility class shouldn't be instantiated!");
@@ -214,12 +215,30 @@ public class AnalystPrefs {
                 "Local Residue Directory",
                 "Directory for custom residues");
 
-        prefSheet.getItems().addAll(libraryVectorSizeItem, libraryVectorLBItem,
+        FileOperationItem gissmoFileItem = new FileOperationItem(prefSheet,
+                (a, b, c) -> {
+                    PreferencesController.setString("GISSMO-FILE", (String) c);
+                    gissmoFileProp.setValue((String) c);
+                }
+                , getGissmoFile(), "Spectrum Library", "User File", "File for GISSMO data");
+
+
+        prefSheet.getItems().addAll(gissmoFileItem, libraryVectorSizeItem, libraryVectorLBItem,
                 libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem, segmentLibraryFileItem,
                 localDirectoryItem,
                 remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem,
                 localResidueDirectoryItem);
 
     }
+    public static String getGissmoFile() {
+        gissmoFileProp = PreferencesController.getString(gissmoFileProp, "GISSMO-FILE", "");
+        return gissmoFileProp.getValue();
+    }
+
+    public static void setGissmoFile(String fileName) {
+        gissmoFileProp.setValue(fileName);
+        PreferencesController.setString("GISSMO-FILE", fileName);
+    }
+
 
 }

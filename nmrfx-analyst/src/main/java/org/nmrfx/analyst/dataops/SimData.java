@@ -402,9 +402,7 @@ public class SimData {
 
     }
 
-    public static void load() {
-        ClassLoader cl = ClassLoader.getSystemClassLoader();
-        InputStream istream = cl.getResourceAsStream("data/bmse.yaml");
+    public static void load(InputStream istream) {
 
         Yaml yaml = new Yaml();
         for (Object data : yaml.loadAll(istream)) {
