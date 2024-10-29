@@ -460,7 +460,7 @@ public class DatasetBase {
         }
     }
 
-    public static double foldPPM(double ppm, double[] foldLimits) {
+    public static double foldPPM(double ppm, double[] foldLimits, double foldAmount) {
         double min = foldLimits[0];
         double max = foldLimits[1];
         if (min > max) {
@@ -469,13 +469,12 @@ public class DatasetBase {
             max = hold;
         }
         if ((ppm < min) || (ppm > max)) {
-            double fDelta = max - min;
             if (min != max) {
                 while (ppm > max) {
-                    ppm -= fDelta;
+                    ppm -= foldAmount;
                 }
                 while (ppm < min) {
-                    ppm += fDelta;
+                    ppm += foldAmount;
                 }
             }
         }

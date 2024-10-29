@@ -779,7 +779,7 @@ public class PeakPicker {
             Optional<Peak> firstPeak = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, null, dimMap)).findFirst();
+                    .filter(peak -> peak.inRegion(limits, null, null, dimMap)).findFirst();
             foundAny = firstPeak.isPresent();
         }
         return foundAny;
@@ -803,7 +803,7 @@ public class PeakPicker {
                     .stream()
                     .parallel()
                     .filter(p -> !p.isDeleted())
-                    .filter(p -> p.inRegion(limits, null, peakPickPar.dim)).toList();
+                    .filter(p -> p.inRegion(limits, null, null, peakPickPar.dim)).toList();
         }
         return peaks;
     }

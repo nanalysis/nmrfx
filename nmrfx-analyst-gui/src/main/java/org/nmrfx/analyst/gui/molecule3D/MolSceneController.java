@@ -1286,7 +1286,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
             Atom startAtom = molecule.globalSelected.get(0).getAtom();
             AngleTreeGenerator angleGen = new AngleTreeGenerator();
             List<List<Atom>> aTree = angleGen.genTree(molecule, startAtom, null);
-            AngleTreeGenerator.dumpAtomTree(aTree);
         }
     }
 
