@@ -29,7 +29,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
-import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakPicking;
@@ -542,7 +541,7 @@ public class PeakSlider implements ControllerTool {
             }
 
             // format link peak dims should link the unlabelled to the labelled
-            if (peakDim1.getLabel().equals("")) {
+            if (peakDim1.getLabel().isEmpty()) {
                 PeakList.linkPeakDims(peakDim0, peakDim1);
                 // force a reset of shifts so new peak gets shifted to the groups shift
                 peakDim0.setChemShift(peakDim0.getChemShift());
@@ -1112,24 +1111,23 @@ public class PeakSlider implements ControllerTool {
                 }
             }
         }
-        PeakListPair hmqcPair = new PeakListPair(hmqcExpListOpt.get(), hmqcPredListOpt.get());
         log.debug("{}", hmqcPredListOpt);
         log.debug("{}", hmqcExpListOpt);
         log.debug("{}", tocsyPredListOpt);
         log.debug("{}", tocsyExpListOpt);
         log.debug("{}", noesyPredListOpt);
         log.debug("{}", noesyExpListOpt);
-        if (hmqcExpListOpt.isPresent() && hmqcPredListOpt.isPresent()) {
-            log.debug("got hmqc");
-            if (tocsyExpListOpt.isPresent() && tocsyPredListOpt.isPresent()) {
-                log.debug("got tocsy");
-                double[] tocsyScale = {0.5, 0.5};
-                double[] hmqcScale = {0.5, 5.0};
-                alignPeakList(hmqcPredListOpt.get(), hmqcExpListOpt.get(),
-                        tocsyPredListOpt.get(), tocsyExpListOpt.get(),
-                        noesyPredListOpt.get(), noesyExpListOpt.get(),
-                        hmqcScale, tocsyScale);
-            }
+        double[] tocsyScale = {0.5, 0.5};
+        double[] hmqcScale = {0.5, 5.0};
+        if (hmqcExpListOpt.isPresent() && hmqcPredListOpt.isPresent() &&
+                tocsyExpListOpt.isPresent() && tocsyPredListOpt.isPresent() &&
+                noesyExpListOpt.isPresent() && noesyPredListOpt.isPresent()
+
+        ) {
+            alignPeakList(hmqcPredListOpt.get(), hmqcExpListOpt.get(),
+                    tocsyPredListOpt.get(), tocsyExpListOpt.get(),
+                    noesyPredListOpt.get(), noesyExpListOpt.get(),
+                    hmqcScale, tocsyScale);
 
         }
     }
