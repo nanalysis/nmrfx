@@ -35,10 +35,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ChemicalLibraryController {
     private static final Logger log = LoggerFactory.getLogger(ChemicalLibraryController.class);
@@ -75,6 +72,8 @@ public class ChemicalLibraryController {
     Dataset currentDataset = null;
     Dataset sumDataset = null;
     CompoundMatcher cmpdMatcher = new CompoundMatcher();
+
+    Map<String, SimData> currentSimMap = new HashMap<>();
     SimpleObjectProperty<SimData> currentSimData = new SimpleObjectProperty<>();
 
     ChangeListener propChangeListener;
@@ -377,10 +376,18 @@ public class ChemicalLibraryController {
     }
 
     void showActiveData() {
-        System.out.println("show active");
+        String activeDataName = activeField.getValue().toLowerCase();
+        if (!activeDataName.isEmpty() && (currentSimData.get() != null) && !activeDataName.equalsIgnoreCase(currentSimData.get().getName())) {
+            SimData simData = currentSimMap.get(activeDataName);
+            if (simData != null) {
+                currentSimData.set(simData);
+                updateGrid(simData);
+            }
+        }
+    }
+    void showActiveDataCmpd() {
         if (currentDataset != null) {
             activeMatch = cmpdMatcher.getMatch(activeField.getValue());
-            System.out.println("show active " + activeMatch);
             showActiveData(activeMatch);
             SpinnerValueFactory.IntegerSpinnerValueFactory iFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinner.getValueFactory();
             iFactory.setMax(activeMatch.getData().getRegionCount() - 1);
@@ -478,13 +485,11 @@ public class ChemicalLibraryController {
         Dataset newDataset;
         String label = currData == null ? "1H" : currData.getLabel(0);
         SimDataVecPars pars;
-        System.out.println("make dataset " + currData);
         if (currData != null) {
             pars = new SimDataVecPars(currData);
         } else {
             pars = defaultPars();
         }
-        System.out.println(pars);
         if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
             CompoundData compoundData = DBData.makeData(name, pars);
             newDataset = new Dataset(compoundData.getVec());
@@ -761,6 +766,7 @@ public class ChemicalLibraryController {
                     currentSimData.set(activeSimData);
                     updateDataset(activeSimData, newDataset);
                     updateGrid(activeSimData);
+                    currentSimMap.put(activeSimData.getName().toLowerCase(), activeSimData);
                 });
             }
 
