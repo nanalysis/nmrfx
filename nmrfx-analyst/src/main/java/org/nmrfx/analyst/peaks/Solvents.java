@@ -28,7 +28,7 @@ public class Solvents {
             Double h2oShift = (Double) solventMap.get("h2oShift");
             Solvent solvent = new Solvent(name, isoname, synonyms, h2oShift);
             for (String synonym : synonyms) {
-                solvents.put(synonym, solvent);
+                solvents.put(synonym.toLowerCase(), solvent);
             }
             max = Math.max(max, name.length());
 
@@ -40,25 +40,25 @@ public class Solvents {
                 List<Map<String, Number>> cShifts = (List<Map<String, Number>>) solventMap.get("Cshifts");
                 solvent.addShifts("C", cShifts);
             }
-            solvents.put(name, solvent);
+            solvents.put(name.toLowerCase(), solvent);
             for (String synonym : synonyms) {
-                solvents.put(synonym, solvent);
+                solvents.put(synonym.toLowerCase(), solvent);
             }
         }
     }
 
-    public Solvent getSolvent(String name) {
-        return solvents.get(name);
+    public static Solvent getSolvent(String name) {
+        return solvents.get(name.toLowerCase());
     }
 
     public static String canonicalIso(String name) {
-        Solvent solvent = solvents.get(name);
-        return solvent.isoname;
+        Solvent solvent = getSolvent(name);
+        return solvent != null ? solvent.isoname : "";
     }
 
     public static String canonical(String name) {
-        Solvent solvent = solvents.get(name);
-        return solvent.name;
+        Solvent solvent = getSolvent(name);
+        return solvent != null ? solvent.name : "";
     }
 
 }
