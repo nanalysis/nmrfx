@@ -44,8 +44,6 @@ public class ChemicalLibraryController {
     Label searchLabel;
     TextField searchField;
 
-    CheckBox autoNameCheckBox;
-    TextField nameField;
     ChoiceBox<ChemicalLibraryController.LIBRARY_MODE> modeChoiceBox;
 
     VBox vBox;
@@ -109,7 +107,6 @@ public class ChemicalLibraryController {
         searchField.setOnKeyReleased(e -> {
             if (e.getCode() == KeyCode.ENTER) {
                 setMol();
-                //createCmpdData();
             }
         });
         HBox hBox2 = new HBox();
@@ -119,10 +116,7 @@ public class ChemicalLibraryController {
 
         vBox.getChildren().addAll(hBox1, hBox2);
 
-        Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> {
-            List<String> suggestions = getMatchingNames(param.getUserText());
-            return suggestions;
-        };
+        Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
         TextFields.bindAutoCompletion(searchField, suggestionProvider);
 
 
@@ -207,7 +201,7 @@ public class ChemicalLibraryController {
         activeBox = new CheckBox();
         fitBar.getChildren().add(activeBox);
         activeBox.setOnAction(e -> setActive());
-        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(Arrays.asList(toolBar)));
+        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(toolBar)));
         setupListeners();
 
     }
@@ -413,8 +407,7 @@ public class ChemicalLibraryController {
             loadSimData();
         }
 
-        List<String> names = cmpdMatcher.getNames(pattern);
-        return names;
+        return cmpdMatcher.getNames(pattern);
 
     }
 
@@ -437,8 +430,6 @@ public class ChemicalLibraryController {
     }
 
     Dataset getExpDataset() {
-        PolyChart chart = fxmlController.getActiveChart();
-
         Dataset currData = null;
         for (PolyChart pChart : fxmlController.getCharts()) {
             currData = (Dataset) pChart.getDataset();
@@ -483,7 +474,6 @@ public class ChemicalLibraryController {
 
     private Dataset makeDataset(ChemicalLibraryController.LIBRARY_MODE mode, Dataset currData, String name) {
         Dataset newDataset;
-        String label = currData == null ? "1H" : currData.getLabel(0);
         SimDataVecPars pars;
         if (currData != null) {
             pars = new SimDataVecPars(currData);
@@ -504,7 +494,6 @@ public class ChemicalLibraryController {
 
     private Dataset makeDataset(Dataset currData, SimData simData, String name) {
         Dataset newDataset;
-        String label = currData == null ? "1H" : currData.getLabel(0);
         SimDataVecPars pars;
         if (currData != null) {
             pars = new SimDataVecPars(currData);
@@ -663,7 +652,6 @@ public class ChemicalLibraryController {
         if (currentSimData.get() != null) {
             SimData.AtomBlock block = currentSimData.get().atomBlock(atomBlockIndex.block);
             int i = atomBlockIndex.index;
-            int nPPMs = block.nPPMs();
             double maxJ = 0.0;
             for (BlockIndex blockIndex : blockIndices) {
                 if (blockIndex.block == atomBlockIndex.block) {
@@ -703,10 +691,8 @@ public class ChemicalLibraryController {
 
     void updateActiveData() {
         Toggle atomToggle = atomToggleGroup.getSelectedToggle();
-        Toggle couplingToggle = jToggleGroup.getSelectedToggle();
 
         BlockIndex atomBlockIndex = atomToggle != null ? (BlockIndex)  atomToggle.getUserData() : null;
-        BlockIndex couplingBlockIndex = couplingToggle != null ? (BlockIndex)  couplingToggle.getUserData() : null;
 
         SimData simData = currentSimData.get();
         if (simData != null) {
@@ -754,10 +740,8 @@ public class ChemicalLibraryController {
                 if (currData != null) {
                     appendMode = true;
                 }
-                System.out.println("test null " + currData);
                 newDataset = makeDataset(mode, currData, name);
             } else {
-                System.out.println("test exists " + testDataset);
                 newDataset = testDataset;
             }
             if (mode == LIBRARY_MODE.GISSMO) {
@@ -786,14 +770,12 @@ public class ChemicalLibraryController {
 
     public void updateDataset(SimData simData, Dataset newDataset) {
         PolyChart chart = fxmlController.getActiveChart();
-        boolean appendMode = false;
         Vec vec = newDataset.getVec();
 
         double lb = AnalystPrefs.getLibraryVectorLB();
         SimData.genVec(simData, vec, lb);
 
         fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
-        //chart.setDataset(newDataset, appendMode, false);
 
         updateColors(chart);
         searchField.setText("");
@@ -905,11 +887,9 @@ public class ChemicalLibraryController {
         activateCurrent();
         CompoundFitter cFitter = CompoundFitter.setup(cmpdMatcher.getMatches());
         Vec fitVec = getExpVec();
-        // zeroNonRegions
 
         cFitter.setVec(fitVec);
         List<FitResult> fitResults = cFitter.optimizeAlignment();
-        int iMatch = 0;
         for (FitResult fitResult : fitResults) {
             System.out.println(fitResult.getShift() + " " + fitResult.getScale());
         }
