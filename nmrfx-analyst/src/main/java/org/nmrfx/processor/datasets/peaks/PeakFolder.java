@@ -160,6 +160,7 @@ public class PeakFolder {
         double bestDensity = density;
         double bestShift = shift;
         double[] foldedShifts = new double[2]; //two possible positions to test
+        boolean updatePeak = false;
 
         foldedShifts[0] = alias ? shift - deltaPPM : upperLim - (shift - upperLim);
         foldedShifts[1] = alias ? shift + deltaPPM : lowerLim + (lowerLim - shift);
@@ -171,6 +172,7 @@ public class PeakFolder {
                 if (newDensity > bestDensity) {
                     bestShift = shifts[pDim];
                     bestDensity = newDensity;
+                    updatePeak = true;
                 }
             } else {
                 for (var entry : MMVNs.entrySet()) {
@@ -182,12 +184,13 @@ public class PeakFolder {
                     if (newDensity > bestDensity) {
                         bestShift = shifts[pDim];
                         bestDensity = newDensity;
+                        updatePeak = true;
                     }
                 }
             }
         }
 
-        if (bestDensity != density) {
+        if (updatePeak) {
             peak.getPeakDim(dimToFold.getDimName()).setChemShiftValue((float) bestShift);
         }
     }

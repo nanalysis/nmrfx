@@ -421,8 +421,9 @@ public class PeakMenuBar {
                 }
                 try {
                     if (peakMode) {
-                        if (menuTarget.getPeak().isPresent()) {
-                            Peak peak = menuTarget.getPeak().get();
+                        var optPeak = menuTarget.getPeak();
+                        if (optPeak.isPresent()) {
+                            Peak peak = optPeak.get();
                             peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, peak);
                         }
                     } else {
