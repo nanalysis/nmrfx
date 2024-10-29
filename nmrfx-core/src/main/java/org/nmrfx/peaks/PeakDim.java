@@ -105,7 +105,7 @@ public class PeakDim {
             newMultiplet.myPeakDim = targetPeakDim;
             targetPeakDim.multiplet = newMultiplet;
         }
-        targetPeakDim.resonance = resonance.copy();
+        targetPeakDim.resonance = resonance.copy(targetPeakDim);
     }
 
     public void restoreFrom(PeakDim peakDim) {

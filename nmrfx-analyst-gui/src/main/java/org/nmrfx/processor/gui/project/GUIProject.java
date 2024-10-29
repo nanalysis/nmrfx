@@ -69,6 +69,7 @@ public class GUIProject extends StructureProject {
         newProject.compoundMap.putAll(project.compoundMap);
         newProject.molecules.putAll(project.molecules);
         newProject.activeMol = project.activeMol;
+        newProject.resFactory = project.resFactory;
         return newProject;
     }
 

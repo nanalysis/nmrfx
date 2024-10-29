@@ -25,6 +25,7 @@ public class PeakListUndo extends ChartUndo {
             peak.peakList = peakList;
             peakList.peaks().add(peak);
         }
+        peakList.reassignResonanceFactoryMap();
         peakList.reIndex();
         return true;
     }
