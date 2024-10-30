@@ -77,6 +77,8 @@ public class ChemicalLibraryController {
     Map<String, SimData> currentSimMap = new HashMap<>();
     SimpleObjectProperty<SimData> currentSimData = new SimpleObjectProperty<>();
 
+    boolean useFieldSlider = false;
+
     ChangeListener propChangeListener;
     enum LIBRARY_MODE {
         GISSMO,
@@ -216,7 +218,6 @@ public class ChemicalLibraryController {
         Slider slider = new Slider(min, max, value);
         slider.setBlockIncrement(0.5);
         slider.setOrientation(Orientation.HORIZONTAL);
-      //  slider.setOnMouseReleased(e -> updateSliderRanges());
         slider.setPrefWidth(200);
         slider.setMaxWidth(200);
         return slider;
@@ -229,6 +230,7 @@ public class ChemicalLibraryController {
         lwSlider.setBlockIncrement(0.1);
         ppmSlider = createSlider(-sliderRange /2, sliderRange /2, 0);
         ppmSlider.setBlockIncrement(0.005);
+        ppmSlider.setOnMouseReleased(e -> updatePPMSliderRange());
         couplingSlider = createSlider(0, 20, 10);
         couplingSlider.setBlockIncrement(0.1);
 
@@ -262,7 +264,7 @@ public class ChemicalLibraryController {
         jBox.getChildren().addAll(jLabel, couplingSlider);
 
         vBox.setSpacing(10);
-        vBox.getChildren().add(fieldBox);
+      //  vBox.getChildren().add(fieldBox);
         vBox.getChildren().add(lwBox);
         vBox.getChildren().add(ppmBox);
         vBox.getChildren().add(jBox);
@@ -396,15 +398,19 @@ public class ChemicalLibraryController {
         }
     }
 
-//    void updateSliderRanges() {
-//        updateSliderRanges(shiftSlider.getValue());
-//    }
-//
-//    void updateSliderRanges(double shift) {
-//        shiftSlider.setMin(Math.round(shift) - sliderRange / 2);
-//        shiftSlider.setMax(Math.round(shift) + sliderRange / 2);
-//        shiftSlider.setValue(shift);
-//    }
+    void updatePPMSliderRange() {
+        updatePPMSliderRange(ppmSlider.getValue());
+    }
+
+    void updatePPMSliderRange(double shift) {
+        double delta = ppmSlider.getMax() - ppmSlider.getMin();
+        double range = Math.round(10.0*delta) / 10.0;
+        double roundShift = Math.round(shift * 100.0) / 100.0;
+        ppmSlider.setMin(roundShift - range / 2);
+        ppmSlider.setMax(roundShift + range / 2);
+        System.out.println(delta + " " + range + " " + roundShift + " " + shift);
+        ppmSlider.setValue(shift);
+    }
 
     void updateSumData() {
         if (sumDataset != null) {
@@ -522,7 +528,11 @@ public class ChemicalLibraryController {
         if (currData != null) {
             pars = new SimDataVecPars(currData);
         } else {
-            pars = defaultPars(fieldSlider.getValue());
+            if (useFieldSlider) {
+                pars = defaultPars(fieldSlider.getValue());
+            } else {
+                pars = defaultPars();
+            }
         }
         if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
             CompoundData compoundData = DBData.makeData(name, pars);
@@ -816,10 +826,12 @@ public class ChemicalLibraryController {
         PolyChart chart = fxmlController.getActiveChart();
 
         double lb = lwSlider.getValue();
-        double field = fieldSlider.getValue();
-        double sw = AnalystPrefs.getLibraryVectorSWPPM() * field;
-        newDataset.setSf(0, field);
-        newDataset.setSw(0, sw);
+        if (useFieldSlider) {
+            double field = fieldSlider.getValue();
+            double sw = AnalystPrefs.getLibraryVectorSWPPM() * field;
+            newDataset.setSf(0, field);
+            newDataset.setSw(0, sw);
+        }
         Vec vec = newDataset.getVec();
         SimData.genVec(simData, vec, lb);
 
