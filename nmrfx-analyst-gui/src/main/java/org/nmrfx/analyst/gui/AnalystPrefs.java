@@ -25,7 +25,7 @@ public class AnalystPrefs {
     private static final String REMOTE_USER_STR = "REMOTE_USER_NAME";
     private static IntegerProperty libraryVectorSize = null;
     private static DoubleProperty libraryVectorSF = null;
-    private static DoubleProperty libraryVectorSW = null;
+    private static DoubleProperty libraryVectorSWPPM = null;
     private static DoubleProperty libraryVectorLB = null;
     private static DoubleProperty libraryVectorREF = null;
 
@@ -58,9 +58,9 @@ public class AnalystPrefs {
         return libraryVectorSF.getValue();
     }
 
-    public static Double getLibraryVectorSW() {
-        libraryVectorSW = PreferencesController.getDouble(libraryVectorSW, "LIBRARY_VECTOR_SW", 10000.0);
-        return libraryVectorSW.getValue();
+    public static Double getLibraryVectorSWPPM() {
+        libraryVectorSWPPM = PreferencesController.getDouble(libraryVectorSWPPM, "LIBRARY_VECTOR_SW_PPM", 15.0);
+        return libraryVectorSWPPM.getValue();
     }
 
     public static Double getLibraryVectorLB() {
@@ -168,10 +168,10 @@ public class AnalystPrefs {
                 "Spectrometer frequency (MHz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSWItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
-                    libraryVectorSW.setValue((Double) c);
+                    libraryVectorSWPPM.setValue((Double) c);
                 },
-                getLibraryVectorSW(), 1000, 16000, "Spectrum Library", "VectorSW",
-                "Sweep Width (Hz) for simulated spectra");
+                getLibraryVectorSWPPM(), 2.0, 20.0, "Spectrum Library", "VectorSW",
+                "Sweep Width (PPM) for simulated spectra");
         DoubleRangeOperationItem libraryVectorREFItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorREF.setValue((Double) c);

@@ -14,7 +14,7 @@ public class SimDataVecPars {
 
     private final String label;
     private final int n;
-    private final double sf;
+    private double sf;
     private final double sw;
     private final double ref;
     private final double vref;
@@ -56,6 +56,10 @@ public class SimDataVecPars {
      */
     public double getSf() {
         return sf;
+    }
+
+    public void setSF(double value) {
+        sf = value;
     }
 
     /**

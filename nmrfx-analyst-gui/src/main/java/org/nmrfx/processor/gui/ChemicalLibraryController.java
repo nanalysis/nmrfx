@@ -48,11 +48,14 @@ public class ChemicalLibraryController {
 
     VBox vBox;
     Spinner<Integer> spinner;
-    Slider shiftSlider;
+   // Slider shiftSlider;
     CheckBox activeBox;
-    TextField shiftField;
-    TextField scaleField;
+    //TextField shiftField;
+    //TextField scaleField;
     GridPane gridPane;
+
+    Slider fieldSlider;
+    Slider lwSlider;
     Slider ppmSlider;
     Slider couplingSlider;
 
@@ -127,28 +130,30 @@ public class ChemicalLibraryController {
         adjusterBox.setSpacing(10);
         adjusterPane.setContent(adjusterBox);
 
-        Button fitButton = new Button("Fit");
-        fitButton.setOnAction(e -> fit());
 
-        ToolBar toolBar = new ToolBar();
-        adjusterBox.getChildren().add(toolBar);
 
         HBox fitBar = new HBox();
         fitBar.setAlignment(Pos.CENTER_LEFT);
         adjusterBox.getChildren().add(fitBar);
 
-        HBox fitBar2 = new HBox();
-        fitBar2.setAlignment(Pos.CENTER_LEFT);
         gridPane = new GridPane();
-        adjusterBox.getChildren().add(fitBar2);
-        HBox fitBar3 = new HBox();
-        fitBar3.setAlignment(Pos.CENTER_LEFT);
-        adjusterBox.getChildren().add(fitBar3);
 
-        toolBar.getItems().add(fitButton);
-        Button optimizeButton = new Button("Optimize");
-        optimizeButton.setOnAction(e -> optimize());
-        toolBar.getItems().add(optimizeButton);
+//        HBox fitBar2 = new HBox();
+//        fitBar2.setAlignment(Pos.CENTER_LEFT);
+//        adjusterBox.getChildren().add(fitBar2);
+//        HBox fitBar3 = new HBox();
+//        fitBar3.setAlignment(Pos.CENTER_LEFT);
+//        adjusterBox.getChildren().add(fitBar3);
+
+//        ToolBar toolBar = new ToolBar();
+//        adjusterBox.getChildren().add(toolBar);
+//        Button fitButton = new Button("Fit");
+//        fitButton.setOnAction(e -> fit());
+//        toolBar.getItems().add(fitButton);
+//        Button optimizeButton = new Button("Optimize");
+//        optimizeButton.setOnAction(e -> optimize());
+//        toolBar.getItems().add(optimizeButton);
+//       toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(toolBar)));
 
         Label activeLabel = new Label("Active");
         activeLabel.setPrefWidth(60);
@@ -164,35 +169,35 @@ public class ChemicalLibraryController {
         activeField.setEditable(true);
         activeField.valueProperty().addListener(e -> showActiveData());
 
-        Label offsetLabel = new Label("Offset:");
-        offsetLabel.setPrefWidth(60);
-        spinner = new Spinner<>(0, 0, 0);
-        spinner.getValueFactory().valueProperty().addListener(c -> regionChanged());
-        spinner.setMaxWidth(60);
-        shiftSlider = new Slider(-sliderRange / 2, sliderRange / 2, 0);
-        shiftSlider.setBlockIncrement(0.5);
-        shiftSlider.setOrientation(Orientation.HORIZONTAL);
-        shiftSlider.valueProperty().addListener(e -> sliderChanged());
-        shiftSlider.setOnMouseReleased(e -> updateSliderRanges());
-        shiftSlider.setPrefWidth(100);
-        shiftSlider.setMaxWidth(100);
-
-        shiftField = new TextField("0.0");
-        shiftField.setMaxWidth(50);
-        shiftField.setPrefWidth(50);
-        fitBar2.getChildren().addAll(offsetLabel, spinner, shiftSlider, shiftField);
-
-        Label scaleLabel = new Label("Scale:");
-        scaleLabel.setPrefWidth(60);
-
-        scaleField = new TextField("0.0");
-        scaleField.setMaxWidth(60);
-        fitBar3.getChildren().addAll(scaleLabel, scaleField);
-        scaleField.setOnKeyReleased(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                setScale();
-            }
-        });
+//        Label offsetLabel = new Label("Offset:");
+//        offsetLabel.setPrefWidth(60);
+//        spinner = new Spinner<>(0, 0, 0);
+//        spinner.getValueFactory().valueProperty().addListener(c -> regionChanged());
+//        spinner.setMaxWidth(60);
+//        shiftSlider = new Slider(-sliderRange / 2, sliderRange / 2, 0);
+//        shiftSlider.setBlockIncrement(0.5);
+//        shiftSlider.setOrientation(Orientation.HORIZONTAL);
+//        shiftSlider.valueProperty().addListener(e -> sliderChanged());
+//        shiftSlider.setOnMouseReleased(e -> updateSliderRanges());
+//        shiftSlider.setPrefWidth(100);
+//        shiftSlider.setMaxWidth(100);
+//
+//        shiftField = new TextField("0.0");
+//        shiftField.setMaxWidth(50);
+//        shiftField.setPrefWidth(50);
+//        fitBar2.getChildren().addAll(offsetLabel, spinner, shiftSlider, shiftField);
+//
+//        Label scaleLabel = new Label("Scale:");
+//        scaleLabel.setPrefWidth(60);
+//
+//        scaleField = new TextField("0.0");
+//        scaleField.setMaxWidth(60);
+//        fitBar3.getChildren().addAll(scaleLabel, scaleField);
+//        scaleField.setOnKeyReleased(e -> {
+//            if (e.getCode() == KeyCode.ENTER) {
+//                setScale();
+//            }
+//        });
 
         VBox gissmoBox = new VBox();
         adjusterBox.getChildren().add(gissmoBox);
@@ -201,8 +206,9 @@ public class ChemicalLibraryController {
         activeBox = new CheckBox();
         fitBar.getChildren().add(activeBox);
         activeBox.setOnAction(e -> setActive());
-        toolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(toolBar)));
         setupListeners();
+        fieldSlider.valueProperty().addListener(propChangeListener);
+        lwSlider.valueProperty().addListener(propChangeListener);
 
     }
 
@@ -210,17 +216,42 @@ public class ChemicalLibraryController {
         Slider slider = new Slider(min, max, value);
         slider.setBlockIncrement(0.5);
         slider.setOrientation(Orientation.HORIZONTAL);
-        slider.setOnMouseReleased(e -> updateSliderRanges());
+      //  slider.setOnMouseReleased(e -> updateSliderRanges());
         slider.setPrefWidth(200);
         slider.setMaxWidth(200);
         return slider;
 
     }
     private void makeAdjuster(VBox vBox) {
+        fieldSlider = createSlider(40, 1200, 600);
+        fieldSlider.setBlockIncrement(10);
+        lwSlider = createSlider(0.1, 20, 1.0);
+        lwSlider.setBlockIncrement(0.1);
         ppmSlider = createSlider(-sliderRange /2, sliderRange /2, 0);
         ppmSlider.setBlockIncrement(0.005);
         couplingSlider = createSlider(0, 20, 10);
         couplingSlider.setBlockIncrement(0.1);
+
+        HBox fieldBox = new HBox();
+        Label fieldLabel = new Label("Field");
+        TextField fieldText = new TextField();
+        fieldText.setPrefWidth(70);
+        fieldBox.setSpacing(10);
+        fieldBox.getChildren().addAll(fieldLabel, fieldSlider, fieldText);
+        GUIUtils.bindSliderField(fieldSlider, fieldText, "0.##");
+
+        HBox lwBox = new HBox();
+        Label lwLabel = new Label("LW (Hz)");
+        TextField lwText = new TextField();
+        lwText.setPrefWidth(70);
+        lwBox.setSpacing(10);
+        lwBox.getChildren().addAll(lwLabel, lwSlider, lwText);
+        GUIUtils.bindSliderField(lwSlider, lwText, "0.##");
+
+        fieldSlider.setValue(600.0);
+        lwSlider.setValue(1.0);
+
+
         HBox ppmBox = new HBox();
         Label ppmLabel = new Label("Shift");
         ppmBox.setSpacing(10);
@@ -229,6 +260,10 @@ public class ChemicalLibraryController {
         Label jLabel = new Label("Coupling");
         jBox.setSpacing(10);
         jBox.getChildren().addAll(jLabel, couplingSlider);
+
+        vBox.setSpacing(10);
+        vBox.getChildren().add(fieldBox);
+        vBox.getChildren().add(lwBox);
         vBox.getChildren().add(ppmBox);
         vBox.getChildren().add(jBox);
         ScrollPane scrollPane = new ScrollPane();
@@ -245,9 +280,13 @@ public class ChemicalLibraryController {
     }
 
     SimDataVecPars defaultPars() {
+        return defaultPars(null);
+    }
+    SimDataVecPars defaultPars(Double sfValue) {
         String label = "1H";
-        double sf = AnalystPrefs.getLibraryVectorSF();
-        double sw = AnalystPrefs.getLibraryVectorSW();
+        double sf = sfValue == null ? AnalystPrefs.getLibraryVectorSF() : sfValue;
+        double swPPM = AnalystPrefs.getLibraryVectorSWPPM();
+        double sw = swPPM * sf;
         int size = (int) Math.pow(2, AnalystPrefs.getLibraryVectorSize());
         double ref = AnalystPrefs.getLibraryVectorREF();
         return new SimDataVecPars(sf, sw, size, ref, label);
@@ -308,33 +347,33 @@ public class ChemicalLibraryController {
 
     }
 
-    void sliderChanged() {
-        int iRegion = spinner.getValue();
-        double shift = shiftSlider.getValue();
-        shiftField.setText(String.format("%.1f", shift));
-        if (activeMatch != null) {
-            activeMatch.setShift(iRegion, shift);
-            updateSumData();
-            showActiveData(activeMatch);
-        }
-
-    }
-
-    void regionChanged() {
-        int iRegion = spinner.getValue();
-        if (activeMatch != null) {
-            double shift = activeMatch.getShifts()[iRegion];
-            updateSliderRanges(shift);
-            shiftField.setText(String.format("%.1f", shift));
-            double center = activeMatch.getData().getRegion(iRegion).getAvgPPM();
-            PolyChart chart = fxmlController.getActiveChart();
-            if (!chart.isInView(0, center, 0.2)) {
-                Double[] positions = {center};
-                chart.moveTo(positions);
-            }
-            activeBox.setSelected(activeMatch.getActive(iRegion));
-        }
-    }
+ //   void sliderChanged() {
+//        int iRegion = spinner.getValue();
+//        double shift = shiftSlider.getValue();
+//        shiftField.setText(String.format("%.1f", shift));
+//        if (activeMatch != null) {
+//            activeMatch.setShift(iRegion, shift);
+//            updateSumData();
+//            showActiveData(activeMatch);
+//        }
+//
+//    }
+//
+//    void regionChanged() {
+//        int iRegion = spinner.getValue();
+//        if (activeMatch != null) {
+//            double shift = activeMatch.getShifts()[iRegion];
+//            updateSliderRanges(shift);
+//            shiftField.setText(String.format("%.1f", shift));
+//            double center = activeMatch.getData().getRegion(iRegion).getAvgPPM();
+//            PolyChart chart = fxmlController.getActiveChart();
+//            if (!chart.isInView(0, center, 0.2)) {
+//                Double[] positions = {center};
+//                chart.moveTo(positions);
+//            }
+//            activeBox.setSelected(activeMatch.getActive(iRegion));
+//        }
+//    }
 
     void activateCurrent() {
         activeBox.setSelected(true);
@@ -352,15 +391,15 @@ public class ChemicalLibraryController {
         }
     }
 
-    void updateSliderRanges() {
-        updateSliderRanges(shiftSlider.getValue());
-    }
-
-    void updateSliderRanges(double shift) {
-        shiftSlider.setMin(Math.round(shift) - sliderRange / 2);
-        shiftSlider.setMax(Math.round(shift) + sliderRange / 2);
-        shiftSlider.setValue(shift);
-    }
+//    void updateSliderRanges() {
+//        updateSliderRanges(shiftSlider.getValue());
+//    }
+//
+//    void updateSliderRanges(double shift) {
+//        shiftSlider.setMin(Math.round(shift) - sliderRange / 2);
+//        shiftSlider.setMax(Math.round(shift) + sliderRange / 2);
+//        shiftSlider.setValue(shift);
+//    }
 
     void updateSumData() {
         if (sumDataset != null) {
@@ -397,7 +436,7 @@ public class ChemicalLibraryController {
             cData.addToVec(currentVec, activeMatch.getShifts(), activeMatch.getScale());
             PolyChart chart = fxmlController.getActiveChart();
             chart.refresh();
-            scaleField.setText(String.format("%.3f", activeMatch.getScale()));
+        //    scaleField.setText(String.format("%.3f", activeMatch.getScale()));
 
         }
     }
@@ -411,23 +450,23 @@ public class ChemicalLibraryController {
 
     }
 
-    void setScale() {
-        String scaleStr = scaleField.getText().trim();
-        try {
-            double scale = Double.parseDouble(scaleStr);
-            if (currentDataset != null) {
-                activeMatch = cmpdMatcher.getMatch(activeField.getValue());
-                if (activeMatch != null) {
-                    activeMatch.setScale(scale);
-                    updateSumData();
-                    regionChanged();
-                    showActiveData(activeMatch);
-                }
-            }
-        } catch (NumberFormatException nfE) {
-            log.warn("Unable to parse scale.", nfE);
-        }
-    }
+//    void setScale() {
+//        String scaleStr = scaleField.getText().trim();
+//        try {
+//            double scale = Double.parseDouble(scaleStr);
+//            if (currentDataset != null) {
+//                activeMatch = cmpdMatcher.getMatch(activeField.getValue());
+//                if (activeMatch != null) {
+//                    activeMatch.setScale(scale);
+//                    updateSumData();
+//                    regionChanged();
+//                    showActiveData(activeMatch);
+//                }
+//            }
+//        } catch (NumberFormatException nfE) {
+//            log.warn("Unable to parse scale.", nfE);
+//        }
+//    }
 
     Dataset getExpDataset() {
         Dataset currData = null;
@@ -478,13 +517,13 @@ public class ChemicalLibraryController {
         if (currData != null) {
             pars = new SimDataVecPars(currData);
         } else {
-            pars = defaultPars();
+            pars = defaultPars(fieldSlider.getValue());
         }
         if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
             CompoundData compoundData = DBData.makeData(name, pars);
             newDataset = new Dataset(compoundData.getVec());
         } else {
-            double lb = AnalystPrefs.getLibraryVectorLB();
+            double lb = lwSlider.getValue();
             newDataset = SimData.genDataset(name, pars, lb);
         }
         newDataset.setFreqDomain(0, true);
@@ -500,7 +539,7 @@ public class ChemicalLibraryController {
         } else {
             pars = defaultPars();
         }
-        double lb = AnalystPrefs.getLibraryVectorLB();
+        double lb = lwSlider.getValue();
         newDataset = SimData.genDataset(simData, name, pars, lb);
 
         newDataset.setFreqDomain(0, true);
@@ -770,9 +809,13 @@ public class ChemicalLibraryController {
 
     public void updateDataset(SimData simData, Dataset newDataset) {
         PolyChart chart = fxmlController.getActiveChart();
-        Vec vec = newDataset.getVec();
 
-        double lb = AnalystPrefs.getLibraryVectorLB();
+        double lb = lwSlider.getValue();
+        double field = fieldSlider.getValue();
+        double sw = AnalystPrefs.getLibraryVectorSWPPM() * field;
+        newDataset.setSf(0, field);
+        newDataset.setSw(0, sw);
+        Vec vec = newDataset.getVec();
         SimData.genVec(simData, vec, lb);
 
         fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
@@ -806,7 +849,7 @@ public class ChemicalLibraryController {
             } else {
                 pars = defaultPars();
             }
-            double lb = AnalystPrefs.getLibraryVectorLB();
+            double lb = lwSlider.getValue();
 
             double refConc = 1.0;
             double cmpdConc = 1.0;
@@ -879,7 +922,7 @@ public class ChemicalLibraryController {
             }
         }
         updateSumData();
-        regionChanged();
+      //  regionChanged();
         showActiveData(activeMatch);
     }
 
@@ -894,7 +937,7 @@ public class ChemicalLibraryController {
             System.out.println(fitResult.getShift() + " " + fitResult.getScale());
         }
         updateSumData();
-        regionChanged();
+      //  regionChanged();
         showActiveData(activeMatch);
     }
 }
