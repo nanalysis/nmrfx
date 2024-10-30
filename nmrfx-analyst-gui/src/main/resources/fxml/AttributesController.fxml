@@ -213,6 +213,7 @@
                     <TitledPane fx:id="integralsPane" text="Integrals">
                         <VBox>
                             <children>
+                                <CheckBox fx:id="integralValuesCheckBox" text="Show integral values"/>
                                 <CheckBox fx:id="integralCheckBox" text="Show integral profiles"/>
                                 <Label text="Integral display position:" minWidth="35"/>
                                 <HBox>
@@ -225,6 +226,12 @@
                                 </HBox>
                                 <Separator orientation="horizontal" minHeight="20"/>
                                 <CheckBox fx:id="regionCheckBox" text="Display integration regions"/>
+                                <HBox>
+                                    <Label text="Integral label font size"/>
+                                    <ComboBox fx:id="integralFontSizeComboBox" editable="false"/>
+                                </HBox>
+
+
                             </children>
                         </VBox>
                     </TitledPane>

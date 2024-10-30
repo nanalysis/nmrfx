@@ -2170,6 +2170,9 @@ public class DatasetBase {
         updateDatasetRegionsListListeners();
     }
 
+    public Optional<DatasetRegion> getLinkedRegion(DatasetRegion linkedRegion) {
+        return regions.stream().filter(region -> region.linkRegion == linkedRegion).findFirst();
+    }
     public DatasetRegion addRegion(double min, double max) {
         // don't use Stream.toList as that will give an imutableList
         List<DatasetRegion> sortedRegions = regions.stream().sorted().collect(Collectors.toList());
@@ -2194,6 +2197,15 @@ public class DatasetBase {
         updateDatasetRegionsListListeners();
         return newRegion;
     }
+
+    public void copyRegionsTo(DatasetBase newDataset) {
+        newDataset.clearRegions();
+        for (DatasetRegion region : getReadOnlyRegions()) {
+            DatasetRegion newRegion = new DatasetRegion(region);
+            newDataset.addRegion(newRegion);
+        }
+    }
+
 
     /**
      * Enum for possible file types consistent with structure available in the

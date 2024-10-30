@@ -29,6 +29,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.utils.FileUtils;
@@ -193,7 +194,11 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if (analyzer != null) {
                 analyzer.clearAnalysis();
             }
+            for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
+                datasetAttributes.getDataset().clearRegions();
+            }
             chart.getChartProperties().setRegions(false);
+            chart.getChartProperties().setIntegralValues(false);
             chart.getChartProperties().setIntegrals(false);
             AnalystApp.getAnalystApp().hidePopover(true);
             chart.refresh();
@@ -231,21 +236,29 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             analyzer.autoSetRegions();
             try {
                 analyzer.integrate();
+                List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
+                Dataset dataset = (Dataset) chart.getDataset();
+                if (!regions.isEmpty()) {
+                    dataset.setNormFromRegions(regions);
+                }
+                for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
+                    Dataset thisDataset = (Dataset) datasetAttributes.getDataset();
+                    if (dataset != thisDataset) {
+                        dataset.copyRegionsTo(thisDataset);
+                        analyzer.integrate(thisDataset);
+                    }
+
+                }
             } catch (IOException ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
                 return;
             }
-            List<DatasetRegion> regions = chart.getDataset().getReadOnlyRegions();
-            Dataset dataset = (Dataset) chart.getDataset();
-            if (!regions.isEmpty()) {
-                dataset.setNormFromRegions(regions);
-            }
             chart.refresh();
-            chart.getChartProperties().setRegions(true);
-            chart.getChartProperties().setIntegrals(true);
+            chart.getChartProperties().setIntegralValues(true);
             chart.setActiveRegion(null);
             chart.refresh();
+            RegionsTableController.updateIfExists();
         }
     }
 
@@ -296,8 +309,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             if (regionFile != null) {
                 try {
                     analyzer.loadRegions(regionFile);
-                    getChart().getChartProperties().setIntegrals(true);
-                    getChart().getChartProperties().setRegions(true);
+                    getChart().getChartProperties().setIntegralValues(true);
                     getChart().refresh();
                 } catch (IOException ioE) {
                     GUIUtils.warn("Error reading regions file", ioE.getMessage());
@@ -326,7 +338,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
             chart.getChartProperties().setRegions(false);
-            chart.getChartProperties().setIntegrals(true);
+            chart.getChartProperties().setIntegralValues(true);
             chart.updatePeakListsByName(peakListNames);
             chart.getPeakListAttributes().get(0).setLabelType(PeakDisplayParameters.LabelTypes.Atom);
             var dStat = peakList.widthDStats(0);
@@ -375,7 +387,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 peakListNames.add(peakList.getName());
                 PolyChart chart = getChart();
                 chart.getChartProperties().setRegions(false);
-                chart.getChartProperties().setIntegrals(true);
+                chart.getChartProperties().setIntegralValues(true);
                 chart.updatePeakListsByName(peakListNames);
                 chart.getPeakListAttributes().get(0).setLabelType(PeakDisplayParameters.LabelTypes.Atom);
                 chart.refresh();

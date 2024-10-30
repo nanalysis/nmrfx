@@ -573,6 +573,12 @@ public class Analyzer {
             region.measure(dataset);
         }
     }
+    public void integrate(Dataset integrateDataset) throws IOException {
+        List<DatasetRegion> regions = integrateDataset.getReadOnlyRegions();
+        for (DatasetRegion region : regions) {
+            region.measure(integrateDataset);
+        }
+    }
 
     public void setVolumesFromIntegrals() {
         int[] dim = new int[peakList.nDim];
@@ -1148,14 +1154,6 @@ public class Analyzer {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
         }
-    }
-
-    public void findRegions() throws IOException {
-        calculateThreshold();
-        getThreshold();
-        autoSetRegions();
-        integrate();
-
     }
 
     public void analyze() throws IOException {
