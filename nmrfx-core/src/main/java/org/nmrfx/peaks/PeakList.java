@@ -724,6 +724,11 @@ public class PeakList {
         return specDim;
     }
 
+    public SpectralDim getFoldedDim(){
+        List<SpectralDim> foldedDim = Arrays.stream(spectralDims).filter((spectralDim) -> spectralDim.getFoldMode() != 'n').toList();
+        return foldedDim.isEmpty() ? null : foldedDim.getFirst();
+    }
+
     public List<SpectralDim> getSpectralDims() {
         return Arrays.asList(spectralDims);
     }
@@ -886,6 +891,15 @@ public class PeakList {
             indexMap.put(peak.getIdNum(), peak);
         }
         peakListUpdated(this);
+    }
+
+    public void reassignResonanceFactoryMap() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim: peak.getPeakDims()) {
+                AtomResonance resonance = peakDim.getResonance();
+                ProjectBase.activeResonanceFactory().reassignResonanceFactoryMap(resonance);
+            }
+        }
     }
 
     /**

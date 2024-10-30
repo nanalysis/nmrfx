@@ -1441,7 +1441,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return 0;
     }
 
-    public boolean inRegion(double[][] limits, double[][] foldLimits, int[] dim) {
+    public boolean inRegion(double[][] limits, double[][] foldLimits, double[] foldAmount, int[] dim) {
         int nSearchDim = limits.length;
         boolean ok = true;
         for (int j = 0; j < nSearchDim; j++) {
@@ -1450,8 +1450,7 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             double ctr = peakDims[dim[j]].getChemShiftValue();
             if ((foldLimits != null) && (foldLimits[j] != null)) {
-                double fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
-                ctr = peakList.foldPPM(ctr, fDelta, foldLimits[j][0], foldLimits[j][1]);
+                ctr = peakList.foldPPM(ctr, foldAmount[j], foldLimits[j][0], foldLimits[j][1]);
             }
 
             if ((ctr < limits[j][0]) || (ctr > limits[j][1])) {

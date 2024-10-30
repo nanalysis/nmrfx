@@ -588,7 +588,12 @@ public class MoleculeBase implements Serializable, ITree {
             throw new IllegalArgumentException("No active molecule");
         }
 
-        return molecule.findAtom(name);
+        Atom testAtom = molecule.findAtom(name);
+        if (testAtom == null) {
+            testAtom = molecule.findAtom(name + "1");
+        }
+        return testAtom;
+
 
     }
 
