@@ -331,15 +331,20 @@ public class ChemicalLibraryController {
     void loadSimData() {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         InputStream istream = cl.getResourceAsStream("data/bmse.yaml");
-        SimData.load(istream);
+        try {
+            SimData.load(istream);
+        } catch (Exception e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
         String fileName = AnalystPrefs.getGissmoFile();
         if (!fileName.isEmpty()) {
             File file = new File(fileName);
             if (file.exists()) {
                 try (FileInputStream fileInputStream = new FileInputStream(file)) {
                     SimData.load(fileInputStream);
-                } catch (IOException ioException) {
-                    ExceptionDialog exceptionDialog = new ExceptionDialog(ioException);
+                } catch (Exception e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                     exceptionDialog.showAndWait();
                 }
             }
@@ -734,7 +739,7 @@ public class ChemicalLibraryController {
         BlockIndex atomBlockIndex = atomToggle != null ? (BlockIndex)  atomToggle.getUserData() : null;
 
         SimData simData = currentSimData.get();
-        if (simData != null) {
+        if ((simData != null) && (atomBlockIndex != null)) {
             Dataset testDataset = Dataset.getDataset(simData.getName().toLowerCase());
             if (testDataset != null) {
                 for (BlockIndex blockIndex : blockIndices) {

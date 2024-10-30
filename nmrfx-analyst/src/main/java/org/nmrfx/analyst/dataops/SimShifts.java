@@ -169,8 +169,10 @@ public class SimShifts {
             }
         }
         double norm = sum / nSpins;
-        for (int i = 0; i < intensities.size(); i++) {
-            intensities.set(i, intensities.get(i) / norm);
+        if (norm > 0.0) {
+            for (int i = 0; i < intensities.size(); i++) {
+                intensities.set(i, intensities.get(i) / norm);
+            }
         }
     }
 

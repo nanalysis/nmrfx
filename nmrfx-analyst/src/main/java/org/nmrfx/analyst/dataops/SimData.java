@@ -58,13 +58,14 @@ public class SimData {
                 sppms.set(iPPM, sppm);
             }
         }
+
         public Double j(int i, int j) {
             int ii = ppmList.get(i)[0];
             int jj = ppmList.get(j)[0];
-            for (int k=0;k<jValues.size();k++) {
+            for (int k = 0; k < jValues.size(); k++) {
                 int iTest = jPairs.get(k * 2);
-                int jTest = jPairs.get(k*2 +1);
-                if (((ii == iTest) && (jj == jTest)) || ((jj == iTest) && (ii == jTest))){
+                int jTest = jPairs.get(k * 2 + 1);
+                if (((ii == iTest) && (jj == jTest)) || ((jj == iTest) && (ii == jTest))) {
                     return jValues.get(k) * jScale / Short.MAX_VALUE;
                 }
             }
@@ -74,12 +75,12 @@ public class SimData {
         public void j(int i, int j, double value) {
             double f = value / jScale;
             short jValue = (short) Math.round(f * Short.MAX_VALUE);
-            for (int k=0;k<jValues.size();k++) {
+            for (int k = 0; k < jValues.size(); k++) {
                 int iTest = jPairs.get(k * 2);
-                int jTest = jPairs.get(k*2 +1);
+                int jTest = jPairs.get(k * 2 + 1);
                 for (int ii : ppmList.get(i)) {
                     for (int jj : ppmList.get(j)) {
-                        if (((ii == iTest) && (jj == jTest)) || ((jj == iTest) && (ii == jTest))){
+                        if (((ii == iTest) && (jj == jTest)) || ((jj == iTest) && (ii == jTest))) {
                             if (jValues.get(k) < 0.0) {
                                 jValue *= -1;
                             }
@@ -389,30 +390,26 @@ public class SimData {
 
         Yaml yaml = new Yaml();
         for (Object data : yaml.loadAll(istream)) {
-            try {
-                Map<String, Object> dataMap = (HashMap<String, Object>) data;
-                String name = ((String) dataMap.get("name")).trim();
-                String id = (String) dataMap.get("id");
-                List blocks = (List) dataMap.get("blocks");
-                SimData simData = new SimData(name, id, blocks.size());
-                int iBlock = 0;
-                for (Object block : blocks) {
-                    Map<String, Object> blockMap = (Map<String, Object>) block;
-                    List<Double> ppms = (List<Double>) blockMap.get("shifts");
-                    List<Double> jValues = (List<Double>) blockMap.get("jValues");
-                    List<Integer> jPairs = (List<Integer>) blockMap.get("jPairs");
-                    List<Integer> ids = (List<Integer>) blockMap.get("id");
-                    simData.setPPMs(iBlock, ppms);
-                    simData.setJValues(iBlock, jValues);
-                    simData.setJPairs(iBlock, jPairs);
-                    simData.setIDs(iBlock, ids);
+            Map<String, Object> dataMap = (HashMap<String, Object>) data;
+            String name = ((String) dataMap.get("name")).trim();
+            String id = (String) dataMap.get("id");
+            List blocks = (List) dataMap.get("blocks");
+            SimData simData = new SimData(name, id, blocks.size());
+            int iBlock = 0;
+            for (Object block : blocks) {
+                Map<String, Object> blockMap = (Map<String, Object>) block;
+                List<Double> ppms = (List<Double>) blockMap.get("shifts");
+                List<Double> jValues = (List<Double>) blockMap.get("jValues");
+                List<Integer> jPairs = (List<Integer>) blockMap.get("jPairs");
+                List<Integer> ids = (List<Integer>) blockMap.get("id");
+                simData.setPPMs(iBlock, ppms);
+                simData.setJValues(iBlock, jValues);
+                simData.setJPairs(iBlock, jPairs);
+                simData.setIDs(iBlock, ids);
 
-                    iBlock++;
-                }
-                simDataMap.put(name.toLowerCase().replace(' ', '-'), simData);
-            } catch (Exception e) {
-                e.printStackTrace();
+                iBlock++;
             }
+            simDataMap.put(name.toLowerCase().replace(' ', '-'), simData);
         }
     }
 
