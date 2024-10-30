@@ -14,12 +14,30 @@ public class SliderLayoutChart {
     private List<Double> x;
     private List<Double> y;
 
+    private String xsync = null;
+
+    private String ysync = null;
+
     public String type() {
         return type;
     }
 
     public void setType(String type) {
         this.type = type;
+    }
+    public String xsync() {
+        return xsync;
+    }
+
+    public void setXsync(String xsync) {
+        this.xsync = xsync;
+    }
+    public String ysync() {
+        return ysync;
+    }
+
+    public void setYsync(String ysync) {
+        this.ysync = ysync;
     }
 
     public Integer row() {
