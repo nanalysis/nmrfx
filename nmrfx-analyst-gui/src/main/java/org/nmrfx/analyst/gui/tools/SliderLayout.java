@@ -6,13 +6,11 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PolyChartManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class SliderLayout {
 
@@ -60,6 +58,8 @@ public class SliderLayout {
         controller.setNCharts(n);
         GUIScripter scripter = new GUIScripter();
         int i = 0;
+        Map<String, List<PolyChart>> xsyncMap = new HashMap<>();
+        Map<String, List<PolyChart>> ysyncMap = new HashMap<>();
         for (SliderLayoutChart layout: sliderLayoutTypes.getLayout()) {
             PolyChart chart = controller.getCharts().get(i++);
             scripter.grid(chart, layout.row(), layout.column(), layout.rowspan(), layout.columnspan());
@@ -70,7 +70,37 @@ public class SliderLayout {
                 chart.getAxes().setMinMax(0, x.get(0), x.get(1));
                 var y = layout.y();
                 chart.getAxes().setMinMax(1, y.get(0), y.get(1));
+                chart.copyChartLimits();
+                String xsync = layout.xsync();
+                addToSync(chart, xsync, xsyncMap);
+                String ysync = layout.ysync();
+                addToSync(chart, ysync, ysyncMap);
             });
+        }
+        addSyncs(xsyncMap, 0);
+        addSyncs(ysyncMap, 1);
+    }
+
+    private void addToSync(PolyChart chart, String sync, Map<String, List<PolyChart>> syncMap) {
+        if ((sync != null) && !sync.isEmpty()) {
+            List<PolyChart> syncList = syncMap.get(sync);
+            if (syncList == null) {
+                syncList = new ArrayList<>();
+                syncMap.put(sync, syncList);
+            }
+            syncList.add(chart);
+        }
+
+    }
+
+    private void addSyncs(Map<String, List<PolyChart>> syncMap, int iDim) {
+        var synchronizer = PolyChartManager.getInstance().getSynchronizer();
+        for (var entry : syncMap.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                PolyChart chart = entry.getValue().get(0);
+                String dimName = chart.getDimNames().get(iDim);
+                synchronizer.addToSyncGroup(entry.getValue(), dimName);
+            }
         }
     }
 

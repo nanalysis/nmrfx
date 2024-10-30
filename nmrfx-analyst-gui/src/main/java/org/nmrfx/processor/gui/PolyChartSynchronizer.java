@@ -99,6 +99,23 @@ public class PolyChartSynchronizer {
                 });
     }
 
+    public void addToSyncGroup(List<PolyChart> relatedCharts, String dimensionName) {
+        SyncGroup group = findGroupForChartsAndDimension(relatedCharts, dimensionName);
+
+        // there was already a group for these chart and dimension, remove it - it may not contain all charts
+        if (group != null) {
+            groups.remove(group);
+        }
+
+        if (relatedCharts.size() >= MINIMAL_GROUP_SIZE) {
+            // create a new group including the current chart
+            // only if at least two charts needs to be synchronized
+            List<WeakReference<PolyChart>> refs = relatedCharts.stream()
+                    .map(WeakReference::new)
+                    .toList();
+            groups.add(new SyncGroup(refs, dimensionName));
+        }
+    }
     /**
      * Add the chart to an existing group, or create a new group with all its scene mates.
      *

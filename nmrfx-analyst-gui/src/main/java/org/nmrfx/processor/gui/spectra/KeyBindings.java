@@ -260,6 +260,14 @@ public class KeyBindings {
                 chart.center();
                 keyMonitor.clear();
             }
+            case "vd" -> {
+                chart.copyChartLimits();
+                keyMonitor.clear();
+            }
+            case "vv" -> {
+                chart.pasteChartLimits();
+                keyMonitor.clear();
+            }
             case "ve" -> {
                 chart.expand();
                 keyMonitor.clear();
