@@ -146,6 +146,7 @@ public class PolyChart extends Region {
     private static PolyChart chartBuffer = null;
 
     private static ViewBuffer viewBuffer = null;
+    private  ViewBuffer chartViewBuffer = null;
 
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
@@ -627,7 +628,9 @@ public class PolyChart extends Region {
         FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
         PolyChart newChart = newController.getActiveChart();
         copyTo(newChart);
+        newChart.copyLimits();
         newController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
+        newChart.pasteLimits();
         newChart.refresh();
     }
 
@@ -649,6 +652,17 @@ public class PolyChart extends Region {
     public void pasteLimits() {
         if (viewBuffer != null) {
             viewBuffer.restore(this);
+            refresh();
+        }
+    }
+    public void copyChartLimits() {
+        chartViewBuffer = new ViewBuffer();
+        chartViewBuffer.save(this);
+    }
+
+    public void pasteChartLimits() {
+        if (chartViewBuffer != null) {
+            chartViewBuffer.restore(this);
             refresh();
         }
     }
