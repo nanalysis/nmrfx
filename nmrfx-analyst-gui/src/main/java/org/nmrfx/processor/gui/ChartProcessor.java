@@ -1068,6 +1068,7 @@ public class ChartProcessor {
         acqMode = new AcquisitionType[nDim];
         processorController.removeOpListener();
         mapOpLists.clear();
+        processorController.refManager.clearObjectPropertyMap();
         Map<ProcessingSection, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>(headerList);
 
