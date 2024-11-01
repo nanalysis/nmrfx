@@ -1271,7 +1271,8 @@ public class ChartProcessor {
     public String getGenScript(boolean arrayed) {
         addFIDToPython();
         String arrayVal = arrayed ? "True" : "False";
-        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal + ")", String.class);
+        String useApod = PreferencesController.getUseFIDParApodization() ? "True" : "False";
+        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal + ", useapod=" + useApod + ")", String.class);
     }
 
     public List<?> getDocs() {

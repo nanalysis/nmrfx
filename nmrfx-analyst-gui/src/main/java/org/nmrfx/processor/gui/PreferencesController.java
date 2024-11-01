@@ -66,6 +66,9 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static IntegerProperty projectSaveIntervalProp = null;
     private static StringProperty rnaModelProp = null;
 
+    private static BooleanProperty useFIDParApodization = null;
+
+
     @FXML
     PropertySheet prefSheet;
     ChangeListener<String> stringListener;
@@ -187,10 +190,18 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
                 , getRNAModelDirectory(), "RNA", "SS Model", "Directory for secondary predictino model");
 
+        BooleanOperationItem useFIDParApodizationItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useFIDParApodization.setValue((Boolean) c);
+                    setBoolean("USE-APODIZATION", (Boolean) c);
+                },
+                getUseFIDParApodization(), "LOAD_PARAMETERS", "Apodization", "Load apodization from FID parameters");
+
+
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem,
-                projectSaveItem, projectSaveIntervalItem);
+                projectSaveItem, projectSaveIntervalItem, useFIDParApodizationItem);
     }
 
     @Override
@@ -508,6 +519,12 @@ public class PreferencesController implements Initializable, StageBasedControlle
         projectSaveProp = getBoolean(projectSaveProp, "PROJECT_SAVE", false);
         return projectSaveProp.getValue();
     }
+
+    public static Boolean getUseFIDParApodization() {
+        useFIDParApodization = getBoolean(useFIDParApodization, "USE-APODIZATION", true);
+        return useFIDParApodization.getValue();
+    }
+
 
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
         if (prop == null) {

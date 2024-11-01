@@ -3845,14 +3845,18 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
-def genScript(arrayed=False):
+def genScript(arrayed=False, useapod=False):
     global fidInfo
     script = ''
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
+        if useapod:
+            lw=fidInfo.fidObj.getExpd(0)
+        else:
+            lw = 0.5
         script += 'DIM(1)\n'
         script += 'SUPPRESS(disabled=True)\n'
-        script += 'EXPD(lb=1.0)\n'
+        script += 'EXPD(lb='+str(lw)+')\n'
         script += 'ZF()\n'
         script += 'FT()\n'
 
