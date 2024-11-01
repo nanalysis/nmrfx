@@ -355,17 +355,17 @@ public class RS2DData implements NMRData {
         } catch (ParserConfigurationException | SAXException | NullPointerException ex) {
             throw new IOException(ex.getMessage());
         }
-        openProcessedParFile(parpath);
+        openProcessedParFile(file);
     }
 
     /**
      * Checks if a processed header file exists and tries to open it and read the first and zero order phase values.
-     * @param parpath The path to the unprocessed parameter file.
+     * @param parFile The unprocessed parameter file.
      * @throws IOException if file exists but unable to read the file.
      */
-    private void openProcessedParFile(String parpath) throws IOException {
+    private void openProcessedParFile(File parFile) throws IOException {
         // try to read the zero and first order phases from the processed dataset.
-        File pdataFile = new File(parpath).toPath().resolve(PROC_DIR).toFile();
+        File pdataFile = parFile.toPath().resolve(PROC_DIR).toFile();
         if (!pdataFile.exists()) {
             return;
         }
