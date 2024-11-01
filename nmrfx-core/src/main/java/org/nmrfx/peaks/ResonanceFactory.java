@@ -65,6 +65,11 @@ public class ResonanceFactory implements FreezeListener {
         return resonance;
     }
 
+    public void reassignResonanceFactoryMap(AtomResonance resonance) {
+        //map.clear();
+        map.put(resonance.getID(), resonance);
+    }
+
     public AtomResonance get(long id) {
         return map.get(id);
     }
@@ -202,7 +207,11 @@ public class ResonanceFactory implements FreezeListener {
         for (AtomResonance res : map.values()) {
             for (PeakDim peakDim : res.getPeakDims()) {
                 Double ppmAvg = res.getPPMAvg(condition);
-                Atom atom = MoleculeBase.getAtomByName(peakDim.getLabel());
+                String label = peakDim.getLabel();
+                Atom atom = MoleculeBase.getAtomByName(label);
+                if (atom == null) {
+                    atom = MoleculeBase.getAtomByName(label+"1");
+                }
                 if (atom != null) {
                     atom.setPPM(ppmAvg);
                     res.setAtomName(atom.getFullName());
@@ -213,6 +222,7 @@ public class ResonanceFactory implements FreezeListener {
 
         }
     }
+
 
     @Override
     public void freezeHappened(Peak peak, boolean state) {
@@ -250,6 +260,9 @@ public class ResonanceFactory implements FreezeListener {
 
         chan.write("_Resonance_linker_list.Sf_framecode   ");
         chan.write("resonance_linker_list\n");
+
+        chan.write("_Resonance_linker_list.ID   ");
+        chan.write("1" + "\n"); //fixme how to get list ID
 
         chan.write("_Resonance_linker_list.Details        ");
         chan.write(".\n");

@@ -21,7 +21,9 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
-import org.nmrfx.chemistry.constraints.DistanceConstraintSet;
+import org.nmrfx.chemistry.constraints.NoeSet;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.Loop;
@@ -31,9 +33,15 @@ import org.nmrfx.star.Saveframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.nio.file.FileSystems;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author brucejohnson, Martha
@@ -46,7 +54,7 @@ public class NMRNEFReader {
     final File nefFile;
     final File nefDir;
 
-    Map entities = new HashMap();
+    Map<String, Entity> entities = new HashMap<>();
     boolean hasResonances = false;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
@@ -59,26 +67,26 @@ public class NMRNEFReader {
      * Read a NEF formatted file.
      *
      * @param nefFileName String. Name of the NEF file to read.
-     * @throws ParseException
+     * @throws ParseException when file can't be parsed properly
      */
-    public static void read(String nefFileName) throws ParseException, IOException {
+    public static MoleculeBase read(String nefFileName) throws ParseException {
         File file = new File(nefFileName);
-        read(file);
         log.info("read {}", nefFileName);
+        return read(file);
     }
 
     /**
      * Read a NEF formatted file.
      *
      * @param nefFile File. NEF file to read.
-     * @throws ParseException
+     * @throws ParseException if NEF file can't be parsed
      */
-    public static void read(File nefFile) throws ParseException {
+    public static MoleculeBase read(File nefFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(nefFile);
         } catch (FileNotFoundException ex) {
-            return;
+            return null;
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -90,10 +98,10 @@ public class NMRNEFReader {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
         NMRNEFReader reader = new NMRNEFReader(nefFile, star);
-        reader.processNEF();
+        return reader.processNEF();
     }
 
-    void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule, final String nomenclature) throws ParseException {
+    void buildNEFChains(final Saveframe saveframe, MoleculeBase molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_sequence");
         if (loop == null) {
             throw new ParseException("No \"_nef_sequence\" loop");
@@ -125,14 +133,14 @@ public class NMRNEFReader {
             if (linkType.equals("dummy")) {
                 continue;
             }
-            String chainCode = (String) chainCodeColumn.get(i);
+            String chainCode = chainCodeColumn.get(i);
             if (chainCode.equals(".")) {
                 chainCode = "A";
             }
             int chainID = chainCode.charAt(0) - 'A' + 1;
-            String resName = (String) residueNameColumn.get(i);
-            String resVariant = (String) variantColumn.get(i);
-            String seqCode = (String) seqCodeColumn.get(i);
+            String resName = residueNameColumn.get(i);
+            String resVariant = variantColumn.get(i);
+            String seqCode = seqCodeColumn.get(i);
             String mapID = chainCode + "." + seqCode;
             if (linkType.equals("start")) {
                 lastPolymer = polymer;
@@ -226,17 +234,15 @@ public class NMRNEFReader {
         compoundMap.put(id, compound);
     }
 
-    void buildNEFChemShifts(int fromSet, final int toSet) throws ParseException {
-        Iterator iter = nef.getSaveFrames().values().iterator();
+    void buildNEFChemShifts(MoleculeBase moleculeBase, int fromSet, final int toSet) throws ParseException {
         int iSet = 0;
-        while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+        for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_chemical_shift_list")) {
                 log.debug("process chem shifts {}", saveframe.getName());
                 if (fromSet < 0) {
-                    processNEFChemicalShifts(saveframe, iSet);
+                    processNEFChemicalShifts(moleculeBase, saveframe, iSet);
                 } else if (fromSet == iSet) {
-                    processNEFChemicalShifts(saveframe, toSet);
+                    processNEFChemicalShifts(moleculeBase, saveframe, toSet);
                     break;
                 }
                 iSet++;
@@ -270,16 +276,83 @@ public class NMRNEFReader {
                 log.debug("process molecule >>{}<<", saveframe.getName());
                 String molName = "noname";
                 molecule = MoleculeFactory.newMolecule(molName);
-                buildNEFChains(saveframe, molecule, molName);
+                buildNEFChains(saveframe, molecule);
                 molecule.updateSpatialSets();
                 molecule.genCoords(false);
-
             }
         }
         return molecule;
     }
 
-    void processNEFChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
+    void setStereo(List<Atom> atoms, Atom atom, String atomName) {
+        if (atom.isMethyl()) {
+            if (atoms.size() == 3) {
+                if (atomName.contains("x") || atomName.contains("y")) {
+                    atom.setStereo(0);
+                } else {
+                    atom.setStereo(1);
+                }
+            } else if (atoms.size() == 6) {
+                atom.setStereo(0);
+            }
+        } else {
+            if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
+                atom.setStereo(0);
+            } else {
+                atom.setStereo(1);
+            }
+        }
+
+    }
+
+    void setPPM(Atom atom, String resIDStr, int ppmSet, String value, String valueErr) throws ParseException {
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        SpatialSet spSet = atom.spatialSet;
+        if (ppmSet < 0) {
+            ppmSet = 0;
+        }
+        int structureNum = ppmSet;
+        if (spSet == null) {
+            throw new ParseException("invalid spatial set in assignments saveframe \"" + atom.getFullName() + "\"");
+        }
+        try {
+            spSet.setPPM(structureNum, Double.parseDouble(value), false);
+            if (!valueErr.equals(".")) {
+                spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
+            }
+        } catch (NumberFormatException nFE) {
+            throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
+        }
+        if (hasResonances && !resIDStr.equals(".")) {
+            long resID = Long.parseLong(resIDStr);
+            if (resID >= 0) {
+                AtomResonance resonance = resFactory.get(resID);
+                if (resonance == null) {
+                    throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
+                }
+                atom.setResonance(resonance);
+                resonance.setAtom(atom);
+            }
+        }
+    }
+
+    Compound getCompound(Map<String, Compound> compoundMap, String chainCode, String sequenceCode) {
+        String mapID = chainCode + "." + sequenceCode;
+        Compound compound = compoundMap.get(mapID);
+        if (compound == null) {
+            for (int e = 1; e <= entities.size(); e++) {
+                chainCode = String.valueOf((char) (e + 'A' - 1));
+                mapID = chainCode + "." + sequenceCode;
+                compound = compoundMap.get(mapID);
+                if (compound != null) {
+                    break;
+                }
+            }
+        }
+        return compound;
+    }
+
+    void processNEFChemicalShifts(MoleculeBase moleculeBase, Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_chemical_shift");
         if (loop != null) {
             var compoundMap = MoleculeBase.compoundMap();
@@ -289,84 +362,31 @@ public class NMRNEFReader {
             List<String> atomColumn = loop.getColumnAsList("atom_name");
             List<String> valColumn = loop.getColumnAsList("value");
             List<String> valErrColumn = loop.getColumnAsList("value_uncertainty");
-            ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
             for (int i = 0; i < chainCodeColumn.size(); i++) {
-                String sequenceCode = (String) sequenceCodeColumn.get(i);
-                String chainCode = (String) chainCodeColumn.get(i);
-                String atomName = (String) atomColumn.get(i);
-                String value = (String) valColumn.get(i);
-                String valueErr = (String) valErrColumn.get(i);
+                String sequenceCode = sequenceCodeColumn.get(i);
+                String chainCode = chainCodeColumn.get(i);
+                String atomName = atomColumn.get(i);
+                String value = valColumn.get(i);
+                String valueErr = valErrColumn.get(i);
                 String resIDStr = ".";
                 if (resColumn != null) {
-                    resIDStr = (String) resColumn.get(i);
+                    resIDStr = resColumn.get(i);
                 }
-                String mapID = chainCode + "." + sequenceCode;
-                Compound compound = compoundMap.get(mapID);
+                Compound compound = getCompound(compoundMap, chainCode, sequenceCode);
                 if (compound == null) {
-                    for (int e = 1; e <= entities.size(); e++) {
-                        chainCode = String.valueOf((char) (e + 'A' - 1));
-                        mapID = chainCode + "." + sequenceCode;
-                        compound = compoundMap.get(mapID);
-                        if (compound != null) {
-                            break;
-                        }
-                    }
-                }
-                if (compound == null) {
-                    log.warn("invalid compound in assignments saveframe \"{}\"", mapID);
+                    log.warn("invalid compound in assignments saveframe \"{} {}\"", chainCode, sequenceCode);
                     continue;
                 }
-                String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
-                List<Atom> atoms = MoleculeBase.getNEFMatchedAtoms(new MolFilter(fullAtom), MoleculeFactory.getActive());
+                String fullAtom;
+                if (chainCode.isBlank() || chainCode.equals(".")) {
+                    fullAtom = sequenceCode + "." + atomName;
+                } else {
+                    fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                }
+                List<Atom> atoms = MoleculeBase.getNEFMatchedAtoms(new MolFilter(fullAtom), moleculeBase);
                 for (Atom atom : atoms) {
-                    if (atom.isMethyl()) {
-                        if (atoms.size() == 3) {
-                            if (atomName.contains("x") || atomName.contains("y")) {
-                                atom.setStereo(0);
-                            } else {
-                                atom.setStereo(1);
-                            }
-                        } else if (atoms.size() == 6) {
-                            atom.setStereo(0);
-                        }
-                    } else {
-                        if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
-                            atom.setStereo(0);
-                        } else {
-                            atom.setStereo(1);
-                        }
-                    }
-                    if (atom == null) {
-                        throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
-                    }
-
-                    SpatialSet spSet = atom.spatialSet;
-                    if (ppmSet < 0) {
-                        ppmSet = 0;
-                    }
-                    int structureNum = ppmSet;
-                    if (spSet == null) {
-                        throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
-                    }
-                    try {
-                        spSet.setPPM(structureNum, Double.parseDouble(value), false);
-                        if (!valueErr.equals(".")) {
-                            spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
-                        }
-                    } catch (NumberFormatException nFE) {
-                        throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
-                    }
-                    if (hasResonances && !resIDStr.equals(".")) {
-                        long resID = Long.parseLong(resIDStr);
-                        if (resID >= 0) {
-                            AtomResonance resonance = (AtomResonance) resFactory.get(resID);
-                            if (resonance == null) {
-                                throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
-                            }
-                            atom.setResonance(resonance);
-                            resonance.setAtom(atom);
-                        }
-                    }
+                    setStereo(atoms, atom, atomName);
+                    setPPM(atom, resIDStr, ppmSet, value, valueErr);
                 }
             }
         }
@@ -396,11 +416,10 @@ public class NMRNEFReader {
         List<String> nameColumn = loop.getColumnAsListIfExists("name");
         AngleConstraintSet angleSet = molecule.getMolecularConstraints().newAngleSet(saveframe.getName());
         for (int i = 0; i < atomNameColumns[0].size(); i++) {
-            int restraintID = restraintIDColumn.get(i);
-            String weightValue = (String) weightColumn.get(i);
-            String targetValue = (String) targetValueColumn.get(i);
-            String upperValue = (String) upperColumn.get(i);
-            String lowerValue = (String) lowerColumn.get(i);
+            String weightValue = weightColumn.get(i);
+            String targetValue = targetValueColumn.get(i);
+            String upperValue = upperColumn.get(i);
+            String lowerValue = lowerColumn.get(i);
             String nameValue = nameColumn != null ? nameColumn.get(i) : "";
             double upper = Double.parseDouble(upperValue);
             double lower = Double.parseDouble(lowerValue);
@@ -423,24 +442,17 @@ public class NMRNEFReader {
             }
             Atom[] atoms = new Atom[4];
             for (int atomIndex = 0; atomIndex < 4; atomIndex++) {
-                String atomName = (String) atomNameColumns[atomIndex].get(i);
-                String chainCode = (String) chainCodeColumns[atomIndex].get(i);
-                String sequenceCode = (String) sequenceCodeColumns[atomIndex].get(i);
-                String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
-                String mapID = chainCode + "." + sequenceCode;
-                Compound compound = compoundMap.get(mapID);
+                String atomName = atomNameColumns[atomIndex].get(i);
+                String chainCode = chainCodeColumns[atomIndex].get(i);
+                String sequenceCode = sequenceCodeColumns[atomIndex].get(i);
+                String fullAtom = chainCode.equals(".") ? sequenceCode + "." + atomName : chainCode + ":" + sequenceCode + "." + atomName;
+                Compound compound = getCompound(compoundMap, chainCode, sequenceCode);
                 if (compound == null) {
-                    for (int e = 1; e <= entities.size(); e++) {
-                        chainCode = String.valueOf((char) (e + 'A' - 1));
-                        mapID = chainCode + "." + sequenceCode;
-                        compound = compoundMap.get(mapID);
-                        if (compound != null) {
-                            fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
-                            break;
-                        }
-                    }
+                    log.warn("invalid compound in assignments saveframe \"{} {}\"", chainCode, sequenceCode);
+                    continue;
                 }
-                atoms[atomIndex] = MoleculeBase.getAtomByName(fullAtom);
+
+                atoms[atomIndex] = molecule.findAtom(fullAtom);
                 if (atoms[atomIndex] == null) {
                     throw new ParseException("Atom not found " + fullAtom);
                 }
@@ -485,14 +497,15 @@ public class NMRNEFReader {
         List<Double> targetErrColumn = loop.getColumnAsDoubleList("target_value_uncertainty", 0.0);
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
-        ArrayList<String> atomNames[] = new ArrayList[2];
+        ArrayList<String>[] atomNames = new ArrayList[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
-        DistanceConstraintSet distanceSet = molecule.getMolecularConstraints().newDistanceSet(saveframe.getName());
+        NoeSet distanceSet = molecule.getMolecularConstraints().newNOESet(saveframe.getName());
         if (origin.contains("bond")) {
             distanceSet.containsBonds(true);
         }
 
+        PeakList peakList = NMRStarReader.getPeakList(saveframe.getName(), ".", null);
         for (int i = 0; i < chainCodeColumns[0].size(); i++) {
             int restraintIDValue = restraintIDColumn.get(i);
             int restraintIDValuePrev = restraintIDValue;
@@ -518,35 +531,26 @@ public class NMRNEFReader {
             }
 
             for (int iAtom = 0; iAtom < 2; iAtom++) {
-                String seqNum = (String) sequenceColumns[iAtom].get(i);
-                String chainCode = (String) chainCodeColumns[iAtom].get(i);
+                String seqNum = sequenceColumns[iAtom].get(i);
+                String chainCode = chainCodeColumns[iAtom].get(i);
                 if (chainCode.equals(".")) {
                     chainCode = "A";
                 }
                 if (seqNum.equals("?")) {
                     continue;
                 }
-                String resName = (String) residueNameColumns[iAtom].get(i);
-                String atomName = (String) atomNameColumns[iAtom].get(i);
+                String atomName = atomNameColumns[iAtom].get(i);
                 String fullAtomName = chainCode + ":" + seqNum + "." + atomName;
-                String mapID = chainCode + "." + seqNum;
-                Compound compound = compoundMap.get(mapID);
+                Compound compound = getCompound(compoundMap, chainCode, seqNum);
                 if (compound == null) {
-                    for (int e = 1; e <= entities.size(); e++) {
-                        chainCode = String.valueOf((char) (e + 'A' - 1));
-                        mapID = chainCode + "." + seqNum;
-                        compound = compoundMap.get(mapID);
-                        if (compound != null) {
-                            fullAtomName = chainCode + ":" + seqNum + "." + atomName;
-                            break;
-                        }
-                    }
+                    log.warn("invalid compound in assignments saveframe \"{} {}\"", chainCode, seqNum);
+                    continue;
                 }
                 atomNames[iAtom].add(fullAtomName);
             }
-            String targetValue = (String) targetValueColumn.get(i);
-            String upperValue = (String) upperColumn.get(i);
-            String lowerValue = (String) lowerColumn.get(i);
+            String targetValue = targetValueColumn.get(i);
+            String upperValue = upperColumn.get(i);
+            String lowerValue = lowerColumn.get(i);
             double upper = 1000000.0;
             if (upperValue.equals(".")) {
                 log.warn("Upper value is a \".\" at line {}", i);
@@ -567,7 +571,8 @@ public class NMRNEFReader {
             Util.setStrictlyNEF(true);
             try {
                 if (addConstraint) {
-                    distanceSet.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(), weight, target, targetErr);
+                    Peak peak = peakList.getNewPeak();
+                    distanceSet.addDistanceConstraint(peak, atomNames[0], atomNames[1], lower, upper, distanceSet.containsBonds(), weight, target, targetErr);
                 }
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
@@ -575,14 +580,14 @@ public class NMRNEFReader {
             }
             Util.setStrictlyNEF(false);
         }
+        distanceSet.updateNPossible(peakList);
     }
 
     /**
      * Process a NEF formatted file.
      *
      * @return processNEF(argv)
-     * @throws ParseException
-     * @throws IllegalArgumentException
+     * @throws ParseException when file can't be parsed properly
      */
     public MoleculeBase processNEF() throws ParseException, IllegalArgumentException {
         String[] argv = {};
@@ -594,8 +599,8 @@ public class NMRNEFReader {
      *
      * @param argv String[]. List of arguments. Default is empty.
      * @return Dihedral object.
-     * @throws ParseException
-     * @throws IllegalArgumentException
+     * @throws ParseException           if NEF file can't be parsed
+     * @throws IllegalArgumentException if invalid arguments for shift set
      */
     public MoleculeBase processNEF(String[] argv) throws ParseException, IllegalArgumentException {
         if ((argv.length != 0) && (argv.length != 3)) {
@@ -609,16 +614,18 @@ public class NMRNEFReader {
             compoundMap.clear();
             log.debug("process molecule");
             molecule = buildNEFMolecule();
+            ProjectBase.getActive().putMolecule(molecule);
             log.debug("process chem shifts");
-            buildNEFChemShifts(-1, 0);
+            buildNEFChemShifts(molecule, -1, 0);
             log.debug("process dist constraints");
             buildNEFDistanceRestraints(molecule);
             log.warn("process angle constraints");
             buildNEFDihedralConstraints(molecule);
-        } else if ("shifts".startsWith(argv[2])) {
-            int fromSet = Integer.parseInt(argv[3]);
-            int toSet = Integer.parseInt(argv[4]);
-            buildNEFChemShifts(fromSet, toSet);
+        } else if ("shifts".startsWith(argv[0])) {
+            int fromSet = Integer.parseInt(argv[1]);
+            int toSet = Integer.parseInt(argv[2]);
+            MoleculeBase moleculeBase = MoleculeFactory.getActive();
+            buildNEFChemShifts(moleculeBase, fromSet, toSet);
         }
         return molecule;
     }

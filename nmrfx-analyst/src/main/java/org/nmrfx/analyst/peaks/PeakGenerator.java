@@ -66,7 +66,7 @@ public class PeakGenerator {
         if (assignIndex >= 0) {
             ppmV = atom.getPPM(assignIndex);
         }
-        if ((ppmV == null) || !ppmV.isValid()) {
+        if ((refIndex >= 0) && ((ppmV == null) || !ppmV.isValid())) {
             ppmV = atom.getRefPPM(refIndex);
         }
         return ppmV;
@@ -287,12 +287,21 @@ public class PeakGenerator {
     }
 
     public void generateHSQC(PeakList peakList, int parentElement) {
+        generateHSQC(peakList, parentElement, false, true);
+
+    }
+    public void generateHSQC(PeakList peakList, int parentElement, boolean isAromatic) {
+        generateHSQC(peakList, parentElement, isAromatic, false);
+
+    }
+    private void generateHSQC(PeakList peakList, int parentElement, boolean isAromatic, boolean ignoreAromatic) {
         double hWidth = getHWidth();
         Atom[] atoms = new Atom[2];
         molecule.getAtoms().stream()
                 .filter(atom -> atom.getAtomicNumber() == 1)
                 .filter(atom -> !atom.isMethyl() || atom.isFirstInMethyl())
                 .filter(atom -> atom.getParent() != null && atom.getParent().getAtomicNumber() == parentElement)
+                .filter(atom -> ignoreAromatic || (atom.isAAAromatic() == isAromatic))
                 .forEach(atom -> {
                     atoms[0] = atom;
                     atoms[1] = atom.getParent();

@@ -235,7 +235,7 @@ public class AtomBrowser {
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
                 chart.updateDatasets(datasetList);
-                chart.updatePeakLists(peakListList);
+                chart.updatePeakListsByName(peakListList);
 
                 Double ppm = item.getShift();
                 double delta = 0.1;

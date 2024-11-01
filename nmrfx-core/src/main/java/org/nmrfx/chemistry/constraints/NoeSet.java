@@ -17,8 +17,14 @@
  */
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.MolFilter;
+import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.SpatialSetGroup;
+import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.star.ParseException;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -69,6 +75,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     public static Peak lastPeakWritten = null;
     public static int memberId = 0;
     public static int id = 0;
+    boolean containsBonds = false;
 
     private final MolecularConstraints molecularConstraints;
 
@@ -77,6 +84,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     private final String name;
     private boolean calibratable = true;
     private boolean dirty = true;
+    PeakList peakList = null;
 
     private NoeSet(MolecularConstraints molecularConstraints,
                    String name) {
@@ -120,6 +128,85 @@ public class NoeSet implements ConstraintSet, Iterable {
     public void clear() {
         constraints.clear();
         peakMap.clear();
+    }
+
+    private Peak getPeak() {
+        try {
+             peakList = NMRStarReader.getPeakList(getName(), ".", peakList);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+        Peak peak = peakList.getNewPeak();
+        return peak;
+
+    }
+    public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+                                      final double rUp, boolean isBond) throws IllegalArgumentException {
+        addDistanceConstraint(getPeak(), List.of(filterString1), List.of(filterString2), rLow, rUp, isBond, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
+                                      final double rLow, final double rUp) throws IllegalArgumentException {
+        addDistanceConstraint(getPeak(), filterStrings1, filterStrings2, rLow, rUp, false, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
+                                      final double rLow, final double rUp, boolean isBond) throws IllegalArgumentException {
+        addDistanceConstraint(getPeak(), filterStrings1, filterStrings2, rLow, rUp, isBond, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(Peak peak, final List<String> filterStrings1, final List<String> filterStrings2,
+                                      final double rLow, final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+        if (filterStrings1.size() != filterStrings2.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        MoleculeBase molecule = molecularConstraints.molecule;
+        List<SpatialSetGroup> spatialSetGroups1 = new ArrayList<>();
+        List<SpatialSetGroup> spatialSetGroups2 = new ArrayList<>();
+        for (int i = 0; i < filterStrings1.size(); i++) {
+            String filterString1 = filterStrings1.get(i);
+            String filterString2 = filterStrings2.get(i);
+            MolFilter molFilter1 = new MolFilter(filterString1);
+            MolFilter molFilter2 = new MolFilter(filterString2);
+
+            List<Atom> group1 = MoleculeBase.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = MoleculeBase.getNEFMatchedAtoms(molFilter2, molecule);
+
+            if (group1.isEmpty()) {
+                throw new IllegalArgumentException("atoms1 null " + filterString1);
+            }
+            if (group2.isEmpty()) {
+                throw new IllegalArgumentException("atoms2 null " + filterString2);
+            }
+            SpatialSetGroup spatialSetGroup1 = new SpatialSetGroup(group1);
+            SpatialSetGroup spatialSetGroup2 = new SpatialSetGroup(group2);
+            spatialSetGroups1.add(spatialSetGroup1);
+            spatialSetGroups2.add(spatialSetGroup2);
+
+        }
+        for (int i = 0; i < spatialSetGroups1.size(); i++) {
+            SpatialSetGroup spGroup1 = spatialSetGroups1.get(i);
+            SpatialSetGroup spGroup2 = spatialSetGroups2.get(i);
+
+            if (weight != null && targetValue != null && targetErr != null) {
+                Noe noe = new Noe(peak, spGroup1, spGroup2, 1.0);
+                noe.isBond(isBond);
+
+                noe.setLower(rLow);
+                noe.setUpper(rUp);
+                noe.setTarget(targetValue);
+                noe.targetErr = targetErr;
+                noe.weight = weight;
+                add(noe);
+            } else {
+                Noe noe = new Noe(peak, spGroup1, spGroup2, 1.0);
+                noe.isBond(isBond);
+                noe.setLower(rLow);
+                noe.setUpper(rUp);
+                add(noe);
+            }
+        }
+
     }
 
     @Override
@@ -174,6 +261,14 @@ public class NoeSet implements ConstraintSet, Iterable {
         dirty = true;
     }
 
+    public boolean containsBonds() {
+        return containsBonds;
+    }
+
+    public void containsBonds(boolean state) {
+        containsBonds = state;
+    }
+
     public void setDirty(boolean state) {
         dirty = state;
     }
@@ -207,14 +302,27 @@ public class NoeSet implements ConstraintSet, Iterable {
                     Integer iGroup = peakMap.computeIfAbsent(noe.getPeak(), peak -> peakMap.size());
                     double lower = noe.getLower();
                     double upper = noe.getUpper();
-                    SpatialSetGroup spg1 = noe.spg1;
-                    SpatialSetGroup spg2 = noe.spg2;
+                    SpatialSetGroup spg1 = noe.getSpg1();
+                    SpatialSetGroup spg2 = noe.getSpg2();
                     String aName1 = spg1.getFullName();
                     String aName2 = spg2.getFullName();
                     String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, iGroup, aName1, aName2, lower, upper);
                     fileWriter.write(outputString);
                     i++;
                 }
+            }
+        }
+    }
+
+    public void updateNPossible(PeakList whichList) {
+        for (Map.Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
+            PeakList peakList = entry.getKey().getPeakList();
+            if ((whichList != null) && (whichList != peakList)) {
+                continue;
+            }
+            List<Noe> noeList = entry.getValue();
+            for (Noe noe : noeList) {
+                noe.setNPossible(noeList.size());
             }
         }
     }

@@ -28,21 +28,23 @@ import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
 import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.datasets.vendor.NMRData;
-import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -60,13 +62,16 @@ public class VarianData implements NMRData {
 
     DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");//20050804T233538
     DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");// Feb  4 2000
-    private final static int MAXDIM = 10;
+    private static final int MAXDIM = 10;
 
-    private final String fpath;
+    private final File dirFile;
     private int nblocks = 0;
     private int np;
     private boolean isSpectrum = false;
-    private int ebytes = 0, tbytes = 0, nbheaders = 0, ntraces = 0;
+    private int ebytes = 0;
+    private int tbytes = 0;
+    private int nbheaders = 0;
+    private int ntraces = 0;
     private short status = 0;
     private boolean isFloat = false;
     private boolean isShort = false;
@@ -74,10 +79,10 @@ public class VarianData implements NMRData {
     private HashMap<String, String> parMap = null;
     private String[] acqOrder;
     // fixme dynamically determine size
-    private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private final Double[] Ref = new Double[MAXDIM];
-    private final Double[] Sw = new Double[MAXDIM];
-    private final Double[] Sf = new Double[MAXDIM];
+    private final int[] arraysize = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private final Double[] refValue = new Double[MAXDIM];
+    private final Double[] sweepWidth = new Double[MAXDIM];
+    private final Double[] specFreq = new Double[MAXDIM];
 
     private Double zeroFreq = null;
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[MAXDIM];
@@ -106,30 +111,27 @@ public class VarianData implements NMRData {
     /**
      * open Varian parameter and data files
      *
-     * @param path : full path to the .fid directory, fid file or spectrum
+     * @param file : full path to the .fid directory
      */
-    public VarianData(String path) {
-        if (path.endsWith(File.separator)) {
-            path = path.substring(0, path.length() - 1);
+    public VarianData(File file) {
+        if (file.isDirectory()) {
+            dirFile = file;
+        } else {
+            dirFile = file.getParentFile();
         }
-        this.fpath = path;
-        openParFile(path);
-        openDataFile(path);
+        openParFile(dirFile);
+        openDataFile(dirFile);
         // force caching nDim and sizes
         getNDim();
         getSize(0);
-        checkAndOpenSampleSchedule(path);
+        checkAndOpenSampleSchedule(dirFile);
     }
 
     public String suggestName() {
-        File file = new File(fpath);
-        String name = file.getName();
-        if (name.equals("fid")) {
-            name = file.getParentFile().getName();
-        }
+        String name = dirFile.getName();
         if (name.endsWith(".fid")) {
             int len = name.length();
-            name = name.substring(0, len-3);
+            name = name.substring(0, len - 3);
         }
         return name;
     }
@@ -143,41 +145,30 @@ public class VarianData implements NMRData {
         }
     }
 
-    public static boolean findFID(StringBuilder bpath) {
-        boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            // case: select .fid directory
-            found = true;
-        } else {
-            // case: select 'fid' or 'procpar' file
-            File f = new File(bpath.toString());
-            String s = f.getParent();
-            if (findFIDFiles(s)) {
-                int len = bpath.toString().length();
-                bpath = bpath.delete(s.length(), len);
-                bpath.trimToSize();
-                found = true;
+    public static Optional<File> findFID(File file) {
+        Optional<File> result = Optional.empty();
+        if (file.exists()) {
+            File dirFile;
+            if (file.isFile() && (file.getName().equals("fid") || file.getName().equals("procpar"))) {
+                dirFile = file.getParentFile();
+            } else {
+                dirFile = file;
             }
-        }
-        return found;
-    } // findFID
-
-    private static boolean findFIDFiles(String dpath) {
-        boolean found = false;
-        if (dpath.endsWith(".fid" + File.separator)
-                || dpath.endsWith(".fid")) {
-            if ((new File(dpath + File.separator + "fid")).exists()) {
-                if ((new File(dpath + File.separator + "procpar")).exists()) {
-                    found = true;
+            if (dirFile.isDirectory()) {
+                Path path = dirFile.toPath();
+                File fidFile = path.resolve("fid").toFile();
+                File procparFile = path.resolve("procpar").toFile();
+                if (fidFile.exists() && procparFile.exists()) {
+                    result = Optional.of(dirFile);
                 }
             }
         }
-        return found;
-    } // findFIDFiles
+        return result;
+    }
 
     @Override
     public String toString() {
-        return fpath;
+        return dirFile.toString();
     }
 
     @Override
@@ -187,7 +178,7 @@ public class VarianData implements NMRData {
 
     @Override
     public String getFilePath() {
-        return fpath;
+        return dirFile.toString();
     }
 
     @Override
@@ -322,16 +313,16 @@ public class VarianData implements NMRData {
     @Override
     public double[] getCoefs(int iDim) {
         String name = "f" + iDim + "coef";
-        double dcoefs[] = {1, 0, 0, 0}; // reasonable for noesy, tocsy
+        double[] dcoefs = {1, 0, 0, 0}; // reasonable for noesy, tocsy
         String s;
         if ((s = getPar(name)) == null) {
             s = "";
         }
-        if (!s.equals("")) {
+        if (!s.isEmpty()) {
             String[] coefs = s.split(" ");
             dcoefs = new double[coefs.length];
             for (int i = 0; i < coefs.length; i++) {
-                dcoefs[i] = Double.valueOf(coefs[i]);
+                dcoefs[i] = Double.parseDouble(coefs[i]);
             }
         }
         return dcoefs;
@@ -345,20 +336,12 @@ public class VarianData implements NMRData {
             if (iDim < axis.length()) {
                 achar = axis.charAt(iDim);
             } else {
-                switch (iDim) {
-                    case 1:
-                        achar = 'd';
-                        break;
-                    case 2:
-                        achar = '2';
-                        break;
-                    case 3:
-                        achar = '3';
-                        break;
-                    default:
-                        achar = 'h';
-                        break;
-                }
+                achar = switch (iDim) {
+                    case 1 -> 'd';
+                    case 2 -> '2';
+                    case 3 -> '3';
+                    default -> 'h';
+                };
             }
         }
         return achar;
@@ -367,29 +350,14 @@ public class VarianData implements NMRData {
     private String getAxisFreqName(int iDim) {
         String freqName;
         char achar = getAxisChar(iDim);
-        switch (achar) {
-            case 'h':
-                freqName = "hz";
-                break;
-            case 'p':
-                freqName = "sfrq";
-                break;
-            case 'd':
-                freqName = "dfrq";
-                break;
-            case '1':
-                freqName = "dfrq";
-                break;
-            case '2':
-                freqName = "dfrq2";
-                break;
-            case '3':
-                freqName = "dfrq3";
-                break;
-            default:
-                freqName = "hz";
-                break;
-        }
+        freqName = switch (achar) {
+            case 'h' -> "hz";
+            case 'p' -> "sfrq";
+            case 'd', '1' -> "dfrq";
+            case '2' -> "dfrq2";
+            case '3' -> "dfrq3";
+            default -> "hz";
+        };
         return freqName;
     }
 
@@ -401,8 +369,8 @@ public class VarianData implements NMRData {
     @Override
     public double getSF(int iDim) {
         double sf = 1.0;
-        if (Sf[iDim] != null) {
-            sf = Sf[iDim];
+        if (specFreq[iDim] != null) {
+            sf = specFreq[iDim];
         } else {
             Double dpar;
             String name = getSFName(iDim);
@@ -415,12 +383,12 @@ public class VarianData implements NMRData {
 
     @Override
     public void setSF(int iDim, double sf) {
-        Sf[iDim] = sf;
+        specFreq[iDim] = sf;
     }
 
     @Override
     public void resetSF(int iDim) {
-        Sf[iDim] = null;
+        specFreq[iDim] = null;
     }
 
     public String getSFName(int iDim) {
@@ -446,7 +414,7 @@ public class VarianData implements NMRData {
     }
 
     double getCorrectedBaseFreq() {
-        Double reffrq = null;
+        Double reffrq;
         Nuclei nuclei = Nuclei.findNuclei(getTN(0));
         if ((reffrq = getParDouble("reffrq")) == null) {
             double rfl = getParDouble("rfl");
@@ -458,6 +426,7 @@ public class VarianData implements NMRData {
 
     }
 
+    @Override
     public void setZeroFreq(Double value) {
         zeroFreq = value;
     }
@@ -473,8 +442,8 @@ public class VarianData implements NMRData {
     @Override
     public double getSW(int iDim) {
         double sw = 1.0;
-        if (Sw[iDim] != null) {
-            sw = Sw[iDim];
+        if (sweepWidth[iDim] != null) {
+            sw = sweepWidth[iDim];
         } else {
             Double dpar;
             String name = "sw";
@@ -495,12 +464,12 @@ public class VarianData implements NMRData {
 
     @Override
     public void setSW(int iDim, double sw) {
-        Sw[iDim] = sw;
+        sweepWidth[iDim] = sw;
     }
 
     @Override
     public void resetSW(int iDim) {
-        Sw[iDim] = null;
+        sweepWidth[iDim] = null;
     }
 
     @Override
@@ -519,14 +488,13 @@ public class VarianData implements NMRData {
         String[] names = new String[nDim];
 
         for (int i = 0; i < nDim; i++) {
-            int dim = i;
             String name = "sw";
-            if (dim > 0) {
+            if (i > 0) {
                 String app = getApptype();
-                if (dim == 1 && app != null && app.equals("homo2d")) {
+                if (i == 1 && app != null && app.equals("homo2d")) {
                     name = "sw";
                 } else {
-                    name = "sw" + dim;
+                    name = "sw" + i;
                 }
             }
             names[i] = name;
@@ -546,36 +514,19 @@ public class VarianData implements NMRData {
             names.add(name);
         }
 
-        return names.toArray(new String[names.size()]);
+        return names.toArray(new String[0]);
     }
 
     private String getAxisTNname(int iDim) {
-        String name;
         char achar = getAxisChar(iDim);
-        switch (achar) {
-            case 'h':
-                name = "n";
-                break;
-            case 'p':
-                name = "tn";
-                break;
-            case 'd':
-                name = "dn";
-                break;
-            case '1':
-                name = "dn";
-                break;
-            case '2':
-                name = "dn2";
-                break;
-            case '3':
-                name = "dn3";
-                break;
-            default:
-                name = "n";
-                break;
-        }
-        return name;
+        return switch (achar) {
+            case 'h' -> "n";
+            case 'p' -> "tn";
+            case 'd', '1' -> "dn";
+            case '2' -> "dn2";
+            case '3' -> "dn3";
+            default -> "n";
+        };
     }
 
     @Override
@@ -604,19 +555,11 @@ public class VarianData implements NMRData {
             tn = s;
         }
         switch (tn) {
-            case "H1":
-                tn = "1H";
-                break;
-            case "C13":
-                tn = "13C";
-                break;
-            case "N15":
-                tn = "15N";
-                break;
-            case "P31":
-                tn = "31P";
-                break;
-            default:
+            case "H1" -> tn = "1H";
+            case "C13" -> tn = "13C";
+            case "N15" -> tn = "15N";
+            case "P31" -> tn = "31P";
+            default -> {
                 int nChars = tn.length();
                 int firstDigit = -1;
                 for (int i = 0; i < nChars; i++) {
@@ -628,14 +571,14 @@ public class VarianData implements NMRData {
                 if (firstDigit > 0) {
                     tn = tn.substring(firstDigit) + tn.substring(0, firstDigit);
                 }
-                break;
+            }
         }
         return tn;
     }
 
     @Override
     public void setRef(int iDim, double ref) {
-        Ref[iDim] = ref;
+        refValue[iDim] = ref;
         String nucleusName = getTN(iDim);
         Nuclei nucleus = Nuclei.findNuclei(nucleusName);
         if (nucleus == Nuclei.H1) {
@@ -646,14 +589,14 @@ public class VarianData implements NMRData {
 
     @Override
     public void resetRef(int iDim) {
-        Ref[iDim] = null;
+        refValue[iDim] = null;
     }
 
     @Override
     public double getRef(int iDim) {
         double ref = 0.0;
-        if (Ref[iDim] != null) {
-            ref = Ref[iDim];
+        if (refValue[iDim] != null) {
+            ref = refValue[iDim];
         } else {
             var refOpt = getRefAtCenter(iDim);
             if (refOpt.isPresent()) {
@@ -682,19 +625,18 @@ public class VarianData implements NMRData {
         }
         return ref;
     }
+
     Optional<Double> getRefAtCenter(int iDim) {
         String nucleusName = getTN(iDim);
         Nuclei nucleus = Nuclei.findNuclei(nucleusName);
         double zf = getZeroFreq();
         double ref = ReferenceCalculator.refByRatio(zf, getSF(iDim), nucleus, getSolvent());
-        Optional<Double> result = Optional.of(ref);
-        return result;
+        return Optional.of(ref);
     }
 
     @Override
     public double getRefPoint(int iDim) {
-        double refpt = getSize(iDim) / 2;
-        return refpt;
+        return getSize(iDim) / 2.0;
     }
 
     @Override
@@ -815,11 +757,7 @@ public class VarianData implements NMRData {
                 }
             } else {
                 int td = getNI(iDim);
-                boolean isComplex = false;
-                if ((td > 1) && notRFT) {
-                    isComplex = true;
-                }
-                return isComplex;
+                return (td > 1) && notRFT;
             }
         }
     }
@@ -1067,17 +1005,17 @@ public class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) fbuf.get(j) / scale, (double) fbuf.get(j + 1) / scale);
+                cdata[j / 2] = new Complex(fbuf.get(j) / scale, fbuf.get(j + 1) / scale);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) sbuf.get(j) / scale, (double) sbuf.get(j + 1) / scale);
+                cdata[j / 2] = new Complex(sbuf.get(j) / scale, sbuf.get(j + 1) / scale);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) ibuf.get(j) / scale, (double) ibuf.get(j + 1) / scale);
+                cdata[j / 2] = new Complex(ibuf.get(j) / scale, ibuf.get(j + 1) / scale);
             }
         }
 
@@ -1098,17 +1036,10 @@ public class VarianData implements NMRData {
     }
 
     // check for and open sample schedule
-    final boolean checkAndOpenSampleSchedule(String parPath) {
+    final boolean checkAndOpenSampleSchedule(File file) {
         boolean gotSchedule = false;
-        String schedulePath = "sampling.sch";
-        if (parPath.endsWith(".fid")) {
-            schedulePath = parPath + File.separator + "sampling.sch";
-        } else if (parPath.endsWith("fid")) {
-            schedulePath = parPath.substring(0, parPath.length() - 3) + "sampling.sch";
-        }
-        File scheduleFile = new File(schedulePath);
+        File scheduleFile = file.toPath().resolve("sampling.sch").toFile();
         if (scheduleFile.exists()) {
-            log.info("exists");
             try {
                 readSampleSchedule(scheduleFile.getPath(), false, false);
                 gotSchedule = true;
@@ -1117,12 +1048,10 @@ public class VarianData implements NMRData {
             }
         }
         if (gotSchedule) {
-            log.info("success");
             int[] dims = sampleSchedule.getDims();
             for (int i = 0; i < dims.length; i++) {
                 sizes[i + 1] = dims[i];
                 maxSizes[i + 1] = dims[i];
-                log.info("sched size {} {}", i, sizes[i + 1]);
             }
         }
         return gotSchedule;
@@ -1132,18 +1061,11 @@ public class VarianData implements NMRData {
     @Override
     public String getText() {
         if (text == null) {
-            String textPath = "";
-            text = "";
-            if (fpath.endsWith(".fid")) {
-                textPath = fpath + File.separator + "text";
-            } else if (fpath.endsWith("fid")) {
-                textPath = fpath.substring(0, fpath.length() - 3);
-                textPath += "text";
-            }
-            if ((new File(textPath)).exists()) {
+            Path textPath = dirFile.toPath().resolve("text");
+
+            if (textPath.toFile().exists()) {
                 try {
-                    Path path = FileSystems.getDefault().getPath(textPath);
-                    text = new String(Files.readAllBytes(path));
+                    text = new String(Files.readAllBytes(textPath));
                 } catch (IOException ex) {
                     text = "";
                 }
@@ -1175,7 +1097,7 @@ public class VarianData implements NMRData {
     public long getDate() {
         String timeRun = getPar("time_run");
         LocalDateTime localDateTime = null;
-        if ((timeRun != null) && (!timeRun.equals(""))) {
+        if ((timeRun != null) && (!timeRun.isEmpty())) {
             try {
                 localDateTime = LocalDateTime.parse(timeRun, vTimeFormatter);
             } catch (DateTimeParseException dtpE) {
@@ -1183,7 +1105,7 @@ public class VarianData implements NMRData {
             }
         } else {
             String date = getPar("date");
-            if ((date != null) && (!date.equals(""))) {
+            if ((date != null) && (!date.isEmpty())) {
                 try {
                     LocalDate localDate = LocalDate.parse(date, vDateFormatter);
                     localDateTime = localDate.atStartOfDay();
@@ -1200,28 +1122,22 @@ public class VarianData implements NMRData {
     }
 
     // open and read Varian parameter file
-    private void openParFile(String parpath) {
-        if (parpath.endsWith(".fid")) {
-            parpath += File.separator + "procpar";
-        } else if (parpath.endsWith("fid")) {
-            parpath = parpath.substring(0, parpath.length() - 3);
-            parpath += "procpar";
-        }
-        if ((new File(parpath)).exists()) {
-            parMap = VNMRPar.getParMap(parpath);
+    private void openParFile(File file) {
+        File parFile = file.toPath().resolve("procpar").toFile();
+        if (parFile.exists()) {
+            parMap = VNMRPar.getParMap(parFile.toString());
         }
     }
 
     // open Varian data file, read header
-    private void openDataFile(String datapath) {
-        if (datapath.endsWith(".fid")) {
-            datapath += File.separator + "fid";
-        }
+    private void openDataFile(File file) {
+        Path dataPath = file.toPath().resolve("fid");
+
         try {
-            fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
+            fc = FileChannel.open(dataPath, StandardOpenOption.READ);
             readFileHeader();
         } catch (IOException ex) {
-            log.warn(fpath, ex);
+            log.warn(dataPath.toString(), ex);
             if (fc != null) {
                 try {
                     fc.close();
@@ -1241,27 +1157,13 @@ public class VarianData implements NMRData {
             for (int i = 0; i < size && nread > 31; i++) {  // read file header
                 int c = ibuf.get();
                 switch (i) {
-                    case 0:
-                        nblocks = c;        // number of blocks
-                        break;
-                    case 1:
-                        ntraces = c;        // number of traces per block, usually 1 for FID
-                        break;
-                    case 2:
-                        np = c;             // number of points per trace
-                        break;
-                    case 3:
-                        ebytes = c;         // 2 is 16 bit, 4 is 32 bit data
-                        break;
-                    case 4:
-                        tbytes = c;         // number of bytes per trace, np * ebytes
-                        break;
-                    case 6:
-                        status = (short) c;  // status in hexadecimal
-                        break;
-                    case 7:
-                        nbheaders = c;      // number of block headers per block
-                        break;
+                    case 0 -> nblocks = c;        // number of blocks
+                    case 1 -> ntraces = c;        // number of traces per block, usually 1 for FID
+                    case 2 -> np = c;             // number of points per trace
+                    case 3 -> ebytes = c;         // 2 is 16 bit, 4 is 32 bit data
+                    case 4 -> tbytes = c;         // number of bytes per trace, np * ebytes
+                    case 6 -> status = (short) c;  // status in hexadecimal
+                    case 7 -> nbheaders = c;      // number of block headers per block
                 }
             }
 //            isComplex = ((status & 0x20) != 0); // not set
@@ -1272,22 +1174,13 @@ public class VarianData implements NMRData {
             if ((nblocks == 0) && (ntraces > 0)) {
                 nblocks = 1;
             }
-            checkPars(np, nblocks);
+            checkPars(np, nblocks, ntraces);
             if (ntraces > 1) {
                 log.info(">> number of traces {} more than one", ntraces);
                 np *= ntraces; // should read ntraces * nblocks into nvectors
             }
             if (badHeaderFormat()) {
-                throw new IOException("improper format for Varian header");
-            }
-        } catch (EOFException e) {
-            log.warn(e.getMessage(), e);
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
+                throw new IOException("improper format for Varian header " + dirFile);
             }
         } catch (IOException e) {
             log.warn(e.getMessage(), e);
@@ -1301,7 +1194,7 @@ public class VarianData implements NMRData {
         }
     }  // end readFileHeader
 
-    private void checkPars(int cKnp, int cKblocks) {
+    private void checkPars(int cKnp, int cKblocks, int cNtraces) {
         Integer ipar;
         ipar = getParInt("np");
         if (ipar != null && ipar != cKnp) {
@@ -1309,7 +1202,7 @@ public class VarianData implements NMRData {
         }
         ipar = getParInt("arraydim");
         if (ipar != null && ipar != cKblocks) {
-            log.info(">> arraydim in header {} and procpar differ {}", cKblocks, ipar);
+            log.info(">> arraydim in header {} and procpar {} differ traces {} file {}", cKblocks, ipar, cNtraces, dirFile.toString());
         }
     }
 
@@ -1337,12 +1230,10 @@ public class VarianData implements NMRData {
             }
         } catch (EOFException e) {
             log.warn(e.getMessage(), e);
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
+            try {
+                fc.close();
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         } catch (IOException e) {
             log.warn(e.getMessage(), e);
@@ -1360,10 +1251,11 @@ public class VarianData implements NMRData {
     // fixme only works for 2nd dim
     private void readValue(int iDim, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
         try {
-            int hskips = 8, bskips = 7, nread = 0;
+            int hskips = 8;
+            int bskips = 7;
             int skips = (hskips + (fileIndex + 1) * bskips * nbheaders) * 4 + fileIndex * np * ebytes + xCol * ebytes * 2;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * ebytes * 2, ebytes * 2);
-            nread = fc.read(buf, skips);
+            fc.read(buf, skips);
         } catch (EOFException e) {
             log.warn(e.getMessage(), e);
             if (fc != null) {
@@ -1375,12 +1267,10 @@ public class VarianData implements NMRData {
             }
         } catch (IOException e) {
             log.warn(e.getMessage(), e);
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ex) {
-                    log.warn(ex.getMessage(), ex);
-                }
+            try {
+                fc.close();
+            } catch (IOException ex) {
+                log.warn(ex.getMessage(), ex);
             }
         }
     }
@@ -1391,17 +1281,17 @@ public class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) fbuf.get(j) / scale;
+                data[j] = fbuf.get(j) / scale;
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) sbuf.get(j) / scale;
+                data[j] = sbuf.get(j) / scale;
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) ibuf.get(j) / scale;
+                data[j] = ibuf.get(j) / scale;
             }
         }
     }  // end copyVecData
@@ -1412,17 +1302,17 @@ public class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j += 2) {
-                data[j / 2] = new Complex((double) fbuf.get(j) / scale, (double) fbuf.get(j + 1) / scale);
+                data[j / 2] = new Complex(fbuf.get(j) / scale, fbuf.get(j + 1) / scale);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j += 2) {
-                data[j / 2] = new Complex((double) sbuf.get(j) / scale, (double) sbuf.get(j + 1) / scale);
+                data[j / 2] = new Complex(sbuf.get(j) / scale, sbuf.get(j + 1) / scale);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j += 2) {
-                data[j / 2] = new Complex((double) ibuf.get(j) / scale, (double) ibuf.get(j + 1) / scale);
+                data[j / 2] = new Complex(ibuf.get(j) / scale, ibuf.get(j + 1) / scale);
             }
         }
     }  // end copyVecData
@@ -1433,20 +1323,20 @@ public class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j += 2) {
-                rdata[j / 2] = (double) fbuf.get(j) / scale;
-                idata[j / 2] = (double) fbuf.get(j + 1) / scale;
+                rdata[j / 2] = fbuf.get(j) / scale;
+                idata[j / 2] = fbuf.get(j + 1) / scale;
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j += 2) {
-                rdata[j / 2] = (double) sbuf.get(j) / scale;
-                idata[j / 2] = (double) sbuf.get(j + 1) / scale;
+                rdata[j / 2] = sbuf.get(j) / scale;
+                idata[j / 2] = sbuf.get(j + 1) / scale;
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j += 2) {  // npoints defined in Varian header
-                rdata[j / 2] = (double) ibuf.get(j) / scale;
-                idata[j / 2] = (double) ibuf.get(j + 1) / scale;
+                rdata[j / 2] = ibuf.get(j) / scale;
+                idata[j / 2] = ibuf.get(j + 1) / scale;
             }
         }
     }  // end copyVecData
@@ -1468,17 +1358,15 @@ public class VarianData implements NMRData {
             for (int i = 0; i < size && nread > 27; i++) {  // read block header
                 int c = ibuf.get();
                 switch (i) {
-                    case 0:
+                    case 0 -> {
                         iscale = (short) (c >> 16); // scale
                         stat = (short) c;              // status
-                        break;
-                    case 1:
+                    }
+                    case 1 -> {
                         index = (short) (c >> 16); // block index
                         mode = (short) c;              // mode
-                        break;
-                    case 2:
-                        ct = c;  // number of completed transients
-                        break;
+                    }
+                    case 2 -> ct = c;  // number of completed transients
                 }
                 cStrBuilder.append(c).append(" ");
             }
@@ -1520,7 +1408,7 @@ public class VarianData implements NMRData {
             boolean hasPhase = false;
             String arrayPar = getPar("array");
             String[] arrayElems = new String[0];
-            if (!arrayPar.trim().equals("")) {
+            if (!arrayPar.trim().isEmpty()) {
                 arrayElems = arrayPar.split(",");
             }
             for (int j = arrayElems.length - 1; j >= 0; j--) {
@@ -1563,10 +1451,8 @@ public class VarianData implements NMRData {
                 }
             } else {
                 Integer arraydim = getParInt("arraydim");
-                int i = 0;
-                for (int j = 0; j < arraysize.length; j++) {
-                    arraysize[j] = 0;
-                }
+                int i;
+                Arrays.fill(arraysize, 0);
                 boolean hasArray = false;
                 if ((arraydim != null) && (arraydim > 1)) {
                     for (int j = arrayElems.length - 1; j >= 0; j--) {
@@ -1645,9 +1531,9 @@ public class VarianData implements NMRData {
         int nDim = getNDim();
         for (int i = acqOrderArray.length - 1; i >= 0; i--) {
             String elem = acqOrderArray[i];
-            if (elem.substring(0, 1).equals("p")) {
-                builder.append(elem.substring(1, 2));
-            } else if (elem.substring(0, 1).equals("a")) {
+            if (elem.charAt(0) == 'p') {
+                builder.append(elem.charAt(1));
+            } else if (elem.charAt(0) == 'a') {
                 return "";
             }
         }
@@ -1667,47 +1553,6 @@ public class VarianData implements NMRData {
     @Override
     public List<DatasetGroupIndex> getSkipGroups() {
         return datasetGroupIndices;
-    }
-
-    // write binary data into text file, using header info
-    public void fileoutraw() {
-        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
-                StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-             DataInputStream in = new DataInputStream(new FileInputStream(fpath))) {
-            bw.write("rawfile header");
-            bw.newLine();
-            for (int k = 0; k < 8; k++) // file header
-            {
-                bw.write(in.readInt() + " ");
-            }
-            bw.newLine();
-            for (int i = 0; i < nblocks; i++) {
-                bw.write("blockhdr " + i + " ");
-                for (int k = 0; k < 7; k++) // block header
-                {
-                    bw.write(in.readInt() + " ");
-                }
-                bw.newLine();
-                // check if int/float/short
-                for (int j = 0; j < np; j++) {  // data
-                    if (j % 512 == 0) {
-                        bw.write("\n  block " + i + ":" + (j / 512) + " : ");
-                    }
-                    if (isFloat) {
-                        bw.write(in.readFloat() + " ");
-                    } else if (isShort) {
-                        bw.write(in.readShort() + " ");
-                    } else {
-                        bw.write(in.readInt() + " ");
-                    }
-                }
-                bw.write(": endblock " + i);
-                bw.newLine();
-                bw.flush();
-            }
-        } catch (IOException e) {
-            log.warn(e.getMessage(), e);
-        }
     }
 
     class VarianSinebellWt extends SinebellWt {
@@ -1841,186 +1686,5 @@ public class VarianData implements NMRData {
             }
         }
 
-    }
-
-    public static void main(String args[]) {
-
-        String root = "/Users/bayardfetler/NVJ/dcdemo/";
-        VarianData varian = new VarianData(root + "proton.fid");
-        int npoints = varian.getNPoints();
-        double[] data = new double[npoints * 2];
-        varian.readVector(0, data);
-        System.out.print("  data:");
-        for (int i = 0; i < 4; i++) {
-            System.out.print(" " + data[i]);
-        }
-        System.out.println(" : " + data[npoints * 2 - 1]);
-
-        Vec vc = new Vec(npoints * 2, false);
-        varian.readVector(0, vc);
-        System.out.print("  vec1 data:");
-        for (int i = 0; i < 4; i++) {
-            System.out.print(" " + vc.rvec[i]);
-        }
-        System.out.println(" : " + vc.rvec[npoints * 2 - 1]);
-
-        vc = new Vec(npoints, true);
-        varian.readVector(0, vc);
-        System.out.print("  vec2 data:");
-        Complex[] cdata = vc.getCvec();
-        for (int i = 0; i < 2; i++) {
-            System.out.print(" " + cdata[i]);
-        }
-        System.out.println(" : " + cdata[npoints - 1]);
-
-        Double sfrq = varian.getParDouble("sfrq");
-        Double sw = varian.getParDouble("sw");
-        Double rfl = varian.getParDouble("rfl");
-        Double rfp = varian.getParDouble("rfp");
-        Integer npts = varian.getParInt("np");
-        Integer ni = varian.getParInt("ni");
-        Integer arraydim = varian.getParInt("arraydim");
-        String scooby = varian.getPar("scooby");  // undefined
-        Integer acqdim = varian.getParInt("acqdim");
-        System.out.print("sfrq=" + sfrq + " sw=" + sw + " rfl=" + rfl + " rfp=" + rfp);
-        System.out.print(" np=" + npts + " ni=" + ni + " arraydim=" + arraydim);
-        System.out.println(" acqdim=" + varian.getNDim() + " scooby=" + scooby);
-
-        varian = new VarianData(root + "dept.fid/fid");
-        npoints = varian.getNPoints();
-        int nvectors = varian.getNVectors();
-        vc = new Vec(npoints, true);
-        for (int j = 0; j < nvectors; j++) {
-            varian.readVector(j, vc);
-            cdata = vc.getCvec();
-            System.out.print("  vec3 data " + j + " :");
-            for (int i = 0; i < 2; i++) {
-                System.out.print(" " + cdata[i]);
-            }
-            System.out.println(" : " + cdata[npoints - 1]);
-        }
-
-        arraydim = varian.getParInt("arraydim");
-        npts = varian.getParInt("np");
-        sfrq = varian.getParDouble("sfrq");
-        sw = varian.getParDouble("sw");
-        rfl = varian.getParDouble("rfl");
-        rfp = varian.getParDouble("rfp");
-        acqdim = varian.getParInt("acqdim");
-        System.out.print("sfrq=" + sfrq + " sw=" + sw + " rfl=" + rfl + " rfp=" + rfp);
-        System.out.println(" np=" + npts + " acqdim=" + varian.getNDim() + " arraydim=" + arraydim);
-
-        String adir = "/Users/bayardfetler/NVJ/NVJ_Data/vdata/";
-        adir += "fidlib/auto_2007.05.23/";
-        adir += "ethylindanone_001/";
-
-        NMRData vdata;
-        try {
-            vdata = NMRDataUtil.getFID(adir + "Roesy_01.fid");
-
-            vc = new Vec(vdata.getNPoints(), true);
-            vdata.readVector(0, vc);
-            System.out.print("  vec4 data:");
-            cdata = vc.getCvec();
-            for (int i = 0; i < 2; i++) {
-                System.out.print(" " + cdata[i]);
-            }
-            System.out.println(" : " + cdata[vdata.getNPoints() - 1]);
-            System.out.print("sequence=" + vdata.getSequence() + " solvent=" + vdata.getSolvent());
-            System.out.println(" dim=" + vdata.getNDim() + " nvectors=" + vdata.getNVectors()
-                    + " npoints=" + vdata.getNPoints() + " toString " + vdata.toString());
-
-            vdata = NMRDataUtil.getFID(adir + "Roesy_01.fid/fid");
-            vc = new Vec(vdata.getNPoints(), true);
-            vdata.readVector(0, vc);
-            System.out.print("  vec5 data:");
-            cdata = vc.getCvec();
-            for (int i = 0; i < 2; i++) {
-                System.out.print(" " + cdata[i]);
-            }
-            System.out.println(" : " + cdata[vdata.getNPoints() - 1]);
-            System.out.print("sequence=" + vdata.getSequence() + " solvent=" + vdata.getSolvent());
-            System.out.println(" dim=" + vdata.getNDim() + " nvectors=" + vdata.getNVectors()
-                    + " npoints=" + vdata.getNPoints() + " toString " + vdata.toString());
-
-            vdata = NMRDataUtil.getFID(adir + "Tocsy_01.fid/");
-            vc = new Vec(vdata.getNPoints(), true);
-            vdata.readVector(0, vc);
-            System.out.print("  vec6 data:");
-            cdata = vc.getCvec();
-            for (int i = 0; i < 2; i++) {
-                System.out.print(" " + cdata[i]);
-            }
-            System.out.println(" : " + cdata[vdata.getNPoints() - 1]);
-            System.out.print("sequence=" + vdata.getSequence() + " solvent=" + vdata.getSolvent());
-            System.out.println(" dim=" + vdata.getNDim() + " nvectors=" + vdata.getNVectors()
-                    + " npoints=" + vdata.getNPoints() + " toString " + vdata.toString());
-            System.out.println("  f1coef=" + Arrays.toString(vdata.getCoefs(2)));
-            SinebellWt sb = vdata.getSinebellWt(1);
-            System.out.print("  sinebell: exists=" + sb.exists() + " power=" + sb.power() + " sb=" + sb.sb() + " sbs=" + sb.sbs());
-            System.out.println(" size=" + sb.size() + " offset=" + sb.offset() + " end=" + sb.end());
-            GaussianWt gb = vdata.getGaussianWt(1);
-            System.out.println("  gaussian: exists=" + gb.exists() + " gf=" + gb.gf() + " gfs=" + gb.gfs() + " lb=" + gb.lb());
-            FPMult fp = vdata.getFPMult(2);
-            System.out.println("  fpmult: exists=" + fp.exists() + " fpmult=" + fp.fpmult());
-            LPParams lp = vdata.getLPParams(2);
-            System.out.print("  lppars: exists=" + lp.exists() + " status=" + lp.status() + " ncoef=" + lp.ncoef());
-            System.out.print(" pstart=" + lp.predictstart() + " pend=" + lp.predictend());
-            System.out.println(" fstart=" + lp.fitstart() + " fend=" + lp.fitend());
-
-            vdata = NMRDataUtil.getFID(adir + "NOT.fid");
-            vc = new Vec(vdata.getNPoints(), true);
-            vdata.readVector(0, vc);
-            System.out.print("  vecN data:");
-            cdata = vc.getCvec();
-            for (int i = 0; i < 2; i++) {
-                System.out.print(" " + cdata[i]);
-            }
-            System.out.println(" : " + cdata[vdata.getNPoints() - 1]);
-            System.out.print("sequence=" + vdata.getSequence() + " solvent=" + vdata.getSolvent());
-            System.out.println(" dim=" + vdata.getNDim() + " nvectors=" + vdata.getNVectors()
-                    + " npoints=" + vdata.getNPoints());
-
-        } catch (IOException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
-
-        varian = new VarianData(adir + "Roesy_01.fid");
-
-        System.out.println("VarianData Roesy local");
-        System.out.print("sequence=" + varian.getSequence() + " solvent=" + varian.getSolvent());
-        System.out.println(" dim=" + varian.getNDim() + " nvectors=" + varian.getNVectors()
-                + " npoints=" + varian.getNPoints());
-        System.out.println("  tdsize's: " + varian.getSize(1) + " " + varian.getSize(2)
-                + " " + varian.getSize(3) + " " + varian.getSize(4));
-        System.out.println("  tn's: " + varian.getTN(1) + " " + varian.getTN(2)
-                + " " + varian.getTN(3) + " " + varian.getTN(4));
-        System.out.println("  sfrq's: " + varian.getSF(1) + " " + varian.getSF(2)
-                + " " + varian.getSF(3) + " " + varian.getSF(4));
-        System.out.println("  sw's: " + varian.getSW(1) + " " + varian.getSW(2)
-                + " " + varian.getSW(3) + " " + varian.getSW(4));
-        System.out.println("  ref's: " + varian.getRef(1) + " " + varian.getRef(2)
-                + " " + varian.getRef(3) + " " + varian.getRef(4));
-
-        varian = new VarianData(adir + "Hmqc_01.fid");
-        System.out.println("VarianData Hmqc local");
-        System.out.print("sequence=" + varian.getSequence() + " solvent=" + varian.getSolvent());
-        System.out.println(" dim=" + varian.getNDim() + " nvectors=" + varian.getNVectors()
-                + " npoints=" + varian.getNPoints());
-        System.out.println("  tdsize's: " + varian.getSize(1) + " " + varian.getSize(2)
-                + " " + varian.getSize(3) + " " + varian.getSize(4));
-        System.out.println("  isComplex: " + varian.isComplex(1) + " " + varian.isComplex(2)
-                + " " + varian.isComplex(3) + " " + varian.isComplex(4));
-        System.out.println("  tn's: " + varian.getTN(1) + " " + varian.getTN(2)
-                + " " + varian.getTN(3) + " " + varian.getTN(4));
-        System.out.println("  sfrq's: " + varian.getSF(1) + " " + varian.getSF(2)
-                + " " + varian.getSF(3) + " " + varian.getSF(4));
-        System.out.println("  sw's: " + varian.getSW(1) + " " + varian.getSW(2)
-                + " " + varian.getSW(3) + " " + varian.getSW(4));
-        System.out.println("  ref's: " + varian.getRef(1) + " " + varian.getRef(2)
-                + " " + varian.getRef(3) + " " + varian.getRef(4));
-        SinebellWt sb = varian.getSinebellWt(1);
-        System.out.print("  sinebell: exists=" + sb.exists() + " power=" + sb.power() + " sb=" + sb.sb() + " sbs=" + sb.sbs());
-        System.out.println(" size=" + sb.size() + " offset=" + sb.offset() + " end=" + sb.end());
     }
 }

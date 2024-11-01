@@ -33,6 +33,7 @@ import org.python.core.PyFunction;
 import org.python.core.PyObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -54,13 +55,11 @@ public class RotationalDynamics {
     double currentTemp = 0.0;
     double bathTemp = 100.0;
     double timeStep = 1.0e-4;
-    double timePower = 4.0;
     double kineticEnergyScale = 50.0;
     double lambda;
     int currentStep = 0;
     int nSteps = 1;
     double eRef = 0.005;
-    double velScale = 2.0;
     double tau = 10.0;
     double tempTimeConstant = 5.0;
     double minTimeStep = 0.0001;
@@ -68,8 +67,7 @@ public class RotationalDynamics {
     double sumDeltaSq = 0.0;
     double sumMaxDelta = 0.0;
     double sumERef = 0.0;
-    double[] velStore = null;
-    Random rand = null;
+    Random rand;
     public static boolean firstRun = true;
     public TrajectoryWriter trajectoryWriter = null;
     private static ProgressUpdater progressUpdater = null;
@@ -85,9 +83,7 @@ public class RotationalDynamics {
         this.dihedrals = dihedrals;
         this.molecule = dihedrals.energyList.getMolecule();
         this.branches = new ArrayList<>();
-        for (AtomBranch branch : dihedrals.energyList.branches) {
-            this.branches.add(branch);
-        }
+        Collections.addAll(this.branches, dihedrals.energyList.branches);
         this.rand = rand;
         getBranchAtoms();
         // makeInertias now
@@ -156,9 +152,7 @@ public class RotationalDynamics {
     }
 
     public void calcRotInertia2() {
-        int n = branches.size();
-        for (int i = 0; i < n; i++) {
-            AtomBranch iBranch = branches.get(i);
+        for (AtomBranch iBranch : branches) {
             iBranch.inertialTensorSetup();
         }
     }
@@ -176,8 +170,8 @@ public class RotationalDynamics {
         updateVelocitiesRecursive();
         double outtemp = calcTemp2();
         for (int i = 0; i < 2; i++) {
-            double lambda = getLambda(temp, outtemp, 1);
-            adjustTemp(lambda);
+            double currentLambda = getLambda(temp, outtemp, 1);
+            adjustTemp(currentLambda);
             updateVelocitiesRecursive();
             outtemp = calcTemp2();
         }
@@ -200,7 +194,7 @@ public class RotationalDynamics {
                 max = absDelta;
             }
             sumSq += delAngle * delAngle;
-            daughter.dihedralAngle += delAngle;
+            daughter.dihedralAngle += (float) delAngle;
             daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
         }
         sumDeltaSq += Math.sqrt(sumSq / branches.size());
@@ -242,7 +236,6 @@ public class RotationalDynamics {
 
     public void advanceVelocities2(double timestep) {
         double maxChange = 0.0;
-        AtomBranch maxBranch = branches.get(0);
         for (AtomBranch branch : branches) {
             double a0 = branch.rotAccel.getEntry(0);
             double a1 = branch.rotAccel.getEntry(1);
@@ -251,7 +244,6 @@ public class RotationalDynamics {
             branch.rotVel += delVelocity;
             if (Math.abs(delVelocity) > maxChange) {
                 maxChange = Math.abs(delVelocity);
-                maxBranch = branch;
             }
         }
     }
@@ -264,14 +256,12 @@ public class RotationalDynamics {
             branch.inertialTensorF.operate(branch.angVelF, tempF);
             sum += 0.5 * branch.angVelF.dotProduct(tempF);
         }
-        double kinE = kineticEnergyScale * sum;
-        return kinE;
+        return kineticEnergyScale * sum;
     }
 
     double calcTemp2(double kineticEnergy) {
         kineticEnergy /= kineticEnergyScale;
-        double temp = 2.0 * kineticEnergy / ((branches.size() - 1) * 1.38e-6);
-        return (temp);
+        return (2.0 * kineticEnergy / ((branches.size() - 1) * 1.38e-6));
     }
 
     double calcTemp2() {
@@ -283,8 +273,12 @@ public class RotationalDynamics {
         return getLambda(temp0, temp, tempTimeConstant);
     }
 
-    double getLambda(double temp0, double temp, double time_c) {
-        lambda = Math.sqrt(1.0 + (1.0 / time_c) * ((temp0 / temp) - 1.0));
+    double getLambda(double temp0, double temp, double timeC) {
+        if (temp < 1.0e-6) {
+            lambda = 4.0;
+        } else {
+            lambda = Math.sqrt(1.0 + (1.0 / timeC) * ((temp0 / temp) - 1.0));
+        }
         if (temp > (2.0 * temp0)) {
             lambda = Math.sqrt(0.01 + temp0 / temp);
         }
@@ -302,12 +296,15 @@ public class RotationalDynamics {
 
     void updateTimeStep(int iStep) {
         eRef = getPyEcon(1.0 * iStep / nSteps);
-
-        double lambda = Math.sqrt(1.0 + (eRef - Math.abs(deltaEnergy)) / (Math.abs(deltaEnergy) * tau));
-        if (lambda > 1.025) {
-            lambda = 1.025;
+        if (Math.abs(deltaEnergy) < 1.0e-9) {
+            deltaEnergy = 1.0e-9;
         }
-        timeStep = lambda * timeStep;
+
+        double currentLambda = Math.sqrt(1.0 + (eRef - Math.abs(deltaEnergy)) / (Math.abs(deltaEnergy) * tau));
+        if (currentLambda > 1.025) {
+            currentLambda = 1.025;
+        }
+        timeStep = currentLambda * timeStep;
         if (timeStep < minTimeStep) {
             timeStep = minTimeStep;
         }
@@ -322,10 +319,10 @@ public class RotationalDynamics {
 
     double getPyTemp(double f) {
         double temp;
-        if (tempFunction instanceof PyFunction) {
+        if (tempFunction instanceof PyFunction pyFunction) {
             PyObject[] objs = new PyObject[1];
             objs[0] = new PyFloat(f);
-            PyObject pyResult = ((PyFunction) tempFunction).__call__(objs);
+            PyObject pyResult = pyFunction.__call__(objs);
             temp = pyResult.asDouble();
         } else {
             temp = tempFunction.asDouble();
@@ -338,7 +335,7 @@ public class RotationalDynamics {
         if (econFunction instanceof PyFunction) {
             PyObject[] objs = new PyObject[1];
             objs[0] = new PyFloat(f);
-            PyObject pyResult = ((PyFunction) econFunction).__call__(objs);
+            PyObject pyResult = econFunction.__call__(objs);
             eCon = pyResult.asDouble();
         } else {
             eCon = econFunction.asDouble();
@@ -454,7 +451,6 @@ public class RotationalDynamics {
     }
 
     public void updateVelocitiesRecursive() {
-        int n = branches.size();
         for (AtomBranch iBranch : branches) {
             AtomBranch prevBranch = iBranch.prev;
             FastVector unitVecF = iBranch.getUnitVecF();
@@ -480,8 +476,8 @@ public class RotationalDynamics {
         double kineticEnergy = calcKineticEnergy();
         currentTemp = calcTemp2(kineticEnergy);
         updateTimeStep(iStep);
-        double lambda = getLambda(bathTemp, currentTemp);
-        adjustTemp(lambda);
+        double currentLambda = getLambda(bathTemp, currentTemp);
+        adjustTemp(currentLambda);
         updateVelocitiesRecursive();
         if (iStep == 0) {
             calcAcceleration2(1);
@@ -500,7 +496,11 @@ public class RotationalDynamics {
         double potentialEnergy = eDeriv.getEnergy();
         double total = potentialEnergy + kineticEnergy;
 
-        deltaEnergy = Math.abs((total - lastTotalEnergy) / total);
+        deltaEnergy = Math.abs((total - lastTotalEnergy));
+        if (Math.abs(total) > 1.0e-9) {
+            deltaEnergy /= Math.abs(total);
+        }
+
         lastKineticEnergy = newKineticEnergy;
         lastPotentialEnergy = potentialEnergy;
         lastTotalEnergy = lastKineticEnergy + lastPotentialEnergy;

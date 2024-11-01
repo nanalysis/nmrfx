@@ -69,7 +69,7 @@ public class AngleConstraint implements Constraint {
     final static double toRad = Math.PI / 180.0;
 
     public AngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
-                           Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                           Double weight, Double target, Double targetErr, String name) {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
@@ -81,7 +81,9 @@ public class AngleConstraint implements Constraint {
             i++;
         }
         if ((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2])) {
-            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa " +
+                    atoms[0] + " " + atoms[1] + " " + atoms[2] + " " + atoms[3] + " parent1 " +
+                    atoms[1].parent + " parent2 " + atoms[2].parent);
         }
         this.lower = Util.reduceAngle(lower * toRad);
         this.upper = Util.reduceAngle(upper * toRad);

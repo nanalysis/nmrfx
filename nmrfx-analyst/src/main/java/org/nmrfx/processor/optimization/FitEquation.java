@@ -12,9 +12,15 @@ public abstract class FitEquation {
     double[] bestPars;
     double[] parErrs;
 
+    int nY = 1;
+
     public abstract String[] parNames();
 
     public abstract int nY();
+
+    public void nY(int nY) {
+        this.nY = nY;
+    }
 
     public abstract int nX();
 
@@ -82,7 +88,7 @@ public abstract class FitEquation {
         if (optResult.isPresent()) {
             PointValuePair result = optResult.get();
             bestPars = result.getPoint();
-            var errResult = fitter.bootstrap(result.getPoint(), 100);
+            var errResult = fitter.bootstrap(result.getPoint(), 200);
             if (errResult.isPresent()) {
                 parErrs = errResult.get();
                 return result;

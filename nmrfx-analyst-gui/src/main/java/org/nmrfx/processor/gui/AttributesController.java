@@ -18,6 +18,7 @@ import org.controlsfx.control.RangeSlider;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -42,6 +43,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     static {
         FORMATTER.setMaximumFractionDigits(3);
     }
+
+    public ComboBox integralFontSizeComboBox;
     @FXML
     private VBox attributesVBox;
 
@@ -57,6 +60,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     ChoiceBox<SelectionChoice> itemChoiceState;
     @FXML
+    Button storeButton;
+    @FXML
     Accordion attributesAccordion;
     @FXML
     TitledPane contourLevelPane;
@@ -71,6 +76,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     private CheckBox integralCheckBox;
     @FXML
+    private CheckBox integralValuesCheckBox;
+    @FXML
     private RangeSlider integralPosSlider;
     @FXML
     private Label integralLowValue;
@@ -83,15 +90,13 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     Slider aspectSlider;
     @FXML
-    Label aspectRatioValue;
+    TextField aspectRatioValue;
     @FXML
     Slider scaleSlider;
     @FXML
     private CheckBox offsetTrackingCheckBox;
     @FXML
     private CheckBox useDatasetColorCheckBox;
-    @FXML
-    private CheckBox sliceStatusCheckBox;
     @FXML
     private CheckBox slice1StateCheckBox;
     @FXML
@@ -232,6 +237,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     private ComboBox<PeakDisplayParameters.DisplayTypes> peakDisplayModeComboBox;
     @FXML
     private ComboBox<PeakDisplayParameters.LabelTypes> peakLabelModeComboBox;
+    @FXML
+    private ComboBox<Integer> peakNPlanesComboBox;
+    @FXML
+    private ComboBox<Integer> peakFontSizeComboBox;
     PeakOnColorListener peakOnColorListener = new PeakOnColorListener();
     PeakOffColorListener peakOffColorListener = new PeakOffColorListener();
     DrawPeaksListener drawPeaksListener = new DrawPeaksListener();
@@ -240,6 +249,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     PeakDisplayTypeListener peakDisplayTypeListener = new PeakDisplayTypeListener();
     PeakColorTypeListener peakColorTypeListener = new PeakColorTypeListener();
     PeakLabelTypeListener peakLabelTypeListener = new PeakLabelTypeListener();
+
+    PeakNPlanesListener peakNPlanesListener = new PeakNPlanesListener();
+
+    PeakFontSizeListener peakFontSizeListener = new PeakFontSizeListener();
 
     Boolean accordionIn1D = null;
     PolyChart chart;
@@ -251,7 +264,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
         AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
-        controller.sliceStatusCheckBox.selectedProperty().bindBidirectional(fxmlController.sliceStatusProperty());
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
         controller.itemChoiceState.setValue(SelectionChoice.CHART);
         controller.setChart(fxmlController.getActiveChart());
@@ -260,6 +272,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        storeButton.setOnAction(e -> storeAttributes());
+
         ticFontSizeComboBox.getItems().addAll(5, 6, 7, 8, 9,
                 10, 11, 12, 14, 16, 18, 20, 22, 24, 26,
                 28, 32, 36);
@@ -302,6 +316,12 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         integralPosSlider.highValueProperty().addListener(e -> setIntegralSliderText());
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
+        integralValuesCheckBox.selectedProperty().addListener(e -> refreshLater());
+        integralFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        integralFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
+
+
+
         gridCheckBox.selectedProperty().addListener(e -> updateCharts());
         offsetTrackingCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
         useDatasetColorCheckBox.selectedProperty().addListener(e -> updateSlicesAndRefresh());
@@ -319,6 +339,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         aspectSlider.setValue(1.0);
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+        aspectSlider.disableProperty().bind(aspectCheckBox.selectedProperty().not());
+        GUIUtils.bindSliderField(aspectSlider, aspectRatioValue, "##0.00");
 
         stackXSlider.setMin(0.0);
         stackXSlider.setMax(1.00);
@@ -387,10 +409,34 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         linkPeakDisplayCheckBox.selectedProperty().addListener(drawLinkPeaksListener);
         peakOnColorPicker.valueProperty().addListener(peakOnColorListener);
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
+        peakNPlanesComboBox.getItems().addAll(0, 1, 2, 3, 4);
+        peakNPlanesComboBox.valueProperty().addListener(peakNPlanesListener);
+        peakFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        peakFontSizeComboBox.valueProperty().addListener(peakFontSizeListener);
     }
 
     public Pane getPane() {
         return attributesVBox;
+    }
+
+    private void storeAttributes() {
+        for (PolyChart chart : getCharts(true)) {
+            for (DatasetAttributes datasetAttributes : chart.getDatasetAttributes()) {
+                Dataset dataset = (Dataset) datasetAttributes.getDataset();
+                dataset.setLvl(datasetAttributes.getLvl());
+                int posNeg = 0;
+                if (datasetAttributes.getPos()) {
+                    posNeg += 1;
+                }
+                if (datasetAttributes.getNeg()) {
+                    posNeg += 2;
+                }
+                dataset.setPosneg(posNeg);
+                dataset.setPosColor(datasetAttributes.getPosColor().toString());
+                dataset.setNegColor(datasetAttributes.getNegColor().toString());
+                dataset.writeParFile();
+            }
+        }
     }
 
     private void unBindChart(PolyChart polyChart) {
@@ -417,6 +463,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         gridCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().gridProperty());
         regionCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().regionsProperty());
         integralCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralsProperty());
+        integralValuesCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().integralValuesProperty());
+        integralFontSizeComboBox.valueProperty().unbindBidirectional(polyChart.getChartProperties().integralFontSizeProperty());
 
         integralPosSlider.lowValueProperty().unbindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
         integralPosSlider.highValueProperty().unbindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
@@ -488,6 +536,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         gridCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().gridProperty());
         regionCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().regionsProperty());
         integralCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralsProperty());
+        integralValuesCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().integralValuesProperty());
+        integralFontSizeComboBox.valueProperty().bindBidirectional(polyChart.getChartProperties().integralFontSizeProperty());
 
         integralPosSlider.lowValueProperty().bindBidirectional(polyChart.getChartProperties().integralLowPosProperty());
         integralPosSlider.highValueProperty().bindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
@@ -559,8 +609,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     @FXML
     private void updateSlices() {
-        final boolean status = sliceStatusCheckBox.isSelected();
-        fxmlController.getCharts().forEach(c -> c.setSliceStatus(status));
+        fxmlController.getStatusBar().updateSlices(false);
     }
 
     abstract class ChartSliderListener implements ChangeListener<Number> {
@@ -979,12 +1028,22 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             peakListAttr.setLabelType(value);
         }
     }
+    class PeakNPlanesListener extends PeakTypeListener<Integer> {
+        void update(PeakListAttributes peakListAttr, Integer value) {
+            peakListAttr.setNplanes(value);
+        }
+    }
+    class PeakFontSizeListener extends PeakTypeListener<Integer> {
+        void update(PeakListAttributes peakListAttr, Integer value) {
+            peakListAttr.setFontSize(value);
+        }
+    }
 
     void setPeakDisplayComboBoxes() {
         List<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
         if (!peakListAttrs.isEmpty()) {
             PeakListAttributes peakListAttr = peakListAttrs.get(0);
-            PeakTypeListener[] listeners = {peakDisplayTypeListener, peakLabelTypeListener, peakColorTypeListener};
+            PeakTypeListener[] listeners = {peakDisplayTypeListener, peakLabelTypeListener, peakColorTypeListener, peakNPlanesListener};
             for (var listener : listeners) {
                 listener.active = false;
                 if (listener instanceof PeakColorTypeListener) {
@@ -993,6 +1052,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                     peakDisplayModeComboBox.setValue(peakListAttr.getDisplayType());
                 } else if (listener instanceof PeakLabelTypeListener) {
                     peakLabelModeComboBox.setValue(peakListAttr.getLabelType());
+                } else if (listener instanceof PeakNPlanesListener) {
+                    peakNPlanesComboBox.setValue(peakListAttr.getNplanes());
+                } else if (listener instanceof PeakFontSizeListener) {
+                    peakFontSizeComboBox.setValue(peakListAttr.getFontSize());
                 }
                 listener.active = true;
             }
@@ -1214,11 +1277,12 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     void updateAspectRatio() {
         List<PolyChart> applyCharts = getCharts(allCharts());
         for (PolyChart applyChart : applyCharts) {
-            applyChart.getChartProperties().setAspect(aspectCheckBox.isSelected());
-            double aspectRatio = aspectSlider.getValue();
-            applyChart.getChartProperties().setAspectRatio(aspectRatio);
-            aspectRatioValue.setText(String.format("%.2f", aspectRatio));
-            applyChart.refresh();
+            if (applyChart != null) {
+                applyChart.getChartProperties().setAspect(aspectCheckBox.isSelected());
+                double aspectRatio = aspectSlider.getValue();
+                applyChart.getChartProperties().setAspectRatio(aspectRatio);
+                applyChart.refresh();
+            }
         }
     }
 

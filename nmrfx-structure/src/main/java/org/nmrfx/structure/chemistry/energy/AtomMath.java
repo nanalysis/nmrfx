@@ -24,7 +24,7 @@ import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.Util;
 import org.nmrfx.chemistry.constraints.AtomDistancePair;
-import org.nmrfx.chemistry.constraints.DistanceConstraint;
+import org.nmrfx.chemistry.constraints.Noe;
 
 /**
  * This program performs various calculations with an atom
@@ -117,10 +117,10 @@ public class AtomMath {
     /**
      * Calculates the volume or space occupied between 4 points
      *
-     * @param pt1 first point
-     * @param pt2 second point
-     * @param pt3 third point
-     * @param pt4 fourth point
+     * @param a first point
+     * @param b second point
+     * @param c third point
+     * @param d fourth point
      * @return volume double
      */
     public static double calcVolume(final Point3 a, final Point3 b, final Point3 c, final Point3 d) {
@@ -130,10 +130,10 @@ public class AtomMath {
     /**
      * Calculates the dihedral angle
      *
-     * @param pt1 first point
-     * @param pt2 second point
-     * @param pt3 third point
-     * @param pt4 fourth point
+     * @param a first point
+     * @param b second point
+     * @param c third point
+     * @param d fourth point
      * @return angle
      */
     public static double calcDihedral(final Point3 a, final Point3 b, final Point3 c, final Point3 d) {
@@ -175,15 +175,15 @@ public class AtomMath {
         return Vector3D.distance(pt1, pt2);
     }
 
-    public static double calcDistanceSumAvg(DistanceConstraint distancePair, double avgN) {
+    public static double calcDistanceSumAvg(Noe distanceConstraint, double avgN) {
 // fixme
         final double distance;
-        if ((distancePair.getAtomPairs().length == 1)) {
-            distance = distancePair.getAtomPairs()[0].getDistance();
+        if ((distanceConstraint.getAtomPairs().length == 1)) {
+            distance = distanceConstraint.getAtomPairs()[0].getDistance();
         } else {
             int nMono = 1;
             double sum = 0.0;
-            for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
+            for (AtomDistancePair atomDistancePair : distanceConstraint.getAtomPairs()) {
                 double distance1 = atomDistancePair.getDistance();
                 sum += Math.pow(distance1, -avgN);
             }
@@ -334,7 +334,7 @@ public class AtomMath {
     }
 
     //Uses Distance Contraints to Calculate Energy
-    public static AtomEnergy calcDistanceEnergy(final DistanceConstraint distancePair, final ForceWeight forceWeight, final boolean calcDeriv) {
+    public static AtomEnergy calcDistanceEnergy(final Noe distancePair, final ForceWeight forceWeight, final boolean calcDeriv) {
         //distance between atoms
         double r = calcDistanceSumAvg(distancePair, sumAvgN);
 

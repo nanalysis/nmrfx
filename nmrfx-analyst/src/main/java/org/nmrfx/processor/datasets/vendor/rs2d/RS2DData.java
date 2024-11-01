@@ -88,7 +88,7 @@ public class RS2DData implements NMRData {
     private static final Logger log = LoggerFactory.getLogger(RS2DData.class);
 
 
-    private final String fpath;
+    private final File dirFile;
     private FileChannel fc = null;
     private Header header;
     private Document seriesDocument;
@@ -126,19 +126,20 @@ public class RS2DData implements NMRData {
     double scale = 1.0;
     double tempK = 298.15;
 
-    public RS2DData(String path, File nusFile) throws IOException {
-        if (path.endsWith(File.separator)) {
-            path = path.substring(0, path.length() - 1);
+    public RS2DData(File file, File nusFile) throws IOException {
+        if (file.isFile()) {
+            dirFile = file.getParentFile();
+        } else {
+            dirFile = file;
         }
-        this.fpath = path;
         this.nusFile = nusFile;
         openNusFile();
-        openParFile(path);
-        openDataFile(path);
+        openParFile(dirFile);
+        openDataFile(dirFile);
     }
 
     public Dataset toDataset(String datasetName) throws IOException {
-        File file = new File(fpath);
+        File file = dirFile;
         Path path;
         if (file.isDirectory()) {
             path = Paths.get(file.getAbsolutePath(), DATA_FILE_NAME);
@@ -209,35 +210,33 @@ public class RS2DData implements NMRData {
      * Finds FID data, given a path to search for vendor-specific files and
      * directories.
      *
-     * @param bpath full path for FID data
+     * @param file full path for FID data
      * @return if FID data was successfully found or not
      */
-    public static boolean findFID(StringBuilder bpath) {
-        return findFiles(bpath, false);
+    public static boolean findFID(File file) {
+        return findFiles(file, false);
     }
 
     /**
      * Finds either fid or processed data, given a path to search for vendor-specific files and
      * directories.
      *
-     * @param bpath Full path for processed data.
+     * @param file        Full path for processed data.
      * @param findDataset If True, search for processed data, otherwise search for fid.
      * @return If processed data was successfully found or not.
      */
-    private static boolean findFiles(StringBuilder bpath, boolean findDataset) {
+    private static boolean findFiles(File file, boolean findDataset) {
         boolean found = false;
-        if (findFIDFiles(bpath.toString())) {
-            found = findDataset == isValidDatasetPath(Path.of(bpath.toString()));
+        if (findFIDFiles(file)) {
+            found = findDataset == isValidDatasetPath(file.toPath());
         } else {
-            File f = new File(bpath.toString());
+            File f = file;
             File parent = f.getParentFile();
-            if (findFIDFiles(parent.getAbsolutePath())) {
+            if (findFIDFiles(parent)) {
                 String fileName = f.getName();
                 if (fileName.equals(DATA_FILE_NAME)) {
                     found = findDataset == isValidDatasetPath(parent.toPath());
                 }
-                bpath.setLength(0);
-                bpath.append(parent);
             }
         }
         return found;
@@ -247,11 +246,11 @@ public class RS2DData implements NMRData {
      * Finds processed data, given a path to search for vendor-specific files and
      * directories.
      *
-     * @param bpath full path for processed data
+     * @param file full path for processed data
      * @return if processed data was successfully found or not
      */
-    public static boolean findData(StringBuilder bpath) {
-        return findFiles(bpath, true);
+    public static boolean findData(File file) {
+        return findFiles(file, true);
     }
 
     @Override
@@ -271,15 +270,15 @@ public class RS2DData implements NMRData {
         return 0;
     }
 
-    private static boolean findFIDFiles(String dirPath) {
-        Path headerPath = Paths.get(dirPath, HEADER_FILE_NAME);
-        Path dataPath = Paths.get(dirPath, DATA_FILE_NAME);
+    private static boolean findFIDFiles(File file) {
+        Path headerPath = file.toPath().resolve(HEADER_FILE_NAME);
+        Path dataPath = file.toPath().resolve(DATA_FILE_NAME);
         return headerPath.toFile().exists() && dataPath.toFile().exists();
     }
 
     private void openNusFile() throws IOException {
         if (nusFile == null) {
-            nusFile = new File(fpath + File.separator + NUS_SCHEDULE_FILENAME);
+            nusFile = dirFile.toPath().resolve(NUS_SCHEDULE_FILENAME).toFile();
         }
         if (!nusFile.exists()) {
             return;
@@ -289,10 +288,11 @@ public class RS2DData implements NMRData {
         readSampleSchedule(nusFile.getPath(), true, true);
     }
 
-    private void openParFile(String parpath) throws IOException {
-        log.info("Opening RS2D file: {}", parpath);
-        Path headerPath = Paths.get(parpath, HEADER_FILE_NAME);
-        Path seriesPath = Paths.get(parpath, SERIES_FILE_NAME);
+    private void openParFile(File file) throws IOException {
+        log.info("Opening RS2D file: {}", file);
+        Path headerPath = file.toPath().resolve(HEADER_FILE_NAME);
+        Path seriesPath = file.toPath().resolve(SERIES_FILE_NAME);
+
         try (InputStream input = Files.newInputStream(headerPath)) {
             header = new HeaderParser().parse(input);
             if (seriesPath.toFile().exists()) {
@@ -416,8 +416,7 @@ public class RS2DData implements NMRData {
         return header;
     }
 
-    private void openDataFile(String datapath) {
-        File file = new File(datapath);
+    private void openDataFile(File file) {
         Path path;
         if (file.isDirectory()) {
             path = Paths.get(file.getAbsolutePath(), DATA_FILE_NAME);
@@ -513,7 +512,7 @@ public class RS2DData implements NMRData {
 
     @Override
     public String getFilePath() {
-        return fpath;
+        return dirFile.toString();
     }
 
     /**

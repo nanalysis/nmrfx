@@ -646,7 +646,6 @@ public class SampleSchedule {
                 calcDims();
                 calcSampleHash();
                 calcSampleIndices();
-                log.info("sample schedule read {} points from {}", nSamples, fpath);
             }
         } catch (IOException e) {
             throw new ProcessingException("error reading " + fpath);
