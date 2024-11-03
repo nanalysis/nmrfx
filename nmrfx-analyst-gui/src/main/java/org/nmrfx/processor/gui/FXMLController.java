@@ -541,7 +541,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         int nDim = nmrData.getNDim();
         if (isFIDActive() && chartProcessor != null) {
             boolean loadedScript = chartProcessor.loadDefaultScriptIfPresent();
-            if (nDim == 1 || nDim == 2) {
+            if (PreferencesController.getAutoProcessData() && (nDim == 1 || nDim == 2)) {
                 if (!loadedScript) {
                     // TODO NMR-5184 update here if there is better way to determine if pseudo2D
                     // This is an estimate of whether the 2D data is pseudo2D, some pseudo2Ds may still be processed as 2Ds

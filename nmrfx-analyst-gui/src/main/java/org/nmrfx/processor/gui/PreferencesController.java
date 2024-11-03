@@ -212,7 +212,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
         BooleanOperationItem autoProcessDataItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     autoProcessData.setValue((Boolean) c);
-                    setBoolean("AUTO-PROCESS", (Boolean) c);
+                    setBoolean("AUTO-PROCESS-DATA", (Boolean) c);
                 },
                 getAutoProcessData(), "Load FID Actions", "Auto Process", "Auto process data when loading (only 1D/2D)");
 
