@@ -21,6 +21,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -84,7 +85,7 @@ public class BrukerData implements NMRData {
     private final int[] tdsize = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int[] arraysize = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int[] maxSize = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private double deltaPh02 = 0.0;
+    private boolean eaMode = false;
     private final Double[] refValue = new Double[MAXDIM];
     private final Double[] sweepWidth = new Double[MAXDIM];
     private final Double[] specFreq = new Double[MAXDIM];
@@ -839,9 +840,10 @@ public class BrukerData implements NMRData {
         double ph0 = 0.0;
         Double dpar;
         if ((dpar = getParDouble("PHC0," + (iDim + 1))) != null) {
-            ph0 = -dpar;
-            if (iDim == 1) {
-                ph0 += deltaPh02;
+            if (eaMode) {
+                ph0 = VecBase.phaseMin(dpar + 180.0);
+            } else {
+                ph0 = -dpar;
             }
         }
         return ph0;
@@ -1206,7 +1208,7 @@ public class BrukerData implements NMRData {
                     case 6 -> {
                         f1coef[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getCoefficients();
                         f1coefS[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getLabel();
-                        deltaPh02 = 90.0;
+                        eaMode = true;
                     }
                     case 1 -> {
                         complexDim[i - 1] = getValues(i - 1).isEmpty();
