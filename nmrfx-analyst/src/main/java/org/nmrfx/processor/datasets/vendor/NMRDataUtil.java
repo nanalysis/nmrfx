@@ -505,7 +505,7 @@ public final class NMRDataUtil {
                 double gb = gaussianWt.gf();
                 double lb = gaussianWt.lb();
                 String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
-                apodizationString = "GM("
+                apodizationString = "GMB("
                         + "lb=" + String.format("%.2f", lb)
                         + ", gb=" + String.format("%.2f", gb)
                         + fPointStr
@@ -513,7 +513,7 @@ public final class NMRDataUtil {
 
             } else {
                 double lb = nmrData.getExpd(dim);
-                if (lb >= 1.0e-6) {
+                if (Math.abs(lb) >= 1.0e-6) {
                     String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
                     apodizationString = "EXPD("
                             + "lb=" + String.format("%.2f", lb)
