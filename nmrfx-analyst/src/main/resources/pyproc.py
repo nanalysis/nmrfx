@@ -3863,8 +3863,8 @@ def genScript(arrayed=False, useapod=False):
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
-        phases = NMRDataUtil.autoPhase(fidInfo.fidObj);
-        script += 'PHASE(ph0='+str(round(phases[0],1))+',ph1='+str(round(phases[1]))+')\n'
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
         script += 'BaselineGroup()\n'
     else:
         script += psspecial.scriptMods(fidInfo, 0)
@@ -3880,7 +3880,8 @@ def genScript(arrayed=False, useapod=False):
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep' and not arrayed:
             script += "COMB(coef='sep')\n"
@@ -3934,7 +3935,9 @@ def genScript(arrayed=False, useapod=False):
         if fCoef != None and fCoef == 'sep':
             script += "MAG()\n"
         else:
-            script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+            phases = NMRDataUtil.getPhases(fidInfo.fidObj, iDim - 1);
+            script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
+            #script += 'PHASE(ph0=0.0,ph1=0.0)\n'
     if fidInfo.nd > 1:
         for iDim in range(1,fidInfo.nd+1):
             if fidInfo.size[iDim-1] < 2:

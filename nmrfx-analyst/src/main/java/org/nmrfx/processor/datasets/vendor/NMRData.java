@@ -507,6 +507,15 @@ public interface NMRData {
         return "";
     }
 
+     /**
+     * Returns true if both the zero and first order phases for a specific dimension are not 0.0 before any conversions
+      * are applied
+     * @return
+     */
+    public default boolean arePhasesSet(int dim) {
+        return false;
+    }
+
     /**
      * Return the zeroth order phase value from parameter file.
      *
