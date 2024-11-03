@@ -436,6 +436,32 @@ public final class NMRDataUtil {
         return base64.encodeToString(digest.digest());
     }
 
+    /**
+     * Attempt to get the phases from the NMRData object. If dimension is 0, then if the phases are not present or are both zero, then
+     * the phases from an auto phase are returned. Otherwise, if the phases are not present or are both zero,
+     * phases will be returned as 0.0.
+     * @param nmrData The NMRData to retrieve phases from
+     * @param dim The dimension to get the phases for
+     * @return An array of phases
+     */
+    public static double[] getPhases(NMRData nmrData, int dim) {
+        double[] phases = new double[2];
+        if (nmrData.arePhasesSet(dim)) {
+            phases[0] = nmrData.getPH0(dim);
+            phases[1] = nmrData.getPH1(dim);
+        } else {
+            if (dim == 0) {
+                log.info("Getting phases using autophase.");
+                phases = autoPhase(nmrData);
+            } else {
+                log.info("Unable to autophase for dimension: {}. Setting phases to 0.0", dim);
+                phases[0] = 0.0;
+                phases[1] = 0.0;
+            }
+        }
+        return phases;
+    }
+
     public static double[] autoPhase(NMRData nmrData) {
         int n = nmrData.getNPoints();
         Vec vec = new Vec(n, true);

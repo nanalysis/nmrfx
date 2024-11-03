@@ -836,6 +836,17 @@ public class VarianData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        String ext = "";
+        if (dim > 0) {
+            ext += dim;
+        }
+        Double ph0 = getParDouble("rp" + ext);
+        Double ph1 = getParDouble("lp" + ext);
+        return (ph0 != null && Math.abs(ph0) > 1.0e-9) || (ph1 != null && Math.abs(ph1) > 1.0e-9);
+    }
+
+    @Override
     public double getPH0(int iDim) {
         double ph0 = 0.0;
         Double dpar;
