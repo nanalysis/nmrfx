@@ -3845,7 +3845,7 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
-def genScript(arrayed=False, useapod=False):
+def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, doautophase1=False):
     global fidInfo
     script = ''
     sequence = fidInfo.fidObj.getSequence()
@@ -3863,7 +3863,7 @@ def genScript(arrayed=False, useapod=False):
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
-        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0, usephases, doautophase, doautophase1)
         script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
         script += 'BaselineGroup()\n'
     else:
@@ -3880,7 +3880,8 @@ def genScript(arrayed=False, useapod=False):
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0, usephases, doautophase, doautophase1)
+
         script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep' and not arrayed:
@@ -3935,7 +3936,7 @@ def genScript(arrayed=False, useapod=False):
         if fCoef != None and fCoef == 'sep':
             script += "MAG()\n"
         else:
-            phases = NMRDataUtil.getPhases(fidInfo.fidObj, iDim - 1);
+            phases = NMRDataUtil.getPhases(fidInfo.fidObj, iDim - 1, usephases, False, False)
             script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
             #script += 'PHASE(ph0=0.0,ph1=0.0)\n'
     if fidInfo.nd > 1:
