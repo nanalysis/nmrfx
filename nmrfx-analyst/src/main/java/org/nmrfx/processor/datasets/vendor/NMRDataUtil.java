@@ -19,6 +19,8 @@ package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.parameters.GaussianWt;
+import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.jeol.JeolDelta;
@@ -486,5 +488,68 @@ public final class NMRDataUtil {
             value = nmrData.getParDouble(string);
         }
         return value;
+    }
+
+    public static String getApodizationString(NMRData nmrData, int dim, boolean arrayed, boolean useApodize) {
+        String fPointVal = "";
+        if (dim > 0) {
+            double ph1 = nmrData.getPH1(dim);
+            double fPoint = 0.5 + 0.5 * Math.abs(ph1 / 180.0);
+            fPointVal =  String.format("%.2f", fPoint);
+        }
+        String apodizationString = "";
+
+        if (useApodize) {
+            GaussianWt gaussianWt = nmrData.getGaussianWt(dim);
+            if (gaussianWt.exists()) {
+                double gb = gaussianWt.gf();
+                double lb = gaussianWt.lb();
+                String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
+                apodizationString = "GM("
+                        + "lb=" + String.format("%.2f", lb)
+                        + ", gb=" + String.format("%.2f", gb)
+                        + fPointStr
+                        + ")";
+
+            } else {
+                double lb = nmrData.getExpd(dim);
+                if (lb >= 1.0e-6) {
+                    String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
+                    apodizationString = "EXPD("
+                            + "lb=" + String.format("%.2f", lb)
+                            + fPointStr
+                            + ")";
+                }
+            }
+            SinebellWt sinebellWt = nmrData.getSinebellWt(dim);
+            if (sinebellWt.exists()) {
+                String fPointStr = fPointVal.isEmpty() ? "" : ", c=" + fPointVal;
+                String sbString = "SB("
+                        + "offset=" + String.format("%.2f", sinebellWt.offset())
+                        + ", power=" + String.format("%d", sinebellWt.power())
+                        + fPointStr
+                        + ")";
+                if (apodizationString.isEmpty()) {
+                    apodizationString = sbString;
+                } else {
+                    apodizationString += "\n" + sbString;
+                }
+            }
+        } else {
+            if ((nmrData.getNDim() == 1) || (arrayed && nmrData.getNDim() == 2)) {
+                apodizationString = "EXPD("
+                        + "lb=" + String.format("%.2f", 0.3)
+                        + ")";
+            } else {
+                String fPointStr = fPointVal.isEmpty() ? "" : ", c=" + fPointVal;
+                String sbString = "SB("
+                        + "offset=" + String.format("%.2f", 0.5)
+                        + ", power=" + String.format("%d", 2)
+                        + fPointStr
+                        + ")";
+            }
+
+        }
+        return apodizationString;
     }
 }

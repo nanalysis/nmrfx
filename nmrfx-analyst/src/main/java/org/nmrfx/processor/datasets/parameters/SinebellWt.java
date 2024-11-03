@@ -31,7 +31,7 @@ public abstract class SinebellWt implements Existence {
     // constructor is vendor dependent, e.g.
     //   SinebellWt(int dim) { }
     public boolean exists() {
-        if (sb != 0.0) {
+        if (sb > 1.0e-6) {
             return true;
         } else {
             return false;
