@@ -193,7 +193,7 @@ public class MoleculeMenuActions extends MenuActions {
                 usePath = entry;
                 break;
             }
-        } catch (IOException ioException) {
+        } catch (IOException ignored) {
         }
         if (usePath != null) {
             String type = getType(usePath);
