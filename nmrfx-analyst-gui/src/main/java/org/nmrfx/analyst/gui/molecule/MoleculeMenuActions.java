@@ -20,6 +20,10 @@ import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
@@ -170,6 +174,40 @@ public class MoleculeMenuActions extends MenuActions {
         }
     }
 
+    public static String getType(Path usePath) {
+        File file = usePath.toFile();
+        String type = null;
+        String fileName = file.getName();
+        int dotPos = fileName.lastIndexOf(".");
+        if (dotPos != -1) {
+            type = fileName.substring(dotPos + 1);
+        }
+        return type;
+
+    }
+
+    public static void readMoleculeInDirectory(Path dir) {
+        Path usePath = null;
+        try (DirectoryStream<Path> paths = Files.newDirectoryStream(dir, "*.{smiles,mol,pdb,mol2,sdf}")) {
+            for (Path entry : paths) {
+                usePath = entry;
+                break;
+            }
+        } catch (IOException ioException) {
+        }
+        if (usePath != null) {
+            String type = getType(usePath);
+            if (type == null) {
+                return;
+            }
+            readMolecule(usePath.toFile(), type);
+        }
+    }
+
+    public void readMolecule() {
+        readMolecule("");
+    }
+
     public void readMolecule(String type) {
         if (!type.equals("pdb xyz") && !checkForExisting()) {
             return;
@@ -177,6 +215,19 @@ public class MoleculeMenuActions extends MenuActions {
 
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
+        if (type.isEmpty()) {
+            type = getType(file.toPath());
+        }
+        if (type != null) {
+            Molecule molecule = readMolecule(file, type);
+            if (molecule != null) {
+                showMols();
+                resetAtomController();
+            }
+        }
+    }
+
+    public static Molecule readMolecule(File file, String type) {
         Molecule molecule = null;
         if (file != null) {
             try {
@@ -213,7 +264,6 @@ public class MoleculeMenuActions extends MenuActions {
                     }
                 }
                 MoleculeFactory.setActive(molecule);
-                showMols();
             } catch (Exception ex) {
                 var mol = MoleculeFactory.getActive();
                 if ((mol != null) && (mol != molecule)) {
@@ -224,8 +274,8 @@ public class MoleculeMenuActions extends MenuActions {
                 dialog.setTitle("Error reading molecule file");
                 dialog.showAndWait();
             }
-            resetAtomController();
         }
+        return molecule;
     }
 
     @FXML

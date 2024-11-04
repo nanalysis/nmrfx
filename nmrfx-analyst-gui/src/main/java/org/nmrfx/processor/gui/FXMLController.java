@@ -47,10 +47,13 @@ import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
+import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -82,6 +85,7 @@ import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.nmrfx.utils.properties.PublicPropertyContainer;
@@ -96,6 +100,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.DoubleFunction;
 
@@ -486,6 +491,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             getActiveChart().layoutPlotChildren();
             statusBar.setMode(SpectrumStatusBar.DataMode.FID);
             processorController.hideDatasetToolBar();
+            if (PreferencesController.getLoadMoleculeIfPresent()) {
+                File file = new File(nmrData.getFilePath());
+                MoleculeMenuActions.readMoleculeInDirectory(file.getParentFile().toPath());
+            }
         } else {
             log.warn("Unable to add FID because controller can not be created.");
         }
@@ -527,6 +536,14 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         getActiveChart().layoutPlotChildren();
         undoManager.clear();
         ProjectBase.getActive().projectChanged(true);
+        if (PreferencesController.getLoadMoleculeIfPresent()) {
+            Molecule molecule = (Molecule) MoleculeFactory.getActive();
+            if (molecule != null) {
+                MoleculeUtils.removeMoleculeFromCanvas();
+                MoleculeUtils.addActiveMoleculeToCanvas();
+            }
+
+        }
     }
 
     /**
