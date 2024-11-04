@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -186,21 +187,21 @@ public class MoleculeMenuActions extends MenuActions {
 
     }
 
-    public static void readMoleculeInDirectory(Path dir) {
-        Path usePath = null;
+    public static void readMoleculeInDirectory(Path dir) throws IOException {
+        List<Path> moleculePaths = new ArrayList<>();
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(dir, "*.{smiles,mol,pdb,mol2,sdf}")) {
             for (Path entry : paths) {
-                usePath = entry;
-                break;
+                moleculePaths.add(entry);
             }
-        } catch (IOException ignored) {
         }
-        if (usePath != null) {
-            String type = getType(usePath);
-            if (type == null) {
-                return;
+        for (Path usePath : moleculePaths) {
+            if (usePath != null) {
+                String type = getType(usePath);
+                if (type == null) {
+                    return;
+                }
+                readMolecule(usePath.toFile(), type);
             }
-            readMolecule(usePath.toFile(), type);
         }
     }
 

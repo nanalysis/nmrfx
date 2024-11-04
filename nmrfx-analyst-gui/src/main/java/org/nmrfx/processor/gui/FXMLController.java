@@ -493,7 +493,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             processorController.hideDatasetToolBar();
             if (PreferencesController.getLoadMoleculeIfPresent()) {
                 File file = new File(nmrData.getFilePath());
-                MoleculeMenuActions.readMoleculeInDirectory(file.getParentFile().toPath());
+                try {
+                    MoleculeMenuActions.readMoleculeInDirectory(file.getParentFile().toPath());
+                } catch (IOException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
             }
         } else {
             log.warn("Unable to add FID because controller can not be created.");
