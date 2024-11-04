@@ -137,7 +137,7 @@ public class PeakPickHandler extends MouseHandler {
         Dataset dataset = (Dataset) chart.getDatasetAttributes().get(0).getDataset();
         Double datasetThreshold = dataset.getThreshold();
         if (datasetThreshold == null) {
-            datasetThreshold = PeakPicker.calculateThreshold(dataset);
+            datasetThreshold = PeakPicker.calculateThreshold(dataset, false);
             dataset.setThreshold(datasetThreshold);
         }
         threshold = Math.max(datasetThreshold, threshold);

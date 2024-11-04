@@ -811,11 +811,10 @@ public class PeakPicker {
         return lastPeakPicked;
     }
 
-    public static double calculateThreshold(Dataset dataset) {
-        boolean scaleToLargest = true;
+    public static double calculateThreshold(Dataset dataset, boolean scaleToLargest) {
         int nWin = 32;
-        double maxRatio = 20.0;
-        double sdRatio = 30.0;
+        double maxRatio = 50.0;
+        double sdRatio = 5.0;
         return calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
     }
 
@@ -848,7 +847,6 @@ public class PeakPicker {
             int nMax = maxs.size();
             double max = maxs.get(nMax - 3);
 
-            double min = maxs.get(0);
             threshold = max / maxRatio;
         }
         if (threshold < sdRatio * sDev) {
