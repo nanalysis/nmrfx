@@ -19,6 +19,8 @@ package org.nmrfx.processor.datasets.vendor;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.processor.datasets.parameters.GaussianWt;
+import org.nmrfx.processor.datasets.parameters.SinebellWt;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.jcamp.JCAMPData;
 import org.nmrfx.processor.datasets.vendor.jeol.JeolDelta;
@@ -444,36 +446,35 @@ public final class NMRDataUtil {
      * @param dim The dimension to get the phases for
      * @return An array of phases
      */
-    public static double[] getPhases(NMRData nmrData, int dim) {
+    public static double[] getPhases(NMRData nmrData, int dim, boolean usePhases, boolean doAutoPhase, boolean doAutoPhase1) {
         double[] phases = new double[2];
-        if (nmrData.arePhasesSet(dim)) {
+        if (nmrData.arePhasesSet(dim) && usePhases) {
             phases[0] = nmrData.getPH0(dim);
             phases[1] = nmrData.getPH1(dim);
-        } else {
-            if (dim == 0) {
-                log.info("Getting phases using autophase.");
-                phases = autoPhase(nmrData);
-            } else {
-                log.info("Unable to autophase for dimension: {}. Setting phases to 0.0", dim);
-                phases[0] = 0.0;
-                phases[1] = 0.0;
-            }
         }
+        if ((dim == 0) && doAutoPhase) {
+            phases = autoPhase(nmrData, phases, doAutoPhase1);
+        }
+
         return phases;
     }
 
-    public static double[] autoPhase(NMRData nmrData) {
+    public static double[] autoPhase(NMRData nmrData, double[] phases, boolean doAutoPhase1) {
         int n = nmrData.getNPoints();
         Vec vec = new Vec(n, true);
         nmrData.readVector(0, vec);
         double lb = nmrData.getTN(0).contains("H") ? 2.0 : 10.0;
         Expd expD = new Expd(lb, 1.0, false);
         expD.eval(vec);
-        vec.fft();
+        vec.fft(false, false, true);
+        vec.phase(phases[0], phases[1]);
         int winSize = vec.getSize() / 256;
         winSize = Math.max(4, winSize);
         winSize = Math.min(64, winSize);
-        double[] phases = vec.autoPhase(true, winSize, 25.0, 2, 360.0, 50.0);
+        double[] autoPhases = vec.autoPhase(doAutoPhase1, winSize, 25.0, 2, 360.0, 50.0);
+        phases[0] += autoPhases[0];
+        phases[1] += autoPhases[1];
+
         return phases;
     }
 
@@ -487,5 +488,68 @@ public final class NMRDataUtil {
             value = nmrData.getParDouble(string);
         }
         return value;
+    }
+
+    public static String getApodizationString(NMRData nmrData, int dim, boolean arrayed, boolean useApodize) {
+        String fPointVal = "";
+        if (dim > 0) {
+            double ph1 = nmrData.getPH1(dim);
+            double fPoint = 0.5 + 0.5 * Math.abs(ph1 / 180.0);
+            fPointVal =  String.format("%.2f", fPoint);
+        }
+        String apodizationString = "";
+
+        if (useApodize) {
+            GaussianWt gaussianWt = nmrData.getGaussianWt(dim);
+            if (gaussianWt.exists()) {
+                double gb = gaussianWt.gf();
+                double lb = gaussianWt.lb();
+                String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
+                apodizationString = "GMB("
+                        + "lb=" + String.format("%.2f", lb)
+                        + ", gb=" + String.format("%.2f", gb)
+                        + fPointStr
+                        + ")";
+
+            } else {
+                double lb = nmrData.getExpd(dim);
+                if (Math.abs(lb) >= 1.0e-6) {
+                    String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
+                    apodizationString = "EXPD("
+                            + "lb=" + String.format("%.2f", lb)
+                            + fPointStr
+                            + ")";
+                }
+            }
+            SinebellWt sinebellWt = nmrData.getSinebellWt(dim);
+            if (sinebellWt.exists()) {
+                String fPointStr = fPointVal.isEmpty() ? "" : ", c=" + fPointVal;
+                String sbString = "SB("
+                        + "offset=" + String.format("%.2f", sinebellWt.offset())
+                        + ", power=" + String.format("%d", sinebellWt.power())
+                        + fPointStr
+                        + ")";
+                if (apodizationString.isEmpty()) {
+                    apodizationString = sbString;
+                } else {
+                    apodizationString += "\n" + sbString;
+                }
+            }
+        } else {
+            if ((nmrData.getNDim() == 1) || (arrayed && nmrData.getNDim() == 2)) {
+                apodizationString = "EXPD("
+                        + "lb=" + String.format("%.2f", 0.3)
+                        + ")";
+            } else {
+                String fPointStr = fPointVal.isEmpty() ? "" : ", c=" + fPointVal;
+                String sbString = "SB("
+                        + "offset=" + String.format("%.2f", 0.5)
+                        + ", power=" + String.format("%d", 2)
+                        + fPointStr
+                        + ")";
+            }
+
+        }
+        return apodizationString;
     }
 }

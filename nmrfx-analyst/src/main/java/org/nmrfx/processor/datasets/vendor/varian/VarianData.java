@@ -900,7 +900,7 @@ public class VarianData implements NMRData {
             name += iDim;
         }
         if ((spar = getPar(name)) != null) {
-            if (spar.equals("n")) {
+            if (!spar.equals("n")) {
                 expd = Double.parseDouble(spar);
             }
         }

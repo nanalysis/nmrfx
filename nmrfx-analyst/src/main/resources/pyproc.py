@@ -3845,21 +3845,22 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
-def genScript(arrayed=False):
+def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, doautophase1=False):
     global fidInfo
     script = ''
     sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
+        apodString = NMRDataUtil.getApodizationString(fidInfo.fidObj, 0, arrayed, useapod)
         script += 'DIM(1)\n'
         script += 'SUPPRESS(disabled=True)\n'
-        script += 'EXPD(lb=1.0)\n'
+        script += apodString +'\n'
         script += 'ZF()\n'
         script += 'FT()\n'
 
         trim = fidInfo.fidObj.getTrim()
         if trim > 1.0e-3:
             script += 'TRIM(ftrim=' + str(trim) +')\n'
-        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0, usephases, doautophase, doautophase1)
         script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
         script += 'BaselineGroup()\n'
     else:
@@ -3873,10 +3874,12 @@ def genScript(arrayed=False):
             if fidInfo.mapToDatasetList[iDim-1] == -1:
                 continue
         script += 'SUPPRESS(disabled=True)\n'
-        script += 'SB()\n'
+        apodString = NMRDataUtil.getApodizationString(fidInfo.fidObj, 0, arrayed, useapod)
+        script += apodString +'\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0)
+        phases = NMRDataUtil.getPhases(fidInfo.fidObj, 0, usephases, doautophase, doautophase1)
+
         script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep' and not arrayed:
@@ -3907,7 +3910,9 @@ def genScript(arrayed=False):
             script += 'NUSGroup()\n'
         else:
             script += 'EXTEND(disabled=True)\n'
-        script += 'SB(c=0.5)\n'
+
+        apodString = NMRDataUtil.getApodizationString(fidInfo.fidObj, iDim-1, arrayed, useapod)
+        script += apodString + '\n'
         script += 'ZF()\n'
 
         if fidInfo.fidObj.getFTType(iDim-1) == "rft":
@@ -3931,7 +3936,7 @@ def genScript(arrayed=False):
         if fCoef != None and fCoef == 'sep':
             script += "MAG()\n"
         else:
-            phases = NMRDataUtil.getPhases(fidInfo.fidObj, iDim - 1);
+            phases = NMRDataUtil.getPhases(fidInfo.fidObj, iDim - 1, usephases, False, False)
             script += 'PHASE(ph0='+str(round(phases[0],2))+',ph1='+str(round(phases[1],2))+')\n'
             #script += 'PHASE(ph0=0.0,ph1=0.0)\n'
     if fidInfo.nd > 1:
