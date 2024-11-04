@@ -556,7 +556,7 @@ public class PeakPicker {
         boolean alreadyPeaksInRegion = false;
         if (listExists) {
             alreadyPeaksInRegion = anyPeaksInRegion();
-            if (alreadyPeaksInRegion && mode.startsWith("replace")) {
+            if (alreadyPeaksInRegion && mode.startsWith("append")) {
                 removeExistingPeaks();
                 peakList.compress();
                 peakList.reNumber();
@@ -578,7 +578,6 @@ public class PeakPicker {
         } else if (mode.equalsIgnoreCase("appendregion")) {
             mode = "append";
         }
-
         if (mode.equalsIgnoreCase("new")) {
             if (listExists) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " already exists");
