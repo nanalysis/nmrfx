@@ -564,6 +564,10 @@ public class AnalystApp extends Application {
                 removeStage(stage);
             }
         }
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
+        if (chart != null) {
+            chart.clearOnRegionAdded();
+        }
     }
 
     public static Stage getMainStage() {
