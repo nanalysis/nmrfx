@@ -1271,7 +1271,16 @@ public class ChartProcessor {
     public String getGenScript(boolean arrayed) {
         addFIDToPython();
         String arrayVal = arrayed ? "True" : "False";
-        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal + ")", String.class);
+        String useApod = PreferencesController.getUseFIDParApodization() ? "True" : "False";
+        String usePhases = PreferencesController.getUseFIDParPhases() ? "True" : "False";
+        String doAutoPhase = PreferencesController.getDoAutoPhase() ? "True" : "False";
+        String doAutoPhase1 = PreferencesController.getDoAutoPhase1() ? "True" : "False";
+        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal
+                + ", useapod=" + useApod
+                + ", usephases=" + usePhases
+                + ", doautophase=" + doAutoPhase
+                + ", doautophase1=" + doAutoPhase1
+                + ")", String.class);
     }
 
     public List<?> getDocs() {

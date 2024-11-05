@@ -643,8 +643,9 @@ public class Phaser {
     private void setPhases() {
         var nmrData = controller.getChartProcessor().getNMRData();
         if (nmrData != null) {
-            double ph0 = nmrData.getPH0(0);
-            double ph1 = nmrData.getPH1(0);
+            int phaseDim = controller.getActiveChart().getPhaseDim();
+            double ph0 = nmrData.getPH0(phaseDim);
+            double ph1 = nmrData.getPH1(phaseDim);
             setPhase(ph0, ph1);
         }
     }

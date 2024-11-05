@@ -465,7 +465,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
         removeMolecule();
         Molecule activeMol = Molecule.getActive();
         if (activeMol == null) {
-            AnalystApp.getAnalystApp().readMolecule("mol");
+            AnalystApp.getAnalystApp().readMolecule();
         }
         MoleculeUtils.addActiveMoleculeToCanvas();
     }

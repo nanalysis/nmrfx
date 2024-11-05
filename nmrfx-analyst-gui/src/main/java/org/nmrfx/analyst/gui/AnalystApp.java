@@ -490,9 +490,9 @@ public class AnalystApp extends Application {
         controller.removeBottomBoxNode(stripsController.getBox());
     }
 
-    public void readMolecule(String type) {
+    public void readMolecule() {
         if (molMenuActions != null) {
-            molMenuActions.readMolecule(type);
+            molMenuActions.readMolecule();
         }
     }
 
