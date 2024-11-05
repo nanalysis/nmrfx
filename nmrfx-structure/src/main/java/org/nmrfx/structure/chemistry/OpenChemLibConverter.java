@@ -110,6 +110,7 @@ public class OpenChemLibConverter {
         Molecule molecule = new Molecule(molName);
         molecule.entities.clear();
         Compound compound = new Compound("1", "A");
+        compound.assemblyID = 1;
         molecule.structures.add(0);
         compound.molecule = molecule;
         molecule.addEntity(compound, molName);
