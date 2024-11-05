@@ -42,6 +42,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 import static org.nmrfx.datasets.Nuclei.*;
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.*;
 
 /**
  * @author brucejohnson
@@ -455,7 +456,7 @@ public class PeakPicker {
                     PeakListTools.groupPeakListAndFit(peakList, dataset, rows, null, fitPars);
                     dataset.addPeakList(peakList, -1.0);
                     if (i != (nTries - 1)) {
-                        peakPickPar.mode = "append";
+                        peakPickPar.mode = APPEND;
                         peakList = peakPick();
                     }
                 } catch (PeakFitException ex) {
@@ -552,33 +553,33 @@ public class PeakPicker {
         }
         PeakList peakList = PeakList.get(peakPickPar.listName);
         boolean listExists = (peakList != null);
-        String mode = peakPickPar.mode;
+        PeakPickParameters.PickMode mode = peakPickPar.mode;
         boolean alreadyPeaksInRegion = false;
         if (listExists) {
             alreadyPeaksInRegion = anyPeaksInRegion();
-            if (alreadyPeaksInRegion && mode.startsWith("append")) {
+            if (alreadyPeaksInRegion && mode.isAppend()) {
                 removeExistingPeaks();
                 peakList.compress();
                 peakList.reNumber();
                 alreadyPeaksInRegion = false;
             }
         }
-        if (mode.equalsIgnoreCase("replaceif") && listExists) {
-            mode = "replace";
-        } else if (mode.equalsIgnoreCase("replaceif") && !listExists) {
-            mode = "new";
-        } else if (mode.equalsIgnoreCase("appendif") && !listExists) {
-            mode = "new";
-        } else if (mode.equalsIgnoreCase("appendif") && listExists) {
-            mode = "append";
-        } else if (mode.equalsIgnoreCase("appendregion") && !listExists) {
-            mode = "new";
-        } else if (mode.equalsIgnoreCase("appendregion") && alreadyPeaksInRegion) {
-            mode = "replace";
-        } else if (mode.equalsIgnoreCase("appendregion")) {
-            mode = "append";
+        if ((mode == REPLACEIF) && listExists) {
+            mode = REPLACE;
+        } else if ((mode == REPLACEIF) && !listExists) {
+            mode = NEW;
+        } else if ((mode == APPENDIF) && !listExists) {
+            mode = NEW;
+        } else if ((mode == APPENDIF) && listExists) {
+            mode = APPEND;
+        } else if ((mode == APPENDREGION) && !listExists) {
+            mode = NEW;
+        } else if ((mode == APPENDREGION) && alreadyPeaksInRegion) {
+            mode = REPLACE;
+        } else if (mode == APPENDREGION) {
+            mode = APPEND;
         }
-        if (mode.equalsIgnoreCase("new")) {
+        if (mode == NEW) {
             if (listExists) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " already exists");
             }
@@ -593,7 +594,7 @@ public class PeakPicker {
                 }
                 configureDim(sDim, pkToData[i]);
             }
-        } else if (mode.equalsIgnoreCase("append")) {
+        } else if (mode == APPEND) {
             if (peakList == null) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + "doesn't exist");
             }
@@ -619,7 +620,7 @@ public class PeakPicker {
             if (nMatch != peakList.nDim) {
                 throw new IllegalArgumentException("Dimensions not equal to those of peak list!");
             }
-        } else if (mode.equalsIgnoreCase("replace")) {
+        } else if (mode == REPLACE) {
             if (!listExists) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " doesn't exist");
             }

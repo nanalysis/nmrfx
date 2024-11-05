@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.NEW;
+
 @PythonAPI("dscript")
 public class PeakPickParameters {
 
@@ -34,7 +36,7 @@ public class PeakPickParameters {
     public PeakList filterList = null;
     public boolean filter = false;
     public double filterWidth;
-    public String mode = "new";
+    public PickMode mode = NEW;
     public String region = "box";
     public boolean useCrossHairs;
     public boolean refineLS = false;
@@ -55,6 +57,18 @@ public class PeakPickParameters {
 
     public boolean useNoise = false;
 
+    public enum PickMode {
+        NEW,
+        APPEND,
+        APPENDIF,
+        APPENDREGION,
+        REPLACE,
+        REPLACEIF;
+
+        public boolean isAppend() {
+            return this == APPEND || this == APPENDIF || this == APPENDREGION;
+        }
+    }
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
         this.listName = listName;
@@ -62,7 +76,7 @@ public class PeakPickParameters {
     public PeakPickParameters() {
     }
 
-    public PeakPickParameters mode(String mode) {
+    public PeakPickParameters mode(PickMode mode) {
         this.mode = mode;
         return this;
     }
