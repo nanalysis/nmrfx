@@ -596,6 +596,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void addRegion(DatasetRegion region) {
         Analyzer analyzer = getAnalyzer();
+        if (chart.getPeakListAttributes().isEmpty()) {
+            return;
+        }
         if (analyzer != null) {
             double ppm0;
             double ppm1;
