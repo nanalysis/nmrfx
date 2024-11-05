@@ -221,13 +221,21 @@ public class TRACTGUI {
                 if (scanTable.isData(header)) {
                     yArrayChoice.getItems().add(header);
                 }
+                if (header.equalsIgnoreCase("etime")
+                        || header.equalsIgnoreCase("value")
+                        || header.equalsIgnoreCase("delay")
+                        || header.equalsIgnoreCase("vd")
+                ) {
+                    xArrayChoice.getItems().add(header);
+                }
+
             }
-            xArrayChoice.getItems().add("etime");
             xArrayChoice.setValue(xArrayChoice.getItems().get(0));
             if (!yArrayChoice.getItems().isEmpty()) {
                 yArrayChoice.setValue(yArrayChoice.getItems().get(0));
             }
         }
+
     }
 
     @FXML
