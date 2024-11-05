@@ -823,11 +823,15 @@ public class ChartProcessor {
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 file = newProcPath.toFile();
             } else {
-                Optional<File> fileOpt = FileNameDialog.getFileName(datasetName, fxmlController.getStage());
-                if (fileOpt.isEmpty()) {
-                    return emptyResult;
+                if (!filePath.endsWith(".dx") && !filePath.endsWith(".jdx")) {
+                    Optional<File> fileOpt = FileNameDialog.getFileName(datasetName, fxmlController.getStage());
+                    if (fileOpt.isEmpty()) {
+                        return emptyResult;
+                    }
+                    file = directory.toPath().resolve(fileOpt.get().toPath()).toFile();
+                } else {
+                    file = directory.toPath().resolve(datasetName).toFile();
                 }
-                file = directory.toPath().resolve(fileOpt.get().toPath()).toFile();
 
                 Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
                 if (fileTypeOpt.isPresent() && fileTypeOpt.get() != getDatasetType()) {
