@@ -523,6 +523,17 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        double ph0 = block.optional($PHC0, dim)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
+        double ph1 = block.optional($PHC1, dim)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
+        return Math.abs(ph0) > 1.0e-9 || Math.abs(ph1) > 1.0e-9;
+    }
+
+    @Override
     public double getPH0(int dim) {
         double ph0 = block.optional($PHC0, dim)
                 .map(JCampRecord::getDouble)

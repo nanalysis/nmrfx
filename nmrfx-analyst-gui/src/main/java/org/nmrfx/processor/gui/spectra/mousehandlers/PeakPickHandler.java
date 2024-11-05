@@ -70,7 +70,7 @@ public class PeakPickHandler extends MouseHandler {
                     double[][] region = {{xLim0, xLim1}, {yLim0, yLim1}};
                     PeakPickParameters peakPickParameters = new PeakPickParameters();
                     peakPickParameters.level(chart.getDatasetAttributes().get(0).getLvl());
-                    peakPickParameters.mode = "appendif";
+                    peakPickParameters.mode = PeakPickParameters.PickMode.APPENDIF;
 
                     PeakList peaklist = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
                             region, peakPickParameters);
@@ -137,7 +137,7 @@ public class PeakPickHandler extends MouseHandler {
         Dataset dataset = (Dataset) chart.getDatasetAttributes().get(0).getDataset();
         Double datasetThreshold = dataset.getThreshold();
         if (datasetThreshold == null) {
-            datasetThreshold = PeakPicker.calculateThreshold(dataset);
+            datasetThreshold = PeakPicker.calculateThreshold(dataset, false);
             dataset.setThreshold(datasetThreshold);
         }
         threshold = Math.max(datasetThreshold, threshold);
@@ -146,7 +146,7 @@ public class PeakPickHandler extends MouseHandler {
         PeakPickParameters peakPickParameters = new PeakPickParameters();
         peakPickParameters.level(threshold);
         peakPickParameters.listName = listName;
-        peakPickParameters.mode = "appendregion";
+        peakPickParameters.mode = PeakPickParameters.PickMode.APPENDREGION;
 
         PeakList peakList = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
                 region, peakPickParameters);
