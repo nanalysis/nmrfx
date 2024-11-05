@@ -137,8 +137,10 @@ public class MouseBindings {
 
     private void showPopOver() {
         if (waitingForPopover.get()) {
-            Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
-            AnalystApp.getAnalystApp().showPopover(chart, objectBounds, currentSelection);
+            if (currentBounds != null) {
+                Bounds objectBounds = chart.getCanvas().localToScreen(currentBounds);
+                AnalystApp.getAnalystApp().showPopover(chart, objectBounds, currentSelection);
+            }
         }
     }
 

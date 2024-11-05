@@ -58,7 +58,7 @@ class TestStructGen(unittest.TestCase):
         data = genYaml()
         refiner=refine()
         dataDir = 'tmp'
-        seed = 0
+        seed = 1
         report = False
         osfiles.setOutFiles(refiner,dataDir, seed)
         refiner.setReportDump(report) # if -r seen == True; else False
