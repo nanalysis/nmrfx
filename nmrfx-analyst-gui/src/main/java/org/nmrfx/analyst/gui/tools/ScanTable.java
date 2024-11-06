@@ -144,8 +144,8 @@ public class ScanTable {
 
     ListChangeListener<Integer> selectionListener;
     PolyChart currentChart;
-    Map<TableColumn, ContextMenu> columnMenus = new HashMap<>();
-    Set<TableColumn> columnsToCheckForMulti = new HashSet<>();
+    Map<TableColumn<FileTableItem, ?>, ContextMenu> columnMenus = new HashMap<>();
+    Set<TableColumn<FileTableItem,?>> columnsToCheckForMulti = new HashSet<>();
 
 
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
@@ -802,11 +802,13 @@ public class ScanTable {
                         String sequence = "";
                         int row = 0;
                         boolean active = true;
+                        String fileName = "";
                         for (String standardHeader : standardHeaders) {
                             if (!fieldMap.containsKey(standardHeader)) {
                                 hasAll = false;
                             } else {
                                 switch (standardHeader) {
+                                    case PATH_COLUMN_NAME -> fileName = fieldMap.get(standardHeader);
                                     case NDIM_COLUMN_NAME -> nDim = Integer.parseInt(fieldMap.get(standardHeader));
                                     case ROW_COLUMN_NAME -> row = Integer.parseInt(fieldMap.get(standardHeader));
                                     case ETIME_COLUMN_NAME -> eTime = Long.parseLong(fieldMap.get(standardHeader));
@@ -815,7 +817,6 @@ public class ScanTable {
                                 }
                             }
                         }
-                        String fileName = fieldMap.get(PATH_COLUMN_NAME);
                         String datasetName = "";
                         if (fieldMap.containsKey(DATASET_COLUMN_NAME)) {
                             datasetName = fieldMap.get(DATASET_COLUMN_NAME);
@@ -827,10 +828,6 @@ public class ScanTable {
                         }
                         boolean noPath = (fileName == null) || fileName.isBlank();
                         if (!hasAll && !noPath) {
-                            if ((fileName == null) || fileName.isBlank()) {
-                                GUIUtils.warn("Load scan table", "No value in path field");
-                                return;
-                            }
                             if ((scanDir == null) || scanDir.toString().isBlank()) {
                                 GUIUtils.warn("Load scan table", "No scan directory");
                                 return;
@@ -1036,7 +1033,7 @@ public class ScanTable {
 
     }
 
-    private boolean columnHasMultiple(TableColumn column) {
+    private boolean columnHasMultiple(TableColumn<FileTableItem, ?> column) {
         int nRows = tableView.getItems().size();
         if (nRows < 2) {
             return false;
@@ -1094,13 +1091,13 @@ public class ScanTable {
         TableColumn<FileTableItem, Color> posColorCol = makeColorColumns(scannerTool, true);
         TableColumn<FileTableItem, Color> negColorCol = makeColorColumns(scannerTool, false);
 
-        TableColumn<FileTableItem, Boolean> posDrawOnCol = makePosDrawColumn(scannerTool, true);
+      //  TableColumn<FileTableItem, Boolean> posDrawOnCol = makePosDrawColumn(scannerTool, true);
         TableColumn<FileTableItem, Boolean> negDrawOnCol = makePosDrawColumn(scannerTool, false);
 
 
         TableColumn<FileTableItem, TableColumn> posColumn = new TableColumn<>(POSITIVE_COLUMN_NAME);
         TableColumn<FileTableItem, TableColumn> negColumn = new TableColumn<>(NEGATIVE_COLUMN_NAME);
-        posColumn.getColumns().addAll(posDrawOnCol, posColorCol);
+        posColumn.getColumns().addAll(posColorCol);
         negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
 
         TableColumn<FileTableItem, Boolean> activeColumn = makeActiveColumn(scannerTool);
