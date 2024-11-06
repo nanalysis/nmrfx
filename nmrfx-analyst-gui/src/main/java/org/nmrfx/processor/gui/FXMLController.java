@@ -51,6 +51,7 @@ import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -2013,6 +2014,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public boolean isScannerToolPresent() {
         return (scannerTool != null) && scannerTool.scannerActive();
+    }
+
+    public Optional<ScanTable> getScannerTable() {
+        Optional<ScanTable> result = Optional.empty();
+        if (scannerTool != null) {
+            ScanTable scanTable = scannerTool.getScanTable();
+            if (getBottomBox().getChildren().contains(scannerTool.getBox())) {
+                result = Optional.of(scanTable);
+            }
+        }
+        return result;
     }
 
     public void showScannerTool() {
