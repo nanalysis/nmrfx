@@ -39,6 +39,7 @@ import org.codehaus.commons.nullanalysis.Nullable;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.regions.RegionsTableController;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
@@ -730,6 +731,18 @@ public class PolyChart extends Region {
         newChart.refresh();
     }
 
+    private List<DatasetAttributes> getUpdateList() {
+        final List<DatasetAttributes> updateThese;
+
+        Optional<ScanTable> scanTableOpt = getFXMLController().getScannerTable();
+        if (scanTableOpt.isPresent()) {
+            updateThese = scanTableOpt.get().getSelectedDatasetAttributesList();
+        } else {
+            updateThese = datasetAttributesList;
+        }
+        return updateThese;
+    }
+
     public void scroll(double x, double y) {
         scrollXAxis(x);
         scrollYAxis(y);
@@ -762,8 +775,10 @@ public class PolyChart extends Region {
         double center = (max + min) / 2.0;
 
         if (is1D()) {
-            if (!datasetAttributesList.isEmpty()) {
-                datasetAttributesList.forEach(dataAttr -> {
+            final List<DatasetAttributes> updateThese = getUpdateList();
+
+            if (!updateThese.isEmpty()) {
+                updateThese.forEach(dataAttr -> {
                     double fOffset = dataAttr.getOffset();
                     fOffset -= y / getHeight();
                     dataAttr.setOffset(fOffset);
@@ -779,9 +794,11 @@ public class PolyChart extends Region {
         }
     }
 
+
     protected void adjustScale(double factor) {
         ChartUndoScale undo = new ChartUndoScale(this);
-        datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
+        final List<DatasetAttributes> updateThese = getUpdateList();
+        updateThese.stream().filter(dataAttr -> !dataAttr.isProjection())
                 .forEach(dataAttr -> adjustScale(dataAttr, factor));
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
@@ -826,7 +843,8 @@ public class PolyChart extends Region {
 
     public void scaleY(double y) {
         final double scale = calculateScaleYFactor(y);
-        datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
+        final List<DatasetAttributes> updateThese = getUpdateList();
+        updateThese.stream().filter(dataAttr -> !dataAttr.isProjection())
                 .forEach(dataAttr -> {
                     DatasetBase dataset = dataAttr.getDataset();
                     if (is1D()) {
@@ -1093,7 +1111,8 @@ public class PolyChart extends Region {
 
     public void autoScale() {
         ChartUndoScale undo = new ChartUndoScale(this);
-        datasetAttributesList.forEach(this::autoScale);
+        var updateList = getUpdateList();
+        updateList.forEach(this::autoScale);
         updateProjectionScale();
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
