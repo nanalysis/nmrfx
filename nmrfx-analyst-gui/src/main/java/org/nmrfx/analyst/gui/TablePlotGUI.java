@@ -218,11 +218,13 @@ public class TablePlotGUI {
         var groups = new HashMap<Integer, List<FileTableItem>>();
         List<FileTableItem> items = tableView.getItems();
         for (FileTableItem item : items) {
-            if (!groups.containsKey(item.getGroup())) {
-                groups.put(item.getGroup(), new ArrayList<>());
+            if (item.getActive()) {
+                if (!groups.containsKey(item.getGroup())) {
+                    groups.put(item.getGroup(), new ArrayList<>());
+                }
+                var itemList = groups.get(item.getGroup());
+                itemList.add(item);
             }
-            var itemList = groups.get(item.getGroup());
-            itemList.add(item);
         }
         return groups;
     }
@@ -237,6 +239,9 @@ public class TablePlotGUI {
     }
 
 
+    int nActive(List<FileTableItem> items) {
+       return (int) items.stream().filter(item -> item.getActive()).count();
+    }
     void updatePlotWithFitLines() {
         updateScatterPlot();
         for (var series : fitLineSeries) {
@@ -282,11 +287,14 @@ public class TablePlotGUI {
                         series.setFill(ScanTable.getGroupColor(groupNum));
 
                         series.clear();
-                        double[] ddata = new double[items.size()];
+                        int nItems = nActive(items);
+                        double[] ddata = new double[nItems];
                         int i = 0;
                         for (FileTableItem item : items) {
-                            double y = item.getDouble(nameMap.get(yElem));
-                            ddata[i++] = y;
+                            if (item.getActive()) {
+                                double y = item.getDouble(nameMap.get(yElem));
+                                ddata[i++] = y;
+                            }
                         }
                         BoxPlotData fiveNum = new BoxPlotData(ddata);
                         XYValue xy = new XYValue(iValue + 1.0, 0.0);
@@ -329,12 +337,14 @@ public class TablePlotGUI {
                             DataSeries series = new DataSeries();
                             series.clear();
                             for (FileTableItem item : items) {
-                                double x = item.getDouble(nameMap.get(xElem));
-                                double y = item.getDouble(nameMap.get(yElem));
-                                series.add(new XYValue(x, y));
-                                series.setFill(ScanTable.getGroupColor(groupNum));
-                                series.setStroke(ScanTable.getGroupColor(groupNum));
+                                if (item.getActive()) {
+                                    double x = item.getDouble(nameMap.get(xElem));
+                                    double y = item.getDouble(nameMap.get(yElem));
+                                    series.add(new XYValue(x, y));
+                                }
                             }
+                            series.setFill(ScanTable.getGroupColor(groupNum));
+                            series.setStroke(ScanTable.getGroupColor(groupNum));
                             activeChart.getData().add(series);
                             activeChart.autoScale(true);
                         }
@@ -498,22 +508,25 @@ public class TablePlotGUI {
 
     private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY, int iGroup) {
         List<FileTableItem> items = tableView.getItems();
-        double[][] xValues = new double[1][items.size()];
-        double[][] yValues = new double[nY][items.size()];
-        double[][] errValues = new double[nY][items.size()];
+        int nItems = nActive(items);
+        double[][] xValues = new double[1][nItems];
+        double[][] yValues = new double[nY][nItems];
+        double[][] errValues = new double[nY][nItems];
         int i = 0;
         double maxX = 0.0;
         for (FileTableItem item : items) {
-            double x = item.getDouble(nameMap.get(xElem));
-            xValues[0][i] = x;
-            maxX = Math.max(xValues[0][i], maxX);
-            int j = 0;
-            for (var yElem : yElems) {
-                yValues[j][i] = item.getDouble(nameMap.get(yElem));
-                errValues[j][i] = 1.0;
-                j++;
+            if (item.getActive()) {
+                double x = item.getDouble(nameMap.get(xElem));
+                xValues[0][i] = x;
+                maxX = Math.max(xValues[0][i], maxX);
+                int j = 0;
+                for (var yElem : yElems) {
+                    yValues[j][i] = item.getDouble(nameMap.get(yElem));
+                    errValues[j][i] = 1.0;
+                    j++;
+                }
+                i++;
             }
-            i++;
         }
         fitEquation.setXYE(xValues, yValues, errValues);
         PointValuePair result = fitEquation.fit();
