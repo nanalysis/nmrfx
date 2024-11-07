@@ -457,13 +457,8 @@ public class PeakMatcher {
 
         int nPeaks = valuesPeak.size();
         int nAtoms = valuesAtom.size();
-        int nExtraPeaks;
+        int nExtraPeaks = nAtoms;
         int nExtraAtoms = 0;
-        if (nAtoms > nPeaks) {
-            nExtraPeaks = nAtoms;
-        } else {
-            nExtraPeaks = nAtoms;
-        }
 
         for (int i = 0; i < nExtraAtoms; i++) {
             int index = valuesAtom.size();
@@ -543,8 +538,6 @@ public class PeakMatcher {
                 int thisPeakNum = itemMatch.itemNum;
                 if (thisPeakNum >= nOrigPeaks) {
                     itemMatch.setGroupProbability(itemMatch.probability);
-                    //System.out.println("skip " + iAtom + " " + thisPeakNum);
-                    //goodMatches.add(itemMatch);
                     continue;
                 }
                 PeakValue peakValue = valuesPeak.get(thisPeakNum);
@@ -564,8 +557,6 @@ public class PeakMatcher {
                             }
                         }
                     }
-                } else {
-
                 }
                 int nSuc = 0;
                 if (peakMatchSuc != null) {
