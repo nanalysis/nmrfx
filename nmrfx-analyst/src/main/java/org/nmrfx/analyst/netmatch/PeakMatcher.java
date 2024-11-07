@@ -299,7 +299,7 @@ public class PeakMatcher {
                                 stdev, delta, QPred, (QMulti / nValues), qTotal / norm);
                     }
                     for (PeakSetAtom peakSetAtom : atomShifts.peakSetAtoms) {
-                        AtomValue aValue = peakSetAtom.peakSets.valuesAtom.get(peakSetAtom.atom);
+                        AtomValue aValue = peakSetAtom.peakSets().valuesAtom.get(peakSetAtom.atom());
                         norms[aValue.getIndex()] += norm;
                         scores[aValue.getIndex()] += qTotal;
                     }

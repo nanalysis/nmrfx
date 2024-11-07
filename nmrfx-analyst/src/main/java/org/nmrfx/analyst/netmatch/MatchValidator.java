@@ -20,7 +20,6 @@ public class MatchValidator implements Predicate {
         for (int i = 0; i < nGenes; i++) {
             int index = getIndex(chromo.get(i));
             if (index < 0) {
-                System.out.println(" bad " + i + " " + index + " " + chromo);
                 return false;
             }
 
@@ -35,7 +34,6 @@ public class MatchValidator implements Predicate {
         for (int i = 0; i < nGenes; i++) {
             int index = getIndex(chromo.get(i));
             if (index < 0) {
-                System.out.println(" bad " + i + " " + index + " " + chromo);
                 return false;
             }
 
@@ -45,8 +43,7 @@ public class MatchValidator implements Predicate {
 
     static int getIndex(Object o) {
         EnumGene gene = (EnumGene) o;
-        int iIndex = (Integer) gene.alleleIndex();
-        return iIndex;
+        return gene.alleleIndex();
     }
 
 }
