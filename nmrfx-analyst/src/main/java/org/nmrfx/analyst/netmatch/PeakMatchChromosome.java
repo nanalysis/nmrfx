@@ -1,9 +1,9 @@
 package org.nmrfx.analyst.netmatch;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math3.genetics.AbstractListChromosome;
 import org.apache.commons.math3.genetics.InvalidRepresentationException;
+
+import java.util.List;
 
 /**
  *
