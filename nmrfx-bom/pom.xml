@@ -356,16 +356,21 @@
                 <version>3.3.1</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
-        <dependency>
-            <groupId>org.ojalgo</groupId>
-            <artifactId>ojalgo</artifactId>
-            <version>47.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.actelion.research</groupId>
-            <artifactId>openchemlib</artifactId>
-            <version>2023.3.3</version>
-        </dependency>
+            <dependency>
+                <groupId>org.ojalgo</groupId>
+                <artifactId>ojalgo</artifactId>
+                <version>47.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.actelion.research</groupId>
+                <artifactId>openchemlib</artifactId>
+                <version>2023.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenetics</groupId>
+                <artifactId>jenetics</artifactId>
+                <version>7.2.0</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>

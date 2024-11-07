@@ -102,6 +102,10 @@
             <artifactId>jython-slim</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.jenetics</groupId>
+            <artifactId>jenetics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>berlin.yuna</groupId>
             <artifactId>type-map</artifactId>
         </dependency>
