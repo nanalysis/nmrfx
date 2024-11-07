@@ -105,7 +105,7 @@ public class ConstrainedSwapMutator<
             double avgFitness = sumFitness / sumCount;
             for (ItemMatch item : peakMatches.get(iGene)) {
                 double rate = item.getLocalScore();
-                if (rate == 0.0) {
+                if (rate < 1.0e-10) {
                     rate = startRate;
                 }
                 if (item.itemNum < values.length) {

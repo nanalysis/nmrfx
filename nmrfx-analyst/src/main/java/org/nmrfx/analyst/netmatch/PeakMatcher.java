@@ -259,7 +259,6 @@ public class PeakMatcher {
             if (out != null) {
                 out.printf("%10s %3s %8s %8s %8s %8s %8s %8s %8s\n", "Atom", "nVa", "predppm", "avgppm", "stdev", "delta", "QPred", "QMulti", "qTotal");
             }
-            //fixme  works for first set only
             PeakSets firstSet = getFirstSet();
             double[] norms = new double[firstSet.getAtoms().size()];
             double[] scores = new double[firstSet.getAtoms().size()];
@@ -316,7 +315,7 @@ public class PeakMatcher {
                 out.close();
             }
             for (int i = 0; i < scores.length; i++) {
-                if (norms[i] != 0.0) {
+                if (norms[i] > 1.0e-10) {
                     localScores[i] = scores[i] / norms[i];
                 }
             }
@@ -377,7 +376,12 @@ public class PeakMatcher {
     }
 
     public static PeakSets getFirstSet() {
-        return peakSetsMap.values().stream().findFirst().orElse(null);
+        var peakSetsOpt =  peakSetsMap.values().stream().findFirst();
+        if (peakSetsOpt.isPresent()) {
+            return peakSetsOpt.get();
+        } else {
+            throw new IllegalStateException("No set in peakSetsMap");
+        }
     }
 
     public double getValue(List list) {
@@ -657,9 +661,6 @@ public class PeakMatcher {
         } else {
             int nTotal = Math.max(nAtoms, nPeaks);
             matcher.reset(nTotal, true);
-//            int nTotal = nAtoms;
-            int nExtra = nTotal - nPeaks;
-//            matcher.reset(nTotal, true);
             int n = nPeaks - nAtoms;
             for (int j = 0; j < nAtoms; j++) {
                 matcher.setWeight(j, n + j, -1.0);
@@ -708,12 +709,13 @@ public class PeakMatcher {
         multiMatchList.clear();
         PeakSets firstSet = null;
         int nAtoms = 0;
-        for (PeakSets peakSets : peakSetsMap.values()) {
+        var peakSetsOpt = peakSetsMap.values().stream().findFirst();
+        if (peakSetsOpt.isPresent()) {
+            var peakSets = peakSetsOpt.get();
             firstMatches = peakSets.atomMatches;
             nAtoms = peakSets.peakMatches.size();
-            firstSet = peakSets;
-            break;
         }
+
         // make an array of peak to atom matches
         int[][] matchPeaks = new int[firstMatches.size()][];
         int iPeak = 0;
@@ -775,11 +777,13 @@ public class PeakMatcher {
     static void refineMultiMatch(String typeName, List<ScoreConstrained> multiMatchList) {
         int nAtoms = 0;
         int nPeaks = 0;
-        for (PeakSets peakSets : peakSetsMap.values()) {
+        var peakSetsOpt = peakSetsMap.values().stream().findFirst();
+        if (peakSetsOpt.isPresent()) {
+            var peakSets = peakSetsOpt.get();
             nAtoms = peakSets.peakMatches.size();
             nPeaks = peakSets.atomMatches.size();
-            break;
         }
+
         boolean[] usedAtoms = new boolean[nAtoms];
         boolean[] usedPeaks = new boolean[nPeaks];
         HashSet<String> skipPeakAtoms = new HashSet<>();
@@ -928,7 +932,6 @@ public class PeakMatcher {
                 int nDim = (fields.length - 2) / 2;
                 Double[] dArray = new Double[nDim];
                 Double[] tArray = new Double[nDim];
-//                int index = Integer.parseInt(fields[1]);
                 int index = peakType.valuesPeak.size();
                 for (int i = 0; i < nDim; i++) {
                     dArray[i] = Double.parseDouble(fields[i * 2 + 2]);
@@ -1011,7 +1014,7 @@ public class PeakMatcher {
         Atom[] atoms = new Atom[nAtoms];
         for (Polymer polymer : mol.getPolymers()) {
             for (Residue residue : polymer.getResidues()) {
-                String hName = residue.previous == null ? hName = "H1" : "H";
+                String hName = residue.previous == null ? "H1" : "H";
                 atoms[0] = residue.getAtom(hName);
                 atoms[1] = residue.getAtom("N");
                 int j = 2;
