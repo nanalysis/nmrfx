@@ -27,10 +27,9 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
-import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
+import org.nmrfx.analyst.gui.GUIScripterAdvanced;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.FileWatchListener;
 import org.nmrfx.utilities.NMRFxFileWatcher;
@@ -45,6 +44,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -136,7 +136,9 @@ public class WindowIO implements FileWatchListener {
             Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows", favName + "_fav.yaml");
             try {
                 saveWindow(AnalystApp.getFXMLControllerManager().getOrCreateActiveController(), path);
-            } catch (IOException ex) {
+            } catch (IOException | ExecutionException | InterruptedException ex) {
+                log.error("Error saving window file " + path, ex);
+                Thread.currentThread().interrupt();
                 GUIUtils.warn("Error saving window file", ex.getMessage());
             }
         }
@@ -144,18 +146,16 @@ public class WindowIO implements FileWatchListener {
     }
 
     public static void loadWindow(File file) throws IOException {
-        AnalystPythonInterpreter.exec("import nwyaml\\n");
         String fileContent = Files.readString(file.toPath());
-        AnalystPythonInterpreter.set("yamlContents", fileContent);
-        AnalystPythonInterpreter.set("yamlFileName", file.toString());
-        AnalystPythonInterpreter.set("yamlFileNum", 1);
-        AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlContents, yamlFileNum)");
+        GUIScripterAdvanced guiScripterAdvanced = new GUIScripterAdvanced();
+        guiScripterAdvanced.loadYAML(fileContent, file.getName(), true);
     }
 
     public static void loadWindows(Path directory) throws IOException {
         Predicate<String> predicate = STAGE_PATTERN1.asPredicate();
         Predicate<String> predicate2 = STAGE_PATTERN2.asPredicate();
-        AnalystPythonInterpreter.exec("import nwyaml\\n");
+        GUIScripterAdvanced guiScripterAdvanced = new GUIScripterAdvanced();
+
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
                 files.sequential().filter(path
@@ -167,10 +167,7 @@ public class WindowIO implements FileWatchListener {
                             if (fileNum.isPresent()) {
                                 try {
                                     String fileContent = Files.readString(path);
-                                    AnalystPythonInterpreter.set("yamlContents", fileContent);
-                                    AnalystPythonInterpreter.set("yamlFileName", path.toString());
-                                    AnalystPythonInterpreter.set("yamlFileNum", fileNum.get());
-                                    AnalystPythonInterpreter.exec("nwyaml.loadYamlWin(yamlFileName, yamlContents, yamlFileNum)");
+                                    guiScripterAdvanced.loadYAML(fileContent, fileName, fileNum.get() > 0);
                                 } catch (IOException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -202,32 +199,32 @@ public class WindowIO implements FileWatchListener {
         }
     }
 
-    public static void saveWindow(FXMLController controller, Path path) throws IOException {
-        AnalystPythonInterpreter.exec("import nwyaml\\n");
-        FXMLController activeController = GUIScripter.getController();
-        GUIScripter.setController(controller);
-        AnalystPythonInterpreter.set("yamlFileName", path.toString());
-        AnalystPythonInterpreter.exec("nwyaml.dumpYamlWin(yamlFileName)");
-        GUIScripter.setController(activeController);
+    public static void saveWindow(FXMLController controller, Path path) throws IOException, ExecutionException, InterruptedException {
+        GUIScripterAdvanced guiScripterAdvanced = new GUIScripterAdvanced();
+        String yamlString = guiScripterAdvanced.genYAML(controller);
+        Files.writeString(path, yamlString);
     }
 
-    public static void saveWindows(Path projectDir) {
+    public static void saveWindows(Path projectDir) throws IOException {
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         cleanWindows(projectDir);
         int i = 0;
-        AnalystPythonInterpreter.exec("import nwyaml\\n");
-        FXMLController activeController = GUIScripter.getController();
+        GUIScripterAdvanced guiScripterAdvanced = new GUIScripterAdvanced();
         for (FXMLController controller : AnalystApp.getFXMLControllerManager().getControllers()) {
-            GUIScripter.setController(controller);
             String fileName = "stage_" + i + ".yaml";
-            Path path = Paths.get(projectDir.toString(), "windows", fileName);
-            AnalystPythonInterpreter.set("yamlFileName", path.toString());
-            AnalystPythonInterpreter.exec("nwyaml.dumpYamlWin(yamlFileName)");
-            i++;
+            String yamlString = null;
+            try {
+                yamlString = guiScripterAdvanced.genYAML(controller);
+                Path path = Paths.get(projectDir.toString(), "windows", fileName);
+                Files.writeString(path, yamlString);
+                i++;
+            } catch (ExecutionException|InterruptedException e) {
+                log.error("Can't save yaml file", e);
+                Thread.currentThread().interrupt();
+            }
         }
-        GUIScripter.setController(activeController);
     }
 
     public void create() {

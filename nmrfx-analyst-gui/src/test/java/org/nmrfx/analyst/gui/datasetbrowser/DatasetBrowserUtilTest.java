@@ -70,7 +70,7 @@ public class DatasetBrowserUtilTest {
         Path validDatasetPath =  Path.of(scanDirectory.toString(), "jcampfolder/jcamp_1d.nv");
         FileUtils.copyFile(Path.of(validPath.toString(), "jcamp_1d.nv").toFile(), validDatasetPath.toFile());
         // Set the sourceFID of the dataset and write it to the par file
-        Dataset validDataset = (new NMRViewData(validDatasetPath.toString())).getDataset();
+        Dataset validDataset = (new NMRViewData(validDatasetPath.toFile(), false)).getDataset();
         validDataset.sourceFID(testFidPath);
         validDataset.writeParFile();
         validDataset.close();

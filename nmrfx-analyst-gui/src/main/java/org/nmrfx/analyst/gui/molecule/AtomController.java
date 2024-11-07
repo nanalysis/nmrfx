@@ -54,6 +54,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -63,6 +64,8 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -73,7 +76,7 @@ import java.util.*;
 /**
  * @author johnsonb
  */
-public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener {
+public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener, PropertyChangeListener {
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static final Map<String, String> filterMap = new HashMap<>();
@@ -135,10 +138,7 @@ public class AtomController implements Initializable, StageBasedController, Free
             }
         });
         PeakList.registerFreezeListener(this);
-        Molecule activeMol = Molecule.getActive();
-        if (activeMol != null) {
-            activeMol.registerAtomTableListener(this);
-        }
+        ProjectBase.addPropertyChangeListener(this::propertyChange);
         updateView();
     }
 
@@ -239,8 +239,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        ppmSetChoice = new ChoiceBox();
-        refSetChoice = new ChoiceBox();
+        ppmSetChoice = new ChoiceBox<>();
+        refSetChoice = new ChoiceBox<>();
         for (int iSet = 0; iSet < 5; iSet++) {
             ppmSetChoice.getItems().add(iSet);
             refSetChoice.getItems().add(iSet);
@@ -256,6 +256,19 @@ public class AtomController implements Initializable, StageBasedController, Free
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         Fx.runOnFxThread(atomTableView::refresh);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (Objects.equals(evt.getPropertyName(), "molecule")) {
+            updateView();
+            Molecule activeMol = Molecule.getActive();
+            if (activeMol != null) {
+                AtomUpdater atomUpdater = new AtomUpdater(activeMol);
+                activeMol.registerUpdater(atomUpdater);
+                activeMol.registerAtomChangeListener(this);
+            }
+        }
     }
 
     class DoubleStringConverter4 extends DoubleStringConverter {
@@ -298,12 +311,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             super.updateItem(item, empty);
             if (item != null) {
                 setText(String.valueOf(item));
-            } else {
             }
         }
     }
 
-    ;
 
     class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
 
@@ -336,25 +347,25 @@ public class AtomController implements Initializable, StageBasedController, Free
         atomTableView.setEditable(true);
 
         TableColumn<Atom, String> atomNameCol = new TableColumn<>("Atom");
-        atomNameCol.setCellValueFactory(new PropertyValueFactory("Name"));
+        atomNameCol.setCellValueFactory(new PropertyValueFactory<>("Name"));
         atomNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
         atomNameCol.setEditable(false);
 
         TableColumn<Atom, String> entityNameColumn = new TableColumn<>("Entity");
-        entityNameColumn.setCellValueFactory(new PropertyValueFactory("PolymerName"));
+        entityNameColumn.setCellValueFactory(new PropertyValueFactory<>("PolymerName"));
         entityNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         entityNameColumn.setEditable(false);
 
         TableColumn<Atom, Integer> residueNumberColumn = new TableColumn<>("Seq");
-        residueNumberColumn.setCellValueFactory(new PropertyValueFactory("ResidueNumber"));
+        residueNumberColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueNumber"));
         residueNumberColumn.setEditable(false);
 
         TableColumn<Atom, Integer> indexColumn = new TableColumn<>("Index");
-        indexColumn.setCellValueFactory(new PropertyValueFactory("Index"));
+        indexColumn.setCellValueFactory(new PropertyValueFactory<>("Index"));
         indexColumn.setEditable(false);
 
         TableColumn<Atom, String> residueNameColumn = new TableColumn<>("Res");
-        residueNameColumn.setCellValueFactory(new PropertyValueFactory("ResidueName"));
+        residueNameColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueName"));
         residueNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         residueNameColumn.setEditable(false);
 
@@ -600,7 +611,7 @@ public class AtomController implements Initializable, StageBasedController, Free
             predictorController.getStage().show();
             predictorController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make predictor controller");
+            System.out.println("Couldn't make predictor controller");
         }
     }
     @Override

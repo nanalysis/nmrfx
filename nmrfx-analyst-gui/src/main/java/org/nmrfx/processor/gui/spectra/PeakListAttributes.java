@@ -29,6 +29,7 @@ import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
 import org.nmrfx.utils.properties.ColorProperty;
@@ -40,7 +41,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.spectra.DrawPeaks.MIN_HIT_SIZE;
-import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
 
 /**
  * @author Bruce Johnson
@@ -51,11 +51,13 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     public static final String DISPLAY_TYPE = "displayType";
     public static final String SIM_PEAKS = "simPeaks";
     public static final String NPLANES = "nplanes";
+    public static final String FONT_SIZE = "font size";
     public static final String DRAW_PEAKS = "drawPeaks";
     public static final String ON_COLOR = "onColor";
     public static final String OFF_COLOR = "offColor";
 
     private final IntegerProperty nplanes = new SimpleIntegerProperty(this, NPLANES, 0);
+    private final IntegerProperty fontSize = new SimpleIntegerProperty(this, FONT_SIZE, PreferencesController.getPeakFontSize());
     private final ColorProperty onColor = new ColorProperty(this, ON_COLOR, Color.BLACK);
     private final ColorProperty offColor = new ColorProperty(this, OFF_COLOR, Color.RED);
     private final BooleanProperty drawPeaks = new SimpleBooleanProperty(this, DRAW_PEAKS, true);
@@ -77,6 +79,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     Axis yAxis = null;
     double[][] foldLimits = null;
 
+    double[] foldAmount = null;
+
     public IntegerProperty nplanesProperty() {
         return nplanes;
     }
@@ -89,6 +93,15 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         return nplanesProperty().get();
     }
 
+    public IntegerProperty fontSizeProperty() {
+        return fontSize;
+    }
+    public void setFontSize(Integer value) {
+        fontSizeProperty().set(value);
+    }
+    public Integer getFontSize() {
+        return fontSizeProperty().get();
+    }
 
     public ColorProperty onColorProperty() {
         return onColor;
@@ -241,9 +254,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     void updateFoldingLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         foldLimits = new double[nDataDim][2];
+        foldAmount = new double[nDataDim];
         for (int i = 0; i < nDataDim; i++) {
             DatasetBase dataset = dataAttr.getDataset();
-            foldLimits[i] = dataset.getLimits(dataAttr.getDim(i));
+            int iDim = dataAttr.getDim(i);
+            foldLimits[i] = dataset.getLimits(iDim);
+            foldAmount[i] = dataset.getSw(iDim) / dataset.getSf(iDim);
         }
     }
 
@@ -350,7 +366,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, foldAmount, peakDim))
                     .collect(Collectors.toList());
             peaksInRegion = Optional.of(peaks);
         }
@@ -371,7 +387,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, foldAmount, peakDim))
                     .collect(Collectors.toList());
             peaksInRegion = Optional.of(peaks);
         }
@@ -391,7 +407,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, foldAmount, peakDim))
                     .collect(Collectors.toList());
             selectedPeaks.addAll(peaks);
             return (peaks);
@@ -401,7 +417,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
     public double foldShift(int iDim, double shift) {
         if (foldLimits != null) {
-            shift = Dataset.foldPPM(shift, foldLimits[iDim]);
+            shift = Dataset.foldPPM(shift, foldLimits[iDim], foldAmount[iDim]);
         }
         return shift;
     }
@@ -761,11 +777,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
         peakAttr.setDrawLinks(getDrawLinks());
         peakAttr.setOffColor(getOffColor());
         peakAttr.setOnColor(getOnColor());
+        peakAttr.setFontSize(getFontSize());
     }
 
     @Override
     public Collection<Property<?>> getPublicProperties() {
-        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, labelType, displayType);
+        return Set.of(onColor, offColor, drawPeaks, nplanes, simPeaks, labelType, displayType, fontSize);
     }
 
     /**
@@ -783,6 +800,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
                 case DISPLAY_TYPE -> setDisplayType(value.toString());
                 case SIM_PEAKS -> setSimPeaks(Boolean.parseBoolean(value.toString()));
                 case NPLANES -> setNplanes(Integer.valueOf(value.toString()));
+                case FONT_SIZE -> setFontSize(Integer.valueOf(value.toString()));
                 case DRAW_PEAKS -> setDrawPeaks(Boolean.parseBoolean(value.toString()));
                 case ON_COLOR -> onColorProperty().set((Color) value);
                 case OFF_COLOR -> offColorProperty().set((Color) value);

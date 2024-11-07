@@ -28,6 +28,7 @@ package org.nmrfx.peaks;
 
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.star.STAR3;
 
 import java.util.DoubleSummaryStatistics;
 import java.util.Optional;
@@ -177,14 +178,11 @@ public class SpectralDim {
     public String toSTAR3LoopPeakCharString() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(String.valueOf(getIndex() + 1)).append(sep);
         result.append(getAtomType()).append(sep);
         result.append(getAtomIsotope());
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getSpectralRegion());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getSpectralRegion()));
         result.append(sep);
         result.append(getMagLinkage() + 1);
         result.append(sep);
@@ -192,31 +190,21 @@ public class SpectralDim {
         result.append(sep);
         result.append(getSf());
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getEncodingCode());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getEncodingCode()));
         result.append(sep);
         result.append(getEncodedSourceDim() + 1);
         result.append(sep);
         result.append((getDataDim() + 1));
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getDimName());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getDimName()));
         result.append(sep);
         result.append(getIdTol());
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getPattern());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getPattern()));
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getRelation());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getRelation()));
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getAliasing());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getAliasing()));
         result.append(sep);
         result.append(getPrecision());
         return result.toString();
@@ -305,11 +293,16 @@ public class SpectralDim {
 
     public void setAtomIsotopeValue(int iValue) {
         atomIsotope = iValue;
+        if (nucName.isEmpty()) {
+            Nuclei nuclei = Nuclei.findNuclei(getAtomTypeFromIsotope());
+            if (nuclei != null) {
+                nucName = nuclei.getNumberName();
+            }
+        }
     }
 
     public int getAtomIsotopeValue() {
-        int isotope = getAtomIsotope();
-        return isotope;
+        return getAtomIsotope();
     }
 
     public void setAtomType(String atomType) {
@@ -545,9 +538,11 @@ public class SpectralDim {
     }
 
     public void setRelation(String relation) {
-        int iDim = getPeakList().getListDim(relation);
-        if (iDim >= 0) {
-            relation = "D" + (iDim + 1);
+        if ((relation.length() != 2) || relation.charAt(0) != 'D' || !Character.isDigit(relation.charAt(1))) {
+            int iDim = getPeakList().getListDim(relation);
+            if (iDim >= 0) {
+                relation = "D" + (iDim + 1);
+            }
         }
         this.relation = relation;
         atomResPatterns = Optional.empty();

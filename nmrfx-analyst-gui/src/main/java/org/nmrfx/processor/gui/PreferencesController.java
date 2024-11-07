@@ -30,6 +30,7 @@ import org.controlsfx.control.PropertySheet;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.operations.NESTANMREx;
 import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
@@ -61,7 +62,17 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static BooleanProperty constrainPeakShapeProp = null;
     private static DoubleProperty peakShapeDirectFactorProp = null;
     private static DoubleProperty peakShapeIndirectFactorProp = null;
+    private static BooleanProperty projectSaveProp = null;
+    private static IntegerProperty projectSaveIntervalProp = null;
     private static StringProperty rnaModelProp = null;
+
+    private static BooleanProperty autoProcessData = null;
+    private static BooleanProperty useFIDParApodization = null;
+    private static BooleanProperty useFIDParPhases = null;
+    private static BooleanProperty doAutoPhase = null;
+    private static BooleanProperty doAutoPhase1 = null;
+    private static BooleanProperty loadMoleculeIfPresent = null;
+
 
     @FXML
     PropertySheet prefSheet;
@@ -160,6 +171,21 @@ public class PreferencesController implements Initializable, StageBasedControlle
                 },
                 getPeakShapeIndirectFactor(), 0.0, 1.5, 0.0, 1.5, "Peak", "PeakShapeIndirect", "Shape factor for indirect dimension");
 
+        IntRangeOperationItem projectSaveIntervalItem = new IntRangeOperationItem(prefSheet,
+                (a, b, c) -> {
+                    projectSaveIntervalProp.setValue((Integer) c);
+                    setInteger("PROJECT_SAVE_INTERVAL", (Integer) c);
+                    GUIProject.projectSaveInterval((Integer) c);
+                },
+                getProjectSaveInterval(), 1, 120, "Project", "SaveInterval", "Project save interval (minutes)");
+
+        BooleanOperationItem projectSaveItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    projectSaveProp.setValue((Boolean) c);
+                    setBoolean("PROJECT_SAVE", (Boolean) c);
+                    GUIProject.projectSave((Boolean)c);
+                },
+                getProjectSave(), "Project", "AutoSave", "Auto Save Project on changes");
 
         DirectoryOperationItem rnaSSModelItem = new DirectoryOperationItem(prefSheet,
                 (a, b, c) -> {
@@ -169,9 +195,55 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
                 , getRNAModelDirectory(), "RNA", "SS Model", "Directory for secondary predictino model");
 
+        BooleanOperationItem useFIDParApodizationItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useFIDParApodization.setValue((Boolean) c);
+                    setBoolean("USE-APODIZATION", (Boolean) c);
+                },
+                getUseFIDParApodization(), "Load FID Actions", "Use Apodization", "Load apodization from FID parameters");
+
+        BooleanOperationItem useFIDParPhasesItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    useFIDParPhases.setValue((Boolean) c);
+                    setBoolean("USE-PHASES", (Boolean) c);
+                },
+                getUseFIDParPhases(), "Load FID Actions", "Use Phases", "Load phases from FID parameters");
+
+        BooleanOperationItem autoProcessDataItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    autoProcessData.setValue((Boolean) c);
+                    setBoolean("AUTO-PROCESS-DATA", (Boolean) c);
+                },
+                getAutoProcessData(), "Load FID Actions", "Auto Process", "Auto process data when loading (only 1D/2D)");
+
+        BooleanOperationItem  doAutoPhaseItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    doAutoPhase.setValue((Boolean) c);
+                    setBoolean("DO-AUTOPHASE", (Boolean) c);
+                },
+                getDoAutoPhase(), "Load FID Actions", "AutoPhase", "Autophase spectrum");
+
+        BooleanOperationItem  doAutoPhase1Item = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    doAutoPhase1.setValue((Boolean) c);
+                    setBoolean("DO-AUTOPHASE1", (Boolean) c);
+                },
+                getDoAutoPhase1(), "Load FID Actions", "AutoPhase1", "Include first order in autophasing");
+
+        BooleanOperationItem  doLoadMoleculeIfPresent = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    loadMoleculeIfPresent.setValue((Boolean) c);
+                    setBoolean("LOAD-MOLECULE", (Boolean) c);
+                },
+                getLoadMoleculeIfPresent(), "Load FID Actions", "Load Molecule", "Load molecule if present");
+
+
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
-                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem);
+                fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem,
+                projectSaveItem, projectSaveIntervalItem,
+                autoProcessDataItem, useFIDParApodizationItem, useFIDParPhasesItem, doAutoPhaseItem, doAutoPhase1Item,
+                doLoadMoleculeIfPresent);
     }
 
     @Override
@@ -481,6 +553,42 @@ public class PreferencesController implements Initializable, StageBasedControlle
         return peakShapeIndirectFactorProp.getValue();
     }
 
+    public static Integer getProjectSaveInterval() {
+        projectSaveIntervalProp = getInteger(projectSaveIntervalProp, "PROJECT_SAVE_INTERVAL", 30);
+        return projectSaveIntervalProp.getValue();
+    }
+    public static Boolean getProjectSave() {
+        projectSaveProp = getBoolean(projectSaveProp, "PROJECT_SAVE", false);
+        return projectSaveProp.getValue();
+    }
+    public static Boolean getAutoProcessData() {
+        autoProcessData = getBoolean(autoProcessData, "AUTO-PROCESS-DATA", true);
+        return autoProcessData.getValue();
+    }
+
+    public static Boolean getUseFIDParApodization() {
+        useFIDParApodization = getBoolean(useFIDParApodization, "USE-APODIZATION", true);
+        return useFIDParApodization.getValue();
+    }
+    public static Boolean getUseFIDParPhases() {
+        useFIDParPhases = getBoolean(useFIDParPhases, "USE-PHASES", true);
+        return useFIDParPhases.getValue();
+    }
+    public static Boolean getDoAutoPhase() {
+        doAutoPhase = getBoolean(doAutoPhase, "DO-AUTOPHASE", true);
+        return doAutoPhase.getValue();
+    }
+    public static Boolean getDoAutoPhase1() {
+        doAutoPhase1 = getBoolean(doAutoPhase1, "DO-AUTOPHASE1", true);
+        return doAutoPhase1.getValue();
+    }
+
+    public static Boolean getLoadMoleculeIfPresent() {
+        loadMoleculeIfPresent = getBoolean(loadMoleculeIfPresent, "LOAD-MOLECULE", true);
+        return loadMoleculeIfPresent.getValue();
+    }
+
+
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
         if (prop == null) {
             Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
@@ -508,6 +616,15 @@ public class PreferencesController implements Initializable, StageBasedControlle
     }
 
     public static void setBoolean(String name, Boolean value) {
+        Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
+        if (value != null) {
+            prefs.put(name, value.toString());
+        } else {
+            prefs.remove(name);
+        }
+    }
+
+    public static void setInteger(String name, Integer value) {
         Preferences prefs = Preferences.userNodeForPackage(AnalystApp.class);
         if (value != null) {
             prefs.put(name, value.toString());

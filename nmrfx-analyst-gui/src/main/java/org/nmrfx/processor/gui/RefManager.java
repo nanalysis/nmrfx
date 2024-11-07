@@ -520,6 +520,10 @@ public class RefManager {
         }
     }
 
+    public void clearObjectPropertyMap() {
+        objectPropertyMap.clear();
+    }
+
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
         vBox.setSpacing(4);

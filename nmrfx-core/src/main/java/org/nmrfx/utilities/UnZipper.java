@@ -15,6 +15,10 @@ public class UnZipper {
         zipFile = new File(zipFileName);
         this.destDir = destDir;
     }
+    public UnZipper(File destDir, File zipFile) throws IOException {
+        this.zipFile = zipFile;
+        this.destDir = destDir;
+    }
 
     public void unzip() throws IOException {
         if (!destDir.exists() && !destDir.mkdir()) {

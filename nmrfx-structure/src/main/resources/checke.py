@@ -51,8 +51,8 @@ def loadPDBModels(files, yaml, out):
     data = []
     for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
-        pdb.readCoordinates(file,0,False, True)
         mol = Molecule.getActive()
+        pdb.readCoordinates(mol, file,0,False, True)
         refiner.setPars({'coarse':False,'useh':True,'dislim':4.6,'end':10000,'hardSphere':0.0,'shrinkValue':0.0, 'shrinkHValue':0.0})
 
         refiner.setForces(yaml['anneal']['force'])
@@ -64,7 +64,8 @@ def loadPDBModels(files, yaml, out):
 
         datum = [inFileName,outFileName]
         refiner.molecule.updateVecCoords()
-        distanceEnergy=refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
+        refiner.molecule.getEnergyCoords().updateNOEPairs()
+        distanceEnergy=refiner.molecule.getEnergyCoords().energy()
         datum.append("%.1f" % (distanceEnergy))
         if ("shifts" in yaml):
             shiftEnergy = refiner.energyLists.calcShift(False)

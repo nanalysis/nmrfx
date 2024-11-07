@@ -86,10 +86,6 @@ public class MoleculeFactory {
                 log.warn(e.getMessage(), e);
             }
         }
-        if (moleculeBase != null) {
-            ProjectBase.getActive().putMolecule(moleculeBase);
-            setActive(moleculeBase);
-        }
         return moleculeBase;
     }
 

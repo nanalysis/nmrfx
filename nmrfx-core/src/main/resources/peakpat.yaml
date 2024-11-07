@@ -45,7 +45,7 @@ types:
       - name: N
         pattern: i.N*
         bonds:
-  - name: 13N-HSQC
+  - name: 13C-HSQC
     dims:
       - name: H
         pattern: i.H*
@@ -162,4 +162,37 @@ types:
         bonds:
       - name: N
         pattern: i.N
+        bonds:
+  - name: HCcH
+    dims:
+      - name: Ha
+        pattern: i.H*
+        bonds: C
+      - name: C
+        pattern: i.C*
+        bonds: Ha
+      - name: Hb
+        pattern: i.H*
+        bonds:
+  - name: HcCH
+    dims:
+      - name: Ha
+        pattern: i.H*
+        bonds:
+      - name: C
+        pattern: i.C*
+        bonds: 
+      - name: Hb
+        pattern: i.H*
+        bonds: C
+  - name: hCCH
+    dims:
+      - name: H
+        pattern: i.H*
+        bonds: Ca
+      - name: Ca
+        pattern: i.C*
+        bonds: 
+      - name: Cb
+        pattern: i.C*
         bonds:

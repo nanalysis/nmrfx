@@ -10,6 +10,8 @@ import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.utils.GUIUtils;
 
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.*;
+
 public class PeakPickController {
     FXMLController fxmlController;
     PolyChart chart;
@@ -17,7 +19,7 @@ public class PeakPickController {
     CheckBox autoNameCheckBox;
     TextField nameField;
 
-    ChoiceBox<String> modeChoiceBox;
+    ChoiceBox<PeakPickParameters.PickMode> modeChoiceBox;
     ChoiceBox<String> regionChoiceBox;
     ChoiceBox<String> thicknessChoiceBox;
 
@@ -44,8 +46,8 @@ public class PeakPickController {
         nameField = new TextField();
         autoNameCheckBox.setSelected(true);
         modeChoiceBox = new ChoiceBox<>();
-        modeChoiceBox.getItems().addAll("New", "Replace", "Append");
-        modeChoiceBox.setValue("New");
+        modeChoiceBox.getItems().addAll(NEW, REPLACE, APPEND);
+        modeChoiceBox.setValue(NEW);
 
         regionChoiceBox = new ChoiceBox<>();
         regionChoiceBox.getItems().addAll("Window", "Box");
@@ -135,7 +137,7 @@ public class PeakPickController {
     }
     void peakPick() {
         String name = autoNameCheckBox.isSelected() ? null : nameField.getText();
-        String mode = modeChoiceBox.getValue().toLowerCase();
+        PeakPickParameters.PickMode mode = modeChoiceBox.getValue();
         String region = regionChoiceBox.getValue().toLowerCase();
         String thicknessStr = thicknessChoiceBox.getValue();
         PeakPickParameters peakPickParameters = new PeakPickParameters();

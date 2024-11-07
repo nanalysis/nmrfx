@@ -17,10 +17,7 @@
  */
 package org.nmrfx.processor.gui.controls;
 
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleLongProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
@@ -41,6 +38,8 @@ public class FileTableItem {
     private final SimpleIntegerProperty row;
     private final SimpleLongProperty date;
     private final SimpleIntegerProperty group;
+
+    private final SimpleBooleanProperty active;
     private SimpleObjectProperty<DatasetAttributes> datasetAttr;
     private final HashMap<String, String> extras = new HashMap<>();
     private final HashMap<String, Integer> intExtras = new HashMap<>();
@@ -55,6 +54,7 @@ public class FileTableItem {
         this.row = new SimpleIntegerProperty(row);
         this.group = new SimpleIntegerProperty(0);
         this.datasetName = new SimpleStringProperty(datasetName);
+        this.active = new SimpleBooleanProperty(true);
     }
 
     public FileTableItem(String fileName, String seqName, int nDim, long date, int row, String datasetName, Map<String, String> extras) {
@@ -72,6 +72,13 @@ public class FileTableItem {
 
     public void setGroup(int group) {
         this.group.set(group);
+    }
+    public boolean getActive() {
+        return active.get();
+    }
+
+    public void setActive(boolean active) {
+        this.active.set(active);
     }
 
     public void setDatasetName(String fileName) {
@@ -351,6 +358,7 @@ public class FileTableItem {
                 case "dataset" -> sBuilder.append(getDatasetName());
                 case "ndim" -> sBuilder.append(getNDim());
                 case "etime" -> sBuilder.append(getDate());
+                case "active" -> sBuilder.append(getActive() ? 1 : 0);
                 default -> {
                     String type = columnTypes.get(header);
                     if (type == null) {

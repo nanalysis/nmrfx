@@ -6,6 +6,9 @@
 .idea/
 *.iml
 
+# jffi libraries
+jffi*
+
 # netbeans
 nbproject/
 build/

@@ -47,6 +47,9 @@ public class ChartProperties implements PublicPropertyContainer {
     private final BooleanProperty grid;
     private final BooleanProperty regions;
     private final BooleanProperty integrals;
+
+    private final IntegerProperty integralFontSize;
+    private final BooleanProperty integralValues;
     private final DoubleProperty integralLowPos;
     private final DoubleProperty integralHighPos;
     private final DoubleProperty aspectRatio;
@@ -75,8 +78,10 @@ public class ChartProperties implements PublicPropertyContainer {
         grid = add(new SimpleBooleanProperty(polyChart, "grid", false));
         regions = add(new SimpleBooleanProperty(polyChart, "regions", false));
         integrals = add(new SimpleBooleanProperty(polyChart, "integrals", false));
+        integralValues = add(new SimpleBooleanProperty(polyChart, "integralValues", false));
         integralLowPos = add(new SimpleDoubleProperty(polyChart, "integralLowPos", 0.8));
         integralHighPos = add(new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95));
+        integralFontSize = add(new SimpleIntegerProperty(polyChart, "integralFontSize", PreferencesController.getLabelFontSize()));
         titles = add(new SimpleBooleanProperty(polyChart, "titles", true));
         parameters = add(new SimpleBooleanProperty(polyChart, "parameters", false));
         aspectRatio = add(new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0));
@@ -123,6 +128,9 @@ public class ChartProperties implements PublicPropertyContainer {
         destProps.setIntegralLowPos(getIntegralLowPos());
         destProps.setIntegralHighPos(getIntegralHighPos());
         destProps.setIntegrals(getIntegrals());
+        destProps.setIntegralValues(getIntegralValues());
+        destProps.setIntegralFontSize(getIntegralFontSize());
+
         destProps.setTitles(getTitles());
         destProps.setParameters(getParameters());
         destProps.setAspectRatio(getAspectRatio());
@@ -294,9 +302,19 @@ public class ChartProperties implements PublicPropertyContainer {
     public boolean getIntegrals() {
         return integralsProperty().get();
     }
-
     public void setIntegrals(boolean value) {
         integralsProperty().set(value);
+    }
+    public BooleanProperty integralValuesProperty() {
+        return integralValues;
+    }
+
+    public void setIntegralValues(boolean value) {
+        integralValuesProperty().set(value);
+    }
+
+    public boolean getIntegralValues() {
+        return integralValuesProperty().get();
     }
 
     public double getIntegralLowPos() {
@@ -321,6 +339,18 @@ public class ChartProperties implements PublicPropertyContainer {
 
     public DoubleProperty integralHighPosProperty() {
         return integralHighPos;
+    }
+
+    public double getIntegralFontSize() {
+        return integralFontSizeProperty().get();
+    }
+
+    public void setIntegralFontSize(double value) {
+        integralFontSizeProperty().set((int) value);
+    }
+
+    public IntegerProperty integralFontSizeProperty() {
+        return integralFontSize;
     }
 
     public BooleanProperty titlesProperty() {
