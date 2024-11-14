@@ -50,6 +50,8 @@ public class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
     private static final double SCALE = 1.0;
+
+    private static final double fidScale = 1.0e6;
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[2];
 
     /**
@@ -521,6 +523,17 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        double ph0 = block.optional($PHC0, dim)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
+        double ph1 = block.optional($PHC1, dim)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
+        return Math.abs(ph0) > 1.0e-9 || Math.abs(ph1) > 1.0e-9;
+    }
+
+    @Override
     public double getPH0(int dim) {
         double ph0 = block.optional($PHC0, dim)
                 .map(JCampRecord::getDouble)
@@ -652,7 +665,7 @@ public class JCAMPData implements NMRData {
             dvec.resize(n, false);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
-                dvec.set(i, rValues[i]);
+                dvec.set(i, rValues[i] / fidScale);
             }
         } else {
             double[] iValues = imaginary[index];
@@ -660,7 +673,7 @@ public class JCAMPData implements NMRData {
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
                 //WARNING: real and imaginaries are inverted on purpose
-                dvec.set(i, iValues[i], rValues[i]);
+                dvec.set(i, iValues[i] / fidScale, rValues[i] / fidScale);
             }
         }
 
@@ -711,14 +724,14 @@ public class JCAMPData implements NMRData {
             for (int row = 0; row < n * 2; row += 2) {
                 double rValue = real[row][index];
                 double iValue = real[row + 1][index];
-                dvec.set(row / 2, rValue, iValue);
+                dvec.set(row / 2, rValue / fidScale, iValue / fidScale);
             }
         } else {
             dvec.resize(n, false);
             dvec.setTDSize(n);
             for (int row = 0; row < n; row++) {
                 double rValue = real[row][index];
-                dvec.set(row, rValue);
+                dvec.set(row, rValue / fidScale);
             }
         }
 

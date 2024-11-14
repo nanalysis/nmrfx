@@ -239,8 +239,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        ppmSetChoice = new ChoiceBox();
-        refSetChoice = new ChoiceBox();
+        ppmSetChoice = new ChoiceBox<>();
+        refSetChoice = new ChoiceBox<>();
         for (int iSet = 0; iSet < 5; iSet++) {
             ppmSetChoice.getItems().add(iSet);
             refSetChoice.getItems().add(iSet);
@@ -311,12 +311,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             super.updateItem(item, empty);
             if (item != null) {
                 setText(String.valueOf(item));
-            } else {
             }
         }
     }
 
-    ;
 
     class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
 
@@ -349,25 +347,25 @@ public class AtomController implements Initializable, StageBasedController, Free
         atomTableView.setEditable(true);
 
         TableColumn<Atom, String> atomNameCol = new TableColumn<>("Atom");
-        atomNameCol.setCellValueFactory(new PropertyValueFactory("Name"));
+        atomNameCol.setCellValueFactory(new PropertyValueFactory<>("Name"));
         atomNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
         atomNameCol.setEditable(false);
 
         TableColumn<Atom, String> entityNameColumn = new TableColumn<>("Entity");
-        entityNameColumn.setCellValueFactory(new PropertyValueFactory("PolymerName"));
+        entityNameColumn.setCellValueFactory(new PropertyValueFactory<>("PolymerName"));
         entityNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         entityNameColumn.setEditable(false);
 
         TableColumn<Atom, Integer> residueNumberColumn = new TableColumn<>("Seq");
-        residueNumberColumn.setCellValueFactory(new PropertyValueFactory("ResidueNumber"));
+        residueNumberColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueNumber"));
         residueNumberColumn.setEditable(false);
 
         TableColumn<Atom, Integer> indexColumn = new TableColumn<>("Index");
-        indexColumn.setCellValueFactory(new PropertyValueFactory("Index"));
+        indexColumn.setCellValueFactory(new PropertyValueFactory<>("Index"));
         indexColumn.setEditable(false);
 
         TableColumn<Atom, String> residueNameColumn = new TableColumn<>("Res");
-        residueNameColumn.setCellValueFactory(new PropertyValueFactory("ResidueName"));
+        residueNameColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueName"));
         residueNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         residueNameColumn.setEditable(false);
 

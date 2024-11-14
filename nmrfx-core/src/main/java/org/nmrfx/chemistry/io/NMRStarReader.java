@@ -23,7 +23,6 @@ import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.relax.*;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.project.ProjectBase;
@@ -32,7 +31,6 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.utilities.NvUtil;
-import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1029,8 +1027,6 @@ public class NMRStarReader {
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_Atom_chem_shift");
-        boolean invalidCompoundFlag = false;
-        boolean invalidResidueFlag = false;
         if (loop != null) {
             boolean refMode = false;
             if (ppmSet < 0) {
@@ -1079,13 +1075,11 @@ public class NMRStarReader {
                 Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
                     log.warn("invalid compound in assignments saveframe \"{}\"", mapID);
-                    invalidCompoundFlag = true;
                     continue;
                 }
                 String compID = compIDColumn.get(i);
             if (!compound.getName().equals(compID)) {
                 log.warn("sequence mismatch expected: " + compound.getName() + " got: " + compID);
-                invalidResidueFlag = true;
                 continue;
             }
                 Atom atom = compound.getAtomLoose(atomName);
@@ -1133,14 +1127,6 @@ public class NMRStarReader {
                     }
                 }
             }
-        }
-        if (invalidCompoundFlag) {
-            Fx.runOnFxThread(() ->
-                    GUIUtils.warn("invalid compound in assignments saveframe","invalid compound in assignments saveframe"));
-        }
-        if (invalidResidueFlag) {
-            Fx.runOnFxThread(() ->
-                    GUIUtils.warn("sequence does not match", "residue mismatch in sequence"));
         }
     }
 

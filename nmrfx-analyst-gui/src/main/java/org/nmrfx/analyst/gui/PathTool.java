@@ -316,7 +316,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
                 peakListNames.add(peakList.getName());
             }
         });
-        chart.updatePeakLists(peakListNames);
+        chart.updatePeakListsByName(peakListNames);
 
         for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
             peakAttr.setColorType(PeakDisplayParameters.ColorTypes.Status);

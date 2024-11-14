@@ -99,7 +99,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         // Some properties were not exposed before refactoring.
         // It's not clear whether this was by design or by error.
         // I've opted to keep the smallest set of properties possible exposed, so I've only kept the original list.
-        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg);
+        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg, offset);
     }
 
     public ColorProperty posColorProperty() {
@@ -1606,7 +1606,6 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
         return ppms;
     }
-
     public double[] getOffsetsAsArray() {
         List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] offsets = null;
@@ -1621,9 +1620,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, PolyChartAxes axes, double[] newValue) {
-        int handle = iHit.handle;
-        DatasetRegion r = iHit.getDatasetRegion();
+    public void moveRegion(DatasetRegion r, int handle, PolyChartAxes axes, double[] newValue) {
         double newX = axes.getX().getValueForDisplay(newValue[0]).doubleValue();
         double newY = axes.getY().getValueForDisplay(newValue[1]).doubleValue();
         switch (handle) {

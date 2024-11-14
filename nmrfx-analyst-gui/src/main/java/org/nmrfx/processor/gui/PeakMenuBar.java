@@ -5,10 +5,13 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakFolder;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndo;
@@ -151,6 +154,18 @@ public class PeakMenuBar {
         MenuItem unifyMenuItem = new MenuItem("Unify Widths");
         unifyMenuItem.setOnAction(e -> unifyPeakWidths());
         editMenu.getItems().add(unifyMenuItem);
+
+        Menu foldMenu = new Menu("Folding");
+        MenuItem foldMenuItem = new MenuItem("Use Assignments (if present)");
+        foldMenuItem.setOnAction(e -> foldPeaks(true, false));
+        foldMenu.getItems().add(foldMenuItem);
+        MenuItem foldNoAssignMenuItem = new MenuItem("Don't Use Assignments");
+        foldNoAssignMenuItem.setOnAction(e -> foldPeaks(false, false));
+        foldMenu.getItems().add(foldNoAssignMenuItem);
+        MenuItem foldPeakMenuItem = new MenuItem("Single Peak");
+        foldPeakMenuItem.setOnAction(e -> foldPeaks(false, true));
+        foldMenu.getItems().add(foldPeakMenuItem);
+        editMenu.getItems().add(foldMenu);
 
         menuBar.getItems().add(editMenu);
 
@@ -374,6 +389,58 @@ public class PeakMenuBar {
         }
     }
 
+    void foldPeaks(boolean useAssign, boolean peakMode) {
+        if (getPeakList() != null) {
+            doUndoRedo(peakList -> doFoldPeaks(useAssign, peakMode), "fold peaks");
+        }
+    }
+
+    void doFoldPeaks(boolean useAssign, boolean peakMode) {
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            PeakFolder peakFolder = new PeakFolder();
+            List<String> dimLabels = PeakFolder.DIMS;
+            SpectralDim dimToFold = peakList.getFoldedDim();
+            if (dimToFold != null) {
+                // if the peaklist is only 2 dimensions, ensure that they are H and C
+                // otherwise user is required to set the bonded dimension
+                String bondedDim = dimToFold.getRelationDim();
+                if (bondedDim.isBlank()) {
+                    if (peakList.getNDim() == 2 &&
+                            new HashSet<>(peakList.getSpectralDims().stream()
+                                    .map(SpectralDim::getNucleus)
+                                    .map(s -> s.substring(s.length() - 1))
+                                    .toList()).containsAll(dimLabels)) {
+                        String currentDim = dimToFold.getDimName();
+                        bondedDim = peakList.getSpectralDims().stream()
+                                .filter((spectralDim -> !spectralDim.getDimName().equals(currentDim))).toList().getFirst().getDimName();
+                        dimToFold.setRelation(bondedDim);
+                    } else {
+                        GUIUtils.warn("Set bonded dimension", "Assign bonded dimension in Peak Tool's reference tab");
+                    }
+                }
+                try {
+                    if (peakMode) {
+                        var optPeak = menuTarget.getPeak();
+                        if (optPeak.isPresent()) {
+                            Peak peak = optPeak.get();
+                            peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, peak);
+                        }
+                    } else {
+                        peakFolder.unfoldPeakList(peakList, dimToFold, useAssign, null);
+                    }
+                } catch (IOException ioException) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(ioException);
+                    exceptionDialog.showAndWait();
+                }
+            } else {
+                GUIUtils.warn("Assign dimension to fold", "Indicate the C13 dimension to fold in Peak Tool's Reference tab");
+            }
+
+
+        }
+    }
+
     void duplicatePeakList() {
         if (getPeakList() != null) {
             TextInputDialog dialog = new TextInputDialog();
@@ -522,8 +589,8 @@ public class PeakMenuBar {
 
     void readList() {
         FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
+        List<File> files = fileChooser.showOpenMultipleDialog(null);
+        for (File file : files) {
             String listFileName = file.getPath();
             try {
                 PeakReader peakReader = new PeakReader();
@@ -544,6 +611,7 @@ public class PeakMenuBar {
             } catch (IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
+                return;
             }
         }
     }
