@@ -56,6 +56,7 @@ public class OperationInfo {
             "Cascade-Sampling",
             "EXTEND",
             "SCHEDULE",
+            "ZFMAT",
             "PROCINDIRECT",
             "GRINS",
             "IST",

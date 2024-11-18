@@ -1327,6 +1327,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] mPoint = new int[mDims];
         for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
+            double sw = getSw(dim[i]);
+            matrix.setDwellTime(i, 1.0 / getSw(dim[i]));
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);

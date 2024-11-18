@@ -70,6 +70,7 @@ from org.nmrfx.processor.operations import Phase
 from org.nmrfx.processor.operations import Phase2d
 from org.nmrfx.processor.operations import Power
 from org.nmrfx.processor.operations import ProcIndirectOp
+from org.nmrfx.processor.operations import ZfMatrix
 from org.nmrfx.processor.operations import PythonScript
 from org.nmrfx.processor.operations import Rand
 from org.nmrfx.processor.operations import RandN
@@ -4141,30 +4142,21 @@ def PROCINDIRECT(
     dataset=None,
     process=None,
 ):
-    """
+    '''
     Process the indirect dimensions of a multidimensional dataset prior to NUS.
-
     Parameters
     ----------
-
-    ph0: List[int]
+    ph0 : []
         Zero-order phase corrections.
-
-    ph1: List[int]
+    ph1 : []
         First-order phase corrections.
-
-    negateImag: List[bool]
+    negateImag : []
         If `True` each complex datapoint in the specified dimension has its
         negative component multiplied by -1.
-
-    negatePairs: List[bool]
+    negatePairs : []
         If `True` every second complex datapoint in the specified dimension is
         multiplied by -1.
-
-    apodize: bool
-        If `True`, the data is apodized using a sine-bell window before ZF, FT,
-        and phasing.
-    """
+    '''
     if disabled:
         return None
 
@@ -4172,6 +4164,47 @@ def PROCINDIRECT(
 
     # TODO include apodization?
     op = ProcIndirectOp(ph0, ph1, negateImag, negatePairs)
+
+    if (dataset is not None):
+        op.eval(dataset)
+    else:
+        process.addOperation(op)
+
+    return op
+
+def ZFMAT(
+        zfy=0,
+        zfz=0,
+        zfa=0,
+        disabled=False,
+        dataset=None,
+        process=None,
+):
+    '''
+    Zero-fill the indirect dimensions of a multidimensional dataset prior to NUS.
+    Parameters
+    ----------
+    zfy : int
+        min : -1
+        max : 3
+        Zero-fill y-dimension.
+    zfz : int
+        min : -1
+        max : 3
+        Zero-fill z-dimension.
+    zfa : int
+        min : -1
+        max : 3
+        Zero-fill a-dimension.
+    '''
+
+    if disabled:
+        return None
+
+    process = process or getCurrentProcess()
+
+    # TODO include apodization?
+    op = ZfMatrix([zfy, zfz, zfa])
 
     if (dataset is not None):
         op.eval(dataset)

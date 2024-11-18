@@ -47,6 +47,8 @@ public class MatrixND implements MatrixType {
     private double[] data;
     private int[] sizes;
     int[] vSizes;
+
+    double[] dwellTimes;
     private int[] strides;
     private double[] phases0;
     private double[] phases1;
@@ -80,6 +82,7 @@ public class MatrixND implements MatrixType {
         phases1 = new double[nDim];
         negateImags = new boolean[nDim];
         negatePairss = new boolean[nDim];
+        dwellTimes = new double[nDim];
     }
 
     public MatrixND(int[][] pt, int... sizes) {
@@ -110,6 +113,13 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public void setDwellTime(int i, double dwellTime) {
+        dwellTimes[i] = dwellTime;
+    }
+
+    public double getDwellTime(int i) {
+        return dwellTimes[i];
+    }
     public void setVSizes(int... vSizes) {
         this.vSizes = vSizes.clone();
     }
@@ -764,7 +774,7 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    static int getZfSize(double vecSize, int factor) {
+    public static int getZfSize(double vecSize, int factor) {
         int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
         return size;
     }
