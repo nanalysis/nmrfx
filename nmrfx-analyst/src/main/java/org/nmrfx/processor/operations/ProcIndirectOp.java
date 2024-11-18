@@ -74,18 +74,31 @@ public class ProcIndirectOp extends MatrixOperation {
             // If ph1 = 180 -> c = 1.0
             // For any ph1 value in between, c is interpolated
             double[] cValues = new double[nDim];
+            boolean phase1 = false;
             for (int i = 0; i < nDim; i++) {
                 cValues[i] = (ph1[i] + 180.0) / 360.0;
+                if (Math.abs(ph1[i]) > 1.0e-6) {
+                    phase1 = true;
+                } else {
+                    ph1[i] = 0.0;
+                }
             }
 
+
             // Zero fill to the next power of 2 (needed for FFT/IFFT)
-            matrixND.zeroFill(0);
+            if (phase1) {
+                matrixND.zeroFill(0);
+            }
             for (int axis = 0; axis < nDim; axis++) {
                 matrixND.doNegateImag(axis, negateImag[axis]);
                 matrixND.doNegatePairs(axis, negatePairs[axis]);
-                matrixND.doFourierTransform(axis, cValues[axis]);
+                if (phase1) {
+                    matrixND.doFourierTransform(axis, cValues[axis]);
+                }
                 matrixND.doPhaseCorrection(axis, ph0[axis], ph1[axis]);
-                matrixND.doInverseFourierTransform(axis);
+                if (phase1) {
+                    matrixND.doInverseFourierTransform(axis);
+                }
             }
         } catch (Exception e) {
             log.error("Error in ProcIndirect", e);
