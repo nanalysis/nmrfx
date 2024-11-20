@@ -21,6 +21,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.peaks.LineShapes;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.slf4j.Logger;
@@ -36,6 +38,11 @@ import java.util.List;
  */
 public class GRINS {
     public static boolean residual = false;
+
+    public static int saveMat = -1;
+
+    public static String saveMatrixName = "/Users/brucejohnson/data/favaro/7/grins2/test_";
+
     private static final Logger log = LoggerFactory.getLogger(GRINS.class);
 
     private static final double THRESHOLD_SCALE = 0.8;
@@ -98,7 +105,6 @@ public class GRINS {
             if (apodize) {
                 matrix.apodize();
             }
-
             // could just copy the actually sample values to vector
             MatrixND matrixCopy = new MatrixND(matrix);
             double[] addBuffer = new double[matrix.getNElems()];
@@ -110,6 +116,14 @@ public class GRINS {
                 if ((iteration == 0) && (calcStats)) {
                     preValue = matrix.calcSumAbs();
                 }
+                int index = matrix.getIndex();
+                if (index == saveMat) {
+                    try {
+                        Dataset.writeMatrixToDataset(saveMatrixName + iteration + "_pre.nv", matrix);
+                    } catch (DatasetException e) {
+                    }
+                }
+
 
                 // TODO: This was wrapped in a conditional: if(calcNoise){...}
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
@@ -134,6 +148,13 @@ public class GRINS {
                 if (!tdMode && !peaks.isEmpty()) {
                     subtractSignals(matrix, peaks, addBuffer, fileWriter);
                 }
+                if (index == saveMat) {
+                    try {
+                        Dataset.writeMatrixToDataset(saveMatrixName + iteration + "_post.nv", matrix);
+                    } catch (DatasetException e) {
+                    }
+                }
+
                 double[] measure2 = matrix.measure(false, 0.0, Double.MAX_VALUE);
                 double max2 = Math.max(FastMath.abs(measure2[0]), FastMath.abs(measure2[1]));
 
