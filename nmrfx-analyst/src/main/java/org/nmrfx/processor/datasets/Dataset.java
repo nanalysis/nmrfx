@@ -1420,6 +1420,26 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    public static void writeMatrixToDataset(String fileName, MatrixND matrixND) throws DatasetException, IOException {
+        int[] dSizes = new int[matrixND.getNDim()];
+        int[] dims = new int[dSizes.length];
+        for (int i =0;i < dSizes.length;i++) {
+            dSizes[i] = matrixND.getSize(i);
+            dims[i] = i;
+        }
+
+        File file = new File(fileName);
+        String name = file.getName();
+        Dataset dataset = Dataset.createDataset(fileName, fileName, name, dSizes, false, true);
+        for (int i =0;i < dSizes.length;i++) {
+            dataset.setComplex(i, false);
+            dataset.setFreqDomain(i, true);
+        }
+        dataset.writeMatrixNDToDatasetFile(dims, matrixND);
+        dataset.writeParFile();
+        dataset.close();
+    }
+
     /**
      * Return the Dataset object with the specified name.
      *
