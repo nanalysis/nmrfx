@@ -2965,11 +2965,11 @@ def DEPT( disabled=False, dataset=None, process=None):
 
 def GRINS(
     noiseRatio=5.0,
-    scale=0.25,
+    scale=0.5,
     zf=0,
     iterations=64,
     shapeFactor=0.5,
-    apodize=True,
+    apodize=False,
     preserve=True,
     synthetic=False,
     logToFile=False,
@@ -3839,10 +3839,36 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
+def genPHASE_ID():
+    global fidInfo
+    script = 'PHASE_ID('
+    negImagList=[]
+    negPairsList=[]
+    for iDim in range(2,fidInfo.nd+1):
+        negateImag = fidInfo.negateImagFT(iDim-1)
+        negatePairs = fidInfo.negatePairsFT(iDim-1)
+        if negatePairs:
+            negPairsList.append('True')
+        else:
+            negPairsList.append('False')
+        if negateImag:
+            negImagList.append('True')
+        else:
+            negImagList.append('False')
+
+    script +='negatePairs=[' + ','.join(negPairsList)+']'
+    script += ','
+    script +='negateImag=[' + ','.join(negImagList)+']'
+    script += ')\n'
+    print(script)
+    return script
+
+
 def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, doautophase1=False):
     global fidInfo
     script = ''
     sequence = fidInfo.fidObj.getSequence()
+    nusMode = False
     if fidInfo.nd < 2:
         apodString = NMRDataUtil.getApodizationString(fidInfo.fidObj, 0, arrayed, useapod)
         script += 'DIM(1)\n'
@@ -3885,8 +3911,11 @@ def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, 
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
-            script += 'SB(dim=0, c=0.5)\n'
-            script += 'NESTA()\n'
+            script += 'ZFMAT(zfy=1, zfz=1)\n'
+            script += 'SB(c=0.5, power=1.0)\n'
+            script += genPHASE_ID()
+            script += 'GRINS()\n'
+            nusMode = True
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
             continue
@@ -3913,18 +3942,18 @@ def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, 
             script += 'RFT('
         else:
             script += 'FT('
-
-        negateImag = fidInfo.negateImagFT(iDim-1)
-        negatePairs = fidInfo.negatePairsFT(iDim-1)
-        if negatePairs:
-            script += 'negatePairs=True'
-        if negateImag:
+        if not nusMode:
+            negateImag = fidInfo.negateImagFT(iDim-1)
+            negatePairs = fidInfo.negatePairsFT(iDim-1)
             if negatePairs:
-                script += ','
-            if fidInfo.fidObj.getFTType(iDim-1) == "rft":
-                script += 'negateOdd=True'
-            else:
-                script += 'negateImag=True'
+                script += 'negatePairs=True'
+            if negateImag:
+                if negatePairs:
+                    script += ','
+                if fidInfo.fidObj.getFTType(iDim-1) == "rft":
+                    script += 'negateOdd=True'
+                else:
+                    script += 'negateImag=True'
         script += ')\n'
         fCoef = fidInfo.getSymbolicCoefs(iDim-1)
         if fCoef != None and fCoef == 'sep':
@@ -4133,7 +4162,7 @@ def getTestLocations():
 dataInfo = DataInfo()
 
 
-def PROCINDIRECT(
+def PHASE_ID(
     ph0=None,
     ph1=None,
     negateImag=None,

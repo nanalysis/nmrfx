@@ -57,7 +57,7 @@ public class OperationInfo {
             "EXTEND",
             "SCHEDULE",
             "ZFMAT",
-            "PROCINDIRECT",
+            "PHASE_ID",
             "GRINS",
             "IST",
             "ISTMATRIX",

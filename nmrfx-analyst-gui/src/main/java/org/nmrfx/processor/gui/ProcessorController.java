@@ -768,7 +768,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setProcessingOperation(op);
         titledPane.setDetailedTitle(detailButton.isSelected());
         PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
-        if (op.getName().equals("PROCINDIRECT")) {
+        if (op.getName().equals("PHASE_ID")) {
             updateIndirectPane(op);
         }
         if (opPropertySheet != null) {
@@ -797,7 +797,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             if (op.getName().equals("PHASE")) {
                 Pane phaserPane = makePhaserPane(titledPane, processingOperation);
                 vBox.getChildren().add(phaserPane);
-            } else if (op.getName().equals("PROCINDIRECT")) {
+            } else if (op.getName().equals("PHASE_ID")) {
                 Pane pane = makeIndirectPane(titledPane, processingOperation);
                 vBox.getChildren().add(pane);
             } else {
@@ -970,7 +970,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         String ph1String = String.join(",", ph1s);
         String negImagString = String.join(",", negImags);
         String negPairString = String.join(",", negPairs);
-        String opString = String.format("PROCINDIRECT(ph0=[%s],ph1=[%s],negateImag=[%s],negatePairs=[%s])",
+        String opString = String.format("PHASE_ID(ph0=[%s],ph1=[%s],negateImag=[%s],negatePairs=[%s])",
                 ph0String,ph1String, negImagString, negPairString);
         System.out.println(opString);
         if (processingOperation != null) {
@@ -1138,7 +1138,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
 
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
-        if (op.getName().equals("PROCINDIRECT")) {
+        if (op.getName().equals("PHASE_ID")) {
             return;
         }
         opPropertySheet.getItems().clear();
