@@ -120,6 +120,7 @@ public class MatrixND implements MatrixType {
     public double getDwellTime(int i) {
         return dwellTimes[i];
     }
+
     public void setVSizes(int... vSizes) {
         this.vSizes = vSizes.clone();
     }
@@ -873,7 +874,7 @@ public class MatrixND implements MatrixType {
     /**
      * Get maximum of absolute value of a matrix.
      *
-     * @param input
+     * @param values list of intensities to test for max
      * @return position of maximum in input matrix
      * @see Matrix
      */
@@ -924,7 +925,9 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public record MatrixDiff(double mabs, double max) {};
+    public record MatrixDiff(double mabs, double max) {
+    }
+
     public MatrixDiff calcDifference(MatrixND source, int[] srcTargetMap) {
         double sum = 0.0;
         double max = 0.0;
@@ -934,7 +937,7 @@ public class MatrixND implements MatrixType {
             max = Math.max(max, Math.abs(v1));
             sum += FastMath.abs(v1 - v2);
         }
-        return new MatrixDiff(sum/srcTargetMap.length, max);
+        return new MatrixDiff(sum / srcTargetMap.length, max);
     }
 
     public double calcSumAbs() {
@@ -1159,7 +1162,7 @@ public class MatrixND implements MatrixType {
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(complexSizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
         int nValid = 0;
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
             int[] complexSample = new int[counts.length];
@@ -1171,7 +1174,7 @@ public class MatrixND implements MatrixType {
                     complexSample[counts.length - j - 1] = counts[counts.length - j - 1] * 2 + cDelta;
                 }
                 int offset = getOffset(complexSample);
-                if (Math.abs(data[offset]) > 1.0e-12){
+                if (Math.abs(data[offset]) > 1.0e-12) {
                     validPositions[offset] = true;
                     nValid++;
                 }
@@ -1202,6 +1205,7 @@ public class MatrixND implements MatrixType {
         int[][] pts = new int[nDim + 1][3];
         int[][] indices = new int[nDim + 1][3];
         double[][] intensities = new double[nDim + 1][3];
+        int[] halfWidth = new int[nDim + 1];
         int[] widthLim = new int[nDim + 1];
         widthLim[0] = 2;
         for (int i = 0; i < sizes.length; i++) {
@@ -1212,8 +1216,8 @@ public class MatrixND implements MatrixType {
         }
         double threshold = FastMath.max(globalThreshold, noiseThreshold);
         int step = isComplex ? 2 : 1;
+        int nSearch = 2;
         double maxValue = Double.NEGATIVE_INFINITY;
-        int nPossible = 0;
         for (int i = 0; iterator.hasNext(); i++) {
             iterator.next();
             int[] counts = iterator.getCounts();
@@ -1241,52 +1245,70 @@ public class MatrixND implements MatrixType {
                     maxValue = ptValue;
                 }
                 if (ptValue > threshold) {
-                    nPossible++;
                     boolean ok = true;
                     pts[0][1] = getIndex();
                     indices[0][1] = getIndex();
                     intensities[0][1] = ptValue * sign;
+                    double halfHeight = ptValue / 2.0;
 
                     for (int jDim = 0; jDim < nDim; jDim++) {
                         int kDim = jDim + 1;
                         pts[kDim][1] = counts[jDim];
                         indices[kDim][1] = i;
                         intensities[kDim][1] = ptValue * sign;
-                        int nBelowThresh = 0;
-                        if (counts[jDim] > 0) {
-                            int index = i - strides[jDim] * step; // 2 assumes complex
-                            double testValue = sign * data[index];
-//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
-                            if ((ptValue < testValue)) {
-                                ok = false;
+                        for (int j = 1; j < nSearch; j++) {
+                            if ((counts[jDim] - j) >= 0) {
+                                int index = i - strides[jDim] * step * j; // 2 assumes complex
+                                double testValue = sign * data[index];
+                                if ((j == 1) && (ptValue < testValue)) {
+                                    ok = false;
+                                    break;
+                                }
+                                if (testValue < halfHeight) {
+                                    halfWidth[kDim] = j;
+                                    break;
+                                }
+                                if (j == 1) {
+                                    pts[kDim][0] = counts[jDim] - j;
+                                    indices[kDim][0] = index;
+                                    intensities[kDim][0] = testValue * sign;
+                                }
+                            }
+                            if (!ok) {
                                 break;
                             }
-                            if (testValue < noiseThreshold) {
-                                nBelowThresh++;
-                            }
-
-                            pts[kDim][0] = counts[jDim] - 1;
-                            indices[kDim][0] = index;
-                            intensities[kDim][0] = testValue * sign;
                         }
-                        if (ok && counts[jDim] < (sizes[jDim] - 1)) {
-                            int index = i + strides[jDim] * step; // 2 assumes complex
-                            double testValue = sign * data[index];
-                            if (ptValue < testValue) {
-                                ok = false;
+                        for (int j = 1; j < nSearch; j++) {
+                            if (ok && (counts[jDim] + j) < (sizes[jDim] - 1)) {
+                                int index = i + strides[jDim] * step; // 2 assumes complex
+                                double testValue = sign * data[index];
+                                if ((j == 1) && ptValue < testValue) {
+                                    ok = false;
+                                    break;
+                                }
+                                if (testValue < halfHeight) {
+                                    if (halfWidth[kDim] == 0) {
+                                        halfWidth[kDim] = j;
+                                    } else {
+                                        halfWidth[kDim] = Math.min(halfWidth[kDim], j);
+                                    }
+                                    break;
+                                }
+
+                                if (j == 1) {
+                                    pts[kDim][2] = counts[jDim] + 1;
+                                    indices[kDim][2] = index;
+                                    intensities[kDim][2] = testValue * sign;
+                                }
+                            }
+                            if (!ok) {
                                 break;
                             }
-                            if (testValue < noiseThreshold) {
-                                nBelowThresh++;
-                            }
-                            pts[kDim][2] = counts[jDim] + 1;
-                            indices[kDim][2] = index;
-                            intensities[kDim][2] = testValue * sign;
                         }
                     }
 
                     if (ok) {
-                        peaks.add(new MatrixPeak(intensities, indices, pts, scale, widthLim));
+                        peaks.add(new MatrixPeak(intensities, indices, pts, scale, widthLim, halfWidth));
                     }
                 }
             }
@@ -1304,8 +1326,9 @@ public class MatrixND implements MatrixType {
 
     // *** Simon's additions ***
 
-    /** A generic method which operates on all RI vectors in a given dimension.
-     *
+    /**
+     * A generic method which operates on all RI vectors in a given dimension.
+     * <p>
      * `op` should be a `static void` method which accepts a riVec
      * (of size [2, N], where N is the number of complex points in the
      * dimension). Define `op` in the `RIVecOperations` class at the bottom of
@@ -1427,7 +1450,8 @@ class RIVecOperations {
                 riVec[dim][oldIdx] = riVec[dim][newIdx];
                 riVec[dim][newIdx] = tmp;
             }
-            oldIdx++; newIdx++;
+            oldIdx++;
+            newIdx++;
         }
     }
 
