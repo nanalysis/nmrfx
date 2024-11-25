@@ -447,10 +447,10 @@ public class MMcifReader {
             Saveframe saveframe = (Saveframe) iter.next();
             log.debug("process chem comp atom {}", saveframe.getName());
             if (fromSet < 0) {
-                molecule.nullCoords(iSet);
+               // molecule.nullCoords(iSet);
                 processChemCompAtom(saveframe, iSet, molecule, chainCode, sequenceCode);
             } else if (fromSet == iSet) {
-                molecule.nullCoords(toSet);
+                //molecule.nullCoords(toSet);
                 processChemCompAtom(saveframe, toSet, molecule, chainCode, sequenceCode);
                 break;
             }
@@ -465,10 +465,10 @@ public class MMcifReader {
             Saveframe saveframe = (Saveframe) iter.next();
             log.debug("process chem comp bond {}", saveframe.getName());
             if (fromSet < 0) {
-                molecule.nullCoords(iSet);
+               // molecule.nullCoords(iSet);
                 processChemCompBond(saveframe, iSet, molecule, chainCode, sequenceCode);
             } else if (fromSet == iSet) {
-                molecule.nullCoords(toSet);
+               // molecule.nullCoords(toSet);
                 processChemCompBond(saveframe, toSet, molecule, chainCode, sequenceCode);
                 break;
             }
@@ -655,6 +655,7 @@ public class MMcifReader {
         Loop loop = saveframe.getLoop("_chem_comp_bond");
         if (loop != null) {
             var compoundMap = MoleculeBase.compoundMap();
+            Compound compound = null;
             List<String> idColumn = loop.getColumnAsList("comp_id");
             List<String> atom1IDColumn = loop.getColumnAsList("atom_id_1");
             List<String> atom2IDColumn = loop.getColumnAsList("atom_id_2");
@@ -671,7 +672,7 @@ public class MMcifReader {
                 String stereoConfig = (String) stereoConfigColumn.get(i);
 
                 String mapID = chainCode + "." + sequenceCode;
-                Compound compound = compoundMap.get(mapID);
+                compound = compoundMap.get(mapID);
                 if (compound == null) {
                     log.warn("invalid compound in chem comp bond saveframe \"{}\"", mapID);
                     continue;
@@ -743,7 +744,6 @@ public class MMcifReader {
             buildChemCompAtom(fromSet, toSet, molecule, chainCode, sequenceCode);
             buildChemCompBond(fromSet, toSet, molecule, chainCode, sequenceCode);
         }
-
     }
 
     MoleculeBase process() throws ParseException, IllegalArgumentException {

@@ -27,7 +27,9 @@ from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.rna import SSLayout
 from org.nmrfx.chemistry import Polymer
+from org.nmrfx.chemistry import Compound
 from org.nmrfx.structure.rna import AllBasePairs
+from org.nmrfx.structure.chemistry.energy import NEFSTARStructureCalculator
 
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
@@ -1387,12 +1389,10 @@ class refine:
             if not 'tree' in data:
                 data['tree'] = None
 
-        if 'tree' in data:
+        if 'tree' in data and not 'nef' in data:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
-            #if 'bonds' in data:
-            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1403,8 +1403,9 @@ class refine:
                     self.molecule.setupRotGroups()
                     #raise TypeError("Tree mode must be run on molecules with more than one entity")
 
-        for entity in self.molecule.getEntities():
-            self.setupAtomProperties(entity)
+        if not 'nef' in data:
+            for entity in self.molecule.getEntities():
+                self.setupAtomProperties(entity)
 
         if rnaLinkerDict:
             self.readRNALinkerDict(rnaLinkerDict)
@@ -1938,35 +1939,9 @@ class refine:
                     pass
 
     def STARReader(self, fileName, nefMode):
-        from java.io import FileReader
-        from java.io import BufferedReader
-        from java.io import File
-        from org.nmrfx.star import STAR3
-        from org.nmrfx.chemistry.io import NMRStarReader
-        from org.nmrfx.chemistry.io import NMRStarWriter
-        from org.nmrfx.chemistry.io import NMRNEFReader
-        fileReader = FileReader(fileName)
-        bfR = BufferedReader(fileReader)
-        star = STAR3(bfR,'star3')
-        star.scanFile()
-        file = File(fileName)
-        if nefMode:
-            reader = NMRNEFReader(file, star)
-            molecule = reader.processNEF()
-        else:
-            reader = NMRStarReader(file, star)
-            reader.process()
-            molecule = MoleculeFactory.getActive()
-        self.molecule = molecule
-        molecule.setMethylRotationActive(True);
-        energyList = EnergyLists(molecule)
-        molecule.setEnergyLists(energyList)
-        dihedral = Dihedral(energyList, False)
-        molecule.setDihedrals(dihedral)
-        self.dihedral = molecule.getDihedrals();
-        self.dihedral.clearBoundaries();
+        self.molecule = NEFSTARStructureCalculator.setup(fileName, nefMode)
+        self.dihedral = self.molecule.getDihedrals()
         self.energyLists = self.dihedral.energyList
-        self.energyLists.makeCompoundList(molecule)
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
         """

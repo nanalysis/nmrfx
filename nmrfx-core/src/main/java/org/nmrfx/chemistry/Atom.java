@@ -1994,7 +1994,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             } else if (isProtein) {
                 return nameBase.equals('X');
             } else {
-                return false;
+                return nameBase.equals('X');
             }
         } else {
             return false;
