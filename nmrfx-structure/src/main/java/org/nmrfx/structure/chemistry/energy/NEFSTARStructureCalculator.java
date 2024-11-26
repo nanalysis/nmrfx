@@ -1,6 +1,8 @@
 package org.nmrfx.structure.chemistry.energy;
 
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.NMRNEFReader;
@@ -16,8 +18,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 
+@PythonAPI("refine")
 public class NEFSTARStructureCalculator {
 
+    private NEFSTARStructureCalculator() {
+
+    }
     public static Molecule setup(String fileName, boolean nefMode) throws FileNotFoundException, ParseException {
         Molecule molecule = getMolecule(fileName, nefMode);
         molecule.setMethylRotationActive(true);
@@ -59,9 +65,11 @@ public class NEFSTARStructureCalculator {
         Atom startAtom = firstEntity.getLastAtom();
         AngleTreeGenerator angleTreeGenerator = new AngleTreeGenerator();
         for (Entity entity : entities) {
-            Atom endAtom = angleTreeGenerator.findStartAtom(entity);
-            AngleTreeGenerator.genMeasuredTree(entity, endAtom);
-            molecule.createLinker(startAtom, endAtom, 6, 5.0, 110.0, 135.0);
+            if (entity instanceof Compound) {
+                Atom endAtom = angleTreeGenerator.findStartAtom(entity);
+                AngleTreeGenerator.genMeasuredTree(entity, endAtom);
+                molecule.createLinker(startAtom, endAtom, 6, 5.0, 110.0, 135.0);
+            }
         }
     }
 

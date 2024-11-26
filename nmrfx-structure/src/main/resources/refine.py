@@ -1294,11 +1294,11 @@ class refine:
             if fileName.endswith('.pdb'):
                 molio.readPDB(fileName)
             elif fileName.endswith('.nef'):
-                self.STARReader(fileName, True)
+                self.setupBMRBNEFMolecule(fileName, True)
             elif fileName.endswith('.str'):
-                self.STARReader(fileName, False)
+                self.setupBMRBNEFMolecule(fileName, False)
             else:
-                raise ValueError("Filename must end in .pdb or .nef")
+                raise ValueError("Filename must end in .pdb, .str or .nef")
         else:
             # Checks if NEF file is specified to process it.
             # Even if NEF file is specified, this control flow
@@ -1306,10 +1306,10 @@ class refine:
             # in the YAML file.
             if 'nef' in data:
                 fileName = data['nef']
-                self.STARReader(fileName, True)
+                self.setupBMRBNEFMolecule(fileName, True)
             elif 'star' in data:
                 fileName = data['star']
-                self.STARReader(fileName, False)
+                self.setupBMRBNEFMolecule(fileName, False)
 
             # Checks if 'molecule' data block is specified.
             if 'molecule' in data:
@@ -1938,7 +1938,7 @@ class refine:
                     print "Error adding angle constraint",fullAtoms
                     pass
 
-    def STARReader(self, fileName, nefMode):
+    def setupBMRBNEFMolecule(self, fileName, nefMode):
         self.molecule = NEFSTARStructureCalculator.setup(fileName, nefMode)
         self.dihedral = self.molecule.getDihedrals()
         self.energyLists = self.dihedral.energyList
