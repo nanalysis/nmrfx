@@ -168,13 +168,11 @@ public class RDC {
 
     @Override
     public String toString() {
-        StringBuilder sBuilder = new StringBuilder();
-        sBuilder.append(atom1.getFullName()).append(" ").append(atom1.getEntity().getName()).append(" ");
-        sBuilder.append(atom2.getFullName()).append(" ").append(atom2.getEntity().getName()).append(" ");
-        sBuilder.append(String.format("%.2f", rdcPred)).append(" ");
-        sBuilder.append(String.format("%.2f", rdcExp)).append(" ");
-        sBuilder.append(String.format("%.2f", error));
-        return sBuilder.toString();
+        return atom1.getFullName() + " " + atom1.getEntity().getName() + " " +
+                atom2.getFullName() + " " + atom2.getEntity().getName() + " " +
+                String.format("%.2f", rdcPred) + " " +
+                String.format("%.2f", rdcExp) + " " +
+                String.format("%.2f", error);
     }
 
 }
