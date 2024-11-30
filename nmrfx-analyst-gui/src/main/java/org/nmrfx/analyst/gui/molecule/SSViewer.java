@@ -407,10 +407,10 @@ public class SSViewer extends Pane {
 
         int fontSize = (int) Math.round(width);
         Color color = switch (text) {
-            case "G" -> Color.ORANGE;
-            case "C" -> Color.LIGHTGREEN;
-            case "A" -> Color.YELLOW;
-            case "U", "T" -> Color.LIGHTBLUE;
+            case "G" -> Color.LIGHTGREEN;
+            case "C" -> Color.CYAN;
+            case "A" -> Color.ORANGE;
+            case "U", "T" -> Color.MAGENTA;
             default -> Color.WHITE;
         };
         String label = text;
