@@ -36,7 +36,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
-import org.nmrfx.processor.optimization.BipartiteMatcher;
+import org.nmrfx.math.BipartiteMatcher;
 import org.nmrfx.processor.optimization.PeakCluster;
 import org.nmrfx.processor.optimization.PeakClusterMatcher;
 import org.nmrfx.project.ProjectBase;

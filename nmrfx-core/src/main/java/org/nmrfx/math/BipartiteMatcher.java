@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.nmrfx.processor.optimization;
+package org.nmrfx.math;
 
 import java.io.BufferedReader;
 import java.io.IOException;
