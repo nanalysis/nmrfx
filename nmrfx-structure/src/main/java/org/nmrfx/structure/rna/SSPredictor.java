@@ -1,6 +1,5 @@
 package org.nmrfx.structure.rna;
 
-import jnr.a64asm.Ext;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
@@ -99,10 +98,11 @@ public class SSPredictor {
         }
     }
 
-    record Extent(List<Integer> r, List<Integer> c, List<Double> values) {
+//    record Extent(List<Integer> r, List<Integer> c, List<Double> values) {
+    record Extent(List<BasePairProbability> basePairProbabilities) {
         boolean contains(int i, int j) {
-            for (int k = 0; k < r.size(); k++) {
-                if ((r.get(k) == i) && (c.get(k) == j)) {
+            for (BasePairProbability bp: basePairProbabilities) {
+                if ((bp.r == i) && (bp.c == j)) {
                     return true;
                 }
             }
@@ -111,27 +111,25 @@ public class SSPredictor {
 
         double sum() {
             double sum = 0.0;
-            for (double value : values) {
-                sum += value;
+            for (BasePairProbability bp: basePairProbabilities) {
+                sum += bp.probability;
             }
             return sum;
         }
 
         boolean overlaps(Extent extent) {
-            int lastB = extent.r.size() - 1;
-            int b1 = extent.r.get(0);
-            int b2 = extent.r.get(lastB);
-            int b3 = extent.c.get(lastB);
-            int b4 = extent.c.get(0);
+            int b1 = extent.basePairProbabilities.get(0).r;
+            int b2 = extent.basePairProbabilities.reversed().get(0).r;
+            int b3 = extent.basePairProbabilities.reversed().get(0).c;
+            int b4 = extent.basePairProbabilities.get(0).c;
             return overlaps(b1, b2, b3, b4);
         }
 
         boolean overlaps(int b1, int b2, int b3, int b4) {
-            int last = r.size() - 1;
-            int a1 = r.get(0);
-            int a2 = r.get(last);
-            int a3 = c.get(last);
-            int a4 = c.get(0);
+            int a1 = basePairProbabilities.get(0).r;
+            int a2 = basePairProbabilities.reversed().get(0).r;
+            int a3 = basePairProbabilities.reversed().get(0).c;
+            int a4 = basePairProbabilities.get(0).c;
 
             boolean bIna = (b1 > a2) && (b4 < a3);
             boolean aInb = (a1 > b2) && (a4 < b3);
@@ -188,18 +186,18 @@ public class SSPredictor {
             }
             Set<Integer> used = new HashSet<>();
             for (BasePairProbability basePairProbability : basePairProbabilities) {
-                used.add(basePairProbability.i);
-                used.add(basePairProbability.j);
+                used.add(basePairProbability.r);
+                used.add(basePairProbability.c);
             }
             for (Extent extent : unusedExtents) {
-                int n = extent.r.size();
+                int n = extent.basePairProbabilities.size();
                 int first = -1;
                 int last = -1;
                 List<BasePairProbability> newBPs = new ArrayList<>();
                 boolean gap = false;
                 for (int i = 0; i < n; i++) {
-                    BasePairProbability basePairProbability = new BasePairProbability(extent.r.get(i), extent.c.get(i), extent.values.get(i));
-                    if (!used.contains(basePairProbability.i) && !used.contains(basePairProbability.j)) {
+                    BasePairProbability basePairProbability = extent.basePairProbabilities.get(i);
+                    if (!used.contains(basePairProbability.r) && !used.contains(basePairProbability.c)) {
                         if (first == -1) {
                             first = i;
                         }
@@ -212,10 +210,10 @@ public class SSPredictor {
                     }
                 }
                 if (((first != -1) && (last - first + 1) > 3)) {
-                    int b1 = newBPs.get(0).i;
-                    int b2 = newBPs.get(newBPs.size() - 1).i;
-                    int b3 = newBPs.get(0).j;
-                    int b4 = newBPs.get(newBPs.size() - 1).j;
+                    int b1 = newBPs.get(0).r;
+                    int b2 = newBPs.get(newBPs.size() - 1).r;
+                    int b3 = newBPs.get(0).c;
+                    int b4 = newBPs.get(newBPs.size() - 1).c;
                     boolean ok = true;
                     for (Extent extent1 : extents) {
                         if (extent1.overlaps(b1, b2, b3, b4)) {
@@ -226,8 +224,8 @@ public class SSPredictor {
                     if (ok) {
                         basePairProbabilities.addAll(newBPs);
                         for (BasePairProbability bp : newBPs) {
-                            used.add(bp.i);
-                            used.add(bp.j);
+                            used.add(bp.r);
+                            used.add(bp.c);
                         }
                     }
                 }
@@ -258,15 +256,13 @@ public class SSPredictor {
         }
     }
 
-    void trimValues(List<Integer> r, List<Integer> c, List<Double> values) {
-        int last = r.size() - 1;
+    void trimValues(List<BasePairProbability> bps) {
+        int last = bps.size() - 1;
         if (last > 0) {
-            int dR = r.get(last) - r.get(last - 1);
-            int dC = c.get(last - 1) - c.get(last);
+            int dR = bps.get(last).r - bps.get(last - 1).r;
+            int dC = bps.get(last - 1).c - bps.get(last).c;
             if ((dR != 1) || (dC != 1)) {
-                r.remove(last);
-                c.remove(last);
-                values.remove(last);
+                bps.remove(last);
             }
         }
 
@@ -283,14 +279,10 @@ public class SSPredictor {
                 }
                 int lastr = r0;
                 int lastc = c0;
-                List<Integer> rows = new ArrayList<>();
-                List<Integer> columns = new ArrayList<>();
-                List<Double> values = new ArrayList<>();
+                List<BasePairProbability> bps = new ArrayList<>();
                 if (predictions[r0][c0] > threshold) {
                     double sum = predictions[r0][c0];
-                    rows.add(r0);
-                    columns.add(c0);
-                    values.add(predictions[r0][c0]);
+                    bps.add(new BasePairProbability(r0, c0, predictions[r0][c0]));
                     int m = Math.min(n - r0, c0);
                     int addedSize = 0;
                     for (int i = 1; i < m; i++) {
@@ -324,16 +316,14 @@ public class SSPredictor {
                             }
                         }
                         if (bestValue > threshold) {
-                            rows.add(bestR);
-                            columns.add(bestC);
-                            values.add(bestValue);
+                            bps.add(new BasePairProbability(bestR, bestC, bestValue));
                             sum += bestValue;
                             lastc = bestC;
                             lastr = bestR;
                         } else {
-                            trimValues(rows, columns, values);
-                            if ((rows.size() > 2) && (rows.size() > addedSize)) {
-                                Extent extent = new Extent(rows, columns, values);
+                            trimValues(bps);
+                            if ((bps.size() > 2) && (bps.size() > addedSize)) {
+                                Extent extent = new Extent(bps);
                                 extents.add(extent);
                             }
                             break;
@@ -412,20 +402,22 @@ public class SSPredictor {
     }
 
     List<Extent> splitExtent(Extent extent) {
-        int n = extent.r.size();
+        int n = extent.basePairProbabilities.size();
         List<Extent> newExtents = new ArrayList<>();
         for (int i = 1; i < n; i++) {
-            int rP = extent.r.get(i - 1);
-            int cP = extent.c.get(i - 1);
-            int r = extent.r.get(i);
-            int c = extent.c.get(i);
+            BasePairProbability bpPrev = extent.basePairProbabilities.get(i-1);
+            BasePairProbability bpThis = extent.basePairProbabilities.get(i);
+            int rP = bpPrev.r;
+            int cP = bpPrev.c;
+            int r = bpThis.r;
+            int c = bpThis.c;
             int dR = r - rP;
             int dC = cP - c;
             if ((dR != 1) || (dC != 1)) {
-                Extent newExtent = new Extent(extent.r.subList(0, i), extent.c.subList(0, i), extent.values.subList(0, i));
+                Extent newExtent = new Extent(extent.basePairProbabilities.subList(0, i));
                 newExtents.add(newExtent);
                 if ((n - i) > 2) {
-                    Extent newExtent2 = new Extent(extent.r.subList(i, n), extent.c.subList(i, n), extent.values.subList(i, n));
+                    Extent newExtent2 = new Extent((extent.basePairProbabilities.subList(i, n)));
                     newExtents.add(newExtent2);
                 }
             }
@@ -463,9 +455,9 @@ public class SSPredictor {
         }
         extentBasePairs = new HashSet<>();
         for (Extent extent : finalExtents) {
-            for (int k = 0; k < extent.r.size(); k++) {
-                int r = extent.r.get(k);
-                int c = extent.c.get(k);
+            for (int k = 0; k < extent.basePairProbabilities.size(); k++) {
+                int r = extent.basePairProbabilities.get(k).r;
+                int c = extent.basePairProbabilities.get(k).c;
                 BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
                 extentBasePairs.add(basePairProbability);
             }
@@ -539,25 +531,25 @@ public class SSPredictor {
         }
     }
 
-    public record BasePairProbability(int i, int j, double probability) {
+    public record BasePairProbability(int r, int c, double probability) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
             BasePairProbability that = (BasePairProbability) o;
-            return ((i == that.i) && (j == that.j)) || ((i == that.j) && (j == that.i));
+            return ((r == that.r) && (c == that.c)) || ((r == that.c) && (c == that.r));
         }
 
         @Override
         public int hashCode() {
-            if (i < j) {
-                int result = i;
-                result = 31 * result + j;
+            if (r < c) {
+                int result = r;
+                result = 31 * result + c;
                 return result;
             } else {
-                int result = j;
-                result = 31 * result + i;
+                int result = c;
+                result = 31 * result + r;
                 return result;
 
             }
@@ -597,11 +589,11 @@ public class SSPredictor {
     Map<BasePairProbability, Integer> findCrossings(List<BasePairProbability> basePairs) {
         Map<BasePairProbability, Integer> crossings = new HashMap<>();
         for (BasePairProbability basePair1 : basePairs) {
-            int i1 = basePair1.i;
-            int j1 = basePair1.j;
+            int i1 = basePair1.r;
+            int j1 = basePair1.c;
             for (BasePairProbability basePair2 : basePairs) {
-                int i2 = basePair2.i;
-                int j2 = basePair2.j;
+                int i2 = basePair2.r;
+                int j2 = basePair2.c;
                 boolean cross = (i1 < i2) && (i2 < j1) && (j1 < j2);
                 if (cross) {
                     crossings.compute(basePair1, (basePair, value) -> (value == null) ? 1 : value + 1);
@@ -647,8 +639,8 @@ public class SSPredictor {
             dotBracketList.add(".");
         }
         for (BasePairProbability basePairProbability : basePairProbabilities) {
-            int i = basePairProbability.i;
-            int j = basePairProbability.j;
+            int i = basePairProbability.r;
+            int j = basePairProbability.c;
             dotBracketList.set(i, "(");
             dotBracketList.set(j, ")");
         }
