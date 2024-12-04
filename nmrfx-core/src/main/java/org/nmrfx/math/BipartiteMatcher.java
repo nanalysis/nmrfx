@@ -413,10 +413,14 @@ public class BipartiteMatcher {
         }
     }
 
-    private void printWeights() {
+    public void printWeights() {
         for (int i = 0; i < n; i++) {
+            System.out.print(i);
             for (int j = 0; j < n; j++) {
-                System.out.print(getWeight(i, j) + " ");
+                double weight = getWeight(i, j);
+                if (weight != Double.NEGATIVE_INFINITY) {
+                    System.out.print(" " + j + " " + getWeight(i, j));
+                }
             }
             System.out.println("");
         }

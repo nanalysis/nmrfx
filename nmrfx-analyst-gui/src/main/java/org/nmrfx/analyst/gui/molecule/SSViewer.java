@@ -260,8 +260,8 @@ public class SSViewer extends Pane {
         }
         var extentBasePairs = ssPredictor.getExtentBasePairs();
         for (var bp : extentBasePairs) {
-            int r = bp.i();
-            int c = bp.j();
+            int r = bp.r();
+            int c = bp.c();
             double x1 = border + c * delta + deltaHalf;
             double y1 = border + r * delta + deltaHalf;
             Line line2 = new Line(x1, y1, y1, y1);
@@ -366,11 +366,11 @@ public class SSViewer extends Pane {
                 if (ssPredictor != null) {
                     double pLimit = 0.1;
                     for (SSPredictor.BasePairProbability bp : ssPredictor.getAllBasePairs(pLimit)) {
-                        int res1 = bp.i();
-                        int res2 = bp.j();
+                        int res1 = bp.r();
+                        int res2 = bp.c();
                         if (selectedResidue > iRes) {
-                            res1 = bp.j();
-                            res2 = bp.i();
+                            res2 = bp.r();
+                            res1 = bp.c();
                         }
                         if (res1 == selectedResidue && res2 == iRes) {
                             String label = String.format("%.2f", bp.probability());

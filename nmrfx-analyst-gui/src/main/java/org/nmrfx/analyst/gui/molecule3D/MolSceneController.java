@@ -1137,7 +1137,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
             try {
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
-                ssPredictor.findExtents(0.4);
+                ssPredictor.bipartiteMatch(0.4);
+               // ssPredictor.findExtents(0.4);
                 updateSSChoiceBox();
                 showSS(ssChoiceBox.getItems().get(0));
 
@@ -1153,8 +1154,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
         Set<String> commonEntries = new HashSet<>();
         if (ssPredictor != null) {
             int n = ssPredictor.getNExtents();
+            n = 1;
             for (int i = 0; i < n; i++) {
-                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(i);
+                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs();
                 String dotBracket = ssPredictor.getDotBracket(basePairsExt);
                 int fileIndex = fileSecondaryStructures.indexOf(dotBracket);
                 SSOrigin origin = fileIndex != -1 ? SSOrigin.BOTH : SSOrigin.PRED;
@@ -1199,7 +1201,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
         if (molecule != null) {
             String dotBracket = "";
             if ((ssPredictor != null) && (secondaryStructureEntry.type == SSOrigin.PRED || secondaryStructureEntry.type == SSOrigin.BOTH)) {
-                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex);
+              //  Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex);
+                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs();
                 dotBracket = ssPredictor.getDotBracket(basePairsExt);
             } else {
                 dotBracket = secondaryStructureEntry.dotBracket;

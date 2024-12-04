@@ -1,5 +1,6 @@
 package org.nmrfx.structure.rna;
 
+import org.nmrfx.math.BipartiteMatcher;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
@@ -12,6 +13,8 @@ import java.util.*;
 public class SSPredictor {
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
     double[][] predictions;
+
+
 
     Set<BasePairProbability> extentBasePairs;
     List<Indices> indices = new ArrayList<>();
@@ -98,10 +101,10 @@ public class SSPredictor {
         }
     }
 
-//    record Extent(List<Integer> r, List<Integer> c, List<Double> values) {
+    //    record Extent(List<Integer> r, List<Integer> c, List<Double> values) {
     record Extent(List<BasePairProbability> basePairProbabilities) {
         boolean contains(int i, int j) {
-            for (BasePairProbability bp: basePairProbabilities) {
+            for (BasePairProbability bp : basePairProbabilities) {
                 if ((bp.r == i) && (bp.c == j)) {
                     return true;
                 }
@@ -111,7 +114,7 @@ public class SSPredictor {
 
         double sum() {
             double sum = 0.0;
-            for (BasePairProbability bp: basePairProbabilities) {
+            for (BasePairProbability bp : basePairProbabilities) {
                 sum += bp.probability;
             }
             return sum;
@@ -405,7 +408,7 @@ public class SSPredictor {
         int n = extent.basePairProbabilities.size();
         List<Extent> newExtents = new ArrayList<>();
         for (int i = 1; i < n; i++) {
-            BasePairProbability bpPrev = extent.basePairProbabilities.get(i-1);
+            BasePairProbability bpPrev = extent.basePairProbabilities.get(i - 1);
             BasePairProbability bpThis = extent.basePairProbabilities.get(i);
             int rP = bpPrev.r;
             int cP = bpPrev.c;
@@ -437,7 +440,11 @@ public class SSPredictor {
     }
 
     public int getNExtents() {
-        return indices.size();
+        int nIndices = indices.size();
+        if ((nIndices == 0) && !extentBasePairs.isEmpty()){
+            nIndices = 1;
+        }
+        return nIndices;
     }
 
     public Set<BasePairProbability> getExtentBasePairs(int i) {
@@ -649,6 +656,52 @@ public class SSPredictor {
             stringBuilder.append(dotBracketList.get(i));
         }
         return stringBuilder.toString();
+    }
+
+    public void bipartiteMatch(double threshold) {
+        BipartiteMatcher bipartiteMatcher = new BipartiteMatcher();
+        int n = predictions.length;
+        bipartiteMatcher.reset(n, true);
+        for (int i = 0; i < n; i++) {
+            bipartiteMatcher.setWeight(i, i,-1.0);
+            for (int j = i+2; j < n; j++) {
+                if (predictions[i][j] > threshold) {
+                    bipartiteMatcher.setWeight(i, j, predictions[i][j]);
+                }
+            }
+        }
+        int[] matching = bipartiteMatcher.getMatching();
+        bipartiteMatcher.printWeights();
+        extentBasePairs = new HashSet<>();
+        int[] revMatches = new int[n];
+        for (int r=0;r<n;r++) {
+            int c = matching[r];
+            if (c >=0) {
+                revMatches[c] = r;
+            }
+        }
+
+        for (int r=0;r<n;r++) {
+            int c = matching[r];
+            System.out.print((r+1) + " " + (c+1) + " " + bipartiteMatcher.getWeight(r, c));
+            if ((c != r) && (c > -1)) {
+                double prob = predictions[r][c];
+                int revMatch = matching[c];
+                double revProb = revMatch >= 0 ? predictions[c][revMatch] : 0.0;
+                System.out.print(" " + (revMatch+1) + " " + revProb);
+                if (prob > revProb) {
+                    matching[c] = -1;
+                    System.out.println(" " + predictions[r][c]);
+                    BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                    extentBasePairs.add(basePairProbability);
+                } else {
+                    System.out.println();
+                }
+            } else {
+                System.out.println();
+            }
+        }
+        System.out.println("nBasePairs " + extentBasePairs.size());
     }
 
 }
