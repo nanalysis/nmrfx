@@ -1,6 +1,9 @@
 package org.nmrfx.structure.rna;
 
-import org.nmrfx.math.BipartiteMatcher;
+import org.jgrapht.alg.interfaces.MatchingAlgorithm;
+import org.jgrapht.alg.matching.MaximumWeightBipartiteMatching;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import org.jgrapht.graph.SimpleWeightedGraph;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
@@ -659,49 +662,64 @@ public class SSPredictor {
     }
 
     public void bipartiteMatch(double threshold) {
-        BipartiteMatcher bipartiteMatcher = new BipartiteMatcher();
-        int n = predictions.length;
-        bipartiteMatcher.reset(n, true);
-        for (int i = 0; i < n; i++) {
-            bipartiteMatcher.setWeight(i, i,-1.0);
-            for (int j = i+2; j < n; j++) {
-                if (predictions[i][j] > threshold) {
-                    bipartiteMatcher.setWeight(i, j, predictions[i][j]);
-                }
-            }
-        }
-        int[] matching = bipartiteMatcher.getMatching();
-        bipartiteMatcher.printWeights();
-        extentBasePairs = new HashSet<>();
-        int[] revMatches = new int[n];
-        for (int r=0;r<n;r++) {
-            int c = matching[r];
-            if (c >=0) {
-                revMatches[c] = r;
-            }
-        }
+        SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph
+                = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
-        for (int r=0;r<n;r++) {
-            int c = matching[r];
-            System.out.print((r+1) + " " + (c+1) + " " + bipartiteMatcher.getWeight(r, c));
-            if ((c != r) && (c > -1)) {
-                double prob = predictions[r][c];
-                int revMatch = matching[c];
-                double revProb = revMatch >= 0 ? predictions[c][revMatch] : 0.0;
-                System.out.print(" " + (revMatch+1) + " " + revProb);
-                if (prob > revProb) {
-                    matching[c] = -1;
-                    System.out.println(" " + predictions[r][c]);
-                    BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
-                    extentBasePairs.add(basePairProbability);
-                } else {
-                    System.out.println();
+        int n = predictions.length;
+        Set<Integer> partition1 = new HashSet<>();
+        Set<Integer> partition2 = new HashSet<>();
+        for (int i = 0; i < n; i++) {
+            simpleGraph.addVertex(i);
+            partition1.add(i);
+            simpleGraph.addVertex(i + n);
+            partition2.add(i + n);
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                double weight = 0.0;
+                boolean addEdge = false;
+                if (i == j) {
+                    weight = 1.0;
+                    addEdge = true;
+                } else if ((i+2) < j) {
+                    if (predictions[i][j] > threshold) {
+                        weight = 100.0 + predictions[i][j] ;
+                        System.out.println("match " + i + " " + j + " " + weight);
+                        addEdge = true;
+                    }
                 }
-            } else {
-                System.out.println();
+                if (addEdge) {
+                    DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
+                    simpleGraph.addEdge(i, j + n, weightedEdge1);
+                    simpleGraph.setEdgeWeight(weightedEdge1, weight);
+                }
             }
         }
-        System.out.println("nBasePairs " + extentBasePairs.size());
+        var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph, partition1, partition2);
+        MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
+        extentBasePairs = new HashSet<>();
+
+        BasePairProbability[] matches = new BasePairProbability[n];
+        BasePairProbability[] matches2 = new BasePairProbability[n];
+        matchResult.getEdges().stream()
+                .sorted((a,b) -> Double.compare(simpleGraph.getEdgeWeight(b),simpleGraph.getEdgeWeight(a)))
+                .forEach(edge -> {
+            int r = simpleGraph.getEdgeSource(edge);
+            int c = simpleGraph.getEdgeTarget(edge) - n;
+            System.out.println(r + " " + c + " " + simpleGraph.getEdgeWeight(edge));
+            if ((r+2) < c) {
+                if ((matches[r] == null) && (matches2[c] == null)){
+                    BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                    matches[r] = basePairProbability;
+                    matches2[c] = basePairProbability;
+                }
+            }
+        });
+        for (int i =0;i<n;i++) {
+            if (matches[i] != null) {
+                extentBasePairs.add(matches[i]);
+            }
+        }
     }
 
 }

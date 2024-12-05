@@ -381,6 +381,11 @@
                 <artifactId>type-map</artifactId>
                 <version>2.1.8</version>
             </dependency>
+            <dependency>
+                <groupId>org.jgrapht</groupId>
+                <artifactId>jgrapht-core</artifactId>
+                <version>1.5.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
