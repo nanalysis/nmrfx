@@ -23,9 +23,6 @@ public class SSPredictor {
     Set<BasePairProbability> extentBasePairs;
 
     List<Set<BasePairProbability>> extentBasePairsList = new ArrayList<>();
-    List<Indices> indices = new ArrayList<>();
-    List<Extent> uniqueExtents = new ArrayList<>();
-    List<Extent> overlapExtents = new ArrayList<>();
     String rnaSequence;
     int delta = 4;
 
@@ -108,22 +105,6 @@ public class SSPredictor {
     }
 
     record Extent(List<BasePairProbability> basePairProbabilities) {
-        boolean contains(int i, int j) {
-            for (BasePairProbability bp : basePairProbabilities) {
-                if ((bp.r == i) && (bp.c == j)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        double sum() {
-            double sum = 0.0;
-            for (BasePairProbability bp : basePairProbabilities) {
-                sum += bp.probability;
-            }
-            return sum;
-        }
 
         boolean overlaps(Extent extent) {
             int b1 = extent.basePairProbabilities.get(0).r;
@@ -146,280 +127,6 @@ public class SSPredictor {
             return !(bIna || aInb || bAftera || aAfterb);
         }
 
-        List<Extent> overlaps(List<Extent> extents) {
-            return extents.stream().filter(e -> e != this).filter(e -> e.overlaps(this)).toList();
-        }
-
-        List<Integer> overlapIndices(List<Extent> extents) {
-            List<Integer> result = new ArrayList<>();
-            for (int i = 0; i < extents.size(); i++) {
-                Extent extent = extents.get(i);
-                if (extent != this) {
-                    if (extent.overlaps(this)) {
-                        result.add(i);
-                    }
-                }
-            }
-            return result;
-        }
-    }
-
-    boolean isPresent(List<Extent> extents, int r, int c) {
-        return extents.stream().anyMatch(e -> e.contains(r, c));
-    }
-
-    class Indices {
-        final List<Integer> indexes = new ArrayList<>();
-        final Set<BasePairProbability> basePairProbabilities = new HashSet<>();
-
-        final double sum;
-
-        Indices(List<Integer> indexes, double sum) {
-            this.indexes.addAll(indexes);
-            this.sum = sum;
-        }
-
-        void updateBasePairs() {
-            basePairProbabilities.addAll(getExtentBasePairs(indexes));
-        }
-
-        void addBasePairs(List<Extent> extents) {
-            Set<Extent> unusedExtents = new HashSet<>(extents);
-            for (var i : indexes) {
-                Extent extent = extents.get(i);
-                unusedExtents.remove(extent);
-            }
-            Set<Integer> used = new HashSet<>();
-            for (BasePairProbability basePairProbability : basePairProbabilities) {
-                used.add(basePairProbability.r);
-                used.add(basePairProbability.c);
-            }
-            for (Extent extent : unusedExtents) {
-                int n = extent.basePairProbabilities.size();
-                int first = -1;
-                int last = -1;
-                List<BasePairProbability> newBPs = new ArrayList<>();
-                for (int i = 0; i < n; i++) {
-                    BasePairProbability basePairProbability = extent.basePairProbabilities.get(i);
-                    if (!used.contains(basePairProbability.r) && !used.contains(basePairProbability.c)) {
-                        if (first == -1) {
-                            first = i;
-                        }
-                        last = i;
-                        newBPs.add(basePairProbability);
-                    }
-                }
-                if (((first != -1) && (last - first + 1) > 3)) {
-                    int b1 = newBPs.get(0).r;
-                    int b2 = newBPs.get(newBPs.size() - 1).r;
-                    int b3 = newBPs.get(0).c;
-                    int b4 = newBPs.get(newBPs.size() - 1).c;
-                    boolean ok = true;
-                    for (Extent extent1 : extents) {
-                        if (extent1.overlaps(b1, b2, b3, b4)) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                    if (ok) {
-                        basePairProbabilities.addAll(newBPs);
-                        for (BasePairProbability bp : newBPs) {
-                            used.add(bp.r);
-                            used.add(bp.c);
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Indices indices1 = (Indices) o;
-            if (indices1.basePairProbabilities.size() != basePairProbabilities.size()) {
-                return false;
-            }
-            for (BasePairProbability basePairProbability : basePairProbabilities) {
-                if (!indices1.basePairProbabilities.contains(basePairProbability)) {
-                    return false;
-                }
-            }
-            return true;
-
-        }
-
-        @Override
-        public int hashCode() {
-            return basePairProbabilities.hashCode();
-        }
-    }
-
-    void trimValues(List<BasePairProbability> bps) {
-        int last = bps.size() - 1;
-        if (last > 0) {
-            int dR = bps.get(last).r - bps.get(last - 1).r;
-            int dC = bps.get(last - 1).c - bps.get(last).c;
-            if ((dR != 1) || (dC != 1)) {
-                bps.remove(last);
-            }
-        }
-
-    }
-
-    public void findExtents(double threshold) {
-        List<Extent> extents = new ArrayList<>();
-        int n = rnaSequence.length();
-        int[][] tries = {{1, 1}, {1, 2}, {2, 1}, {2, 2}};
-        for (int r0 = 0; r0 < n; r0++) {
-            for (int c0 = r0 + delta; c0 < n; c0++) {
-                if (isPresent(extents, r0, c0)) {
-                    continue;
-                }
-                int lastr = r0;
-                int lastc = c0;
-                List<BasePairProbability> bps = new ArrayList<>();
-                if (predictions[r0][c0] > threshold) {
-                    bps.add(new BasePairProbability(r0, c0, predictions[r0][c0]));
-                    int m = Math.min(n - r0, c0);
-                    int addedSize = 0;
-                    for (int i = 1; i < m; i++) {
-                        double bestValue = 0.0;
-                        int bestR = 0;
-                        int bestC = 0;
-                        for (int itry = 0; itry < 4; itry++) {
-                            int r = lastr + tries[itry][0];
-                            int c = lastc - tries[itry][1];
-
-                            if (((r) < n) && ((c) >= 0)) {
-                                double value = predictions[r][c];
-                                if (value > bestValue) {
-                                    bestValue = value;
-                                    bestR = r;
-                                    bestC = c;
-                                    if ((itry == 0) && (value > threshold)) {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (bestValue > threshold) {
-                            bps.add(new BasePairProbability(bestR, bestC, bestValue));
-                            lastc = bestC;
-                            lastr = bestR;
-                        } else {
-                            trimValues(bps);
-                            if ((bps.size() > 2) && (bps.size() > addedSize)) {
-                                Extent extent = new Extent(bps);
-                                extents.add(extent);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        extents.sort((a, b) -> Double.compare(b.sum(), a.sum()));
-        overlapExtents.clear();
-        uniqueExtents.clear();
-        addExtents(extents);
-
-
-        for (var extent : extents) {
-            var overlaps = extent.overlaps(extents);
-            if (overlaps.isEmpty()) {
-                uniqueExtents.add(extent);
-            } else {
-                overlapExtents.add(extent);
-            }
-        }
-        boolean[] used = new boolean[overlapExtents.size()];
-        List<List<Integer>> allOverlaps = new ArrayList<>();
-        for (var extent : overlapExtents) {
-            List<Integer> overlapIndices = extent.overlapIndices(overlapExtents);
-            allOverlaps.add(overlapIndices);
-        }
-
-
-        indices.clear();
-        int m = Math.min(12, overlapExtents.size());
-        int m2 = (int) Math.pow(2, m);
-        for (int j = 0; j < m2; j++) {
-            Arrays.fill(used, false);
-            boolean[] use = new boolean[overlapExtents.size()];
-            for (int k = 0; k < m; k++) {
-                int mask = 1 << k;
-                use[k] = (j & mask) == mask;
-            }
-            List<Integer> useIndices = new ArrayList<>();
-            double sum = 0.0;
-            for (int k = 0; k < m; k++) {
-                if (use[k] && !used[k]) {
-                    Extent extent = overlapExtents.get(k);
-                    sum += addExtent(extent, allOverlaps, useIndices, used, k, sum);
-                }
-            }
-            for (int i = 0; i < overlapExtents.size(); i++) {
-                if (!used[i]) {
-                    Extent extent = overlapExtents.get(i);
-                    sum += addExtent(extent, allOverlaps, useIndices, used, i, sum);
-                }
-            }
-            useIndices.sort(null);
-            Indices currentIndices = new Indices(useIndices, sum);
-            currentIndices.updateBasePairs();
-            if (!indices.contains(currentIndices)) {
-                indices.add(currentIndices);
-            }
-        }
-        indices.sort((a, b) -> Double.compare(b.sum, a.sum));
-        for (var indice : indices) {
-            indice.addBasePairs(overlapExtents);
-        }
-    }
-
-    void addExtents(List<Extent> extents) {
-        List<Extent> newExtents = new ArrayList<>();
-        for (Extent extent : extents) {
-            newExtents.addAll(splitExtent(extent));
-        }
-        extents.addAll(newExtents);
-    }
-
-    List<Extent> splitExtent(Extent extent) {
-        int n = extent.basePairProbabilities.size();
-        List<Extent> newExtents = new ArrayList<>();
-        for (int i = 1; i < n; i++) {
-            BasePairProbability bpPrev = extent.basePairProbabilities.get(i - 1);
-            BasePairProbability bpThis = extent.basePairProbabilities.get(i);
-            int rP = bpPrev.r;
-            int cP = bpPrev.c;
-            int r = bpThis.r;
-            int c = bpThis.c;
-            int dR = r - rP;
-            int dC = cP - c;
-            if ((dR != 1) || (dC != 1)) {
-                Extent newExtent = new Extent(extent.basePairProbabilities.subList(0, i));
-                newExtents.add(newExtent);
-                if ((n - i) > 2) {
-                    Extent newExtent2 = new Extent((extent.basePairProbabilities.subList(i, n)));
-                    newExtents.add(newExtent2);
-                }
-            }
-        }
-        return newExtents;
-    }
-
-    double addExtent(Extent extent, List<List<Integer>> allOverlaps, List<Integer> useIndices, boolean[] used, int i, double sum) {
-        sum += extent.sum();
-        useIndices.add(i);
-        List<Integer> overlapIndices = allOverlaps.get(i);
-        used[i] = true;
-        for (int index : overlapIndices) {
-            used[index] = true;
-        }
-        return sum;
     }
 
     public int getNExtents() {
@@ -428,25 +135,6 @@ public class SSPredictor {
 
     public Set<BasePairProbability> getExtentBasePairs(int i) {
         extentBasePairs = extentBasePairsList.get(i);
-        return extentBasePairs;
-    }
-
-    public Set<BasePairProbability> getExtentBasePairs(List<Integer> indexes) {
-
-        List<Extent> finalExtents = new ArrayList<>(uniqueExtents);
-        for (var index : indexes) {
-            finalExtents.add(overlapExtents.get(index));
-        }
-        extentBasePairs = new HashSet<>();
-        for (Extent extent : finalExtents) {
-            for (int k = 0; k < extent.basePairProbabilities.size(); k++) {
-                int r = extent.basePairProbabilities.get(k).r;
-                int c = extent.basePairProbabilities.get(k).c;
-                BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
-                extentBasePairs.add(basePairProbability);
-            }
-        }
-
         return extentBasePairs;
     }
 
@@ -527,16 +215,15 @@ public class SSPredictor {
 
         @Override
         public int hashCode() {
+            int result;
             if (r < c) {
-                int result = r;
+                result = r;
                 result = 31 * result + c;
-                return result;
             } else {
-                int result = c;
+                result = c;
                 result = 31 * result + r;
-                return result;
-
             }
+            return result;
         }
     }
 
@@ -657,10 +344,8 @@ public class SSPredictor {
                 boolean addEdge = false;
                 if (i == j) {
                     addEdge = true;
-                } else if ((i + 2) < j) {
-                    if (predictions[i][j] > threshold) {
-                        addEdge = true;
-                    }
+                } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
+                    addEdge = true;
                 }
                 if (addEdge) {
                     DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
@@ -679,13 +364,11 @@ public class SSPredictor {
             double weight = 0.0;
             if (i == j) {
                 weight = 1.0;
-            } else if ((i + 2) < j) {
-                if (predictions[i][j] > threshold) {
-                    double adjustment = randomScale * random.nextGaussian();
-                    double prediction = predictions[i][j] + adjustment;
-                    prediction = Math.min(prediction, 1.0);
-                    weight = 100.0 + prediction;
-                }
+            } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
+                double adjustment = randomScale * random.nextGaussian();
+                double prediction = predictions[i][j] + adjustment;
+                prediction = Math.min(prediction, 1.0);
+                weight = 100.0 + prediction;
             }
             graph.setEdgeWeight(i, j + n, weight);
         }
@@ -701,12 +384,10 @@ public class SSPredictor {
                 .forEach(edge -> {
                     int r = simpleGraph.getEdgeSource(edge);
                     int c = simpleGraph.getEdgeTarget(edge) - n;
-                    if ((r + 2) < c) {
-                        if ((matches[r] == null) && (matches2[c] == null)) {
-                            BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
-                            matches[r] = basePairProbability;
-                            matches2[c] = basePairProbability;
-                        }
+                    if (((r + 2) < c) && ((matches[r] == null) && (matches2[c] == null))) {
+                        BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                        matches[r] = basePairProbability;
+                        matches2[c] = basePairProbability;
                     }
                 });
         return matches;
@@ -756,7 +437,7 @@ public class SSPredictor {
                         newExtentBasePairs.add(basePairProbability);
                         int c = basePairProbability.c;
                         matchTries[nFound][i] = c;
-                    } else  {
+                    } else {
                         matchTries[nFound][i] = -1;
                     }
                 }
