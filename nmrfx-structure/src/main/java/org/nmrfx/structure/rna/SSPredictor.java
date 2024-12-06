@@ -107,7 +107,6 @@ public class SSPredictor {
         }
     }
 
-    //    record Extent(List<Integer> r, List<Integer> c, List<Double> values) {
     record Extent(List<BasePairProbability> basePairProbabilities) {
         boolean contains(int i, int j) {
             for (BasePairProbability bp : basePairProbabilities) {
@@ -166,7 +165,7 @@ public class SSPredictor {
     }
 
     boolean isPresent(List<Extent> extents, int r, int c) {
-        return extents.stream().filter(e -> e.contains(r, c)).findFirst().isPresent();
+        return extents.stream().anyMatch(e -> e.contains(r, c));
     }
 
     class Indices {
@@ -185,8 +184,7 @@ public class SSPredictor {
         }
 
         void addBasePairs(List<Extent> extents) {
-            Set<Extent> unusedExtents = new HashSet<>();
-            unusedExtents.addAll(extents);
+            Set<Extent> unusedExtents = new HashSet<>(extents);
             for (var i : indexes) {
                 Extent extent = extents.get(i);
                 unusedExtents.remove(extent);
@@ -201,7 +199,6 @@ public class SSPredictor {
                 int first = -1;
                 int last = -1;
                 List<BasePairProbability> newBPs = new ArrayList<>();
-                boolean gap = false;
                 for (int i = 0; i < n; i++) {
                     BasePairProbability basePairProbability = extent.basePairProbabilities.get(i);
                     if (!used.contains(basePairProbability.r) && !used.contains(basePairProbability.c)) {
@@ -210,10 +207,6 @@ public class SSPredictor {
                         }
                         last = i;
                         newBPs.add(basePairProbability);
-                    } else {
-                        if (first != -1) {
-                            gap = true;
-                        }
                     }
                 }
                 if (((first != -1) && (last - first + 1) > 3)) {
@@ -288,7 +281,6 @@ public class SSPredictor {
                 int lastc = c0;
                 List<BasePairProbability> bps = new ArrayList<>();
                 if (predictions[r0][c0] > threshold) {
-                    double sum = predictions[r0][c0];
                     bps.add(new BasePairProbability(r0, c0, predictions[r0][c0]));
                     int m = Math.min(n - r0, c0);
                     int addedSize = 0;
@@ -296,7 +288,6 @@ public class SSPredictor {
                         double bestValue = 0.0;
                         int bestR = 0;
                         int bestC = 0;
-                        int lastAdded = 0;
                         for (int itry = 0; itry < 4; itry++) {
                             int r = lastr + tries[itry][0];
                             int c = lastc - tries[itry][1];
@@ -307,24 +298,14 @@ public class SSPredictor {
                                     bestValue = value;
                                     bestR = r;
                                     bestC = c;
-                                    lastAdded = itry;
                                     if ((itry == 0) && (value > threshold)) {
                                         break;
                                     }
                                 }
-//                                if ((itry == 0) && (value <= threshold)) {
-//                                    if (rows.size() > 2) {
-//                                        //trimValues(rows, columns, values);
-//                                        Extent extent = new Extent(new ArrayList<>(rows), new ArrayList<>(columns), new ArrayList<>(values));
-//                                        extents.add(extent);
-//                                        addedSize = rows.size();
-//                                    }
-//                                }
                             }
                         }
                         if (bestValue > threshold) {
                             bps.add(new BasePairProbability(bestR, bestC, bestValue));
-                            sum += bestValue;
                             lastc = bestC;
                             lastr = bestR;
                         } else {
@@ -361,7 +342,6 @@ public class SSPredictor {
         }
 
 
-        double best = 0.0;
         indices.clear();
         int m = Math.min(12, overlapExtents.size());
         int m2 = (int) Math.pow(2, m);
@@ -389,7 +369,6 @@ public class SSPredictor {
             useIndices.sort(null);
             Indices currentIndices = new Indices(useIndices, sum);
             currentIndices.updateBasePairs();
-            // currentIndices.addBasePairs(overlapExtents);
             if (!indices.contains(currentIndices)) {
                 indices.add(currentIndices);
             }
@@ -454,8 +433,7 @@ public class SSPredictor {
 
     public Set<BasePairProbability> getExtentBasePairs(List<Integer> indexes) {
 
-        List<Extent> finalExtents = new ArrayList<>();
-        finalExtents.addAll(uniqueExtents);
+        List<Extent> finalExtents = new ArrayList<>(uniqueExtents);
         for (var index : indexes) {
             finalExtents.add(overlapExtents.get(index));
         }
@@ -752,7 +730,6 @@ public class SSPredictor {
             MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
             BasePairProbability[] matches = getMatches(matchResult);
 
-            Set<BasePairProbability> extentBasePairs = new HashSet<>();
             int nFound = extentBasePairsList.size();
             boolean foundMatch = false;
             for (int j = 0; j < nFound; j++) {
@@ -772,18 +749,19 @@ public class SSPredictor {
             }
 
             if (!foundMatch) {
+                Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
                 for (int i = 0; i < n; i++) {
                     if (matches[i] != null) {
                         BasePairProbability basePairProbability = matches[i];
-                        extentBasePairs.add(basePairProbability);
+                        newExtentBasePairs.add(basePairProbability);
                         int c = basePairProbability.c;
                         matchTries[nFound][i] = c;
                     } else  {
                         matchTries[nFound][i] = -1;
                     }
                 }
-                filterAllCrossings(extentBasePairs);
-                extentBasePairsList.add(extentBasePairs);
+                filterAllCrossings(newExtentBasePairs);
+                extentBasePairsList.add(newExtentBasePairs);
             }
         }
     }
