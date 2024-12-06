@@ -1,5 +1,6 @@
 package org.nmrfx.structure.rna;
 
+import org.jgrapht.Graph;
 import org.jgrapht.alg.interfaces.MatchingAlgorithm;
 import org.jgrapht.alg.matching.MaximumWeightBipartiteMatching;
 import org.jgrapht.graph.DefaultWeightedEdge;
@@ -14,12 +15,14 @@ import java.io.File;
 import java.util.*;
 
 public class SSPredictor {
+    static final Random random = new Random();
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
     double[][] predictions;
 
-
-
+    ParitionedGraph paritionedGraph = null;
     Set<BasePairProbability> extentBasePairs;
+
+    List<Set<BasePairProbability>> extentBasePairsList = new ArrayList<>();
     List<Indices> indices = new ArrayList<>();
     List<Extent> uniqueExtents = new ArrayList<>();
     List<Extent> overlapExtents = new ArrayList<>();
@@ -186,9 +189,7 @@ public class SSPredictor {
             unusedExtents.addAll(extents);
             for (var i : indexes) {
                 Extent extent = extents.get(i);
-                if (unusedExtents.contains(extent)) {
-                    unusedExtents.remove(extent);
-                }
+                unusedExtents.remove(extent);
             }
             Set<Integer> used = new HashSet<>();
             for (BasePairProbability basePairProbability : basePairProbabilities) {
@@ -443,16 +444,11 @@ public class SSPredictor {
     }
 
     public int getNExtents() {
-        int nIndices = indices.size();
-        if ((nIndices == 0) && !extentBasePairs.isEmpty()){
-            nIndices = 1;
-        }
-        return nIndices;
+        return extentBasePairsList.size();
     }
 
     public Set<BasePairProbability> getExtentBasePairs(int i) {
-        Indices indices1 = indices.get(i);
-        extentBasePairs = indices1.basePairProbabilities;
+        extentBasePairs = extentBasePairsList.get(i);
         return extentBasePairs;
     }
 
@@ -596,7 +592,7 @@ public class SSPredictor {
         return bps;
     }
 
-    Map<BasePairProbability, Integer> findCrossings(List<BasePairProbability> basePairs) {
+    Map<BasePairProbability, Integer> findCrossings(Collection<BasePairProbability> basePairs) {
         Map<BasePairProbability, Integer> crossings = new HashMap<>();
         for (BasePairProbability basePair1 : basePairs) {
             int i1 = basePair1.r;
@@ -615,7 +611,7 @@ public class SSPredictor {
         return crossings;
     }
 
-    boolean removeLargestCrossing(List<BasePairProbability> basePairs, Map<BasePairProbability, Integer> crossings) {
+    boolean removeLargestCrossing(Collection<BasePairProbability> basePairs, Map<BasePairProbability, Integer> crossings) {
         BasePairProbability basePairMax = null;
         int max = 0;
         for (var crossing : crossings.entrySet()) {
@@ -633,7 +629,7 @@ public class SSPredictor {
         return removedOne;
     }
 
-    void filterAllCrossings(List<BasePairProbability> basePairs) {
+    void filterAllCrossings(Collection<BasePairProbability> basePairs) {
         boolean removedOne = true;
         while (removedOne) {
             var crossings = findCrossings(basePairs);
@@ -661,7 +657,11 @@ public class SSPredictor {
         return stringBuilder.toString();
     }
 
-    public void bipartiteMatch(double threshold) {
+    record ParitionedGraph(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph,
+                           Set<Integer> partition1, Set<Integer> partition2) {
+    }
+
+    private void buildGraph(double threshold) {
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph
                 = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
 
@@ -676,48 +676,114 @@ public class SSPredictor {
         }
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                double weight = 0.0;
                 boolean addEdge = false;
                 if (i == j) {
-                    weight = 1.0;
                     addEdge = true;
-                } else if ((i+2) < j) {
+                } else if ((i + 2) < j) {
                     if (predictions[i][j] > threshold) {
-                        weight = 100.0 + predictions[i][j] ;
-                        System.out.println("match " + i + " " + j + " " + weight);
                         addEdge = true;
                     }
                 }
                 if (addEdge) {
                     DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
                     simpleGraph.addEdge(i, j + n, weightedEdge1);
-                    simpleGraph.setEdgeWeight(weightedEdge1, weight);
                 }
             }
         }
-        var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph, partition1, partition2);
-        MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
-        extentBasePairs = new HashSet<>();
+        paritionedGraph = new ParitionedGraph(simpleGraph, partition1, partition2);
+    }
 
+    private void setGraphWeights(Graph<Integer, DefaultWeightedEdge> graph, double threshold, double randomScale) {
+        int n = predictions.length;
+        for (var edge : graph.edgeSet()) {
+            int i = graph.getEdgeSource(edge);
+            int j = graph.getEdgeTarget(edge) - n;
+            double weight = 0.0;
+            if (i == j) {
+                weight = 1.0;
+            } else if ((i + 2) < j) {
+                if (predictions[i][j] > threshold) {
+                    double adjustment = randomScale * random.nextGaussian();
+                    double prediction = predictions[i][j] + adjustment;
+                    prediction = Math.min(prediction, 1.0);
+                    weight = 100.0 + prediction;
+                }
+            }
+            graph.setEdgeWeight(i, j + n, weight);
+        }
+    }
+
+    BasePairProbability[] getMatches(MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult) {
+        int n = predictions.length;
+        var simpleGraph = matchResult.getGraph();
         BasePairProbability[] matches = new BasePairProbability[n];
         BasePairProbability[] matches2 = new BasePairProbability[n];
         matchResult.getEdges().stream()
-                .sorted((a,b) -> Double.compare(simpleGraph.getEdgeWeight(b),simpleGraph.getEdgeWeight(a)))
+                .sorted((a, b) -> Double.compare(simpleGraph.getEdgeWeight(b), simpleGraph.getEdgeWeight(a)))
                 .forEach(edge -> {
-            int r = simpleGraph.getEdgeSource(edge);
-            int c = simpleGraph.getEdgeTarget(edge) - n;
-            System.out.println(r + " " + c + " " + simpleGraph.getEdgeWeight(edge));
-            if ((r+2) < c) {
-                if ((matches[r] == null) && (matches2[c] == null)){
-                    BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
-                    matches[r] = basePairProbability;
-                    matches2[c] = basePairProbability;
+                    int r = simpleGraph.getEdgeSource(edge);
+                    int c = simpleGraph.getEdgeTarget(edge) - n;
+                    if ((r + 2) < c) {
+                        if ((matches[r] == null) && (matches2[c] == null)) {
+                            BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                            matches[r] = basePairProbability;
+                            matches2[c] = basePairProbability;
+                        }
+                    }
+                });
+        return matches;
+
+    }
+
+    public void bipartiteMatch(double threshold, double randomScale, int nTries) {
+        int n = predictions.length;
+        if (paritionedGraph == null) {
+            buildGraph(threshold);
+        }
+        int[][] matchTries = new int[nTries][n];
+        extentBasePairsList.clear();
+        SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
+
+        for (int iTry = 0; iTry < nTries; iTry++) {
+            double randomValue = iTry == 0 ? 0.0 : randomScale;
+            setGraphWeights(simpleGraph, threshold, randomValue);
+            var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
+                    paritionedGraph.partition1, paritionedGraph.partition2);
+            MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
+            BasePairProbability[] matches = getMatches(matchResult);
+
+            Set<BasePairProbability> extentBasePairs = new HashSet<>();
+            int nFound = extentBasePairsList.size();
+            boolean foundMatch = false;
+            for (int j = 0; j < nFound; j++) {
+                boolean ok = true;
+                for (int i = 0; i < n; i++) {
+                    BasePairProbability basePairProbability = matches[i];
+                    int c = basePairProbability != null ? basePairProbability.c : -1;
+                    if (matchTries[j][i] != c) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok) {
+                    foundMatch = true;
+                    break;
                 }
             }
-        });
-        for (int i =0;i<n;i++) {
-            if (matches[i] != null) {
-                extentBasePairs.add(matches[i]);
+
+            if (!foundMatch) {
+                for (int i = 0; i < n; i++) {
+                    if (matches[i] != null) {
+                        BasePairProbability basePairProbability = matches[i];
+                        extentBasePairs.add(basePairProbability);
+                        int c = basePairProbability.c;
+                        matchTries[nFound][i] = c;
+                    } else  {
+                        matchTries[nFound][i] = -1;
+                    }
+                }
+                filterAllCrossings(extentBasePairs);
+                extentBasePairsList.add(extentBasePairs);
             }
         }
     }
