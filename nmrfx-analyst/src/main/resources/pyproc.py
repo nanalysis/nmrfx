@@ -2964,10 +2964,10 @@ def DEPT( disabled=False, dataset=None, process=None):
 
 
 def GRINS(
-    noiseRatio=5.0,
+    noiseRatio=3.0,
     scale=0.5,
     zf=0,
-    iterations=64,
+    iterations=128,
     shapeFactor=0.5,
     apodize=False,
     preserve=True,
