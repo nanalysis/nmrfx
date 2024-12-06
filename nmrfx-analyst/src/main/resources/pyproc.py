@@ -2469,7 +2469,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
 
 
     if alg == 'nesta':
-        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, zeroAtStart, threshold, factor, skipIndices)
+        op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, phaseList, zeroAtStart, threshold, factor, skipIndices)
     elif alg == 'grins':
         negateImagList = ArrayList()
         negatePairsList = ArrayList()
