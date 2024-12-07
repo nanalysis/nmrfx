@@ -54,12 +54,12 @@ public class AngleTreeGenerator {
     }
 
     public static void genMeasuredTree(Entity entity, Atom startAtom) {
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         if (startAtom == null) {
-            startAtom = entity.atoms.get(0);
+            startAtom = aTreeGen.findStartAtom(entity);
         }
         Molecule molecule = (Molecule) startAtom.entity.molecule;
 
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
         aTreeGen.measureAtomTree(entity, atomTree, true, false);
         molecule.setRingClosures(aTreeGen.getRingClosures());

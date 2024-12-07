@@ -218,14 +218,6 @@ public class NMRNEFReader {
                 MMcifReader.readChemComp(cifFileName, molecule, chainCode, seqCode);
             }
         }
-        if (polymer != null) {
-            polymer.molecule.genCoords(false);
-            polymer.molecule.setupRotGroups();
-        }
-        if (compound != null) {
-            compound.molecule.genCoords(false);
-            compound.molecule.setupRotGroups();
-        }
         sequence.removeBadBonds();
     }
 
@@ -278,7 +270,7 @@ public class NMRNEFReader {
                 molecule = MoleculeFactory.newMolecule(molName);
                 buildNEFChains(saveframe, molecule);
                 molecule.updateSpatialSets();
-                molecule.genCoords(false);
+               // molecule.genCoords(false);
             }
         }
         return molecule;
