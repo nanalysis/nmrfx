@@ -56,6 +56,8 @@ public class OperationInfo {
             "Cascade-Sampling",
             "EXTEND",
             "SCHEDULE",
+            "ZFMAT",
+            "PHASE_ID",
             "GRINS",
             "IST",
             "ISTMATRIX",

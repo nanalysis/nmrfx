@@ -822,12 +822,10 @@ public class NMRPipeData implements NMRData {
         }
         boolean gotSchedule = false;
         if (nusFile == null) {
-            File fidFile = new File(fpath);
-            Path nusPath = fidFile.getParentFile().toPath().resolve("nuslist");
-            nusFile = nusPath.toFile();
+            nusFile = new File(fpath + File.separator + "nuslist");
         }
         if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), true, false);
+            readSampleSchedule(nusFile.getPath(), false, false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {
