@@ -39,12 +39,16 @@ import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class MatrixND implements MatrixType {
 
     private double[] data;
     private int[] sizes;
     int[] vSizes;
+
+    double[] dwellTimes;
     private int[] strides;
     private double[] phases0;
     private double[] phases1;
@@ -78,6 +82,7 @@ public class MatrixND implements MatrixType {
         phases1 = new double[nDim];
         negateImags = new boolean[nDim];
         negatePairss = new boolean[nDim];
+        dwellTimes = new double[nDim];
     }
 
     public MatrixND(int[][] pt, int... sizes) {
@@ -106,6 +111,14 @@ public class MatrixND implements MatrixType {
                 data[k++] = data2D[i][j];
             }
         }
+    }
+
+    public void setDwellTime(int i, double dwellTime) {
+        dwellTimes[i] = dwellTime;
+    }
+
+    public double getDwellTime(int i) {
+        return dwellTimes[i];
     }
 
     public void setVSizes(int... vSizes) {
@@ -672,6 +685,14 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    private MultidimensionalCounter.Iterator axisIterator(int axis) {
+        int[] subSizes = getSubSizes(axis);
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        return iterator;
+    }
+
+
     public void doPhaseTD(int axis, double ph0, double ph1, boolean negateImag, boolean negatePairs) {
         int[] subSizes = getSubSizes(axis);
         int size = sizes[axis];
@@ -687,10 +708,10 @@ public class MatrixND implements MatrixType {
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
             if (negateImag) {
-                negateImag(riVec, size);
+                negateImag(riVec);
             }
             if (negatePairs) {
-                negatePairs(riVec, size);
+                negatePairs(riVec);
             }
             fft(riVec);
             fftShuffle(riVec);
@@ -698,23 +719,37 @@ public class MatrixND implements MatrixType {
             fftShuffle(riVec);
             ifft(riVec);
             if (negateImag) {
-                negateImag(riVec, size);
+                negateImag(riVec);
             }
             if (negatePairs) {
-                negatePairs(riVec, size);
+                negatePairs(riVec);
             }
             putVectorRI(axis, riVec, counts);
         }
     }
 
-    private static void negatePairs(double[][] riVec, int size) {
+    public void doNegatePairs(int axis) {
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        var iterator = axisIterator(axis);
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            negatePairs(riVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    private static void negatePairs(double[][] riVec) {
+        int size = riVec[0].length;
         for (int i = 1; i < size; i += 2) {
             riVec[0][i] = -riVec[0][i];
             riVec[1][i] = -riVec[1][i];
         }
     }
 
-    private static void negateImag(double[][] riVec, int size) {
+    private static void negateImag(double[][] riVec) {
+        int size = riVec[0].length;
         for (int i = 0; i < size; ++i) {
             riVec[1][i] = -riVec[1][i];
         }
@@ -740,7 +775,7 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    static int getZfSize(double vecSize, int factor) {
+    public static int getZfSize(double vecSize, int factor) {
         int size = (int) (Math.pow(2, Math.ceil((Math.log(vecSize) / Math.log(2)) + factor)));
         return size;
     }
@@ -839,7 +874,7 @@ public class MatrixND implements MatrixType {
     /**
      * Get maximum of absolute value of a matrix.
      *
-     * @param input
+     * @param values list of intensities to test for max
      * @return position of maximum in input matrix
      * @see Matrix
      */
@@ -890,7 +925,9 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public record MatrixDiff(double mabs, double max) {};
+    public record MatrixDiff(double mabs, double max) {
+    }
+
     public MatrixDiff calcDifference(MatrixND source, int[] srcTargetMap) {
         double sum = 0.0;
         double max = 0.0;
@@ -900,7 +937,7 @@ public class MatrixND implements MatrixType {
             max = Math.max(max, Math.abs(v1));
             sum += FastMath.abs(v1 - v2);
         }
-        return new MatrixDiff(sum/srcTargetMap.length, max);
+        return new MatrixDiff(sum / srcTargetMap.length, max);
     }
 
     public double calcSumAbs() {
@@ -1125,7 +1162,7 @@ public class MatrixND implements MatrixType {
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(complexSizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
         int nValid = 0;
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
             int[] complexSample = new int[counts.length];
@@ -1137,7 +1174,7 @@ public class MatrixND implements MatrixType {
                     complexSample[counts.length - j - 1] = counts[counts.length - j - 1] * 2 + cDelta;
                 }
                 int offset = getOffset(complexSample);
-                if (Math.abs(data[offset]) > 1.0e-12){
+                if (Math.abs(data[offset]) > 1.0e-12) {
                     validPositions[offset] = true;
                     nValid++;
                 }
@@ -1168,6 +1205,7 @@ public class MatrixND implements MatrixType {
         int[][] pts = new int[nDim + 1][3];
         int[][] indices = new int[nDim + 1][3];
         double[][] intensities = new double[nDim + 1][3];
+        int[] halfWidth = new int[nDim + 1];
         int[] widthLim = new int[nDim + 1];
         widthLim[0] = 2;
         for (int i = 0; i < sizes.length; i++) {
@@ -1178,8 +1216,8 @@ public class MatrixND implements MatrixType {
         }
         double threshold = FastMath.max(globalThreshold, noiseThreshold);
         int step = isComplex ? 2 : 1;
+        int nSearch = 2;
         double maxValue = Double.NEGATIVE_INFINITY;
-        int nPossible = 0;
         for (int i = 0; iterator.hasNext(); i++) {
             iterator.next();
             int[] counts = iterator.getCounts();
@@ -1207,52 +1245,70 @@ public class MatrixND implements MatrixType {
                     maxValue = ptValue;
                 }
                 if (ptValue > threshold) {
-                    nPossible++;
                     boolean ok = true;
                     pts[0][1] = getIndex();
                     indices[0][1] = getIndex();
                     intensities[0][1] = ptValue * sign;
+                    double halfHeight = ptValue / 2.0;
 
                     for (int jDim = 0; jDim < nDim; jDim++) {
                         int kDim = jDim + 1;
                         pts[kDim][1] = counts[jDim];
                         indices[kDim][1] = i;
                         intensities[kDim][1] = ptValue * sign;
-                        int nBelowThresh = 0;
-                        if (counts[jDim] > 0) {
-                            int index = i - strides[jDim] * step; // 2 assumes complex
-                            double testValue = sign * data[index];
-//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
-                            if ((ptValue < testValue)) {
-                                ok = false;
+                        for (int j = 1; j < nSearch; j++) {
+                            if ((counts[jDim] - j) >= 0) {
+                                int index = i - strides[jDim] * step * j; // 2 assumes complex
+                                double testValue = sign * data[index];
+                                if ((j == 1) && (ptValue < testValue)) {
+                                    ok = false;
+                                    break;
+                                }
+                                if (testValue < halfHeight) {
+                                    halfWidth[kDim] = j;
+                                    break;
+                                }
+                                if (j == 1) {
+                                    pts[kDim][0] = counts[jDim] - j;
+                                    indices[kDim][0] = index;
+                                    intensities[kDim][0] = testValue * sign;
+                                }
+                            }
+                            if (!ok) {
                                 break;
                             }
-                            if (testValue < noiseThreshold) {
-                                nBelowThresh++;
-                            }
-
-                            pts[kDim][0] = counts[jDim] - 1;
-                            indices[kDim][0] = index;
-                            intensities[kDim][0] = testValue * sign;
                         }
-                        if (ok && counts[jDim] < (sizes[jDim] - 1)) {
-                            int index = i + strides[jDim] * step; // 2 assumes complex
-                            double testValue = sign * data[index];
-                            if (ptValue < testValue) {
-                                ok = false;
+                        for (int j = 1; j < nSearch; j++) {
+                            if (ok && (counts[jDim] + j) < (sizes[jDim] - 1)) {
+                                int index = i + strides[jDim] * step; // 2 assumes complex
+                                double testValue = sign * data[index];
+                                if ((j == 1) && ptValue < testValue) {
+                                    ok = false;
+                                    break;
+                                }
+                                if (testValue < halfHeight) {
+                                    if (halfWidth[kDim] == 0) {
+                                        halfWidth[kDim] = j;
+                                    } else {
+                                        halfWidth[kDim] = Math.min(halfWidth[kDim], j);
+                                    }
+                                    break;
+                                }
+
+                                if (j == 1) {
+                                    pts[kDim][2] = counts[jDim] + 1;
+                                    indices[kDim][2] = index;
+                                    intensities[kDim][2] = testValue * sign;
+                                }
+                            }
+                            if (!ok) {
                                 break;
                             }
-                            if (testValue < noiseThreshold) {
-                                nBelowThresh++;
-                            }
-                            pts[kDim][2] = counts[jDim] + 1;
-                            indices[kDim][2] = index;
-                            intensities[kDim][2] = testValue * sign;
                         }
                     }
 
                     if (ok) {
-                        peaks.add(new MatrixPeak(intensities, indices, pts, scale, widthLim));
+                        peaks.add(new MatrixPeak(intensities, indices, pts, scale, widthLim, halfWidth));
                     }
                 }
             }
@@ -1268,5 +1324,172 @@ public class MatrixND implements MatrixType {
         schedule = sampleSchedule;
     }
 
+    // *** Simon's additions ***
 
+    /**
+     * A generic method which operates on all RI vectors in a given dimension.
+     * <p>
+     * `op` should be a `static void` method which accepts a riVec
+     * (of size [2, N], where N is the number of complex points in the
+     * dimension). Define `op` in the `RIVecOperations` class at the bottom of
+     * this file.
+     */
+    void manipulateRIVecs(int axis, Consumer<double[][]> op) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            op.accept(riVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+
+    <U> void manipulateRIVecs(int axis, U extraArgs, BiConsumer<double[][], U> op) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis] / 2];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            op.accept(riVec, extraArgs);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    // TODO: check negateImag as same number of values as dimensions in the matrix
+    public void doNegateImag(boolean[] negateImag) {
+        for (int axis = 0; axis < nDim; axis++) {
+            doNegateImag(axis, negateImag[axis]);
+        }
+    }
+
+    public void doNegateImag(int axis, boolean negateImag) {
+        if (negateImag) {
+            manipulateRIVecs(axis, RIVecOperations::negateImag);
+        }
+    }
+
+    public void doNegatePairs(boolean[] negatePairs) {
+        for (int axis = 0; axis < nDim; axis++) {
+            doNegatePairs(axis, negatePairs[axis]);
+        }
+    }
+
+    public void doNegatePairs(int axis, boolean negatePairs) {
+        if (negatePairs) {
+            manipulateRIVecs(axis, RIVecOperations::negatePairs);
+        }
+    }
+
+    public void doFourierTransform(int axis, double cValue) {
+        manipulateRIVecs(axis, cValue, RIVecOperations::fourierTransform);
+    }
+
+    public void doFourierTransform(double[] cValues) {
+        for (int axis = 0; axis < nDim; axis++) {
+            double cValue = cValues[axis];
+            doFourierTransform(axis, cValue);
+        }
+    }
+
+    public void doInverseFourierTransform(int axis) {
+        manipulateRIVecs(axis, RIVecOperations::inverseFourierTransform);
+    }
+
+    public void doInverseFourierTransform() {
+        for (int axis = 0; axis < nDim; axis++) {
+            doInverseFourierTransform(axis);
+        }
+    }
+
+    public void doPhaseCorrection(int axis, double ph0, double ph1) {
+        manipulateRIVecs(axis, new double[]{ph0, ph1}, RIVecOperations::phaseCorrection);
+    }
+
+    public void doPhaseCorrection(double[] ph0, double[] ph1) {
+        for (int axis = 0; axis < nDim; axis++) {
+            doPhaseCorrection(axis, ph0[axis], ph1[axis]);
+        }
+    }
+}
+
+class RIVecOperations {
+    final static double degtorad = Math.PI / 180.0;
+
+    static int getSize(double[][] riVec) {
+        return riVec[0].length;
+    }
+
+    static void negateImag(double[][] riVec) {
+        for (int i = 0; i < getSize(riVec); i++) {
+            riVec[1][i] *= -1.0;
+        }
+    }
+
+    static void negatePairs(double[][] riVec) {
+        for (int i = 1; i < getSize(riVec); i += 2) {
+            riVec[0][i] *= -1.0;
+            riVec[1][i] *= -1.0;
+        }
+    }
+
+    static void fftShift(double[][] riVec) {
+        int middleIdx = riVec[0].length / 2;
+        int oldIdx = 0, newIdx = middleIdx;
+        double tmp;
+        while (oldIdx < middleIdx) {
+            for (int dim = 0; dim < 2; dim++) {
+                tmp = riVec[dim][oldIdx];
+                riVec[dim][oldIdx] = riVec[dim][newIdx];
+                riVec[dim][newIdx] = tmp;
+            }
+            oldIdx++;
+            newIdx++;
+        }
+    }
+
+    static void fourierTransform(double[][] riVec, double cValue) {
+        riVec[0][0] *= cValue;
+        riVec[1][0] *= cValue;
+        FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.FORWARD);
+        fftShift(riVec);
+    }
+
+    static void inverseFourierTransform(double[][] riVec) {
+        fftShift(riVec);
+        FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.INVERSE);
+    }
+
+    static void phaseCorrection(double[][] riVec, double[] phases) {
+        double ph0 = degtorad * phases[0];
+        double ph1 = degtorad * phases[1];
+        double size = riVec[0].length;
+
+        double pReal;
+        double pImag;
+        double vReal;
+        double vImag;
+
+        double p = ph0;
+        double delta = ph1 / (size - 1);
+
+        for (int n = 0; n < size; n++) {
+            pReal = FastMath.cos(p);
+            pImag = -FastMath.sin(p);
+            vReal = riVec[0][n];
+            vImag = riVec[1][n];
+
+            riVec[0][n] = vReal * pReal - vImag * pImag;
+            riVec[1][n] = vReal * pImag + vImag * pReal;
+
+            p += delta;
+        }
+    }
 }
