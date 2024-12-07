@@ -524,6 +524,13 @@ public class DatasetBase {
      * @return String object, null if data stored in Vec
      */
     public String getCanonicalFile() {
+        if ((canonicalName == null) && (file != null)) {
+            try {
+                canonicalName = file.getCanonicalPath();
+            } catch (IOException e) {
+                canonicalName = null;
+            }
+        }
         return canonicalName;
     }
 

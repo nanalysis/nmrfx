@@ -1327,6 +1327,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] mPoint = new int[mDims];
         for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
+            double sw = getSw(dim[i]);
+            matrix.setDwellTime(i, 1.0 / getSw(dim[i]));
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
@@ -1416,6 +1418,26 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             dataFile.setFloat((float) (matrix.getValue(index) * scale), point);
         }
+    }
+
+    public static void writeMatrixToDataset(String fileName, MatrixND matrixND) throws DatasetException, IOException {
+        int[] dSizes = new int[matrixND.getNDim()];
+        int[] dims = new int[dSizes.length];
+        for (int i =0;i < dSizes.length;i++) {
+            dSizes[i] = matrixND.getSize(i);
+            dims[i] = i;
+        }
+
+        File file = new File(fileName);
+        String name = file.getName();
+        Dataset dataset = Dataset.createDataset(fileName, fileName, name, dSizes, false, true);
+        for (int i =0;i < dSizes.length;i++) {
+            dataset.setComplex(i, false);
+            dataset.setFreqDomain(i, true);
+        }
+        dataset.writeMatrixNDToDatasetFile(dims, matrixND);
+        dataset.writeParFile();
+        dataset.close();
     }
 
     /**

@@ -69,6 +69,8 @@ from org.nmrfx.processor.operations import Ones
 from org.nmrfx.processor.operations import Phase
 from org.nmrfx.processor.operations import Phase2d
 from org.nmrfx.processor.operations import Power
+from org.nmrfx.processor.operations import ProcIndirectOp
+from org.nmrfx.processor.operations import ZfMatrix
 from org.nmrfx.processor.operations import PythonScript
 from org.nmrfx.processor.operations import Rand
 from org.nmrfx.processor.operations import RandN
@@ -2471,7 +2473,7 @@ def EXTEND(alg='nesta', factor=1, phase=None, disabled=False, vector=None, proce
     elif alg == 'grins':
         negateImagList = ArrayList()
         negatePairsList = ArrayList()
-        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, phaseList, negateImagList, negatePairsList, preserve, skipIndices)
+        op = GRINSOp(noise, scale, factor, nGrins, shapeFactor,  False, preserve, skipIndices)
     else:
         raise Exception("Invalid algorithm for EXTEND: " + alg)
 
@@ -2962,10 +2964,18 @@ def DEPT( disabled=False, dataset=None, process=None):
 
 
 def GRINS(
-    noiseRatio=5.0, scale=0.25, zf=0, iterations=64, shapeFactor=0.5,
-    apodize=True, phase=None, negateImag=None, negatePairs=None,
-    preserve=True, synthetic=False, logToFile=False, disabled=False,
-    dataset=None, process=None,
+    noiseRatio=3.0,
+    scale=0.5,
+    zf=0,
+    iterations=128,
+    shapeFactor=0.5,
+    apodize=False,
+    preserve=True,
+    synthetic=False,
+    logToFile=False,
+    disabled=False,
+    dataset=None,
+    process=None,
 ):
     ''' Experimental GRINS.
     Parameters
@@ -3001,12 +3011,6 @@ def GRINS(
         Lineshape factor
     apodize : bool
         Do Kaiser apodization during GRINS
-    phase : []
-        Array of phase values, 2 per indirect dimension.
-    negateImag : []
-        Array of booleans, 1 per indirect dimension.
-    negatePairs : []
-        Array of booleans, 1 per indirect dimension.
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
@@ -3018,23 +3022,6 @@ def GRINS(
         return None
 
     global fidInfo
-
-    phaseList = ArrayList()
-    if phase is None:
-        pass
-    else:
-        for value in phase:
-            phaseList.add(float(value))
-
-    negateImagList = ArrayList()
-    if negateImag is not None:
-        for value in negateImag:
-            negateImagList.add(value)
-
-    negatePairsList = ArrayList()
-    if negatePairs is not None:
-        for value in negatePairs:
-            negatePairsList.add(value)
 
     logFileName = None
 
@@ -3054,9 +3041,16 @@ def GRINS(
     process = process or getCurrentProcess()
 
     op = GRINSOp(
-        noiseRatio, scale, zf, iterations, shapeFactor, apodize,
-        phaseList, negateImagList, negatePairsList, preserve,
-        synthetic, schedule, logFileName,
+        noiseRatio,
+        scale,
+        zf,
+        iterations,
+        shapeFactor,
+        apodize,
+        preserve,
+        synthetic,
+        schedule,
+        logFileName,
     )
 
     if (dataset is not None):
@@ -3845,10 +3839,36 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
+def genPHASE_ID():
+    global fidInfo
+    script = 'PHASE_ID('
+    negImagList=[]
+    negPairsList=[]
+    for iDim in range(2,fidInfo.nd+1):
+        negateImag = fidInfo.negateImagFT(iDim-1)
+        negatePairs = fidInfo.negatePairsFT(iDim-1)
+        if negatePairs:
+            negPairsList.append('True')
+        else:
+            negPairsList.append('False')
+        if negateImag:
+            negImagList.append('True')
+        else:
+            negImagList.append('False')
+
+    script +='negatePairs=[' + ','.join(negPairsList)+']'
+    script += ','
+    script +='negateImag=[' + ','.join(negImagList)+']'
+    script += ')\n'
+    print(script)
+    return script
+
+
 def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, doautophase1=False):
     global fidInfo
     script = ''
     sequence = fidInfo.fidObj.getSequence()
+    nusMode = False
     if fidInfo.nd < 2:
         apodString = NMRDataUtil.getApodizationString(fidInfo.fidObj, 0, arrayed, useapod)
         script += 'DIM(1)\n'
@@ -3891,8 +3911,11 @@ def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, 
                 multiDim += ',' + str(mDim+1)
             multiDim += ')'
             script += multiDim + '\n'
-            script += 'SB(dim=0, c=0.5)\n'
-            script += 'NESTA()\n'
+            script += 'ZFMAT(zfy=1, zfz=1)\n'
+            script += 'SB(c=0.5, power=1.0)\n'
+            script += genPHASE_ID()
+            script += 'GRINS()\n'
+            nusMode = True
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
             continue
@@ -3919,18 +3942,18 @@ def genScript(arrayed=False, useapod=False, usephases=False, doautophase=False, 
             script += 'RFT('
         else:
             script += 'FT('
-
-        negateImag = fidInfo.negateImagFT(iDim-1)
-        negatePairs = fidInfo.negatePairsFT(iDim-1)
-        if negatePairs:
-            script += 'negatePairs=True'
-        if negateImag:
+        if not nusMode:
+            negateImag = fidInfo.negateImagFT(iDim-1)
+            negatePairs = fidInfo.negatePairsFT(iDim-1)
             if negatePairs:
-                script += ','
-            if fidInfo.fidObj.getFTType(iDim-1) == "rft":
-                script += 'negateOdd=True'
-            else:
-                script += 'negateImag=True'
+                script += 'negatePairs=True'
+            if negateImag:
+                if negatePairs:
+                    script += ','
+                if fidInfo.fidObj.getFTType(iDim-1) == "rft":
+                    script += 'negateOdd=True'
+                else:
+                    script += 'negateImag=True'
         script += ')\n'
         fCoef = fidInfo.getSymbolicCoefs(iDim-1)
         if fCoef != None and fCoef == 'sep':
@@ -4137,3 +4160,84 @@ def getTestLocations():
     return (fidHome, tmpHome)
 
 dataInfo = DataInfo()
+
+
+def PHASE_ID(
+    ph0=None,
+    ph1=None,
+    negateImag=None,
+    negatePairs=None,
+    disabled=False,
+    dataset=None,
+    process=None,
+):
+    '''
+    Process the indirect dimensions of a multidimensional dataset prior to NUS.
+    Parameters
+    ----------
+    ph0 : []
+        Zero-order phase corrections.
+    ph1 : []
+        First-order phase corrections.
+    negateImag : []
+        If `True` each complex datapoint in the specified dimension has its
+        negative component multiplied by -1.
+    negatePairs : []
+        If `True` every second complex datapoint in the specified dimension is
+        multiplied by -1.
+    '''
+    if disabled:
+        return None
+
+    process = process or getCurrentProcess()
+
+    # TODO include apodization?
+    op = ProcIndirectOp(ph0, ph1, negateImag, negatePairs)
+
+    if (dataset is not None):
+        op.eval(dataset)
+    else:
+        process.addOperation(op)
+
+    return op
+
+def ZFMAT(
+        zfy=0,
+        zfz=0,
+        zfa=0,
+        disabled=False,
+        dataset=None,
+        process=None,
+):
+    '''
+    Zero-fill the indirect dimensions of a multidimensional dataset prior to NUS.
+    Parameters
+    ----------
+    zfy : int
+        min : -1
+        max : 3
+        Zero-fill y-dimension.
+    zfz : int
+        min : -1
+        max : 3
+        Zero-fill z-dimension.
+    zfa : int
+        min : -1
+        max : 3
+        Zero-fill a-dimension.
+    '''
+
+    if disabled:
+        return None
+
+    process = process or getCurrentProcess()
+
+    # TODO include apodization?
+    op = ZfMatrix([zfy, zfz, zfa])
+
+    if (dataset is not None):
+        op.eval(dataset)
+    else:
+        process.addOperation(op)
+
+    return op
