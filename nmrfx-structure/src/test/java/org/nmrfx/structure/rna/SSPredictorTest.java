@@ -16,7 +16,7 @@ public class SSPredictorTest {
         List<Double> values = new ArrayList<>();
         List<SSPredictor.BasePairProbability> bps = new ArrayList<>();
         for (int i=0;i<n;i++) {
-            SSPredictor.BasePairProbability bp = new SSPredictor.BasePairProbability(r+1, c-i, p);
+            SSPredictor.BasePairProbability bp = new SSPredictor.BasePairProbability(r+i, c-i, p);
             bps.add(bp);
         }
         return new SSPredictor.Extent(bps);
