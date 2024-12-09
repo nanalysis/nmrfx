@@ -72,11 +72,10 @@ public class RDCGUI {
     TextField rhombField = new TextField("");
     TextField magField = new TextField("");
     Slider fracSlider = new Slider(0.1, 15, 5);
-    ChoiceBox<String> modeBox = new ChoiceBox();
-    ChoiceBox<String> stericBox = new ChoiceBox();
+    ChoiceBox<String> modeBox = new ChoiceBox<>();
+    ChoiceBox<String> stericBox = new ChoiceBox<>();
 
     RDCConstraintSet localRDCSet;
-    Label pdbFile = new Label("");
     public Label bmrbFile = new Label("");
     SVDFit svdFit;
     AlignmentMatrix aMat;
@@ -98,9 +97,7 @@ public class RDCGUI {
             //Populate ChoiceBoxes with fitting variable names
             setChoice.getItems().clear();
             try {
-                setChoice.valueProperty().addListener((Observable x) -> {
-                    updateRDCplot();
-                });
+                setChoice.valueProperty().addListener((Observable x) -> updateRDCplot());
             } catch (NullPointerException npEmc1) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Error: Fit must first be performed.");
@@ -113,14 +110,12 @@ public class RDCGUI {
             Button rdcButton = new Button("Perform RDC Analysis");
             Button saveButton = new Button("Save Results to File");
             Button exportButton = new Button("Export Plot");
-            Label pdbLabel = new Label("  PDB File: ");
-            Label bmrbLabel = new Label("  BMRB File: ");
-            toolBar.getItems().addAll(openButton, rdcButton, saveButton, exportButton);//, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
+            toolBar.getItems().addAll(openButton, rdcButton, saveButton, exportButton);
 
             openButton.setOnAction(e -> loadRDCTextFile());
             rdcButton.setOnAction(e -> analyze());
             saveButton.setOnAction(e -> saveToFile());
-            exportButton.setOnAction(e -> exportPlotSVGAction(e));
+            exportButton.setOnAction(this::exportPlotSVGAction);
 
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
@@ -193,17 +188,15 @@ public class RDCGUI {
                 //Prepare XYChart.Series objects by setting data
                 series0.clear();
                 if (aMat != null) {
-                    List<RDC> rdcValues = new ArrayList<>();
-                    rdcValues.addAll(localRDCSet.get());
+                    List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
                     for (RDC rdcValue : rdcValues) {
                         series0.add(new XYValue(rdcValue.getExpRDC(), rdcValue.getRDC()));
                     }
                     series0.getData().sort(Comparator.comparing(XYValue::getXValue));
                     long lb = Math.round(series0.getData().get(0).getXValue());
-                    long ub = Math.round(series0.getData().get(series0.getData().size() - 1).getXValue());
+                    long ub = Math.round(series0.getData().reversed().get(0).getXValue());
                     series1.add(new XYValue(lb, lb));
                     series1.add(new XYValue(ub, ub));
-
                 }
                 activeChart.autoScale(true);
             }
@@ -211,16 +204,13 @@ public class RDCGUI {
     }
 
     void updateRDCPlotChoices() {
-        System.out.println("up");
         setChoice.getItems().clear();
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
             MolecularConstraints molConstr = molecule.getMolecularConstraints();
-            if (molConstr != null) {
-                if (!molConstr.getRDCSetNames().isEmpty()) {
-                    setChoice.getItems().addAll(molConstr.getRDCSetNames());
-                    setChoice.setValue(setChoice.getItems().get(0));
-                }
+            if ((molConstr != null) && !molConstr.getRDCSetNames().isEmpty()) {
+                setChoice.getItems().addAll(molConstr.getRDCSetNames());
+                setChoice.setValue(setChoice.getItems().get(0));
             }
         }
     }
@@ -246,7 +236,6 @@ public class RDCGUI {
         localRDCSet = rdcSet(name);
         if (localRDCSet != null) {
             List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
-            System.out.println("nrdcs " + localRDCSet.getSize());
 
             RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues);
             if (modeBox.getValue().equals("SVD")) {
@@ -261,8 +250,6 @@ public class RDCGUI {
 
             RDCFitQuality fitQuality = new RDCFitQuality();
             fitQuality.evaluate(aMat, rdcValues);
-            System.out.println(aMat.toString());
-            System.out.append(fitQuality.toString());
 
             double qRMS = fitQuality.getQRMS();
             double qRhomb = fitQuality.getQRhomb();
@@ -281,7 +268,6 @@ public class RDCGUI {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Error: No RDC Set.");
             alert.showAndWait();
-            return;
         }
 
     }

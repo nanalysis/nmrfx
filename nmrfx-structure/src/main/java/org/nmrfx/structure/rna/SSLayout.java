@@ -466,7 +466,7 @@ public class SSLayout implements MultivariateFunction {
             if (nSet >= nNuc) {
                 break;
             }
-            if ((basePairs[i + 1] != -1) && (basePairs[j - 1] != -1)) {
+            if ((basePairs[i + 1] != -1) && (basePairs[j - 1] != -1) && (basePairs[i+1] == (j - 1))) {
                 if (coordsSet[i + 1]) {
                     break;
                 }

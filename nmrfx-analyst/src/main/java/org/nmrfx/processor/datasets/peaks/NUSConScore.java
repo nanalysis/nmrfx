@@ -5,7 +5,7 @@ import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.optimization.BipartiteMatcher;
+import org.nmrfx.math.BipartiteMatcher;
 
 import java.io.IOException;
 import java.util.DoubleSummaryStatistics;

@@ -1137,7 +1137,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             try {
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
-                ssPredictor.findExtents(0.4);
+                ssPredictor.bipartiteMatch(0.7, 0.05, 20);
                 updateSSChoiceBox();
                 showSS(ssChoiceBox.getItems().get(0));
 
@@ -1154,8 +1154,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
         if (ssPredictor != null) {
             int n = ssPredictor.getNExtents();
             for (int i = 0; i < n; i++) {
-                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(i);
-                String dotBracket = ssPredictor.getDotBracket(basePairsExt);
+                SSPredictor.BasePairsMatching basePairsMatching = ssPredictor.getExtentBasePairs(i);
+                String dotBracket = ssPredictor.getDotBracket(basePairsMatching.basePairsSet());
                 int fileIndex = fileSecondaryStructures.indexOf(dotBracket);
                 SSOrigin origin = fileIndex != -1 ? SSOrigin.BOTH : SSOrigin.PRED;
                 SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, origin, i, fileIndex);
@@ -1199,21 +1199,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         if (molecule != null) {
             String dotBracket = "";
             if ((ssPredictor != null) && (secondaryStructureEntry.type == SSOrigin.PRED || secondaryStructureEntry.type == SSOrigin.BOTH)) {
-                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex);
+                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex).basePairsSet();
                 dotBracket = ssPredictor.getDotBracket(basePairsExt);
             } else {
                 dotBracket = secondaryStructureEntry.dotBracket;
             }
-            molecule.setDotBracket(dotBracket);
-            layoutSS();
-        }
-    }
-
-    private void get2D(double pLimit) throws InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-        if (molecule != null && ssPredictor != null) {
-            List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(pLimit);
-            String dotBracket = ssPredictor.getDotBracket(basePairs);
             molecule.setDotBracket(dotBracket);
             layoutSS();
         }

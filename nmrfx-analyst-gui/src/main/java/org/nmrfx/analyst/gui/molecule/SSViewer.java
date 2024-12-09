@@ -197,7 +197,7 @@ public class SSViewer extends Pane {
     public void drawSS() {
         drawingGroup.getChildren().clear();
         if ((ssPredictor != null) && drawMapProp.get()) {
-            drawProbabilityMap(0.4);
+            drawProbabilityMap();
         }
         try {
             if (drawSSProp.get()) {
@@ -209,8 +209,9 @@ public class SSViewer extends Pane {
 
     }
 
-    private void drawProbabilityMap(double threshold) {
+    private void drawProbabilityMap() {
         double[][] predictions = ssPredictor.getPredictions();
+        double threshold = ssPredictor.getGraphThreshold();
         int n = predictions.length;
         double mapPaneWidth = mapPane.getWidth();
         double mapPaneHeight = mapPane.getHeight();
@@ -260,8 +261,8 @@ public class SSViewer extends Pane {
         }
         var extentBasePairs = ssPredictor.getExtentBasePairs();
         for (var bp : extentBasePairs) {
-            int r = bp.i();
-            int c = bp.j();
+            int r = bp.r();
+            int c = bp.c();
             double x1 = border + c * delta + deltaHalf;
             double y1 = border + r * delta + deltaHalf;
             Line line2 = new Line(x1, y1, y1, y1);
@@ -366,11 +367,11 @@ public class SSViewer extends Pane {
                 if (ssPredictor != null) {
                     double pLimit = 0.1;
                     for (SSPredictor.BasePairProbability bp : ssPredictor.getAllBasePairs(pLimit)) {
-                        int res1 = bp.i();
-                        int res2 = bp.j();
+                        int res1 = bp.r();
+                        int res2 = bp.c();
                         if (selectedResidue > iRes) {
-                            res1 = bp.j();
-                            res2 = bp.i();
+                            res2 = bp.r();
+                            res1 = bp.c();
                         }
                         if (res1 == selectedResidue && res2 == iRes) {
                             String label = String.format("%.2f", bp.probability());
@@ -407,10 +408,10 @@ public class SSViewer extends Pane {
 
         int fontSize = (int) Math.round(width);
         Color color = switch (text) {
-            case "G" -> Color.ORANGE;
-            case "C" -> Color.LIGHTGREEN;
-            case "A" -> Color.YELLOW;
-            case "U", "T" -> Color.LIGHTBLUE;
+            case "G" -> Color.LIGHTGREEN;
+            case "C" -> Color.CYAN;
+            case "A" -> Color.ORANGE;
+            case "U", "T" -> Color.MAGENTA;
             default -> Color.WHITE;
         };
         String label = text;

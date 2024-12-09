@@ -6,7 +6,7 @@ import io.jenetics.internal.util.Requires;
 import io.jenetics.util.ISeq;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.chemistry.*;
-import org.nmrfx.processor.optimization.BipartiteMatcher;
+import org.nmrfx.math.BipartiteMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
