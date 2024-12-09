@@ -164,7 +164,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private BorderPane mainBox;
     @FXML
     private HBox leftBar;
-    @FXML SplitPane splitPane;
+    @FXML
+    SplitPane splitPane;
     ScannerTool scannerTool;
 
     private double previousStageRestoreWidth = 0;
@@ -544,11 +545,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         ProjectBase.getActive().projectChanged(true);
         if (PreferencesController.getLoadMoleculeIfPresent()) {
             Molecule molecule = (Molecule) MoleculeFactory.getActive();
-            if (molecule != null) {
+            if ((molecule != null) && (molecule.getAtoms().size() < 100)) {
                 MoleculeUtils.removeMoleculeFromCanvas();
                 MoleculeUtils.addActiveMoleculeToCanvas();
             }
-
         }
     }
 
@@ -673,7 +673,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         int dot = name.lastIndexOf('.');
         String extension = "";
         if (dot != -1) {
-             extension = name.substring(dot+1);
+            extension = name.substring(dot + 1);
         }
         switch (extension) {
             case "svg" -> exportSVG(selectedFile);
@@ -841,6 +841,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         }));
     }
+
     public SpectrumStatusBar getStatusBar() {
         return statusBar;
     }
@@ -921,7 +922,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             button.getStyleClass().add("toolButton");
         });
         processorButton.disableProperty().addListener((observable, oldValue, newValue) -> {
-            if(Boolean.TRUE.equals(newValue) && processorButton.isSelected()) {
+            if (Boolean.TRUE.equals(newValue) && processorButton.isSelected()) {
                 viewProcessorControllerIfPossible = true;
             }
         });
@@ -1004,7 +1005,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         statusBar.updateCursorBox();
     }
 
-     DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
+    DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
         return value -> {
             PolyChart chart = getActiveChart();
             if (CanvasCursor.isCrosshair(getCurrentCursor())) {
@@ -1209,6 +1210,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public GridPaneCanvas getGridPaneCanvas() {
         return chartDrawingLayers.getGrid();
     }
+
     public void draw() {
         chartDrawingLayers.getGrid().layoutChildren();
     }
@@ -1663,9 +1665,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     /**
      * Switches which NmrControlRightSideContent is displayed in the nmrControlRightSidePane.
+     *
      * @param attributesButton The attributes toggle button.
-     * @param contentButton The content toggle button.
-     * @param processorButton The processor toggle button.
+     * @param contentButton    The content toggle button.
+     * @param processorButton  The processor toggle button.
      */
     private void toggleNmrControlRightSideContent(ToggleButton attributesButton, ToggleButton contentButton,
                                                   ToggleButton processorButton, ToggleButton toolButton) {
@@ -2060,7 +2063,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public Optional<RunAboutGUI>  showRunAboutTool() {
+    public Optional<RunAboutGUI> showRunAboutTool() {
         RunAboutGUI runAboutGUI;
         if (!containsTool(RunAboutGUI.class)) {
             TabPane tabPane = new TabPane();
