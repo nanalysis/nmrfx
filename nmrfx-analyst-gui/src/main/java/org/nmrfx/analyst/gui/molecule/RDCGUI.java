@@ -180,8 +180,6 @@ public class RDCGUI {
             if ((xElem != null)) {
                 xAxis.setLabel("Experimental RDCs");
                 yAxis.setLabel("Calculated RDCs");
-                xAxis.setZeroIncluded(true);
-                yAxis.setZeroIncluded(true);
                 xAxis.setAutoRanging(true);
                 yAxis.setAutoRanging(true);
                 activeChart.getData().clear();
