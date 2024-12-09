@@ -191,9 +191,10 @@ public class SSPredictor {
             return ((r == that.r) && (c == that.c)) || ((r == that.c) && (c == that.r));
         }
 
-        BPKey bpKey () {
+        BPKey bpKey() {
             return BPKey.getBPKey(r, c);
         }
+
         @Override
         public int hashCode() {
             int result;
@@ -369,6 +370,16 @@ public class SSPredictor {
         return graphThreshold;
     }
 
+    boolean hasNeighbor(BasePairProbability[] matches, BasePairProbability bp) {
+        int last = predictions.length - 1;
+        boolean available = (matches[bp.r] == null) && (matches[bp.c] == null);
+        boolean neighbored = ((bp.r > 0) && (matches[bp.r - 1] != null))
+                || ((bp.r < last) && (matches[bp.r + 1] != null))
+                || ((bp.c > 0) && (matches[bp.c - 1] != null))
+                || ((bp.c < last) && (matches[bp.c + 1] != null));
+        return available && neighbored;
+    }
+
     private void addMissing(Set<BasePairProbability> basePairProbabilities) {
         Map<BPKey, BasePairProbability> bps = new HashMap<>();
         BasePairProbability[] matches = new BasePairProbability[predictions.length];
@@ -378,14 +389,14 @@ public class SSPredictor {
             matches[basePairProbability.c] = basePairProbability;
         }
         List<BasePairProbability> extras = new ArrayList<>();
-        for (var entry: allBasePairs.entrySet()) {
+        for (var entry : allBasePairs.entrySet()) {
             BasePairProbability bp = entry.getValue();
-            if (!bps.containsKey(entry.getKey()) && (matches[bp.r] == null) && (matches[bp.c] == null)) {
+            if (!bps.containsKey(entry.getKey()) && hasNeighbor(matches, bp)) {
                 extras.add(entry.getValue());
             }
         }
         for (BasePairProbability bp : extras) {
-            if (!crosses(basePairProbabilities, bp) && (matches[bp.r] == null) && (matches[bp.c] == null)) {
+            if (!crosses(basePairProbabilities, bp) &&  hasNeighbor(matches, bp)) {
                 basePairProbabilities.add(bp);
                 matches[bp.r] = bp;
                 matches[bp.c] = bp;
@@ -421,6 +432,7 @@ public class SSPredictor {
         }
         return foundMatch;
     }
+
     void refineMatches(List<BasePairProbability> matches, int[][] matchTries) {
         Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
         int nFound = extentBasePairsList.size();
@@ -441,6 +453,7 @@ public class SSPredictor {
         }
 
     }
+
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
         int n = predictions.length;
         if (paritionedGraph == null) {
