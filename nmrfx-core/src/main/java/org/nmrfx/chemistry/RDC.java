@@ -52,18 +52,21 @@ public class RDC {
      *
      * @param vector     Vector3D object that represents the vector associated with
      *                   the two atoms.
-     * @param aType1     String of the type of the first atom of the vector.
-     * @param aType2     String of the type of the second atom of the vector.
+     * @param atom1      the first atom of the vector.
+     * @param atom2      the second atom of the vector.
      * @param calcMaxRDC Boolean of whether to calculate the max RDCConstraint
      *                   value based on the vector distance.
      * @param scale      Boolean of whether to calculate the max RDCConstraint value
      *                   with the scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
-    public static double calcMaxRDC(Vector3D vector, String aType1, String aType2, boolean calcMaxRDC, boolean scale) {
+    public static double calcMaxRDC(Vector3D vector, Atom atom1, Atom atom2, boolean calcMaxRDC, boolean scale) {
+        String aType1 = atom1.getElementName();
+        String aType2 = atom2.getElementName();
+
         String type = aType1 + aType2;
         double r;
-        if (disDict.containsKey(type)) {
+        if (((atom1.getParent() == atom2) || (atom2.getParent() == atom1)) && disDict.containsKey(type)) {
             r = disDict.get(type) * 1.0E-10;
         } else {
             r = vector.getNorm() * 1.0E-10;
@@ -107,16 +110,12 @@ public class RDC {
         this.atom1 = atom1;
         this.atom2 = atom2;
         this.vector = vector;
-        String elemName1 = atom1.getElementName();
-        String elemName2 = atom2.getElementName();
-        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
+        maxRDC = calcMaxRDC(vector, atom1, atom2, CALC_MAX_RDC, false);
     }
 
     public void updateVector() {
         vector = atom2.getPoint().subtract(atom1.getPoint());
-        String elemName1 = atom1.getElementName();
-        String elemName2 = atom2.getElementName();
-        maxRDC = calcMaxRDC(vector, elemName1, elemName2, CALC_MAX_RDC, false);
+        maxRDC = calcMaxRDC(vector, atom1, atom2, CALC_MAX_RDC, false);
     }
     public Double getRDC() {
         return rdcPred;
