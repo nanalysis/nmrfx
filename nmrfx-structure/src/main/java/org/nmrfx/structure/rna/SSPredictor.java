@@ -23,6 +23,7 @@ public class SSPredictor {
 
     ParitionedGraph paritionedGraph = null;
     Set<BasePairProbability> extentBasePairs;
+    Map<BPKey, BasePairProbability> allBasePairs;
 
     List<BasePairsMatching> extentBasePairsList = new ArrayList<>();
     String rnaSequence;
@@ -31,7 +32,28 @@ public class SSPredictor {
     static SavedModelBundle graphModel;
     static String modelFilePath = null;
 
-    record BasePairsMatching(double value,Set<BasePairProbability> basePairsSet) {}
+    public record BasePairsMatching(double value, Set<BasePairProbability> basePairsSet) {
+
+        boolean exists(List<BasePairsMatching> extentBasePairsList) {
+            for (BasePairsMatching basePairsMatching : extentBasePairsList) {
+                if (basePairsMatching.basePairsSet.equals(basePairsSet)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    record BPKey(int row, int col) {
+        static Map<Integer, Map<Integer, BPKey>> bpMap = new HashMap<>();
+
+        static BPKey getBPKey(int row, int col) {
+            Map<Integer, BPKey> colMap = bpMap.computeIfAbsent(row, key -> new HashMap<>());
+            return colMap.computeIfAbsent(col, key -> new BPKey(row, col));
+        }
+
+    }
+
     public static void setModelFile(String fileName) {
         modelFilePath = fileName;
     }
@@ -75,6 +97,7 @@ public class SSPredictor {
 
         matrix1.set(inputTF, 0);
         double threshold = 0.4;
+        allBasePairs = new HashMap<>();
 
         var inputs = TInt32.tensorOf(matrix1);
         try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
@@ -101,7 +124,15 @@ public class SSPredictor {
                     if ((v1 > threshold) && (v0 < threshold) && (v2 < threshold)) {
                         predictions[r][c] = 0.0;
                     }
-
+                }
+            }
+            for (int r = 0; r < seqLen; r++) {
+                for (int c = r + delta; c < seqLen; c++) {
+                    if (predictions[r][c] > threshold) {
+                        BPKey bpKey = BPKey.getBPKey(r, c);
+                        BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                        allBasePairs.put(bpKey, basePairProbability);
+                    }
                 }
             }
         }
@@ -136,9 +167,10 @@ public class SSPredictor {
         return extentBasePairsList.size();
     }
 
-    public Set<BasePairProbability> getExtentBasePairs(int i) {
-        extentBasePairs = extentBasePairsList.get(i).basePairsSet;
-        return extentBasePairs;
+    public BasePairsMatching getExtentBasePairs(int i) {
+        BasePairsMatching basePairsMatching = extentBasePairsList.get(i);
+        extentBasePairs = basePairsMatching.basePairsSet;
+        return basePairsMatching;
     }
 
     public Set<BasePairProbability> getExtentBasePairs() {
@@ -147,63 +179,6 @@ public class SSPredictor {
 
     public double[][] getPredictions() {
         return predictions;
-    }
-
-    public List<BasePairProbability> getBasePairs(double pLimit) {
-        int n = predictions.length;
-        double[][] predicted = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            predicted[i] = Arrays.copyOf(predictions[i], n);
-        }
-        List<BasePairProbability> basePairs = getBasePairs(predicted, pLimit);
-        filterAllCrossings(basePairs);
-        return basePairs;
-    }
-
-    record RCMax(int row, int column, double prediction) {
-    }
-
-    RCMax findAnRCMax(double[][] predicted) {
-        int n = rnaSequence.length();
-        double max = 0.0;
-        int rMax = -1;
-        int cMax = -1;
-        for (int r = 0; r < n; r++) {
-            for (int c = r + 1; c < n; c++) {
-                double v = predicted[r][c];
-                if (v > max) {
-                    max = v;
-                    rMax = r;
-                    cMax = c;
-                }
-            }
-        }
-        return new RCMax(rMax, cMax, max);
-    }
-
-    void findRCMax(double[][] predicted) {
-        int n = rnaSequence.length();
-        for (int i = 0; i < n; i++) {
-            RCMax rcMax = findAnRCMax(predicted);
-            if (rcMax.row() != -1) {
-                int r = rcMax.row();
-                int c = rcMax.column;
-                for (int j = 0; j < n; j++) {
-                    predicted[r][j] = 0.0;
-                    predicted[j][r] = 0.0;
-                    predicted[c][j] = 0.0;
-                    predicted[j][c] = 0.0;
-                }
-                predicted[r][c] = -rcMax.prediction();
-            }
-        }
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (predicted[i][j] < 0.0) {
-                    predicted[i][j] *= -1.0;
-                }
-            }
-        }
     }
 
     public record BasePairProbability(int r, int c, double probability) {
@@ -216,6 +191,9 @@ public class SSPredictor {
             return ((r == that.r) && (c == that.c)) || ((r == that.c) && (c == that.r));
         }
 
+        BPKey bpKey () {
+            return BPKey.getBPKey(r, c);
+        }
         @Override
         public int hashCode() {
             int result;
@@ -230,31 +208,11 @@ public class SSPredictor {
         }
     }
 
-    List<BasePairProbability> getBasePairs(double[][] predicted, double pLimit) {
-        findRCMax(predicted);
-        int n = rnaSequence.length();
-        List<BasePairProbability> bps = new ArrayList<>();
-        for (int r = 0; r < n; r++) {
-            for (int c = r + 2; c < n; c++) {
-                if (predicted[r][c] > pLimit) {
-                    BasePairProbability bp = new BasePairProbability(r, c, predicted[r][c]);
-                    bps.add(bp);
-                }
-            }
-        }
-        return bps;
-    }
-
     public List<BasePairProbability> getAllBasePairs(double pLimit) {
-        double[][] predicted = predictions;
-        int n = rnaSequence.length();
         List<BasePairProbability> bps = new ArrayList<>();
-        for (int r = 0; r < n; r++) {
-            for (int c = r + 2; c < n; c++) {
-                if (predicted[r][c] > pLimit) {
-                    BasePairProbability bp = new BasePairProbability(r, c, predicted[r][c]);
-                    bps.add(bp);
-                }
+        for (BasePairProbability basePairProbability : allBasePairs.values()) {
+            if (basePairProbability.probability > pLimit) {
+                bps.add(basePairProbability);
             }
         }
         return bps;
@@ -277,6 +235,21 @@ public class SSPredictor {
             }
         }
         return crossings;
+    }
+
+    boolean crosses(Collection<BasePairProbability> basePairs, BasePairProbability basePair1) {
+        int i1 = basePair1.r;
+        int j1 = basePair1.c;
+        for (BasePairProbability basePair2 : basePairs) {
+            int i2 = basePair2.r;
+            int j2 = basePair2.c;
+            boolean cross1 = (i1 < i2) && (i2 < j1) && (j1 < j2);
+            boolean cross2 = (i2 < i1) && (i1 < j2) && (j2 < j1);
+            if (cross1 || cross2) {
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean removeLargestCrossing(Collection<BasePairProbability> basePairs, Map<BasePairProbability, Integer> crossings) {
@@ -332,7 +305,6 @@ public class SSPredictor {
     private void buildGraph(double threshold) {
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph
                 = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
-
         int n = predictions.length;
         Set<Integer> partition1 = new HashSet<>();
         Set<Integer> partition2 = new HashSet<>();
@@ -382,7 +354,8 @@ public class SSPredictor {
                     int r = simpleGraph.getEdgeSource(edge);
                     int c = simpleGraph.getEdgeTarget(edge) - n;
                     if (((r + 3) < c) && (matchUsed[r] == null) && (matchUsed[c] == null)) {
-                        BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                        BPKey bpKey = BPKey.getBPKey(r, c);
+                        BasePairProbability basePairProbability = allBasePairs.get(bpKey);
                         matches.add(basePairProbability);
                         matchUsed[r] = basePairProbability;
                         matchUsed[c] = basePairProbability;
@@ -396,6 +369,78 @@ public class SSPredictor {
         return graphThreshold;
     }
 
+    private void addMissing(Set<BasePairProbability> basePairProbabilities) {
+        Map<BPKey, BasePairProbability> bps = new HashMap<>();
+        BasePairProbability[] matches = new BasePairProbability[predictions.length];
+        for (BasePairProbability basePairProbability : basePairProbabilities) {
+            bps.put(basePairProbability.bpKey(), basePairProbability);
+            matches[basePairProbability.r] = basePairProbability;
+            matches[basePairProbability.c] = basePairProbability;
+        }
+        List<BasePairProbability> extras = new ArrayList<>();
+        for (var entry: allBasePairs.entrySet()) {
+            BasePairProbability bp = entry.getValue();
+            if (!bps.containsKey(entry.getKey()) && (matches[bp.r] == null) && (matches[bp.c] == null)) {
+                extras.add(entry.getValue());
+            }
+        }
+        for (BasePairProbability bp : extras) {
+            if (!crosses(basePairProbabilities, bp) && (matches[bp.r] == null) && (matches[bp.c] == null)) {
+                basePairProbabilities.add(bp);
+                matches[bp.r] = bp;
+                matches[bp.c] = bp;
+            }
+        }
+    }
+
+    boolean checkForExisting(List<BasePairProbability> matches, int[][] matchTries) {
+        int nFound = extentBasePairsList.size();
+        int n = predictions.length;
+        boolean foundMatch = false;
+        for (int j = 0; j < nFound; j++) {
+            int[] matchTest = new int[n];
+            Arrays.fill(matchTest, -1);
+            for (BasePairProbability basePairProbability : matches) {
+                if (basePairProbability != null) {
+                    matchTest[basePairProbability.r] = basePairProbability.c;
+                    matchTest[basePairProbability.c] = basePairProbability.r;
+                }
+            }
+
+            boolean ok = true;
+            for (int i = 0; i < n; i++) {
+                if (matchTest[i] != matchTries[j][i]) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                foundMatch = true;
+                break;
+            }
+        }
+        return foundMatch;
+    }
+    void refineMatches(List<BasePairProbability> matches, int[][] matchTries) {
+        Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
+        int nFound = extentBasePairsList.size();
+        for (BasePairProbability basePairProbability : matches) {
+            if (basePairProbability != null) {
+                newExtentBasePairs.add(basePairProbability);
+                matchTries[nFound][basePairProbability.r] = basePairProbability.c;
+                matchTries[nFound][basePairProbability.c] = basePairProbability.r;
+            }
+        }
+
+        filterAllCrossings(newExtentBasePairs);
+        addMissing(newExtentBasePairs);
+        double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
+        BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
+        if (!basePairsMatching.exists(extentBasePairsList)) {
+            extentBasePairsList.add(basePairsMatching);
+        }
+
+    }
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
         int n = predictions.length;
         if (paritionedGraph == null) {
@@ -416,45 +461,12 @@ public class SSPredictor {
                     paritionedGraph.partition1, paritionedGraph.partition2);
             MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
             List<BasePairProbability> matches = getMatches(matchResult);
-
-            int nFound = extentBasePairsList.size();
-            boolean foundMatch = false;
-            for (int j = 0; j < nFound; j++) {
-                int[] matchTest = new int[n];
-                Arrays.fill(matchTest, -1);
-                for (BasePairProbability basePairProbability : matches) {
-                    matchTest[basePairProbability.r] = basePairProbability.c;
-                    matchTest[basePairProbability.c] = basePairProbability.r;
-                }
-
-                boolean ok = true;
-                for (int i = 0; i < n; i++) {
-                    if (matchTest[i] != matchTries[j][i]) {
-                        ok = false;
-                        break;
-                    }
-                }
-                if (ok) {
-                    foundMatch = true;
-                    break;
-                }
-            }
-
+            boolean foundMatch = checkForExisting(matches, matchTries);
             if (!foundMatch) {
-                Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
-                for (BasePairProbability basePairProbability : matches) {
-                    newExtentBasePairs.add(basePairProbability);
-                    matchTries[nFound][basePairProbability.r] = basePairProbability.c;
-                    matchTries[nFound][basePairProbability.c] = basePairProbability.r;
-                }
-
-                filterAllCrossings(newExtentBasePairs);
-                double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
-                BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
-                extentBasePairsList.add(basePairsMatching);
+                refineMatches(matches, matchTries);
             }
         }
-        Collections.sort(extentBasePairsList, (a,b) -> Double.compare(b.value, a.value));
+        extentBasePairsList.sort((a, b) -> Double.compare(b.value, a.value));
     }
 
 }
