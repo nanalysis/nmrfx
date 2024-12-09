@@ -340,14 +340,8 @@ public class SSPredictor {
             partition2.add(i + n);
         }
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                boolean addEdge = false;
-                if (i == j) {
-                    addEdge = true;
-                } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
-                    addEdge = true;
-                }
-                if (addEdge) {
+            for (int j = i + delta; j < n; j++) {
+                if ((predictions[i][j] > threshold)) {
                     DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
                     simpleGraph.addEdge(i, j + n, weightedEdge1);
                 }
@@ -384,10 +378,10 @@ public class SSPredictor {
                 .forEach(edge -> {
                     int r = simpleGraph.getEdgeSource(edge);
                     int c = simpleGraph.getEdgeTarget(edge) - n;
-                    if (((r + 2) < c) && ((matches[r] == null) && (matches2[c] == null))) {
+                    if (((r + 3) < c) && (matches[r] == null) && (matches[c] == null)) {
                         BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
                         matches[r] = basePairProbability;
-                        matches2[c] = basePairProbability;
+                        matches[c] = basePairProbability;
                     }
                 });
         return matches;
@@ -400,6 +394,9 @@ public class SSPredictor {
             buildGraph(threshold);
         }
         int[][] matchTries = new int[nTries][n];
+        for (int i = 0; i < nTries; i++) {
+            Arrays.fill(matchTries[i], -1);
+        }
         extentBasePairsList.clear();
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
 
@@ -414,11 +411,18 @@ public class SSPredictor {
             int nFound = extentBasePairsList.size();
             boolean foundMatch = false;
             for (int j = 0; j < nFound; j++) {
-                boolean ok = true;
+                int[] matchTest = new int[n];
+                Arrays.fill(matchTest, -1);
                 for (int i = 0; i < n; i++) {
                     BasePairProbability basePairProbability = matches[i];
-                    int c = basePairProbability != null ? basePairProbability.c : -1;
-                    if (matchTries[j][i] != c) {
+                    if (basePairProbability != null) {
+                        matchTest[basePairProbability.r] = basePairProbability.c;
+                        matchTest[basePairProbability.c] = basePairProbability.r;
+                    }
+                }
+                boolean ok = true;
+                for (int i = 0; i < n; i++) {
+                    if (matchTest[i] != matchTries[j][i]) {
                         ok = false;
                         break;
                     }
@@ -432,13 +436,13 @@ public class SSPredictor {
             if (!foundMatch) {
                 Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
                 for (int i = 0; i < n; i++) {
-                    if (matches[i] != null) {
-                        BasePairProbability basePairProbability = matches[i];
-                        newExtentBasePairs.add(basePairProbability);
-                        int c = basePairProbability.c;
-                        matchTries[nFound][i] = c;
-                    } else {
-                        matchTries[nFound][i] = -1;
+                    BasePairProbability basePairProbability = matches[i];
+                    if (basePairProbability != null) {
+                        if (i == basePairProbability.r) {
+                            newExtentBasePairs.add(basePairProbability);
+                            matchTries[nFound][basePairProbability.r] = basePairProbability.c;
+                            matchTries[nFound][basePairProbability.c] = basePairProbability.r;
+                        }
                     }
                 }
                 filterAllCrossings(newExtentBasePairs);
