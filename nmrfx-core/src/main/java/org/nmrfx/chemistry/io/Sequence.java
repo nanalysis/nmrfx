@@ -101,12 +101,12 @@ public class Sequence {
         connectBranch = null;
     }
 
+    /**
+     * makeConnection creates a bond for @param residue to the previous
+     * residue and sets this.connectAtom for the next residue in the
+     * sequence.
+     */
     public void makeConnection(Residue residue) {
-        /**
-         * makeConnection creates a bond for @param residue to the previous
-         * residue and sets this.connectAtom for the next residue in the
-         * sequence.
-         */
         Atom firstAtom = residue.getFirstBackBoneAtom();
         Atom parent = connectAtom != null ? connectAtom : null;
         if (parent != null) {

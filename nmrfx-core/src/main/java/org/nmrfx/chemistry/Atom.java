@@ -1989,13 +1989,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             boolean isRNA = polymer.isRNA();
             String fullName = (String) name;
             Character nameBase = fullName.charAt(0);
-            if (isRNA) {
-                return nameBase.equals('X');
-            } else if (isProtein) {
-                return nameBase.equals('X');
-            } else {
-                return false;
-            }
+            return nameBase.equals('X');
         } else {
             return false;
         }

@@ -1095,7 +1095,7 @@ public class MoleculeBase implements Serializable, ITree {
                 for (int j = 0, n = atoms.size(); j < n; j++) {
                     Atom atom = atoms.get(j);
                     SpatialSet spSet = atom.spatialSet;
-                    if (atom.isCoarse() || atom.isConnector() || atom.isPlanarity()) {
+                    if (atom.isCoarse() || atom.isConnector() || atom.isPlanarity() || atom.isLinker()) {
                         continue;
                     }
                     atom.iAtom = i;
@@ -1104,6 +1104,7 @@ public class MoleculeBase implements Serializable, ITree {
                         if ((lastAtom != null) && (atom.getTopEntity() != lastAtom.getTopEntity())) {
                             out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
                             i++;
+                            atom.iAtom = i;
                             result = spSet.toPDBString(i + 1, iStruct);
                         }
                         if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
@@ -1125,7 +1126,7 @@ public class MoleculeBase implements Serializable, ITree {
                         outString.append(String.format("%5d", bAtom.iAtom + 1));
                         iAtoms.clear();
                         for (Atom bAtom2 : bondedAtoms) {
-                            if (bAtom2.getElementName() != null) {
+                            if (!bAtom2.isConnector() && !bAtom2.isLinker() && (bAtom2.getElementName() != null)) {
                                 iAtoms.add(bAtom2.iAtom);
                             }
                         }
