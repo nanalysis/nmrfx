@@ -19,16 +19,19 @@ public class SSPredictor {
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
     double[][] predictions;
 
+    double graphThreshold = 0.7;
+
     ParitionedGraph paritionedGraph = null;
     Set<BasePairProbability> extentBasePairs;
 
-    List<Set<BasePairProbability>> extentBasePairsList = new ArrayList<>();
+    List<BasePairsMatching> extentBasePairsList = new ArrayList<>();
     String rnaSequence;
     int delta = 4;
 
     static SavedModelBundle graphModel;
     static String modelFilePath = null;
 
+    record BasePairsMatching(double value,Set<BasePairProbability> basePairsSet) {}
     public static void setModelFile(String fileName) {
         modelFilePath = fileName;
     }
@@ -134,7 +137,7 @@ public class SSPredictor {
     }
 
     public Set<BasePairProbability> getExtentBasePairs(int i) {
-        extentBasePairs = extentBasePairsList.get(i);
+        extentBasePairs = extentBasePairsList.get(i).basePairsSet;
         return extentBasePairs;
     }
 
@@ -368,24 +371,29 @@ public class SSPredictor {
         }
     }
 
-    BasePairProbability[] getMatches(MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult) {
+    List<BasePairProbability> getMatches(MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult) {
         int n = predictions.length;
         var simpleGraph = matchResult.getGraph();
-        BasePairProbability[] matches = new BasePairProbability[n];
-        BasePairProbability[] matches2 = new BasePairProbability[n];
+        List<BasePairProbability> matches = new ArrayList<>();
+        BasePairProbability[] matchUsed = new BasePairProbability[n];
         matchResult.getEdges().stream()
                 .sorted((a, b) -> Double.compare(simpleGraph.getEdgeWeight(b), simpleGraph.getEdgeWeight(a)))
                 .forEach(edge -> {
                     int r = simpleGraph.getEdgeSource(edge);
                     int c = simpleGraph.getEdgeTarget(edge) - n;
-                    if (((r + 3) < c) && (matches[r] == null) && (matches[c] == null)) {
+                    if (((r + 3) < c) && (matchUsed[r] == null) && (matchUsed[c] == null)) {
                         BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
-                        matches[r] = basePairProbability;
-                        matches[c] = basePairProbability;
+                        matches.add(basePairProbability);
+                        matchUsed[r] = basePairProbability;
+                        matchUsed[c] = basePairProbability;
                     }
                 });
         return matches;
 
+    }
+
+    public double getGraphThreshold() {
+        return graphThreshold;
     }
 
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
@@ -393,6 +401,7 @@ public class SSPredictor {
         if (paritionedGraph == null) {
             buildGraph(threshold);
         }
+        graphThreshold = threshold;
         int[][] matchTries = new int[nTries][n];
         for (int i = 0; i < nTries; i++) {
             Arrays.fill(matchTries[i], -1);
@@ -406,20 +415,18 @@ public class SSPredictor {
             var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
                     paritionedGraph.partition1, paritionedGraph.partition2);
             MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
-            BasePairProbability[] matches = getMatches(matchResult);
+            List<BasePairProbability> matches = getMatches(matchResult);
 
             int nFound = extentBasePairsList.size();
             boolean foundMatch = false;
             for (int j = 0; j < nFound; j++) {
                 int[] matchTest = new int[n];
                 Arrays.fill(matchTest, -1);
-                for (int i = 0; i < n; i++) {
-                    BasePairProbability basePairProbability = matches[i];
-                    if (basePairProbability != null) {
-                        matchTest[basePairProbability.r] = basePairProbability.c;
-                        matchTest[basePairProbability.c] = basePairProbability.r;
-                    }
+                for (BasePairProbability basePairProbability : matches) {
+                    matchTest[basePairProbability.r] = basePairProbability.c;
+                    matchTest[basePairProbability.c] = basePairProbability.r;
                 }
+
                 boolean ok = true;
                 for (int i = 0; i < n; i++) {
                     if (matchTest[i] != matchTries[j][i]) {
@@ -435,20 +442,19 @@ public class SSPredictor {
 
             if (!foundMatch) {
                 Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
-                for (int i = 0; i < n; i++) {
-                    BasePairProbability basePairProbability = matches[i];
-                    if (basePairProbability != null) {
-                        if (i == basePairProbability.r) {
-                            newExtentBasePairs.add(basePairProbability);
-                            matchTries[nFound][basePairProbability.r] = basePairProbability.c;
-                            matchTries[nFound][basePairProbability.c] = basePairProbability.r;
-                        }
-                    }
+                for (BasePairProbability basePairProbability : matches) {
+                    newExtentBasePairs.add(basePairProbability);
+                    matchTries[nFound][basePairProbability.r] = basePairProbability.c;
+                    matchTries[nFound][basePairProbability.c] = basePairProbability.r;
                 }
+
                 filterAllCrossings(newExtentBasePairs);
-                extentBasePairsList.add(newExtentBasePairs);
+                double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
+                BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
+                extentBasePairsList.add(basePairsMatching);
             }
         }
+        Collections.sort(extentBasePairsList, (a,b) -> Double.compare(b.value, a.value));
     }
 
 }

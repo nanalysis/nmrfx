@@ -197,7 +197,7 @@ public class SSViewer extends Pane {
     public void drawSS() {
         drawingGroup.getChildren().clear();
         if ((ssPredictor != null) && drawMapProp.get()) {
-            drawProbabilityMap(0.4);
+            drawProbabilityMap();
         }
         try {
             if (drawSSProp.get()) {
@@ -209,8 +209,9 @@ public class SSViewer extends Pane {
 
     }
 
-    private void drawProbabilityMap(double threshold) {
+    private void drawProbabilityMap() {
         double[][] predictions = ssPredictor.getPredictions();
+        double threshold = ssPredictor.getGraphThreshold();
         int n = predictions.length;
         double mapPaneWidth = mapPane.getWidth();
         double mapPaneHeight = mapPane.getHeight();

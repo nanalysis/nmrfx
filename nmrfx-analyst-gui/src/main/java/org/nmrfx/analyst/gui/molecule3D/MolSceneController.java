@@ -1137,7 +1137,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             try {
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
-                ssPredictor.bipartiteMatch(0.7, 0.1, 20);
+                ssPredictor.bipartiteMatch(0.7, 0.05, 20);
                 updateSSChoiceBox();
                 showSS(ssChoiceBox.getItems().get(0));
 
