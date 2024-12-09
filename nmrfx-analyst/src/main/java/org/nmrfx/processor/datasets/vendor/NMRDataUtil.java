@@ -501,7 +501,7 @@ public final class NMRDataUtil {
 
         if (useApodize) {
             GaussianWt gaussianWt = nmrData.getGaussianWt(dim);
-            if (gaussianWt.exists()) {
+            if ((gaussianWt != null) && gaussianWt.exists()) {
                 double gb = gaussianWt.gf();
                 double lb = gaussianWt.lb();
                 String fPointStr = fPointVal.isEmpty() ? "" : ", fPoint=" + fPointVal;
@@ -522,7 +522,7 @@ public final class NMRDataUtil {
                 }
             }
             SinebellWt sinebellWt = nmrData.getSinebellWt(dim);
-            if (sinebellWt.exists()) {
+            if ((sinebellWt != null) && sinebellWt.exists()) {
                 String fPointStr = fPointVal.isEmpty() ? "" : ", c=" + fPointVal;
                 String sbString = "SB("
                         + "offset=" + String.format("%.2f", sinebellWt.offset())
