@@ -458,9 +458,10 @@ public class NMRStarReader {
                     molecule.addCoordSet(asymLabel, entityAssemblyID, entity);
                 }
             } else {
+                name = saveframe.getValue("_Entity","Nonpolymer_comp_ID", name);
                 Entity entity = molecule.getEntity(name);
                 if (entity == null) {
-                    Compound compound = new Compound("1", entityAssemblyName, name);
+                    Compound compound = new Compound("1", name, entityAssemblyName);
                     compound.setIDNum(1);
                     compound.assemblyID = entityAssemblyID;
                     compound.setPDBChain(pdbLabel);
