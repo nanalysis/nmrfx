@@ -18,6 +18,7 @@ import java.util.*;
  */
 public class InteractionType {
     static Map<String, Map<String, Double>> atomMaps = new HashMap<>();
+    static final String RES_PAIR_TABLE_FILENAME = "/data/res_pair_table.txt";
 
     public static int distance(Residue aResObj, Residue bResObj) {
         int distance;
@@ -43,19 +44,20 @@ public class InteractionType {
 
     public static String determineType(Residue aResObj, Residue bResObj) {
         String interType = null;
-        LinkedHashMap<String, Boolean> typeMap = new LinkedHashMap<String, Boolean>();
+        LinkedHashMap<String, Boolean> typeMap = new LinkedHashMap<>();
         int dis = distance(aResObj, bResObj);
         char aResLoopType = classifyLoop(aResObj.secStruct);
         char bResLoopType = classifyLoop(bResObj.secStruct);
         boolean sameRes = aResObj.equals(bResObj);
         boolean sameSS = (aResObj.secStruct == bResObj.secStruct);
+        boolean samePolymer = aResObj.polymer == bResObj.polymer;
         boolean basePair = aResObj.pairedTo == bResObj;
         boolean bothInLoop = aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Loop;
         boolean bothInHelix = aResObj.secStruct instanceof RNAHelix && bResObj.secStruct instanceof RNAHelix;
         boolean oneAwayBasePair = sameSS && bothInHelix && (aResObj.previous != null) && (bResObj == aResObj.previous.pairedTo);
         boolean loopAndHelix = (aResObj.secStruct instanceof RNAHelix && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof RNAHelix);
-        boolean bulgeAndHelix = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof RNAHelix);
-        boolean helixAndBulge = (aResObj.secStruct instanceof RNAHelix && bResObj.secStruct instanceof Bulge);
+        boolean bulgeAndHelix = ((aResObj.secStruct instanceof Bulge) && (bResObj.secStruct instanceof RNAHelix));
+        boolean helixAndBulge = ((aResObj.secStruct instanceof RNAHelix) && (bResObj.secStruct instanceof Bulge));
         boolean bothInSameBulge = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Bulge && sameSS);
         boolean inTetraLoop = (bothInLoop && sameSS && aResLoopType == 'T');
         boolean T12 = (inTetraLoop && (aResObj.secStruct.getResidues().get(0).equals(aResObj) && bResObj.secStruct.getResidues().get(1).equals(bResObj)));
@@ -83,8 +85,8 @@ public class InteractionType {
         typeMap.put("T23", T23);
         typeMap.put("T24", T24);
         typeMap.put("T34", T34);
-        typeMap.put("BH", sameSS && bulgeAndHelix && dis == 1); //filter reverse cases
-        typeMap.put("HB", sameSS && helixAndBulge && dis == 1);
+        typeMap.put("BH", samePolymer && bulgeAndHelix && dis == 1); //filter reverse cases
+        typeMap.put("HB", samePolymer && helixAndBulge && dis == 1);
         typeMap.put("BB", !sameRes && bothInSameBulge);
         typeMap.put("TH", loopAndHelix && aResLoopType == 'T' && dis == 1);
         typeMap.put("HT", loopAndHelix && bResLoopType == 'T' && dis == 1);
@@ -95,7 +97,7 @@ public class InteractionType {
         typeMap.put("TA", bothInHelix && dis == 2);
 
         for (Map.Entry<String, Boolean> type : typeMap.entrySet()) {
-            if (type.getValue()) {
+            if (Boolean.TRUE.equals(type.getValue())) {
                 interType = type.getKey();
                 break;
             }
@@ -146,12 +148,11 @@ public class InteractionType {
     }
 
     public static void loadInteractionMap() {
-        String fileName = "/data/res_pair_table.txt";
 
         Map<String, Double> sums = new HashMap<>();
         Map<String, Integer> nInter = new HashMap<>();
         List<AtomResDistance> atomResDistances = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(InteractionType.class.getResourceAsStream(fileName)))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(InteractionType.class.getResourceAsStream(RES_PAIR_TABLE_FILENAME))))) {
             List<String> lines = reader.lines().toList();
             lines.forEach(line -> {
                 line = line.trim();
