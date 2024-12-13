@@ -311,6 +311,7 @@ public class PeakGeneratorGUI {
                     labels.add("H");
                     labels.add("H2");
                     optionBox.getChildren().add(useNCheckBox);
+                    optionBox.getChildren().add(requireActiveCheckBox);
                 }
                 case Proton_1D -> labels.add("H");
                 case HNCO, HNCACO -> {
@@ -507,9 +508,10 @@ public class PeakGeneratorGUI {
     private void makeRNANOESYSecStr(Dataset dataset, PeakList peakList) {
         peakList.getSpectralDim(0).setPattern("i.H*");
         peakList.getSpectralDim(1).setPattern("j.H*");
-        int useN = useNCheckBox.isSelected() ? 1 : 0;
+        boolean useN = useNCheckBox.isSelected();
+        boolean reqActive = requireActiveCheckBox.isSelected();
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
-        peakGenerator.generateRNANOESYSecStr(dataset, peakList, useN);
+        peakGenerator.generateRNANOESYSecStr(dataset, peakList, useN, reqActive);
 
     }
 
