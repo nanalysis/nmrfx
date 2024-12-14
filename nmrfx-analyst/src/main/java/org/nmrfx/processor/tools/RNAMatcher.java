@@ -72,7 +72,7 @@ public class RNAMatcher {
             switch (type) {
                 case "NOESY" -> {
                     regions.put(type, noesyRegion);
-                    peakGenerator.generateRNANOESYSecStr(dataset, newPeakList, 0);
+                    peakGenerator.generateRNANOESYSecStr(dataset, newPeakList, false, false);
                 }
                 case "COSY" -> {
                     regions.put(type, cosyRegion);

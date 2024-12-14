@@ -8,7 +8,9 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.structure.chemistry.CouplingList;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.python.util.PythonInterpreter;
+import org.nmrfx.structure.rna.InteractionType;
+import org.nmrfx.structure.rna.RNAAnalysis;
+import org.nmrfx.structure.rna.SSGen;
 
 import java.util.*;
 
@@ -72,7 +74,10 @@ public class PeakGenerator {
         return ppmV;
     }
 
-    void addPeak(PeakList peakList, double hWidth, double intensity, Atom... atoms) {
+    void addPeak(PeakList peakList, double hWidth, double intensity,  Atom... atoms) {
+        addPeak(peakList, hWidth, intensity, false, null, atoms);
+    }
+    void addPeak(PeakList peakList, double hWidth, double intensity, boolean requireActive, Boolean[] editScheme, Atom... atoms) {
         int nAtoms = atoms.length;
         double[] ppms = new double[nAtoms];
         double[] eppms = new double[nAtoms];
@@ -81,7 +86,19 @@ public class PeakGenerator {
         String[] names = new String[nAtoms];
         boolean ok = true;
         double xScale = nAtoms < 3 ? 1.0 : 2.0;  //three D usually have lower resolution in X dims
+        int iProton = 0;
         for (int i = 0; i < nAtoms; i++) {
+            if (requireActive && !atoms[i].isActive()) {
+                ok = false;
+                break;
+            }
+            if ((editScheme != null) && atoms[i].getAtomicNumber() == 1) {
+                if ((editScheme[iProton] != null) && (Boolean.TRUE.equals(editScheme[iProton]) != atoms[i].getParent().isActive())) {
+                    ok = false;
+                    break;
+                }
+                iProton++;
+            }
             PPMv ppmV = getPPM(atoms[i]);
             if ((ppmV == null) || !ppmV.isValid()) {
                 ok = false;
@@ -410,15 +427,62 @@ public class PeakGenerator {
         });
     }
 
-    public void generateRNANOESYSecStr(Dataset dataset, PeakList peakList, int useN) {
-        String script = String.format("molGen.genRNASecStrPeaks(datasetName, listName=listName, useN=%d)", useN);
-        try (PythonInterpreter interp = new PythonInterpreter()) {
-            interp.exec("import molpeakgen");
-            interp.exec("molGen=molpeakgen.MolPeakGen()");
-            interp.set("datasetName", dataset.getName());
-            interp.set("listName", peakList.getName());
-            interp.exec(script);
+    private Boolean[] getFiltering(String scheme) {
+        Boolean[] editingModes = {null, null};
+        for (int i = 0;i<2;i++) {
+            editingModes[i] = switch (scheme.charAt(i)) {
+                case 'e': yield false;
+                case 'f': yield true;
+                default: yield null;
+            };
         }
+        return editingModes;
+    }
+    public void generateRNANOESYSecStr(Dataset dataset, PeakList peakList, boolean useN, boolean reqActive) {
+        var ss = new SSGen(molecule, molecule.getDotBracket());
+        ss.genRNAResidues();
+        ss.pairTo();
+        ss.secondaryStructGen();
+
+        String scheme = "";
+        if (dataset != null) {
+            scheme = dataset.getProperty("editScheme");
+        }
+        if (scheme.isEmpty()) {
+            scheme = "aa";
+        }
+        Boolean[] editingModes = getFiltering(scheme);
+        var map = InteractionType.getInteractionMap();
+        List<Residue> rnaResidues = RNAAnalysis.genRnaResidues(molecule);
+        for (int i=0;i<rnaResidues.size();i++) {
+            for (int j = i;j<rnaResidues.size();j++) {
+                Residue aRes = rnaResidues.get(i);
+                Residue bRes = rnaResidues.get(j);
+                String iType = InteractionType.determineType(aRes, bRes);
+
+                String key = iType + "." + aRes.getName() + "." + bRes.getName();
+                var atomPairMap = map.get(key);
+                if (atomPairMap == null) {
+                    continue;
+                }
+                for (var atomPairDistance : atomPairMap.entrySet()) {
+                    String[] fields = atomPairDistance.getKey().split("\\.");
+                    String aName1 = fields[0];
+                    String aName2 = fields[1];
+                    Atom atom1 = aRes.getAtom(aName1);
+                    Atom atom2 = bRes.getAtom(aName2);
+                    double distance = atomPairDistance.getValue();
+                    double width = 1.0;
+                    double scaleConst = 100.0/Math.pow(2.0,-6);
+                    double intensity = Math.pow(distance, -6)*scaleConst;
+                    if ((useN || (atom1.getParent().getAtomicNumber() != 7)) && (useN || (atom2.getParent().getAtomicNumber() != 7)))  {
+                        addPeak(peakList, width, intensity, reqActive, editingModes, atom1, atom2);
+                        addPeak(peakList, width, intensity, reqActive, editingModes, atom2, atom1);
+                    }
+                }
+            }
+        }
+
     }
 
     public void generateProteinPeaks(DatasetBase dataset, PeakList peakList, PeakGeneratorTypes expType) {
