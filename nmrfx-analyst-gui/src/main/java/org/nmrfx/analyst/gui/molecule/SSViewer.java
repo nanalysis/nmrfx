@@ -37,6 +37,8 @@ public class SSViewer extends Pane {
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
     private static final int N_ATOMS = 7;
 
+    private static Color ACTIVE_COLORS[] = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
+
     record AtomCoord(double x, double y) {
     }
 
@@ -447,16 +449,18 @@ public class SSViewer extends Pane {
         return color;
     }
 
-    Node drawAtom(String resNum, String text, double x, double y, boolean active) {
+    Node drawAtom(String resNum, String text, double x, double y, boolean colorByActive, int active) {
         double width = scale * 0.2;
         if (width < 4) {
             width = 4.0;
         }
 
         int fontSize = (int) Math.round(width);
-        Color color = colorCodeAtom(resNum, text);
-        if (!active) {
-            color = Color.LIGHTGRAY;
+        final Color color;
+        if (colorByActive) {
+            color = ACTIVE_COLORS[active];
+        } else {
+            color = colorCodeAtom(resNum, text);
         }
         NodeRecord nodeRecord = drawLabelledCircle(width, text, fontSize, color, x, y);
         nodeRecord.node().setOnMousePressed(e -> showInfo(e, resNum, text));
@@ -828,20 +832,25 @@ public class SSViewer extends Pane {
                     text = "1";
                 }
                 if (!text.isEmpty()) {
-                    boolean active = true;
+                    int active = 3;
                     if (showActiveProp.get()) {
-                        active = false;
+                        active = 0;
                         String atomSpec = resName + ".H" + text;
                         Atom atom = MoleculeBase.getAtomByName(atomSpec);
                         if (atom != null) {
+                            if (atom.isActive()) {
+                                active += 2;
+                            }
                             Atom parent = atom.getParent();
                             if (parent != null) {
-                                active = parent.isActive();
+                                if (parent.isActive()) {
+                                    active += 1;
+                                }
                             }
                         }
                     }
 
-                    Node node = drawAtom(resNum, text, toX(x), toY(y), active);
+                    Node node = drawAtom(resNum, text, toX(x), toY(y), showActiveProp.get(), active);
                     group.getChildren().add(node);
                 }
             }
