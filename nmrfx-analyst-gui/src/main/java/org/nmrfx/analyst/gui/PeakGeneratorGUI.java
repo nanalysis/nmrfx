@@ -499,10 +499,11 @@ public class PeakGeneratorGUI {
         peakList.getSpectralDim(0).setPattern("i.H*");
         peakList.getSpectralDim(1).setPattern("j.H*");
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
-        if (requireActiveCheckBox.isSelected()) {
+        boolean reqActive = requireActiveCheckBox.isSelected();
+        if (reqActive) {
             setSelectedAtoms();
         }
-        peakGenerator.generateNOESY(peakList, tol, useNCheckBox.isSelected(), requireActiveCheckBox.isSelected());
+        peakGenerator.generateNOESY(peakList, tol, useNCheckBox.isSelected(), reqActive);
     }
 
     private void makeRNANOESYSecStr(Dataset dataset, PeakList peakList) {
@@ -510,6 +511,10 @@ public class PeakGeneratorGUI {
         peakList.getSpectralDim(1).setPattern("j.H*");
         boolean useN = useNCheckBox.isSelected();
         boolean reqActive = requireActiveCheckBox.isSelected();
+        if (reqActive) {
+            setSelectedAtoms();
+        }
+
         PeakGenerator peakGenerator = new PeakGenerator(ppmSetChoice.getValue(), refSetChoice.getValue());
         peakGenerator.generateRNANOESYSecStr(dataset, peakList, useN, reqActive);
 
