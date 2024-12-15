@@ -6,13 +6,16 @@ import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.Molecule;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class LACSCalculator {
     record PPMDiff(double ppmDDCA, double ppmDDCB, double ppmDDC) {
     }
 
-    record LACSResult(double xMin, double xMax, double nMedian, double pMedian, double allMedian) {
+    public record LACSResult(List<Double> shiftsX, List<Double> shiftsY, double xMin, double xMax, double nMedian,
+                             double pMedian, double allMedian, double nSlope, double pSlope) {
     }
 
     public Optional<LACSResult> calculateLACS(String calcAtomName, int iGroup) {
@@ -30,6 +33,8 @@ public class LACSCalculator {
         DescriptiveStatistics pStat = new DescriptiveStatistics();
         DescriptiveStatistics allStat = new DescriptiveStatistics();
         DescriptiveStatistics deltaStat = new DescriptiveStatistics();
+        List<Double> shiftsX = new ArrayList<>();
+        List<Double> shiftsY = new ArrayList<>();
         LACSResult lacsResult = null;
         if (molecule != null) {
             molecule.getPolymers().forEach(polymer -> polymer.getResidues().forEach(residue -> {
@@ -41,6 +46,8 @@ public class LACSCalculator {
                         double delta = ppmDiff.ppmDDCA - ppmDiff.ppmDDCB;
                         deltaStat.addValue(delta);
                         double value;
+                        shiftsX.add(delta);
+                        shiftsY.add(ppmDiff.ppmDDC);
                         if (delta > 0.0) {
                             value = ppmDiff.ppmDDC - delta * pSlope;
                             pStat.addValue(value);
@@ -57,7 +64,7 @@ public class LACSCalculator {
             double nMedian = nStat.getPercentile(50);
             double pMedian = pStat.getPercentile(50);
             double allMedian = allStat.getPercentile(50);
-            lacsResult = new LACSResult(xMin, xMax, nMedian, pMedian, allMedian);
+            lacsResult = new LACSResult(shiftsX, shiftsY, xMin, xMax, nMedian, pMedian, allMedian, nSlope, pSlope);
         }
         return Optional.ofNullable(lacsResult);
     }

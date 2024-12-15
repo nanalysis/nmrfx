@@ -43,6 +43,7 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.tools.LACSPlotGui;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
@@ -121,6 +122,8 @@ public class AtomController implements Initializable, StageBasedController, Free
     ObservableList<Atom> atoms = FXCollections.observableArrayList();
 
     MolFilter molFilter = new MolFilter("*.C*,H*,N*");
+
+    LACSPlotGui lacsPlotGui = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -233,6 +236,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         readRefPPMItem.setOnAction(e -> readPPM(true));
         refMenu.getItems().add(readRefPPMItem);
 
+        MenuItem lacsPlotItem = new MenuItem("LACS Plot...");
+        lacsPlotItem.setOnAction(e -> showLACSPlot());
+        refMenu.getItems().add(lacsPlotItem);
+
         MenuButton predictMenu = new MenuButton("Predict");
         menuBar.getItems().add(predictMenu);
         MenuItem preditorMenuItem = new MenuItem("Predictor");
@@ -253,6 +260,12 @@ public class AtomController implements Initializable, StageBasedController, Free
         refSetChoice.setOnAction(e -> atomTableView.refresh());
     }
 
+    private void showLACSPlot() {
+        if (lacsPlotGui == null) {
+            lacsPlotGui = new LACSPlotGui();
+        }
+        lacsPlotGui.showMCplot();
+    }
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         Fx.runOnFxThread(atomTableView::refresh);
