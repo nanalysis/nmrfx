@@ -421,17 +421,15 @@ public class SeqFragment {
         List<List<AtomShiftValue>> atomShiftValues = getShifts();
         Residue firstResidue = resSeqScore.getFirstResidue();
         Residue residue = firstResidue;
-        int i = 0;
         for (var atomShiftValueList : atomShiftValues) {
             assignResidue(residue, atomShiftValueList);
             residue = residue.getNext();
-            if (i < spinSystemMatches.size()) {
-                if (i == 0) {
-                    spinSystemMatches.get(i).getSpinSystemA().assignPeaksInSystem(residue);
-                }
-                spinSystemMatches.get(i).getSpinSystemB().assignPeaksInSystem(residue);
-            }
-            i++;
+        }
+        residue = firstResidue.getNext();
+        spinSystemMatches.get(0).getSpinSystemA().assignPeaksInSystem(residue);
+        for (int i = 0; i < spinSystemMatches.size(); i++) {
+            residue = residue.getNext();
+            spinSystemMatches.get(i).getSpinSystemB().assignPeaksInSystem(residue);
         }
     }
 
