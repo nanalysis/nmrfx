@@ -92,7 +92,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *                     closed)
      * @throws IOException if an I/O error occurs
      */
-    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
+    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile, boolean saveToProject)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         super(fullName, name, writable, useCacheFile);
@@ -136,8 +136,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             createDataFile(raFile, writable);
         }
 
-        log.info("new dataset {}", fileName);
-        addFile(fileName);
+        if (saveToProject) {
+            addFile(fileName);
+        }
         loadLSCatalog();
     }
 
@@ -529,7 +530,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         log.info(fullName);
         String fileString = Files.readString(linkFile.toPath());
         log.info(fileString);
-        NMRData nmrData = NMRDataUtil.getNMRData(fileString);
+        NMRData nmrData = NMRDataUtil.getNMRData(new File(fileString));
         log.info("{}", nmrData);
         if (nmrData instanceof BrukerData brukerData) {
             return brukerData.toDataset(name);
@@ -631,6 +632,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         layout.setSize(iDim, size);
     }
 
+
+    public void addFile() {
+        addFile(this.fileName);
+    }
     private void addFile(String datasetName) {
         ProjectBase.getActive().addDataset(this, datasetName);
     }
@@ -1322,6 +1327,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] mPoint = new int[mDims];
         for (int i = 0; i < mDims; i++) {
             mPoint[i] = pt[i][1] + 1;
+            double sw = getSw(dim[i]);
+            matrix.setDwellTime(i, 1.0 / getSw(dim[i]));
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
@@ -1411,6 +1418,26 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             dataFile.setFloat((float) (matrix.getValue(index) * scale), point);
         }
+    }
+
+    public static void writeMatrixToDataset(String fileName, MatrixND matrixND) throws DatasetException, IOException {
+        int[] dSizes = new int[matrixND.getNDim()];
+        int[] dims = new int[dSizes.length];
+        for (int i =0;i < dSizes.length;i++) {
+            dSizes[i] = matrixND.getSize(i);
+            dims[i] = i;
+        }
+
+        File file = new File(fileName);
+        String name = file.getName();
+        Dataset dataset = Dataset.createDataset(fileName, fileName, name, dSizes, false, true);
+        for (int i =0;i < dSizes.length;i++) {
+            dataset.setComplex(i, false);
+            dataset.setFreqDomain(i, true);
+        }
+        dataset.writeMatrixNDToDatasetFile(dims, matrixND);
+        dataset.writeParFile();
+        dataset.close();
     }
 
     /**

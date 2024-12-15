@@ -224,6 +224,15 @@ public class PolyChartAxes {
         return limits;
     }
 
+    public double[][] getLimits() {
+        double[][] limits = new double[axes.length][2];
+        int i = 0;
+        for (Axis axis : axes) {
+            limits[i][0] = axis.getLowerBound();
+            limits[i++][1] = axis.getUpperBound();
+        }
+        return limits;
+    }
 
     /**
      * Checks the current axis is within provided range.

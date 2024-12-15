@@ -29,7 +29,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.optimization.BipartiteMatcher;
+import org.nmrfx.math.BipartiteMatcher;
 
 import java.util.ArrayList;
 import java.util.HashSet;

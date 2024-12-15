@@ -7,8 +7,11 @@ import javafx.scene.control.MenuItem;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.BMRB.BMRBDepositionController;
+import org.nmrfx.analyst.gui.BMRB.BMRBSearchController;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.io.MoleculeIOException;
+import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.peaks.InvalidPeakException;
@@ -30,6 +33,7 @@ public class ProjectMenuActions extends MenuActions {
     public ProjectMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
     }
+    BMRBSearchController searchController;
 
     @Override
     public void basic() {
@@ -52,6 +56,25 @@ public class ProjectMenuActions extends MenuActions {
         MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
         saveSTARMenuItem.setOnAction(this::writeSTAR);
 
+        MenuItem showHistoryAction = new MenuItem("GIT Manager...");
+        showHistoryAction.setOnAction(this::showHistory);
+
+        MenuItem openNEFMenuItem = new MenuItem("Open NEF...");
+        openNEFMenuItem.setOnAction(this::readNEF);
+
+        MenuItem fetchSTARMenuItem = new MenuItem("Fetch STAR3...");
+        fetchSTARMenuItem.setOnAction(this::fetchSTAR);
+
+        MenuItem depositSTARMenuItem = new MenuItem("Deposit STAR3...");
+        depositSTARMenuItem.setOnAction(this::depositSTAR);
+
+        MenuItem searchBMRBMenuItem = new MenuItem("Search BMRB");
+        searchBMRBMenuItem.setOnAction(this::searchBMRB);
+
+        Menu STARMenu = new Menu("STAR/NEF/BMRB");
+        STARMenu.getItems().addAll(openSTARMenuItem, openNEFMenuItem, saveSTARMenuItem, fetchSTARMenuItem,
+                depositSTARMenuItem, searchBMRBMenuItem);
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -65,9 +88,7 @@ public class ProjectMenuActions extends MenuActions {
         }
 
         menu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
-                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
-                openSTARMenuItem, saveSTARMenuItem);
-
+                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, showHistoryAction, STARMenu);
     }
 
     @Override
@@ -78,7 +99,7 @@ public class ProjectMenuActions extends MenuActions {
     }
 
     private void loadProject(ActionEvent event) {
-        if (GUIProject.checkProjectActive()) {
+        if (GUIProject.checkProjectActive(true)) {
             GUIUtils.warn("Open Project", "Project content already present.  Close existing first");
             return;
         }
@@ -93,7 +114,7 @@ public class ProjectMenuActions extends MenuActions {
 
     private void loadProjectFromPath(Path path) {
         if (path != null) {
-            if (GUIProject.checkProjectActive()) {
+            if (GUIProject.checkProjectActive(true)) {
                 GUIUtils.warn("Open Project", "Project content already present.  Close existing first");
                 return;
             }
@@ -120,8 +141,7 @@ public class ProjectMenuActions extends MenuActions {
         if (directoryFile != null) {
             GUIProject activeProject = (GUIProject) AnalystApp.getActive();
             if (activeProject != null) {
-                GUIProject newProject = GUIProject.replace(AnalystApp.getAppName(), activeProject);
-
+                GUIProject newProject = GUIProject.replace(directoryFile.getName(), activeProject);
                 try {
                     newProject.createProject(directoryFile.toPath());
                     newProject.saveProject();
@@ -169,6 +189,23 @@ public class ProjectMenuActions extends MenuActions {
         }
     }
 
+    @FXML
+    void fetchSTAR(ActionEvent event) {
+        BMRBSearchController.fetchStar(0);
+    }
+    @FXML
+    void depositSTAR(ActionEvent event) {
+        BMRBDepositionController.create();
+    }
+
+    void searchBMRB(ActionEvent event) {
+        if (searchController == null) {
+            searchController = BMRBSearchController.create();
+        }
+        searchController.getStage().show();
+        searchController.getStage().toFront();
+    }
+
     void writeSTAR(ActionEvent event) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Write STAR3 File");
@@ -185,6 +222,21 @@ public class ProjectMenuActions extends MenuActions {
         }
     }
 
+    void readNEF(ActionEvent event) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Read NEF File");
+        File nefFile = chooser.showOpenDialog(null);
+        if (nefFile != null) {
+            try {
+                NMRNEFReader.read(nefFile);
+            } catch (ParseException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+
     void readSparkyProject() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Read Sparky Project");
@@ -199,5 +251,9 @@ public class ProjectMenuActions extends MenuActions {
                 interpreter.exec("sparky.loadProjectFile(sparkyFile)");
             }
         }
+    }
+
+    void showHistory(ActionEvent event) {
+        AnalystApp.getAnalystApp().showHistoryAction(event);
     }
 }

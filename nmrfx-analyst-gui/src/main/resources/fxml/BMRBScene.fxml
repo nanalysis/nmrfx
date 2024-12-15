@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.control.Button?>
+<BorderPane fx:id="attrBorderPane" prefHeight="500.0" prefWidth="1000.0"
+            styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.analyst.gui.BMRB.BMRBSearchController">
+<top>
+</top>
+<center>
+    <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+        <top>
+            <HBox spacing="10.0">
+                <children>
+                    <TextField fx:id="searchField" />
+                    <Button fx:id="searchButton" />
+                    <Button fx:id="fetchStarButton" alignment="CENTER_RIGHT" />
+                    <Button fx:id="goToButton" alignment="CENTER_RIGHT" />
+                </children>
+            </HBox>
+        </top>
+        <center>
+            <TableView fx:id="BMRBSearchTableView">
+                <columns>
+                </columns>
+            </TableView>
+        </center>
+    </BorderPane>
+</center>
+</BorderPane>

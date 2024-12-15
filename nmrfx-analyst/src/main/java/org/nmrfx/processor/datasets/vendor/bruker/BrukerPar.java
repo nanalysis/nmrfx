@@ -105,7 +105,7 @@ public class BrukerPar {
                 if (!gotPar) {
                     value = '\n' + value;
                 }
-                values.add(value);
+                values.add(value.trim());
             }
             // misses last parameter value, but last param should be END anyway
         } catch (IOException ioE) {
@@ -126,6 +126,11 @@ public class BrukerPar {
         if (nValues == 1) {
             value = values.get(0);
         } else {
+            value = values.get(0);
+            if (value.charAt(0) == '(' && value.charAt(value.length()-1) == ')') {
+                values.remove(0);
+                nValues = values.size();
+            }
             StringBuilder sBuf = new StringBuilder();
             for (int i = 0; i < nValues; i++) {
                 if (i > 0) {

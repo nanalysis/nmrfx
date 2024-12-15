@@ -1,5 +1,6 @@
 package org.nmrfx.structure.chemistry.energy;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.search.MNode;
@@ -53,12 +54,12 @@ public class AngleTreeGenerator {
     }
 
     public static void genMeasuredTree(Entity entity, Atom startAtom) {
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         if (startAtom == null) {
-            startAtom = entity.atoms.get(0);
+            startAtom = aTreeGen.findStartAtom(entity);
         }
         Molecule molecule = (Molecule) startAtom.entity.molecule;
 
-        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
         aTreeGen.measureAtomTree(entity, atomTree, true, false);
         molecule.setRingClosures(aTreeGen.getRingClosures());
@@ -82,7 +83,12 @@ public class AngleTreeGenerator {
     }
 
     public boolean checkStartAtom(Atom startAtom) {
-        return startAtom.bonds.size() == 1;
+        boolean ok = startAtom.bonds.size() == 1;
+        if (ok) {
+            Atom partner = startAtom.getConnected().get(0);
+            ok = !partner.getFlag(Atom.RING);
+        }
+        return ok;
     }
 
     public Atom findStartAtom(ITree itree) {
@@ -137,9 +143,15 @@ public class AngleTreeGenerator {
             throw new IllegalArgumentException("Didn't find start atom\"" + startAtom.getShortName() + "\"");
         }
 
+        Set<Bond> usedBonds = new HashSet<>();
         for (Atom atom : atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = atom.bonds.get(iBond);
+                if (usedBonds.contains(bond)) {
+                    continue;
+                } else {
+                    usedBonds.add(bond);
+                }
                 if (bond.getProperty(Bond.DEACTIVATE)) {
                     continue;
                 }
@@ -295,6 +307,10 @@ public class AngleTreeGenerator {
                     Point3 p0 = a0 != null ? a0.getPoint() : null;
                     Point3 p1 = a1 != null ? a1.getPoint() : null;
                     Point3 p2 = a2 != null ? a2.getPoint() : null;
+                    if ((p1 != null) && (p0 == null)) {
+                        Vector3D ps0 =  p1.subtract(new Point3(1.0,1.0, 0.0));
+                        p0 = new Point3(ps0);
+                    }
                     double lastAngle = 0.0;
                     Optional<Bond> oBond = Optional.empty();
                     for (int j = 3; j < branch.size(); j++) {

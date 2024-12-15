@@ -6,6 +6,7 @@
 package org.nmrfx.peaks.io;
 
 import org.nmrfx.peaks.*;
+import org.nmrfx.star.STAR3;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -18,7 +19,6 @@ import java.util.List;
 public class PeakPathWriter {
 
     public void writeToSTAR3(Writer chan, PeakPaths peakPath, int id) throws IOException, InvalidPeakException {
-        char stringQuote = '"';
         List<PeakList> peakLists = peakPath.getPeakLists();
         PeakList firstList = peakLists.get(0);
 
@@ -41,7 +41,7 @@ public class PeakPathWriter {
         chan.write(peakPath.getUnits() + "\n");
         chan.write("_NMRFx_peak_path.Details                       ");
         if (peakPath.getDetails().length() != 0) {
-            chan.write(stringQuote + peakPath.getDetails() + stringQuote + "\n");
+            chan.write(STAR3.quote(peakPath.getDetails()) + "\n");
         } else {
             chan.write(".\n");
         }

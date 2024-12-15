@@ -28,7 +28,6 @@ public class MolFilter {
     public Vector atomNames = new Vector(4, 4);
     CoordsetAndEntity csAndE = null;
     String molName = "*";
-    String seqID = "1";
     public String firstRes = "";
     public String lastRes = "";
     public String firstResType = "*";
@@ -92,11 +91,6 @@ public class MolFilter {
 
         if (colonPos >= 0) {
             molName = string.substring(0, colonPos);
-            int sPeriodPos = string.indexOf('.');
-
-            if (sPeriodPos >= 0) {
-                seqID = string.substring(colonPos + 1, sPeriodPos);
-            }
         }
         int periodPos = molName.indexOf(".");
 
@@ -236,10 +230,6 @@ public class MolFilter {
 
     public String getCoordEntity() {
         return molName;
-    }
-
-    public String getCoordSeqID() {
-        return seqID;
     }
 
     public String getString() {

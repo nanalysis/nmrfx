@@ -21,16 +21,11 @@ import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Bruce Johnson
@@ -53,9 +48,10 @@ public class AtomResonance {
         this.id = id;
     }
 
-    public AtomResonance copy() {
+    public AtomResonance copy(PeakDim peakDim) {
         AtomResonance copy = new AtomResonance(getID());
-        copy.getPeakDims().addAll(getPeakDims());
+        //copy.getPeakDims().addAll(getPeakDims());
+        copy.getPeakDims().add(peakDim);
         if (getNames() != null) {
             copy.setName(getNames());
             copy.setName(getName());
@@ -90,6 +86,9 @@ public class AtomResonance {
         boolean result = true;
         if (!name.isBlank() && (molBase != null)) {
             Atom testAtom = molBase.findAtom(name);
+            if (testAtom == null) {
+                testAtom = molBase.findAtom(name + "1");
+            }
             result = testAtom != null;
         }
         return result;
@@ -210,11 +209,8 @@ public class AtomResonance {
     public String toSTARResonanceString() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(getID()).append(sep);
-        result.append(stringQuote);
-        result.append(getName());
-        result.append(stringQuote);
+        result.append(STAR3.quote(getName()));
         result.append(sep);
         if (resonanceSet == null) {
             result.append(".");

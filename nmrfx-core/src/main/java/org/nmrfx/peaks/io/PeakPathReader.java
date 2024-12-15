@@ -158,12 +158,21 @@ public class PeakPathReader {
                 List<Integer> parDimColumn = loop.getColumnAsIntegerList("Dim", 0);
                 List<String> parConfirmedColumn = loop.getColumnAsList("Confirmed");
                 List<String> parActiveColumn = loop.getColumnAsList("Active");
-                List<List<Double>> parColumns = new ArrayList<>();
-                List<List<Double>> errColumns = new ArrayList<>();
+                Map<String, List<Double>> parColumns = new HashMap<>();
+                Map<String, List<Double>> errColumns = new HashMap<>();
                 List<String> parNames = peakPath.getBaseParNames();
                 for (String parName : parNames) {
-                    parColumns.add(loop.getColumnAsDoubleList(parName + "_val", null));
-                    errColumns.add(loop.getColumnAsDoubleList(parName + "_val_err", null));
+                    String useName = parName;
+                    boolean hasTag = loop.hasTag(useName + "_val");
+                    // translate name if older star file
+                    if (parName.equals("K1") && !hasTag) {
+                        useName = "K";
+                    } else if (parName.equals("D1") && !hasTag) {
+                        useName = "C";
+                    }
+                    parColumns.put(parName, loop.getColumnAsDoubleList(useName + "_val", null));
+                    errColumns.put(parName, loop.getColumnAsDoubleList(useName + "_val_err", null));
+
                 }
                 int useDims = pathMode == PeakPaths.PATHMODE.PRESSURE ? nDim : 1;
                 int nParsPerDim = parNames.size();
@@ -171,8 +180,8 @@ public class PeakPathReader {
                 int nPaths = parIDColumn.size() / useDims;
                 int i = 0;
                 for (int iPath = 0; iPath < nPaths; iPath++) {
-                    double[] pars = new double[nPars];
-                    double[] errors = new double[nPars];
+                    Double[] pars = new Double[nPars];
+                    Double[] errors = new Double[nPars];
                     boolean ok = true;
                     boolean confirmed = false;
                     boolean active = false;
@@ -184,32 +193,27 @@ public class PeakPathReader {
                         active = true;
                     }
                     for (int iDim = 0; iDim < useDims; iDim++) {
-
                         if (ok) {
                             for (int iPar = 0; iPar < nParsPerDim; iPar++) {
-                                Double val = parColumns.get(iPar).get(i);
-                                if (val == null) {
-                                    ok = false;
-                                    break;
+                                List<Double> parColumn = parColumns.get(parNames.get(iPar));
+                                List<Double> errColumn = errColumns.get(parNames.get(iPar));
+                                if (parColumn != null) {
+                                    pars[iDim * nParsPerDim + iPar] = parColumn.get(i);
+                                    errors[iDim * nParsPerDim + iPar] = errColumn.get(i);
                                 }
-                                pars[iDim * nParsPerDim + iPar] = parColumns.get(iPar).get(i);
-                                errors[iDim * nParsPerDim + iPar] = errColumns.get(iPar).get(i);
                             }
                         }
                         i++;
-
                     }
                     PeakPath path = pathMap.get(id);
                     if (ok) {
-                        path.setFitPars(pars);
-                        path.setFitErrs(errors);
+                        path.setFitParErrors(pars, errors);
                     }
                     if (confirmed) {
                         path.confirm();
                     }
                     path.setActive(active);
                 }
-
             }
         }
     }

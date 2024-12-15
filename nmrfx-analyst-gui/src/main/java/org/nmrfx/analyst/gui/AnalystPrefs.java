@@ -25,18 +25,27 @@ public class AnalystPrefs {
     private static final String REMOTE_USER_STR = "REMOTE_USER_NAME";
     private static IntegerProperty libraryVectorSize = null;
     private static DoubleProperty libraryVectorSF = null;
-    private static DoubleProperty libraryVectorSW = null;
+    private static DoubleProperty libraryVectorSWPPM = null;
     private static DoubleProperty libraryVectorLB = null;
     private static DoubleProperty libraryVectorREF = null;
+
+    private static StringProperty segmentLibraryFile = null;
     private static BooleanProperty useRemotePassword = null;
     private static StringProperty remoteUserName = null;
     private static StringProperty remoteHostName = null;
     private static StringProperty remoteDirectory = null;
     private static StringProperty localDirectory = null;
     private static StringProperty localResidueDirectory = null;
+    private static StringProperty gissmoFileProp = null;
 
     private AnalystPrefs() {
         throw new IllegalAccessError("Utility class shouldn't be instantiated!");
+    }
+
+
+    public static String getSegmentLibraryFile() {
+        segmentLibraryFile = PreferencesController.getString(segmentLibraryFile, "SEGMENT_LBRARY_FILE", "/Users/brucejohnson/metabo/save/all.json");
+        return segmentLibraryFile.getValue();
     }
 
     public static Integer getLibraryVectorSize() {
@@ -49,9 +58,9 @@ public class AnalystPrefs {
         return libraryVectorSF.getValue();
     }
 
-    public static Double getLibraryVectorSW() {
-        libraryVectorSW = PreferencesController.getDouble(libraryVectorSW, "LIBRARY_VECTOR_SW", 10000.0);
-        return libraryVectorSW.getValue();
+    public static Double getLibraryVectorSWPPM() {
+        libraryVectorSWPPM = PreferencesController.getDouble(libraryVectorSWPPM, "LIBRARY_VECTOR_SW_PPM", 15.0);
+        return libraryVectorSWPPM.getValue();
     }
 
     public static Double getLibraryVectorLB() {
@@ -159,16 +168,18 @@ public class AnalystPrefs {
                 "Spectrometer frequency (MHz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSWItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
-                    libraryVectorSW.setValue((Double) c);
+                    libraryVectorSWPPM.setValue((Double) c);
                 },
-                getLibraryVectorSW(), 1000, 16000, "Spectrum Library", "VectorSW",
-                "Sweep Width (Hz) for simulated spectra");
+                getLibraryVectorSWPPM(), 2.0, 20.0, "Spectrum Library", "VectorSW",
+                "Sweep Width (PPM) for simulated spectra");
         DoubleRangeOperationItem libraryVectorREFItem = new DoubleRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorREF.setValue((Double) c);
                 },
                 getLibraryVectorREF(), 0, 10.0, "Spectrum Library", "VectorREF",
                 "Center reference (PPM) for simulated spectra");
+
+        FileOperationItem segmentLibraryFileItem = new FileOperationItem(prefSheet, (a, b, c) -> segmentLibraryFile.setValue(c.toString()), getSegmentLibraryFile(), "Spectrum Library", "Segment Library", "File containing segment library");
 
         TextOperationItem remoteUserItem = new TextOperationItem(prefSheet, (a, b, c) -> {
             setRemoteUserName((String) c);
@@ -204,12 +215,30 @@ public class AnalystPrefs {
                 "Local Residue Directory",
                 "Directory for custom residues");
 
-        prefSheet.getItems().addAll(libraryVectorSizeItem, libraryVectorLBItem,
-                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem,
+        FileOperationItem gissmoFileItem = new FileOperationItem(prefSheet,
+                (a, b, c) -> {
+                    PreferencesController.setString("GISSMO-FILE", (String) c);
+                    gissmoFileProp.setValue((String) c);
+                }
+                , getGissmoFile(), "Spectrum Library", "User File", "File for GISSMO data");
+
+
+        prefSheet.getItems().addAll(gissmoFileItem, libraryVectorSizeItem, libraryVectorLBItem,
+                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem, segmentLibraryFileItem,
                 localDirectoryItem,
                 remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem,
                 localResidueDirectoryItem);
 
     }
+    public static String getGissmoFile() {
+        gissmoFileProp = PreferencesController.getString(gissmoFileProp, "GISSMO-FILE", "");
+        return gissmoFileProp.getValue();
+    }
+
+    public static void setGissmoFile(String fileName) {
+        gissmoFileProp.setValue(fileName);
+        PreferencesController.setString("GISSMO-FILE", fileName);
+    }
+
 
 }

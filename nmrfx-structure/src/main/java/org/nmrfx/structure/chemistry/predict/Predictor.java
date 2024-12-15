@@ -5,6 +5,8 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -155,6 +157,16 @@ public class Predictor {
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
+    public enum PredictionModes {
+        OFF,
+        RNA_ATTRIBUTES,
+        THREED_DIST,
+        THREED_RC,
+        THREED,
+        SHELL
+    }
+    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {}
+
     void clearRefPPMs(int iRef) {
         Molecule mol = Molecule.getActive();
         if (mol != null) {
@@ -299,10 +311,80 @@ public class Predictor {
             }
         }
     }
+    boolean checkCoordinates(Molecule molecule) {
+        if (molecule == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
+            alert.showAndWait();
+            return false;
+        } else if (molecule.structures.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
+            alert.showAndWait();
+            return false;
+        } else {
+            return true;
+        }
+
+    }
+
+    boolean checkDotBracket(Molecule molecule) {
+        return !molecule.getDotBracket().isBlank();
+    }
+
+    public void predictAll(Molecule mol, PredictionTypes predictionTypes, int ppmSet) throws InvalidMoleculeException, IOException {
+        boolean hasPeptide = false;
+
+        for (Polymer polymer : mol.getPolymers()) {
+            if (polymer.isRNA()) {
+                switch (predictionTypes.rna) {
+                    case THREED_DIST:
+                        if (checkCoordinates(mol)) {
+                            predictRNAWithDistances(polymer, 0, ppmSet, false);
+                        }
+                        break;
+                    case THREED_RC:
+                        if (checkCoordinates(mol)) {
+                            predictRNAWithRingCurrent(polymer, 0, ppmSet);
+                        }
+                        break;
+                    case RNA_ATTRIBUTES:
+                        if (checkDotBracket(mol)) {
+                            predictRNAWithAttributes(ppmSet);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } else if (polymer.isPeptide()) {
+                hasPeptide = true;
+            }
+        }
+
+        if (hasPeptide) {
+            if (predictionTypes.protein == PredictionModes.THREED) {
+                if (checkCoordinates(mol)) {
+                    int iStructure = 0;
+                    predictProtein(mol, iStructure, ppmSet);
+                }
+            } else if (predictionTypes.protein == PredictionModes.SHELL) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    predictWithShells(polymer, ppmSet);
+                }
+            }
+        }
+        boolean hasPolymer = !mol.getPolymers().isEmpty();
+        for (Entity entity : mol.getLigands()) {
+            if (predictionTypes.smallMol == PredictionModes.SHELL) {
+                predictWithShells(entity, ppmSet);
+                if (hasPolymer) {
+                    predictLigandWithRingCurrent(entity, ppmSet);
+                }
+            }
+        }
+    }
 
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
-        if ((molecule != null) && !molecule.getDotBracket().equals("")) {
+        if ((molecule != null) && !molecule.getDotBracket().isEmpty()) {
             try (PythonInterpreter interp = new PythonInterpreter()) {
                 interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
             }
@@ -464,13 +546,15 @@ public class Predictor {
             Atom hoseAtom = null;
             double roundScale = 1.0;
             if (atom.getAtomicNumber() == 1) {
-                if (atom.getParent().getAtomicNumber() != aNum) {
+                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().get(0) : null;
+                if ((connectedAtom == null) || (connectedAtom.getAtomicNumber() != aNum)) {
                     continue;
                 }
             } else if (atom.getAtomicNumber() != aNum) {
                 continue;
             }
 
+            double defaultError = 2.0;
             if (atom.getAtomicNumber() == aNum) {
                 hoseAtom = atom;
                 predAtomType = aNum == 6 ? "13C" : "15N";
@@ -479,6 +563,7 @@ public class Predictor {
                 hoseAtom = atom.parent;
                 predAtomType = "1H";
                 roundScale = 100.0;
+                defaultError = 0.2;
             }
             if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == aNum)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
@@ -488,12 +573,35 @@ public class Predictor {
                     predResult = hosePred.predict(hosePPM, predAtomType);
                     HOSEStat hoseStat = predResult.getStat(predAtomType);
                     if (hoseStat != null) {
-                        double shift = hoseStat.dStat.getPercentile(50);
+                        int n = hoseStat.nValues;
+                        double shift;
+                        double error;
+                        int nShells = predResult.getShell();
+                        int shellMult = 6 - nShells;
+                        if (n == 1) {
+                            shift = hoseStat.dStat.getElement(0);
+                            error = defaultError * shellMult;
+                        } else {
+                             shift = hoseStat.dStat.getPercentile(50);
+                             error = hoseStat.dStat.getStandardDeviation() * shellMult;
+                        }
+                        if (Double.isNaN(error)) {
+                            error = defaultError;
+                        }
+                        if (error < defaultError) {
+                            error = defaultError;
+                        }
+                        if (error > (shift * 0.2)) {
+                            error = shellMult * 0.2;
+                        }
                         shift = Math.round(shift * roundScale) / roundScale;
+                        error = Math.round(error * roundScale) / roundScale;
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, shift);
+                            atom.setRefError(-iRef -1, error);
                         } else {
                             atom.setPPM(iRef, shift);
+                            atom.setRefError(iRef, error);
                         }
                     } else {
                         log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);
@@ -520,43 +628,45 @@ public class Predictor {
                 if (line == null) {
                     break;
                 } else {
-                    if (!line.equals("")) {
+                    if (!line.isEmpty()) {
                         String[] fields = line.split("\t");
                         if (fields.length > 0) {
-                            if (fields[0].equals("rmax")) {
-                                setRMax(Double.parseDouble(fields[1]));
-                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
-                                // it was previously used to help set the typeIndex
-                                setIntraScale(Double.parseDouble(fields[3]));
-                            } else if (fields[0].equals("coef")) {
-                                state = "coef";
-                                nCoef = Integer.parseInt(fields[2]) + 1;
-                                if (!coefMap.containsKey(fields[1])) {
-                                    coefMap.put(fields[1], coefMap.size());
+                            switch (fields[0]) {
+                                case "rmax" -> {
+                                    setRMax(Double.parseDouble(fields[1]));
+                                    // For this line fields[2] is unused but its value is the atom type, e.g. H, C
+                                    // it was previously used to help set the typeIndex
+                                    setIntraScale(Double.parseDouble(fields[3]));
                                 }
-                                typeIndex = coefMap.get(fields[1]);
-                                alphas[typeIndex] = new double[nCoef];
-                                coefAtoms = new String[nCoef];
-                                alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
-                                coefAtoms[nCoef - 1] = "intercept";
-                            } else if (fields[0].equals("baseshifts")) {
-                                state = "baseshifts";
-                            } else if (fields[0].equals("mae")) {
-                                state = "mae";
-                            } else {
-                                switch (state) {
-                                    case "coef" -> {
-                                        int index = Integer.parseInt(fields[0]);
-                                        coefAtoms[index] = fields[1];
-                                        alphas[typeIndex][index] = Double.parseDouble(fields[2]);
+                                case "coef" -> {
+                                    state = "coef";
+                                    nCoef = Integer.parseInt(fields[2]) + 1;
+                                    if (!coefMap.containsKey(fields[1])) {
+                                        coefMap.put(fields[1], coefMap.size());
                                     }
-                                    case "baseshifts" -> {
-                                        double shift = Double.parseDouble(fields[1]);
-                                        baseShiftMap.put(fields[0], shift);
-                                    }
-                                    case "mae" -> {
-                                        double value = Double.parseDouble(fields[1]);
-                                        maeMap.put(fields[0], value);
+                                    typeIndex = coefMap.get(fields[1]);
+                                    alphas[typeIndex] = new double[nCoef];
+                                    coefAtoms = new String[nCoef];
+                                    alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
+                                    coefAtoms[nCoef - 1] = "intercept";
+                                }
+                                case "baseshifts" -> state = "baseshifts";
+                                case "mae" -> state = "mae";
+                                default -> {
+                                    switch (state) {
+                                        case "coef" -> {
+                                            int index = Integer.parseInt(fields[0]);
+                                            coefAtoms[index] = fields[1];
+                                            alphas[typeIndex][index] = Double.parseDouble(fields[2]);
+                                        }
+                                        case "baseshifts" -> {
+                                            double shift = Double.parseDouble(fields[1]);
+                                            baseShiftMap.put(fields[0], shift);
+                                        }
+                                        case "mae" -> {
+                                            double value = Double.parseDouble(fields[1]);
+                                            maeMap.put(fields[0], value);
+                                        }
                                     }
                                 }
                             }
@@ -596,7 +706,7 @@ public class Predictor {
                 if (line == null) {
                     break;
                 } else {
-                    if (!line.equals("")) {
+                    if (!line.isEmpty()) {
                         String[] fields = line.split("\t");
                         String aName1 = fields[0];
                         for (int i = 1; i < fields.length; i++) {

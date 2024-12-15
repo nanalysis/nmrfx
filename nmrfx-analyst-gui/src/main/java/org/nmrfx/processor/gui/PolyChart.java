@@ -38,6 +38,8 @@ import javafx.scene.text.TextAlignment;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.regions.RegionsTableController;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
@@ -75,7 +77,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -142,6 +143,16 @@ public class PolyChart extends Region {
     private CrossHairs crossHairs;
     private List<ChartUndo> undos = new ArrayList<>();
     private List<ChartUndo> redos = new ArrayList<>();
+    private MapChangeListener<String, PeakList> peakListMapChangeListener = change -> purgeInvalidPeakListAttributes();
+
+    private static PolyChart chartBuffer = null;
+
+    private static ViewBuffer viewBuffer = null;
+    private  ViewBuffer chartViewBuffer = null;
+
+    record IntegralLabelPosition(DatasetAttributes datasetAttributes, DatasetRegion region, BoundingBox boundingBox) {}
+
+    List<IntegralLabelPosition> integralLabelPositions = new ArrayList<>();
 
     protected PolyChart(FXMLController controller, String name, ChartDrawingLayers drawingLayers) {
         this.controller = controller;
@@ -153,6 +164,32 @@ public class PolyChart extends Region {
         initChart();
         drawPeaks = new DrawPeaks(this, drawingLayers.getGraphicsContextFor(ChartDrawingLayers.Item.Peaks));
         setVisible(false);
+    }
+
+    class ViewBuffer {
+        int[] dim;
+        double[][] limits;
+
+        void save(PolyChart chart) {
+            if (!chart.datasetAttributesList.isEmpty()) {
+                DatasetAttributes datasetAttributes = chart.datasetAttributesList.get(0);
+                dim = datasetAttributes.dim.clone();
+                limits = chart.axes.getLimits();
+            }
+        }
+
+        void restore(PolyChart chart) {
+            if (!chart.datasetAttributesList.isEmpty()) {
+                DatasetAttributes datasetAttributes = chart.datasetAttributesList.get(0);
+                if (dim != null) {
+                    for (int i = 0; i < dim.length; i++) {
+                        datasetAttributes.dim[i] = dim[i];
+                        chart.axes.get(i).setLowerBound(limits[i][0]);
+                        chart.axes.get(i).setUpperBound(limits[i][1]);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -243,8 +280,7 @@ public class PolyChart extends Region {
         drawingLayers.getTopPane().getChildren().add(highlightRect);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
-        MapChangeListener<String, PeakList> mapChangeListener = change -> purgeInvalidPeakListAttributes();
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(peakListMapChangeListener));
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
@@ -253,6 +289,7 @@ public class PolyChart extends Region {
         regionMenu = new RegionMenu(this);
         integralMenu = new IntegralMenu(this);
         drawingLayers.requestFocus();
+        ProjectBase.getActive().projectChanged(true);
     }
 
     public String getName() {
@@ -382,20 +419,45 @@ public class PolyChart extends Region {
         onRegionAdded = consumer;
     }
 
-    private void addRegion(double min, double max) {
-        DatasetBase dataset = getDataset();
-        if (dataset != null) {
-            DatasetRegion newRegion = dataset.addRegion(min, max);
-            try {
-                newRegion.measure(dataset);
-            } catch (IOException ex) {
-                log.error(ex.getMessage(), ex);
+    public void clearOnRegionAdded() {
+        onRegionAdded = null;
+    }
+
+    public void addRegion(double min, double max) {
+        boolean addedRegion = false;
+        if (getFXMLController().isScannerToolPresent()) {
+            double[] ppms = {min, max};
+            getFXMLController().scannerTool.measure(ppms);
+        } else {
+            DatasetRegion firstRegion = null;
+            DatasetBase firstDataset = null;
+            for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+                DatasetBase dataset = datasetAttributes.getDataset();
+                final DatasetRegion newRegion;
+                if (firstRegion == null) {
+                    newRegion = dataset.addRegion(min, max);
+                    firstRegion = newRegion;
+                    firstDataset = dataset;
+                } else {
+                    newRegion = new DatasetRegion(firstRegion);
+                    dataset.addRegion(newRegion);
+                    dataset.setNorm(firstDataset.getNorm());
+                }
+                try {
+                    newRegion.measure(dataset);
+                } catch (IOException ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+                if (onRegionAdded != null) {
+                    onRegionAdded.accept(newRegion);
+                }
             }
-            chartProps.setRegions(true);
-            chartProps.setIntegrals(true);
-            if (onRegionAdded != null) {
-                onRegionAdded.accept(newRegion);
-            }
+            addedRegion = true;
+        }
+
+        if (addedRegion) {
+            chartProps.setIntegralValues(true);
+            RegionsTableController.updateIfExists();
         }
     }
 
@@ -541,13 +603,49 @@ public class PolyChart extends Region {
     }
 
     public void swapView() {
-        if (!is1D()) {
+        if (!is1D() && !datasetAttributesList.isEmpty()) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            int dim0 = datasetAttributes.getDim(0);
+            int dim1 = datasetAttributes.getDim(1);
             double minX = axes.getX().getLowerBound();
             double maxX = axes.getX().getUpperBound();
             double minY = axes.getY().getLowerBound();
             double maxY = axes.getY().getUpperBound();
+            datasetAttributes.setDim(dim1, 0);
+            datasetAttributes.setDim(dim0, 1);
             axes.getX().setMinMax(minY, maxY);
             axes.getY().setMinMax(minX, maxX);
+            refresh();
+        }
+    }
+    public void sliceView(Orientation orientation) {
+        if (!is1D() && !datasetAttributesList.isEmpty() && (getDataset().getNDim() == 3)) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            int dim0 = datasetAttributes.getDim(0);
+            int dim1 = datasetAttributes.getDim(1);
+            int dim2 = datasetAttributes.getDim(2);
+            double v1 = crossHairs.getPosition(0, orientation);
+            double minX = axes.getX().getLowerBound();
+            double maxX = axes.getX().getUpperBound();
+            double minY = axes.getY().getLowerBound();
+            double maxY = axes.getY().getUpperBound();
+            double minZ = axes.get(2).getLowerBound();
+            double maxZ = axes.get(2).getUpperBound();
+            if (orientation == Orientation.VERTICAL) {
+                datasetAttributes.setDim(dim2, 0);
+                datasetAttributes.setDim(dim1, 1);
+                datasetAttributes.setDim(dim0, 2);
+                axes.getY().setMinMax(minY, maxY);
+                axes.get(2).setMinMax(v1, v1);
+                full(0);
+            } else {
+                datasetAttributes.setDim(dim0, 0);
+                datasetAttributes.setDim(dim2, 1);
+                datasetAttributes.setDim(dim1, 2);
+                axes.getX().setMinMax(minX, maxX);
+                full(1);
+                axes.get(2).setMinMax(v1, v1);
+            }
             refresh();
         }
     }
@@ -556,11 +654,71 @@ public class PolyChart extends Region {
         FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
         PolyChart newChart = newController.getActiveChart();
         copyTo(newChart);
+        newChart.copyLimits();
         newController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
+        newChart.pasteLimits();
         newChart.refresh();
     }
 
+    public void unifyLimits() {
+        viewBuffer = new ViewBuffer();
+        viewBuffer.save(this);
+        controller.getCharts().forEach(chart -> {
+            if (chart != this) {
+                viewBuffer.restore(chart);
+                chart.refresh();
+            }
+        });
+    }
+    public void copyLimits() {
+        viewBuffer = new ViewBuffer();
+        viewBuffer.save(this);
+    }
+
+    public void pasteLimits() {
+        if (viewBuffer != null) {
+            viewBuffer.restore(this);
+            refresh();
+        }
+    }
+    public void copyChartLimits() {
+        chartViewBuffer = new ViewBuffer();
+        chartViewBuffer.save(this);
+    }
+
+    public void pasteChartLimits() {
+        if (chartViewBuffer != null) {
+            chartViewBuffer.restore(this);
+            refresh();
+        }
+    }
+    public void setToBuffer() {
+        chartBuffer = this;
+    }
+
+    public void pasteFromBuffer() {
+        if (chartBuffer != null) {
+            chartBuffer.copyTo(this);
+        }
+    }
+
+    public void pasteAxes() {
+        if (chartBuffer != null) {
+            DatasetAttributes copyAttributes = chartBuffer.getDatasetAttributes().get(0);
+            DatasetAttributes datasetAttributes = getDatasetAttributes().get(0);
+            for (int i = 0; i < copyAttributes.dim.length; i++) {
+                if (datasetAttributes.dim.length > i) {
+                    datasetAttributes.setDim(i, copyAttributes.getDim(i));
+                }
+            }
+            chartBuffer.axes.copyTo(axes);
+        }
+    }
+
     public void copyTo(PolyChart newChart) {
+        newChart.datasetAttributesList.clear();
+        newChart.peakListAttributesList.clear();
+        newChart.clearAnnotations();
         for (DatasetAttributes dataAttr : datasetAttributesList) {
             DatasetAttributes newDataAttr = newChart.setDataset(dataAttr.getDataset(), true, false);
             dataAttr.copyTo(newDataAttr);
@@ -571,6 +729,18 @@ public class PolyChart extends Region {
         }
         axes.copyTo(newChart.axes);
         newChart.refresh();
+    }
+
+    private List<DatasetAttributes> getUpdateList() {
+        final List<DatasetAttributes> updateThese;
+
+        Optional<ScanTable> scanTableOpt = getFXMLController().getScannerTable();
+        if (scanTableOpt.isPresent()) {
+            updateThese = scanTableOpt.get().getSelectedDatasetAttributesList();
+        } else {
+            updateThese = datasetAttributesList;
+        }
+        return updateThese;
     }
 
     public void scroll(double x, double y) {
@@ -605,8 +775,10 @@ public class PolyChart extends Region {
         double center = (max + min) / 2.0;
 
         if (is1D()) {
-            if (!datasetAttributesList.isEmpty()) {
-                datasetAttributesList.forEach(dataAttr -> {
+            final List<DatasetAttributes> updateThese = getUpdateList();
+
+            if (!updateThese.isEmpty()) {
+                updateThese.forEach(dataAttr -> {
                     double fOffset = dataAttr.getOffset();
                     fOffset -= y / getHeight();
                     dataAttr.setOffset(fOffset);
@@ -622,9 +794,11 @@ public class PolyChart extends Region {
         }
     }
 
+
     protected void adjustScale(double factor) {
         ChartUndoScale undo = new ChartUndoScale(this);
-        datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
+        final List<DatasetAttributes> updateThese = getUpdateList();
+        updateThese.stream().filter(dataAttr -> !dataAttr.isProjection())
                 .forEach(dataAttr -> adjustScale(dataAttr, factor));
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
@@ -669,7 +843,8 @@ public class PolyChart extends Region {
 
     public void scaleY(double y) {
         final double scale = calculateScaleYFactor(y);
-        datasetAttributesList.stream().filter(dataAttr -> !dataAttr.isProjection())
+        final List<DatasetAttributes> updateThese = getUpdateList();
+        updateThese.stream().filter(dataAttr -> !dataAttr.isProjection())
                 .forEach(dataAttr -> {
                     DatasetBase dataset = dataAttr.getDataset();
                     if (is1D()) {
@@ -760,6 +935,22 @@ public class PolyChart extends Region {
                 layoutPlotChildren();
             }
         }
+    }
+
+    public void center() {
+        Double[] positions;
+        if (is1D()) {
+            positions = new Double[1];
+        } else {
+            positions = new Double[2];
+        }
+        double v1 = getCrossHairs().getPosition(0, Orientation.VERTICAL);
+        positions[0] = v1;
+        if (!is1D()) {
+            double v2 = getCrossHairs().getPosition(0, Orientation.HORIZONTAL);
+            positions[1] = v2;
+        }
+        moveTo(positions);
     }
 
     public void center(int axis) {
@@ -920,7 +1111,8 @@ public class PolyChart extends Region {
 
     public void autoScale() {
         ChartUndoScale undo = new ChartUndoScale(this);
-        datasetAttributesList.forEach(this::autoScale);
+        var updateList = getUpdateList();
+        updateList.forEach(this::autoScale);
         updateProjectionScale();
         layoutPlotChildren();
         ChartUndoScale redo = new ChartUndoScale(this);
@@ -969,8 +1161,8 @@ public class PolyChart extends Region {
                     range = max;
                 }
             }
-            max += range / 20.0;
-            min -= range / 20.0;
+            max += range  * 0.10;
+            min -= range * 0.15;
 
             double delta = max - min;
             double fOffset = (0.0 - min) / delta;
@@ -1320,7 +1512,7 @@ public class PolyChart extends Region {
         if (!newAttributes.isEmpty() && datasetAttrs.isEmpty()) {
             // if no datsets present already must use addDataset once to set up
             // various parameters
-            controller.addDataset(newAttributes.get(0).getDataset(), false, false);
+            controller.addDataset(this, newAttributes.get(0).getDataset(), false, false);
             newAttributes.remove(0);
             datasetAttrs.addAll(newAttributes);
         } else {
@@ -1890,7 +2082,7 @@ public class PolyChart extends Region {
     void drawDatasetsTrace(GraphicsContextInterface gC) {
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
-        double firstOffset;
+        double firstOffset = 0.0;
         double firstLvl = 1.0;
         double xPos = getLayoutX();
         double yPos = getLayoutY();
@@ -1906,28 +2098,37 @@ public class PolyChart extends Region {
                     .mapToInt(d -> d.getLastChunk(0) + 1).sum();
         }
         int i1D = 0;
+        var firstOpt = compatibleAttributes.stream()
+                .filter(d -> d.getDataset() != null)
+                .filter(d -> d.getDataset().getSizeReal(0) > 0)
+                .filter(d -> !d.isProjection())
+                .filter(d -> d.getPos()).findFirst();
         DatasetAttributes firstAttr = null;
+        if (firstOpt.isPresent()) {
+            firstAttr = firstOpt.get();
+            firstLvl = firstAttr.getLvl();
+            firstOffset = firstAttr.getOffset();
+            updateAxisType(false);
+            if ( chartProps.getRegions()) {
+                try {
+                    drawRegions(firstAttr, gC);
+                } catch (GraphicsIOException e) {
+                    log.warn(e.getMessage(), e);
+                }
+            }
+        }
+        integralLabelPositions.clear();
         for (int iData = compatibleAttributes.size() - 1; iData >= 0; iData--) {
             DatasetAttributes datasetAttributes = compatibleAttributes.get(iData);
             DatasetBase dataset = datasetAttributes.getDataset();
             if ((dataset.getSizeReal(0) == 0) || datasetAttributes.isProjection() || !datasetAttributes.getPos() || (dataset == null)) {
                 continue;
             }
-            if (firstAttr == null) {
-                firstAttr = datasetAttributes;
-            }
             datasetAttributes.setDrawReal(true);
-            if (datasetAttributes == firstAttr) {
-                firstLvl = datasetAttributes.getLvl();
-                updateAxisType(false);
-            } else {
+            if (datasetAttributes != firstAttr) {
                 datasetAttributes.syncDims(firstAttr);
             }
-            firstOffset = datasetAttributes.getOffset();
             try {
-                if (chartProps.getRegions()) {
-                    drawRegions(datasetAttributes, gC);
-                }
                 gC.save();
                 double clipExtra = 1;
                 drawSpectrum.setClipRect(xPos + borders.getLeft() + clipExtra, yPos + borders.getTop() + clipExtra,
@@ -1956,8 +2157,9 @@ public class PolyChart extends Region {
                             boolean selected = datasetAttributes.isSelected(rowIndex);
                             drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy, selected);
                             gC.setFill(datasetAttributes.getPosColor(rowIndex));
-                            if (chartProps.getIntegrals()) {
-                                draw1DIntegral(datasetAttributes, gC);
+                            if (chartProps.getIntegrals() || chartProps.getIntegralValues()) {
+                                double[] offsets = drawSpectrum.getOffset(datasetAttributes, firstOffset, i1D, n1D);
+                                draw1DIntegral(firstAttr, datasetAttributes, gC, offsets);
                             }
                             drawBaseLine(gC, bcPath);
                             if (iMode == 0) {
@@ -2201,7 +2403,7 @@ public class PolyChart extends Region {
                 x2 = hold;
             }
             if (region == activeRegion.get()) {
-                gC.setFill(Color.YELLOW);
+                gC.setFill(Color.LIGHTYELLOW.saturate());
             } else {
                 gC.setFill(Color.LIGHTYELLOW);
             }
@@ -2210,25 +2412,36 @@ public class PolyChart extends Region {
         }
     }
 
-    void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
-        List<DatasetRegion> regions = datasetAttr.getDataset().getReadOnlyRegions();
+    void draw1DIntegral(DatasetAttributes firstAttr, DatasetAttributes datasetAttr, GraphicsContextInterface gC, double[] offsets) throws GraphicsIOException {
+        List<DatasetRegion> regions = firstAttr.getDataset().getReadOnlyRegions();
         if (regions == null) {
             return;
         }
         double xMin = axes.getX().getLowerBound();
         double xMax = axes.getX().getUpperBound();
-        double norm = datasetAttr.getDataset().getNorm() / datasetAttr.getDataset().getScale();
+        double norm = firstAttr.getDataset().getNorm() / firstAttr.getDataset().getScale();
         double integralMax = getIntegralMaxFromRegions(regions);
-        for (DatasetRegion region : regions) {
+        if (Math.abs(gC.getFont().getSize() -  chartProps.getIntegralFontSize()) > 0.01) {
+            gC.setFont( new Font(FONT_FAMILY, chartProps.getIntegralFontSize()));
+        }
+        Font font = gC.getFont();
+
+        double vSpace = font.getSize() + 4;
+        double hSpace = 10.0;
+        double ySpace = 10.0;
+        double lineSpace = 3;
+        double[] xOffsets = new double[4];
+        Arrays.fill(xOffsets, Double.MAX_VALUE);
+        regions.stream().sorted().forEach(region -> {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
-            double[] offsets = new double[2];
-            offsets[0] = region.getRegionStartIntensity(0);
-            offsets[1] = region.getRegionEndIntensity(0);
+            double[] regionOffsets = new double[2];
+            regionOffsets[0] = region.getRegionStartIntensity(0);
+            regionOffsets[1] = region.getRegionEndIntensity(0);
 
             if ((ppm2 > xMin) && (ppm1 < xMax)) {
                 Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
-                        ppm1, ppm2, offsets,
+                        ppm1, ppm2, regionOffsets,
                         integralMax, chartProps.getIntegralLowPos(),
                         chartProps.getIntegralHighPos());
                 if (result.isPresent()) {
@@ -2237,14 +2450,54 @@ public class PolyChart extends Region {
                     int rowIndex = drawSpectrum.getRowIndex();
                     gC.setTextAlign(TextAlignment.CENTER);
                     gC.setTextBaseline(VPos.BASELINE);
-                    drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy, false);
-                    String text = String.format("%.1f", result.get() / norm);
-                    double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
-                    double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
-                    gC.fillText(text, xCenter, yCenter);
+                    if (chartProps.getIntegrals()) {
+                        try {
+                            drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy, false);
+                        } catch (GraphicsIOException e) {
+                        }
+                    }
+                    if (chartProps.getIntegralValues() || chartProps.getIntegrals()) {
+                        String text = String.format("%.1f", result.get() / norm);
+                        double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
+                        double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
+                        boolean inProfile = false;
+                        double yOffset = font.getSize() + ySpace + (xOffsets.length * lineSpace + 1);
+                        if (!chartProps.getIntegralValues()) {
+                            gC.fillText(text, xCenter, yCenter);
+                        } else {
+                            xCenter += offsets[0];
+                            double y0 = axes.getY().getDisplayPosition(0.0) - offsets[1];
+                            double textWidth = GUIUtils.getTextWidth(text, font);
+                            double y = y0 + yOffset;
+                            double edge = xCenter + textWidth / 2.0 + hSpace;
+                            int pos = 0;
+                            for (int iPos = 0; iPos < xOffsets.length; iPos++) {
+                                if (edge < xOffsets[iPos]) {
+                                    pos = iPos;
+                                    break;
+                                }
+                            }
+                            y += pos * vSpace;
+                            gC.fillText(text, xCenter, y);
+                            xOffsets[pos] = xCenter - textWidth / 2.0 - hSpace;
+                            BoundingBox boundingBox =
+                                    new BoundingBox(xCenter - textWidth / 2.0, y - vSpace / 2.0, textWidth, vSpace);
+                            IntegralLabelPosition integralLabelPosition =
+                                    new IntegralLabelPosition(datasetAttr, region, boundingBox);
+                            integralLabelPositions.add(integralLabelPosition);
+                            double y2 = y0 + ySpace + pos * (lineSpace + 1);
+
+                            gC.strokeLine(xy[0][0], y2 - lineSpace, xy[0][0], y2);
+                            gC.strokeLine(xy[0][0], y2, xy[0][nPoints -1], y2);
+                            gC.strokeLine(xy[0][nPoints -1], y2 - lineSpace, xy[0][nPoints -1], y2);
+
+                        }
+                    }
                 }
             }
-        }
+        });
+
+
         datasetAttr.getActiveRegion().ifPresent(r -> {
             try {
                 drawSpectrum.drawActiveRegion(gC, datasetAttr, r.getDatasetRegion());
@@ -2254,12 +2507,24 @@ public class PolyChart extends Region {
         });
     }
 
+
     public Optional<IntegralHit> hitIntegral(double pickX, double pickY) {
         Optional<IntegralHit> hit = Optional.empty();
         for (DatasetAttributes datasetAttr : datasetAttributesList) {
             hit = hitIntegral(datasetAttr, pickX, pickY);
             if (hit.isPresent()) {
                 break;
+            }
+        }
+        if (hit.isEmpty()) {
+            for (IntegralLabelPosition integralLabelPosition : integralLabelPositions) {
+                if (integralLabelPosition.boundingBox.contains(pickX, pickY)) {
+                    IntegralHit integralHit =
+                            new IntegralHit(integralLabelPosition.datasetAttributes,
+                                    integralLabelPosition.region, -2, integralLabelPosition.boundingBox);
+                    hit = Optional.of(integralHit);
+                    break;
+                }
             }
         }
         return hit;
@@ -2525,10 +2790,18 @@ public class PolyChart extends Region {
         }
     }
 
-    public void updatePeakLists(List<String> targets) {
+    public void updatePeakListsByName(List<String> targets) {
         removeUnusedPeakLists(targets);
         for (String s : targets) {
             PeakList peakList = PeakList.get(s);
+            if (peakList != null) {
+                setupPeakListAttributes(peakList);
+            }
+        }
+    }
+    public void updatePeakLists(List<PeakList> targets) {
+        removeUnusedPeakLists(targets.stream().map(p -> p.getName()).toList());
+        for (PeakList peakList : targets) {
             if (peakList != null) {
                 setupPeakListAttributes(peakList);
             }
@@ -2593,9 +2866,19 @@ public class PolyChart extends Region {
 
     public void dragRegion(IntegralHit regionHit, double x, double y) {
         double[] dragPos = {x, y};
-        for (DatasetAttributes datasetAttr : datasetAttributesList) {
-            if (datasetAttr.getActiveRegion().isPresent()) {
-                datasetAttr.moveRegion(regionHit, axes, dragPos);
+        DatasetRegion hitRegion = regionHit.getDatasetRegion();
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes firstAttr = datasetAttributesList.getFirst();
+            if (firstAttr.getActiveRegion().isPresent()) {
+                for (DatasetAttributes datasetAttr : datasetAttributesList) {
+                    if (firstAttr == datasetAttr) {
+                        datasetAttr.moveRegion(hitRegion, regionHit.getHandle(), axes, dragPos);
+                    } else {
+                        datasetAttr.getDataset().getLinkedRegion(hitRegion).ifPresent(region -> {
+                            datasetAttr.moveRegion(region, regionHit.getHandle(), axes, dragPos);
+                        });
+                    }
+                }
                 refresh();
             }
         }
@@ -2867,7 +3150,7 @@ public class PolyChart extends Region {
             PeakList newPeakList = peakList.copy(newListName, false, false, true);
             if (newPeakList != null) {
                 newPeakList.setDatasetName(getDataset().getName());
-                updatePeakLists(Collections.singletonList(newPeakList.getName()));
+                updatePeakListsByName(Collections.singletonList(newPeakList.getName()));
             }
         }
     }
@@ -2887,10 +3170,6 @@ public class PolyChart extends Region {
             if (peakGC instanceof GraphicsContextProxy) {
                 peakGC.clearRect(xPos, yPos, width, height);
             }
-            if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
-                peakFont = new Font(FONT_FAMILY, PreferencesController.getPeakFontSize());
-            }
-            peakGC.setFont(peakFont);
 
             final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
             while (peakListIterator.hasNext()) {
@@ -2901,6 +3180,10 @@ public class PolyChart extends Region {
                 }
             }
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                if (peakFont.getSize() != peakListAttr.getFontSize()) {
+                    peakFont = new Font(FONT_FAMILY, peakListAttr.getFontSize());
+                }
+                peakGC.setFont(peakFont);
                 if (clear) {
                     peakListAttr.clearPeaksInRegion();
                 }
@@ -3607,7 +3890,8 @@ public class PolyChart extends Region {
                 }
                 newChart.clearDataAndPeaks();
                 newChart.updateDatasets(sliceDatasets);
-                sliceController.getStatusBar().setMode(controller.getStatusBar().getMode(), controller.getStatusBar().getModeDimensions());
+                getFXMLController().getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
+                newChart.disDimProp.set(DISDIM.OneDX);
                 newChart.autoScale();
                 double lvl = newChart.getDatasetAttributes().get(0).getLvl();
                 double offset = newChart.getDatasetAttributes().get(0).getOffset();
@@ -3760,13 +4044,6 @@ public class PolyChart extends Region {
 
     public CrossHairs getCrossHairs() {
         return crossHairs;
-    }
-
-    DoubleFunction getCrossHairUpdateFunction(int crossHairNum, Orientation orientation) {
-        return value -> {
-            crossHairs.updatePosition(crossHairNum, orientation, value);
-            return null;
-        };
     }
 
     public void adjustLabels() {

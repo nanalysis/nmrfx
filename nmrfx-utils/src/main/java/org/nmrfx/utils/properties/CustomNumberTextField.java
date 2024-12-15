@@ -80,6 +80,11 @@ public class CustomNumberTextField extends CustomTextField {
         });
     }
 
+    public void resetMinMax() {
+        this.min = Double.NEGATIVE_INFINITY;
+        this.max = Double.MAX_VALUE;
+    }
+
     public void setMin(double min) {
         this.min = min;
     }

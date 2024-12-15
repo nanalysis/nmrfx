@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.nmrfx.processor.optimization;
+package org.nmrfx.math;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -413,10 +413,14 @@ public class BipartiteMatcher {
         }
     }
 
-    private void printWeights() {
+    public void printWeights() {
         for (int i = 0; i < n; i++) {
+            System.out.print(i);
             for (int j = 0; j < n; j++) {
-                System.out.print(getWeight(i, j) + " ");
+                double weight = getWeight(i, j);
+                if (weight != Double.NEGATIVE_INFINITY) {
+                    System.out.print(" " + j + " " + getWeight(i, j));
+                }
             }
             System.out.println("");
         }

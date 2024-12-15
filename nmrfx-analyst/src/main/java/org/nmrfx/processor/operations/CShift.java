@@ -77,6 +77,13 @@ public class CShift extends Operation {
         if (unit.isPresent()) {
             iShift = (int) Math.round(unit.get().getDoubleDelta(vector));
         }
+        shift(vector, iShift, adjustRef);
+        return this;
+    }
+
+    public static void shift(Vec vector, int iShift, boolean adjustRef) {
+        int size = vector.getSize();
+
         double adjustAmount = iShift;
         iShift = iShift % size;
 
@@ -125,8 +132,6 @@ public class CShift extends Operation {
         if ((adjustRef) && (Math.abs(adjustAmount) > 0.1)){
             vector.adjustRef(-adjustAmount, size);
         }
-
-        return this;
     }
 
 }

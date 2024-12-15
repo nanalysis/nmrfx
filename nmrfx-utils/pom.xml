@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.6-SNAPSHOT</version>
+        <version>11.4.16-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.4.6-SNAPSHOT</version>
+                <version>11.4.16-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

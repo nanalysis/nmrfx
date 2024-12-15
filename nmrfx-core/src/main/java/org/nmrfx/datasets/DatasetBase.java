@@ -460,7 +460,7 @@ public class DatasetBase {
         }
     }
 
-    public static double foldPPM(double ppm, double[] foldLimits) {
+    public static double foldPPM(double ppm, double[] foldLimits, double foldAmount) {
         double min = foldLimits[0];
         double max = foldLimits[1];
         if (min > max) {
@@ -469,13 +469,12 @@ public class DatasetBase {
             max = hold;
         }
         if ((ppm < min) || (ppm > max)) {
-            double fDelta = max - min;
             if (min != max) {
                 while (ppm > max) {
-                    ppm -= fDelta;
+                    ppm -= foldAmount;
                 }
                 while (ppm < min) {
-                    ppm += fDelta;
+                    ppm += foldAmount;
                 }
             }
         }
@@ -525,6 +524,13 @@ public class DatasetBase {
      * @return String object, null if data stored in Vec
      */
     public String getCanonicalFile() {
+        if ((canonicalName == null) && (file != null)) {
+            try {
+                canonicalName = file.getCanonicalPath();
+            } catch (IOException e) {
+                canonicalName = null;
+            }
+        }
         return canonicalName;
     }
 
@@ -2171,6 +2177,9 @@ public class DatasetBase {
         updateDatasetRegionsListListeners();
     }
 
+    public Optional<DatasetRegion> getLinkedRegion(DatasetRegion linkedRegion) {
+        return regions.stream().filter(region -> region.linkRegion == linkedRegion).findFirst();
+    }
     public DatasetRegion addRegion(double min, double max) {
         // don't use Stream.toList as that will give an imutableList
         List<DatasetRegion> sortedRegions = regions.stream().sorted().collect(Collectors.toList());
@@ -2195,6 +2204,15 @@ public class DatasetBase {
         updateDatasetRegionsListListeners();
         return newRegion;
     }
+
+    public void copyRegionsTo(DatasetBase newDataset) {
+        newDataset.clearRegions();
+        for (DatasetRegion region : getReadOnlyRegions()) {
+            DatasetRegion newRegion = new DatasetRegion(region);
+            newDataset.addRegion(newRegion);
+        }
+    }
+
 
     /**
      * Enum for possible file types consistent with structure available in the

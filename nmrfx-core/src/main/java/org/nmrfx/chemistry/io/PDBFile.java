@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.io;
 
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class PDBFile {
      * setLocalResLibDir is used to specify a directory of user generated
      * residues.
      *
-     * @param localDir provides a path to the directory
+     * @param dirName provides a path to the directory
      *                 <p>
      *                 When specifying a sequence, if the residue name is not found within the
      *                 standard library, this path will be parsed for the necessary file.
@@ -136,6 +137,7 @@ public class PDBFile {
                     molecule.structures.add(Integer.valueOf(structureNumber));
                     molecule.calcAllBonds();
                     molecule.getAtomTypes();
+                    ProjectBase.getActive().putMolecule(molecule);
                     return molecule;
                 }
 
@@ -247,13 +249,14 @@ public class PDBFile {
 
     }
 
-    public ArrayList<String> readSequence(String fileName, boolean listMode, int structureNum)
+    public MoleculeBase readSequence(String fileName, int structureNum)
             throws MoleculeIOException {
         String lastRes = "";
         String lastLoc = "";
         File file = new File(fileName);
         int dotPos = file.getName().lastIndexOf('.');
         String molName = file.getName().substring(0, dotPos);
+        MoleculeBase moleculeBase = null;
 
         String string;
         String polymerName = "";
@@ -307,11 +310,10 @@ public class PDBFile {
                     break;
                 }
             }
-            if (!listMode) {
-                Sequence sequence = new Sequence();
-                sequence.read(molName, residueList, null);
-                readCoordinates(fileName, structureNum, true, true);
-            }
+            Sequence sequence = new Sequence();
+            moleculeBase = sequence.read(molName, residueList, null);
+            readCoordinates(moleculeBase, fileName, structureNum, true, true);
+
         } catch (FileNotFoundException ioe) {
             throw new MoleculeIOException(ioe.getMessage());
         } catch (IOException e) {
@@ -319,7 +321,7 @@ public class PDBFile {
 
             return null;
         }
-        return residueList;
+        return moleculeBase;
     }
 
     double chiralVolume(Vector3d v1, Vector3d v2, Vector3d v3, Vector3d v4) {
@@ -401,12 +403,12 @@ public class PDBFile {
                 Matcher matcher = pdbPattern.matcher(entry.toString());
                 if (matcher.matches()) {
                     if (readMolSeq) {
-                        readSequence(entry.toString(), false, 0);
+                        readSequence(entry.toString(), 0);
                         molecule = MoleculeFactory.getActive();
                         molecule.structures.clear();
                         readMolSeq = false;
                     }
-                    readCoordinates(entry.toString(), iStruct++, noComplain, true);
+                    readCoordinates(molecule, entry.toString(), iStruct++, noComplain, true);
                 }
             }
         }
@@ -423,23 +425,19 @@ public class PDBFile {
         int iStruct = 0;
         for (File entry : files) {
             if (readMolSeq) {
-                readSequence(entry.toString(), false, 0);
+                readSequence(entry.toString(), 0);
                 molecule = MoleculeFactory.getActive();
                 molecule.structures.clear();
                 readMolSeq = false;
             }
-            readCoordinates(entry.toString(), iStruct++, noComplain, true);
+            readCoordinates(molecule, entry.toString(), iStruct++, noComplain, true);
         }
     }
 
-    public void readCoordinates(String fileName, int structureNumber, final boolean noComplain, boolean genCoords)
+    public void readCoordinates(MoleculeBase molecule, String fileName, int structureNumber, final boolean noComplain, boolean genCoords)
             throws MoleculeIOException {
         String lastChain = "";
 
-        MoleculeBase molecule = MoleculeFactory.getActive();
-        if (molecule == null) {
-            throw new MoleculeIOException("No molecule");
-        }
         String molName = molecule.getName();
         int type = checkPDBType(fileName);
         boolean coordsGen = false;
@@ -1006,6 +1004,7 @@ public class PDBFile {
             if (calcBonds && compound != null) {
                 compound.calcAllBonds();
             }
+            ProjectBase.getActive().putMolecule(molecule);
             return compound;
         }
 
@@ -1015,6 +1014,5 @@ public class PDBFile {
             compound.calcAllBonds();
         }
         return compound;
-
     }
 }

@@ -27,7 +27,9 @@ from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.rna import SSLayout
 from org.nmrfx.chemistry import Polymer
+from org.nmrfx.chemistry import Compound
 from org.nmrfx.structure.rna import AllBasePairs
+from org.nmrfx.structure.chemistry.energy import NEFSTARStructureCalculator
 
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
@@ -464,6 +466,7 @@ class refine:
         self.NEFfile = ''
         self.energyLists = None
         self.dihedral = None
+        self.ssGen = None
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
@@ -647,18 +650,16 @@ class refine:
 
     def getDistanceConstraintSet(self, name):
         molConstraints = self.molecule.getMolecularConstraints()
-        disCon = molConstraints.getDistanceSet(name, True)
+        disCon = molConstraints.getNoeSet(name, True)
         return disCon
 
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
         if bond == False:
             disCon = self.getDistanceConstraintSet("noe_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper)
-            disCon.containsBonds(False)
         else:
             disCon = self.getDistanceConstraintSet("bond_restraint_list")
-            disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
-            disCon.containsBonds(True)
+            disCon.containsBonds(bond)
+        disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
     def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
@@ -1293,9 +1294,11 @@ class refine:
             if fileName.endswith('.pdb'):
                 molio.readPDB(fileName)
             elif fileName.endswith('.nef'):
-                self.NEFReader(fileName)
+                self.setupBMRBNEFMolecule(fileName, True)
+            elif fileName.endswith('.str'):
+                self.setupBMRBNEFMolecule(fileName, False)
             else:
-                raise ValueError("Filename must end in .pdb or .nef")
+                raise ValueError("Filename must end in .pdb, .str or .nef")
         else:
             # Checks if NEF file is specified to process it.
             # Even if NEF file is specified, this control flow
@@ -1303,7 +1306,10 @@ class refine:
             # in the YAML file.
             if 'nef' in data:
                 fileName = data['nef']
-                self.NEFReader(fileName)
+                self.setupBMRBNEFMolecule(fileName, True)
+            elif 'star' in data:
+                fileName = data['star']
+                self.setupBMRBNEFMolecule(fileName, False)
 
             # Checks if 'molecule' data block is specified.
             if 'molecule' in data:
@@ -1347,7 +1353,11 @@ class refine:
 
 
         if 'rna' in data:
-            self.findRNAHelices(data['rna'])
+            if not self.ssGen:
+                self.findRNAHelices(data['rna'])
+            if 'vienna' in data['rna']:
+                self.vienna = data['rna']['vienna']
+                self.addHelicesRestraints(self.vienna)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
                 rnaLinks,rnaBonds = self.findSSLinks()
                 molData['link'] = rnaLinks
@@ -1379,12 +1389,10 @@ class refine:
             if not 'tree' in data:
                 data['tree'] = None
 
-        if 'tree' in data:
+        if 'tree' in data and not 'nef' in data:
             if len(self.molecule.getEntities()) > 1:
                 linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
-            #if 'bonds' in data:
-            #    self.processBonds(data['bonds'], 'break')
             self.measureTree()
         else:
             if nEntities > 1:
@@ -1395,8 +1403,9 @@ class refine:
                     self.molecule.setupRotGroups()
                     #raise TypeError("Tree mode must be run on molecules with more than one entity")
 
-        for entity in self.molecule.getEntities():
-            self.setupAtomProperties(entity)
+        if not 'nef' in data:
+            for entity in self.molecule.getEntities():
+                self.setupAtomProperties(entity)
 
         if rnaLinkerDict:
             self.readRNALinkerDict(rnaLinkerDict)
@@ -1438,7 +1447,7 @@ class refine:
             self.readShiftDict(data['shifts'],residues)
 
         if 'rna' in data:
-            self.readRNADict(data['rna'])
+            self.readRNADict(data)
         self.readSuiteAngles()
 
         self.readAngleFiles()
@@ -1452,6 +1461,14 @@ class refine:
             self.initializeData = (data['initialize'])
         else:
             self.initializeData = None
+
+    def initAnneal(self, data):
+        seed = 0
+        self.setup('./',seed,writeTrajectory=False, usePseudo=False)
+        self.energy()
+        self.setSeed(0)
+        if 'anneal' in data:
+            self.dOpt = self.readAnnealDict(data['anneal'])
 
     def prepAngles(self):
         print 'Initializing angles'
@@ -1802,9 +1819,12 @@ class refine:
             self.findHelices(rnaDict['vienna'])
             self.vienna = rnaDict['vienna']
 
-    def readRNADict(self, rnaDict):
+    def readRNADict(self, data):
+        rnaDict = data['rna']
+        if 'vienna' in rnaDict:
+            self.vienna = rnaDict['vienna']
         if 'ribose' in rnaDict:
-            if rnaDict['ribose'] == "Constrain":
+            if not 'tree' in data and rnaDict['ribose'] == "Constrain":
                 polymers = self.molecule.getPolymers()
                 for polymer in polymers:
                     self.addRiboseRestraints(polymer)
@@ -1918,31 +1938,10 @@ class refine:
                     print "Error adding angle constraint",fullAtoms
                     pass
 
-    def NEFReader(self, fileName):
-        from java.io import FileReader
-        from java.io import BufferedReader
-        from java.io import File
-        from org.nmrfx.star import STAR3
-        from org.nmrfx.chemistry.io import NMRStarReader
-        from org.nmrfx.chemistry.io import NMRStarWriter
-        from org.nmrfx.chemistry.io import NMRNEFReader
-        fileReader = FileReader(fileName)
-        bfR = BufferedReader(fileReader)
-        star = STAR3(bfR,'star3')
-        star.scanFile()
-        file = File(fileName)
-        reader = NMRNEFReader(file, star) # NMRStarReader(file, star)
-        molecule = reader.processNEF()
-        self.molecule = molecule
-        molecule.setMethylRotationActive(True);
-        energyList = EnergyLists(molecule)
-        molecule.setEnergyLists(energyList)
-        dihedral = Dihedral(energyList, False)
-        molecule.setDihedrals(dihedral)
-        self.dihedral = molecule.getDihedrals();
-        self.dihedral.clearBoundaries();
+    def setupBMRBNEFMolecule(self, fileName, nefMode):
+        self.molecule = NEFSTARStructureCalculator.setup(fileName, nefMode)
+        self.dihedral = self.molecule.getDihedrals()
         self.energyLists = self.dihedral.energyList
-        self.energyLists.makeCompoundList(molecule)
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
         """
@@ -2401,18 +2400,20 @@ class refine:
        
 
     def findHelices(self,vienna):
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
         self.ssGen = SSGen(self.molecule, vienna)
         self.ssGen.secondaryStructGen()
+
+    def addHelicesRestraints(self, vienna):
         for ss in self.ssGen.structures:
             if ss.getName() == "Helix":
                 residues = ss.getResidues()
                 self.addHelix(residues)
                 self.addHelixPP(residues)
 
+        polymers = self.molecule.getPolymers()
+        allResidues = []
+        for polymer in polymers:
+            allResidues += polymer.getResidues()
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
             start = m.start()+1
@@ -3075,18 +3076,20 @@ class refine:
         if save:
             self.output()
 
-    def refine(self,dOpt=None):
+    def refine(self,dOpt=None,mode='refine'):
         from anneal import runStage
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
-        self.mode = 'refine'
-
+        self.restart()
+        self.mode = mode
+        if mode == 'cff':
+            dOpt['cffSteps'] = 1000
         self.rDyn = self.rinertia()
         self.rDyn.setKinEScale(dOpt['kinEScale'])
         energy = self.energy()
-        print 'start energy is', energy
+        print('start energy is', energy)
 
-        stages = getAnnealStages(dOpt, self.settings,'refine')
+        stages = getAnnealStages(dOpt, self.settings,mode)
         for stageName in stages:
             stage = stages[stageName]
             runStage(stage, self, self.rDyn)

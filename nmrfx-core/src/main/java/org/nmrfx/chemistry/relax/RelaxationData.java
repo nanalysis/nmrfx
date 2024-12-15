@@ -158,7 +158,7 @@ public class RelaxationData implements RelaxationValues {
             }
             Double value = data != null ? data.getValue() : null;
             Double error = data != null ? data.getError() : null;
-            RelaxationValues.appendValueError(sBuilder, value, error, "%.3f");
+            RelaxationValues.appendValueError(sBuilder, value, error, "%.3f",",");
         }
         return sBuilder.toString();
     }

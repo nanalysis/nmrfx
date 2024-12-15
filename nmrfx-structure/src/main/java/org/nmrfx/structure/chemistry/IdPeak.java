@@ -18,7 +18,8 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.utilities.NvUtil;
+import org.nmrfx.peaks.PeakList;
+import org.nmrfx.structure.noe.NOEAssign;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,15 +27,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public class IdPeak {
-
-    static final int N_PEAK_ID = 500;
     private MoleculeBase molecule;
     List<SpatialSet> atomList = new ArrayList<>();
-    ArrayList[] protonList = new ArrayList[2];
+    List<SpatialSet>[] protonList = new ArrayList[2];
     double keepThresh = 10000.0;
     double disThresh = 10.0;
     boolean useRef = false;
-    int start = 1;
     int ppmSet = 0;
 
     public void clearAtomList() {
@@ -45,39 +43,21 @@ public class IdPeak {
         this.ppmSet = ppmSet;
     }
 
-    public MatchCriteria[] setup(Molecule molecule, String[] argv) {
+    public void setKeepThresh(double value) {
+        keepThresh = value;
+    }
+
+    public void setMin(double value) {
+        disThresh = value;
+    }
+
+    public void setKeepThresh(boolean value) {
+        useRef = value;
+    }
+
+    public MatchCriteria[] setup(PeakList peakList, Molecule molecule) {
         this.molecule = molecule;
-
-        int j;
-        start = 1;
-        keepThresh = 10000.0;
-        disThresh = 10.0;
-        useRef = false;
-        ppmSet = 0;
-
-        for (j = 1; j < (argv.length - 1); j++) {
-            if (argv[j].startsWith("-thr")) {
-                keepThresh = NvUtil.toDouble(argv[j + 1]);
-                start = j + 2;
-            } else if (argv[j].startsWith("-min")) {
-                disThresh = NvUtil.toDouble(argv[j + 1]);
-                start = j + 2;
-            } else if (argv[j].startsWith("-useref")) {
-                useRef = true;
-                start = j + 1;
-            } else if (argv[j].startsWith("-ppmset")) {
-                ppmSet = NvUtil.toInt(argv[j + 1]);
-                start = j + 2;
-            }
-        }
-
-        int nDim = argv.length - start;
-
-        MatchCriteria[] matchCriteria = new MatchCriteria[nDim];
-        for (j = start; j < argv.length; j++) {
-            matchCriteria[j - start] = parseArgs(argv[j], j - start);
-        }
-        return matchCriteria;
+        return NOEAssign.getMatchCriteria(peakList, false);
     }
 
     public List<SpatialSet>[] scan(final MatchCriteria[] matchCriteria) {
@@ -86,11 +66,8 @@ public class IdPeak {
         for (int j = 0; j < nDim; j++) {
             boolean atomPatMatch = false;
             matchList[j] = new ArrayList<>();
-            for (int i = 0; i < atomList.size(); i++) {
-                SpatialSet spatialSet = atomList.get(i);
-
+            for (SpatialSet spatialSet : atomList) {
                 if (spatialSet == null) {
-                    System.out.println("null atom");
                     continue;
                 }
 
@@ -108,8 +85,6 @@ public class IdPeak {
                         }
 
                         if (ppmv == null) {
-                            System.out.println("null ppm");
-
                             continue;
                         }
 
@@ -194,9 +169,9 @@ public class IdPeak {
                     if (index1 >= protonList[iDim].size()) {
                         index1 = protonList[iDim].size() - 1;
                     }
-                    if (protonList[iDim].size() > 0) {
+                    if (!protonList[iDim].isEmpty()) {
                         for (int j = index1 - 1; j >= 0; j--) {
-                            SpatialSet sSet = (SpatialSet) protonList[iDim].get(j);
+                            SpatialSet sSet = protonList[iDim].get(j);
                             if (checkPPM(sSet, matchCriteria[iDim], iFold)) {
                                 boolean atomMatch = false;
                                 if (matchCriteria[iDim + 2] == null) {
@@ -222,7 +197,7 @@ public class IdPeak {
                             }
                         }
                         for (int j = (index1); j < protonList[iDim].size(); j++) {
-                            SpatialSet sSet = (SpatialSet) protonList[iDim].get(j);
+                            SpatialSet sSet = protonList[iDim].get(j);
                             if (checkPPM(sSet, matchCriteria[iDim], iFold)) {
                                 boolean atomMatch = false;
                                 if (matchCriteria[iDim + 2] == null) {
@@ -275,8 +250,7 @@ public class IdPeak {
             Double ppm1 = null;
             Double ppm2 = null;
             int result;
-            if (o1 instanceof SpatialSet) {
-                SpatialSet a1 = (SpatialSet) o1;
+            if (o1 instanceof SpatialSet a1) {
                 PPMv ppmv1 = a1.getPPM(ppmSet);
                 if ((ppmv1 == null) && useRef) {
                     ppmv1 = a1.getRefPPM();
@@ -284,11 +258,10 @@ public class IdPeak {
                 if (ppmv1 != null) {
                     ppm1 = ppmv1.getValue();
                 }
-            } else if (o1 instanceof Double) {
-                ppm1 = (Double) o1;
+            } else if (o1 instanceof Double ppm) {
+                ppm1 = ppm;
             }
-            if (o2 instanceof SpatialSet) {
-                SpatialSet a2 = (SpatialSet) o2;
+            if (o2 instanceof SpatialSet a2) {
                 PPMv ppmv2 = a2.getPPM(ppmSet);
                 if ((ppmv2 == null) && useRef) {
                     ppmv2 = a2.getRefPPM();
@@ -296,8 +269,8 @@ public class IdPeak {
                 if (ppmv2 != null) {
                     ppm2 = ppmv2.getValue();
                 }
-            } else if (o2 instanceof Double) {
-                ppm2 = (Double) o2;
+            } else if (o2 instanceof Double ppm) {
+                ppm2 = ppm;
             }
             if (ppm1 != null) {
                 if (ppm2 == null) {
@@ -318,7 +291,6 @@ public class IdPeak {
         for (CoordSet coordSet : molecule.coordSets.values()) {
             for (Entity entity : coordSet.getEntities().values()) {
                 for (Atom atom : entity.atoms) {
-                    String aName = atom.getName();
                     if (atom.isMethyl() && !atom.isFirstInMethyl()) {
                         continue;
                     }
@@ -344,7 +316,7 @@ public class IdPeak {
         boolean atomMatch = false;
         aName = aName.toLowerCase();
         for (String pattern : patterns) {
-            if ((pattern.length() == 0) || (pattern.charAt(0) == '*')) {
+            if ((pattern.isEmpty()) || (pattern.charAt(0) == '*')) {
                 atomMatch = true;
 
                 break;
@@ -359,7 +331,7 @@ public class IdPeak {
     }
 
     public void getProtons(int iDim, String[] protonPats) {
-        protonList[iDim] = new ArrayList();
+        protonList[iDim] = new ArrayList<>();
 
         for (CoordSet coordSet : molecule.coordSets.values()) {
             for (Entity entity : coordSet.getEntities().values()) {
@@ -391,86 +363,11 @@ public class IdPeak {
             }
         }
         SpatialSetPPMComparator ssPC = new SpatialSetPPMComparator();
-        Collections.sort(protonList[iDim], ssPC);
+        protonList[iDim].sort(ssPC);
 
     }
 
-    MatchCriteria parseArgs(String arg, int i) {
-        if (arg.length() == 0) {
-            throw new IllegalArgumentException("IdNoe.get_atomppm(): arg is of length zero");
-        }
-
-        int atplace = arg.indexOf('@');
-        int squigplace = arg.indexOf('~');
-        int left = arg.indexOf('(');
-        int right = arg.indexOf(')');
-        int ppmStart = -1;
-        int ppmEnd = arg.length();
-        String relation;
-        String resPats[];
-        String atomPats[];
-        double ppm;
-        double tol;
-        if (left > right) {
-            throw new IllegalArgumentException(
-                    "IdNoe.get_atomppm(): left paren after right");
-        }
-
-        if ((left != -1) && (left > atplace)) {
-            throw new IllegalArgumentException(
-                    "IdNoe.get_atomppm(): left paren after @");
-        }
-
-        //HN(D1) @ 34.3 ~ 0.2
-        if (atplace != -1) {
-            ppmStart = atplace + 1;
-        }
-
-        String pattern;
-
-        if ((left != -1) && (right != -1)) {
-            relation = arg.substring(left + 1, right);
-            pattern = arg.substring(0, left);
-        } else {
-            relation = "";
-
-            if (atplace != -1) {
-                pattern = arg.substring(0, atplace);
-            } else {
-                pattern = arg;
-            }
-        }
-
-        int dot = pattern.indexOf('.');
-
-        if (dot < 0) {
-            resPats = new String[1];
-            atomPats = new String[1];
-            resPats[0] = "";
-            atomPats[0] = "*";
-        } else {
-            resPats = pattern.substring(0, dot).split(",");
-            atomPats = pattern.substring(dot + 1).toLowerCase().split(",");
-        }
-
-        if (squigplace != -1) {
-            tol = Float.valueOf(arg.substring(squigplace + 1)).doubleValue();
-            ppmEnd = squigplace;
-        } else {
-            tol = 0.0;
-        }
-
-        if (ppmStart != -1) {
-            ppm = Float.valueOf(arg.substring(ppmStart, ppmEnd)).doubleValue();
-        } else {
-            ppm = 0.0;
-        }
-        MatchCriteria matchCriteria = new MatchCriteria(i, ppm, tol, atomPats, resPats, relation, 0.0, 0);
-
-        return matchCriteria;
-    }
-
-    static boolean CheckPattern(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
+    static boolean checkPattern(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
         int ires;
         int jres;
         int ares;
@@ -484,7 +381,7 @@ public class IdPeak {
 // change to also support magnetization linkage and parent should work either direction
         for (int i = 0; i < nDim; i++) {
             MatchCriteria mC = matchCriteria[i];
-            if (mC.getRelation().length() > 0) {
+            if (!mC.getRelation().isEmpty()) {
                 if ((mC.getRelation().charAt(0) != 'D')
                         && (mC.getRelation().charAt(0) != 'd')) {
                     throw new IllegalArgumentException(
@@ -516,7 +413,7 @@ public class IdPeak {
             MatchCriteria mC = matchCriteria[i];
 
             for (int k = 0; k < mC.getAtomPatCount(); k++) {
-                if ((mC.getAtomPat(k).length() == 0)
+                if ((mC.getAtomPat(k).isEmpty())
                         || (mC.getAtomPat(k).charAt(0) == '*')) {
                     atomMatch = true;
 
@@ -539,23 +436,18 @@ public class IdPeak {
         if (!atomsMatch) {
             return false;
         }
-        boolean ok = atomsMatch;
+        boolean ok = true;
         boolean[] processedRes = new boolean[nDim];
         boolean noResidue = true;
-        for (int i = 0; i < nDim; i++) {
-            MatchCriteria mC = matchCriteria[i];
+        for (MatchCriteria mC : matchCriteria) {
             for (int k = 0; k < mC.getResPatCount(); k++) {
-                if (mC.getResPat(k).length() > 0) {
+                if (!mC.getResPat(k).isEmpty()) {
                     noResidue = false;
                 }
             }
         }
         if (noResidue) {
             return true;
-        }
-
-        for (int i = 0; i < nDim; i++) {
-            processedRes[i] = false;
         }
 
         // check for explicit residue number, if present and correct then no need for
@@ -664,7 +556,7 @@ public class IdPeak {
                         int delta = 0;
                         int res = 0;
 
-                        if (mC.getResPat(k).length() == 0) {
+                        if (mC.getResPat(k).isEmpty()) {
                             res = ires;
                         } else if (mC.getResPat(k).charAt(0) == 'i') {
                             res = ires;
@@ -709,7 +601,7 @@ public class IdPeak {
         return ok;
     }
 
-    IdResult GetDistances(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
+    IdResult measureDistances(SpatialSet[] spatialSets, MatchCriteria[] matchCriteria) {
         int nDim = spatialSets.length;
         SpatialSet proton1 = null;
         SpatialSet proton2 = null;
@@ -726,17 +618,17 @@ public class IdPeak {
         Point3 point1;
         Point3 point2;
         int j;
-        long longVal;
         IdResult idResult = new IdResult(nDim);
         for (j = 0; j < nDim; j++) {
             aname[j] = spatialSets[j].atom.name;
             idResult.setSpatialSet(j, spatialSets[j]);
-            if (proton1 == null) {
-                if (aname[j].toUpperCase().charAt(0) == 'H') {
+            boolean isProton = aname[j].toUpperCase().charAt(0) == 'H';
+            if (isProton) {
+                if (proton1 == null) {
                     proton1 = spatialSets[j];
+                } else {
+                    proton2 = spatialSets[j];
                 }
-            } else if (aname[j].toUpperCase().charAt(0) == 'H') {
-                proton2 = spatialSets[j];
             }
 
             ppmv = spatialSets[j].getPPM(ppmSet);
@@ -756,10 +648,8 @@ public class IdPeak {
 
         int[] structureList = molecule.getActiveStructures();
 
-        if ((proton1 == null) || (proton2 == null) || (structureList.length == 0)) {
-        } else {
-            for (int jStruct = 0; jStruct < structureList.length; jStruct++) {
-                int iStructure = structureList[jStruct];
+        if ((proton1 != null) && (proton2 != null) && (structureList.length != 0)) {
+            for (int iStructure : structureList) {
                 point1 = proton1.getPoint(iStructure);
                 point2 = proton2.getPoint(iStructure);
 
@@ -797,19 +687,17 @@ public class IdPeak {
             if (dismin > keepThresh) {
                 return (null);
             }
-            idResult.dis = dis;
-            idResult.dismin = dismin;
-            idResult.dismax = dismax;
+            idResult.setDistances(dis, dismin, dismax);
             idResult.inRange = percent;
         }
 
         return idResult;
     }
 
-    public List<String> getResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
-        List<String> result = new ArrayList<>();
+    public List<IdResult> getIdResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
         int nDim = matchList.length;
         int[] idx = new int[nDim];
+        List<IdResult> result = new ArrayList<>();
         for (int i = 0; i < nDim; i++) {
             if (matchList[i].isEmpty()) {
                 return result;
@@ -825,52 +713,8 @@ public class IdPeak {
                 spatialSets[i] = matchList[i].get(idx[i]);
             }
 
-            if (CheckPattern(spatialSets, matchCriteria)) {
-                IdResult idResult = GetDistances(spatialSets, matchCriteria);
-                if (idResult != null) {
-                    result.add(idResult.toString());
-                }
-            }
-            int i;
-            for (i = 0; i < nDim; i++) {
-                idx[i]++;
-
-                if (idx[i] >= matchList[i].size()) {
-                    idx[i] = 0;
-                } else {
-                    break;
-                }
-            }
-
-            if (i == nDim) {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    public ArrayList<IdResult> getIdResults(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
-        int nDim = matchList.length;
-        int[] idx = new int[nDim];
-        ArrayList<IdResult> result = new ArrayList<>();
-        for (int i = 0; i < nDim; i++) {
-            if (matchList[i].isEmpty()) {
-                return result;
-            }
-
-            idx[i] = 0;
-        }
-
-        SpatialSet[] spatialSets = new SpatialSet[nDim];
-
-        while (true) {
-            for (int i = 0; i < nDim; i++) {
-                spatialSets[i] = (SpatialSet) matchList[i].get(idx[i]);
-            }
-
-            if (CheckPattern(spatialSets, matchCriteria)) {
-                IdResult idResult = GetDistances(spatialSets, matchCriteria);
+            if (checkPattern(spatialSets, matchCriteria)) {
+                IdResult idResult = measureDistances(spatialSets, matchCriteria);
                 if (idResult != null) {
                     result.add(idResult);
                 }
@@ -894,15 +738,14 @@ public class IdPeak {
         return result;
     }
 
-    public ArrayList<IdResult> getResults2(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
+    public List<IdResult> getResults2(List<SpatialSet>[] matchList, MatchCriteria[] matchCriteria) {
         int nDim = matchList.length;
         int[] idx = new int[nDim];
-        ArrayList<IdResult> result = new ArrayList<>();
+        List<IdResult> result = new ArrayList<>();
         for (int i = 0; i < nDim; i++) {
             if ((matchList[i] == null) || (matchList[i].isEmpty())) {
                 return result;
             }
-
             idx[i] = 0;
         }
 
@@ -910,10 +753,10 @@ public class IdPeak {
 
         while (true) {
             for (int i = 0; i < nDim; i++) {
-                spatialSets[i] = (SpatialSet) matchList[i].get(idx[i]);
+                spatialSets[i] = matchList[i].get(idx[i]);
             }
 
-            IdResult idResult = GetDistances(spatialSets, matchCriteria);
+            IdResult idResult = measureDistances(spatialSets, matchCriteria);
             if (idResult != null) {
                 result.add(idResult);
             }
