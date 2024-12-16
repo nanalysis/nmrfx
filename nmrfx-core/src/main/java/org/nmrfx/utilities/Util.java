@@ -17,10 +17,20 @@
  */
 package org.nmrfx.utilities;
 
+import javafx.stage.FileChooser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.function.Consumer;
+
 /**
  * @author Bruce Johnson
  */
 public class Util {
+    private static final Logger log = LoggerFactory.getLogger(Util.class);
 
     /**
      * stringMatch --
@@ -147,5 +157,21 @@ public class Util {
             incrIndex = true;
         }
     }
+
+    public static void exportData(Consumer<FileWriter> f) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export data values");
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            try (FileWriter writer = new FileWriter(selectedFile)) {
+                f.accept(writer);
+            } catch (IOException ioE) {
+                log.warn(ioE.getMessage(), ioE);
+
+            }
+
+        }
+    }
+
 
 }

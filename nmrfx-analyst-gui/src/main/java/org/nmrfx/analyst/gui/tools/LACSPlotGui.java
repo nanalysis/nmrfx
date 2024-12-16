@@ -31,6 +31,7 @@ import javafx.stage.Stage;
 import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.structure.tools.LACSCalculator;
+import org.nmrfx.utilities.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,13 +95,13 @@ public class LACSPlotGui {
         double x0 = 0.0;
         double y0 = lacsResult.allMedian();
         double xP = lacsResult.xMax();
-        double yP = lacsResult.xMax()*lacsResult.pSlope()+lacsResult.allMedian();
+        double yP = lacsResult.xMax() * lacsResult.pSlope() + lacsResult.allMedian();
         double xN = lacsResult.xMin();
-        double yN = lacsResult.xMin()*lacsResult.nSlope()+lacsResult.allMedian();
+        double yN = lacsResult.xMin() * lacsResult.nSlope() + lacsResult.allMedian();
         XYValue xyValue00 = new XYValue(x0, 0.0);
-        XYValue xyValue0 = new XYValue(x0,y0);
-        XYValue xyValueN = new XYValue(xN,yN);
-        XYValue xyValueP = new XYValue(xP,yP);
+        XYValue xyValue0 = new XYValue(x0, y0);
+        XYValue xyValueN = new XYValue(xN, yN);
+        XYValue xyValueP = new XYValue(xP, yP);
         series.clear();
         series.add(xyValueN);
         series.add(xyValue0);
@@ -170,29 +171,30 @@ public class LACSPlotGui {
         activeChart.drawChart(svgGC);
     }
 
-    void exportData() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export data values");
-        File selectedFile = fileChooser.showSaveDialog(null);
-        if (selectedFile != null) {
-            try (FileWriter writer = new FileWriter(selectedFile)) {
-                List<DataSeries> data = activeChart.getData();
-                if (!data.isEmpty()) {
-                    DataSeries series = data.get(0);
-                    List<XYValue> values = series.getData();
-                    int n = values.size();
-                    writer.write("#Data " + n + " \n");
-
-                    for (int i = 0; i < n; i++) {
-                        XYValue v0 = values.get(i);
-                        String outStr = String.format("%.2f %.2f%n", v0.getXValue(), v0.getYValue());
-                        writer.write(outStr);
-                    }
-                }
-            } catch (IOException ioE) {
-                log.warn(ioE.getMessage(), ioE);
+    void writeData(FileWriter writer) throws IOException {
+        List<DataSeries> data = activeChart.getData();
+        if (!data.isEmpty()) {
+            DataSeries series = data.get(0);
+            List<XYValue> values = series.getData();
+            int n = values.size();
+            writer.write("#Data " + n + " \n");
+            for (int i = 0; i < n; i++) {
+                XYValue v0 = values.get(i);
+                String outStr = String.format("%.2f %.2f%n", v0.getXValue(), v0.getYValue());
+                writer.write(outStr);
             }
         }
+    }
+
+
+    void exportData() {
+        Util.exportData(f -> {
+            try {
+                writeData(f);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
 }
