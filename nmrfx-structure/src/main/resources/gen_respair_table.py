@@ -4,7 +4,6 @@ import os
 from org.nmrfx.structure.chemistry import InteractionType
 from org.nmrfx.structure.chemistry import SecondaryStructure
 from org.nmrfx.structure.chemistry import SSGen
-#from molpeakgen import determineType
 from collections import OrderedDict
 import itertools as itools
 
