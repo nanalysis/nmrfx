@@ -627,6 +627,28 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
+    public void exportDataset() {
+        var chart = getActiveChart();
+        DatasetBase dataset = chart.getDataset();
+        if (dataset.getNDim() > 2) {
+            GUIUtils.warn("Dataset export", "Currently only 1D and 2D files are exportable");
+            return;
+        }
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.setTitle("Export NMR Dataset");
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                dataset.writeDataToTextFile(file);
+            } catch (IOException e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.showAndWait();
+            }
+        }
+
+
+    }
     public NmrControlRightSidePane getNmrControlRightSidePane() {
         return nmrControlRightSidePane;
     }
