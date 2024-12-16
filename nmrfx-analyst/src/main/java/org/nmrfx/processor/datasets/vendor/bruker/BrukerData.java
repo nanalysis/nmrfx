@@ -571,16 +571,8 @@ public class BrukerData implements NMRData {
             sf = specFreq[iDim];
         } else {
             Double dpar;
-            List<Integer> fcuChans = getIntListPar("FCUCHAN,1");
-            int chan = fcuChans == null ? -1 : fcuChans.get(iDim) + 1;
-            if (chan >= 0) {
-                if ((dpar = getParDouble("SFO" + chan + ",1")) != null) {
-                    sf = dpar;
-                }
-            } else {
-                if ((dpar = getParDouble("SFO1," + (iDim + 1))) != null) {
-                    sf = dpar;
-                }
+            if ((dpar = getParDouble("SFO1," + (iDim + 1))) != null) {
+                sf = dpar;
             }
         }
         return sf;
@@ -723,13 +715,7 @@ public class BrukerData implements NMRData {
         if (hDim != -1) {
             Double baseFreq;
             Double dpar;
-            List<Integer> fcuChans = getIntListPar("FCUCHAN,1");
-            int chan = fcuChans == null ? -1 : fcuChans.get(hDim) + 1;
-            if (chan >= 0) {
-                baseFreq = getParDouble("BF" + chan + ",1");
-            } else {
-                baseFreq= getParDouble("BF1," + (hDim + 1));
-            }
+            baseFreq= getParDouble("BF1," + (hDim + 1));
 
             Double lockPPM = getParDouble("LOCKPPM,1");
             if (lockPPM == null) {
