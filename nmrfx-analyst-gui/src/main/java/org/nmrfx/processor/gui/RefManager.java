@@ -422,6 +422,9 @@ public class RefManager {
         String acqOrderValue = acqOrderCombo.getValue();
         boolean ok = processorController.chartProcessor.setAcqOrder(acqOrderValue);
         if (ok) {
+            if (acqOrderValue.equals("a2,p1,d1")) {
+                acqArrayChoice.setValue(2);
+            }
             invalidateScript();
         }
     }
@@ -459,6 +462,9 @@ public class RefManager {
                         sBuilder.append(iVal);
                     }
                     choices.add(sBuilder.toString());
+                }
+                if (nmrData.getVendor().equals("bruker") && (nmrData.getNDim() == 2)) {
+                    choices.add("a2,p1,d1");
                 }
                 acqOrderCombo.getItems().addAll(choices);
                 acqOrderCombo.setEditable(true);
