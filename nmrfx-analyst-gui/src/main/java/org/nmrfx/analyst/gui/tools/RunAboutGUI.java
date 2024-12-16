@@ -29,6 +29,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.FileChooser;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
@@ -65,6 +66,7 @@ import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
@@ -438,6 +440,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         Button setupButton = new Button("Setup");
         setupButton.setOnAction(e -> setupRunAbout());
+        Button arrangementsButton = new Button("Arrangements...");
+        arrangementsButton.setOnAction(e -> loadArrangements());
 
         Button autoTolButton = new Button("AutoTol");
         autoTolButton.setOnAction(e -> autoSetTolerances());
@@ -445,7 +449,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Button addListButton = new Button("Add Lists");
         addListButton.setOnAction(e -> addLists());
 
-        buttonBar.getItems().addAll(configureButton, setupButton, autoTolButton, addListButton);
+        buttonBar.getItems().addAll(configureButton, setupButton, arrangementsButton, autoTolButton, addListButton);
         vBox2.getChildren().addAll(buttonBar, peakTableView);
         HBox.setHgrow(vBox2, Priority.ALWAYS);
         hBox.getChildren().addAll(vBox2);
@@ -2038,6 +2042,19 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 runAbout.setRefList(refListObj.get());
                 registerPeakLists();
             }
+        }
+    }
+
+    void loadArrangements() {
+        try {
+            FileChooser fileChooser = new FileChooser();
+            File file = fileChooser.showOpenDialog(null);
+            if (file != null) {
+                runAboutArrangements = RunAboutYamlReader.loadYaml(file);
+                setupArrangements();
+            }
+        } catch (IOException e) {
+            GUIUtils.warn("RunAbout:load yaml", e.getMessage());
         }
     }
 
