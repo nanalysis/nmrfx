@@ -42,11 +42,14 @@ import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.math.TRACTSimFit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.nmrfx.utilities.Util;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author brucejohnson
@@ -320,46 +323,44 @@ public class TRACTGUI {
         activeChart.drawChart(svgGC);
     }
 
-    void exportData() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Export data values");
-        File selectedFile = fileChooser.showSaveDialog(null);
-        if (selectedFile != null) {
-            try (FileWriter writer = new FileWriter(selectedFile)) {
-                List<DataSeries> data = activeChart.getData();
-                if (!data.isEmpty()) {
-                    DataSeries series = data.get(0);
-                    List<XYValue> values = series.getData();
-                    int n = values.size() / 2;
-                    writer.write("#Data " + n + " \n");
+    void writeData(FileWriter writer) throws IOException {
+        List<DataSeries> data = activeChart.getData();
+        if (!data.isEmpty()) {
+            DataSeries series = data.get(0);
+            List<XYValue> values = series.getData();
+            int n = values.size() / 2;
+            writer.write("#Data " + n + " \n");
 
-                    for (int i = 0; i < n; i++) {
-                        XYValue v0 = values.get(i * 2);
-                        XYValue v1 = values.get(i * 2 + 1);
-                        String outStr = String.format("%.5f %.5f %.5f\n", v0.getXValue(), v0.getYValue(), v1.getYValue());
-                        writer.write(outStr);
-                    }
-                }
-                if (data.size() == 3) {
-                    DataSeries series0 = data.get(1);
-                    DataSeries series1 = data.get(2);
-                    List<XYValue> values0 = series0.getData();
-                    List<XYValue> values1 = series1.getData();
-                    int n = values0.size();
-                    writer.write("#Simulated " + n + " \n");
-                    for (int i = 0; i < n; i++) {
-                        XYValue v0 = values0.get(i);
-                        XYValue v1 = values1.get(i);
-                        String outStr = String.format("%.5f %.5f %.5f\n", v0.getXValue(), v0.getYValue(), v1.getYValue());
-                        writer.write(outStr);
-                    }
-                }
-            } catch (IOException ioE) {
-                log.warn(ioE.getMessage(), ioE);
-
+            for (int i = 0; i < n; i++) {
+                XYValue v0 = values.get(i * 2);
+                XYValue v1 = values.get(i * 2 + 1);
+                String outStr = String.format("%.5f %.5f %.5f\n", v0.getXValue(), v0.getYValue(), v1.getYValue());
+                writer.write(outStr);
             }
-
+        }
+        if (data.size() == 3) {
+            DataSeries series0 = data.get(1);
+            DataSeries series1 = data.get(2);
+            List<XYValue> values0 = series0.getData();
+            List<XYValue> values1 = series1.getData();
+            int n = values0.size();
+            writer.write("#Simulated " + n + " \n");
+            for (int i = 0; i < n; i++) {
+                XYValue v0 = values0.get(i);
+                XYValue v1 = values1.get(i);
+                String outStr = String.format("%.5f %.5f %.5f\n", v0.getXValue(), v0.getYValue(), v1.getYValue());
+                writer.write(outStr);
+            }
         }
     }
 
+    void exportData() {
+        Util.exportData(f -> {
+            try {
+                writeData(f);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 }
