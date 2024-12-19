@@ -21,9 +21,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -39,6 +37,7 @@ import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -178,8 +177,6 @@ public class StripController implements ControllerTool {
 
         toolBar.getItems().addAll(nSlider, nField);
 
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-
         limitListener = (observable, oldValue, newValue) -> updateView(false);
 
         Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
@@ -196,7 +193,7 @@ public class StripController implements ControllerTool {
         itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        ProjectBase.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
+        GUIProject.getActive().addDatasetListSubscription(this::updateDatasetNames);
 
         Label offsetLabel = new Label("Offset:");
         offsetBox = new ChoiceBox<>();
@@ -215,7 +212,7 @@ public class StripController implements ControllerTool {
                 new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -540,10 +537,6 @@ public class StripController implements ControllerTool {
 
         Peak peak;
         double[] positions;
-
-        public Cell(Dataset dataset, Peak peak) {
-
-        }
 
         public Cell(Peak peak, double[] positions) {
             this.peak = peak;

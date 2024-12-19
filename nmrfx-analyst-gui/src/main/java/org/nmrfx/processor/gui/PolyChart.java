@@ -58,6 +58,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.*;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
@@ -143,7 +144,6 @@ public class PolyChart extends Region {
     private CrossHairs crossHairs;
     private List<ChartUndo> undos = new ArrayList<>();
     private List<ChartUndo> redos = new ArrayList<>();
-    private MapChangeListener<String, PeakList> peakListMapChangeListener = change -> purgeInvalidPeakListAttributes();
 
     private static PolyChart chartBuffer = null;
 
@@ -280,7 +280,8 @@ public class PolyChart extends Region {
         drawingLayers.getTopPane().getChildren().add(highlightRect);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(peakListMapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(this::purgeInvalidPeakListAttributes);
+
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);

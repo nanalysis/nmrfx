@@ -10,12 +10,11 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
-import javafx.concurrent.Task;
 import javafx.util.Duration;
-import org.eclipse.jgit.util.FS;
+import javafx.util.Subscription;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.eclipse.jgit.util.FS;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.git.GitManager;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -49,6 +48,9 @@ public class GUIProject extends StructureProject {
     private static double projectSaveInterval;
 
     private static Timeline timeline = null;
+
+    Subscription peakListSubscriptions = Subscription.EMPTY;
+    Subscription datasetMapSubscriptions = Subscription.EMPTY;
 
     public GUIProject(String name) {
         super(name);
@@ -205,6 +207,10 @@ public class GUIProject extends StructureProject {
         if (timeline != null) {
             timeline.stop();
         }
+        peakListSubscriptions.unsubscribe();
+        datasetMapSubscriptions.unsubscribe();
+        peakListSubscriptions = Subscription.EMPTY;
+        datasetMapSubscriptions = Subscription.EMPTY;
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
@@ -300,32 +306,14 @@ public class GUIProject extends StructureProject {
         WindowIO.saveWindows(dir);
     }
 
-    @Override
-    public void addPeakListListener(Object mapChangeObject) {
-        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
-            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-            obsMap.addListener(mapChangeListener);
-        }
+    public void addPeakListSubscription(Runnable runnable) {
+        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+        peakListSubscriptions = peakListSubscriptions.and(obsMap.subscribe(runnable));
     }
 
-    public void removePeakListListener(Object mapChangeObject) {
-        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
-            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-            obsMap.removeListener(mapChangeListener);
-        }
-    }
-
-    @Override
-    public void addDatasetListListener(Object mapChangeListener) {
+    public void addDatasetListSubscription(Runnable runnable) {
         ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
-        obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
-    }
-
-    public void removeDatasetListListener(Object mapChangeObject) {
-        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
-            ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
-            obsMap.removeListener(mapChangeListener);
-        }
+        datasetMapSubscriptions = datasetMapSubscriptions.and(obsMap.subscribe(runnable));
     }
 
     public void checkSubDirs(Path projectDir) throws IOException {
