@@ -15,6 +15,7 @@ import javafx.scene.layout.VBox;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.project.ProjectBase;
@@ -45,7 +46,6 @@ public class ContentController implements NmrControlRightSideContent {
     PolyChart chart;
     ListChangeListener<String> peakTargetListener;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
-    MapChangeListener mapChangeListener = change -> update();
 
     public static ContentController create(FXMLController fxmlController) {
         Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml");
@@ -68,8 +68,8 @@ public class ContentController implements NmrControlRightSideContent {
 
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
         peakView.getTargetItems().addListener(peakTargetListener);
-        ProjectBase.getActive().addDatasetListListener(new WeakMapChangeListener<>(mapChangeListener));
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        GUIProject.getActive().addDatasetListSubscription(() -> update());
+        GUIProject.getActive().addPeakListSubscription(() -> update());
         peakTitledPane.expandedProperty().addListener(e -> update());
         datasetTitledPane.expandedProperty().addListener(e -> update());
     }

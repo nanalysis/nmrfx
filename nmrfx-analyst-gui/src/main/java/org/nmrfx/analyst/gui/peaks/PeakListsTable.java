@@ -14,6 +14,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.project.ProjectBase;
 
 import java.util.Comparator;
@@ -31,7 +32,6 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
     private static final String NUMBER_ASSIGNED_COLUMN_NAME = "Assigned";
     private static final String NUMBER_PARTIAL_COLUMN_NAME = "Partial";
     private static final String NUMBER_UNASSIGNED_COLUMN_NAME = "Unassigned";
-    MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakLists();
 
     private String getPeakListLabels(PeakList peakList) {
         StringBuilder sBuilder = new StringBuilder();
@@ -84,7 +84,7 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
 
         getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         updatePeakLists();
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(() -> updatePeakLists());
     }
 
     /**

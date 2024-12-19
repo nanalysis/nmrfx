@@ -57,6 +57,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.TableUtils;
 
@@ -122,8 +123,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
-
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(() -> updatePeakListMenu());
     }
 
     public void updatePeakListMenu() {
