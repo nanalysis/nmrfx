@@ -164,7 +164,7 @@ public class NOETableController implements Initializable, StageBasedController {
         MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> updateNoeSetMenu();
 
         noeSetMap.addListener(mapChangeListener);
-        GUIProject.getActive().addPeakListSubscription(() -> updatePeakListMenu());
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
 
         updateNoeSetMenu();
         updatePeakListMenu();

@@ -3,9 +3,7 @@ package org.nmrfx.analyst.gui.peaks;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
@@ -36,7 +34,7 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
     private String getPeakListLabels(PeakList peakList) {
         StringBuilder sBuilder = new StringBuilder();
         for (var sDim : peakList.getSpectralDims()) {
-            if (sBuilder.length() != 0) {
+            if (!sBuilder.isEmpty()) {
                 sBuilder.append(" ");
             }
             sBuilder.append(sDim.getDimName());
@@ -80,11 +78,11 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         unassignedNumberCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getNumberUnAssigned()));
         getColumns().add(unassignedNumberCol);
 
-        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         updatePeakLists();
-        GUIProject.getActive().addPeakListSubscription(() -> updatePeakLists());
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakLists);
     }
 
     /**

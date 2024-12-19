@@ -21,9 +21,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -195,7 +193,7 @@ public class StripController implements ControllerTool {
         itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        GUIProject.getActive().addDatasetListSubscription(() -> updateDatasetNames());
+        GUIProject.getActive().addDatasetListSubscription(this::updateDatasetNames);
 
         Label offsetLabel = new Label("Offset:");
         offsetBox = new ChoiceBox<>();
@@ -214,7 +212,7 @@ public class StripController implements ControllerTool {
                 new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        GUIProject.getActive().addPeakListSubscription(() -> updatePeakListMenu());
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -539,10 +537,6 @@ public class StripController implements ControllerTool {
 
         Peak peak;
         double[] positions;
-
-        public Cell(Dataset dataset, Peak peak) {
-
-        }
 
         public Cell(Peak peak, double[] positions) {
             this.peak = peak;

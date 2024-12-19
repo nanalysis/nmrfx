@@ -7,9 +7,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -430,7 +428,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
         peakTableView.getItems().addAll(peakListSelectors);
 
-        GUIProject.getActive().addPeakListSubscription(() -> updatePeakTableView());
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakTableView);
 
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
@@ -699,7 +697,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 }
             }
         });
-        GUIProject.getActive().addPeakListSubscription(() -> updatePeakListMenu());
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height

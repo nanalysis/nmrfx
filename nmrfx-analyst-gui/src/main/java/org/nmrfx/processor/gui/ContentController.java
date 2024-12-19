@@ -2,9 +2,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Accordion;
 import javafx.scene.control.ChoiceBox;
@@ -18,7 +16,6 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +65,8 @@ public class ContentController implements NmrControlRightSideContent {
 
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
         peakView.getTargetItems().addListener(peakTargetListener);
-        GUIProject.getActive().addDatasetListSubscription(() -> update());
-        GUIProject.getActive().addPeakListSubscription(() -> update());
+        GUIProject.getActive().addDatasetListSubscription(this::update);
+        GUIProject.getActive().addPeakListSubscription(this::update);
         peakTitledPane.expandedProperty().addListener(e -> update());
         datasetTitledPane.expandedProperty().addListener(e -> update());
     }

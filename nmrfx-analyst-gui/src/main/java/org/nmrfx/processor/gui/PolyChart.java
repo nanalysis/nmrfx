@@ -280,7 +280,7 @@ public class PolyChart extends Region {
         drawingLayers.getTopPane().getChildren().add(highlightRect);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
-        GUIProject.getActive().addPeakListSubscription(() -> purgeInvalidPeakListAttributes());
+        GUIProject.getActive().addPeakListSubscription(this::purgeInvalidPeakListAttributes);
 
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
