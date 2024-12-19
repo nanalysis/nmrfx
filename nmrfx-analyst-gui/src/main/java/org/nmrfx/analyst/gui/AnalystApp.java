@@ -550,6 +550,9 @@ public class AnalystApp extends Application {
         List<FXMLController> controllers = new ArrayList<>(getFXMLControllerManager().getControllers());
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller
+        for (FXMLController controller : controllers) {
+            controller.removeRunaboutTool();
+        }
         for (int index = 1; index < controllers.size(); index++) {
             getFXMLControllerManager().closeController(controllers.get(index));
         }

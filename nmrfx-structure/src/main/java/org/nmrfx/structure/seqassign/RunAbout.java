@@ -47,6 +47,12 @@ public class RunAbout implements SaveframeWriter {
         runaboutMap.put(id, this);
     }
 
+    public void close() {
+        spinSystems.clearAll();
+        peakListMap.clear();
+        peakLists.clear();
+        residueSpinSystemsMap.clear();
+    }
     public static final RunAbout getRunAbout(int id) {
         return runaboutMap.get(id);
     }
