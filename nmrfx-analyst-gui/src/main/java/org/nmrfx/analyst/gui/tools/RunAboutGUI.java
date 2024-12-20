@@ -7,9 +7,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -434,10 +432,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
         peakTableView.getItems().addAll(peakListSelectors);
 
-        MapChangeListener<String, PeakList> peakmapChangeListener =
-                (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakTableView();
-
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(peakmapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakTableView);
 
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
@@ -709,9 +704,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 }
             }
         });
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
 
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height

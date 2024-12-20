@@ -56,6 +56,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -163,8 +164,7 @@ public class NOETableController implements Initializable, StageBasedController {
         MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> updateNoeSetMenu();
 
         noeSetMap.addListener(mapChangeListener);
-        MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(peakmapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
 
         updateNoeSetMenu();
         updatePeakListMenu();
