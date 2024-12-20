@@ -152,6 +152,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     public void clear() {
+        unregisterPeakLists();
         runAbout = null;
     }
 
@@ -2130,6 +2131,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         for (var peakList : PeakList.peakLists()) {
             peakList.registerPeakListChangeListener(this);
             peakList.registerPeakCountChangeListener(this);
+        }
+    }
+
+    void unregisterPeakLists() {
+        for (var peakList : PeakList.peakLists()) {
+            peakList.removePeakListChangeListener(this);
+            peakList.removePeakCountChangeListener(this);
         }
     }
 
