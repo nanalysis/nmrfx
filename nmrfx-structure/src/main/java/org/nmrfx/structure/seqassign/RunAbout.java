@@ -345,8 +345,7 @@ public class RunAbout implements SaveframeWriter {
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
         List<SpectralDim> sDims = new ArrayList<>();
-        for (int i = 0; i < iDims.length; i++) {
-            int iDim = iDims[i];
+        for (int iDim : iDims) {
             String dataDimName = dataset.getLabel(iDim);
             SpectralDim sDim = peakList.getSpectralDim(dataDimName);
             sDims.add(sDim);
@@ -374,7 +373,6 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public void assemble() {
-        System.out.println("assemble " + peakListMap.keySet());
         getSpinSystems().assembleWithClustering(refList, peakLists);
     }
 
@@ -578,7 +576,7 @@ public class RunAbout implements SaveframeWriter {
         writeToSTAR(chan);
     }
 
-    void writeToSTAR(Writer chan) throws ParseException, IOException {
+    void writeToSTAR(Writer chan) throws IOException {
         String category = "_Runabout";
         String categoryName = "runabout";
         StringBuilder sBuilder = new StringBuilder();
