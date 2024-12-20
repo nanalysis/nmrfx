@@ -74,8 +74,8 @@ public class GUIScripterAdvanced extends GUIScripter {
     public void runabout(FXMLController controller, Map<String, Object> runAboutData) {
         Optional<RunAboutGUI> runAboutGUIOpt = controller.showRunAboutTool();
         runAboutGUIOpt.ifPresent(runAboutGUI -> {
-            String arrangement = runAboutData.getOrDefault(ARRANGEMENT, "").toString();
-            String refListName = runAboutData.getOrDefault(REFLIST, "").toString();
+            String arrangement = Objects.requireNonNullElse(runAboutData.getOrDefault(ARRANGEMENT, ""), "").toString();
+            String refListName = Objects.requireNonNullElse(runAboutData.getOrDefault(REFLIST, ""), "").toString();
             PeakList refList = PeakList.get(refListName);
             runAboutGUI.getRunAbout().setRefList(refList);
             runAboutGUI.genWin(arrangement);

@@ -151,6 +151,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         paletteColors.set(11, gray);
     }
 
+    public void clear() {
+        unregisterPeakLists();
+        runAbout = null;
+    }
+
     public RunAbout getRunAbout() {
         return runAbout;
     }
@@ -457,6 +462,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     private void updatePeakTableView() {
+        if (runAbout == null) {
+            return;
+        }
         var peakListSelectors = PeakList.peakLists().stream().map(PeakListSelection::new).toList();
         peakTableView.getItems().setAll(peakListSelectors);
         for (var peakListSelector : peakListSelectors) {
@@ -1555,6 +1563,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     public void updatePeakListMenu() {
+        if (runAbout == null) {
+            return;
+        }
         peakListMenuButton.getItems().clear();
         if (runAbout.getSpinSystems().getSize() > 0) {
             MenuItem spinSysMenuItem = new MenuItem("spinsystems");
@@ -2120,6 +2131,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         for (var peakList : PeakList.peakLists()) {
             peakList.registerPeakListChangeListener(this);
             peakList.registerPeakCountChangeListener(this);
+        }
+    }
+
+    void unregisterPeakLists() {
+        for (var peakList : PeakList.peakLists()) {
+            peakList.removePeakListChangeListener(this);
+            peakList.removePeakCountChangeListener(this);
         }
     }
 
