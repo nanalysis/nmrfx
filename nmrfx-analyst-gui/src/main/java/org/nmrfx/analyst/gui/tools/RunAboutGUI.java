@@ -246,7 +246,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     }
 
-    public static class PeakListSelection {
+    public  class PeakListSelection {
         PeakList peakList;
         private BooleanProperty active;
 
@@ -282,15 +282,41 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             return peakList.getExperimentType();
         }
 
-        public boolean getPattern() {
-            boolean hasPattern = true;
-            for (var sDim : peakList.getSpectralDims()) {
-                if (sDim.getPattern().isBlank()) {
-                    hasPattern = false;
-                    break;
-                }
+        public int getCount() {
+            String typeName = peakList.getExperimentType();
+            int count = 0;
+            if (runAbout != null) {
+                 count = runAbout.getTypeCount(typeName);
             }
-            return hasPattern;
+            return count;
+        }
+
+        public String getPattern() {
+            String pattern = "";
+            boolean first = true;
+            for (var sDim : peakList.getSpectralDims()) {
+                if (!first) {
+                    pattern += " : ";
+                } else {
+                    first = false;
+                }
+                pattern += sDim.getPattern();
+            }
+            return pattern;
+        }
+        public String getTolerance() {
+            String tol = "";
+            boolean first = true;
+            for (var sDim : peakList.getSpectralDims()) {
+                if (!first) {
+                    tol += " : ";
+                } else {
+                    first = false;
+                }
+                double tolValue = sDim.getIdTol();
+                tol += String.format("%.2f", tolValue);
+            }
+            return tol;
         }
 
 
@@ -413,9 +439,20 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakTypeColumn.setCellValueFactory(new PropertyValueFactory<>("Type"));
         peakTypeColumn.setEditable(false);
 
-        TableColumn<PeakListSelection, Boolean> peakListPatternColumn = new TableColumn<>("Pattern");
+        TableColumn<PeakListSelection, String> peakListPatternColumn = new TableColumn<>("Pattern");
         peakListPatternColumn.setCellValueFactory(new PropertyValueFactory<>("pattern"));
         peakListPatternColumn.setEditable(false);
+        peakListPatternColumn.setPrefWidth(130);
+
+        TableColumn<PeakListSelection, Integer> typeCountColumn = new TableColumn<>("Count");
+        typeCountColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
+        typeCountColumn.setEditable(false);
+        typeCountColumn.setPrefWidth(40);
+
+        TableColumn<PeakListSelection, String> tolColumn = new TableColumn<>("Tolerance");
+        tolColumn.setCellValueFactory(new PropertyValueFactory<>("tolerance"));
+        tolColumn.setEditable(false);
+        tolColumn.setPrefWidth(100);
 
         TableColumn<PeakListSelection, Integer> peakListSizeColumn = new TableColumn<>("Size");
         peakListSizeColumn.setCellValueFactory(new PropertyValueFactory<>("Size"));
@@ -427,7 +464,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         peakListSelectedColumn.setCellFactory(param -> new CheckBoxTableCell<>());
         var peakListSelectors = peakLists.stream().map(PeakListSelection::new).toList();
 
-        peakTableView.getColumns().addAll(peakListNameColumn, peakTypeColumn, peakListPatternColumn,
+        peakTableView.getColumns().addAll(peakListNameColumn, peakTypeColumn, peakListPatternColumn, typeCountColumn, tolColumn,
                 peakListSizeColumn, peakListSelectedColumn);
         if (runAbout != null) {
             var runaboutLists = runAbout.getPeakLists();
@@ -446,11 +483,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
         Button setupButton = new Button("Setup");
         setupButton.setOnAction(e -> setupRunAbout());
+        Button refreshButton = new Button("Refresh");
+        refreshButton.setOnAction(e -> peakTableView.refresh());
         Button arrangementsButton = new Button("Arrangements...");
         arrangementsButton.setOnAction(e -> loadArrangements());
 
-        Button autoTolButton = new Button("AutoTol");
-        autoTolButton.setOnAction(e -> autoSetTolerances());
+        MenuButton toleranceButton = new MenuButton("Tolerances");
+        MenuItem autoTolItem = new MenuItem("Automatic");
+        autoTolItem.setOnAction(e -> autoSetTolerances());
+        MenuItem defaultTolItem = new MenuItem("Defaults");
+        defaultTolItem.setOnAction(e -> setDefaultTolerances());
+        toleranceButton.getItems().addAll(autoTolItem, defaultTolItem);
 
         Button addListButton = new Button("Add Lists");
         addListButton.setOnAction(e -> addLists());
@@ -458,7 +501,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         unifyLimitsCheckBox = new CheckBox("Unify Limits");
         unifyLimitsCheckBox.setSelected(false);
 
-        buttonBar.getItems().addAll(configureButton, setupButton, arrangementsButton, autoTolButton, addListButton, unifyLimitsCheckBox);
+        buttonBar.getItems().addAll(configureButton, refreshButton, setupButton, arrangementsButton, toleranceButton, addListButton, unifyLimitsCheckBox);
         vBox2.getChildren().addAll(buttonBar, peakTableView);
         HBox.setHgrow(vBox2, Priority.ALWAYS);
         hBox.getChildren().addAll(vBox2);
@@ -2071,6 +2114,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 runAbout.setPeakLists(peakLists);
                 runAbout.setRefList(refListObj.get());
                 registerPeakLists();
+                peakTableView.refresh();
             }
         }
     }
@@ -2091,6 +2135,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     void autoSetTolerances() {
         if (runAbout.isActive()) {
             runAbout.autoSetTolerance(1.0);
+            peakTableView.refresh();
+        }
+    }
+
+    void setDefaultTolerances() {
+        if (runAbout.isActive()) {
+            runAbout.setDefaultTolerances();
+            peakTableView.refresh();
         }
     }
 

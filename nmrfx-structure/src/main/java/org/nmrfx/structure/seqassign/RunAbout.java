@@ -3,6 +3,7 @@ package org.nmrfx.structure.seqassign;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
@@ -24,6 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RunAbout implements SaveframeWriter {
     static final List<String> peakListTags = List.of("ID", "Spectral_peak_list_ID");
     static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
+    static Map<Nuclei, Double> defaultTolearnces = Map.of(Nuclei.H1, 0.05, Nuclei.C13, 0.6, Nuclei.N15, 0.2);
+
     int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
@@ -34,6 +37,7 @@ public class RunAbout implements SaveframeWriter {
     Map<String, DatasetBase> datasetMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
+
 
     EnumMap<SpinSystem.AtomEnum, Integer>[] countMap = new EnumMap[2];
 
@@ -58,6 +62,7 @@ public class RunAbout implements SaveframeWriter {
         residueSpinSystemsMap.clear();
         runaboutMap.clear();
     }
+
     public static RunAbout getRunAbout(int id) {
         return runaboutMap.get(id);
     }
@@ -94,7 +99,11 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public int getTypeCount(String typeName) {
-        return typeInfoMap.get(typeName).nTotal;
+        int nTotal = 0;
+        if (typeInfoMap.containsKey(typeName)) {
+            nTotal =  typeInfoMap.get(typeName).nTotal;
+        }
+        return nTotal;
     }
 
     public int getExpected(int k, SpinSystem.AtomEnum atomEnum) {
@@ -391,6 +400,24 @@ public class RunAbout implements SaveframeWriter {
                 var stat = peakList.widthDStatsPPM(i);
                 double median = stat.getPercentile(50.0);
                 peakList.getSpectralDim(i).setIdTol(median * scale);
+            }
+        }
+    }
+
+    public void setDefaultTolerances() {
+        setDefaultTolerances(peakLists);
+    }
+
+    public void setDefaultTolerances(Collection<PeakList> peakLists) {
+        for (var peakList : peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String nucName = peakList.getSpectralDim(i).getNucleus();
+                Nuclei nuclei = Nuclei.findNuclei(nucName);
+                Double tol = defaultTolearnces.get(nuclei);
+                if (tol != null) {
+                    peakList.getSpectralDim(i).setIdTol(tol);
+                }
             }
         }
     }
