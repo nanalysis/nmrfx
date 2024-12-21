@@ -95,6 +95,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     ChoiceBox<SpinSystems.ClusterModes> clusterModesChoiceBox;
     PeakList navigationPeakList;
     SimpleObjectProperty<PeakList> refListObj = new SimpleObjectProperty<>();
+
+    CheckBox unifyLimitsCheckBox;
     Peak currentPeak;
     Background defaultBackground = null;
     List<Peak> matchPeaks = new ArrayList<>();
@@ -122,6 +124,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     TableView<PeakListSelection> peakTableView = new TableView<>();
     boolean useSpinSystem = false;
     Double[][] widths;
+
+    HashMap<String, double[]> plotLimits;
+
+    HashMap<Integer, String> rowMap;
     int[] resOffsets = null;
     Map<PolyChart, List<String>> winPatterns = new HashMap<>();
     boolean[] intraResidue = null;
@@ -449,7 +455,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Button addListButton = new Button("Add Lists");
         addListButton.setOnAction(e -> addLists());
 
-        buttonBar.getItems().addAll(configureButton, setupButton, arrangementsButton, autoTolButton, addListButton);
+        unifyLimitsCheckBox = new CheckBox("Unify Limits");
+        unifyLimitsCheckBox.setSelected(false);
+
+        buttonBar.getItems().addAll(configureButton, setupButton, arrangementsButton, autoTolButton, addListButton, unifyLimitsCheckBox);
         vBox2.getChildren().addAll(buttonBar, peakTableView);
         HBox.setHgrow(vBox2, Priority.ALWAYS);
         hBox.getChildren().addAll(vBox2);
@@ -532,6 +541,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     void updateTabSize() {
     }
 
+    public boolean unifyLimits() {
+        return unifyLimitsCheckBox.isSelected();
+    }
+
+    public void unifyLimits(boolean value) {
+        unifyLimitsCheckBox.setSelected(value);
+    }
     void initPeakNavigator(ToolBar toolBar) {
         this.navigatorToolBar = toolBar;
         peakIdField = new TextField();
@@ -2007,7 +2023,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         return dName;
     }
 
-    Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes) {
+    Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes,
+                          String row) {
         Double[] dimWidths = new Double[dataset.getNDim()];
         for (int i = 0; i < dimNames.size(); i++) {
             Double width;
@@ -2026,6 +2043,15 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 width = 0.0;
             } else {
                 width = null;
+                if (i == 1) {
+                    double max = dataset.pointToPPM(iDim, 0);
+                    double min = dataset.pointToPPM(iDim, dataset.getSizeReal(iDim));
+                    double[] plotLim = plotLimits.computeIfAbsent(row, key ->
+                            new double[]{min, max}
+                    );
+                    plotLim[0] = Math.min(plotLim[0], min);
+                    plotLim[1] = Math.max(plotLim[1], max);
+                }
             }
             dimWidths[i] = width;
 
@@ -2150,6 +2176,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
+
     public void genWin(String arrangeName) {
         if (runAbout.isActive()) {
             currentArrangement = arrangeName;
@@ -2161,6 +2188,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             controller.arrange(rows.size());
             List<PolyChart> charts = controller.getCharts();
             widths = new Double[nCharts][];
+            plotLimits = new HashMap<>();
+            rowMap = new HashMap<>();
             minOffset = 0;
             resOffsets = new int[cols.size()];
             intraResidue = new boolean[cols.size()];
@@ -2184,6 +2213,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     List<String> widthTypes = col.getWidths();
 
                     Optional<PeakList> peakListOptional = runAbout.getPeakListForCell(row, dir);
+                    rowMap.put(iChart, row);
                     final int jChart = iChart;
                     peakListOptional.ifPresent(peakList -> {
                         String datasetName = peakList.getDatasetName();
@@ -2200,7 +2230,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                             int[] iDims = runAbout.getIDims(dataset, peakList, typeName, dimNames);
                             var sDims = runAbout.getPeakListDims(peakList, dataset, iDims);
-                            widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes);
+                            widths[jChart] = getDimWidth(peakList, dataset, dimNames, iDims, widthTypes, row);
                             dataAttr.setDims(iDims);
                             List<String> peakLists = Collections.singletonList(peakList.getName());
                             chart.updatePeakListsByName(peakLists);
@@ -2430,7 +2460,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if ((widths[iChart] != null) && (peakDim != null)) {
                 ppms[i] = (double) peakDim.getChemShiftValue();
                 if (widths[iChart][i] == null) {
-                    chart.full(i);
+                    String row = rowMap.get(iChart);
+                    double[] limits = plotLimits.get(row);
+                    if (unifyLimits() && (i == 1) && (limits != null)) {
+                        chart.getAxes().setMinMax(i, limits[0], limits[1]);
+                    } else {
+                        chart.full(i);
+                    }
                 } else {
                     double pos;
                     if (chart.getAxes().getMode(i) == PPM) {

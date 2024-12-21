@@ -24,6 +24,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     private static final String PEAKLIST = "peaklist";
     private static final String ARRANGEMENT = "arrangement";
     private static final String REFLIST = "reflist";
+    private static final String UNIFYLIMITS = "unifylimits";
     private static final String GEOMETRY = "geometry";
     private static final String SCONFIG = "sconfig";
     private static final String SPECTRA = "spectra";
@@ -67,6 +68,8 @@ public class GUIScripterAdvanced extends GUIScripter {
             RunAbout runAbout = runAboutGUI.getRunAbout();
             String refListName = runAbout.getRefList() == null ? "" : runAbout.getRefList().getName();
             result.put(REFLIST, refListName);
+            String unifyLimits = runAboutGUI.unifyLimits()  ? "1" : "0";
+            result.put(UNIFYLIMITS, unifyLimits);
         }
         return result;
     }
@@ -76,8 +79,10 @@ public class GUIScripterAdvanced extends GUIScripter {
         runAboutGUIOpt.ifPresent(runAboutGUI -> {
             String arrangement = Objects.requireNonNullElse(runAboutData.getOrDefault(ARRANGEMENT, ""), "").toString();
             String refListName = Objects.requireNonNullElse(runAboutData.getOrDefault(REFLIST, ""), "").toString();
+            String unifyLimits = Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, "0"), "0").toString();
             PeakList refList = PeakList.get(refListName);
             runAboutGUI.getRunAbout().setRefList(refList);
+            runAboutGUI.unifyLimits(unifyLimits.equals("1"));
             runAboutGUI.genWin(arrangement);
         });
     }
