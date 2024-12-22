@@ -407,6 +407,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         ObservableList<PeakList> peakLists = FXCollections.observableArrayList(new ArrayList<>(PeakList.peakLists()));
         ToolBar buttonBar = new ToolBar();
 
+        peakTableView.setStyle("-fx-font-size: 14");
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         if (closeAction != null) {
@@ -434,15 +435,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         TableColumn<PeakListSelection, String> peakListNameColumn = new TableColumn<>("Name");
         peakListNameColumn.setCellValueFactory(new PropertyValueFactory<>("Name"));
         peakListNameColumn.setEditable(false);
+        peakListNameColumn.setPrefWidth(150);
 
         TableColumn<PeakListSelection, String> peakTypeColumn = new TableColumn<>("Type");
         peakTypeColumn.setCellValueFactory(new PropertyValueFactory<>("Type"));
         peakTypeColumn.setEditable(false);
+        peakTypeColumn.setPrefWidth(125);
 
         TableColumn<PeakListSelection, String> peakListPatternColumn = new TableColumn<>("Pattern");
         peakListPatternColumn.setCellValueFactory(new PropertyValueFactory<>("pattern"));
         peakListPatternColumn.setEditable(false);
-        peakListPatternColumn.setPrefWidth(130);
+        peakListPatternColumn.setPrefWidth(150);
 
         TableColumn<PeakListSelection, Integer> typeCountColumn = new TableColumn<>("Count");
         typeCountColumn.setCellValueFactory(new PropertyValueFactory<>("count"));
@@ -452,7 +455,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         TableColumn<PeakListSelection, String> tolColumn = new TableColumn<>("Tolerance");
         tolColumn.setCellValueFactory(new PropertyValueFactory<>("tolerance"));
         tolColumn.setEditable(false);
-        tolColumn.setPrefWidth(100);
+        tolColumn.setPrefWidth(125);
 
         TableColumn<PeakListSelection, Integer> peakListSizeColumn = new TableColumn<>("Size");
         peakListSizeColumn.setCellValueFactory(new PropertyValueFactory<>("Size"));
