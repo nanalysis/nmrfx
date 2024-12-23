@@ -25,6 +25,8 @@ public class GUIScripterAdvanced extends GUIScripter {
     private static final String ARRANGEMENT = "arrangement";
     private static final String REFLIST = "reflist";
     private static final String UNIFYLIMITS = "unifylimits";
+    private static final String WIDTHS = "widths";
+    private static final String TOLERANCES = "tolerances";
     private static final String GEOMETRY = "geometry";
     private static final String SCONFIG = "sconfig";
     private static final String SPECTRA = "spectra";
@@ -59,17 +61,28 @@ public class GUIScripterAdvanced extends GUIScripter {
         stripController.loadFromCharts(peakList, xDim, zDim);
     }
 
-    public Map<String, String> runabout(FXMLController controller) {
+    public Map<String, Object> runabout(FXMLController controller) {
         RunAboutGUI runAboutGUI = (RunAboutGUI) controller.getTool(RunAboutGUI.class);
-        Map<String, String> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         if (runAboutGUI != null) {
             String arrangement = runAboutGUI.getArrangement();
             result.put(ARRANGEMENT, arrangement);
             RunAbout runAbout = runAboutGUI.getRunAbout();
             String refListName = runAbout.getRefList() == null ? "" : runAbout.getRefList().getName();
             result.put(REFLIST, refListName);
-            String unifyLimits = runAboutGUI.unifyLimits()  ? "1" : "0";
-            result.put(UNIFYLIMITS, unifyLimits);
+            result.put(UNIFYLIMITS, runAboutGUI.unifyLimits());
+            Map<String, Double> widthMap = new HashMap<>();
+            var currentMap = runAboutGUI.getWidthMap();
+            for (var entry : currentMap.entrySet()) {
+                widthMap.put(entry.getKey().getNumberName(), entry.getValue().doubleValue());
+            }
+            result.put(WIDTHS, widthMap);
+            Map<String, Double> tolMap = new HashMap<>();
+            var currentTolMap = runAboutGUI.getWidthMap();
+            for (var entry : currentTolMap.entrySet()) {
+                tolMap.put(entry.getKey().getNumberName(), entry.getValue().doubleValue());
+            }
+            result.put(TOLERANCES, tolMap);
         }
         return result;
     }
@@ -77,12 +90,22 @@ public class GUIScripterAdvanced extends GUIScripter {
     public void runabout(FXMLController controller, Map<String, Object> runAboutData) {
         Optional<RunAboutGUI> runAboutGUIOpt = controller.showRunAboutTool();
         runAboutGUIOpt.ifPresent(runAboutGUI -> {
-            String arrangement = Objects.requireNonNullElse(runAboutData.getOrDefault(ARRANGEMENT, ""), "").toString();
+            String arrangement = Objects.requireNonNullElse(runAboutData.getOrDefault(ARRANGEMENT, "HC"), "HC").toString();
             String refListName = Objects.requireNonNullElse(runAboutData.getOrDefault(REFLIST, ""), "").toString();
-            String unifyLimits = Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, "0"), "0").toString();
+            Object unifyObject =  Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, false), false);
+            Boolean unifyLimits = Boolean.FALSE;
+            if (unifyObject instanceof Boolean unifyBoolean) {
+                unifyLimits = unifyBoolean;
+            } else {
+                unifyLimits = unifyLimits.toString().equals("1");
+            }
+            Map<String, Double> widthMap = (Map<String, Double>) Objects.requireNonNullElse(runAboutData.getOrDefault(WIDTHS, Map.of()), Map.of());
+            Map<String, Double> tolMap = (Map<String, Double>) Objects.requireNonNullElse(runAboutData.getOrDefault(TOLERANCES, Map.of()), Map.of());
             PeakList refList = PeakList.get(refListName);
             runAboutGUI.getRunAbout().setRefList(refList);
-            runAboutGUI.unifyLimits(unifyLimits.equals("1"));
+            runAboutGUI.unifyLimits(unifyLimits);
+            runAboutGUI.setToleranceMap(tolMap);
+            runAboutGUI.setWidthMap(widthMap);
             runAboutGUI.genWin(arrangement);
         });
     }
@@ -136,7 +159,7 @@ public class GUIScripterAdvanced extends GUIScripter {
         if ((stripData != null) && stripData.containsKey(PEAKLIST)) {
             winMap.put(STRIPS, stripData);
         }
-        Map<String, String> runaboutData = runabout(controller);
+        Map<String, Object> runaboutData = runabout(controller);
         if ((runaboutData != null) && runaboutData.containsKey(ARRANGEMENT)) {
             winMap.put(RUNABOUT, runaboutData);
         }
