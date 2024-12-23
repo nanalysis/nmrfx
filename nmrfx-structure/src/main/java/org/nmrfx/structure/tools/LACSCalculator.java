@@ -17,7 +17,7 @@ import java.util.*;
 public class LACSCalculator {
     private static final Logger log = LoggerFactory.getLogger(LACSCalculator.class);
 
-    private static Map<String, Double> REFMAP = new HashMap<>();
+    private static Map<String, Double> refMap = new HashMap<>();
 
     record PPMDiff(double ppmDDCA, double ppmDDCB, double ppmDDC) {
     }
@@ -26,8 +26,11 @@ public class LACSCalculator {
                              double pMedian, double allMedian, double nSlope, double pSlope) {
     }
 
-    private void loadRPPMs() throws IOException {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/lacsref.txt");
+    private static void loadRPPMs() throws IOException {
+        InputStream iStream = LACSCalculator.class.getResourceAsStream("/data/lacsref.txt");
+        if (iStream == null) {
+            throw new IOException("Coudn't not get /data/lacsref.txt input stream");
+        }
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {
                 String line = reader.readLine();
@@ -36,8 +39,8 @@ public class LACSCalculator {
                 }
                 String[] fields = line.split("\t");
                 String key = fields[0] + ":" + fields[1];
-                double value = Double.valueOf(fields[2].toUpperCase());
-                REFMAP.put(key, value);
+                double value = Double.parseDouble(fields[2].toUpperCase());
+                refMap.put(key, value);
             }
         }
     }
@@ -48,21 +51,21 @@ public class LACSCalculator {
         return getRef(aaName, atomName);
     }
 
-    public Optional<Double> getRef(String aaName, String atomName) {
-        if (REFMAP == null) {
+    public static Optional<Double> getRef(String aaName, String atomName) {
+        if (refMap == null) {
             return Optional.empty();
         }
         String key = aaName.toUpperCase() + ":" + atomName.toUpperCase();
-        if (REFMAP.isEmpty()) {
+        if (refMap.isEmpty()) {
             try {
                 loadRPPMs();
             } catch (IOException e) {
                 log.error("Failed to load ref ppms", e);
-                REFMAP = null;
+                refMap = null;
                 return Optional.empty();
             }
         }
-        return Optional.ofNullable(REFMAP.get(key));
+        return Optional.ofNullable(refMap.get(key));
     }
 
     public Optional<LACSResult> calculateLACS(String calcAtomName, int iGroup) {
