@@ -1,5 +1,6 @@
 package org.nmrfx.structure.seqassign;
 
+import javafx.beans.property.SimpleDoubleProperty;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RunAbout implements SaveframeWriter {
     static final List<String> peakListTags = List.of("ID", "Spectral_peak_list_ID");
     static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
-    static Map<Nuclei, Double> defaultTolearnces = Map.of(Nuclei.H1, 0.05, Nuclei.C13, 0.6, Nuclei.N15, 0.2);
+    public final static Map<Nuclei, Double> defaultTolearnces = Map.of(Nuclei.H1, 0.05, Nuclei.C13, 0.6, Nuclei.N15, 0.2);
 
     int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
@@ -415,6 +416,19 @@ public class RunAbout implements SaveframeWriter {
                 String nucName = peakList.getSpectralDim(i).getNucleus();
                 Nuclei nuclei = Nuclei.findNuclei(nucName);
                 Double tol = defaultTolearnces.get(nuclei);
+                if (tol != null) {
+                    peakList.getSpectralDim(i).setIdTol(tol);
+                }
+            }
+        }
+    }
+    public void setTolerances(Map<Nuclei, SimpleDoubleProperty> tolerances) {
+        for (var peakList : peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String nucName = peakList.getSpectralDim(i).getNucleus();
+                Nuclei nuclei = Nuclei.findNuclei(nucName);
+                Double tol = tolerances.get(nuclei).get();
                 if (tol != null) {
                     peakList.getSpectralDim(i).setIdTol(tol);
                 }
