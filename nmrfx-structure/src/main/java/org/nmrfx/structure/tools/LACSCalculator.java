@@ -5,17 +5,64 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.*;
 
 public class LACSCalculator {
+    private static final Logger log = LoggerFactory.getLogger(LACSCalculator.class);
+
+    private static Map<String, Double> REFMAP = new HashMap<>();
+
     record PPMDiff(double ppmDDCA, double ppmDDCB, double ppmDDC) {
     }
 
     public record LACSResult(List<Double> shiftsX, List<Double> shiftsY, double xMin, double xMax, double nMedian,
                              double pMedian, double allMedian, double nSlope, double pSlope) {
+    }
+
+    private void loadRPPMs() throws IOException {
+        InputStream iStream = this.getClass().getResourceAsStream("/data/lacsref.txt");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String[] fields = line.split("\t");
+                String key = fields[0] + ":" + fields[1];
+                double value = Double.valueOf(fields[2].toUpperCase());
+                REFMAP.put(key, value);
+            }
+        }
+    }
+
+    public Optional<Double> getRef(Atom atom) {
+        String aaName = atom.getEntity().getName();
+        String atomName = atom.getName();
+        return getRef(aaName, atomName);
+    }
+
+    public Optional<Double> getRef(String aaName, String atomName) {
+        if (REFMAP == null) {
+            return Optional.empty();
+        }
+        String key = aaName.toUpperCase() + ":" + atomName.toUpperCase();
+        if (REFMAP.isEmpty()) {
+            try {
+                loadRPPMs();
+            } catch (IOException e) {
+                log.error("Failed to load ref ppms", e);
+                REFMAP = null;
+                return Optional.empty();
+            }
+        }
+        return Optional.ofNullable(REFMAP.get(key));
     }
 
     public Optional<LACSResult> calculateLACS(String calcAtomName, int iGroup) {
@@ -74,23 +121,23 @@ public class LACSCalculator {
         Atom cbAtom = residue.getAtom("CB");
         Atom calcAtom = residue.getAtom(calcAtomName);
         if ((caAtom != null) && (cbAtom != null) && (calcAtom != null)) {
+            var caOpt = getRef(caAtom);
+            var cbOpt = getRef(cbAtom);
+            var cOpt = getRef(calcAtom);
+
             PPMv caPPMv = caAtom.getPPM(iGroup);
-            Double caRef = caAtom.getRefPPM();
-
             PPMv cbPPMv = cbAtom.getPPM(iGroup);
-            Double cbRef = cbAtom.getRefPPM();
-
             PPMv calcPPMv = calcAtom.getPPM(iGroup);
-            Double cRef = calcAtom.getRefPPM();
+
             if ((caPPMv != null) && caPPMv.isValid() && (cbPPMv != null) && cbPPMv.isValid()
                     && (calcPPMv != null) && calcPPMv.isValid() &&
-                    caRef != null && cbRef != null && cRef != null) {
+                    caOpt.isPresent() && cbOpt.isPresent() && cOpt.isPresent()) {
                 double caPPM = caPPMv.getValue();
                 double cbPPM = cbPPMv.getValue();
                 double ppm = calcPPMv.getValue();
-                double ppmDDCA = caPPM - caRef;
-                double ppmDDCB = cbPPM - cbRef;
-                double ppmDDC = ppm - cRef;
+                double ppmDDCA = caPPM - caOpt.get();
+                double ppmDDCB = cbPPM - cbOpt.get();
+                double ppmDDC = ppm - cOpt.get();
                 PPMDiff ppmDiff = new PPMDiff(ppmDDCA, ppmDDCB, ppmDDC);
                 return Optional.of(ppmDiff);
             }
