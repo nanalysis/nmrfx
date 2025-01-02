@@ -1,12 +1,9 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.SVMPredict;
-import org.nmrfx.structure.rna.SSLayout;
+import org.nmrfx.structure.rna.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -40,6 +37,8 @@ public class RNAAttributes {
             "GH21", "GH22", "GH4p", "GH5p", "GH5pp", "AN1", "AN3", "AN6", "AN7", "AN9", "CN1", "CN3", "CN4", "GN1",
             "GN2", "GN7", "GN9", "UN1", "UN3");
     static List<String> attrTypes = Arrays.asList("nuc1", "nuc2", "nuc3", "nuc4", "nuc5", "pos1", "pos2", "pos3", "pos4", "pos5", "nuc");
+
+    static Map<String, Integer> baseTokenMap = Map.of("G", 1, "A", 2, "C", 3, "U", 4);
 
     static Map<String, String> wcMap = Map.of("G", "C", "C", "G", "A", "U", "U", "A", "X", "", "x", "", "P", "p", "p", "P");
     static Map<String, String> wobbleMap = Map.of("G", "U", "U", "G", "A", "", "C", "", "X", "", "x", "", "P", "p", "p", "P");
@@ -185,6 +184,40 @@ public class RNAAttributes {
             String jName = partner != null ? partner.getName() : "-";
             return iName + jName;
         }
+
+        int getBaseType() {
+            return baseTokenMap.get(residue.getName());
+        }
+
+        int getPairType() {
+            return partner == null ? 0 : baseTokenMap.get(partner.getName());
+        }
+    }
+
+    int getNToNextBP(int[] basePairs, int index, int max) {
+        int nNucs = basePairs.length;
+        int n = 0;
+        for (int i = index + 1; i < nNucs; i++) {
+            int delta = i - index;
+
+            if ((basePairs[i] != -1) || (delta >= max)) {
+                n = delta;
+                break;
+            }
+        }
+        return n;
+    }
+
+    int getNToPrevBP(int[] basePairs, int index, int max) {
+        int n = 0;
+        for (int i = index - 1; i >= 0; i--) {
+            int delta = index - i;
+            if ((basePairs[i] != -1) || (delta >= max)) {
+                n = delta;
+                break;
+            }
+        }
+        return n;
     }
 
     String checkNC(int[] basePairs, int index) {
@@ -228,12 +261,67 @@ public class RNAAttributes {
 
     }
 
+    public List<Integer> genRNAAttrDeep() {
+        Molecule molecule = Molecule.getActive();
+        int[] basePairs = getPairs(molecule);
+        SSGen ssGen = new SSGen(molecule, molecule.getDotBracket());
+
+        List<Residue> rnaResidues = getSeqList(molecule);
+        List<RNAPair> rnaPairs = new ArrayList<>();
+        for (int i = 0; i < basePairs.length; i++) {
+            Residue residue = rnaResidues.get(i);
+            Residue partner = basePairs[i] >= 0 ? rnaResidues.get(basePairs[i]) : null;
+            var pair = new RNAPair(i, residue, partner, basePairs[i]);
+            rnaPairs.add(pair);
+        }
+        List<Integer> tokens = new ArrayList<>();
+        for (int i = 0; i < rnaPairs.size(); i++) {
+            int ssToken = ssToken(rnaPairs, i, rnaResidues);
+            tokens.add(ssToken);
+        }
+        return tokens;
+    }
+
+    private static int ssToken(List<RNAPair> rnaPairs, int i, List<Residue> rnaResidues) {
+        int base = rnaPairs.get(i).getBaseType();
+        int pair = rnaPairs.get(i).getPairType();
+        Residue residue = rnaResidues.get(i);
+        SecondaryStructure secondaryStructure = residue.getSecondaryStructure();
+        int ss = switch (secondaryStructure) {
+            case RNAHelix j:{
+                Residue r1 = rnaPairs.get(i).residue;
+                Residue r2 = rnaPairs.get(i).partner;
+                Polymer polymer1 = r1.getPolymer();
+                Polymer polymer2 = r2.getPolymer();
+                final int value;
+                if (polymer1 == polymer2) {
+                    value = r1.getResNum() < r2.getResNum() ? 1 : 2;
+                } else {
+                    value = polymer1.getIDNum() < polymer2.getIDNum() ? 1 : 2;
+                }
+                yield value;
+            }
+            case Bulge j:
+                yield 3;
+            case Loop j:
+                yield 4;
+            case InternalLoop j:
+                yield 5;
+            case NonLoop j:
+                yield 6;
+            case Junction j:
+                yield 7;
+            default:
+                yield 0;
+        };
+        return ss * 25 + pair * 5 + base;
+    }
+
     public List<List<String>> genRNAData() {
         Molecule molecule = Molecule.getActive();
         int[] basePairs = getPairs(molecule);
         Pattern gnraPat = Pattern.compile("G[AGUC][AG]A");
         Pattern uncgPat = Pattern.compile("U[AGUC]CG");
-
         List<Residue> rnaResidues = getSeqList(molecule);
         List<RNAPair> rnaPairs = new ArrayList<>();
         for (int i = 0; i < basePairs.length; i++) {
