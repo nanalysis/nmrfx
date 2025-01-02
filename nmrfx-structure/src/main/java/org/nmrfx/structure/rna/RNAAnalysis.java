@@ -21,29 +21,27 @@ import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.structure.chemistry.Molecule;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author bajlabuser
  */
 public class RNAAnalysis {
 
+    private RNAAnalysis() {
+
+    }
     /**
      * Generates a list of RNA residues in the given molecule
      *
-     * @param molecule
-     * @return
+     * @param molecule The molecule to get RNA residues from
+     * @return list of RNA residues
      */
-    public static List<Residue> genRnaResidues(Molecule molecule) { //list of only rna residues
-        List<Residue> rnaResidues = new ArrayList();
+    public static List<Residue> getRNAResidues(Molecule molecule) { //list of only rna residues
+        List<Residue> rnaResidues = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
-                for (Residue res : polymer.getResidues()) {
-                    rnaResidues.add(res);
-                }
+                rnaResidues.addAll(polymer.getResidues());
             }
         }
         return rnaResidues;
@@ -68,8 +66,8 @@ public class RNAAnalysis {
      * @return A list of BasePairs found in the molecule
      */
     public static List<BasePair> getPairList(Molecule molecule, int typeTarget) { //for RNA only
-        List<BasePair> bpList = new ArrayList();
-        List<Residue> rnaResidues = genRnaResidues(molecule);
+        List<BasePair> bpList = new ArrayList<>();
+        List<Residue> rnaResidues = getRNAResidues(molecule);
         int iResA = 0;
         for (Residue residueA : rnaResidues) {
             int iResB = 0;
@@ -92,14 +90,14 @@ public class RNAAnalysis {
      * Generates a map which determines which pairs overlap and create
      * pseudoknots
      *
-     * @param molecule
-     * @return
+     * @param molecule The molecule to analyze for base pairs
+     * @return a map of overlapping base pairs
      */
     public static Map<Integer, List<BasePair>> getBasePairs(Molecule molecule) {
         Map<Integer, List<BasePair>> bpMap = new HashMap<>();
         BasePair currentBp = null;
         int i = 0;
-        List<BasePair> crossedPairs = new ArrayList();
+        List<BasePair> crossedPairs = new ArrayList<>();
         List<BasePair> bpList = getPairList(molecule);
         for (BasePair bp1 : bpList) {
             for (BasePair bp2 : bpList) {
@@ -114,7 +112,6 @@ public class RNAAnalysis {
 
                     } else {
                         crossedPairs.add(bp1);
-                        currentBp = bp2;
                         break;
                     }
                 }
@@ -126,19 +123,17 @@ public class RNAAnalysis {
     /**
      * Generates vienna (dot-bracket) sequence for RNA residues within molecule
      *
-     * @param molecule
-     * @return
+     * @param molecule The molecule to get dot-bracket vienna sequence from
+     * @return The dot-bracket sequence as an array of chars
      */
     public static char[] getViennaSequence(Molecule molecule) {
         Map<Integer, List<BasePair>> bpMap = getBasePairs(molecule);
         List<BasePair> bps = getPairList(molecule);
-        List<Residue> rnaResidues = genRnaResidues(molecule);
+        List<Residue> rnaResidues = getRNAResidues(molecule);
         char[] vienna = new char[rnaResidues.size()];
         String leftBrackets = "[{ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String rightBrackets = "]}abcdefghijklmnopqrstuvwxyz";
-        for (int i = 0; i < vienna.length; i++) {
-            vienna[i] = '.';
-        }
+        Arrays.fill(vienna, '.');
         for (BasePair bp : bps) {
             vienna[bp.getIResA()] = '(';
             vienna[bp.getIResB()] = ')';
@@ -163,18 +158,16 @@ public class RNAAnalysis {
      * Generates vienna (dot-bracket) sequence for RNA residues within molecule
      * to test functionality of SSGen class
      *
-     * @param molecule
-     * @return
+     * @param molecule The molecule to analyze
+     * @return the dot-bracket sequence as an array of chars
      */
     public static char[] testViennaSequence(Molecule molecule) {
         Map<Integer, List<BasePair>> bpMap = getBasePairs(molecule);
-        List<Residue> rnaResidues = genRnaResidues(molecule);
+        List<Residue> rnaResidues = getRNAResidues(molecule);
         char[] vienna = new char[rnaResidues.size()];
         String leftBrackets = "[{";
         String rightBrackets = "]}";
-        for (int i = 0; i < vienna.length; i++) {
-            vienna[i] = '.';
-        }
+        Arrays.fill(vienna, '.');
         for (Residue residueA : rnaResidues) {
             if (residueA.pairedTo != null && residueA.iRes < residueA.pairedTo.iRes) {
                 vienna[residueA.iRes] = '(';
