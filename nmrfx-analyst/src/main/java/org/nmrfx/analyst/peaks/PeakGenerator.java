@@ -440,9 +440,7 @@ public class PeakGenerator {
     }
     public void generateRNANOESYSecStr(Dataset dataset, PeakList peakList, boolean useN, boolean reqActive) {
         var ss = new SSGen(molecule, molecule.getDotBracket());
-        ss.genRNAResidues();
-        ss.pairTo();
-        ss.secondaryStructGen();
+        ss.analyze();
 
         String scheme = "";
         if (dataset != null) {

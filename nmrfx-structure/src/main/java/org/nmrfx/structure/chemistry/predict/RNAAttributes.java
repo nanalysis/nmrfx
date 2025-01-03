@@ -265,6 +265,7 @@ public class RNAAttributes {
         Molecule molecule = Molecule.getActive();
         int[] basePairs = getPairs(molecule);
         SSGen ssGen = new SSGen(molecule, molecule.getDotBracket());
+        ssGen.analyze();
 
         List<Residue> rnaResidues = getSeqList(molecule);
         List<RNAPair> rnaPairs = new ArrayList<>();
