@@ -17,7 +17,6 @@ import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 import org.nmrfx.utils.GUIUtils;
-import org.python.util.PythonInterpreter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -614,7 +613,7 @@ public class Predictor {
                             atom.setRefError(iRef, error);
                         }
                     } else {
-                        log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);
+                        log.warn("no hose prediction for {} {}",  hoseAtom.getFullName(), hoseCode);
                     }
                 }
             }
