@@ -115,6 +115,9 @@ public class PeakPicking {
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
         int nFreqDim = datasetBase.getNFreqDims();
+        if (nFreqDim == 0) {
+            nFreqDim = datasetBase.getNDim();
+        }
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
             if ((iDim < 2) && (iDim < nFreqDim)) {

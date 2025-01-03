@@ -2542,7 +2542,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             TypeInfo typeInfo = runAbout.getTypeInfo(typeName);
             var sDim = currentList.getSpectralDim(dataAttr.getLabel(1));
             if (sDim != null) {
-                int dim = sDim.getDataDim();
+                int dim = sDim.getIndex();
                 List<AtomPresent> typesPresent = spinSystem.getTypesPresent(typeInfo, currentList, dim);
                 double x = 100.0;
                 double delta = textWidth + 5.0;

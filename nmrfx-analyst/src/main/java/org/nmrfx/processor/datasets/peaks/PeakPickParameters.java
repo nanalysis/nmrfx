@@ -45,7 +45,7 @@ public class PeakPickParameters {
     public int[][] pt = null;
     public int[][] ptMax;
     public double[] cpt;
-    public int[] dim;
+    public int[] peakToData;
     public Double level = null;
     public double regionWidth = 0;
     public int thickness = 0;
@@ -130,14 +130,14 @@ public class PeakPickParameters {
         cpt = new double[dataDim];
 
         ptMax = new int[dataDim][2];
-        dim = new int[dataDim];
+        peakToData = new int[dataDim];
 
         for (int i = 0; i < dataDim; i++) {
             pt[i][0] = 0;
             pt[i][1] = theFile.getSizeReal(i) - 1;
             ptMax[i][0] = 0;
             ptMax[i][1] = theFile.getSizeReal(i) - 1;
-            dim[i] = i;
+            peakToData[i] = i;
             cpt[i] = (pt[i][0] + pt[i][1]) / 2.0;
         }
     }
@@ -223,7 +223,7 @@ public class PeakPickParameters {
                 holdPt[i][1] = pt[i][1];
             }
             for (int i = 0; i < dimSizes.length; i++) {
-                dim[i] = dimSizes[i].iDim;
+                peakToData[i] = dimSizes[i].iDim;
                 pt[i][0] = holdPt[dimSizes[i].iDim][0];
                 pt[i][1] = holdPt[dimSizes[i].iDim][1];
             }
