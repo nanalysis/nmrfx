@@ -1640,15 +1640,15 @@ class refine:
         for polymer in polymers:
             allResidues += polymer.getResidues()
         ssGen = SSGen(self.molecule, self.vienna)
-        ssGen.secondaryStructGen()
+        ssGen.analyze()
         subType='0'
-        for ss in ssGen.structures:
+        for ss in ssGen.structures():
             residues = ss.getResidues()
         stemLoops = []
-        for ss in ssGen.structures:
+        for ss in ssGen.structures():
             residues = ss.getResidues()
             if ss.getName() == "Helix":
-                stemLoop = self.isStemLoop(ssGen.structures, ss)
+                stemLoop = self.isStemLoop(ssGen.structures(), ss)
                 if stemLoop:
                     stemLoops.append(stemLoop)
                 strandI = residues[0::2]
@@ -2371,7 +2371,7 @@ class refine:
     def findSSLinks(self):
         links = []
         bonds = []
-        for ss in self.ssGen.structures:
+        for ss in self.ssGen.structures():
             if ss.getName() == "Helix":
                 residues = ss.getResidues()
                 strandI = residues[0::2]
@@ -2401,10 +2401,10 @@ class refine:
 
     def findHelices(self,vienna):
         self.ssGen = SSGen(self.molecule, vienna)
-        self.ssGen.secondaryStructGen()
+        self.ssGen.analyze()
 
     def addHelicesRestraints(self, vienna):
-        for ss in self.ssGen.structures:
+        for ss in self.ssGen.structures():
             if ss.getName() == "Helix":
                 residues = ss.getResidues()
                 self.addHelix(residues)
@@ -2424,7 +2424,7 @@ class refine:
                 tetraLoopSeq += residue.getName()
                 tetraLoopRes.append(residue.getNumber())
 
-            matched_cluster = getCluster(tetraLoopSeq) 
+            matched_cluster = getCluster(tetraLoopSeq)
 
             if matched_cluster:            
                 loopResidues = [allResidues[start+i] for i in range(6)]
@@ -2465,8 +2465,8 @@ class refine:
 
     def lockRNAHelices(self, lockLast=False):
         ssGen = SSGen(self.molecule, self.vienna)
-        ssGen.secondaryStructGen()
-        for ss in ssGen.structures:
+        ssGen.analyze()
+        for ss in ssGen.structures():
             if ss.getName() == "Helix":
                 helixResidues = ss.getResidues()
                 strandI = helixResidues[0::2]
@@ -2506,6 +2506,8 @@ class refine:
         resNumI = residueI.getNumber()
         resNumJ = residueJ.getNumber()
         basePairs = AllBasePairs.getBasePair(type, resNameI, resNameJ)
+        if (basePairs == None):
+            return
         for bp in basePairs.getBPConstraints():
             lowAtomAtomDis = bp.getLower()
             atomAtomDis = bp.getUpper()

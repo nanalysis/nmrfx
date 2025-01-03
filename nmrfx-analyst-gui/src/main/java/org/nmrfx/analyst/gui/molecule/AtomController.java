@@ -186,6 +186,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         writePPMItem.setOnAction(e -> writePPM());
         fileMenu.getItems().add(writePPMItem);
 
+        MenuItem writeRefPPMItem = new MenuItem("Write Ref PPM...");
+        writeRefPPMItem.setOnAction(e -> writeRefPPM());
+        fileMenu.getItems().add(writeRefPPMItem);
+
         MenuItem readPPMItem = new MenuItem("Read PPM...");
         readPPMItem.setOnAction(e -> readPPM(false));
         fileMenu.getItems().add(readPPMItem);
@@ -494,6 +498,13 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     void writePPM() {
+        writePPM(0, false);
+    }
+
+    void writeRefPPM() {
+        writePPM(0, true);
+    }
+    void writePPM(int ppmSet, boolean refMode) {
         try {
             FileChooser fileChooser = new FileChooser();
             File file = fileChooser.showSaveDialog(null);
@@ -503,7 +514,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                 if (molecule != null) {
 
                     try (FileWriter writer = new FileWriter(listFileName)) {
-                        PPMFiles.writePPM(molecule, writer, 0, false);
+                        PPMFiles.writePPM(molecule, writer, ppmSet, refMode);
                     }
                 }
             }

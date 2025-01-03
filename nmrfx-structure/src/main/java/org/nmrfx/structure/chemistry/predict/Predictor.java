@@ -7,6 +7,7 @@ package org.nmrfx.structure.chemistry.predict;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -15,7 +16,7 @@ import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
-import org.python.util.PythonInterpreter;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -384,9 +385,17 @@ public class Predictor {
 
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
-        if ((molecule != null) && !molecule.getDotBracket().isEmpty()) {
-            try (PythonInterpreter interp = new PythonInterpreter()) {
-                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+        if (molecule != null) {
+            if  (molecule.getDotBracket().isEmpty()) {
+                GUIUtils.warn("RNA Prediction", "Please set secondary structure (dot-bracket)");
+                return;
+            }
+            RNAAttributes rnaAttributes = new RNAAttributes();
+            try {
+                rnaAttributes.predictFromAttr(molecule, ppmSet);
+            } catch (IOException e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.showAndWait();
             }
         }
     }
@@ -604,7 +613,7 @@ public class Predictor {
                             atom.setRefError(iRef, error);
                         }
                     } else {
-                        log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);
+                        log.warn("no hose prediction for {} {}",  hoseAtom.getFullName(), hoseCode);
                     }
                 }
             }
