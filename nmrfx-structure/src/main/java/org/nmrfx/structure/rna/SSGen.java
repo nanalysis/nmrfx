@@ -29,172 +29,172 @@ import java.util.List;
  * @author bajlabuser
  */
 public class SSGen {
+    enum SSTypes {
+        JUNCTION,
+        NONLOOP,
+        BULGE,
+        INTERNALLOOP,
+        LOOP,
+        HELIX
+    }
 
-    public int tracker = 0;
-    public String viennaSeq;
-    public Molecule molecule;
-    public static String type;
-    public List<SecondaryStructure> structures = new ArrayList<>();
-    public List<Residue> residues;
+    private int tracker = 0;
+    private final String viennaSeq;
+    private final Molecule molecule;
+    private SSTypes type;
+    private final List<SecondaryStructure> structures = new ArrayList<>();
+    private List<Residue> residues;
 
     public SSGen(Molecule mol, String vienna) {
         molecule = mol;
         viennaSeq = vienna;
-        genRNAResidues();
-        pairTo();
-        secondaryStructGen();
-
     }
 
     public SSGen(Molecule mol) {
         molecule = mol;
         char[] vSeq = RNAAnalysis.getViennaSequence(mol);
-        String vienna = new String(vSeq);
-        viennaSeq = vienna;
-        genRNAResidues();
+        viennaSeq = new String(vSeq);
+    }
+
+    public List<SecondaryStructure> analyze() {
+        residues = RNAAnalysis.getRNAResidues(molecule);
         pairTo();
         secondaryStructGen();
+        return structures;
     }
 
-    public final void genRNAResidues() {
-        residues = new ArrayList<>();
-        for (Polymer polymer : molecule.getPolymers()) {
-            if (polymer.isRNA()) {
-                for (Residue residue : polymer.getResidues()) {
-                    residues.add(residue);
-                }
-            }
-        }
+    public List<SecondaryStructure> structures() {
+        return structures;
     }
 
-    public final void pairTo() {
+        private void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
     }
 
-    public static SecondaryStructure classifyRes(List<Residue> residues) {
-        if (residues != null && !(residues.isEmpty())) {
-            if (null != type) {
-                switch (type) {
-                    case "junction":
-                        SecondaryStructure J = new Junction(residues);
-                        return J;
-                    case "nonloop": {
-                        SecondaryStructure L = new NonLoop(residues);
-                        return L;
-                    }
-                    case "bulge":
-                        SecondaryStructure B = new Bulge(residues);
-                        return B;
-                    case "internalLoop":
-                        SecondaryStructure IL = new InternalLoop(residues);
-                        return IL;
-                    case "loop": {
-                        SecondaryStructure L = new Loop(residues);
-                        return L;
-                    }
-                    case "helix": {
-                        SecondaryStructure H = new RNAHelix(residues);
-                        return H;
-                    }
-                    default:
-                        break;
+    private SecondaryStructure classifyRes(List<Residue> residues) {
+        SecondaryStructure secondaryStructure = null;
+        if (residues != null && !(residues.isEmpty()) && (null != type)) {
+            secondaryStructure = switch (type) {
+                case JUNCTION:
+                    yield new Junction(residues);
+                case NONLOOP:
+                    yield new NonLoop(residues);
+                case BULGE:
+                    yield new Bulge(residues);
+                case INTERNALLOOP:
+                    yield new InternalLoop(residues);
+                case LOOP: {
+                    yield new Loop(residues);
                 }
-            }
+                case HELIX: {
+                    yield new RNAHelix(residues);
+                }
+            };
         }
-        return null;
+        return secondaryStructure;
     }
 
-    public List<Residue> genResList() {
-        List<Residue> currentSS = new ArrayList<>();
-        List<Residue> ssType = new ArrayList<>();
-        boolean add = false;
+    private List<Residue> genResList() {
         if (residues.get(tracker).pairedTo == null) {
+            List<Residue> currentSS = new ArrayList<>();
             while (tracker < residues.size() && residues.get(tracker).pairedTo == null) {
                 currentSS.add(residues.get(tracker));
                 tracker++;
             }
-            Residue ssFirstRes = currentSS.get(0);
-            Residue ssLastRes = currentSS.get(currentSS.size() - 1);
-            Residue firstRes = residues.get(0);
-            Residue lastRes = residues.get(residues.size() - 1);
-            Residue resBefore = ssFirstRes.getPrevious();
-            Residue resAfter = ssLastRes.getNext();
-            boolean samePoly = ssFirstRes.getPolymer() == ssLastRes.getPolymer();
-
-            if (ssLastRes == lastRes || ssFirstRes == firstRes || (resAfter == null)) { //last residue or first residue (string of non pairing all the way to end)
-                add = true;
-                type = "nonloop"; //instead of calling first residue, call last residue
-            } else if (samePoly && (resBefore.pairedTo == resAfter)) { //loop
-                add = true;
-                type = "loop";
-            } else if (resBefore.pairedTo.iRes < resAfter.pairedTo.iRes) { //junction
-                add = true;
-                type = "junction";
-            } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
-                add = true;
-                type = "bulge";
-            } else if (resBefore.pairedTo.getPrevious().pairedTo == null && (resBefore.iRes < resBefore.pairedTo.iRes)) { //second half of internal loop
-                Residue otherLoopRes = resBefore.pairedTo.getPrevious();
-                while (otherLoopRes.pairedTo == null) {
-                    currentSS.add(otherLoopRes);
-                    otherLoopRes = otherLoopRes.previous;
-                }
-                add = true;
-                type = "internalLoop";
-            } else {
-                boolean hasType = true;
-                for (Residue res : currentSS) {
-                    if (res.secStruct == null) {
-                        hasType = false;
-                    }
-                }
-                if (!hasType) {
-                    add = true;
-                    type = "bulge";
-                }
-            }
-            if (add) {
-                ssType.addAll(currentSS);
-            }
-            return ssType;
+            return buildOther(currentSS);
         } else {
-            while (tracker < residues.size() && residues.get(tracker).pairedTo != null) {
-                Residue res1 = residues.get(tracker);
-                Residue res2 = res1.pairedTo;
-                Residue res1Next = res1.getNext();
-                Residue res2Before = res2.getPrevious();
-                Polymer poly1 = res1.getPolymer();
-                Polymer poly2 = res2.getPolymer();
-                int polyID1 = poly1.getIDNum();
-                int polyID2 = poly2.getIDNum();
-                boolean firstInstance = polyID1 < polyID2;
-                if (polyID1 == polyID2) {
-                    firstInstance = res1.iRes < res2.iRes;
-                }
-                if (firstInstance) {
-                    ssType.add(residues.get(tracker));
-                    ssType.add(residues.get(tracker).pairedTo);
-                    tracker++;
-                } else {
-                    tracker++;
-                }
-                if ((res1Next != null) && (res1Next.pairedTo != null) && (res2Before != null) && res2Before.pairedTo == null) {
-                    // bulge on opposite strand so end helix
-                    break;
-                }
-            }
-            type = "helix";
-            return ssType;
+            return buildHelix();
         }
     }
 
-    public final void secondaryStructGen() {
+    private List<Residue> buildOther(List<Residue> currentSS) {
+        List<Residue> ssResidues = new ArrayList<>();
+        Residue ssFirstRes = currentSS.get(0);
+        Residue ssLastRes = currentSS.get(currentSS.size() - 1);
+        Residue firstRes = residues.get(0);
+        Residue lastRes = residues.get(residues.size() - 1);
+        Residue resBefore = ssFirstRes.getPrevious();
+        Residue resAfter = ssLastRes.getNext();
+        boolean samePoly = ssFirstRes.getPolymer() == ssLastRes.getPolymer();
+        boolean add = false;
+
+        if (ssLastRes == lastRes || ssFirstRes == firstRes || (resAfter == null)) { //last residue or first residue (string of non pairing all the way to end)
+            add = true;
+            type = SSTypes.NONLOOP; //instead of calling first residue, call last residue
+        } else if (samePoly && (resBefore.pairedTo == resAfter)) { //loop
+            add = true;
+            type = SSTypes.LOOP;
+        } else if (resBefore.pairedTo.iRes < resAfter.pairedTo.iRes) { //junction
+            add = true;
+            type = SSTypes.JUNCTION;
+        } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
+            add = true;
+            type = SSTypes.BULGE;
+        } else if (resBefore.pairedTo.getPrevious().pairedTo == null && (resBefore.iRes < resBefore.pairedTo.iRes)) { //second half of internal loop
+            Residue otherLoopRes = resBefore.pairedTo.getPrevious();
+            while (otherLoopRes.pairedTo == null) {
+                currentSS.add(otherLoopRes);
+                otherLoopRes = otherLoopRes.previous;
+            }
+            add = true;
+            type = SSTypes.INTERNALLOOP;
+        } else {
+            boolean hasType = true;
+            for (Residue res : currentSS) {
+                if (res.secStruct == null) {
+                    hasType = false;
+                    break;
+                }
+            }
+            if (!hasType) {
+                add = true;
+                type = SSTypes.BULGE;
+            }
+        }
+        if (add) {
+            ssResidues.addAll(currentSS);
+        }
+        return  ssResidues;
+    }
+
+    private List<Residue> buildHelix() {
+        List<Residue> ssResidues = new ArrayList<>();
+        while (tracker < residues.size() && residues.get(tracker).pairedTo != null) {
+            Residue res1 = residues.get(tracker);
+            Residue res2 = res1.pairedTo;
+            Residue res1Next = res1.getNext();
+            Residue res2Before = res2.getPrevious();
+            Polymer poly1 = res1.getPolymer();
+            Polymer poly2 = res2.getPolymer();
+            int polyID1 = poly1.getIDNum();
+            int polyID2 = poly2.getIDNum();
+            boolean firstInstance = polyID1 < polyID2;
+            if (polyID1 == polyID2) {
+                firstInstance = res1.iRes < res2.iRes;
+            }
+            if (firstInstance) {
+                ssResidues.add(residues.get(tracker));
+                ssResidues.add(residues.get(tracker).pairedTo);
+            }
+            tracker++;
+            if ((res1Next != null) && (res1Next.pairedTo != null) && (res2Before != null) && res2Before.pairedTo == null) {
+                // bulge on opposite strand so end helix
+                break;
+            }
+        }
+        type = SSTypes.HELIX;
+        return ssResidues;
+
+    }
+    private void secondaryStructGen() {
+        tracker = 0;
+        structures.clear();
         while (tracker < residues.size()) {
             SecondaryStructure ss = classifyRes(genResList());
             if (ss != null) {
-                for (Residue residues : ss.secResidues) {
-                    residues.secStruct = ss;
+                for (Residue residue : ss.secResidues) {
+                    residue.secStruct = ss;
                 }
                 ss.size = ss.secResidues.size();
                 structures.add(ss);

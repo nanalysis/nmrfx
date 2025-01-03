@@ -440,9 +440,7 @@ public class PeakGenerator {
     }
     public void generateRNANOESYSecStr(Dataset dataset, PeakList peakList, boolean useN, boolean reqActive) {
         var ss = new SSGen(molecule, molecule.getDotBracket());
-        ss.genRNAResidues();
-        ss.pairTo();
-        ss.secondaryStructGen();
+        ss.analyze();
 
         String scheme = "";
         if (dataset != null) {
@@ -453,7 +451,7 @@ public class PeakGenerator {
         }
         Boolean[] editingModes = getFiltering(scheme);
         var map = InteractionType.getInteractionMap();
-        List<Residue> rnaResidues = RNAAnalysis.genRnaResidues(molecule);
+        List<Residue> rnaResidues = RNAAnalysis.getRNAResidues(molecule);
         for (int i=0;i<rnaResidues.size();i++) {
             for (int j = i;j<rnaResidues.size();j++) {
                 Residue aRes = rnaResidues.get(i);

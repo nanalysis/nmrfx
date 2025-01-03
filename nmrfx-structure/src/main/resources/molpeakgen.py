@@ -416,10 +416,8 @@ class MolPeakGen:
             scheme = "aa"
              
 	#print(self.vienna)
-        ss = SSGen(self.mol, self.vienna)
-        ss.genRNAResidues()
-        ss.pairTo()
-        ss.secondaryStructGen()
+        ssGen = SSGen(self.mol, self.vienna)
+        ssGen.analyze()
 
         peakList.setSampleConditionLabel(condition)
         self.addRNASecStrPeaks(peakList, scheme, useN, requireActive)
