@@ -31,6 +31,7 @@ public class RNAAnalysis {
     private RNAAnalysis() {
 
     }
+
     /**
      * Generates a list of RNA residues in the given molecule
      *
@@ -58,6 +59,22 @@ public class RNAAnalysis {
         return RNAAnalysis.getPairList(molecule, 1);
     }
 
+    static int getResDistance(List<Residue> residues, Residue residueI, Residue residueJ) {
+        int i = residues.indexOf(residueI);
+        int j = residues.indexOf(residueJ);
+        return j - i;
+    }
+
+    static boolean samePolymer(Residue residueI, Residue residueJ) {
+        return residueI.polymer == residueJ.polymer;
+    }
+
+    static boolean pairingAllowed(List<Residue> residues, Residue residueI, Residue residueJ) {
+        boolean samePolymer = samePolymer(residueI, residueJ);
+        int distance = getResDistance(residues, residueI, residueJ);
+        return (samePolymer && (distance > 3)) || (!samePolymer && (distance > 0));
+    }
+
     /**
      * Generates a list of RNA basepairs for the given molecule
      *
@@ -72,7 +89,7 @@ public class RNAAnalysis {
         for (Residue residueA : rnaResidues) {
             int iResB = 0;
             for (Residue residueB : rnaResidues) {
-                if (residueA.getResNum() < residueB.getResNum()) {
+                if (pairingAllowed(rnaResidues, residueA, residueB)) {
                     int type = BasePair.getBasePairType(residueA, residueB);
                     if ((type == typeTarget) || ((typeTarget == -1) && (type > 0))) {
                         BasePair bp = new BasePair(residueA, iResA, residueB, iResB, type);
