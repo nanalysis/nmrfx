@@ -1,6 +1,8 @@
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 
 import java.util.*;
 
@@ -144,4 +146,27 @@ public class MolecularConstraints {
         return rdcSets.values();
     }
 
+    public static void addDistanceConstraint(String atomNames1, String atomNames2, double lower, double upper,  boolean bond) {
+        String setName = bond ? "bond_restraint_list" : "noe_restraint_list";
+        addDistanceConstraint(atomNames1, atomNames2, lower, upper, setName, bond);
+    }
+    public static void addDistanceConstraint(List<String> atomNames1, List<String> atomNames2, double lower, double upper,  boolean bond) {
+        String setName = bond ? "bond_restraint_list" : "noe_restraint_list";
+        addDistanceConstraint(atomNames1, atomNames2, lower, upper, setName, bond);
+    }
+
+    public static void addDistanceConstraint(String atomNames1, String atomNames2, double lower, double upper, String setName, boolean bond) {
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        var molecularConstraints = molecule.getMolecularConstraints();
+        var disCon = molecularConstraints.getNoeSet(setName, true);
+        disCon.containsBonds(bond);
+        disCon.addDistanceConstraint(atomNames1, atomNames2, lower, upper, bond);
+    }
+    public static void addDistanceConstraint(List<String> atomNames1, List<String> atomNames2, double lower, double upper, String setName, boolean bond) {
+        MoleculeBase molecule = MoleculeFactory.getActive();
+        var molecularConstraints = molecule.getMolecularConstraints();
+        var disCon = molecularConstraints.getNoeSet(setName, true);
+        disCon.containsBonds(bond);
+        disCon.addDistanceConstraint(atomNames1, atomNames2, lower, upper, bond);
+    }
 }

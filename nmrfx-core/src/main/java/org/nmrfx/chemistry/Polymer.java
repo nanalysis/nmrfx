@@ -42,6 +42,8 @@ public class Polymer extends Entity {
     private String strandID = "A";
     private String nomenclature = "IUPAC";
     private boolean capped = true;
+
+    private boolean cyclic = false;
     private boolean libraryMode = true;
     ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
     ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
@@ -234,6 +236,14 @@ public class Polymer extends Entity {
 
     public void setCapped(final boolean capped) {
         this.capped = capped;
+    }
+
+    public boolean isCyclic() {
+        return cyclic;
+    }
+
+    public void setCyclic(final boolean cyclic) {
+        this.cyclic = cyclic;
     }
 
     public boolean isLibraryMode() {

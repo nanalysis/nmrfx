@@ -82,7 +82,7 @@ public class AngleTreeGenerator {
 
     }
 
-    public boolean checkStartAtom(Atom startAtom) {
+    public static boolean checkStartAtom(Atom startAtom) {
         boolean ok = startAtom.bonds.size() == 1;
         if (ok) {
             Atom partner = startAtom.getConnected().get(0);
@@ -91,7 +91,7 @@ public class AngleTreeGenerator {
         return ok;
     }
 
-    public Atom findStartAtom(ITree itree) {
+    public static Atom findStartAtom(ITree itree) {
         List<Atom> atoms = itree.getAtomArray();
         Atom startAtom = null;
         if (itree instanceof Entity && itree instanceof Polymer) {
@@ -110,7 +110,7 @@ public class AngleTreeGenerator {
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom)
             throws IllegalArgumentException {
-
+System.out.println("genTree");
         List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             atom.parent = null;
@@ -288,6 +288,7 @@ public class AngleTreeGenerator {
 
     public void measureAtomTree(ITree itree, List<List<Atom>> atomTree, boolean changeBonds, boolean freezeRings) {
         // get Atom array --> getAtomList() difference?
+        System.out.println("measuretree");
         for (Atom atom : itree.getAtomArray()) {
             atom.parent = null;
         }

@@ -30,6 +30,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public MoleculeBase molecule = null;
     public List<Atom> atoms = new ArrayList<Atom>();
     public List<Bond> bonds = new ArrayList<Bond>();
+    Atom startAtom = null;
     boolean hasEquivalentAtoms = false;
     public CoordSet coordSet = null;
     public int entityID = 0;
@@ -277,6 +278,14 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     public void sortByIndex() {
         Collections.sort(atoms, Atom::compareByIndex);
+    }
+
+    public void startAtom(Atom atom) {
+        startAtom = atom;
+    }
+
+    public Optional<Atom> startAtom() {
+        return Optional.ofNullable(startAtom);
     }
 
 }
