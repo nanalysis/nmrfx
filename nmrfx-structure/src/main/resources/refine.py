@@ -651,7 +651,6 @@ class refine:
                 self.readLinkerDict(linkerList)
 
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
-        print(atomName1,atomName2)
         MolecularConstraints.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
     def getAngleConstraintSet(self):
@@ -1111,8 +1110,7 @@ class refine:
             if not self.ssGen:
                 self.findRNAHelices(data['rna'])
             if 'vienna' in data['rna']:
-                self.vienna = data['rna']['vienna']
-                self.addHelicesRestraints(self.vienna)
+                ConstraintCreator.addHelicesRestraints(self.molecule, self.ssGen)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
                 rnaLinks,rnaBonds = self.findSSLinks()
                 molData['link'] = rnaLinks
@@ -2066,58 +2064,6 @@ class refine:
                         pass
                 print 'dihedral',output
 
-    def addHelix(self, helixResidues):
-        strandI = helixResidues[0::2]
-        strandJ = helixResidues[1::2]
-        nRes = len(strandI)
-        for i in range(nRes):
-            resI = strandI[i]
-            resJ = strandJ[i]
-            resINum = resI.getNumber()
-            resJNum = resJ.getNumber()
-            polymerI = resI.getPolymer()
-            polymerJ = resJ.getPolymer()
-            self.addSuiteBoundary(polymerI, resINum,"1a")
-            self.addSuiteBoundary(polymerJ, resJNum,"1a")
-            self.addBasePair(resI, resJ)
-            if ((i+1) < nRes):
-                resINext = strandI[i+1]
-                resJPrev = strandJ[i+1]
-                #  make sure we're not in bulge before adding stack
-                if resINext.getPrevious() == resI and resJPrev.getNext() == resJ:
-                    self.addStackPair(resI, resINext)
-                    self.addStackPair(resJPrev, resJ)
-                    resJName = resJ.getName()
-                    if (resJName == "A"):
-                        atomNameI = self.getAtomName(resINext,"H1'")
-                        atomNameJ = self.getAtomName(resJ,"H2")
-                        self.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
-
-
-    def addHelixPP(self, helixResidues):
-        strandI = helixResidues[0::2]
-        strandJ = helixResidues[1::2]
-        nRes = len(strandI)
-        for i in range(nRes):
-            resI = strandI[i]
-            resJ = strandJ[i]
-            if ((i+3) < nRes):
-                resI3 = strandI[i+3]
-                if (resI.getAtom("P") != None) and (resI3.getAtom("P") != None):
-                    atomNameI = self.getAtomName(resI,"P")
-                    atomNameI3 = self.getAtomName(resI3,"P")
-                    self.addDistanceConstraint(atomNameI, atomNameI3, 16.5, 20.0)
-                resJ3 = strandJ[i+3]
-                if (resJ3.getAtom("P") != None) and (resJ3.getAtom("P") != None):
-                    atomNameJ = self.getAtomName(resJ,"P")
-                    atomNameJ3 = self.getAtomName(resJ3,"P")
-                    self.addDistanceConstraint(atomNameJ, atomNameJ3, 16.5, 20.0)
-            if ((i+5) < nRes):
-                resJ5 = strandJ[i+5]
-                if (resI.getAtom("P") != None) and (resJ5.getAtom("P") != None):
-                    atomNameI = self.getAtomName(resI,"P")
-                    atomNameJ5 = self.getAtomName(resJ5,"P")
-                    self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
 
     def findSSLinks(self):
         links = []
@@ -2154,43 +2100,6 @@ class refine:
         self.ssGen = SSGen(self.molecule, vienna)
         self.ssGen.analyze()
 
-    def addHelicesRestraints(self, vienna):
-        for ss in self.ssGen.structures():
-            if ss.getName() == "Helix":
-                residues = ss.getResidues()
-                self.addHelix(residues)
-                self.addHelixPP(residues)
-
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
-        pat = re.compile('\(\(\.\.\.\.\)\)')
-        for m in pat.finditer(vienna):
-            start = m.start()+1
-            tetraLoopSeq = ""
-            tetraLoopRes = []
-            for iRes in range(start,start+6):
-                residue = allResidues[iRes]
-                tetraLoopSeq += residue.getName()
-                tetraLoopRes.append(residue.getNumber())
-
-            matched_cluster = getCluster(tetraLoopSeq)
-
-            if matched_cluster:            
-                loopResidues = [allResidues[start+i] for i in range(6)]
-                if loopResidues[1].getPolymer() == loopResidues[-1].getPolymer():
-                    for i, suite in enumerate(matched_cluster.suites):
-                        if suite != "..":
-                            res = loopResidues[i+1]
-                            self.addSuiteBoundary(polymer, res.getNumber(), suite)
-
-                bps = matched_cluster.bp
-                for bp in bps:
-                    (resNum1, resNum2) = bp.split(':')
-                    res1 = loopResidues[int(resNum1) - 1]
-                    res2 = loopResidues[int(resNum2) - 1]
-                    self.addBasePair(res1, res2)
 
     def restart(self):
         print 'restart'
@@ -2388,73 +2297,6 @@ class refine:
                 self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
                 self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
 
-    def addStackPair(self, resI, resJ):
-        resNameI = resI.getName()
-        resNameJ = resJ.getName()
-        resNumI = resI.getNumber()
-        resNumJ = resJ.getNumber()
-        polyI = resI.getPolymer()
-        polyJ = resJ.getPolymer()
-        if polyI != polyJ:
-            return
-        dHN = 1.89
-        dHO = 1.89
-        dNN = 3.0
-        dNO = 3.0
-
-        stackTo = {}
-        stackTo['C'] = (("H2'","H6",4.0,2.7), ("H3'","H6",3.0,3.3))
-        stackTo['U'] = (("H2'","H6",4.0,2.7), ("H3'","H6",3.0,3.3))
-        stackTo['G'] = (("H2'","H8",4.0,2.7), ("H3'","H8",3.0,3.3))
-        stackTo['A'] = (("H2'","H8",4.0,2.7), ("H3'","H8",3.0,3.3))
-
-        stackPairs = {}
-        stackPairs['CU'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['CC'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['CG'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-        stackPairs['CA'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-
-        stackPairs['UU'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['UC'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['UG'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-        stackPairs['UA'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-
-        stackPairs['GU'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0)]
-        stackPairs['GC'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0)]
-        stackPairs['GG'] = [("H8","H8",1.8,5.0)]
-        stackPairs['GA'] = [("H8","H8",1.8,5.0)]
-
-        stackPairs['AU'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0),("H2","H1'",1.8,5.0)]
-        stackPairs['AC'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0),("H2","H1'",1.8,5.0)]
-        stackPairs['AG'] = [("H8","H8",1.8,5.0),("H2","H1'",1.8,5.0)]
-        stackPairs['AA'] = [("H8","H8",1.8,5.0),("H2","H1'",1.8,5.0)]
-
-        stacks = stackTo[resNameI]
-        for stack in stacks:
-            aNameI, aNameJ,intra,inter = stack
-            lowerIntra = intra - 1.0
-            atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
-            atomNameJ = polyI.getName()+':'+resNumI+'.'+aNameJ
-            self.addDistanceConstraint(atomNameI,atomNameJ,lowerIntra,intra)
-
-        stacks = stackTo[resNameJ]
-        for stack in stacks:
-            aNameI, aNameJ,intra,inter = stack
-            lowerInter = inter - 1.0
-            atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
-            atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
-            self.addDistanceConstraint(atomNameI,atomNameJ,lowerInter,inter)
-
-        pairName = resNameI+resNameJ
-        if not pairName in stackPairs:
-            print("No data for pair " + pairName)
-        else:
-            pairs = stackPairs[pairName]
-            for pair in pairs:
-                aNameI, aNameJ,lower,upper = pair
-                atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
-                atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
-                self.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
 
     def dumpProperties(self, nodeValidator):
         atoms = self.molecule.getAtoms()
