@@ -44,12 +44,11 @@ public class ConstraintCreator {
 
     static void processCyclic(Molecule molecule, Map<String, Object> linkerDict) {
         Map<String, Object> bondDict = (Map<String, Object>) linkerDict.get("bond");
-        Boolean cyclicValue = (Boolean) bondDict.get("cyclic");
         List<Polymer> polymers = molecule.getPolymers();
         if ((polymers.size() != 1) && !bondDict.containsKey("pName")) {
             throw new IllegalArgumentException("Multiple polymers in structure but no specification for which to be made cyclic\"");
         }
-        Polymer polymer = null;
+        Polymer polymer;
         if (bondDict.containsKey("pName")) {
             String pName = (String) bondDict.get("pName");
             var polyOpt = polymers.stream().filter(p -> p.getName().equals(pName)).findFirst();
@@ -65,9 +64,7 @@ public class ConstraintCreator {
     }
 
     public static void addCyclicConstraints(Molecule molecule) {
-        molecule.getPolymers().stream().filter(p -> p.isCyclic()).forEach(polymer -> {
-            addCyclicBond(polymer);
-        });
+        molecule.getPolymers().stream().filter(Polymer::isCyclic).forEach(ConstraintCreator::addCyclicBond);
     }
 
     static void addCyclicBond(Polymer polymer) {
@@ -171,14 +168,13 @@ public class ConstraintCreator {
         } else {
             if (first) {
                 String aName = connectorName + ".H3'";
-                atom = molecule.getAtomByName(aName);
+                atom = MoleculeBase.getAtomByName(aName);
             } else {
                 String aName = connectorName + ".P";
-                atom = molecule.getAtomByName(aName);
+                atom = MoleculeBase.getAtomByName(aName);
                 if (atom == null) {
                     aName = connectorName + ".O5'";
-                    atom = molecule.getAtomByName(aName);
-
+                    atom = MoleculeBase.getAtomByName(aName);
                 }
             }
         }
@@ -219,8 +215,8 @@ public class ConstraintCreator {
 
     public static Map<String, String> setEntityEntryDict(List<Map<String, Object>> linkerList, Map<String, String> treeDict) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
-        Entity startEntity = null;
-        Atom entryAtom = null;
+        Entity startEntity;
+        Atom entryAtom;
         if (treeDict != null) {
             String entryAtomName = treeDict.getOrDefault("start", null);
             entryAtom = MoleculeBase.getAtomByName(entryAtomName);
@@ -271,10 +267,9 @@ public class ConstraintCreator {
     }
 
     public static void measureTree(Molecule molecule) {
-        var aTree = new AngleTreeGenerator();
         for (Entity entity : molecule.getEntities()) {
             if (entity instanceof Polymer polymer) {
-                Atom prfStartAtom = aTree.findStartAtom(polymer);
+                Atom prfStartAtom = AngleTreeGenerator.findStartAtom(polymer);
                 var treeStartOpt = polymer.startAtom();
                 if (treeStartOpt.isPresent()) {
                     Atom treeStartAtom = treeStartOpt.get();
@@ -288,9 +283,7 @@ public class ConstraintCreator {
                 }
             }
             setupAtomProperties(entity);
-            entity.startAtom().ifPresent(atom -> {
-                AngleTreeGenerator.genMeasuredTree(entity, atom);
-            });
+            entity.startAtom().ifPresent(atom -> AngleTreeGenerator.genMeasuredTree(entity, atom));
         }
     }
 
@@ -309,20 +302,14 @@ public class ConstraintCreator {
     static AngleConstraintSet getAngleConstraintSet(Molecule molecule) {
         var molConstraints = molecule.getMolecularConstraints();
         var optSet = molConstraints.activeAngleSet();
-        AngleConstraintSet angleCon = null;
-        if (optSet.isPresent()) {
-            angleCon = optSet.get();
-        } else {
-            angleCon = molConstraints.newAngleSet("default");
-        }
-        return angleCon;
+        return optSet.orElseGet(() -> molConstraints.newAngleSet("default"));
     }
 
     static void addAngleConstraint(Molecule molecule, Atom[] atoms, double lower, double upper, double scale) throws InvalidMoleculeException {
         getAngleConstraintSet(molecule).addAngleConstraint(atoms, lower, upper, scale);
     }
 
-    public static void addAngleConstraint(Molecule molecule, AngleConstraint angleConstraint) throws InvalidMoleculeException {
+    public static void addAngleConstraint(Molecule molecule, AngleConstraint angleConstraint) {
         getAngleConstraintSet(molecule).add(angleConstraint);
     }
 
