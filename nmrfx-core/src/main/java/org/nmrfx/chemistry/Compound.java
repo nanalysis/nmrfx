@@ -33,12 +33,13 @@ public class Compound extends Entity implements AtomIterable {
     }
 
     public Compound(String number, String name) {
-        this(number, name, name);
+        this(number, name, name, name);
     }
 
-    public Compound(String number, String name, String label) {
+    public Compound(String number, String name, String label, String entityAssemblyName) {
         this.name = name;
         this.number = number;
+        this.entityAssemblyName = entityAssemblyName;
         try {
             resNum = Integer.valueOf(number);
         } catch (NumberFormatException nfE) {

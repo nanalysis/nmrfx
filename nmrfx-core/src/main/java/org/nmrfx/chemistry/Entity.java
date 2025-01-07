@@ -26,6 +26,7 @@ import java.util.*;
 public class Entity implements AtomContainer, Serializable, ITree {
     public String name = null;
     public String label = null;
+    String entityAssemblyName = null;
     String pdbChain = "";
     public MoleculeBase molecule = null;
     public List<Atom> atoms = new ArrayList<Atom>();
@@ -44,6 +45,9 @@ public class Entity implements AtomContainer, Serializable, ITree {
     Map<String, Object> propertyObjectMap = new HashMap<>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
+    public String getEntityAssemblyName() {
+        return entityAssemblyName != null ? entityAssemblyName : label;
+    }
     @Override
     public int getAtomCount() {
         return atoms.size();

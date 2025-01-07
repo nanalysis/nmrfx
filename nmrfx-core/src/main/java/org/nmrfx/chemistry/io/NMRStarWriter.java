@@ -32,6 +32,7 @@ import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.*;
 import java.util.*;
@@ -135,14 +136,14 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         result.append(sep);
-        result.append(atom.entity.label);
+        result.append(atom.entity.name);
         result.append(sep);
         result.append("?");
         return result.toString();
     }
 
     public static void writeEntityCommonNamesSTAR3(Writer chan, Entity entity, int entityID) throws IOException {
-        if (entity.getCommonNames().size() > 0) {
+        if (!entity.getCommonNames().isEmpty()) {
             chan.write("loop_\n");
             for (String loopString : NMRStarWriter.entityCommonNameLoopStrings) {
                 chan.write(loopString + "\n");
@@ -162,7 +163,7 @@ public class NMRStarWriter {
         String sep = " ";
         result.append(compID);
         result.append(sep);
-        result.append("\"").append(entity.name).append("\"");
+        result.append(STAR3Base.quote(entity.getEntityAssemblyName()));
         result.append(sep);
         result.append(entity.entityID);
         result.append(sep);
@@ -182,39 +183,7 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entity.role);
         result.append(sep);
-        result.append(entity.details);
-        result.append(sep);
-        result.append(assemblyID);
-        result.append(sep);
-        return result.toString();
-    }
-
-    static String toSTAR3String(Polymer polymer, String coordSetName, int assemblyID, int compID) {
-        StringBuilder result = new StringBuilder();
-        String sep = " ";
-        result.append(compID);
-        result.append(sep);
-        result.append("\"").append(polymer.name).append("\"");
-        result.append(sep);
-        result.append(polymer.entityID);
-        result.append(sep);
-        result.append("$").append(polymer.label);
-        result.append(sep);
-        result.append(coordSetName);
-        result.append(sep);
-        result.append("yes");
-        result.append(sep);
-        result.append(polymer.physicalState);
-        result.append(sep);
-        result.append(polymer.conformationalIsomer);
-        result.append(sep);
-        result.append(polymer.chemicalExchangeState);
-        result.append(sep);
-        result.append(polymer.magneticEquivalenceGroupCode);
-        result.append(sep);
-        result.append(polymer.role);
-        result.append(sep);
-        result.append(polymer.details);
+        result.append(STAR3Base.quote(entity.details));
         result.append(sep);
         result.append(assemblyID);
         result.append(sep);
@@ -231,29 +200,30 @@ public class NMRStarWriter {
     }
 
     static void writeCompoundHeaderSTAR3(Writer chan, Compound compound, int entityID) throws ParseException, IOException {
+        String name = compound.name;
         String label = compound.label;
-        chan.write("save_" + label + "\n");
+        chan.write("save_" + name + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
         chan.write("_Entity.Sf_framecode                           ");
-        chan.write(label + "\n");
+        chan.write(name + "\n");
         chan.write("_Entity.ID                           ");
         chan.write(entityID + "\n");
         chan.write("_Entity.Name                        ");
-        chan.write(label + "\n");
+        chan.write(name + "\n");
         chan.write("_Entity.Type                          ");
         chan.write("non-polymer\n");
         chan.write("\n");
-        STAR3.writeLoopStrings(chan, chemCompEntityIndexLoopStrings);
+        STAR3Base.writeLoopStrings(chan, chemCompEntityIndexLoopStrings);
         StringBuilder result = new StringBuilder();
         String sep = " ";
         result.append("1");
         result.append(sep);
         result.append(compound.getNumber());
         result.append(sep);
-        result.append(label);
+        result.append(STAR3.quote(label));
         result.append(sep);
-        result.append(label);
+        result.append(STAR3.quote(label));
         result.append(sep);
         result.append(".");
         result.append(sep);
@@ -313,7 +283,7 @@ public class NMRStarWriter {
             chan.write(polymer.getPolymerType() + "\n");
             chan.write("_Entity.Polymer_strand_ID            ");
             String strandID = polymer.getStrandID();
-            if (strandID.equals("")) {
+            if (strandID.isEmpty()) {
                 strandID = "?";
             }
             chan.write(strandID + "\n");
@@ -357,20 +327,20 @@ public class NMRStarWriter {
     }
 
     static void writeCompoundToSTAR3(Writer chan, Compound compound, int entityID, final String mode) throws IOException, ParseException {
-        String label = compound.label;
+        String label = compound.name;
         chan.write("save_chem_comp_" + label + mode + "\n");
         chan.write("_Chem_comp.Sf_category                 ");
         chan.write("chem_comp\n");
         chan.write("_Chem_comp.Sf_framecode                           ");
         chan.write("chem_comp_" + label + mode + "\n");
-        STAR3.writeLoopStrings(chan, chemCompAtomLoopStrings);
+        STAR3Base.writeLoopStrings(chan, chemCompAtomLoopStrings);
         int iAtom = 0;
         for (Atom atom : compound.getAtoms()) {
             chan.write(toSTAR3CompoundString(iAtom, atom, entityID));
             chan.write("\n");
         }
         chan.write("stop_\n");
-        if (compound.getBonds().size() > 0) {
+        if (!compound.getBonds().isEmpty()) {
             STAR3.writeLoopStrings(chan, chemCompBondLoopStrings);
             int iBond = 1;
             for (Bond bond : compound.getBonds()) {
@@ -418,16 +388,16 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         result.append(sep);
-        result.append(bond.begin.entity.label);
+        result.append(bond.begin.entity.name);
         return result.toString();
     }
 
     static String toSTAR3CommonNameString(Entity.EntityCommonName eCN, int entityID) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        result.append(STAR3.quote(eCN.getName()));
+        result.append(STAR3Base.quote(eCN.getName()));
         result.append(sep);
-        result.append(STAR3.quote(eCN.getType()));
+        result.append(STAR3Base.quote(eCN.getType()));
         result.append(sep);
         result.append(entityID);
         return result.toString();
@@ -845,23 +815,13 @@ public class NMRStarWriter {
             resName = atom.getResidueName();
             atomName = atom.getName();
             nucName = atom.getElementName();
-            switch (nucName) {
-                case "C":
-                    isotope = 13;
-                    break;
-                case "N":
-                    isotope = 15;
-                    break;
-                case "F":
-                    isotope = 19;
-                    break;
-                case "P":
-                    isotope = 31;
-                    break;
-                default:
-                    isotope = 1;
-                    break;
-            }
+            isotope = switch (nucName) {
+                case "C" -> 13;
+                case "N" -> 15;
+                case "F" -> 19;
+                case "P" -> 31;
+                default -> 1;
+            };
         }
 
         sBuilder.append(String.format("%-4s ", "."));
@@ -926,7 +886,7 @@ public class NMRStarWriter {
         chan.write("   _Heteronucl_NOE_list.Spectrometer_frequency_1H      ");
         chan.write(field + "\n");
         chan.write("   _Heteronucl_NOE_list.Heteronuclear_NOE_val_type      ");
-        chan.write(STAR3.quote("peak height") + "\n");
+        chan.write(STAR3Base.quote("peak height") + "\n");
         chan.write("   _Heteronucl_NOE_list.ref_val      ");
         chan.write("0\n"); //fixme get dynamically
         chan.write("   _Heteronucl_NOE_list.ref_description      ");

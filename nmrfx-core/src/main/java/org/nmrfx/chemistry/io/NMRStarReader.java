@@ -447,7 +447,7 @@ public class NMRStarReader {
             if (type != null && type.equals("polymer")) {
                 Entity entity = molecule.getEntity(entityAssemblyName);
                 if (entity == null) {
-                    Polymer polymer = new Polymer(entitySaveFrameLabel, entityAssemblyName);
+                    Polymer polymer = new Polymer(entitySaveFrameLabel, entitySaveFrameLabel, entityAssemblyName);
                     polymer.setIDNum(entityID);
                     polymer.assemblyID = entityAssemblyID;
                     polymer.setPDBChain(pdbLabel);
@@ -461,7 +461,7 @@ public class NMRStarReader {
                 name = saveframe.getValue("_Entity","Nonpolymer_comp_ID", name);
                 Entity entity = molecule.getEntity(name);
                 if (entity == null) {
-                    Compound compound = new Compound("1", name, entityAssemblyName);
+                    Compound compound = new Compound("1", name, name, entityAssemblyName);
                     compound.setIDNum(1);
                     compound.assemblyID = entityAssemblyID;
                     compound.setPDBChain(pdbLabel);
