@@ -21,6 +21,7 @@ package org.nmrfx.chemistry.io;
 import org.nmrfx.chemistry.constraints.Constraint;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
 import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -37,7 +38,7 @@ public class ConstraintSTARWriter {
         String saveFrameCategory = cSet.getCategory();
         String thisCategory = cSet.getListType();
         String constraintType = cSet.getType();
-        chan.write("save_" + saveFrameName + "\n");
+        chan.write(STAR3Base.SAVE + saveFrameName + "\n");
 
         chan.write(thisCategory + ".Sf_category    ");
         chan.write(saveFrameCategory + "\n");
@@ -70,6 +71,6 @@ public class ConstraintSTARWriter {
         chan.write("stop_\n");
         chan.write("\n");
 
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 }

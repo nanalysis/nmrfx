@@ -19,6 +19,7 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -35,7 +36,7 @@ public class CoordinateSTARWriter {
         String saveFrameName = "ensemble_of_conformers";
         String saveFrameCategory = "conformer_family_coord_set";
         String thisCategory = "_Conformer_family_coord_set";
-        chan.write("save_" + saveFrameName + "\n");
+        chan.write(STAR3Base.SAVE + saveFrameName + "\n");
 
         chan.write(thisCategory + ".Sf_category    ");
         chan.write(saveFrameCategory + "\n");
@@ -112,6 +113,6 @@ public class CoordinateSTARWriter {
         chan.write("stop_\n");
         chan.write("\n");
 
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 }

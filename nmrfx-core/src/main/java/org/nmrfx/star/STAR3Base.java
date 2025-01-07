@@ -17,6 +17,10 @@ import java.util.*;
 public class STAR3Base {
 
     private static final Logger log = LoggerFactory.getLogger(STAR3Base.class);
+
+    public static final String SAVE = STAR3Base.SAVE + "";
+    public static final String LOOP = "loop_";
+    public static final String STOP = "stop_";
     LineNumberReader lineReader = null;
     PrintWriter out = null;
     BufferedReader bfR;

@@ -26,10 +26,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.STAR3;
-import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.*;
 import org.nmrfx.utilities.NvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,10 +173,10 @@ public class NMRStarReader {
             if ((seqNumber == null) || seqNumber.isBlank()) {
                 seqNumber = resName;
             }
-            String ccSaveFrameName = "save_chem_comp_" + resName;
+            String ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             if (ccSaveframe == null) {
-                ccSaveFrameName = "save_" + resName;
+                ccSaveFrameName = STAR3Base.SAVE + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
             if (ccSaveframe != null) {
@@ -278,14 +275,14 @@ public class NMRStarReader {
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);
-            String ccSaveFrameName = "save_chem_comp_" + resName + "." + iRes;
+            String ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName + "." + iRes;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             if (ccSaveframe == null) {
-                ccSaveFrameName = "save_chem_comp_" + resName;
+                ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
             if (ccSaveframe == null) {
-                ccSaveFrameName = "save_" + resName;
+                ccSaveFrameName = STAR3Base.SAVE + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
             RES_POSITION resPos = RES_POSITION.MIDDLE;
@@ -431,7 +428,7 @@ public class NMRStarReader {
         }
         //int entityAssemblyID = Integer.parseInt(entityAssemblyIDString);
         // get entity saveframe
-        String saveFrameName = "save_" + entitySaveFrameLabel;
+        String saveFrameName = STAR3Base.SAVE + entitySaveFrameLabel;
         log.debug("process entity {}", saveFrameName);
         Saveframe saveframe = star3.getSaveFrames().get(saveFrameName);
         if (saveframe != null) {

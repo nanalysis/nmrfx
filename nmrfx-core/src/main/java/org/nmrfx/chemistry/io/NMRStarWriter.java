@@ -70,7 +70,7 @@ public class NMRStarWriter {
         }
     }
     public static void initSaveFrameOutput(StringBuilder sBuilder, String category, String categoryName, String id) {
-        sBuilder.append("save_").append(categoryName).append("_").append(id).append("\n");
+        sBuilder.append(STAR3Base.SAVE).append(categoryName).append("_").append(id).append("\n");
         NMRStarWriter.appendSTAR(sBuilder, category, "Sf_category", categoryName);
         NMRStarWriter.appendSTAR(sBuilder, category, "Sf_framecode", categoryName + "_" + id);
         NMRStarWriter.appendSTAR(sBuilder, category, "Entry_ID", ".");
@@ -202,7 +202,7 @@ public class NMRStarWriter {
     static void writeCompoundHeaderSTAR3(Writer chan, Compound compound, int entityID) throws ParseException, IOException {
         String name = compound.name;
         String label = compound.label;
-        chan.write("save_" + name + "\n");
+        chan.write(STAR3Base.SAVE + name + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
         chan.write("_Entity.Sf_framecode                           ");
@@ -221,9 +221,9 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(compound.getNumber());
         result.append(sep);
-        result.append(STAR3.quote(label));
+        result.append(STAR3Base.quote(label));
         result.append(sep);
-        result.append(STAR3.quote(label));
+        result.append(STAR3Base.quote(label));
         result.append(sep);
         result.append(".");
         result.append(sep);
@@ -266,7 +266,7 @@ public class NMRStarWriter {
      */
     static void writeEntityHeaderSTAR3(Writer chan, Entity entity, int entityID, boolean nonStandard) throws IOException {
         String label = entity.label;
-        chan.write("save_" + label + "\n");
+        chan.write(STAR3Base.SAVE + label + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
         chan.write("_Entity.Sf_framecode                           ");
@@ -276,8 +276,7 @@ public class NMRStarWriter {
         chan.write("_Entity.Name                        ");
         chan.write(label + "\n");
         chan.write("_Entity.Type                          ");
-        if (entity instanceof Polymer) {
-            Polymer polymer = (Polymer) entity;
+        if (entity instanceof Polymer polymer) {
             chan.write("polymer\n");
             chan.write("_Entity.Polymer_type                  ");
             chan.write(polymer.getPolymerType() + "\n");
@@ -328,7 +327,7 @@ public class NMRStarWriter {
 
     static void writeCompoundToSTAR3(Writer chan, Compound compound, int entityID, final String mode) throws IOException, ParseException {
         String label = compound.name;
-        chan.write("save_chem_comp_" + label + mode + "\n");
+        chan.write(STAR3Base.SAVE + "chem_comp_" + label + mode + "\n");
         chan.write("_Chem_comp.Sf_category                 ");
         chan.write("chem_comp\n");
         chan.write("_Chem_comp.Sf_framecode                           ");
@@ -341,7 +340,7 @@ public class NMRStarWriter {
         }
         chan.write("stop_\n");
         if (!compound.getBonds().isEmpty()) {
-            STAR3.writeLoopStrings(chan, chemCompBondLoopStrings);
+            STAR3Base.writeLoopStrings(chan, chemCompBondLoopStrings);
             int iBond = 1;
             for (Bond bond : compound.getBonds()) {
                 if (bond.begin.entity == bond.end.entity) {
@@ -352,7 +351,7 @@ public class NMRStarWriter {
             }
             chan.write("stop_\n");
         }
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     static String toSTAR3CompoundBondString(int ID, Bond bond, int entityID) {
@@ -495,18 +494,17 @@ public class NMRStarWriter {
         chan.write("\n\n");
         while (entityIterator.hasNext()) {
             Entity entity = entityIterator.next();
-            if (entity instanceof Polymer) {
+            if (entity instanceof Polymer polymer) {
                 writeEntityHeaderSTAR3(chan, entity, entityID, false);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
-                Polymer polymer = (Polymer) entity;
                 writeEntitySeqSTAR3(chan, polymer, entityID);
-                chan.write("save_\n\n");
+                chan.write(STAR3Base.SAVE + "\n\n");
                 if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR") || true) {
                     writeComponentsSTAR3(chan, polymer, cmpdSet);
                 }
             } else {
                 writeCompoundHeaderSTAR3(chan, (Compound) entity, entityID);
-                chan.write("save_\n\n");
+                chan.write(STAR3Base.SAVE + "\n\n");
                 writeCompoundToSTAR3(chan, (Compound) entity, entityID, "");
             }
             entityID++;
@@ -517,7 +515,7 @@ public class NMRStarWriter {
         chan.write("    #  Molecular system (assembly) description  #\n");
         chan.write("    #############################################\n");
         chan.write("\n\n");
-        chan.write("save_" + "assembly\n");
+        chan.write(STAR3Base.SAVE + "assembly\n");
         chan.write("_Assembly.Sf_category                 ");
         chan.write("assembly\n");
         chan.write("_Assembly.Sf_framecode                 ");
@@ -537,7 +535,7 @@ public class NMRStarWriter {
         chan.write(nEntities + "\n");
         for (String key : molecule.getPropertyNames()) {
             String propValue = molecule.getProperty(key);
-            if ((propValue != null) && (!propValue.equals(""))) {
+            if ((propValue != null) && (!propValue.isEmpty())) {
                 chan.write("_Assembly.NvJ_prop_" + key + "                   ");
                 STAR3.writeString(chan, propValue, 1024);
             }
@@ -553,7 +551,7 @@ public class NMRStarWriter {
         }
         chan.write("stop_\n");
         chan.write("\n");
-        chan.write("save_\n");
+        chan.write(STAR3Base.SAVE + "\n");
     }
 
     public static String toSTARChemShiftAssignmentString(final SpatialSet spatialSet, final int id, final int ppmSet) {
@@ -623,7 +621,7 @@ public class NMRStarWriter {
         result.append(resIDStr);
         result.append(sep);
         String rNum = ((Compound) atom.getEntity()).getNumber();
-        if (rNum.trim().length() == 0) {
+        if (rNum.trim().isEmpty()) {
             rNum = ".";
         }
         result.append(rNum);
@@ -665,7 +663,7 @@ public class NMRStarWriter {
         chan.write("#                                                                 #\n");
         chan.write("###################################################################\n");
         chan.write("\n\n");
-        chan.write("save_assigned_chem_shift_list_" + ppmSet + "\n");
+        chan.write(STAR3Base.SAVE + "assigned_chem_shift_list_" + ppmSet + "\n");
         chan.write("_Assigned_chem_shift_list.Sf_category                 ");
         chan.write("assigned_chemical_shifts\n");
         chan.write("_Assigned_chem_shift_list.Sf_framecode                 ");
@@ -870,7 +868,7 @@ public class NMRStarWriter {
         chan.write("    #  Heteronuclear NOE values  #\n");
         chan.write("    ########################################\n");
         chan.write("\n\n");
-        chan.write("save_" + frameName + "\n");
+        chan.write(STAR3Base.SAVE + frameName + "\n");
         chan.write("   _Heteronucl_NOE_list.Sf_category                    ");
         chan.write("heteronucl_NOEs\n");
         chan.write("   _Heteronucl_NOE_list.Sf_framecode                   ");
@@ -929,7 +927,7 @@ public class NMRStarWriter {
         }
 
         chan.write("   stop_\n");
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
 
     }
 
@@ -994,7 +992,7 @@ public class NMRStarWriter {
         chan.write("    #  Heteronuclear " + expName + " relaxation values  #\n");
         chan.write("    ########################################\n");
         chan.write("\n\n");
-        chan.write("save_" + frameName + "\n");
+        chan.write(STAR3Base.SAVE + frameName + "\n");
         chan.write("   _Heteronucl_" + expName + "_list.Sf_category                    ");
         chan.write("heteronucl_" + expName + "_relaxation\n");
         chan.write("   _Heteronucl_" + expName + "_list.Sf_framecode                   ");
@@ -1074,7 +1072,7 @@ public class NMRStarWriter {
             }
         }
         chan.write("   stop_\n");
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
 
     }
 
@@ -1129,7 +1127,7 @@ public class NMRStarWriter {
         chan.write("    #  Order parameters  #\n");
         chan.write("    ########################################\n");
         chan.write("\n\n");
-        chan.write("save_" + frameName + "\n");
+        chan.write(STAR3Base.SAVE + frameName + "\n");
         chan.write("   " + catName + ".Sf_category                    ");
         chan.write("order_parameters\n");
         chan.write("   " + catName + ".Sf_framecode                   ");
@@ -1198,7 +1196,7 @@ public class NMRStarWriter {
         }
 
         chan.write("   stop_\n");
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     /**
@@ -1210,7 +1208,7 @@ public class NMRStarWriter {
      * @param entityID int. The number of the molecular entity.
      * @param atom     Atom. The atom in the molecule.
      * @param orderPar The order parameter.
-     * @return
+     * @return String containing oreder parameter values
      */
     public static String toStarOrderParString(int idx, int listID, int entityID, Atom atom, OrderPar orderPar) {
         StringBuilder sBuilder = new StringBuilder();

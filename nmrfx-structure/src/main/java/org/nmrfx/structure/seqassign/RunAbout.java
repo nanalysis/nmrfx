@@ -10,10 +10,7 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.Saveframe;
-import org.nmrfx.star.SaveframeWriter;
+import org.nmrfx.star.*;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -632,7 +629,7 @@ public class RunAbout implements SaveframeWriter {
         spinSystems.writeSpinSystemPeaks(sBuilder);
 
         chan.write(sBuilder.toString());
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     void writePeakLists(StringBuilder sBuilder) {
