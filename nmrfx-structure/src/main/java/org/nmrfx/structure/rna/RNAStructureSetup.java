@@ -4,13 +4,20 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
+import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 import org.nmrfx.structure.chemistry.energy.RNARotamer;
 
+import java.io.*;
 import java.util.*;
 
 import static org.nmrfx.structure.chemistry.energy.ConstraintCreator.addDistanceConstraint;
 
 public class RNAStructureSetup {
+    private static final Map<String, Map<String, Double>> angleDict = new HashMap<>();
+    public static Map<String, List<AtomAtomDistance>> rnaPlanarity = new HashMap<>();
+    public static Map<String, List<AtomAtomLowUp>> stackTo = new HashMap<>();
+    public static Map<String, List<AtomAtomLowUp>> stackPairs = new HashMap<>();
+
     public record AtomAtomDistance(String aName1, String aName2, double distance) {
     }
 
@@ -60,9 +67,69 @@ public class RNAStructureSetup {
         RNAStructureSetup.stackPairs.put("AG", List.of(new AtomAtomLowUp("H8", "H8", 1.8, 5.0), new AtomAtomLowUp("H2", "H1'", 1.8, 5.0)));
         RNAStructureSetup.stackPairs.put("AA", List.of(new AtomAtomLowUp("H8", "H8", 1.8, 5.0), new AtomAtomLowUp("H2", "H1'", 1.8, 5.0)));
     }
-    public static Map<String, List<AtomAtomDistance>> rnaPlanarity = new HashMap<>();
-    public static Map<String, List<AtomAtomLowUp>> stackTo = new HashMap<>();
-    public static Map<String, List<AtomAtomLowUp>> stackPairs = new HashMap<>();
+
+
+    private static void loadAngles() throws IOException {
+        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/angles.txt");
+        angleDict.clear();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            String[] header = null;
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String[] fields = line.split(" +");
+                if (fields.length < 6) {
+                    continue;
+                }
+                if (header == null) {
+                    header = fields;
+                } else {
+                    String ssType = fields[1];
+                    String posType = fields[2];
+                    String nucType = fields[3];
+                    String subType = fields[4];
+                    Map<String, Double> data = new HashMap<>();
+                    for (int i = 5; i < fields.length; i++) {
+                        String field = fields[i].trim();
+                        String headerAtom = header[i];
+                        if (!field.equals("-")) {
+                            data.put(headerAtom, Double.parseDouble(field));
+                        }
+                    }
+                    String key = ssType + ':' + posType + ':' + nucType + ':' + subType;
+                    angleDict.put(key, data);
+                }
+            }
+        }
+    }
+
+    public static Optional<Map<String, Double>> getAngles(String key) {
+        Optional<Map<String, Double>> result;
+        if (angleDict.isEmpty()) {
+            try {
+                loadAngles();
+            } catch (IOException e) {
+                result = Optional.empty();
+                return result;
+            }
+        }
+        result = Optional.ofNullable(angleDict.get(key));
+        return result;
+    }
+
+    public static boolean hasAngles(String key) {
+        if (angleDict.isEmpty()) {
+            try {
+                loadAngles();
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return angleDict.containsKey(key);
+    }
 
     public static List<Atom[]> readRNALinkerDict(Molecule molecule, List<Map<String, Object>> rnaLinkerDict, boolean formLinks) throws IllegalArgumentException {
         List<Atom[]> linkAtoms = new ArrayList<>();
@@ -278,7 +345,7 @@ public class RNAStructureSetup {
                     addStackPair(resI, resINext);
                     addStackPair(resJPrev, resJ);
                     String resJName = resJ.getName();
-                    if (resJName == "A") {
+                    if (Objects.equals(resJName, "A")) {
                         String atomNameI = ConstraintCreator.getAtomName(resINext, "H1'");
                         String atomNameJ = ConstraintCreator.getAtomName(resJ, "H2");
                         addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0, false);
@@ -288,7 +355,7 @@ public class RNAStructureSetup {
         }
     }
 
-    public static void addHelixPP(List<Residue> helixResidues) throws InvalidMoleculeException {
+    public static void addHelixPP(List<Residue> helixResidues) {
         int nRes = helixResidues.size() / 2;
         for (int i = 0; i < nRes; i++) {
             Residue resI = helixResidues.get(i * 2);
@@ -339,7 +406,14 @@ public class RNAStructureSetup {
         }
     }
 
-    public static void addHelicesRestraints(Molecule molecule, SSGen ssGen) throws InvalidMoleculeException {
+    static List<Residue> getLoopResidues(List<Residue> residues) {
+        List<Residue> loopResidues = new ArrayList<>();
+        loopResidues.add(residues.get(0).getPrevious());
+        loopResidues.add(residues.getLast().getNext());
+        return loopResidues;
+    }
+
+    public static void addHelicesRestraints(SSGen ssGen) throws InvalidMoleculeException {
         for (var ss : ssGen.structures()) {
             if (ss.getName().equals("Helix")) {
                 List<Residue> residues = ss.getResidues();
@@ -349,15 +423,11 @@ public class RNAStructureSetup {
         }
         for (var ss : ssGen.structures()) {
             if (ss instanceof Loop loop) {
-                List<Residue> loopResidues = loop.getResidues();
-                if (loopResidues.size() == 4) {
-                    loopResidues.add(0, loopResidues.get(0).getPrevious());
-                    loopResidues.add(loopResidues.reversed().get(0).getNext());
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (Residue residue : loopResidues) {
-                        stringBuilder.append(residue.getName());
-                    }
-                    var rnaLoopsOptional = RNALoops.getRNALoop(stringBuilder.toString());
+                List<Residue> residues = loop.getResidues();
+                if (residues.size() == 4) {
+                    List<Residue> loopResidues = getLoopResidues(residues);
+                    String loopResidueNames = getResidueNames(loopResidues);
+                    var rnaLoopsOptional = RNALoops.getRNALoop(loopResidueNames);
                     rnaLoopsOptional.ifPresent(rnaLoops -> {
                         addSuiteBoundaries(loopResidues, rnaLoops);
                         addBasePairs(loopResidues, rnaLoops);
@@ -372,6 +442,211 @@ public class RNAStructureSetup {
         Molecule molecule = (Molecule) polymer.molecule;
         for (AngleConstraint angleConstraint : angleConstraints) {
             ConstraintCreator.addAngleConstraint(molecule, angleConstraint);
+        }
+    }
+
+    static String getPurinePyrimidine(String nucType) {
+        if (nucType.equals("A") || nucType.equals("G")) {
+            nucType = "P";
+        } else {
+            nucType = "p";
+        }
+        return nucType;
+    }
+
+
+    static Residue getHelixResidue(List<Residue> residues, int index, int chain, boolean fromStart) {
+        if (fromStart) {
+            return residues.get(index * 2 + chain);
+        } else {
+            return residues.reversed().get(index * 2 + 1 - chain);
+        }
+    }
+
+    static void setAnglesLoop(Loop loop, boolean lockLoop) {
+        int iLoop = 0;
+        for (Residue residue : loop.getResidues()) {
+            String subType = getRNAResType(residue);
+            String nucType = residue.getName();
+            nucType = getPurinePyrimidine(nucType);
+            String key = "Loop" + ':' + iLoop + ':' + nucType + ':' + subType;
+            getAngles(key).ifPresent(anglesToSet -> RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockLoop));
+            iLoop++;
+        }
+
+    }
+
+    static void setAnglesBulge(Bulge bulge, boolean lockBulge) {
+        int iLoop = 0;
+        for (Residue residue : bulge.getResidues()) {
+            String subType = getRNAResType(residue);
+            String nucType = residue.getName();
+            nucType = getPurinePyrimidine(nucType);
+            String key = "Bulge" + ':' + iLoop + ':' + nucType + ':' + subType;
+            getAngles(key).ifPresent(anglesToSet -> RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockBulge));
+            iLoop++;
+        }
+    }
+
+
+    static void setAnglesHelix(RNAHelix rnaHelix, boolean lockFirst, boolean lockLast, boolean lockLoop, boolean doLock) {
+        List<Residue> residues = rnaHelix.getResidues();
+        for (Residue residue : residues) {
+            String subType = getRNAResType(residue);
+
+            boolean firstResI = residue == getHelixResidue(residues, 0, 0, true);
+            boolean firstResJ = residue == getHelixResidue(residues, 0, 1, true);
+            boolean lastResI = residue == getHelixResidue(residues, 0, 0, false);
+            boolean lastResJ = residue == getHelixResidue(residues, 0, 1, false);
+            boolean firstRes = firstResI || firstResJ;
+            boolean lastRes = lastResI || lastResJ;
+            String nucType = residue.getName();
+            nucType = getPurinePyrimidine(nucType);
+            String key = "Helix" + ":0:" + nucType + ":" + subType;
+            if (getAngles(key).isPresent()) {
+                var anglesToSet = getAngles(key).get();
+                boolean lock = doLock;
+                if (firstRes && !lockFirst) {
+                    lock = false;
+                }
+                if (lastRes && !lockLast) {
+                    lock = false;
+                }
+                if ((lastRes && (subType.contains("hL") || subType.contains("hl")) && lockLoop)) {
+                    lock = true;
+                }
+                RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lock);
+            } else {
+                subType = subType.charAt(subType.length() - 2) == 'X' ? "hL:GNRAXe" : "hl:GNRAxe";
+                String genericHelixLinker = "Helix" + ":0:" + nucType + ":" + subType;
+                getAngles(genericHelixLinker).ifPresent(anglesToSet -> {
+                    boolean lock = lastRes && lockLoop;
+                    RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lock);
+                });
+            }
+        }
+    }
+
+    static String getResidueNames(List<Residue> residues) {
+        StringBuilder stringBuilder = new StringBuilder();
+        residues.forEach(residue -> stringBuilder.append(residue.getName()));
+        return stringBuilder.toString();
+    }
+
+    static String getLoopType(SecondaryStructure ss) {
+        if (ss instanceof Loop) {
+            List<Residue> residues = ss.getResidues();
+            if (residues.size() == 4) {
+                List<Residue> loopResidues = getLoopResidues(residues);
+                String loopSeq = getResidueNames(loopResidues);
+                var rnaLoopsOptional = RNALoops.getRNALoop(loopSeq);
+
+                return rnaLoopsOptional.map(rnaLoops -> ":" + rnaLoops.name).orElseGet(() -> String.valueOf(residues.size()));
+            }
+        }
+        return "";
+    }
+
+    static String getHelixSubType(Residue residue, SecondaryStructure ssNext, SecondaryStructure ssPrev) {
+        Residue nextRes = residue.getNext();
+        Residue prevRes = residue.getPrevious();
+        Residue pairRes = residue.pairedTo;
+
+        String subType = "h";
+        String ssNextType;
+        String ssPrevType;
+        if (prevRes == null) {
+            subType = "h5";
+        } else if (ssNext instanceof Loop) {
+            ssNextType = getLoopType(ssNext);
+            subType = "hL" + ssNextType;
+        } else if (ssPrev instanceof Loop) {
+            ssPrevType = getLoopType(ssPrev);
+            subType = "hl" + ssPrevType;
+        } else if (ssNext instanceof Bulge) {
+            subType = "hB0" + ":" + 'B' + nextRes.getSecondaryStructure().getResidues().size();
+        } else if (ssPrev instanceof Bulge) {
+            subType = "hB1" + ":" + 'B' + prevRes.getSecondaryStructure().getResidues().size();
+        } else if (pairRes.getPrevious() != null) {
+            if (pairRes.getPrevious().getSecondaryStructure() instanceof Bulge) {
+                subType = "hb1" + ":" + 'B' + pairRes.getPrevious().getSecondaryStructure().getResidues().size();
+                if (pairRes.getNext() != null) {
+                    if (pairRes.getNext().getSecondaryStructure() instanceof Bulge) {
+                        subType = "hb0" + ":" + 'B' + pairRes.getNext().getSecondaryStructure().getResidues().size();
+                    }
+                }
+            }
+        }
+        return subType;
+    }
+
+    public static String getRNAResType(Residue residue) {
+        SecondaryStructure ss = residue.getSecondaryStructure();
+        String subType = "c";
+        Residue nextRes = residue.getNext();
+        Residue prevRes = residue.getPrevious();
+        SecondaryStructure ssNext = nextRes != null ? nextRes.getSecondaryStructure() : null;
+        SecondaryStructure ssPrev = null;
+        if (prevRes != null) {
+            ssPrev = prevRes.getSecondaryStructure();
+            if (ssNext instanceof Loop) {
+                String ssNextType = getLoopType(ssNext);
+                subType = "hL:" + ssNextType;
+            }
+        }
+        if (ss instanceof RNAHelix) {
+            subType = getHelixSubType(residue, ssNext, ssPrev);
+        } else if (ss instanceof Loop) {
+            subType = getLoopType(ss);
+        } else if (ss instanceof Bulge) {
+            subType = "B" + ss.getResidues().size();
+            // check whether res num is greater than paired res num, to determine orientation of bulge
+            Residue prevResidue = ss.getResidues().get(0).getPrevious();
+            if (prevResidue.getResNum() > prevResidue.pairedTo.getResNum()) {
+                subType = subType + "c";
+            }
+        }
+        Residue pairRes = residue.pairedTo;
+        if (pairRes != null) {
+            if (pairRes.getAtom("X1") != null) {
+                if (pairRes == ss.getResidues().get(0)) {
+                    subType = subType + "xb";
+                } else {
+                    subType = subType + "xe";
+                }
+
+            }
+        }
+        if (residue.getAtom("X1") != null) {
+            if (residue == ss.getResidues().get(0)) {
+                subType = subType + "Xb";
+            } else {
+                subType = subType + "Xe";
+            }
+        }
+
+        return subType;
+    }
+
+    public static void setAnglesVienna(Map<String, Object> data, SSGen ssGen) {
+        try {
+            boolean doLock = (Boolean) data.getOrDefault("restrain", false);
+            boolean lockFirst = (Boolean) data.getOrDefault("lockfirst", false);
+            boolean lockLast = (Boolean) data.getOrDefault("locklast", false);
+            boolean lockBulge = (Boolean) data.getOrDefault("lockbulge", doLock);
+            boolean lockLoop = (Boolean) data.getOrDefault("lockloop", doLock);
+
+            for (SecondaryStructure ss : ssGen.structures()) {
+                if (ss instanceof RNAHelix rnaHelix) {
+                    setAnglesHelix(rnaHelix, lockFirst, lockLast, lockLoop, doLock);
+                } else if (ss instanceof Loop loop) {
+                    setAnglesLoop(loop, lockLoop);
+                } else if (ss instanceof Bulge bulge) {
+                    setAnglesBulge(bulge, lockBulge);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

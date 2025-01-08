@@ -31,6 +31,7 @@ from org.nmrfx.chemistry import Compound
 from org.nmrfx.structure.rna import AllBasePairs
 from org.nmrfx.structure.chemistry.energy import NEFSTARStructureCalculator
 from org.nmrfx.structure.chemistry.energy import ConstraintCreator
+from org.nmrfx.structure.rna import RNAStructureSetup
 
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
@@ -73,120 +74,6 @@ rnaBPPlanarity = {
 gnraHBonds = [["N2","N7",2.4,2.8],["N3","N6",2.7,5.0],["N2","OP1",2.4,2.9]]
 
 addPlanarity = False
-
-class Cluster:
-    def __init__(self,name,regex,suites,chi,bp,hb):
-        self.name = name
-        self.regex = regex
-        self.suites = suites
-        self.chi = chi
-        self.bp = bp
-        self.hb = hb
-        self.repSeqs = []
-
-def getClusterDict():
-    clusterDict = {}
-    cluster_table_file = "cluster_table.txt"
-    lines = loadFile(cluster_table_file)
-    currCluster = None
-    for nLine, line in enumerate(lines):
-        if nLine%2 != 0:
-            currCluster.repSeqs += [seq for seq in line.strip('\n').split()]
-            continue
-        line = line.strip('\n').split('\t')
-        name,regex,suites,chi = line[:4]
-        nSuites = int(len(suites)/2)
-        suites = [suites[i*2:(i+1)*2] for i in range(nSuites)]
-        bp = [item[3:] for item in line[4:] if item.startswith("bp")]
-        hb = [item[3:] for item in line[4:] if item.startswith("hb")]
-        clusterDict[name] = Cluster(name,regex,suites,chi,bp,hb)
-        currCluster = clusterDict[name]
-    return clusterDict
-
-def getCluster(tetraLoopSeq):
-    matched_cluster = None
-    clusterDict = getClusterDict()
-    search_representative_seqs = [cluster for cluster in clusterDict.values() if any([tetraLoopSeq == seq for seq in cluster.repSeqs])]
-    if search_representative_seqs:
-        matched_cluster  = search_representative_seqs[0]
-    else:
-        search_regex = [cluster for cluster in clusterDict.values() if re.compile(cluster.regex).match(tetraLoopSeq)]
-        if search_regex:
-            matched_cluster = search_regex[0]
-    return matched_cluster
-
-def getLoopType(ss):
-   residues = ss.getResidues()
-   if ss.getName() == "Loop":
-       if len(residues) == 4:
-           residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
-           loopSeq = ''.join([residue.getName() for residue in residues])
-           cluster = getCluster(loopSeq) 
-           if cluster:
-               return ":"+cluster.name
-       return str(len(residues))
-   return ""
-   
-def getRNAResType(ss, residues, residue):
-    ssType = ss.getName()
-    res = int(residue.getNumber())
-    subType = 'c'
-    rName = residue.getName()
-    nextRes = residue.getNext()
-    prevRes = residue.getPrevious()
-    pairRes = residue.pairedTo
-    ssNextName = ""
-    ssPrevName = ""
-    if nextRes != None:
-       ssNextName = nextRes.getSecondaryStructure().getName()
-    if prevRes != None:
-       ssPrevName = prevRes.getSecondaryStructure().getName()
-       if ssNextName == "Loop":
-           ssNextType = getLoopType(nextRes.getSecondaryStructure())
-           subType = "hL:" + ssNextType 
-    if ssType == "Helix":
-        subType = 'h'
-        if prevRes == None:
-            subType = "h5"
-        elif ssNextName == "Loop":
-            ssNextType = getLoopType(nextRes.getSecondaryStructure())
-            subType = "hL" + ssNextType
-        elif ssPrevName == "Loop":
-            ssPrevType = getLoopType(prevRes.getSecondaryStructure())
-            subType = "hl" + ssPrevType
-        elif ssNextName == "Bulge":
-            subType = "hB0"+":"'B'+str(len(nextRes.getSecondaryStructure().getResidues()))
-        elif ssPrevName == "Bulge":
-            subType = "hB1"+":"'B'+str(len(prevRes.getSecondaryStructure().getResidues()))
-        elif pairRes.getPrevious():
-            if pairRes.getPrevious().getSecondaryStructure().getName() == "Bulge":
-                subType = "hb1"+":"'B'+str(len(pairRes.getPrevious().getSecondaryStructure().getResidues()))
-        if pairRes.getNext():
-            if pairRes.getNext().getSecondaryStructure().getName() == "Bulge":
-                subType = "hb0"+":"'B'+str(len(pairRes.getNext().getSecondaryStructure().getResidues()))
-
-    elif ssType == "Loop":
-        loopType = getLoopType(ss)
-        subType = 'T' + loopType 
-    elif ssType == "Bulge":
-        subType = 'B'+str(len(ss.getResidues()))
-        #check whether res num is greater than paired res num, to determine orientation of bulge
-        subType = subType+'c' if int(ss.getResidues()[0].getPrevious().getNumber()) > int(ss.getResidues()[0].getPrevious().pairedTo.getNumber()) else subType
-    if pairRes:
-        rName2 = pairRes.getName()
-        rName += rName2
-        if pairRes.getAtom('X1') != None:
-            if pairRes == residues[0]:
-                subType = subType+'xb'
-            else:
-                subType = subType+'xe'
-    if residue.getAtom('X1') != None:
-        if residue == residues[0]:
-            subType = subType+'Xb'
-        else:
-            subType = subType+'Xe'
-    return subType
-
 
 def getHelix(pairs,vie):
     inHelix = False
@@ -1004,7 +891,7 @@ class refine:
         unusedEntities.remove(firstEntityName)
         if rnaLinkerDict:
             linkerList = []
-            linkerAtoms = ConstraintCreator.readRNALinkerDict(rnaLinkerDict, False)
+            linkerAtoms = RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, False)
             for linkPair in linkerAtoms:
                 (startAtom, endAtom) = linkPair
                 newLinker = {'atoms': [startAtom.getFullName(), endAtom.getFullName()]}
@@ -1110,7 +997,7 @@ class refine:
             if not self.ssGen:
                 self.findRNAHelices(data['rna'])
             if 'vienna' in data['rna']:
-                ConstraintCreator.addHelicesRestraints(self.molecule, self.ssGen)
+                RNAStructureSetup.addHelicesRestraints(self.ssGen)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
                 rnaLinks,rnaBonds = self.findSSLinks()
                 molData['link'] = rnaLinks
@@ -1128,7 +1015,7 @@ class refine:
 
         if rnaLinkerDict:
             self.molecule.fillEntityCoords()
-            rnaLinkerAtoms = ConstraintCreator.readRNALinkerDict(rnaLinkerDict, False)
+            rnaLinkerAtoms = RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, False)
             for atoms in rnaLinkerAtoms:
                 atom = atoms[1]
                 if atom.getParent() == None:
@@ -1162,7 +1049,7 @@ class refine:
                 ConstraintCreator.setupAtomProperties(entity)
 
         if rnaLinkerDict:
-            ConstraintCreator.readRNALinkerDict(rnaLinkerDict, True)
+            RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, True)
         elif linkerList:
             self.addLinkers(linkerList)
 
@@ -1229,7 +1116,10 @@ class refine:
             self.readInitAngles()
             if 'vienna' in data:
                 print 'Setting angles based on Vienna sequence'
-                self.setAnglesVienna(data['vienna'])
+                if not self.ssGen:
+                    self.ssGen = SSGen(self.molecule, self.vienna)
+                    self.ssGen.analyze()
+                RNAStructureSetup.setAnglesVienna(data['vienna'], self.ssGen)
             if 'doublehelix' in data:
                 print 'Setting angles based on double helix information'
                 self.setAnglesDoubleHelix(data,data['doublehelix'][0]['restrain'] )
@@ -1372,93 +1262,6 @@ class refine:
                     break
         return isStem
 
-    def setAnglesVienna(self, data):
-        doLock = data['restrain']
-        lockFirst = data['lockfirst']
-        lockLast = data['locklast']
-        if 'lockbulge' in data:
-            lockBulge = data['lockbulge']
-        else:
-            lockBulge = doLock
-        if 'lockloop' in data:
-            lockLoop = data['lockloop']
-        else:
-            lockLoop = doLock
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
-        ssGen = SSGen(self.molecule, self.vienna)
-        ssGen.analyze()
-        subType='0'
-        for ss in ssGen.structures():
-            residues = ss.getResidues()
-        stemLoops = []
-        for ss in ssGen.structures():
-            residues = ss.getResidues()
-            if ss.getName() == "Helix":
-                stemLoop = self.isStemLoop(ssGen.structures(), ss)
-                if stemLoop:
-                    stemLoops.append(stemLoop)
-                strandI = residues[0::2]
-                strandJ = residues[1::2]
-                for res in residues:
-                    subType = getRNAResType(ss, residues, res)
-                    firstResI = res == strandI[0]
-                    firstResJ = res == strandJ[0]
-                    lastResI = res == strandI[-1]
-                    lastResJ = res == strandJ[-1]
-                    firstRes = firstResI or firstResJ
-                    lastRes = lastResI or lastResJ
-                    resLett = res.getName()
-                    pairLett = res.pairedTo.getName()
-                    nucType = resLett
-                    if nucType == 'A' or nucType == 'G':
-                        nucType = "P"
-                    else:
-                        nucType = "p"
-                    key = 'Helix'+':0:'+nucType+':'+subType
-                    if key in angleDict:
-                        anglesToSet = angleDict[key].copy()
-                        lock = doLock
-                        if firstRes and not lockFirst:
-                            lock = False
-                        if lastRes and not lockLast:
-                            lock = False
-                        if lastRes and ("hL" in subType or "hl" in subType) and lockLoop:
-                            lock = True 
-                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
-                    else:
-                        subType = 'hL:GNRAXe' if subType[-2] =='X' else 'hl:GNRAxe'
-                        genericHelixLinker = 'Helix'+':0:'+nucType+':'+subType
-                        anglesToSet = angleDict[genericHelixLinker].copy()
-                        lock = True if lastRes and lockLoop else False
-                        RNARotamer.setDihedrals(res,anglesToSet,0.0,lock)
-            elif ss.getName() == "Loop":
-                for iLoop,res in enumerate(residues):
-                    subType = getRNAResType(ss, residues, res)
-                    nucType = res.getName()
-                    if nucType == 'A' or nucType == 'G':
-                        nucType = "P"
-                    else:
-                        nucType = "p"
-                    key = 'Loop'+':'+str(iLoop)+':'+nucType+':'+subType
-                    if key in angleDict:
-                        anglesToSet = angleDict[key].copy()
-                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
-            elif ss.getName() == "Bulge":
-                for iLoop,res in enumerate(residues):
-                    subType = getRNAResType(ss, residues, res)
-                    nucType = res.getName()
-                    if nucType == 'A' or nucType == 'G':
-                        nucType = "P"
-                    else:
-                        nucType = "p"
-                    key = 'Bulge'+':'+str(iLoop)+':'+nucType+':'+subType
-                    if key in angleDict:
-                        anglesToSet = angleDict[key].copy()
-                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockBulge)
- 
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:
             if 'remove' in entry:
