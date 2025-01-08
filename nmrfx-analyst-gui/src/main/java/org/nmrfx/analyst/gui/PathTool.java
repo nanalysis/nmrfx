@@ -758,7 +758,10 @@ public class PathTool implements PeakNavigable, ControllerTool {
         if (peakPaths != null) {
 
             chart.clearAnnotations();
+            String xDim = chart.getDimNames().get(0);
+            String yDim = chart.getDimNames().get(1);
             Collection<PeakPath> paths = peakPaths.getPaths();
+            int[] peakDim = chart.getPeakListAttributes().get(0).getPeakDim();
 
             for (PeakPath path : paths) {
                 int nValid = path.getNValid();
@@ -770,8 +773,8 @@ public class PathTool implements PeakNavigable, ControllerTool {
                     for (PeakDistance peakDist : path.getPeakDistances()) {
                         if (peakDist != null) {
                             Peak peak = peakDist.getPeak();
-                            x.add((double) peak.getPeakDim(0).getChemShiftValue());
-                            y.add((double) peak.getPeakDim(1).getChemShiftValue());
+                            x.add((double) peak.getPeakDim(peakDim[0]).getChemShiftValue());
+                            y.add((double) peak.getPeakDim(peakDim[1]).getChemShiftValue());
                         }
                     }
                     if (!x.isEmpty()) {
