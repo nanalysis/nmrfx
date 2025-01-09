@@ -926,6 +926,23 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
     }
 
+    double[] getPlaneRange(PeakPath path) {
+        int[] peakDims = chart.getPeakListAttributes().get(0).getPeakDim();
+        double minShift = Double.MAX_VALUE;
+        double maxShift = Double.NEGATIVE_INFINITY;
+        for (PeakDistance peakDistance : path.getPeakDistances()) {
+            if (peakDistance != null) {
+                float ppm = peakDistance.getPeak().getPeakDim(peakDims[2]).getChemShiftValue();
+                minShift = Math.min(minShift, ppm);
+                maxShift = Math.max(maxShift, ppm);
+                double delta = (maxShift - minShift) / 5.0;
+                minShift -= delta;
+                maxShift += delta;
+            }
+        }
+        return new double[]{minShift, maxShift};
+    }
+
     void refreshPaths() {
         peakPaths.refreshPaths();
         chart.refresh();
@@ -936,6 +953,12 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         controller.refreshPeakView(peak);
         if ((peak != null) && (peakPaths != null)) {
+            if (peak.getPeakList().getNDim() > 2) {
+                PeakPath path = peakPaths.getPath(peak);
+                double[] range = getPlaneRange(path);
+                chart.getAxes().setMinMax(2, range[0], range[1]);
+                chart.refresh();
+            }
             updatePathInfo(peak);
         }
     }
