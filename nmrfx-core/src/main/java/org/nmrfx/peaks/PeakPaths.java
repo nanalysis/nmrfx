@@ -207,6 +207,9 @@ public class PeakPaths implements PeakListener {
                 }
             }
             String peakPathName = file.getName();
+            if (!peakPathName.endsWith("Paths")) {
+                peakPathName = peakPathName + "Paths";
+            }
             peakPath = loadPathData(pathMode, datasetNames, x0List, x1List, peakPathName);
         }
         return peakPath;
