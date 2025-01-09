@@ -91,9 +91,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         fitBar = new ToolBar();
         fitParBox = new HBox();
         this.vBox = vBox;
-        HBox hBox = new HBox();
-        hBox.getChildren().addAll(fitBar, fitParBox);
-        vBox.getChildren().addAll(toolBar, hBox);
+        vBox.getChildren().addAll(toolBar, fitBar, fitParBox);
         peakNavigator = PeakNavigator.create(this).onClose(this::close).initialize(toolBar);
         peakNavigator.setPeakList();
         controller.addScaleBox(peakNavigator, toolBar);
@@ -184,28 +182,26 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
-        Pane filler2 = new Pane();
-        filler2.setMinWidth(50);
         Pane filler3 = new Pane();
         filler3.setMinWidth(50);
-        Pane filler4 = new Pane();
-        filler4.setMinWidth(50);
-        Pane filler5 = new Pane();
-        HBox.setHgrow(filler5, Priority.ALWAYS);
 
         toolBar.getItems().add(gotoButton);
-        toolBar.getItems().add(filler1);
+        Pane filler4 = new Pane();
+        filler4.setMinWidth(30);
+        filler4.setMaxWidth(30);
+        toolBar.getItems().add(filler4);
         toolBar.getItems().add(actionMenu);
-        toolBar.getItems().add(filler2);
-        toolBar.getItems().addAll(dataButtons);
 
+        Pane filler5 = new Pane();
+        filler5.setMinWidth(30);
+        filler5.setMaxWidth(30);
         toolBar.getItems().add(filler5);
         radiusField = new TextField("0.5");
         radiusField.setPrefWidth(50);
-        toolBar.getItems().add(radiusField);
+        toolBar.getItems().addAll(new Label("Radius"), radiusField);
         tolField = new TextField("0.2");
         tolField.setPrefWidth(50);
-        toolBar.getItems().add(tolField);
+        toolBar.getItems().addAll(new Label("Tol."), tolField);
 
         Pane fillerf1 = new Pane();
         fillerf1.setMinWidth(5);
@@ -214,7 +210,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         fitButton = new Button("Fit");
         fitButton.setOnAction(e -> fitPath());
-        fitButton.setDisable(true);
+        fitButton.setDisable(false);
         fitButton.setPrefWidth(80);
 
         addButton = new Button("Add");
@@ -230,6 +226,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         nField.setPrefWidth(100);
 
         fitBar.getItems().addAll(nField, fillerf1, bindingModeChoice,  fitButton, addButton, showButton, fillerf2);
+        fitBar.getItems().addAll(dataButtons);
 
         bindingModeChoice.getItems().addAll(PeakPaths.BINDINGMODE.values());
         bindingModeChoice.setValue(PeakPaths.BINDINGMODE.SINGLE_SITE);
@@ -363,6 +360,10 @@ public class PathTool implements PeakNavigable, ControllerTool {
             return;
         }
         String pathName = scanTable.getScanDir() != null ? scanTable.getScanDir().getName() : datasetNames.get(0).toString();
+        if (pathName.contains(".")) {
+            pathName = pathName.substring(0, pathName.indexOf("."));
+        }
+        pathName = pathName + "Paths";
         peakPaths = PeakPaths.loadPathData(pathMode, datasetNames, x0List, x1List, pathName);
     }
 
@@ -684,6 +685,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.YES) {
                     peakPaths.clearPaths();
+                    chart.clearAnnotations();
                 }
             });
         }
@@ -692,6 +694,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
     void findPaths() {
         if (peakPaths != null) {
             peakPaths.clearPaths();
+            chart.clearAnnotations();
             int n = 10;
             double minRadius = 0.1;
             double maxRadius = Double.parseDouble(radiusField.getText());
@@ -826,7 +829,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
                 if (fitPath == null) {
                     fitPath = new PathFitter();
-                    if (path.getFitPars().length > 0) {
+                    if ((path.getFitPars() != null) && (path.getFitPars().length > 0)) {
                         fitPath.nStates(path.getFitPars().length / 2);
                     }
                     fitPath.setup(peakPaths, path);
