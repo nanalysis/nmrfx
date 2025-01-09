@@ -892,21 +892,25 @@ public class PathTool implements PeakNavigable, ControllerTool {
             int iSeries = 0;
             for (PeakPath path : paths) {
                 Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
-                showXYPath(path, color);
+                showXYPath(path, iSeries, paths.size());
                 iSeries++;
             }
         }
     }
 
-    public void showXYPath(PeakPath path, Color color) {
+    public void showXYPath(PeakPath path, int iSeries, int n) {
         PathFitter fitPath = new PathFitter();
         fitPath.nStates(path.getFitPars().length / 2);
         fitPath.setup(peakPaths, path);
 
         double[][] xValues = fitPath.getX();
         double[][] yValues = fitPath.getY();
+        int j = 0;
         for (double[] yValue : yValues) {
+            int iColor = n < 2 ? j : iSeries;
+            Color color = XYCanvasChart.colors[iColor % XYCanvasChart.colors.length];
             plotTool.getChart().addLines(xValues[0], yValue, true, color);
+            j++;
         }
 
         double[] fitPars = path.getFitPars();
@@ -914,11 +918,14 @@ public class PathTool implements PeakNavigable, ControllerTool {
             double first = 0.0;
             double last = FitUtils.getMaxValue(peakPaths.getXValues()[0]);
             if (peakPaths.getPathMode() == PATHMODE.TITRATION) {
+                Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
                 double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
                 plotTool.getChart().addLines(xy[0], xy[1], false, color);
             } else if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
                 double[][] xy = fitPath.getPressureSimValues(fitPars, first, last, 100);
                 for (int i = 1; i < xy.length; i++) {
+                    int iColor = n < 2 ? i - 1 : iSeries;
+                    Color color = XYCanvasChart.colors[iColor % XYCanvasChart.colors.length];
                     plotTool.getChart().addLines(xy[0], xy[i], false, color);
                 }
             }
@@ -955,9 +962,11 @@ public class PathTool implements PeakNavigable, ControllerTool {
         if ((peak != null) && (peakPaths != null)) {
             if (peak.getPeakList().getNDim() > 2) {
                 PeakPath path = peakPaths.getPath(peak);
-                double[] range = getPlaneRange(path);
-                chart.getAxes().setMinMax(2, range[0], range[1]);
-                chart.refresh();
+                if (path != null) {
+                    double[] range = getPlaneRange(path);
+                    chart.getAxes().setMinMax(2, range[0], range[1]);
+                    chart.refresh();
+                }
             }
             updatePathInfo(peak);
         }

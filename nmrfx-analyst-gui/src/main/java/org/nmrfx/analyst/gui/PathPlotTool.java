@@ -253,7 +253,7 @@ public class PathPlotTool {
         for (Integer index : selected) {
             PeakPath path = tableView.getItems().get(index);
             Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
-            pathTool.showXYPath(path, color);
+            pathTool.showXYPath(path, iSeries, selected.size());
             iSeries++;
         }
     }
