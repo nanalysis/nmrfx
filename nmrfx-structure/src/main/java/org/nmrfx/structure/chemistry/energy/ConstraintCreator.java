@@ -78,6 +78,49 @@ public class ConstraintCreator {
         }
     }
 
+    public static void processBonds(List<Map<String, Object>> bondDicts, String phase) throws IllegalArgumentException {
+        for (var bondDict : bondDicts) {
+            String bondMode = (String) bondDict.getOrDefault("mode", "add");
+            Object atomObject = bondDict.get("atoms");
+            String atomName1;
+            String atomName2;
+            if (atomObject == null) {
+                throw new IllegalArgumentException("No \"atoms\" entry in bond dictionary");
+            } else if (atomObject instanceof List atomList) {
+                if (atomList.size() != 2) {
+                    throw new IllegalArgumentException("Need two atoms in bond dictionary atom entry");
+                } else {
+                    atomName1 = atomList.get(0).toString();
+                    atomName2 = atomList.get(1).toString();
+                }
+            } else {
+                throw new IllegalArgumentException("\"atoms\" entry not a list");
+            }
+            Atom atom1 = MoleculeBase.getAtomByName(atomName1);
+            Atom atom2 = MoleculeBase.getAtomByName(atomName2);
+            if (phase.equals("add") && bondMode.equals("add")) {
+                Object lengthObj = bondDict.getOrDefault("length", Double.valueOf(1.08));
+                double lower;
+                double upper;
+                if (lengthObj instanceof List distances) {
+                     lower = (Double) distances.get(0);
+                     upper = (Double) distances.get(1);
+                } else if (lengthObj instanceof Double distance) {
+                    lower = distance - 0.001;
+                    upper = distance + 0.001;
+                } else {
+                    throw new IllegalArgumentException("\"length\" entry not present or not a list");
+                }
+                addDistanceConstraint(atomName1, atomName2, lower, upper, false);
+            } else if (phase.equals("float") && bondMode.equals("float")) {
+                floatBond(atom1, atom2);
+            } else if (phase.equals("float") && bondMode.equals("constrain")) {
+                constrainDistance(atom1, atom2);
+            } else if (phase.equals("break") && (bondMode.equals("break") || bondMode.equals("float"))) {
+                breakBond(atom1, atom2);
+            }
+        }
+    }
     public static void readLinkerDict(Molecule molecule, Map<String, Object> linkerDict) throws IllegalArgumentException {
         if (linkerDict == null) {
             return;
@@ -179,6 +222,17 @@ public class ConstraintCreator {
             }
         }
         return atom;
+    }
+
+    public static void floatBond(Atom atom1, Atom atom2) {
+        Molecule molecule = (Molecule) atom1.getEntity().molecule;
+        var ringClosures = molecule.getRingClosures();
+        AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2);
+    }
+    public static void constrainDistance(Atom atom1, Atom atom2) {
+        Molecule molecule = (Molecule) atom1.getEntity().molecule;
+        var ringClosures = molecule.getRingClosures();
+        AngleTreeGenerator.addConstrainDistance(ringClosures, atom1, atom2);
     }
 
     public static void breakBond(Atom atom1, Atom atom2) {
@@ -317,6 +371,4 @@ public class ConstraintCreator {
         return residue.getPolymer().getName() + ':' + residue.getNumber() + '.' + aName;
 
     }
-
-
 }

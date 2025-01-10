@@ -563,57 +563,6 @@ class refine:
     def readLinkerDict(self, linkerDict):
         ConstraintCreator.readLinkerDict(self.molecule, linkerDict)
 
-    def processBonds(self,bondDict, phase):
-        for bondInfo in bondDict:
-            bondMode = bondInfo['mode'] if 'mode' in bondInfo else 'add'
-            if phase == 'add' and bondMode == 'add':
-                distances = bondInfo['length'] if 'length' in bondInfo else 1.08
-                if not isinstance(distances,float):
-                    lower,upper = distances
-                else:
-                    lower = distances - 0.001
-                    upper = distances + 0.001
-                atomName1, atomName2 = bondInfo['atoms']
-                self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
-            elif phase == 'float' and bondMode == 'float':
-                atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                self.floatBond(atom1, atom2)
-            elif phase == 'float' and bondMode == 'constrain':
-                atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                self.constrainDistance(atom1, atom2)
-            elif phase == 'break' and (bondMode == 'break' or bondMode == 'float'):
-                atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                self.breakBond(atom1, atom2)
-
-    def floatBond(self, atom1, atom2):
-        ringClosures = self.molecule.getRingClosures()
-        AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
-
-    def constrainDistance(self, atom1, atom2):
-        ringClosures = self.molecule.getRingClosures()
-        AngleTreeGenerator.addConstrainDistance(ringClosures, atom1, atom2)
-                
-    def breakBond(self, atom1, atom2):
-        atom1.removeBondTo(atom2)
-        atom2.removeBondTo(atom1)
-        atom1.daughterAtom = None
-        atom1.rotActive = False
-        atom1.rotUnit = -1
-        atom1.rotGroup = None
-                
-    def addCyclicBond(self, polymer):
-        # to return a list atomName1, atomName2, distance
-        distanceConstraints = polymer.getCyclicConstraints()
-        for distanceConstraint in distanceConstraints:
-            self.bondConstraints.append(distanceConstraint)
-
-
     def getPars(self):
         el = self.energyLists
         coarseGrain = el.getCourseGrain()
@@ -1011,7 +960,7 @@ class refine:
         nPolymers = len(self.molecule.getPolymers())
 
         if 'bonds' in data:
-            self.processBonds(data['bonds'], 'float')
+            ConstraintCreator.processBonds(data['bonds'], 'float')
 
         if rnaLinkerDict:
             self.molecule.fillEntityCoords()
@@ -1022,7 +971,7 @@ class refine:
                     print 'null atom parent', atom
                 else:
                     print 'float',atoms[1].getParent(),atoms[1]
-                    self.floatBond(atoms[1].getParent(), atoms[1])
+                    ConstraintCreator.floatBond(atoms[1].getParent(), atoms[1])
                 
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
@@ -1054,8 +1003,8 @@ class refine:
             self.addLinkers(linkerList)
 
         if 'bonds' in data:
-            self.processBonds(data['bonds'], 'break')
-            self.processBonds(data['bonds'], 'add')
+            ConstraintCreator.processBonds(data['bonds'], 'break')
+            ConstraintCreator.processBonds(data['bonds'], 'add')
 
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
