@@ -409,6 +409,7 @@ public class RNAStructureSetup {
     static List<Residue> getLoopResidues(List<Residue> residues) {
         List<Residue> loopResidues = new ArrayList<>();
         loopResidues.add(residues.get(0).getPrevious());
+        loopResidues.addAll(residues);
         loopResidues.add(residues.getLast().getNext());
         return loopResidues;
     }
@@ -546,7 +547,6 @@ public class RNAStructureSetup {
         }
         return "";
     }
-
     static String getHelixSubType(Residue residue, SecondaryStructure ssNext, SecondaryStructure ssPrev) {
         Residue nextRes = residue.getNext();
         Residue prevRes = residue.getPrevious();
@@ -597,7 +597,7 @@ public class RNAStructureSetup {
         if (ss instanceof RNAHelix) {
             subType = getHelixSubType(residue, ssNext, ssPrev);
         } else if (ss instanceof Loop) {
-            subType = getLoopType(ss);
+            subType = "T"+getLoopType(ss);
         } else if (ss instanceof Bulge) {
             subType = "B" + ss.getResidues().size();
             // check whether res num is greater than paired res num, to determine orientation of bulge
