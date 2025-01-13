@@ -1068,6 +1068,7 @@ class refine:
                 if not self.ssGen:
                     self.ssGen = SSGen(self.molecule, self.vienna)
                     self.ssGen.analyze()
+                self.molecule.setDotBracket(self.vienna)
                 RNAStructureSetup.setAnglesVienna(data['vienna'], self.ssGen)
             if 'doublehelix' in data:
                 print 'Setting angles based on double helix information'
