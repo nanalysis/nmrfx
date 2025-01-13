@@ -16,6 +16,8 @@ public class RNAStructureSetup {
 
     private static Map<Integer, String> angleKeyList = new HashMap<>();
     public static boolean dumpKeys = true;
+
+    private static boolean usePlanarity = true;
     private static final Map<String, Map<String, Double>> angleDict = new HashMap<>();
     public static Map<String, List<AtomAtomDistance>> rnaPlanarity = new HashMap<>();
     public static Map<String, List<AtomAtomLowUp>> stackTo = new HashMap<>();
@@ -72,6 +74,12 @@ public class RNAStructureSetup {
     }
 
 
+    public static void setPlanarityUse(boolean state) {
+        usePlanarity = state;
+    }
+    public static boolean getPlanarityUse() {
+        return usePlanarity;
+    }
     private static void loadAngles() throws IOException {
         InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/angles.txt");
         angleDict.clear();

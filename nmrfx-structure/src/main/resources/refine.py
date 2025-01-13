@@ -1334,6 +1334,7 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'planarity' in rnaDict:
             self.addPlanarity = rnaDict['planarity']
+            RNAStructureSetup.setPlanarityUse(self.addPlanarity)
         if 'bp' in rnaDict:
             polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
@@ -1344,7 +1345,7 @@ class refine:
                 residue1, residue2 = polymer1.getResidue(str(resNum1)), polymer2.getResidue(str(resNum2))
                 types = bp['type']
                 if len(types) == 1:
-                    self.addBasePair(residue1, residue2, types[0])
+                    RNAStructureSetup.addBasePair(residue1, residue2, types[0], self.addPlanarity)
                 else:
                     self.addBasePairs(residue1, residue2, types)
 
