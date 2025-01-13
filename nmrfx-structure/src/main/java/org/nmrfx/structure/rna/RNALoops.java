@@ -44,7 +44,7 @@ public class RNALoops {
         loop1.repSeqs = List.of("CGAGAG", "UACCAA");
         rnaLoops.add(loop1);
 
-        RNALoops loop2 = new RNALoops("GNRA", "^[AGUC]G[AGUC][AG][AGUC]", "1a1g1a1a1c", "AAAA");
+        RNALoops loop2 = new RNALoops("GNRA", "^[AGUC]G[AGUC][AG][AGUC][AGUC]", "1a1g1a1a1c", "AAAA");
         loop2.repSeqs = List.of("CGCAAG", "CGCGAG", "UGAAAA", "CGAAGG", "GGCAAC", "CGGGAG", "GGUGAC", "UGAGAG",
                 "GGCGAC", "AGCAAU", "CGUAGG", "CGAGUG", "CUCACG", "UGUGAA", "CGAAAG", "CGUGAG", "CCAAAG", "CUAACG",
                 "AAAAAU", "UGAAAG", "GGAGAC", "GGUAAC", "AGAAAU", "CGCAGG", "UGCAAG", "AGUGAU GGAAAC", "CGUAAG", "UUAGCG");
@@ -52,7 +52,7 @@ public class RNALoops {
         loop2.hbAtomNames.addAll(List.of(new String[]{"2.N2", "5.N7"}, new String[]{"2.O2", "4.N7"}, new String[]{"2.N2", "5.OP2"}));
         rnaLoops.add(loop2);
 
-        RNALoops loop3 = new RNALoops("UWCG", "^[GC]U[AU]CG[GC]", "1a1z2[6n1c", "AAAS");
+        RNALoops loop3 = new RNALoops("UWCG", "^[GC]U[AU]CG[GC][AGUC]", "1a1z2[6n1c", "AAAS");
         loop3.repSeqs = List.of("GUACGG", "GUUCGC", "CUCCGG", "GAUCGC", "CUUCGG", "AUUUGU");
         loop3.basePairs.add(new int[]{2, 5});
         loop3.hbAtomNames.addAll(List.of(new String[]{"2.O5", "5.O6"}, new String[]{"2.O2", "5.O6"}));
