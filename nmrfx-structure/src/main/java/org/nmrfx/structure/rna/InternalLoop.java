@@ -37,6 +37,19 @@ public class InternalLoop extends SecondaryStructure {
 
     }
 
+    public int[] getLoopSizes() {
+        int n = 0;
+        for (int i=1;i< secResidues.size();i++) {
+            Residue res1 = secResidues.get(i-1);
+            Residue res2 = secResidues.get(i);
+            if (res2.getPrevious() != res1) {
+                n = i;
+                break;
+            }
+        }
+        return new int[]{n, secResidues.size() - n};
+    }
+
     @Override
     public String getName() {
         return name;

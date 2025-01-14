@@ -9,12 +9,13 @@ import org.nmrfx.structure.chemistry.energy.RNARotamer;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.nmrfx.structure.chemistry.energy.ConstraintCreator.addDistanceConstraint;
 
 public class RNAStructureSetup {
 
-    private static Map<Integer, String> angleKeyList = new HashMap<>();
+    private static Map<Integer, String> angleKeyMap = new HashMap<>();
     public static boolean dumpKeys = true;
 
     private static boolean usePlanarity = true;
@@ -77,9 +78,11 @@ public class RNAStructureSetup {
     public static void setPlanarityUse(boolean state) {
         usePlanarity = state;
     }
+
     public static boolean getPlanarityUse() {
         return usePlanarity;
     }
+
     private static void loadAngles() throws IOException {
         InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/angles.txt");
         angleDict.clear();
@@ -474,6 +477,16 @@ public class RNAStructureSetup {
             return residues.reversed().get(index * 2 + 1 - chain);
         }
     }
+    static void setAngles(Residue residue, String key, boolean lockAngles) {
+        AtomicBoolean found = new AtomicBoolean(false);
+        getAngles(key).ifPresent(anglesToSet -> {
+            found.set(true);
+            RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockAngles);
+        });
+        key = found.get() ? "PRESENT:" + key : "ABSENT :" + key;
+        angleKeyMap.put(residue.getResNum(), key);
+    }
+
 
     static void setAnglesLoop(Loop loop, boolean lockLoop) {
         int iLoop = 0;
@@ -482,10 +495,33 @@ public class RNAStructureSetup {
             String nucType = residue.getName();
             nucType = getPurinePyrimidine(nucType);
             String key = "Loop" + ':' + iLoop + ':' + nucType + ':' + subType;
-            getAngles(key).ifPresent(anglesToSet -> {
-                angleKeyList.put(residue.getResNum(), key);
-                RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockLoop);
-            });
+            setAngles(residue, key, lockLoop);
+            iLoop++;
+        }
+
+    }
+
+    static void setAnglesInternalLoop(InternalLoop loop, boolean lockLoop) {
+        int iLoop = 0;
+        for (Residue residue : loop.getResidues()) {
+            String subType = getRNAResType(residue);
+            String nucType = residue.getName();
+            nucType = getPurinePyrimidine(nucType);
+            String key = "ILoop" + ':' + iLoop + ':' + nucType + ':' + subType;
+            setAngles(residue, key, lockLoop);
+            iLoop++;
+        }
+
+    }
+
+    static void setAnglesJunction(Junction junction, boolean lockLoop) {
+        int iLoop = 0;
+        for (Residue residue : junction.getResidues()) {
+            String subType = getRNAResType(residue);
+            String nucType = residue.getName();
+            nucType = getPurinePyrimidine(nucType);
+            String key = "Junction" + ':' + iLoop + ':' + nucType + ':' + subType;
+            setAngles(residue, key, lockLoop);
             iLoop++;
         }
 
@@ -498,10 +534,7 @@ public class RNAStructureSetup {
             String nucType = residue.getName();
             nucType = getPurinePyrimidine(nucType);
             String key = "Bulge" + ':' + iLoop + ':' + nucType + ':' + subType;
-            getAngles(key).ifPresent(anglesToSet -> {
-                angleKeyList.put(residue.getResNum(), key);
-                RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockBulge);
-            });
+            setAngles(residue, key, lockBulge);
             iLoop++;
         }
     }
@@ -522,7 +555,6 @@ public class RNAStructureSetup {
             nucType = getPurinePyrimidine(nucType);
             String key = "Helix" + ":0:" + nucType + ":" + subType;
             if (getAngles(key).isPresent()) {
-                var anglesToSet = getAngles(key).get();
                 boolean lock = doLock;
                 if (firstRes && !lockFirst) {
                     lock = false;
@@ -533,16 +565,12 @@ public class RNAStructureSetup {
                 if ((lastRes && (subType.contains("hL") || subType.contains("hl")) && lockLoop)) {
                     lock = true;
                 }
-                angleKeyList.put(residue.getResNum(), key);
-                RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lock);
+                setAngles(residue, key, lock);
             } else {
                 subType = subType.charAt(subType.length() - 2) == 'X' ? "hL:GNRAXe" : "hl:GNRAxe";
                 String key2 = "Helix" + ":0:" + nucType + ":" + subType;
-                getAngles(key).ifPresent(anglesToSet -> {
-                    boolean lock = lastRes && lockLoop;
-                    angleKeyList.put(residue.getResNum(), key2);
-                    RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lock);
-                });
+                boolean lock = lastRes && lockLoop;
+                setAngles(residue, key2, lock);
             }
         }
     }
@@ -565,6 +593,11 @@ public class RNAStructureSetup {
             }
         }
         return "";
+    }
+
+    static String getInternalLoopType(InternalLoop internalLoop) {
+        int[] loopSizes = internalLoop.getLoopSizes();
+        return loopSizes[0] + "_" + loopSizes[1];
     }
 
     static String getHelixSubType(List<Residue> residues, Residue residue, SecondaryStructure ssNext, SecondaryStructure ssPrev) {
@@ -635,6 +668,14 @@ public class RNAStructureSetup {
             if (prevResidue.getResNum() > prevResidue.pairedTo.getResNum()) {
                 subType = subType + "c";
             }
+        } else if (ss instanceof Junction) {
+            subType = "J" + ss.getResidues().size();
+        } else if (ss instanceof InternalLoop internalLoop) {
+            subType = "I" + getInternalLoopType(internalLoop);
+            Residue prevResidue = ss.getResidues().get(0).getPrevious();
+            if (prevResidue.getResNum() > prevResidue.pairedTo.getResNum()) {
+                subType = subType + "c";
+            }
         }
         Residue pairRes = residue.pairedTo;
         if (pairRes != null) {
@@ -673,19 +714,27 @@ public class RNAStructureSetup {
                     setAnglesLoop(loop, lockLoop);
                 } else if (ss instanceof Bulge bulge) {
                     setAnglesBulge(bulge, lockBulge);
+                } else if (ss instanceof InternalLoop loop) {
+                    setAnglesInternalLoop(loop, lockBulge);
+                } else if (ss instanceof Junction junction) {
+                    setAnglesJunction(junction, lockBulge);
                 }
             }
             if (dumpKeys) {
                 Molecule molecule = (Molecule) ssGen.structures().getFirst().firstResidue().molecule;
                 String dotBracket = molecule.getDotBracket();
 
-                angleKeyList.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(entry -> {
+                angleKeyMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(entry -> {
                     int iRes = entry.getKey();
-                    System.out.printf("%3d %c %s\n", iRes, dotBracket.charAt(iRes-1), entry.getValue());
+                    System.out.printf("%3d %c %s\n", iRes, dotBracket.charAt(iRes - 1), entry.getValue());
                 });
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static Map<Integer, String> getAngleKeyMap() {
+        return angleKeyMap;
     }
 }
