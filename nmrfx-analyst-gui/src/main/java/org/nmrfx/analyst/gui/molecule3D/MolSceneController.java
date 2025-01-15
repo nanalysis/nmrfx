@@ -26,6 +26,7 @@ import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
 import org.nmrfx.analyst.models.ModelFetcher;
+import org.nmrfx.analyst.peaks.PeakGenerator;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
@@ -983,6 +984,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 peakClasses.add(menuItem.getText());
             }
         }
+        double exponent = PeakGenerator.EXPONENT;
 
         if (peakList != null) {
             List<String> constraintPairs = new ArrayList<>();
@@ -1002,13 +1004,14 @@ public class MolSceneController implements Initializable, StageBasedController, 
                         String name2 = peak.getPeakDim(1).getLabel();
                         if (!name1.equals("") && !name2.equals("")) {
                             double intensity = peak.getIntensity();
-                            double normIntensity = 100.0 * intensity / max;
+                            double normIntensity = intensity / peakList.getScale();
+                            double distance = Math.exp(-1.0/exponent*Math.log(normIntensity));
                             String intMode;
-                            if (normIntensity > 10.0) {
+                            if (distance < 2.8) {
                                 intMode = "s";
-                            } else if (normIntensity > 1.5) {
+                            } else if (distance < 3.8) {
                                 intMode = "m";
-                            } else if (normIntensity > 1.0) {
+                            } else if (distance < 5.0) {
                                 intMode = "w";
                             } else {
                                 intMode = "vw";

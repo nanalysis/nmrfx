@@ -24,6 +24,8 @@ public class PeakGenerator {
     static final String[][] PATTERN_HNCA = {{"H", "N", "CA"}, {"H", "N", "-1.CA"}};
     static final String[][] PATTERN_HNCACB = {{"H", "N", "CB"}, {"H", "N", "-1.CB"}, {"H", "N", "CA"}, {"H", "N", "-1.CA"}};
 
+    public static final double EXPONENT = 5.0;
+
     public enum PeakGeneratorTypes {
         Proton_1D,
         HSQC_13C(PATTERN_HSQC_13C),
@@ -74,9 +76,10 @@ public class PeakGenerator {
         return ppmV;
     }
 
-    void addPeak(PeakList peakList, double hWidth, double intensity,  Atom... atoms) {
+    void addPeak(PeakList peakList, double hWidth, double intensity, Atom... atoms) {
         addPeak(peakList, hWidth, intensity, false, null, atoms);
     }
+
     void addPeak(PeakList peakList, double hWidth, double intensity, boolean requireActive, Boolean[] editScheme, Atom... atoms) {
         int nAtoms = atoms.length;
         double[] ppms = new double[nAtoms];
@@ -307,10 +310,12 @@ public class PeakGenerator {
         generateHSQC(peakList, parentElement, false, true);
 
     }
+
     public void generateHSQC(PeakList peakList, int parentElement, boolean isAromatic) {
         generateHSQC(peakList, parentElement, isAromatic, false);
 
     }
+
     private void generateHSQC(PeakList peakList, int parentElement, boolean isAromatic, boolean ignoreAromatic) {
         double hWidth = getHWidth();
         Atom[] atoms = new Atom[2];
@@ -387,10 +392,10 @@ public class PeakGenerator {
         if (indices[1] == -1) {
             throw new IllegalArgumentException("Can't find two proton dimensions");
         }
+        double scaleConst = 100.0 / Math.pow(2.0, -EXPONENT);
+        peakList.setScale(scaleConst);
 
         final int testANum = aNum;
-        double exponent = -5.0;
-        double scale = Math.pow(2.0, exponent);
         protonPairs.forEach(aP -> {
             atoms[indices[0]] = aP.getAtom1();
             atoms[indices[1]] = aP.getAtom2();
@@ -417,7 +422,8 @@ public class PeakGenerator {
             }
             if (ok) {
                 double distance = Math.max(2.0, Math.abs(aP.getDistance()));
-                double intensity = 100.0 * Math.pow(distance, exponent) / scale;
+                double intensity = Math.pow(distance, -EXPONENT) * scaleConst;
+
                 addPeak(peakList, hWidth, intensity, atoms);
                 if (atoms.length == 2) {
                     Atom[] atomsSwap = {atoms[1], atoms[0]};
@@ -429,15 +435,19 @@ public class PeakGenerator {
 
     private Boolean[] getFiltering(String scheme) {
         Boolean[] editingModes = {null, null};
-        for (int i = 0;i<2;i++) {
+        for (int i = 0; i < 2; i++) {
             editingModes[i] = switch (scheme.charAt(i)) {
-                case 'e': yield false;
-                case 'f': yield true;
-                default: yield null;
+                case 'e':
+                    yield false;
+                case 'f':
+                    yield true;
+                default:
+                    yield null;
             };
         }
         return editingModes;
     }
+
     public void generateRNANOESYSecStr(Dataset dataset, PeakList peakList, boolean useN, boolean reqActive) {
         var ss = new SSGen(molecule, molecule.getDotBracket());
         ss.analyze();
@@ -452,8 +462,10 @@ public class PeakGenerator {
         Boolean[] editingModes = getFiltering(scheme);
         var map = InteractionType.getInteractionMap();
         List<Residue> rnaResidues = RNAAnalysis.getRNAResidues(molecule);
-        for (int i=0;i<rnaResidues.size();i++) {
-            for (int j = i;j<rnaResidues.size();j++) {
+        double scaleConst = 100.0 / Math.pow(2.0, -EXPONENT);
+        peakList.setScale(scaleConst);
+        for (int i = 0; i < rnaResidues.size(); i++) {
+            for (int j = i; j < rnaResidues.size(); j++) {
                 Residue aRes = rnaResidues.get(i);
                 Residue bRes = rnaResidues.get(j);
                 String iType = InteractionType.determineType(aRes, bRes);
@@ -471,9 +483,8 @@ public class PeakGenerator {
                     Atom atom2 = bRes.getAtom(aName2);
                     double distance = atomPairDistance.getValue();
                     double width = 1.0;
-                    double scaleConst = 100.0/Math.pow(2.0,-6);
-                    double intensity = Math.pow(distance, -6)*scaleConst;
-                    if ((useN || (atom1.getParent().getAtomicNumber() != 7)) && (useN || (atom2.getParent().getAtomicNumber() != 7)))  {
+                    double intensity = Math.pow(distance, -EXPONENT) * scaleConst;
+                    if ((useN || (atom1.getParent().getAtomicNumber() != 7)) && (useN || (atom2.getParent().getAtomicNumber() != 7))) {
                         addPeak(peakList, width, intensity, reqActive, editingModes, atom1, atom2);
                         addPeak(peakList, width, intensity, reqActive, editingModes, atom2, atom1);
                     }
