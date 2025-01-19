@@ -595,9 +595,14 @@ public class RNAStructureSetup {
         return "";
     }
 
-    static String getInternalLoopType(InternalLoop internalLoop) {
-        int[] loopSizes = internalLoop.getLoopSizes();
-        return loopSizes[0] + "_" + loopSizes[1];
+    static String getJunctionType(Junction junction) {
+      List<Integer> loopSizes = junction.getLoopSizes();
+      StringBuilder result = new StringBuilder(String.valueOf(loopSizes.get(0)));
+
+      for (int i=1;i<loopSizes.size();i++) {
+          result.append("_").append(loopSizes.get(i));
+      }
+      return result.toString();
     }
 
     static String getHelixSubType(List<Residue> residues, Residue residue, SecondaryStructure ssNext, SecondaryStructure ssPrev) {
@@ -668,14 +673,14 @@ public class RNAStructureSetup {
             if (prevResidue.getResNum() > prevResidue.pairedTo.getResNum()) {
                 subType = subType + "c";
             }
-        } else if (ss instanceof Junction) {
-            subType = "J" + ss.getResidues().size();
         } else if (ss instanceof InternalLoop internalLoop) {
-            subType = "I" + getInternalLoopType(internalLoop);
+            subType = "I" + getJunctionType(internalLoop);
             Residue prevResidue = ss.getResidues().get(0).getPrevious();
             if (prevResidue.getResNum() > prevResidue.pairedTo.getResNum()) {
                 subType = subType + "c";
             }
+        } else if (ss instanceof Junction junction) {
+            subType = "J" + getJunctionType(junction);
         }
         Residue pairRes = residue.pairedTo;
         if (pairRes != null) {
