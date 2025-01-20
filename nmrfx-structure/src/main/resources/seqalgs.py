@@ -50,7 +50,7 @@ def readSequence(bmrbID,lines):
                 if fields[0] == "_Residue_label":
                     state = 'inSeq'
             elif state == 'inSeq':
-                if fields[0] == "stop_":
+                if fields[0] == STAR3Base.STOP:
                     break
 
                 if len(fields) > 2:
@@ -93,7 +93,7 @@ def processBMRBLines(bmrbID, lines):
                     state = "inShifts"
                 
             if state == 'inShifts':
-                if fields[0] == "stop_":
+                if fields[0] == STAR3Base.STOP:
                     break
                 #print shiftLoopTags
                 #print fields
@@ -147,7 +147,7 @@ def makeOffsetDict(bmrbID, lines):
                     state = "inShifts"
                 
             if state == 'inShifts':
-                if fields[0] == "stop_":
+                if fields[0] == STAR3Base.STOP:
                     break
                 #print shiftLoopTags
                 #print fields

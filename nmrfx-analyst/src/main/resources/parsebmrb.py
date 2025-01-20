@@ -9,7 +9,7 @@ def scanBMRB(fileName):
         for line in f1:
             line = line.strip()
             if inSave:
-                if line == "save_":
+                if line == STAR3Base.SAVE:
                     inSave = False
                     inAssign = False
                 elif line.startswith("_Assigned_chem_shift_list.Sf_category"):
@@ -17,7 +17,7 @@ def scanBMRB(fileName):
                     assignData.append(line)
                 elif inAssign:
                     assignData.append(line)
-            elif line.startswith("save_"):
+            elif line.startswith(STAR3Base.SAVE):
                 if inAssign:
                     break
                 inSave = True
@@ -33,7 +33,7 @@ def processAssign(assignData, atomNames):
         if line == "":
             continue
         if inLoop:
-            if line == "stop_":
+            if line == STAR3Base.STOP:
                 inLoop = False
             elif line.startswith("_"):
                 (tag,type) = line.split(".")
@@ -44,7 +44,7 @@ def processAssign(assignData, atomNames):
                 loopData[tag].append(type)
             else:
                 loopValues[currentLoop].append(line)
-        elif line == "loop_":
+        elif line == STAR3Base.LOOP:
             inLoop = True
     valueIndex = loopData['_Atom_chem_shift'].index('Val')
     atomNameIndex = loopData['_Atom_chem_shift'].index('Atom_ID')

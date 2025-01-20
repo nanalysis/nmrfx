@@ -139,7 +139,7 @@ public class Saveframe {
                 }
                 throw new ParseException("File exhausted before all tokens found in \"" + name + "\"");
             }
-            if (token.equals("save_")) {
+            if (token.equals(STAR3Base.SAVE)) {
                 if (saveframeCategory == null) {
                     throw new ParseException("No category for saveframe \"" + name + "\"");
                 }
@@ -148,7 +148,7 @@ public class Saveframe {
                     tokenMap.clear();
                 }
                 break;
-            } else if (token.equals("loop_")) {
+            } else if (token.equals(STAR3Base.LOOP)) {
                 if (saveframeCategory == null) {
                     throw new ParseException("No category for saveframe \"" + name + "\"");
                 }

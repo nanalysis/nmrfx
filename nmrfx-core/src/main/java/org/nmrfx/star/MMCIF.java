@@ -48,7 +48,7 @@ public class MMCIF extends STAR3Base {
                 break;
             } else if (token.startsWith("data_")) {
                 processSaveFrame(token);
-            } else if (token.startsWith("save_")) {
+            } else if (token.startsWith(STAR3Base.SAVE)) {
                 processSaveFrame(token);
             }
         }
