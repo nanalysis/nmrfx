@@ -22,6 +22,7 @@ import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -253,7 +254,7 @@ public class ResonanceFactory implements FreezeListener {
     public void writeResonancesSTAR3(Writer chan)
             throws IOException {
 
-        chan.write("save_resonance_linker_list\n");
+        chan.write(STAR3Base.SAVE + "resonance_linker_list\n");
 
         chan.write("_Resonance_linker_list.Sf_category    ");
         chan.write("resonance_linker\n");
@@ -281,7 +282,7 @@ public class ResonanceFactory implements FreezeListener {
             chan.write(resonance.toSTARResonanceString() + "\n");
         }
         chan.write("stop_\n");
-        chan.write("save_\n");
+        chan.write(STAR3Base.SAVE + "\n");
 
     }
 

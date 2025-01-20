@@ -11,6 +11,7 @@ import org.nmrfx.math.Clusters;
 import org.nmrfx.peaks.events.*;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 import org.nmrfx.utilities.Updater;
 import org.nmrfx.utilities.Util;
 
@@ -1923,7 +1924,7 @@ public class PeakList {
     }
 
     public void writeSTAR3Header(Writer chan) throws IOException {
-        chan.write("save_" + getName() + "\n");
+        chan.write(STAR3Base.SAVE + getName() + "\n");
         chan.write("_Spectral_peak_list.Sf_category                 ");
         chan.write("spectral_peak_list\n");
         chan.write("_Spectral_peak_list.Sf_framecode                 ");

@@ -165,7 +165,7 @@ public class NMRNEFReader {
                         polymer.molecule.setupRotGroups();
                     }
                 } else if (compound == null) {
-                    compound = new Compound(seqCode, resName, resVariant);
+                    compound = new Compound(seqCode, resName, resVariant, resName);
                     compound.molecule = molecule;
                     addCompound(mapID, compound);
                     compound.setIDNum(entityID);

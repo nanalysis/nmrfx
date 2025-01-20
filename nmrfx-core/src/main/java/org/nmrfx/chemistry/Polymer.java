@@ -77,12 +77,20 @@ public class Polymer extends Entity {
     public Polymer(String name) {
         this.name = name;
         this.label = name;
+        this.entityAssemblyName = name;
         residues = new HashMap<>();
     }
 
     public Polymer(String label, String name) {
         this.name = name;
         this.label = label;
+        this.entityAssemblyName = label;
+        residues = new HashMap<>();
+    }
+    public Polymer(String label, String name, String entityAssemblyName) {
+        this.name = name;
+        this.label = label;
+        this.entityAssemblyName = entityAssemblyName;
         residues = new HashMap<>();
     }
 
