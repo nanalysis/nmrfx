@@ -528,15 +528,6 @@ class refine:
         self.rDyn.setTrajectoryWriter(self.trajectoryWriter)
         return self.rDyn
 
-    def addLinkers(self, linkerList):
-        if linkerList:
-            try :
-                for linkerDict in linkerList:
-                    self.readLinkerDict(linkerDict) # returns used Entities to mark them
-            except TypeError as e:
-                print repr(e)
-                self.readLinkerDict(linkerList)
-
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
         MolecularConstraints.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
@@ -559,9 +550,6 @@ class refine:
 
     def addAngleConstraint(self, angleConstraint):
         self.getAngleConstraintSet().add(angleConstraint)
-
-    def readLinkerDict(self, linkerDict):
-        ConstraintCreator.readLinkerDict(self.molecule, linkerDict)
 
     def getPars(self):
         el = self.energyLists
@@ -825,50 +813,6 @@ class refine:
             raise ValueError(atomName, "was not found in", entityName)
         return atom
 
-    def validateLinkerList(self,linkerList, treeDict, rnaLinkerDict):
-        ''' validateLinkerList goes over all linkers and the treeDict to make
-            sure all entities in the molecule are connected in some way.
-            If no linker is provided for an entity, one will be created for
-            the entity.  This function also has a few break points to help users
-            troubleshoot invalid data in their config file'''
-        unusedEntities = [entity.getName() for entity in self.molecule.getEntities()]
-        allEntities = tuple(unusedEntities)
-
-        entryAtomName = treeDict.get('start') if treeDict else None
-        firstEntityName = entryAtomName.split(':')[0] if entryAtomName else unusedEntities[0]
-        firstEntity = self.molecule.getEntity(firstEntityName)
-        unusedEntities.remove(firstEntityName)
-        if rnaLinkerDict:
-            linkerList = []
-            linkerAtoms = RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, False)
-            for linkPair in linkerAtoms:
-                (startAtom, endAtom) = linkPair
-                newLinker = {'atoms': [startAtom.getFullName(), endAtom.getFullName()]}
-                linkerList.append(newLinker)
-                for i,atom in enumerate(linkPair):
-                    entName = atom.getTopEntity().getName()
-                    if entName in unusedEntities:
-                        unusedEntities.remove(entName)
-        elif linkerList:
-            linkerList = linkerList if type(linkerList) is ArrayList else [linkerList]
-            linkerAtoms = reduce(lambda total, linkerDict : total + list(linkerDict.get('atoms')), linkerList, [])
-            for atomName in linkerAtoms:
-                entName = atomName.split(':')[0]
-                if entName not in allEntities:
-                    raise ValueError(entName + " is not a valid entitiy. Entities within molecule are " + ', '.join(allEntities))
-                if entName in unusedEntities:
-                    unusedEntities.remove(entName)
-        else:
-            if len(unusedEntities) > 0:
-                linkerList = ArrayList()
-        for entityName in unusedEntities:
-            entity = self.molecule.getEntity(entityName)
-            startAtom = firstEntity.getLastAtom().getFullName()
-            endAtom = self.getEntityTreeStartAtom(entity).getFullName()
-            newLinker = {'atoms': [startAtom, endAtom]}
-            linkerList.append(newLinker)
-        return linkerList
-
     def loadFromYaml(self,data, seed, fileName=""):
         #XXX: Need to complete docstring
         """
@@ -879,6 +823,8 @@ class refine:
         molData = {}
         residues = None
         rnaLinkerDict = None
+        structureLinks = []
+        structureBonds = []
 
         if fileName != '':
             if fileName.endswith('.pdb'):
@@ -930,9 +876,9 @@ class refine:
                         self.findRNAHelices(data['rna'])
                         if not 'link' in molData:
                             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
-                                rnaLinks,rnaBonds = self.findSSLinks()
-                                molData['link'] = rnaLinks
-                                data['bonds'] = rnaBonds
+                                sLB = RNAStructureSetup.findSSLinks(self.ssGen)
+                                structureLinks = sLB.links()
+                                structureBonds = sLB.bonds()
                 else:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
@@ -948,19 +894,21 @@ class refine:
             if 'vienna' in data['rna']:
                 RNAStructureSetup.addHelicesRestraints(self.ssGen)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
-                rnaLinks,rnaBonds = self.findSSLinks()
-                molData['link'] = rnaLinks
-                data['bonds'] = rnaBonds
+                sLB = RNAStructureSetup.findSSLinks(self.ssGen)
+                structureLinks = sLB.links()
+                structureBonds = sLB.bonds()
         self.molecule = MoleculeFactory.getActive()
         self.molName = self.molecule.getName()
 
         treeDict = data['tree'] if 'tree' in data else None
-        linkerList = molData['link'] if 'link' in molData else None
+
+
         nEntities = len(self.molecule.getEntities())
         nPolymers = len(self.molecule.getPolymers())
+        if len(structureBonds) == 0 and 'bonds' in data:
+            structureBonds = ConstraintCreator.parseBonds(data['bonds'])
 
-        if 'bonds' in data:
-            ConstraintCreator.processBonds(data['bonds'], 'float')
+        ConstraintCreator.processBonds(structureBonds, 'float')
 
         if rnaLinkerDict:
             self.molecule.fillEntityCoords()
@@ -980,10 +928,12 @@ class refine:
 
         if 'tree' in data and not 'nef' in data:
             if len(self.molecule.getEntities()) > 1:
-                linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
-            treeDict = ConstraintCreator.setEntityEntryDict(linkerList, treeDict)
+                structureLinks = ConstraintCreator.validateLinkerList(structureLinks, treeDict, rnaLinkerDict)
+            treeDict = ConstraintCreator.setEntityEntryDict(structureLinks, treeDict)
 
             ConstraintCreator.measureTree(self.molecule)
+            if len(structureLinks) == 0 and 'link' in molData:
+                structureLinks = ConstraintCreator.parseLinkerDict(self.molecule, molData['link'])
         else:
             if nEntities > 1:
                 if not 'nef' in data:
@@ -999,12 +949,11 @@ class refine:
 
         if rnaLinkerDict:
             RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, True)
-        elif linkerList:
-            self.addLinkers(linkerList)
+        elif len(structureLinks) > 0:
+            ConstraintCreator.processLinks(self.molecule, structureLinks)
 
-        if 'bonds' in data:
-            ConstraintCreator.processBonds(data['bonds'], 'break')
-            ConstraintCreator.processBonds(data['bonds'], 'add')
+        ConstraintCreator.processBonds(structureBonds, 'break')
+        ConstraintCreator.processBonds(structureBonds, 'add')
 
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
@@ -1818,37 +1767,6 @@ class refine:
                         pass
                 print 'dihedral',output
 
-
-    def findSSLinks(self):
-        links = []
-        bonds = []
-        for ss in self.ssGen.structures():
-            if ss.getName() == "Helix":
-                residues = ss.getResidues()
-                strandI = residues[0::2]
-                strandJ = residues[1::2]
-
-                resI = strandI[0]
-                resJ = strandJ[0]
-                if resI.getPrevious():
-                    atomI = resI.getAtom("H3'")
-                    atomJ = resJ.getAtom("P")
-                    link = {'atoms':[atomI.getShortName(), atomJ.getShortName()],'rna':''}
-                    links.append(link)
-                    
-                    bond = {'atoms':[atomJ.getParent().getShortName(), atomJ.getShortName()],'mode':'float'}
-                    bonds.append(bond)
-
-                resI = strandI[-1]
-                resJ = strandJ[-1]
-                atomI = resI.getAtom("H3'")
-                atomJ = resJ.getAtom("P")
-                link = {'atoms':[atomI.getShortName(), atomJ.getShortName()],'rna':''}
-                links.append(link)
-                bond = {'atoms':[atomJ.getParent().getShortName(), atomJ.getShortName()],'mode':'float'}
-                bonds.append(bond)
-        return links, bonds
-       
 
     def findHelices(self,vienna):
         self.ssGen = SSGen(self.molecule, vienna)

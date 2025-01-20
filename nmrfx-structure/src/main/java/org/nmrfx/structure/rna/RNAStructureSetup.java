@@ -3,9 +3,7 @@ package org.nmrfx.structure.rna;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
-import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
-import org.nmrfx.structure.chemistry.energy.RNARotamer;
+import org.nmrfx.structure.chemistry.energy.*;
 
 import java.io.*;
 import java.util.*;
@@ -155,7 +153,7 @@ public class RNAStructureSetup {
                     throw new IllegalArgumentException("Should be two elemens in connection");
                 }
                 atoms[0] = ConstraintCreator.getConnectorAtom(molecule, connectorNames.get(0), true);
-                atoms[1] = ConstraintCreator.getConnectorAtom(molecule, connectorNames.get(0), false);
+                atoms[1] = ConstraintCreator.getConnectorAtom(molecule, connectorNames.get(1), false);
                 Entity poly0 = atoms[0].getTopEntity();
                 Entity poly1 = atoms[1].getTopEntity();
                 linkAtoms.add(atoms);
@@ -567,7 +565,7 @@ public class RNAStructureSetup {
                 }
                 setAngles(residue, key, lock);
             } else {
-                subType = subType.charAt(subType.length() - 2) == 'X' ? "hL:GNRAXe" : "hl:GNRAxe";
+              //  subType = subType.charAt(subType.length() - 2) == 'X' ? "hL:GNRAXe" : "hl:GNRAxe";
                 String key2 = "Helix" + ":0:" + nucType + ":" + subType;
                 boolean lock = lastRes && lockLoop;
                 setAngles(residue, key2, lock);
@@ -741,5 +739,43 @@ public class RNAStructureSetup {
 
     public static Map<Integer, String> getAngleKeyMap() {
         return angleKeyMap;
+    }
+
+    record LinksLink (Atom atomI, Atom atomJ) {
+
+    }
+    record LinksBond (Atom atomI, Atom atomJ, String mode) {
+
+    }
+
+    public record StructureLinksBonds( List<StructureLink> links ,List<StructureBond> bonds ) {}
+    public static StructureLinksBonds findSSLinks(SSGen ssGen) {
+        List<StructureLink> links = new ArrayList<>();
+        List<StructureBond> bonds = new ArrayList<>();
+        for (SecondaryStructure secondaryStructure : ssGen.structures()) {
+            if (secondaryStructure instanceof RNAHelix rnaHelix) {
+                List<Residue> residues = rnaHelix.getResidues();
+                Residue residueI = getHelixResidue(residues, 0, 0, true);
+                Residue residueJ = getHelixResidue(residues, 0, 1, true);
+                if (residueI.getPrevious() != null) {
+                    Atom atomI = residueI.getAtom("H3'");
+                    Atom atomJ = residueJ.getAtom("P");
+                    StructureLink structureLink = new StructureLink(atomI, atomJ, true);
+                    links.add(structureLink);
+                    StructureBond structureBond = new StructureBond(atomJ.getParent(), atomJ, "float");
+                    bonds.add(structureBond);
+                }
+
+                residueI = getHelixResidue(residues, 0, 0, false);
+                residueJ = getHelixResidue(residues, 0, 1, false);
+                Atom atomI = residueI.getAtom("H3'");
+                Atom atomJ = residueJ.getAtom("P");
+                StructureLink structureLink = new StructureLink(atomI, atomJ, true);
+                links.add(structureLink);
+                StructureBond structureBond = new StructureBond(atomJ.getParent(), atomJ, "float");
+                bonds.add(structureBond);
+            }
+        }
+        return new StructureLinksBonds(links, bonds);
     }
 }

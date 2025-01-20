@@ -28,9 +28,6 @@ public class ConstraintCreator {
         }
     }
 
-    record LinkProps(int n, double length, double valAngle, double dihAngle) {
-    }
-
     static boolean isCyclicLinker(Map<String, Object> linkerDict) {
         boolean isCyclic = false;
         if (linkerDict.containsKey("bond")) {
@@ -78,7 +75,27 @@ public class ConstraintCreator {
         }
     }
 
-    public static void processBonds(List<Map<String, Object>> bondDicts, String phase) throws IllegalArgumentException {
+    public static void processBonds(List<StructureBond> structureBonds, String phase) throws IllegalArgumentException {
+        for (var structureBond : structureBonds) {
+            String bondMode = structureBond.mode;
+            Atom atom1 = structureBond.atom1;
+            Atom atom2 = structureBond.atom2;
+            if (phase.equals("add") && bondMode.equals("add")) {
+                double lower = structureBond.lower;
+                double upper = structureBond.upper;
+                addDistanceConstraint(atom1.getFullName(), atom2.getFullName(), lower, upper, false);
+            } else if (phase.equals("float") && bondMode.equals("float")) {
+                floatBond(atom1, atom2);
+            } else if (phase.equals("float") && bondMode.equals("constrain")) {
+                constrainDistance(atom1, atom2);
+            } else if (phase.equals("break") && (bondMode.equals("break") || bondMode.equals("float"))) {
+                breakBond(atom1, atom2);
+            }
+        }
+    }
+
+    public static List<StructureBond> parseBonds(List<Map<String, Object>> bondDicts) throws IllegalArgumentException {
+        List<StructureBond> structureBonds = new ArrayList<>();
         for (var bondDict : bondDicts) {
             String bondMode = (String) bondDict.getOrDefault("mode", "add");
             Object atomObject = bondDict.get("atoms");
@@ -98,100 +115,105 @@ public class ConstraintCreator {
             }
             Atom atom1 = MoleculeBase.getAtomByName(atomName1);
             Atom atom2 = MoleculeBase.getAtomByName(atomName2);
-            if (phase.equals("add") && bondMode.equals("add")) {
-                Object lengthObj = bondDict.getOrDefault("length", Double.valueOf(1.08));
-                double lower;
-                double upper;
-                if (lengthObj instanceof List distances) {
-                     lower = (Double) distances.get(0);
-                     upper = (Double) distances.get(1);
-                } else if (lengthObj instanceof Double distance) {
-                    lower = distance - 0.001;
-                    upper = distance + 0.001;
-                } else {
-                    throw new IllegalArgumentException("\"length\" entry not present or not a list");
-                }
-                addDistanceConstraint(atomName1, atomName2, lower, upper, false);
-            } else if (phase.equals("float") && bondMode.equals("float")) {
-                floatBond(atom1, atom2);
-            } else if (phase.equals("float") && bondMode.equals("constrain")) {
-                constrainDistance(atom1, atom2);
-            } else if (phase.equals("break") && (bondMode.equals("break") || bondMode.equals("float"))) {
-                breakBond(atom1, atom2);
-            }
+            StructureBond structureBond = new StructureBond(atom1, atom2, bondMode);
+            structureBonds.add(structureBond);
         }
+        return structureBonds;
     }
-    public static void readLinkerDict(Molecule molecule, Map<String, Object> linkerDict) throws IllegalArgumentException {
-        if (linkerDict == null) {
-            return;
+    public static Polymer getPolymer(Molecule molecule, Map<String, Object> linkerDict) {
+        List<Polymer> polymers = molecule.getPolymers();
+        if ((polymers.size() != 1) && !linkerDict.containsKey("pName")) {
+            throw new IllegalArgumentException("Multiple polymers in structure but no specification for which to be made cyclic\"");
         }
-        LinkProps linkProps;
-        final Entity startEntity;
-        final Entity endEntity;
-        final Atom startAtom;
-        final Atom endAtom;
-        int nLinks;
-        double linkLen;
-        double valAngle;
-        double dihAngle;
-
-        if (isCyclicLinker(linkerDict)) {
-            processCyclic(molecule, linkerDict);
-            return;
+        Polymer polymer;
+        if (linkerDict.containsKey("pName")) {
+            String pName = (String) linkerDict.get("pName");
+            var polyOpt = polymers.stream().filter(p -> p.getName().equals(pName)).findFirst();
+            if (polyOpt.isEmpty()) {
+                throw new IllegalArgumentException(pName + " is not a polymer within the molecule");
+            } else {
+                polymer = polyOpt.get();
+            }
+        } else {
+            polymer = polymers.get(0);
         }
+        return polymer;
+    }
 
-        if (linkerDict.containsKey("atoms")) {
-            List<String> atomNames = (List<String>) linkerDict.get("atoms");
-            Atom atom1 = MoleculeBase.getAtomByName(atomNames.get(0));
-            Atom atom2 = MoleculeBase.getAtomByName(atomNames.get(1));
-            Entity entity1 = atom1.getTopEntity();
-            Entity entity2 = atom2.getTopEntity();
-            var startOpt = entity1.startAtom();
-            if (startOpt.isPresent()) {
-                Atom startAtomTest = startOpt.get();
-                if (startAtomTest == atom1) {
-                    startEntity = entity2;
-                    startAtom = atom2;
-                    endEntity = entity1;
-                    endAtom = atom1;
+    public static List<StructureLink> parseLinkerDict(Molecule molecule, List<Map<String, Object>> linkerList) {
+        List<StructureLink> result = new ArrayList<>();
+        for (Map<String, Object> linkerDict : linkerList){
+            Polymer polymer = getPolymer(molecule, linkerDict);
+            if (linkerDict.containsKey("atoms")) {
+                final Atom startAtom;
+                final Atom endAtom;
+                int nLinks;
+                double linkLen;
+                double valAngle;
+                double dihAngle;
+                List<String> atomNames = (List<String>) linkerDict.get("atoms");
+                Atom atom1 = MoleculeBase.getAtomByName(atomNames.get(0));
+                Atom atom2 = MoleculeBase.getAtomByName(atomNames.get(1));
+                System.out.println(atomNames + " " + atom1 + " " + atom2);
+                Entity entity1 = atom1.getTopEntity();
+                Entity entity2 = atom2.getTopEntity();
+                var startOpt = entity1.startAtom();
+                if (startOpt.isPresent()) {
+                    Atom startAtomTest = startOpt.get();
+                    if (startAtomTest == atom1) {
+                        startAtom = atom2;
+                        endAtom = atom1;
+                    } else {
+                        startAtom = atom1;
+                        endAtom = atom2;
+                    }
                 } else {
-                    startEntity = entity1;
-                    startAtom = atom1;
-                    endEntity = entity2;
-                    endAtom = atom2;
+                    throw new IllegalArgumentException("No start atom on entity");
                 }
+                nLinks = (Integer) linkerDict.getOrDefault("n", 6);
+                linkLen = (Double) linkerDict.getOrDefault("length", 5.0);
+                valAngle = (Double) linkerDict.getOrDefault("valAngle", 110.0);
+                dihAngle = (Double) linkerDict.getOrDefault("dihAngle", 135.0);
+                String bondOrder = (String) linkerDict.getOrDefault("order", "SINGLE");
+System.out.println(startAtom + " stend " + endAtom);
+                StructureLink structureLink = new StructureLink(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle);
+                structureLink.rna(linkerDict.containsKey("rna"));
+                structureLink.bond(linkerDict.containsKey("bond"));
+                structureLink.cyclic(linkerDict.containsKey("cyclic"));
+                structureLink.order(bondOrder);
+                structureLink.polymer(polymer);
+                result.add(structureLink);
             } else {
-                throw new IllegalArgumentException("No start atom on entity");
+                throw new IllegalArgumentException("No atoms or no cyclic bonds");
             }
-            nLinks = (Integer) linkerDict.getOrDefault("n", 6);
-            linkLen = (Double) linkerDict.getOrDefault("length", 5.0);
-            valAngle = (Double) linkerDict.getOrDefault("valAngle", 110.0);
-            dihAngle = (Double) linkerDict.getOrDefault("dihAngle", 135.0);
-            linkProps = new LinkProps(nLinks, linkLen, valAngle, dihAngle);
-        } else {
-            throw new IllegalArgumentException("No atoms or no cyclic bonds");
         }
-        if (linkerDict.containsKey("bond")) {
-            Map<String, Object> bondDict = (Map<String, Object>) linkerDict.get("bond");
-            boolean sameEnt = startEntity == endEntity;
-            float bondLength = (Float) bondDict.getOrDefault("length", 1.08f);
-            String bondOrder = (String) bondDict.getOrDefault("order", "SINGLE");
-            if (!sameEnt) {
-                molecule.createLinker(startAtom, endAtom, bondOrder, bondLength);
-            } else {
-                var lAtoms = getLinkerAtoms(bondDict);
-                if (lAtoms.isPresent()) {
-                    Atom[] atoms = lAtoms.get();
-                    double lower = bondLength - 0.0001;
-                    double upper = bondLength + 0.0001;
-                    MolecularConstraints.addDistanceConstraint(atoms[0].getFullName(), atoms[1].getFullName(), lower, upper, true);
+        return result;
+    }
+
+    public static void processLinks(Molecule molecule, List<StructureLink> structureLinks) {
+        for (StructureLink sL : structureLinks) {
+            System.out.println(sL);
+            if (sL.isCyclic && (sL.polymer != null)) {
+                sL.polymer.setCyclic(true);
+            } else if (sL.isBond) {
+                if (sL.atom1.getTopEntity() != sL.atom2.getTopEntity()) {
+                    molecule.createLinker(sL.atom1, sL.atom2, sL.bondOrder, (float) sL.length);
+                } else {
+                    double lower = sL.length - 0.0001;
+                    double upper = sL.length + 0.0001;
+                    MolecularConstraints.addDistanceConstraint(sL.atom1.getFullName(), sL.atom2.getFullName(),
+                            lower, upper, true);
+
                 }
-            }
-        } else {
-            if (linkerDict.containsKey("rna")) {
-                RNAStructureSetup.addRNALinker(molecule, startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle);
             } else {
-                molecule.createLinker(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle);
+                if (sL.isRNALink) {
+                    RNAStructureSetup.addRNALinker(molecule, sL.atom1, sL.atom2,
+                            sL.nLinks, sL.length, sL.valAngle, sL.dihAngle);
+                } else {
+                    molecule.createLinker(sL.atom1, sL.atom2,
+                            sL.nLinks, sL.length, sL.valAngle, sL.dihAngle);
+                }
+
             }
         }
     }
@@ -229,6 +251,7 @@ public class ConstraintCreator {
         var ringClosures = molecule.getRingClosures();
         AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2);
     }
+
     public static void constrainDistance(Atom atom1, Atom atom2) {
         Molecule molecule = (Molecule) atom1.getEntity().molecule;
         var ringClosures = molecule.getRingClosures();
@@ -267,7 +290,7 @@ public class ConstraintCreator {
         return result;
     }
 
-    public static Map<String, String> setEntityEntryDict(List<Map<String, Object>> linkerList, Map<String, String> treeDict) {
+    public static Map<String, String> setEntityEntryDict(List<StructureLink> linkerList, Map<String, String> treeDict) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         Entity startEntity;
         Atom entryAtom;
@@ -286,14 +309,12 @@ public class ConstraintCreator {
         visitedEntities.add(startEntity);
 
         if (linkerList != null) {
-            List<Map<String, Object>> linkerList2 = new ArrayList<>(linkerList);
+            List<StructureLink> linkerList2 = new ArrayList<>(linkerList);
 
             while (!linkerList2.isEmpty()) {
-                Map<String, Object> linkerDict = linkerList2.get(0);
-                var atomOpt = getLinkerAtoms(linkerDict);
-                Atom[] atoms;
-                if (atomOpt.isPresent()) {
-                    atoms = atomOpt.get();
+                StructureLink structureLink = linkerList2.get(0);
+                if (structureLink.atom1 != null) {
+                    Atom[] atoms = {structureLink.atom1, structureLink.atom2};
                     Entity entity0 = atoms[0].getTopEntity();
                     Entity entity1 = atoms[1].getTopEntity();
                     if (visitedEntities.contains(entity0) && visitedEntities.contains(entity1)) {
@@ -307,7 +328,7 @@ public class ConstraintCreator {
                         linkerList2.remove(0);
                     } else {
                         linkerList2.remove(0);
-                        linkerList2.add(linkerDict);
+                        linkerList2.add(structureLink);
                         continue;
                     }
                     Entity entity = entryAtom.getTopEntity();
@@ -370,5 +391,45 @@ public class ConstraintCreator {
     public static String getAtomName(Residue residue, String aName) {
         return residue.getPolymer().getName() + ':' + residue.getNumber() + '.' + aName;
 
+    }
+
+    public static List<StructureLink> validateLinkers(Molecule molecule, List<StructureLink> linkerList, Map<String, Object> treeDict, List<Map<String, Object>> rnaLinkerDicts) {
+        List<Entity> unusedEntities = molecule.getEntities();
+        String entryAtomName = treeDict != null ? (String) treeDict.get("start") : null;
+        Atom entryAtom = entryAtomName != null ? MoleculeBase.getAtomByName(entryAtomName) : null;
+        Entity firstEntity = entryAtom != null ? entryAtom.getTopEntity() : unusedEntities.getFirst();
+        unusedEntities.remove(firstEntity);
+        if (linkerList == null) {
+            linkerList = new ArrayList<>();
+        }
+        if (rnaLinkerDicts != null) {
+            linkerList.clear();
+            List<Atom[]> linkerAtoms = RNAStructureSetup.readRNALinkerDict(molecule, rnaLinkerDicts, false);
+            for (Atom[] linkPair : linkerAtoms) {
+                StructureLink structureLink = new StructureLink(linkPair[0], linkPair[1]);
+                linkerList.add(structureLink);
+                for (Atom atom : linkPair) {
+                    Entity entity = atom.getTopEntity();
+                    unusedEntities.remove(entity);
+                }
+            }
+        } else {
+            for (var structureLink : linkerList) {
+                Atom atom1 = structureLink.atom1;
+                Atom atom2 = structureLink.atom2;
+                var atoms = List.of(atom1, atom2);
+                for (Atom atom : atoms) {
+                    Entity entity = atom.getTopEntity();
+                    unusedEntities.remove(entity);
+                }
+            }
+        }
+        for (Entity entity : unusedEntities) {
+            Atom startAtom = firstEntity.getLastAtom();
+            Atom endAtom = AngleTreeGenerator.findStartAtom(entity);
+            StructureLink structureLink = new StructureLink(startAtom, endAtom);
+            linkerList.add(structureLink);
+        }
+        return linkerList;
     }
 }
