@@ -20,6 +20,9 @@ public class InteractionType {
     static Map<String, Map<String, Double>> atomMaps = new HashMap<>();
     static final String RES_PAIR_TABLE_FILENAME = "/data/res_pair_table.txt";
 
+    private static double maxDist = 5.5;
+    private static double limitScale = 4.0;
+
     public static int distance(Residue aResObj, Residue bResObj) {
         int distance;
         distance = bResObj.iRes - aResObj.iRes;
@@ -105,15 +108,33 @@ public class InteractionType {
         return interType;
     }
 
+    public static void maxDist(double value) {
+        atomMaps.clear();
+        maxDist = value;
+    }
+
+    public static void limitScale(int value) {
+        atomMaps.clear();
+        limitScale = value;
+    }
+
     record AtomResDistance(String type, String res1, String res2, String atom1, String atom2, double distance, int n) {
         String getKey() {
             String resA = res1;
             String resB = res2;
             if (atom1.endsWith("'")) {
                 resA = "r";
+            } else if (resA.equals("A") || resA.equals("G")) {
+                resA = "P";
+            } else {
+                resA = "p";
             }
             if (atom2.endsWith("'")) {
                 resB = "r";
+            } else if (resB.equals("A") || resB.equals("G")) {
+                resB = "P";
+            } else {
+                resB = "p";
             }
             return type + "." + resA + "." + atom1 + "." + resB + "." + atom2;
         }
@@ -124,18 +145,6 @@ public class InteractionType {
 
         String getAtomKey() {
             return atom1 + "." + atom2;
-        }
-
-        int getScale() {
-            int scale = 1;
-            if (atom1.endsWith("'")) {
-                scale *= 2;
-            }
-            if (atom2.endsWith("'")) {
-                scale *= 2;
-            }
-            return scale;
-
         }
 
     }
@@ -151,6 +160,8 @@ public class InteractionType {
 
         Map<String, Double> sums = new HashMap<>();
         Map<String, Integer> nInter = new HashMap<>();
+        Map<String, Integer> nTypes = new HashMap<>();
+        Map<String, Integer> nExample = new HashMap<>();
         List<AtomResDistance> atomResDistances = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(InteractionType.class.getResourceAsStream(RES_PAIR_TABLE_FILENAME))))) {
             List<String> lines = reader.lines().toList();
@@ -168,22 +179,23 @@ public class InteractionType {
                         int nInst = Integer.parseInt(fields[8].trim());
                         AtomResDistance atomResDistance = new AtomResDistance(interType, res1, res2, atom1, atom2, avgDis, nInst);
                         String key = atomResDistance.getKey();
-                        sums.merge(key, avgDis * nInst, (k, v) -> v + avgDis * nInst);
-                        nInter.merge(key, nInst, (k, v) -> v + nInst);
+                        sums.merge(key, avgDis * nInst, Double::sum);
+                        nInter.merge(key, nInst, Integer::sum);
+                        nTypes.merge(interType, nInst, Integer::sum);
+                        nExample.merge(interType, 1, Integer::sum);
                         atomResDistances.add(atomResDistance);
                     }
                 }
             });
         } catch (IOException ioException) {
-
         }
-        double maxDist = 5.25;
-        int minInst = 10;
         for (var atomResDistance : atomResDistances) {
             double sum = sums.get(atomResDistance.getKey());
             int nInst = nInter.get(atomResDistance.getKey());
             double distance = sum / nInst;
-            if ((distance < maxDist) && ((nInst / atomResDistance.getScale()) > minInst)) {
+            String type = atomResDistance.type;
+            double limit = (double) nTypes.get(type) / nExample.get(type) / limitScale;
+            if ((distance < maxDist) && (nInst  > limit)) {
                 String key = atomResDistance.getShortKey();
                 String key2 = atomResDistance.getAtomKey();
                 var aMap = atomMaps.computeIfAbsent(key, k -> new HashMap<>());
