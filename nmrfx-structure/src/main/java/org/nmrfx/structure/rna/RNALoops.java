@@ -69,7 +69,6 @@ public class RNALoops {
 
         RNALoops loop6 = new RNALoops("UGGU", "^[GU]UGGU[AC]", "1a..4b....", "AAAA");
         loop6.repSeqs = List.of("GUGGUC", "UUGGUA");
-        loop6.basePairs.add(new int[]{4, 5});
         loop6.hbAtomNames.addAll(List.of(new String[]{"2.O2", "4.OP1"}, new String[]{"5.OP1", "6.O2"},
                 new String[]{"4.N2", "5.O4"}, new String[]{"4.O2", "5.OP2"}));
         rnaLoops.add(loop6);
