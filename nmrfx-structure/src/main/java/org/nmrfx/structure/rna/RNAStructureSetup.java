@@ -92,26 +92,22 @@ public class RNAStructureSetup {
                 if (line == null) {
                     break;
                 }
-                String[] fields = line.split(" +");
+                String[] fields = line.split("\t");
                 if (fields.length < 6) {
                     continue;
                 }
                 if (header == null) {
                     header = fields;
                 } else {
-                    String ssType = fields[1];
-                    String posType = fields[2];
-                    String nucType = fields[3];
-                    String subType = fields[4];
+                    String key = fields[0];
                     Map<String, Double> data = new HashMap<>();
-                    for (int i = 5; i < fields.length; i++) {
+                    for (int i = 1; i < fields.length; i++) {
                         String field = fields[i].trim();
                         String headerAtom = header[i];
                         if (!field.equals("-")) {
                             data.put(headerAtom, Double.parseDouble(field));
                         }
                     }
-                    String key = ssType + ':' + posType + ':' + nucType + ':' + subType;
                     angleDict.put(key, data);
                 }
             }
@@ -475,13 +471,14 @@ public class RNAStructureSetup {
             return residues.reversed().get(index * 2 + 1 - chain);
         }
     }
+
     static void setAngles(Residue residue, String key, boolean lockAngles) {
         AtomicBoolean found = new AtomicBoolean(false);
         getAngles(key).ifPresent(anglesToSet -> {
             found.set(true);
             RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockAngles);
         });
-        key = found.get() ? "PRESENT:" + key : "ABSENT :" + key;
+        key = found.get() ? "PRESENT:" + key : "ABSENT:" + key;
         angleKeyMap.put(residue.getResNum(), key);
     }
 
@@ -565,7 +562,7 @@ public class RNAStructureSetup {
                 }
                 setAngles(residue, key, lock);
             } else {
-              //  subType = subType.charAt(subType.length() - 2) == 'X' ? "hL:GNRAXe" : "hl:GNRAxe";
+                //  subType = subType.charAt(subType.length() - 2) == 'X' ? "hL:GNRAXe" : "hl:GNRAxe";
                 String key2 = "Helix" + ":0:" + nucType + ":" + subType;
                 boolean lock = lastRes && lockLoop;
                 setAngles(residue, key2, lock);
@@ -594,29 +591,29 @@ public class RNAStructureSetup {
     }
 
     static String getJunctionType(Junction junction) {
-      List<Integer> loopSizes = junction.getLoopSizes();
-      StringBuilder result = new StringBuilder(String.valueOf(loopSizes.get(0)));
+        List<Integer> loopSizes = junction.getLoopSizes();
+        StringBuilder result = new StringBuilder(String.valueOf(loopSizes.get(0)));
 
-      for (int i=1;i<loopSizes.size();i++) {
-          result.append("_").append(loopSizes.get(i));
-      }
-      return result.toString();
+        for (int i = 1; i < loopSizes.size(); i++) {
+            result.append("_").append(loopSizes.get(i));
+        }
+        return result.toString();
     }
 
-    static String getHelixSubType(List<Residue> residues, Residue residue, SecondaryStructure ssNext, SecondaryStructure ssPrev) {
+    static String getHelixSubType(List<Residue> residues, Residue residue, SecondaryStructure ssNext, SecondaryStructure ssPrev, SecondaryStructure ssNext2) {
         Residue nextRes = residue.getNext();
         Residue prevRes = residue.getPrevious();
         Residue pairRes = residue.pairedTo;
 
-        boolean lastResI = residue == getHelixResidue(residues, 0, 0, false);
-        boolean lastResJ = residue == getHelixResidue(residues, 0, 1, false);
+        boolean lastRes2I = residue == getHelixResidue(residues, 1, 0, false);
+        boolean lastRes2J = residue == getHelixResidue(residues, 1, 1, false);
 
         String subType = "h";
         String ssNextType;
         String ssPrevType;
-        if (lastResI) {
+        if (lastRes2I) {
             subType = "hE";
-        } else if (lastResJ) {
+        } else if (lastRes2J) {
             subType = "he";
         } else {
             if (prevRes == null) {
@@ -624,14 +621,22 @@ public class RNAStructureSetup {
             } else if (ssNext instanceof Loop) {
                 ssNextType = getLoopType(ssNext);
                 subType = "hL" + ssNextType;
+            } else if (ssNext2 instanceof Loop) {
+                ssNextType = getLoopType(ssNext2);
+                subType = "hL" + ssNextType;
             } else if (ssPrev instanceof Loop) {
                 ssPrevType = getLoopType(ssPrev);
                 subType = "hl" + ssPrevType;
+            } else if (ssNext2 instanceof InternalLoop internalLoop) {
+                ssNextType = getJunctionType(internalLoop);
+                subType = "hI" + ssNextType;
+            } else if (ssPrev instanceof InternalLoop internalLoop) {
+                ssPrevType = getJunctionType(internalLoop);
+                subType = "hi" + ssPrevType;
             } else if (ssNext instanceof Bulge) {
                 subType = "hB0" + ":" + 'B' + nextRes.getSecondaryStructure().getResidues().size();
             } else if (ssPrev instanceof Bulge) {
                 subType = "hB1" + ":" + 'B' + prevRes.getSecondaryStructure().getResidues().size();
-                //     subType = "hl:GNRAxe";
             } else if (pairRes.getPrevious() != null) {
                 if (pairRes.getPrevious().getSecondaryStructure() instanceof Bulge) {
                     subType = "hb1" + ":" + 'B' + pairRes.getPrevious().getSecondaryStructure().getResidues().size();
@@ -644,6 +649,15 @@ public class RNAStructureSetup {
             }
         }
         return subType;
+    }
+
+    static int getHelixPos(RNAHelix rnaHelix, Residue residue, boolean fromStart) {
+        int index = rnaHelix.getResidues().indexOf(residue) / 2;
+        int length = rnaHelix.getResidues().size() / 2;
+        if (!fromStart) {
+            index = length - index - 1;
+        }
+        return index;
     }
 
     public static String getRNAResType(Residue residue) {
@@ -660,8 +674,13 @@ public class RNAStructureSetup {
                 subType = "hL:" + ssNextType;
             }
         }
-        if (ss instanceof RNAHelix) {
-            subType = getHelixSubType(ss.getResidues(), residue, ssNext, ssPrev);
+        if (ss instanceof RNAHelix rnaHelix) {
+            int index = getHelixPos(rnaHelix, residue, false);
+            SecondaryStructure ssNext2 = null;
+            if (index == 1) {
+                ssNext2 = nextRes.getNext().getSecondaryStructure();
+            }
+            subType = getHelixSubType(ss.getResidues(), residue, ssNext, ssPrev, ssNext2);
         } else if (ss instanceof Loop) {
             subType = "T" + getLoopType(ss);
         } else if (ss instanceof Bulge) {
@@ -741,14 +760,17 @@ public class RNAStructureSetup {
         return angleKeyMap;
     }
 
-    record LinksLink (Atom atomI, Atom atomJ) {
-
-    }
-    record LinksBond (Atom atomI, Atom atomJ, String mode) {
+    record LinksLink(Atom atomI, Atom atomJ) {
 
     }
 
-    public record StructureLinksBonds( List<StructureLink> links ,List<StructureBond> bonds ) {}
+    record LinksBond(Atom atomI, Atom atomJ, String mode) {
+
+    }
+
+    public record StructureLinksBonds(List<StructureLink> links, List<StructureBond> bonds) {
+    }
+
     public static StructureLinksBonds findSSLinks(SSGen ssGen) {
         List<StructureLink> links = new ArrayList<>();
         List<StructureBond> bonds = new ArrayList<>();
@@ -766,8 +788,8 @@ public class RNAStructureSetup {
                     bonds.add(structureBond);
                 }
 
-                residueI = getHelixResidue(residues, 0, 0, false);
-                residueJ = getHelixResidue(residues, 0, 1, false);
+                residueI = getHelixResidue(residues, 1, 0, false);
+                residueJ = getHelixResidue(residues, 1, 1, false);
                 Atom atomI = residueI.getAtom("H3'");
                 Atom atomJ = residueJ.getAtom("P");
                 StructureLink structureLink = new StructureLink(atomI, atomJ, true);
