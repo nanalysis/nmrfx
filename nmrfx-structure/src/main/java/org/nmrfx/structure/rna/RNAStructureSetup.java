@@ -115,6 +115,8 @@ public class RNAStructureSetup {
     }
 
     public static Optional<Map<String, Double>> getAngles(String key) {
+        String resP = ":P:";
+        String resp = ":p:";
         Optional<Map<String, Double>> result;
         if (angleDict.isEmpty()) {
             try {
@@ -124,8 +126,39 @@ public class RNAStructureSetup {
                 return result;
             }
         }
-        result = Optional.ofNullable(angleDict.get(key));
-        return result;
+        Map<String, Double> angles = angleDict.get(key);
+        if (angles == null) {
+            String origAtom;
+            String newAtom ;
+            String origKey;
+            String newKey;
+
+            if (key.contains(resP)) {
+                origAtom = "N1";
+                newAtom = "N9";
+                origKey = resP;
+                newKey = resp;
+            } else {
+                origAtom = "N9";
+                newAtom = "N1";
+                origKey = resp;
+                newKey = resP;
+            }
+            key = key.replace(origKey, newKey);
+            angles = angleDict.get(key);
+            if (angles != null) {
+                Double angle = angles.get(origAtom);
+                if (angle != null) {
+                    angles.remove(origAtom);
+                    angle= angle + 180.0;
+                    if (angle > 180.0) {
+                        angle -= 360.0;
+                    }
+                    angles.put(newAtom, angle);
+                }
+            }
+        }
+        return Optional.ofNullable(angles);
     }
 
     public static boolean hasAngles(String key) {
@@ -332,7 +365,7 @@ public class RNAStructureSetup {
         }
     }
 
-    public static void addHelix(List<Residue> helixResidues) throws InvalidMoleculeException {
+    public static void addHelix(List<Residue> helixResidues, Set<Residue> usedResidues) throws InvalidMoleculeException {
         int nRes = helixResidues.size() / 2;
         for (int i = 0; i < nRes; i++) {
             Residue resI = helixResidues.get(i * 2);
@@ -341,8 +374,14 @@ public class RNAStructureSetup {
             String resJNum = resJ.getNumber();
             Polymer polymerI = resI.getPolymer();
             Polymer polymerJ = resJ.getPolymer();
-            addSuiteBoundary(polymerI, resINum, "1a", 0.5);
-            addSuiteBoundary(polymerJ, resJNum, "1a", 0.5);
+            if (!usedResidues.contains(resI)) {
+                addSuiteBoundary(polymerI, resINum, "1a", 0.5);
+                usedResidues.add(resI);
+            }
+            if (!usedResidues.contains(resJ)) {
+                addSuiteBoundary(polymerJ, resJNum, "1a", 0.5);
+                usedResidues.add(resJ);
+            }
             addBasePair(resI, resJ, 1, false);
 
             if ((i + 1) < nRes) {
@@ -393,13 +432,16 @@ public class RNAStructureSetup {
         }
     }
 
-    private static void addSuiteBoundaries(List<Residue> loopResidues, RNALoops rnaLoops) {
+    private static void addSuiteBoundaries(List<Residue> loopResidues, RNALoops rnaLoops, Set<Residue> usedResidues) {
         String[] suites = rnaLoops.getSuites();
         for (int i = 0; i < suites.length; i++) {
             if (!suites[i].equals("..")) {
                 Residue residue = loopResidues.get(i);
                 try {
-                    addSuiteBoundary(residue.getPolymer(), residue.getNumber(), suites[i], 0.5);
+                    if (!usedResidues.contains(residue)) {
+                        addSuiteBoundary(residue.getPolymer(), residue.getNumber(), suites[i], 0.5);
+                        usedResidues.add(residue);
+                    }
                 } catch (InvalidMoleculeException e) {
                 }
             }
@@ -423,13 +465,7 @@ public class RNAStructureSetup {
     }
 
     public static void addHelicesRestraints(SSGen ssGen) throws InvalidMoleculeException {
-        for (var ss : ssGen.structures()) {
-            if (ss.getName().equals("Helix")) {
-                List<Residue> residues = ss.getResidues();
-                addHelix(residues);
-                addHelixPP(residues);
-            }
-        }
+        Set<Residue> usedResidues = new HashSet<>();
         for (var ss : ssGen.structures()) {
             if (ss instanceof Loop loop) {
                 List<Residue> residues = loop.getResidues();
@@ -438,10 +474,17 @@ public class RNAStructureSetup {
                     String loopResidueNames = getResidueNames(loopResidues);
                     var rnaLoopsOptional = RNALoops.getRNALoop(loopResidueNames);
                     rnaLoopsOptional.ifPresent(rnaLoops -> {
-                        addSuiteBoundaries(loopResidues, rnaLoops);
+                        addSuiteBoundaries(loopResidues, rnaLoops, usedResidues);
                         addBasePairs(loopResidues, rnaLoops);
                     });
                 }
+            }
+        }
+        for (var ss : ssGen.structures()) {
+            if (ss.getName().equals("Helix")) {
+                List<Residue> residues = ss.getResidues();
+                addHelix(residues, usedResidues);
+                addHelixPP(residues);
             }
         }
     }
@@ -449,6 +492,7 @@ public class RNAStructureSetup {
     static void addSuiteBoundary(Polymer polymer, String residueNum, String suiteName, double mul) throws InvalidMoleculeException {
         List<AngleConstraint> angleConstraints = RNARotamer.getAngleBoundaries(polymer, residueNum, suiteName, mul);
         Molecule molecule = (Molecule) polymer.molecule;
+        System.out.println("add suite " + residueNum + " " + suiteName);
         for (AngleConstraint angleConstraint : angleConstraints) {
             ConstraintCreator.addAngleConstraint(molecule, angleConstraint);
         }
