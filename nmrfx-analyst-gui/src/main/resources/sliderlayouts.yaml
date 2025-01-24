@@ -1,7 +1,7 @@
 layouts :
   - name : RNA-NOESY-HMQC-MLEV
     layout :
-      - type : mlev
+      - type : [mlev]
         row : 0
         column : 0
         rowspan : 1
@@ -9,21 +9,21 @@ layouts :
         x : [6.5, 8.5]
         y : [5.0, 6.0]
         xsync : noeX
-      - type : hmqc
+      - type : [hmqc]
         row : 1
         column : 0
         rowspan : 1
         columnspan : 1
         x : [3.5, 5.5]
         y : [65.0, 90.0]
-      - type : hmqc
+      - type : [hmqc]
         row : 2
         column : 0
         rowspan : 1
         columnspan : 1
         x : [5.0, 6.5]
         y : [85.0, 110.0]
-      - type : hmqc
+      - type : [hmqc]
         row : 3
         column : 0
         rowspan : 1
@@ -31,7 +31,7 @@ layouts :
         x : [6.5, 8.5]
         y : [130.0, 160.0]
         xsync : noeX
-      - type : noesy
+      - type : [noesy]
         row : 0
         column : 1
         rowspan : 2
@@ -39,7 +39,7 @@ layouts :
         x : [6.5, 8.5]
         y : [3.5, 6.5]
         xsync : noeX
-      - type : noesy
+      - type : [noesy]
         row : 2
         column : 1
         rowspan : 2

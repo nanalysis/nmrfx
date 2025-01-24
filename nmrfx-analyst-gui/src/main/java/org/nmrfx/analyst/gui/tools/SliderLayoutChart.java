@@ -6,7 +6,7 @@ import java.util.List;
 
 @YamlEntity("sliderlayouts")
 public class SliderLayoutChart {
-    private String type;
+    private List<String> types;
     private Integer row;
     private Integer column;
     private Integer rowspan;
@@ -18,12 +18,12 @@ public class SliderLayoutChart {
 
     private String ysync = null;
 
-    public String type() {
-        return type;
+    public List<String> types() {
+        return types;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setType(List<String> type) {
+        this.types = type;
     }
     public String xsync() {
         return xsync;

@@ -25,7 +25,7 @@ public class SliderLayout {
         }
     }
 
-    static void loadLayoutFromFile()  {
+    static void loadLayoutFromFile() {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
@@ -60,22 +60,25 @@ public class SliderLayout {
         int i = 0;
         Map<String, List<PolyChart>> xsyncMap = new HashMap<>();
         Map<String, List<PolyChart>> ysyncMap = new HashMap<>();
-        for (SliderLayoutChart layout: sliderLayoutTypes.getLayout()) {
+        for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
             PolyChart chart = controller.getCharts().get(i++);
             scripter.grid(chart, layout.row(), layout.column(), layout.rowspan(), layout.columnspan());
-            var datasetOpt = getDatasetForType(layout.type().toLowerCase());
-            datasetOpt.ifPresent(d -> {
-                chart.setDataset(d);
-                var x = layout.x();
-                chart.getAxes().setMinMax(0, x.get(0), x.get(1));
-                var y = layout.y();
-                chart.getAxes().setMinMax(1, y.get(0), y.get(1));
-                chart.copyChartLimits();
-                String xsync = layout.xsync();
-                addToSync(chart, xsync, xsyncMap);
-                String ysync = layout.ysync();
-                addToSync(chart, ysync, ysyncMap);
-            });
+            var datasets = getDatasetForType(layout.types());
+            boolean appendFile = false;
+            for (DatasetBase dataset : datasets) {
+                controller.addDataset(chart, dataset, appendFile, false);
+                appendFile = true;
+            }
+            var x = layout.x();
+            chart.getAxes().setMinMax(0, x.get(0), x.get(1));
+            var y = layout.y();
+            chart.getAxes().setMinMax(1, y.get(0), y.get(1));
+            chart.copyChartLimits();
+            String xsync = layout.xsync();
+            addToSync(chart, xsync, xsyncMap);
+            String ysync = layout.ysync();
+            addToSync(chart, ysync, ysyncMap);
+
         }
         addSyncs(xsyncMap, 0);
         addSyncs(ysyncMap, 1);
@@ -104,9 +107,13 @@ public class SliderLayout {
         }
     }
 
-    Optional<DatasetBase> getDatasetForType(String type) {
-        return DatasetBase.datasets().stream().filter(d -> d.getName().toLowerCase().contains(type)).findFirst();
-
+    List<DatasetBase> getDatasetForType(List<String> types) {
+        List<DatasetBase> datasets = new ArrayList<>();
+        for (String type : types) {
+            var datasetOpt = DatasetBase.datasets().stream().filter(d -> d.getName().toLowerCase().contains(type)).findFirst();
+            datasetOpt.ifPresent(dataset -> datasets.add(dataset));
+        }
+        return datasets;
     }
 
 }
