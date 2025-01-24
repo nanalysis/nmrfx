@@ -7,6 +7,8 @@ import java.util.List;
 @YamlEntity("sliderlayouts")
 public class SliderLayoutChart {
     private List<String> types;
+
+    private Boolean loadpeaks;
     private Integer row;
     private Integer column;
     private Integer rowspan;
@@ -87,4 +89,14 @@ public class SliderLayoutChart {
     public void setY(List<Double> y) {
         this.y = y;
     }
+
+    public Boolean loadpeaks() {
+        return loadpeaks;
+    }
+
+    public void setLoadpeaks(Boolean loadpeaks) {
+        this.loadpeaks = loadpeaks;
+    }
+
+
 }

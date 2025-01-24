@@ -3,6 +3,7 @@ package org.nmrfx.analyst.gui.tools;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart;
@@ -64,11 +65,21 @@ public class SliderLayout {
             PolyChart chart = controller.getCharts().get(i++);
             scripter.grid(chart, layout.row(), layout.column(), layout.rowspan(), layout.columnspan());
             var datasets = getDatasetForType(layout.types());
+            Boolean loadPeakLists = layout.loadpeaks();
             boolean appendFile = false;
+            List<PeakList> peakLists = new ArrayList<>();
             for (DatasetBase dataset : datasets) {
                 controller.addDataset(chart, dataset, appendFile, false);
+                if (loadPeakLists == Boolean.TRUE) {
+                    PeakList peakList = PeakList.getPeakListForDataset(dataset.getName());
+                    if (peakList != null) {
+                        peakLists.add(peakList);
+                    }
+                }
                 appendFile = true;
             }
+            chart.updatePeakLists(peakLists);
+
             var x = layout.x();
             chart.getAxes().setMinMax(0, x.get(0), x.get(1));
             var y = layout.y();
