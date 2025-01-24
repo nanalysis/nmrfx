@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ZoomEvent;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -169,6 +170,7 @@ public class SSViewer extends Pane {
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
         pane.setOnMousePressed(e -> revertToOriginal());
+        pane.setBackground(Background.fill(Color.WHITE));
 
         scrollPane.setContent(pane);
         hBox.getChildren().addAll(mapPane, scrollPane);

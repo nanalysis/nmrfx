@@ -129,8 +129,8 @@ public class MolTube extends Group implements MolItem {
             zn /= length;
             tube.addNode(x, y, z, xn, yn, zn);
             tube.setColor(j, (float) asphere0.color.getRed(), (float) asphere0.color.getGreen(), (float) asphere0.color.getBlue());
-            double radiusA = 0.6;
-            double radiusB = 0.6;
+            double radiusA = radius;
+            double radiusB = radius;
             if ((asphere0.value != 0.0) && (asphere1.value != 0.0)) {
                 radiusA = asphere0.value;
                 radiusB = asphere1.value;
@@ -156,8 +156,8 @@ public class MolTube extends Group implements MolItem {
         Image image = makeTubeColors(nodes.size());
         material.setDiffuseMap(image);
 
-        Sphere startSphere = new Sphere(0.6, 15);
-        Sphere endSphere = new Sphere(0.6, 15);
+        Sphere startSphere = new Sphere(radius, 15);
+        Sphere endSphere = new Sphere(radius, 15);
         AtomSphere asphereStart = atomSpheres.get(0);
         AtomSphere asphereEnd = atomSpheres.get(atomSpheres.size() - 2);
 

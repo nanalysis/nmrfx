@@ -102,7 +102,7 @@ public class MolViewer extends Pane {
         Group rootGroup = new Group();
 
         subScene = new SubScene(rootGroup, width, height, true, SceneAntialiasing.BALANCED);
-        subScene.setFill(Color.BLACK);
+        subScene.setFill(Color.WHITE);
         subScene.getRoot().requestFocus();
         this.getChildren().add(subScene);
         molGroup = new Xform();
@@ -729,6 +729,31 @@ public class MolViewer extends Pane {
                 allTubes.add(tube);
             }
             molGroup.getChildren().addAll(allTubes);
+        }
+
+    }
+
+    public void addNucleicAcidBases(List<Integer> structures, double radius, String tag, int index) throws InvalidMoleculeException {
+        Molecule mol = getCurrentMolecule();
+        if (mol == null) {
+            return;
+        }
+        Map<String, String> endAtomMap = Map.of("G", "N1", "C", "N3", "A", "N1", "U", "N3", "T", "N3");
+        for (Polymer polymer : mol.getPolymers()) {
+            mol.updateAtomArray();
+            for (int iStructure : structures) {
+                if (polymer.isRNA() || polymer.isDNA()) {
+                    for (Residue residue : polymer.getResidues()) {
+                        Atom pAtom = residue.getAtom("P");
+                        Atom endAtom = residue.getAtom(endAtomMap.get(residue.getName()));
+                        if ((pAtom != null) && (endAtom != null)) {
+                            MolCylinder cyl = new MolCylinder(pAtom.getPoint(iStructure).toArray(),
+                                    endAtom.getPoint(iStructure).toArray(), radius, Color.BLUE, tag);
+                            molGroup.getChildren().add(cyl);
+                        }
+                    }
+                }
+            }
         }
 
     }
