@@ -97,11 +97,7 @@ public class SliderLayout {
 
     private void addToSync(PolyChart chart, String sync, Map<String, List<PolyChart>> syncMap) {
         if ((sync != null) && !sync.isEmpty()) {
-            List<PolyChart> syncList = syncMap.get(sync);
-            if (syncList == null) {
-                syncList = new ArrayList<>();
-                syncMap.put(sync, syncList);
-            }
+            List<PolyChart> syncList = syncMap.computeIfAbsent(sync, k -> new ArrayList<>());
             syncList.add(chart);
         }
 
@@ -122,7 +118,7 @@ public class SliderLayout {
         List<DatasetBase> datasets = new ArrayList<>();
         for (String type : types) {
             var datasetOpt = DatasetBase.datasets().stream().filter(d -> d.getName().toLowerCase().contains(type)).findFirst();
-            datasetOpt.ifPresent(dataset -> datasets.add(dataset));
+            datasetOpt.ifPresent(datasets::add);
         }
         return datasets;
     }
