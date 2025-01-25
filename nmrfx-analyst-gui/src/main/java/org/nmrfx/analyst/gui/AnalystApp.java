@@ -385,6 +385,9 @@ public class AnalystApp extends Application {
 
         statusBar.addToToolMenu("Spectrum Tools", compareMenuItem);
 
+        Menu layoutMenu = new Menu("Layouts");
+        statusBar.addToToolMenu(layoutMenu);
+
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
 
@@ -416,6 +419,8 @@ public class AnalystApp extends Application {
         MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
         proteinMenu.getItems().add(stripsToolItem);
         stripsToolItem.setOnAction(e -> controller.showStripsBar());
+
+        statusBar.updateLayoutMenu(layoutMenu);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 

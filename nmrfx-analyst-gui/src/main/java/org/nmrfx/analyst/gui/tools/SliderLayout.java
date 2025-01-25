@@ -27,7 +27,7 @@ public class SliderLayout {
         }
     }
 
-    static void loadLayoutFromFile() {
+    public static void loadLayoutFromFile() {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {

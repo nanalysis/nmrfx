@@ -38,7 +38,9 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.SegmentedButton;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.tools.SliderLayout;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -48,6 +50,7 @@ import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -316,6 +319,32 @@ public class SpectrumStatusBar {
         specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem);
         addToToolMenu(specToolMenu);
     }
+
+    public void updateLayoutMenu(Menu menu) {
+        var names = SliderLayout.getLayoutNames();
+        menu.getItems().clear();
+        MenuItem loadLayoutsItem = new MenuItem("Open...");
+        menu.getItems().add(loadLayoutsItem);
+        loadLayoutsItem.setOnAction(e -> {SliderLayout.loadLayoutFromFile();
+            updateLayoutMenu(menu);
+        });
+        for (String name : names) {
+            MenuItem item = new MenuItem(name);
+            menu.getItems().add(item);
+            item.setOnAction(e -> loadLayout(name));
+        }
+    }
+
+    private void loadLayout(String name) {
+        SliderLayout sliderLayout = new SliderLayout();
+        try {
+            sliderLayout.apply(name, controller);
+        } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
+    }
+
 
     private StackPane makeIcon(int i, Orientation orientation, boolean boundMode) {
         StackPane stackPane = new StackPane();
