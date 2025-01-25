@@ -11,6 +11,7 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.Atom;
 
 import javax.vecmath.Vector3d;
@@ -117,17 +118,10 @@ public class MolTube extends Group implements MolItem {
             AtomSphere asphere0 = atomSpheres.get(i);
             AtomSphere asphere1 = atomSpheres.get(i + 1);
             double x = asphere0.pt.getX();
-
             double y = asphere0.pt.getY();
             double z = asphere0.pt.getZ();
-            double xn = asphere1.pt.getX();
-            double yn = asphere1.pt.getY();
-            double zn = asphere1.pt.getZ();
-            double length = Math.sqrt(xn * xn + yn * yn + zn * zn);
-            xn /= length;
-            yn /= length;
-            zn /= length;
-            tube.addNode(x, y, z, xn, yn, zn);
+            Vector3D v3d = asphere1.pt.subtract(asphere0.pt).normalize().add(asphere0.pt);
+            tube.addNode(x, y, z, v3d.getX(), v3d.getY(), v3d.getZ());
             tube.setColor(j, (float) asphere0.color.getRed(), (float) asphere0.color.getGreen(), (float) asphere0.color.getBlue());
             double radiusA = radius;
             double radiusB = radius;
@@ -143,7 +137,7 @@ public class MolTube extends Group implements MolItem {
 
     public Group makeTube(Tube tube) {
         Tessellation tesselation = new Tessellation();
-        ArrayList<TubeNode> nodes = tube.createPath();
+        ArrayList<TubeNode> nodes = tube.createPathPoly();
         if (nodes.isEmpty()) {
             return null;
         }
