@@ -296,7 +296,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
     }
 
     void setupChart(List<String> datasetNames) {
-        chart.updateDatasets(datasetNames);
+        chart.updateDatasetsByNames(datasetNames);
         var peakAttrs = chart.getPeakListAttributes();
         var peakListNames = new ArrayList<String>();
         chart.getDatasetAttributes().stream().map(DatasetAttributes::getDataset).forEach(dataset -> {

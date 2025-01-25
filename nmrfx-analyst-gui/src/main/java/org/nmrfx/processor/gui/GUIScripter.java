@@ -646,7 +646,7 @@ public class GUIScripter {
     }
 
     public void datasets(List<String> datasetNames) {
-        Fx.runOnFxThread(() -> getChart().updateDatasets(datasetNames));
+        Fx.runOnFxThread(() -> getChart().updateDatasetsByNames(datasetNames));
     }
 
     public void gridDatasets(List<String> datasetNames) {

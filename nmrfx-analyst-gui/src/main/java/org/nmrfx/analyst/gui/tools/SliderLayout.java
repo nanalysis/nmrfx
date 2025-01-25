@@ -4,6 +4,7 @@ import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart;
@@ -56,40 +57,54 @@ public class SliderLayout {
         }
         SliderLayoutTypes sliderLayoutTypes = layouts.get(name);
         int n = sliderLayoutTypes.getLayout().size();
+        for (var chart : controller.getCharts()) {
+            chart.clearDataAndPeaks();
+        }
+        controller.setNCharts(1);
         controller.setNCharts(n);
+        controller.getCharts().getFirst().clearDataAndPeaks();
+        var charts = controller.getCharts();
         GUIScripter scripter = new GUIScripter();
         int i = 0;
-        Map<String, List<PolyChart>> xsyncMap = new HashMap<>();
-        Map<String, List<PolyChart>> ysyncMap = new HashMap<>();
         for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
-            PolyChart chart = controller.getCharts().get(i++);
+            PolyChart chart = charts.get(i++);
             scripter.grid(chart, layout.row(), layout.column(), layout.rowspan(), layout.columnspan());
+        }
+        i = 0;
+        for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
+            PolyChart chart = charts.get(i++);
             var datasets = getDatasetForType(layout.types());
             Boolean loadPeakLists = layout.loadpeaks();
-            boolean appendFile = false;
-            List<PeakList> peakLists = new ArrayList<>();
-            for (DatasetBase dataset : datasets) {
-                controller.addDataset(chart, dataset, appendFile, false);
-                if (loadPeakLists == Boolean.TRUE) {
+            chart.updateDatasets(datasets);
+            if (loadPeakLists == Boolean.TRUE) {
+                List<PeakList> peakLists = new ArrayList<>();
+                for (DatasetBase dataset : datasets) {
                     PeakList peakList = PeakList.getPeakListForDataset(dataset.getName());
                     if (peakList != null) {
                         peakLists.add(peakList);
                     }
                 }
-                appendFile = true;
+                chart.updatePeakLists(peakLists);
             }
-            chart.updatePeakLists(peakLists);
-
+        }
+        i = 0;
+        for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
+            PolyChart chart = charts.get(i++);
             var x = layout.x();
             chart.getAxes().setMinMax(0, x.get(0), x.get(1));
             var y = layout.y();
             chart.getAxes().setMinMax(1, y.get(0), y.get(1));
             chart.copyChartLimits();
+        }
+        Map<String, List<PolyChart>> xsyncMap = new HashMap<>();
+        Map<String, List<PolyChart>> ysyncMap = new HashMap<>();
+        i = 0;
+        for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
+            PolyChart chart = charts.get(i++);
             String xsync = layout.xsync();
             addToSync(chart, xsync, xsyncMap);
             String ysync = layout.ysync();
             addToSync(chart, ysync, ysyncMap);
-
         }
         addSyncs(xsyncMap, 0);
         addSyncs(ysyncMap, 1);
@@ -108,17 +123,20 @@ public class SliderLayout {
         for (var entry : syncMap.entrySet()) {
             if (entry.getValue().size() > 1) {
                 PolyChart chart = entry.getValue().get(0);
-                String dimName = chart.getDimNames().get(iDim);
-                synchronizer.addToSyncGroup(entry.getValue(), dimName);
+                var dimNames = chart.getDimNames();
+                if (iDim < dimNames.size()) {
+                    String dimName = chart.getDimNames().get(iDim);
+                    synchronizer.addToSyncGroup(entry.getValue(), dimName);
+                }
             }
         }
     }
 
-    List<DatasetBase> getDatasetForType(List<String> types) {
-        List<DatasetBase> datasets = new ArrayList<>();
+    List<Dataset> getDatasetForType(List<String> types) {
+        List<Dataset> datasets = new ArrayList<>();
         for (String type : types) {
             var datasetOpt = DatasetBase.datasets().stream().filter(d -> d.getName().toLowerCase().contains(type)).findFirst();
-            datasetOpt.ifPresent(datasets::add);
+            datasetOpt.ifPresent(d -> datasets.add((Dataset) d));
         }
         return datasets;
     }
