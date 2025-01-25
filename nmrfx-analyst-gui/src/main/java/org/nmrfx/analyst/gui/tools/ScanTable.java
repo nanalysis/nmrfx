@@ -218,7 +218,7 @@ public class ScanTable {
                 }
             }
         }
-        chart.updateDatasets(datasetNames);
+        chart.updateDatasetsByNames(datasetNames);
     }
 
     private void setDatasetAttributes() {

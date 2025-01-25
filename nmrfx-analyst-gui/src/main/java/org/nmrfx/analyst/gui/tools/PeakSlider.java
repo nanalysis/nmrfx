@@ -169,7 +169,6 @@ public class PeakSlider implements ControllerTool {
             modeMenuItem.setOnAction(e -> setPeakMode(peakMode));
             peakDisplayMenu.getItems().add(modeMenuItem);
         }
-        Menu layoutMenu = new Menu("Layouts");
 
         Menu matchingMenu = new Menu("Perform Match");
         MenuItem matchColumnItem = new MenuItem("Do Match Columns");
@@ -184,12 +183,7 @@ public class PeakSlider implements ControllerTool {
         autoItem.setOnAction(e -> autoAlign());
         matchingMenu.getItems().addAll(matchColumnItem, matchRowItem, clearMatchItem, autoItem, matchExpPredItem);
 
-        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, pickItem, peakDisplayMenu, layoutMenu, matchingMenu);
-        actionMenu.showingProperty().addListener((a, b, c) -> {
-            if (c) {
-                updateLayoutMenu(layoutMenu);
-            }
-        });
+        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, randomizeAllItem, pickItem, peakDisplayMenu, matchingMenu);
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -221,29 +215,6 @@ public class PeakSlider implements ControllerTool {
             addKeyBindingsToChart(chart);
         }
         ((ObservableList<PolyChart>) controller.getCharts()).addListener(chartsListener);
-    }
-
-    void updateLayoutMenu(Menu menu) {
-        var names = SliderLayout.getLayoutNames();
-        menu.getItems().clear();
-        MenuItem loadLayoutsItem = new MenuItem("Open...");
-        menu.getItems().add(loadLayoutsItem);
-        loadLayoutsItem.setOnAction(e -> SliderLayout.loadLayoutFromFile());
-        for (String name : names) {
-            MenuItem item = new MenuItem(name);
-            menu.getItems().add(item);
-            item.setOnAction(e -> loadLayout(name));
-        }
-    }
-
-    private void loadLayout(String name) {
-        SliderLayout sliderLayout = new SliderLayout();
-        try {
-            sliderLayout.apply(name, controller);
-        } catch (IOException e) {
-            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
-            exceptionDialog.showAndWait();
-        }
     }
 
     /**

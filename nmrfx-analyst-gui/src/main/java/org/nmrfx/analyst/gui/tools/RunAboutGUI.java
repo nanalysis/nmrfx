@@ -2234,7 +2234,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             Dataset dataset = Dataset.getDataset(datasetName);
             if (dataset != null) {
                 PolyChart chart = refController.getActiveChart();
-                chart.updateDatasets(List.of(dataset.getName()));
+                chart.updateDatasetsByNames(List.of(dataset.getName()));
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 int[] iDims = runAbout.getIDims(dataset, refList, refList.getExperimentType(), List.of("H", "N"));
                 dataAttr.setDims(iDims);
@@ -2340,7 +2340,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             String dName = dataset.getName();
                             List<String> datasets = Collections.singletonList(dName);
                             PolyChartManager.getInstance().setActiveChart(chart);
-                            chart.updateDatasets(datasets);
+                            chart.updateDatasetsByNames(datasets);
                             List<String> dimNames = col.getDims();
                             DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                             int[] iDims = runAbout.getIDims(dataset, peakList, typeName, dimNames);
