@@ -19,4 +19,7 @@ public class StructureBond {
         this.atom2 = atom2;
         this.mode = mode;
     }
+    public String toString() {
+        return atom1.toString() + " " + atom2.toString() + " " + mode + " " + lower + " " + upper;
+    }
 }
