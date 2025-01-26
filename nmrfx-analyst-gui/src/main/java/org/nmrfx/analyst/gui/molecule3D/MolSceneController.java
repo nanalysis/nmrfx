@@ -791,14 +791,16 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     public void drawCartoon() throws InvalidMoleculeException {
         if (!molViewer.getCurrentMolecule().getPolymers().isEmpty()) {
-            molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
+            molViewer.addTube(getStructures(), 1.0, "tube", getIndex());
+            molViewer.addNucleicAcidBases(getStructures(), 0.3, "bases", getIndex());
         }
         selectLigand();
         drawSticks();
     }
 
     public void drawTubes() throws InvalidMoleculeException {
-        molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
+        molViewer.addTube(getStructures(), 1.0, "tube", getIndex());
+        molViewer.addNucleicAcidBases(getStructures(), 0.3, "bases", getIndex());
     }
 
     public void drawOrientationSpheresX() throws InvalidMoleculeException {

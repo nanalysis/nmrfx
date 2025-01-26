@@ -248,17 +248,18 @@ public class FXMLController implements Initializable, StageBasedController, Publ
      * of the dataset.
      */
     public void updateSpectrumStatusBarOptions(boolean initDataset) {
+        PolyChart chart = getActiveChart();
         if (isFIDActive()) {
             statusBar.setMode(SpectrumStatusBar.DataMode.FID);
         } else {
-            ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
+            ObservableList<DatasetAttributes> datasetAttrList = chart.getDatasetAttributes();
             datasetAttrList.stream().mapToInt(d -> d.nDim).max().ifPresent(maxNDim -> {
-                if (getActiveChart().is1D() && maxNDim > 1) {
+                if (chart.is1D() && maxNDim > 1) {
                     int maxRows = datasetAttrList.stream()
                             .mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1))
                             .max().orElse(0);
                     if (initDataset && maxRows > MAX_INITIAL_TRACES) {
-                        getActiveChart().setDrawlist(0);
+                        chart.setDrawlist(0);
                     }
                     statusBar.set1DArray(maxNDim, maxRows);
                 } else {
@@ -454,15 +455,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             log.warn(ex.getMessage(), ex);
             GUIUtils.warn("Open Dataset", ex.getMessage());
         }
+        PolyChart chart = getActiveChart();
         if (dataset != null) {
-            ProcessorController processorController = getActiveChart().getProcessorController(false);
+            ProcessorController processorController = chart.getProcessorController(false);
             if (processorController != null && (!dataset.getFile().equals(chartProcessor.getDatasetFile()))) {
                 nmrControlRightSidePane.removeContent(processorController);
-                getActiveChart().setProcessorController(null);
+                chart.setProcessorController(null);
                 processorController.cleanUp();
             }
             if (addDatasetToChart) {
-                addDataset(getActiveChart(), dataset, append, false);
+                addDataset(chart, dataset, append, false);
             }
         } else {
             log.info("Unable to find a dataset format for: {}", selectedFile);
@@ -474,7 +476,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void addFID(NMRData nmrData, boolean clearOps, boolean reload) {
         isFID = true;
         // Only create a new processor controller, if the active chart does not have one already created.
-        ProcessorController processorController = getActiveChart().getProcessorController(true);
+        PolyChart chart = getActiveChart();
+        ProcessorController processorController = chart.getProcessorController(true);
         if (processorController != null) {
             processorButton.setSelected(true);
             processorController.setAutoProcess(false);
@@ -486,13 +489,13 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             chartProcessor.clearAllOperations();
             processorController.parseScript("");
             if (!reload) {
-                getActiveChart().full();
-                getActiveChart().autoScale();
+                chart.full();
+                chart.autoScale();
                 generateScriptAndParse(nmrData, processorController);
             }
-            getActiveChart().clearAnnotations();
-            getActiveChart().removeProjections();
-            getActiveChart().layoutPlotChildren();
+            chart.clearAnnotations();
+            chart.removeProjections();
+            chart.layoutPlotChildren();
             statusBar.setMode(SpectrumStatusBar.DataMode.FID);
             processorController.hideDatasetToolBar();
             if (PreferencesController.getLoadMoleculeIfPresent()) {
@@ -515,12 +518,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             PreferencesController.saveRecentFiles(dataset.getFile().toString());
         }
 
-        DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile, false);
+        DatasetAttributes datasetAttributes = chart.setDataset(dataset, appendFile, false);
         chart.getCrossHairs().setStates(true, true, true, true);
-        getActiveChart().clearAnnotations();
-        getActiveChart().clearPopoverTools();
-        getActiveChart().removeProjections();
-        ProcessorController processorController = getActiveChart().getProcessorController();
+        chart.clearAnnotations();
+        chart.clearPopoverTools();
+        chart.removeProjections();
+        ProcessorController processorController = chart.getProcessorController();
         if (processorController != null) {
             processorController.viewingDataset(true);
             if (processorController.chartProcessor.getNMRData() == null) {
@@ -533,16 +536,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         phaser.getPhaseOp();
         if (!reload) {
             if (!datasetAttributes.getHasLevel()) {
-                getActiveChart().full();
+                chart.full();
                 if (datasetAttributes.getDataset().isLvlSet()) {
                     datasetAttributes.setLvl(datasetAttributes.getDataset().getLvl());
                     datasetAttributes.setHasLevel(true);
                 } else {
-                    getActiveChart().autoScale();
+                    chart.autoScale();
                 }
             }
         }
-        getActiveChart().layoutPlotChildren();
+        chart.layoutPlotChildren();
         undoManager.clear();
         ProjectBase.getActive().projectChanged(true);
         if (PreferencesController.getLoadMoleculeIfPresent()) {

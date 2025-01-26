@@ -271,7 +271,7 @@ public class GUIScripterAdvanced extends GUIScripter {
         }
         var datasetList = (List<Map<String, Object>>) spectraMap.get("datasets");
         List<String> datasetNames = datasetList.stream().filter(m -> m.containsKey("name")).map(m -> m.get("name").toString()).toList();
-        chart.updateDatasets(datasetNames);
+        chart.updateDatasetsByNames(datasetNames);
 
         if (spectraMap.containsKey("lim")) {
             var limMap = (Map<String, List<Double>>) spectraMap.get("lim");

@@ -1420,17 +1420,21 @@ public class PolyChart extends Region {
         refresh();
     }
 
-    public void updateDatasets(List<String> targets) {
+    public void updateDatasetsByNames(List<String> targets) {
+        List<Dataset> datasets = targets.stream().map(s -> Dataset.getDataset(s)).toList();
+        updateDatasets(datasets);
+    }
+    public void updateDatasets(List<Dataset> datasets) {
         ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
         List<DatasetAttributes> newList = new ArrayList<>();
         boolean updated = false;
         int iTarget = 0;
-        for (String s : targets) {
+        for (Dataset dataset : datasets) {
             int n = newList.size();
             int jData = 0;
             int addAt = -1;
             for (DatasetAttributes datasetAttr : datasetAttrs) {
-                if (datasetAttr.getDataset().getName().equals(s) && !newList.contains(datasetAttr)) {
+                if (datasetAttr.getDataset().getName().equals(dataset.getName()) && !newList.contains(datasetAttr)) {
                     newList.add(datasetAttr);
                     addAt = jData;
                 }
@@ -1441,7 +1445,6 @@ public class PolyChart extends Region {
             }
             // if didn't add one, then create new DatasetAttributes
             if (newList.size() == n) {
-                Dataset dataset = Dataset.getDataset(s);
                 if (dataset != null) {
                     int nDim = dataset.getNDim();
                     // fixme kluge as not all datasets that are freq domain have attribute set
@@ -1452,7 +1455,7 @@ public class PolyChart extends Region {
                     newList.add(newAttr);
                     updated = true;
                 } else {
-                    log.info("No dataset {}", s);
+                    log.info("No dataset");
                 }
             }
             iTarget++;
@@ -3831,7 +3834,7 @@ public class PolyChart extends Region {
                 if (proj1 != null) {
                     datasetNames.add(proj1.getName());
                 }
-                updateDatasets(datasetNames);
+                updateDatasetsByNames(datasetNames);
                 updateProjections();
                 updateProjectionBorders();
                 updateProjectionScale();
@@ -3890,7 +3893,7 @@ public class PolyChart extends Region {
                     newChart = sliceController.getActiveChart();
                 }
                 newChart.clearDataAndPeaks();
-                newChart.updateDatasets(sliceDatasets);
+                newChart.updateDatasetsByNames(sliceDatasets);
                 getFXMLController().getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
                 newChart.disDimProp.set(DISDIM.OneDX);
                 newChart.autoScale();
