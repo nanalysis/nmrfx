@@ -13,14 +13,14 @@ import static org.nmrfx.structure.chemistry.energy.ConstraintCreator.addDistance
 
 public class RNAStructureSetup {
 
-    private static Map<Integer, String> angleKeyMap = new HashMap<>();
+    private static final Map<Integer, String> angleKeyMap = new HashMap<>();
     public static boolean dumpKeys = true;
 
     private static boolean usePlanarity = true;
     private static final Map<String, Map<String, Double>> angleDict = new HashMap<>();
-    public static Map<String, List<AtomAtomDistance>> rnaPlanarity = new HashMap<>();
-    public static Map<String, List<AtomAtomLowUp>> stackTo = new HashMap<>();
-    public static Map<String, List<AtomAtomLowUp>> stackPairs = new HashMap<>();
+    private static final Map<String, List<AtomAtomDistance>> rnaPlanarity = new HashMap<>();
+    private static final Map<String, List<AtomAtomLowUp>> stackTo = new HashMap<>();
+    private static final Map<String, List<AtomAtomLowUp>> stackPairs = new HashMap<>();
 
     public record AtomAtomDistance(String aName1, String aName2, double distance) {
     }
@@ -129,7 +129,7 @@ public class RNAStructureSetup {
         Map<String, Double> angles = angleDict.get(key);
         if (angles == null) {
             String origAtom;
-            String newAtom ;
+            String newAtom;
             String origKey;
             String newKey;
 
@@ -150,7 +150,7 @@ public class RNAStructureSetup {
                 Double angle = angles.get(origAtom);
                 if (angle != null) {
                     angles.remove(origAtom);
-                    angle= angle + 180.0;
+                    angle = angle + 180.0;
                     if (angle > 180.0) {
                         angle -= 360.0;
                     }
@@ -442,7 +442,7 @@ public class RNAStructureSetup {
                         addSuiteBoundary(residue.getPolymer(), residue.getNumber(), suites[i], 0.5);
                         usedResidues.add(residue);
                     }
-                } catch (InvalidMoleculeException e) {
+                } catch (InvalidMoleculeException ignored) {
                 }
             }
         }
@@ -492,7 +492,6 @@ public class RNAStructureSetup {
     static void addSuiteBoundary(Polymer polymer, String residueNum, String suiteName, double mul) throws InvalidMoleculeException {
         List<AngleConstraint> angleConstraints = RNARotamer.getAngleBoundaries(polymer, residueNum, suiteName, mul);
         Molecule molecule = (Molecule) polymer.molecule;
-        System.out.println("add suite " + residueNum + " " + suiteName);
         for (AngleConstraint angleConstraint : angleConstraints) {
             ConstraintCreator.addAngleConstraint(molecule, angleConstraint);
         }
@@ -681,14 +680,10 @@ public class RNAStructureSetup {
                 subType = "hB0" + ":" + 'B' + nextRes.getSecondaryStructure().getResidues().size();
             } else if (ssPrev instanceof Bulge) {
                 subType = "hB1" + ":" + 'B' + prevRes.getSecondaryStructure().getResidues().size();
-            } else if (pairRes.getPrevious() != null) {
-                if (pairRes.getPrevious().getSecondaryStructure() instanceof Bulge) {
-                    subType = "hb1" + ":" + 'B' + pairRes.getPrevious().getSecondaryStructure().getResidues().size();
-                    if (pairRes.getNext() != null) {
-                        if (pairRes.getNext().getSecondaryStructure() instanceof Bulge) {
-                            subType = "hb0" + ":" + 'B' + pairRes.getNext().getSecondaryStructure().getResidues().size();
-                        }
-                    }
+            } else if ((pairRes.getPrevious() != null) && (pairRes.getPrevious().getSecondaryStructure() instanceof Bulge)) {
+                subType = "hb1" + ":" + 'B' + pairRes.getPrevious().getSecondaryStructure().getResidues().size();
+                if ((pairRes.getNext() != null) && (pairRes.getNext().getSecondaryStructure() instanceof Bulge)) {
+                    subType = "hb0" + ":" + 'B' + pairRes.getNext().getSecondaryStructure().getResidues().size();
                 }
             }
         }
@@ -766,37 +761,33 @@ public class RNAStructureSetup {
     }
 
     public static void setAnglesVienna(Map<String, Object> data, SSGen ssGen) {
-        try {
-            boolean doLock = (Boolean) data.getOrDefault("restrain", false);
-            boolean lockFirst = (Boolean) data.getOrDefault("lockfirst", false);
-            boolean lockLast = (Boolean) data.getOrDefault("locklast", false);
-            boolean lockBulge = (Boolean) data.getOrDefault("lockbulge", doLock);
-            boolean lockLoop = (Boolean) data.getOrDefault("lockloop", doLock);
+        boolean doLock = (Boolean) data.getOrDefault("restrain", false);
+        boolean lockFirst = (Boolean) data.getOrDefault("lockfirst", false);
+        boolean lockLast = (Boolean) data.getOrDefault("locklast", false);
+        boolean lockBulge = (Boolean) data.getOrDefault("lockbulge", doLock);
+        boolean lockLoop = (Boolean) data.getOrDefault("lockloop", doLock);
 
-            for (SecondaryStructure ss : ssGen.structures()) {
-                if (ss instanceof RNAHelix rnaHelix) {
-                    setAnglesHelix(rnaHelix, lockFirst, lockLast, lockLoop, doLock);
-                } else if (ss instanceof Loop loop) {
-                    setAnglesLoop(loop, lockLoop);
-                } else if (ss instanceof Bulge bulge) {
-                    setAnglesBulge(bulge, lockBulge);
-                } else if (ss instanceof InternalLoop loop) {
-                    setAnglesInternalLoop(loop, lockBulge);
-                } else if (ss instanceof Junction junction) {
-                    setAnglesJunction(junction, lockBulge);
-                }
+        for (SecondaryStructure ss : ssGen.structures()) {
+            if (ss instanceof RNAHelix rnaHelix) {
+                setAnglesHelix(rnaHelix, lockFirst, lockLast, lockLoop, doLock);
+            } else if (ss instanceof Loop loop) {
+                setAnglesLoop(loop, lockLoop);
+            } else if (ss instanceof Bulge bulge) {
+                setAnglesBulge(bulge, lockBulge);
+            } else if (ss instanceof InternalLoop loop) {
+                setAnglesInternalLoop(loop, lockBulge);
+            } else if (ss instanceof Junction junction) {
+                setAnglesJunction(junction, lockBulge);
             }
-            if (dumpKeys) {
-                Molecule molecule = (Molecule) ssGen.structures().getFirst().firstResidue().molecule;
-                String dotBracket = molecule.getDotBracket();
+        }
+        if (dumpKeys) {
+            Molecule molecule = (Molecule) ssGen.structures().getFirst().firstResidue().molecule;
+            String dotBracket = molecule.getDotBracket();
 
-                angleKeyMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(entry -> {
-                    int iRes = entry.getKey();
-                    System.out.printf("%3d %c %s\n", iRes, dotBracket.charAt(iRes - 1), entry.getValue());
-                });
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            angleKeyMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(entry -> {
+                int iRes = entry.getKey();
+                System.out.printf("%3d %c %s\n", iRes, dotBracket.charAt(iRes - 1), entry.getValue());
+            });
         }
     }
 

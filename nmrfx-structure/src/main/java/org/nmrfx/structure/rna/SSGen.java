@@ -23,6 +23,7 @@ import org.nmrfx.chemistry.SecondaryStructure;
 import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -105,7 +106,6 @@ public class SSGen {
                 }
                 tracker++;
             }
-            System.out.println("build other " + currentSS);
             if (currentSS.isEmpty()) {
                 return currentSS;
             } else {
@@ -126,7 +126,7 @@ public class SSGen {
             newResidues.add(residue);
             residue = residue.getNext();
             if (residue == null) {
-                return null;
+                return Collections.emptyList();
             }
         }
         return newResidues;
@@ -142,8 +142,7 @@ public class SSGen {
         int nSections = 1;
         while (true) {
             List<Residue> newPart = findNextPart(residue);
-            System.out.println("new part " +residue + " new part " +  newPart);
-            if (newPart == null) {
+            if (newPart.isEmpty()) {
                 break;
             }
             residues.addAll(newPart);
@@ -199,7 +198,6 @@ public class SSGen {
         if (add) {
             ssResidues.addAll(currentSS);
         }
-        System.out.println("type " + type + " add " + add + " " + ssResidues);
         return  ssResidues;
     }
 
@@ -229,7 +227,6 @@ public class SSGen {
             }
         }
         type = SSTypes.HELIX;
-        System.out.println("build helix " + ssResidues);
         return ssResidues;
 
     }
