@@ -4,6 +4,8 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -12,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.nmrfx.structure.chemistry.energy.ConstraintCreator.addDistanceConstraint;
 
 public class RNAStructureSetup {
+    private static final Logger log = LoggerFactory.getLogger(RNAStructureSetup.class);
 
     private static final Map<Integer, String> angleKeyMap = new HashMap<>();
     public static boolean dumpKeys = true;
@@ -442,7 +445,8 @@ public class RNAStructureSetup {
                         addSuiteBoundary(residue.getPolymer(), residue.getNumber(), suites[i], 0.5);
                         usedResidues.add(residue);
                     }
-                } catch (InvalidMoleculeException ignored) {
+                } catch (InvalidMoleculeException exception) {
+                    log.error("Invalid residue", exception);
                 }
             }
         }
@@ -716,7 +720,7 @@ public class RNAStructureSetup {
         if (ss instanceof RNAHelix rnaHelix) {
             int index = getHelixPos(rnaHelix, residue, false);
             SecondaryStructure ssNext2 = null;
-            if (index == 1) {
+            if ((index == 1) && (nextRes != null)) {
                 ssNext2 = nextRes.getNext().getSecondaryStructure();
             }
             subType = getHelixSubType(ss.getResidues(), residue, ssNext, ssPrev, ssNext2);

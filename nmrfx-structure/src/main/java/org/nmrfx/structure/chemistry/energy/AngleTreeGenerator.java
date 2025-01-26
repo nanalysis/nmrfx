@@ -56,13 +56,15 @@ public class AngleTreeGenerator {
     public static void genMeasuredTree(Entity entity, Atom startAtom) {
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         if (startAtom == null) {
-            startAtom = aTreeGen.findStartAtom(entity);
+            startAtom = AngleTreeGenerator.findStartAtom(entity);
         }
-        Molecule molecule = (Molecule) startAtom.entity.molecule;
+        if (startAtom != null) {
+            Molecule molecule = (Molecule) startAtom.entity.molecule;
 
-        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
-        aTreeGen.measureAtomTree(entity, atomTree, true, false);
-        molecule.setRingClosures(aTreeGen.getRingClosures());
+            List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+            aTreeGen.measureAtomTree(entity, atomTree, true, false);
+            molecule.setRingClosures(aTreeGen.getRingClosures());
+        }
     }
 
     static class BondSort implements Comparable<BondSort> {
@@ -94,8 +96,7 @@ public class AngleTreeGenerator {
     public static Atom findStartAtom(ITree itree) {
         List<Atom> atoms = itree.getAtomArray();
         Atom startAtom = null;
-        if (itree instanceof Entity && itree instanceof Polymer) {
-            Polymer polymer = (Polymer) itree;
+        if (itree instanceof Polymer polymer) {
             startAtom = polymer.getFirstResidue().getFirstBackBoneAtom();
         } else {
             for (Atom atom : atoms) {
@@ -110,7 +111,6 @@ public class AngleTreeGenerator {
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom)
             throws IllegalArgumentException {
-System.out.println("genTree");
         List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             atom.parent = null;
@@ -266,8 +266,7 @@ System.out.println("genTree");
                 firstAtom = false;
             }
         }
-        if (itree instanceof Molecule) {
-            Molecule mol = (Molecule) itree;
+        if (itree instanceof Molecule mol) {
             mol.setTreeList(atomPathList);
             mol.setAtomTree(atomTree);
         }
@@ -288,7 +287,6 @@ System.out.println("genTree");
 
     public void measureAtomTree(ITree itree, List<List<Atom>> atomTree, boolean changeBonds, boolean freezeRings) {
         // get Atom array --> getAtomList() difference?
-        System.out.println("measuretree");
         for (Atom atom : itree.getAtomArray()) {
             atom.parent = null;
         }
@@ -354,10 +352,10 @@ System.out.println("genTree");
                         }
                         oBond.ifPresent(b -> {
                             if (!bondMap.containsKey(a2)) {
-                                bondMap.put(a2, new ArrayList<Bond>());
+                                bondMap.put(a2, new ArrayList<>());
                             }
                             if (!bondMap.containsKey(a3)) {
-                                bondMap.put(a3, new ArrayList<Bond>());
+                                bondMap.put(a3, new ArrayList<>());
                             }
                             bondMap.get(a2).add(b);
                             bondMap.get(a3).add(b);
