@@ -30,6 +30,8 @@ from org.nmrfx.chemistry import Polymer
 from org.nmrfx.chemistry import Compound
 from org.nmrfx.structure.rna import AllBasePairs
 from org.nmrfx.structure.chemistry.energy import NEFSTARStructureCalculator
+from org.nmrfx.structure.chemistry.energy import ConstraintCreator
+from org.nmrfx.structure.rna import RNAStructureSetup
 
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
@@ -40,6 +42,7 @@ from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
 from java.lang import String, NullPointerException, IllegalArgumentException
 from java.util import ArrayList
 from org.nmrfx.chemistry.constraints import RDCConstraint
+from org.nmrfx.chemistry.constraints import MolecularConstraints
 from org.nmrfx.chemistry.constraints import RDCConstraintSet
 from org.nmrfx.chemistry import SpatialSet
 
@@ -71,120 +74,6 @@ rnaBPPlanarity = {
 gnraHBonds = [["N2","N7",2.4,2.8],["N3","N6",2.7,5.0],["N2","OP1",2.4,2.9]]
 
 addPlanarity = False
-
-class Cluster:
-    def __init__(self,name,regex,suites,chi,bp,hb):
-        self.name = name
-        self.regex = regex
-        self.suites = suites
-        self.chi = chi
-        self.bp = bp
-        self.hb = hb
-        self.repSeqs = []
-
-def getClusterDict():
-    clusterDict = {}
-    cluster_table_file = "cluster_table.txt"
-    lines = loadFile(cluster_table_file)
-    currCluster = None
-    for nLine, line in enumerate(lines):
-        if nLine%2 != 0:
-            currCluster.repSeqs += [seq for seq in line.strip('\n').split()]
-            continue
-        line = line.strip('\n').split('\t')
-        name,regex,suites,chi = line[:4]
-        nSuites = int(len(suites)/2)
-        suites = [suites[i*2:(i+1)*2] for i in range(nSuites)]
-        bp = [item[3:] for item in line[4:] if item.startswith("bp")]
-        hb = [item[3:] for item in line[4:] if item.startswith("hb")]
-        clusterDict[name] = Cluster(name,regex,suites,chi,bp,hb)
-        currCluster = clusterDict[name]
-    return clusterDict
-
-def getCluster(tetraLoopSeq):
-    matched_cluster = None
-    clusterDict = getClusterDict()
-    search_representative_seqs = [cluster for cluster in clusterDict.values() if any([tetraLoopSeq == seq for seq in cluster.repSeqs])]
-    if search_representative_seqs:
-        matched_cluster  = search_representative_seqs[0]
-    else:
-        search_regex = [cluster for cluster in clusterDict.values() if re.compile(cluster.regex).match(tetraLoopSeq)]
-        if search_regex:
-            matched_cluster = search_regex[0]
-    return matched_cluster
-
-def getLoopType(ss):
-   residues = ss.getResidues()
-   if ss.getName() == "Loop":
-       if len(residues) == 4:
-           residues = [residues[0].getPrevious()] + residues + [residues[-1].getNext()]
-           loopSeq = ''.join([residue.getName() for residue in residues])
-           cluster = getCluster(loopSeq) 
-           if cluster:
-               return ":"+cluster.name
-       return str(len(residues))
-   return ""
-   
-def getRNAResType(ss, residues, residue):
-    ssType = ss.getName()
-    res = int(residue.getNumber())
-    subType = 'c'
-    rName = residue.getName()
-    nextRes = residue.getNext()
-    prevRes = residue.getPrevious()
-    pairRes = residue.pairedTo
-    ssNextName = ""
-    ssPrevName = ""
-    if nextRes != None:
-       ssNextName = nextRes.getSecondaryStructure().getName()
-    if prevRes != None:
-       ssPrevName = prevRes.getSecondaryStructure().getName()
-       if ssNextName == "Loop":
-           ssNextType = getLoopType(nextRes.getSecondaryStructure())
-           subType = "hL:" + ssNextType 
-    if ssType == "Helix":
-        subType = 'h'
-        if prevRes == None:
-            subType = "h5"
-        elif ssNextName == "Loop":
-            ssNextType = getLoopType(nextRes.getSecondaryStructure())
-            subType = "hL" + ssNextType
-        elif ssPrevName == "Loop":
-            ssPrevType = getLoopType(prevRes.getSecondaryStructure())
-            subType = "hl" + ssPrevType
-        elif ssNextName == "Bulge":
-            subType = "hB0"+":"'B'+str(len(nextRes.getSecondaryStructure().getResidues()))
-        elif ssPrevName == "Bulge":
-            subType = "hB1"+":"'B'+str(len(prevRes.getSecondaryStructure().getResidues()))
-        elif pairRes.getPrevious():
-            if pairRes.getPrevious().getSecondaryStructure().getName() == "Bulge":
-                subType = "hb1"+":"'B'+str(len(pairRes.getPrevious().getSecondaryStructure().getResidues()))
-        if pairRes.getNext():
-            if pairRes.getNext().getSecondaryStructure().getName() == "Bulge":
-                subType = "hb0"+":"'B'+str(len(pairRes.getNext().getSecondaryStructure().getResidues()))
-
-    elif ssType == "Loop":
-        loopType = getLoopType(ss)
-        subType = 'T' + loopType 
-    elif ssType == "Bulge":
-        subType = 'B'+str(len(ss.getResidues()))
-        #check whether res num is greater than paired res num, to determine orientation of bulge
-        subType = subType+'c' if int(ss.getResidues()[0].getPrevious().getNumber()) > int(ss.getResidues()[0].getPrevious().pairedTo.getNumber()) else subType
-    if pairRes:
-        rName2 = pairRes.getName()
-        rName += rName2
-        if pairRes.getAtom('X1') != None:
-            if pairRes == residues[0]:
-                subType = subType+'xb'
-            else:
-                subType = subType+'xe'
-    if residue.getAtom('X1') != None:
-        if residue == residues[0]:
-            subType = subType+'Xb'
-        else:
-            subType = subType+'Xe'
-    return subType
-
 
 def getHelix(pairs,vie):
     inHelix = False
@@ -639,27 +528,8 @@ class refine:
         self.rDyn.setTrajectoryWriter(self.trajectoryWriter)
         return self.rDyn
 
-    def addLinkers(self, linkerList):
-        if linkerList:
-            try :
-                for linkerDict in linkerList:
-                    self.readLinkerDict(linkerDict) # returns used Entities to mark them
-            except TypeError as e:
-                print repr(e)
-                self.readLinkerDict(linkerList)
-
-    def getDistanceConstraintSet(self, name):
-        molConstraints = self.molecule.getMolecularConstraints()
-        disCon = molConstraints.getNoeSet(name, True)
-        return disCon
-
     def addDistanceConstraint(self, atomName1,atomName2,lower,upper,bond=False):
-        if bond == False:
-            disCon = self.getDistanceConstraintSet("noe_restraint_list")
-        else:
-            disCon = self.getDistanceConstraintSet("bond_restraint_list")
-            disCon.containsBonds(bond)
-        disCon.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
+        MolecularConstraints.addDistanceConstraint(atomName1,atomName2,lower,upper,bond)
 
     def getAngleConstraintSet(self):
         molConstraints = self.molecule.getMolecularConstraints()
@@ -680,249 +550,6 @@ class refine:
 
     def addAngleConstraint(self, angleConstraint):
         self.getAngleConstraintSet().add(angleConstraint)
-
-    def readLinkerDict(self, linkerDict):
-        entityNames = [entity.getName() for entity in self.molecule.getEntities()]
-        if not linkerDict:
-            return
-        if 'atoms' in linkerDict:
-            atomName1, atomName2 = linkerDict['atoms']
-            atom1 = self.molecule.getAtomByName(atomName1)
-            atom2 = self.molecule.getAtomByName(atomName2)
-            entity1 = atom1.getTopEntity()
-            entity2 = atom2.getTopEntity()
-            if self.entityEntryDict[entity1] == atom1:
-                startEntity, startAtom = entity2, atom2
-                endEntity, endAtom = entity1, atom1
-            else:
-                startEntity, startAtom = entity1, atom1
-                endEntity, endAtom = entity2, atom2
-
-            # n is the number of rotational points within a link established between any 2 entities.
-            # default is 6.
-            nLinks = linkerDict['n'] if 'n' in linkerDict else 6
-            linkLen = linkerDict['length'] if 'length' in linkerDict else 5.0
-            valAngle = linkerDict['valAngle'] if 'valAngle' in linkerDict else 110.0
-            dihAngle = linkerDict['dihAngle'] if 'dihAngle' in linkerDict else 135.0
-
-        else:
-            if 'bond' not in linkerDict or 'cyclic' not in linkerDict['bond']:
-                raise KeyError("atoms must be defined within the linker object")
-
-        if 'bond' in linkerDict:
-            bondDict = linkerDict['bond']
-            if "cyclic" in bondDict and bondDict["cyclic"]:
-                polymers = self.molecule.getPolymers()
-                polymerNames = [polymer.getName() for polymer in polymers]
-                if len(polymers) != 1 and "pName" not in bondDict:
-                    raise ValueError("Multiple polymers in structure but no specification for which to by made cyclic")
-                    #return []
-                polymer = None
-                if "pName" in bondDict:
-                    if bondDict["pName"] in polymerNames:
-                        polymer = self.molecule.getEntity(bondDict["pName"])
-                    else:
-                        raise ValueError(bondDict["pName"] + " is not a polymer within the molecule")
-                else:
-                    polymer = polymers[0]
-                self.addCyclicBond(polymer)
-                return []
-
-            else:
-                sameEnt = startEntity == endEntity;
-                length = bondDict['length'] if 'length' in bondDict else 1.08
-                order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
-
-                if not sameEnt:
-                    global bondOrders
-                    if (order < 0 or order > 4) and order not in bondOrders:
-                        print "Bad bond order, automatically converting to SINGLE bond"
-                        order = "SINGLE"
-                    try:
-                        order = bondOrders[order-1]
-                    except:
-                        order = order.upper()
-                    print 'createLinkA'
-                    self.molecule.createLinker(startAtom, endAtom, order, length)
-                else:
-                    atomName1, atomName2 = bondDict['atoms']
-                    startAtom = self.molecule.getAtomByName(atomName1)
-                    endAtom = self.molecule.getAtomByName(atomName2)
-                    atomName1 = startAtom.getFullName()
-                    atomName2 = endAtom.getFullName()
-                    lower = length - .0001
-                    upper = length + .0001
-                    self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
-        else:
-            if 'rna' in linkerDict:
-                self.addRNALinker(startAtom, endAtom, nLinks, linkLen, valAngle,  dihAngle)
-            else:
-                newAtoms = self.molecule.createLinker(startAtom, endAtom,  nLinks, linkLen, valAngle,  dihAngle)
-
-    def readRNALinkerDict(self, rnaLinkerDict, formLinks=True):
-        linkAtoms = []
-        for connection in rnaLinkerDict:
-            connectors = connection['connect']
-            if len(connectors) != 2:
-                raise ValueError('Should be two elements in connection')
-            atoms = []
-            for i, connector in enumerate(connectors):
-                if connector.find(':') == -1:
-                    polymer = self.molecule.getEntity(connector)
-                    residues = polymer.getResidues()
-                    if i == 0:
-                        residue = residues[-1]
-                        atom = residue.getAtom("H3'")
-                    else:
-                        residue = residues[0]
-                        atom = residue.getAtom("O5'")
-                else:
-                    if i == 0:
-                        aName = connector+".H3'"
-                        atom = self.molecule.getAtomByName(aName)
-                    else:
-                        aName = connector+".P"
-                        atom = self.molecule.getAtomByName(aName)
-                        if atom == None:
-                            aName = connector+".O5'"
-                            atom = self.molecule.getAtomByName(aName)
-                atoms.append(atom)
-
-            res0 = atoms[0].getEntity()
-            res1 = atoms[1].getEntity()
-            poly0 = atoms[0].getTopEntity()
-            poly1 = atoms[1].getTopEntity()
-
-            linkAtoms.append(atoms)
-            if formLinks:
-                nLinks = connection['n'] if 'n' in connection else 6
-                linkLen = connection['length'] if 'length' in connection else 5.0
-                valAngle = connection['valAngle'] if 'valAngle' in connection else 110.0
-                dihAngle = connection['dihAngle'] if 'dihAngle' in connection else 135.0
-                if poly0 == poly1:
-                    print 'break bond ', poly0, poly1
-                    self.breakBond(atoms[1].getParent(), atoms[1])
-                self.addRNALinker(atoms[0], atoms[1], nLinks, linkLen, valAngle,  dihAngle)
-        return linkAtoms
-            
-    def addRNALinker(self, startAtom, endAtom,  nLinks, linkLen, valAngle, dihAngle):
-        if endAtom.getName() == "P":
-            self.addRNALinkerTurn(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle)
-        else:
-            self.addRNALinkerHelix(startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle)
-
-
-    def addRNALinkerHelix(self, startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle):
-#            linkLens = [5.0,5.0,5.0,5.0,5.0,5.0,1.41,1.6, 1.59]
-#            valAngles = [110.0,110.0,110.0,110.0,110.0,110.0,112.21,120.58, 104.38]
-#            linkNames = ["X1","X2","X3","X4","X5","X6","XC3'","XO3'","XP"]
-
-            linkNames = [""]*(nLinks+3)
-            linkLens = [linkLen]*(nLinks+3)
-            valAngles = [valAngle]*(nLinks+3)
-
-            linkLens[-3] = 1.41
-            linkLens[-2] = 1.60
-            linkLens[-1] = 1.59
-            valAngles[-3] = 112.21
-            valAngles[-2] = 120.58
-            valAngles[-1] = 104.38
-            for i in range(nLinks):
-                linkNames[i] = "X"+str(i+1)
-            linkNames[-3] = "XC3'"
-            linkNames[-2] = "XO3'"
-            linkNames[-1] = "XP"
-
-            newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLens, valAngles, linkNames, dihAngle)
-
-    def addRNALinkerTurn(self, startAtom, endAtom, nLinks, linkLen, valAngle, dihAngle):
-#            linkLens = [5.0,5.0,5.0,5.0,5.0,5.0,1.52,1.41,1.6]
-#            valAngles = [110.0,110.0,110.0,110.0,110.0,110.0,116.47,112.21,120.58]
-#            linkNames = ["X1","X2","X3","X4","X5","X6","XC4'","XC3'","XO3'"]
-
-            linkNames = [""]*(nLinks+3)
-            linkLens = [linkLen]*(nLinks+3)
-            valAngles = [valAngle]*(nLinks+3)
-
-            linkLens[-2] = 1.52
-            linkLens[-1] = 1.41
-            valAngles[-2] = 116.47
-            valAngles[-1] = 112.21
-            for i in range(nLinks):
-                linkNames[i] = "X"+str(i+1)
-            linkNames[-3] = "XC4'"
-            linkNames[-2] = "XC3'"
-            linkNames[-1] = "XO3'"
-
-            print endAtom,endAtom.getParent()
-
-            oParent1 = endAtom.getParent()
-            oParent2 = oParent1.getParent()
-            oParent3 = oParent2.getParent()
-            newAtoms = self.molecule.createLinker(startAtom, endAtom,  linkLens, valAngles, linkNames, dihAngle)
-
-            atomName1 = newAtoms[-1].getFullName() 
-            atomName2 = oParent1.getFullName()
-            self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
-            atomName1 = newAtoms[-2].getFullName() 
-            atomName2 = oParent2.getFullName()
-            self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
-            atomName1 = newAtoms[-3].getFullName() 
-            atomName2 = oParent3.getFullName()
-            print atomName1,atomName2
-            self.addDistanceConstraint(atomName1,atomName2,0.0,0.01,True)
-
-
-    def processBonds(self,bondDict, phase):
-        for bondInfo in bondDict:
-            bondMode = bondInfo['mode'] if 'mode' in bondInfo else 'add'
-            if phase == 'add' and bondMode == 'add':
-                distances = bondInfo['length'] if 'length' in bondInfo else 1.08
-                if not isinstance(distances,float):
-                    lower,upper = distances
-                else:
-                    lower = distances - 0.001
-                    upper = distances + 0.001
-                atomName1, atomName2 = bondInfo['atoms']
-                self.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
-            elif phase == 'float' and bondMode == 'float':
-                atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                self.floatBond(atom1, atom2)
-            elif phase == 'float' and bondMode == 'constrain':
-                atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                self.constrainDistance(atom1, atom2)
-            elif phase == 'break' and (bondMode == 'break' or bondMode == 'float'):
-                atomName1, atomName2 = bondInfo['atoms']
-                atom1 = self.molecule.getAtomByName(atomName1)
-                atom2 = self.molecule.getAtomByName(atomName2)
-                self.breakBond(atom1, atom2)
-
-    def floatBond(self, atom1, atom2):
-        ringClosures = self.molecule.getRingClosures()
-        AngleTreeGenerator.addRingClosureSet(ringClosures, atom1, atom2)
-
-    def constrainDistance(self, atom1, atom2):
-        ringClosures = self.molecule.getRingClosures()
-        AngleTreeGenerator.addConstrainDistance(ringClosures, atom1, atom2)
-                
-    def breakBond(self, atom1, atom2):
-        atom1.removeBondTo(atom2)
-        atom2.removeBondTo(atom1)
-        atom1.daughterAtom = None
-        atom1.rotActive = False
-        atom1.rotUnit = -1
-        atom1.rotGroup = None
-                
-    def addCyclicBond(self, polymer):
-        # to return a list atomName1, atomName2, distance
-        distanceConstraints = polymer.getCyclicConstraints()
-        for distanceConstraint in distanceConstraints:
-            self.bondConstraints.append(distanceConstraint)
-
 
     def getPars(self):
         el = self.energyLists
@@ -1158,55 +785,6 @@ class refine:
         entryAtom = aTree.findStartAtom(entity)
         return entryAtom
 
-    def setEntityEntryDict(self, linkerList, treeDict):
-        entities = [entity for entity in self.molecule.getEntities()]
-        visitedEntities = []
-        if treeDict:
-            entryAtomName = treeDict['start'] if 'start' in treeDict else None
-            entryAtom = self.molecule.getAtomByName(entryAtomName)
-            startEntity = entryAtom.getEntity()
-        elif not treeDict or not entryAtomName:
-            startEntity = self.molecule.getEntities()[0]
-            entryAtom = self.getEntityTreeStartAtom(startEntity)
-            entryAtomName = entryAtom.getShortName()
-            treeDict = {'start':entryAtom}
-
-        self.entityEntryDict[startEntity] = entryAtom
-        visitedEntities.append(startEntity)
-
-        if linkerList:
-            import copy
-            linkerList = copy.deepcopy(linkerList)
-            linkerList = [linkerDict for linkerDict in linkerList if 'atoms' in linkerDict]
-            while len(linkerList) > 0:
-                linkerDict = linkerList[0]
-                atomSpecs = linkerDict['atoms']
-                atoms = []
-                for atomName in atomSpecs:
-                    atom = self.molecule.getAtomByName(atomName)
-                    if atom == None:
-                        msg = 'Linker atom "' + atomName + '" doesn\'t exist'
-                        raise ValueError(msg)
-                    atoms.append(atom)
-                linkerEntities = [atom.getTopEntity() for atom in atoms]
-
-                if linkerEntities[0] in visitedEntities and linkerEntities[1] in visitedEntities:
-                    linkerList.pop(0)
-                    continue
-                elif linkerEntities[0] in visitedEntities:
-                    entryAtom = atoms[1]
-                    linkerList.pop(0)
-                elif linkerEntities[1] in visitedEntities:
-                    entryAtom = atoms[0]
-                    linkerList.pop(0)
-                else:
-                    linkerList.pop(0)
-                    linkerList.append(linkerDict)
-                    continue
-                entity = entryAtom.getTopEntity()
-                self.entityEntryDict[entity] = entryAtom
-                visitedEntities.append(entity)
-        return treeDict
 
     def getAtom(self, atomTuple):
         """
@@ -1235,50 +813,6 @@ class refine:
             raise ValueError(atomName, "was not found in", entityName)
         return atom
 
-    def validateLinkerList(self,linkerList, treeDict, rnaLinkerDict):
-        ''' validateLinkerList goes over all linkers and the treeDict to make
-            sure all entities in the molecule are connected in some way.
-            If no linker is provided for an entity, one will be created for
-            the entity.  This function also has a few break points to help users
-            troubleshoot invalid data in their config file'''
-        unusedEntities = [entity.getName() for entity in self.molecule.getEntities()]
-        allEntities = tuple(unusedEntities)
-
-        entryAtomName = treeDict.get('start') if treeDict else None
-        firstEntityName = entryAtomName.split(':')[0] if entryAtomName else unusedEntities[0]
-        firstEntity = self.molecule.getEntity(firstEntityName)
-        unusedEntities.remove(firstEntityName)
-        if rnaLinkerDict:
-            linkerList = []
-            linkerAtoms = self.readRNALinkerDict(rnaLinkerDict, False)
-            for linkPair in linkerAtoms:
-                (startAtom, endAtom) = linkPair
-                newLinker = {'atoms': [startAtom.getFullName(), endAtom.getFullName()]}
-                linkerList.append(newLinker)
-                for i,atom in enumerate(linkPair):
-                    entName = atom.getTopEntity().getName()
-                    if entName in unusedEntities:
-                        unusedEntities.remove(entName)
-        elif linkerList:
-            linkerList = linkerList if type(linkerList) is ArrayList else [linkerList]
-            linkerAtoms = reduce(lambda total, linkerDict : total + list(linkerDict.get('atoms')), linkerList, [])
-            for atomName in linkerAtoms:
-                entName = atomName.split(':')[0]
-                if entName not in allEntities:
-                    raise ValueError(entName + " is not a valid entitiy. Entities within molecule are " + ', '.join(allEntities))
-                if entName in unusedEntities:
-                    unusedEntities.remove(entName)
-        else:
-            if len(unusedEntities) > 0:
-                linkerList = ArrayList()
-        for entityName in unusedEntities:
-            entity = self.molecule.getEntity(entityName)
-            startAtom = firstEntity.getLastAtom().getFullName()
-            endAtom = self.getEntityTreeStartAtom(entity).getFullName()
-            newLinker = {'atoms': [startAtom, endAtom]}
-            linkerList.append(newLinker)
-        return linkerList
-
     def loadFromYaml(self,data, seed, fileName=""):
         #XXX: Need to complete docstring
         """
@@ -1289,6 +823,8 @@ class refine:
         molData = {}
         residues = None
         rnaLinkerDict = None
+        structureLinks = []
+        structureBonds = []
 
         if fileName != '':
             if fileName.endswith('.pdb'):
@@ -1340,9 +876,9 @@ class refine:
                         self.findRNAHelices(data['rna'])
                         if not 'link' in molData:
                             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
-                                rnaLinks,rnaBonds = self.findSSLinks()
-                                molData['link'] = rnaLinks
-                                data['bonds'] = rnaBonds
+                                sLB = RNAStructureSetup.findSSLinks(self.ssGen)
+                                structureLinks = sLB.links()
+                                structureBonds = sLB.bonds()
                 else:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
@@ -1356,33 +892,34 @@ class refine:
             if not self.ssGen:
                 self.findRNAHelices(data['rna'])
             if 'vienna' in data['rna']:
-                self.vienna = data['rna']['vienna']
-                self.addHelicesRestraints(self.vienna)
+                RNAStructureSetup.addHelicesRestraints(self.ssGen)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
-                rnaLinks,rnaBonds = self.findSSLinks()
-                molData['link'] = rnaLinks
-                data['bonds'] = rnaBonds
+                sLB = RNAStructureSetup.findSSLinks(self.ssGen)
+                structureLinks = sLB.links()
+                structureBonds = sLB.bonds()
         self.molecule = MoleculeFactory.getActive()
         self.molName = self.molecule.getName()
 
         treeDict = data['tree'] if 'tree' in data else None
-        linkerList = molData['link'] if 'link' in molData else None
+
+
         nEntities = len(self.molecule.getEntities())
         nPolymers = len(self.molecule.getPolymers())
+        if len(structureBonds) == 0 and 'bonds' in data:
+            structureBonds = ConstraintCreator.parseBonds(data['bonds'])
 
-        if 'bonds' in data:
-            self.processBonds(data['bonds'], 'float')
+        ConstraintCreator.processBonds(structureBonds, 'float')
 
         if rnaLinkerDict:
             self.molecule.fillEntityCoords()
-            rnaLinkerAtoms = self.readRNALinkerDict(rnaLinkerDict, False)
+            rnaLinkerAtoms = RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, False)
             for atoms in rnaLinkerAtoms:
                 atom = atoms[1]
                 if atom.getParent() == None:
                     print 'null atom parent', atom
                 else:
                     print 'float',atoms[1].getParent(),atoms[1]
-                    self.floatBond(atoms[1].getParent(), atoms[1])
+                    ConstraintCreator.floatBond(atoms[1].getParent(), atoms[1])
                 
         # Check to auto add tree in case where there are ligands
         if nEntities > nPolymers:
@@ -1391,9 +928,12 @@ class refine:
 
         if 'tree' in data and not 'nef' in data:
             if len(self.molecule.getEntities()) > 1:
-                linkerList = self.validateLinkerList(linkerList, treeDict, rnaLinkerDict)
-            treeDict = self.setEntityEntryDict(linkerList, treeDict)
-            self.measureTree()
+                structureLinks = ConstraintCreator.validateLinkerList(structureLinks, treeDict, rnaLinkerDict)
+            treeDict = ConstraintCreator.setEntityEntryDict(structureLinks, treeDict)
+
+            ConstraintCreator.measureTree(self.molecule)
+            if len(structureLinks) == 0 and 'link' in molData:
+                structureLinks = ConstraintCreator.parseLinkerDict(self.molecule, molData['link'])
         else:
             if nEntities > 1:
                 if not 'nef' in data:
@@ -1405,16 +945,15 @@ class refine:
 
         if not 'nef' in data:
             for entity in self.molecule.getEntities():
-                self.setupAtomProperties(entity)
+                ConstraintCreator.setupAtomProperties(entity)
 
         if rnaLinkerDict:
-            self.readRNALinkerDict(rnaLinkerDict)
-        elif linkerList:
-            self.addLinkers(linkerList)
+            RNAStructureSetup.readRNALinkerDict(rnaLinkerDict, True)
+        elif len(structureLinks) > 0:
+            ConstraintCreator.processLinks(self.molecule, structureLinks)
 
-        if 'bonds' in data:
-            self.processBonds(data['bonds'], 'break')
-            self.processBonds(data['bonds'], 'add')
+        ConstraintCreator.processBonds(structureBonds, 'break')
+        ConstraintCreator.processBonds(structureBonds, 'add')
 
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
@@ -1436,12 +975,7 @@ class refine:
                             self.setPeptideDihedrals(-60,-60)
                         elif type == "sheet":
                             self.setPeptideDihedrals(-120,120)
-        if self.bondConstraints:
-            for bondConstraint in self.bondConstraints:
-                atomName1, atomName2, distance = bondConstraint.split()
-                distance = float(distance)
-                self.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
-
+        ConstraintCreator.addCyclicConstraints(self.molecule)
 
         if 'shifts' in data:
             self.readShiftDict(data['shifts'],residues)
@@ -1480,7 +1014,11 @@ class refine:
             self.readInitAngles()
             if 'vienna' in data:
                 print 'Setting angles based on Vienna sequence'
-                self.setAnglesVienna(data['vienna'])
+                if not self.ssGen:
+                    self.ssGen = SSGen(self.molecule, self.vienna)
+                    self.ssGen.analyze()
+                self.molecule.setDotBracket(self.vienna)
+                RNAStructureSetup.setAnglesVienna(data['vienna'], self.ssGen)
             if 'doublehelix' in data:
                 print 'Setting angles based on double helix information'
                 self.setAnglesDoubleHelix(data,data['doublehelix'][0]['restrain'] )
@@ -1623,93 +1161,6 @@ class refine:
                     break
         return isStem
 
-    def setAnglesVienna(self, data):
-        doLock = data['restrain']
-        lockFirst = data['lockfirst']
-        lockLast = data['locklast']
-        if 'lockbulge' in data:
-            lockBulge = data['lockbulge']
-        else:
-            lockBulge = doLock
-        if 'lockloop' in data:
-            lockLoop = data['lockloop']
-        else:
-            lockLoop = doLock
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
-        ssGen = SSGen(self.molecule, self.vienna)
-        ssGen.analyze()
-        subType='0'
-        for ss in ssGen.structures():
-            residues = ss.getResidues()
-        stemLoops = []
-        for ss in ssGen.structures():
-            residues = ss.getResidues()
-            if ss.getName() == "Helix":
-                stemLoop = self.isStemLoop(ssGen.structures(), ss)
-                if stemLoop:
-                    stemLoops.append(stemLoop)
-                strandI = residues[0::2]
-                strandJ = residues[1::2]
-                for res in residues:
-                    subType = getRNAResType(ss, residues, res)
-                    firstResI = res == strandI[0]
-                    firstResJ = res == strandJ[0]
-                    lastResI = res == strandI[-1]
-                    lastResJ = res == strandJ[-1]
-                    firstRes = firstResI or firstResJ
-                    lastRes = lastResI or lastResJ
-                    resLett = res.getName()
-                    pairLett = res.pairedTo.getName()
-                    nucType = resLett
-                    if nucType == 'A' or nucType == 'G':
-                        nucType = "P"
-                    else:
-                        nucType = "p"
-                    key = 'Helix'+':0:'+nucType+':'+subType
-                    if key in angleDict:
-                        anglesToSet = angleDict[key].copy()
-                        lock = doLock
-                        if firstRes and not lockFirst:
-                            lock = False
-                        if lastRes and not lockLast:
-                            lock = False
-                        if lastRes and ("hL" in subType or "hl" in subType) and lockLoop:
-                            lock = True 
-                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lock)
-                    else:
-                        subType = 'hL:GNRAXe' if subType[-2] =='X' else 'hl:GNRAxe'
-                        genericHelixLinker = 'Helix'+':0:'+nucType+':'+subType
-                        anglesToSet = angleDict[genericHelixLinker].copy()
-                        lock = True if lastRes and lockLoop else False
-                        RNARotamer.setDihedrals(res,anglesToSet,0.0,lock)
-            elif ss.getName() == "Loop":
-                for iLoop,res in enumerate(residues):
-                    subType = getRNAResType(ss, residues, res)
-                    nucType = res.getName()
-                    if nucType == 'A' or nucType == 'G':
-                        nucType = "P"
-                    else:
-                        nucType = "p"
-                    key = 'Loop'+':'+str(iLoop)+':'+nucType+':'+subType
-                    if key in angleDict:
-                        anglesToSet = angleDict[key].copy()
-                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockLoop)
-            elif ss.getName() == "Bulge":
-                for iLoop,res in enumerate(residues):
-                    subType = getRNAResType(ss, residues, res)
-                    nucType = res.getName()
-                    if nucType == 'A' or nucType == 'G':
-                        nucType = "P"
-                    else:
-                        nucType = "p"
-                    key = 'Bulge'+':'+str(iLoop)+':'+nucType+':'+subType
-                    if key in angleDict:
-                        anglesToSet = angleDict[key].copy()
-                        RNARotamer.setDihedrals(res,anglesToSet, 0.0, lockBulge)
- 
     def readMolEditDict(self,seqReader, editDict):
         for entry in editDict:
             if 'remove' in entry:
@@ -1733,7 +1184,7 @@ class refine:
         if seqReader != None and seqReader.getMolecule() != None:
             mol = seqReader.getMolecule()
             for entity in mol.getEntities():
-                self.setupAtomProperties(entity)
+                ConstraintCreator.setupAtomProperties(entity)
             print 'createlink'
             seqReader.createLinker(7, linkLen, valAngle, dihAngle);
         #if sequence exists it takes priority over the file and the sequence will be used instead
@@ -1832,6 +1283,7 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'planarity' in rnaDict:
             self.addPlanarity = rnaDict['planarity']
+            RNAStructureSetup.setPlanarityUse(self.addPlanarity)
         if 'bp' in rnaDict:
             polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
@@ -1842,7 +1294,7 @@ class refine:
                 residue1, residue2 = polymer1.getResidue(str(resNum1)), polymer2.getResidue(str(resNum2))
                 types = bp['type']
                 if len(types) == 1:
-                    self.addBasePair(residue1, residue2, types[0])
+                    RNAStructureSetup.addBasePair(residue1, residue2, types[0], self.addPlanarity)
                 else:
                     self.addBasePairs(residue1, residue2, types)
 
@@ -2315,131 +1767,11 @@ class refine:
                         pass
                 print 'dihedral',output
 
-    def addHelix(self, helixResidues):
-        strandI = helixResidues[0::2]
-        strandJ = helixResidues[1::2]
-        nRes = len(strandI)
-        for i in range(nRes):
-            resI = strandI[i]
-            resJ = strandJ[i]
-            resINum = resI.getNumber()
-            resJNum = resJ.getNumber()
-            polymerI = resI.getPolymer()
-            polymerJ = resJ.getPolymer()
-            self.addSuiteBoundary(polymerI, resINum,"1a")
-            self.addSuiteBoundary(polymerJ, resJNum,"1a")
-            self.addBasePair(resI, resJ)
-            if ((i+1) < nRes):
-                resINext = strandI[i+1]
-                resJPrev = strandJ[i+1]
-                #  make sure we're not in bulge before adding stack
-                if resINext.getPrevious() == resI and resJPrev.getNext() == resJ:
-                    self.addStackPair(resI, resINext)
-                    self.addStackPair(resJPrev, resJ)
-                    resJName = resJ.getName()
-                    if (resJName == "A"):
-                        atomNameI = self.getAtomName(resINext,"H1'")
-                        atomNameJ = self.getAtomName(resJ,"H2")
-                        self.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
-
-
-    def addHelixPP(self, helixResidues):
-        strandI = helixResidues[0::2]
-        strandJ = helixResidues[1::2]
-        nRes = len(strandI)
-        for i in range(nRes):
-            resI = strandI[i]
-            resJ = strandJ[i]
-            if ((i+3) < nRes):
-                resI3 = strandI[i+3]
-                if (resI.getAtom("P") != None) and (resI3.getAtom("P") != None):
-                    atomNameI = self.getAtomName(resI,"P")
-                    atomNameI3 = self.getAtomName(resI3,"P")
-                    self.addDistanceConstraint(atomNameI, atomNameI3, 16.5, 20.0)
-                resJ3 = strandJ[i+3]
-                if (resJ3.getAtom("P") != None) and (resJ3.getAtom("P") != None):
-                    atomNameJ = self.getAtomName(resJ,"P")
-                    atomNameJ3 = self.getAtomName(resJ3,"P")
-                    self.addDistanceConstraint(atomNameJ, atomNameJ3, 16.5, 20.0)
-            if ((i+5) < nRes):
-                resJ5 = strandJ[i+5]
-                if (resI.getAtom("P") != None) and (resJ5.getAtom("P") != None):
-                    atomNameI = self.getAtomName(resI,"P")
-                    atomNameJ5 = self.getAtomName(resJ5,"P")
-                    self.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
-
-    def findSSLinks(self):
-        links = []
-        bonds = []
-        for ss in self.ssGen.structures():
-            if ss.getName() == "Helix":
-                residues = ss.getResidues()
-                strandI = residues[0::2]
-                strandJ = residues[1::2]
-
-                resI = strandI[0]
-                resJ = strandJ[0]
-                if resI.getPrevious():
-                    atomI = resI.getAtom("H3'")
-                    atomJ = resJ.getAtom("P")
-                    link = {'atoms':[atomI.getShortName(), atomJ.getShortName()],'rna':''}
-                    links.append(link)
-                    
-                    bond = {'atoms':[atomJ.getParent().getShortName(), atomJ.getShortName()],'mode':'float'}
-                    bonds.append(bond)
-
-                resI = strandI[-1]
-                resJ = strandJ[-1]
-                atomI = resI.getAtom("H3'")
-                atomJ = resJ.getAtom("P")
-                link = {'atoms':[atomI.getShortName(), atomJ.getShortName()],'rna':''}
-                links.append(link)
-                bond = {'atoms':[atomJ.getParent().getShortName(), atomJ.getShortName()],'mode':'float'}
-                bonds.append(bond)
-        return links, bonds
-       
 
     def findHelices(self,vienna):
         self.ssGen = SSGen(self.molecule, vienna)
         self.ssGen.analyze()
 
-    def addHelicesRestraints(self, vienna):
-        for ss in self.ssGen.structures():
-            if ss.getName() == "Helix":
-                residues = ss.getResidues()
-                self.addHelix(residues)
-                self.addHelixPP(residues)
-
-        polymers = self.molecule.getPolymers()
-        allResidues = []
-        for polymer in polymers:
-            allResidues += polymer.getResidues()
-        pat = re.compile('\(\(\.\.\.\.\)\)')
-        for m in pat.finditer(vienna):
-            start = m.start()+1
-            tetraLoopSeq = ""
-            tetraLoopRes = []
-            for iRes in range(start,start+6):
-                residue = allResidues[iRes]
-                tetraLoopSeq += residue.getName()
-                tetraLoopRes.append(residue.getNumber())
-
-            matched_cluster = getCluster(tetraLoopSeq)
-
-            if matched_cluster:            
-                loopResidues = [allResidues[start+i] for i in range(6)]
-                if loopResidues[1].getPolymer() == loopResidues[-1].getPolymer():
-                    for i, suite in enumerate(matched_cluster.suites):
-                        if suite != "..":
-                            res = loopResidues[i+1]
-                            self.addSuiteBoundary(polymer, res.getNumber(), suite)
-
-                bps = matched_cluster.bp
-                for bp in bps:
-                    (resNum1, resNum2) = bp.split(':')
-                    res1 = loopResidues[int(resNum1) - 1]
-                    res2 = loopResidues[int(resNum2) - 1]
-                    self.addBasePair(res1, res2)
 
     def restart(self):
         print 'restart'
@@ -2637,89 +1969,6 @@ class refine:
                 self.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
                 self.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
 
-    def addStackPair(self, resI, resJ):
-        resNameI = resI.getName()
-        resNameJ = resJ.getName()
-        resNumI = resI.getNumber()
-        resNumJ = resJ.getNumber()
-        polyI = resI.getPolymer()
-        polyJ = resJ.getPolymer()
-        if polyI != polyJ:
-            return
-        dHN = 1.89
-        dHO = 1.89
-        dNN = 3.0
-        dNO = 3.0
-
-        stackTo = {}
-        stackTo['C'] = (("H2'","H6",4.0,2.7), ("H3'","H6",3.0,3.3))
-        stackTo['U'] = (("H2'","H6",4.0,2.7), ("H3'","H6",3.0,3.3))
-        stackTo['G'] = (("H2'","H8",4.0,2.7), ("H3'","H8",3.0,3.3))
-        stackTo['A'] = (("H2'","H8",4.0,2.7), ("H3'","H8",3.0,3.3))
-
-        stackPairs = {}
-        stackPairs['CU'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['CC'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['CG'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-        stackPairs['CA'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-
-        stackPairs['UU'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['UC'] = [("H6","H5",1.8,5.0), ("H6","H6",1.8,5.0)]
-        stackPairs['UG'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-        stackPairs['UA'] = [("H6","H8",1.8,5.0), ("H5","H8",1.8,5.0)]
-
-        stackPairs['GU'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0)]
-        stackPairs['GC'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0)]
-        stackPairs['GG'] = [("H8","H8",1.8,5.0)]
-        stackPairs['GA'] = [("H8","H8",1.8,5.0)]
-
-        stackPairs['AU'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0),("H2","H1'",1.8,5.0)]
-        stackPairs['AC'] = [("H8","H6",1.8,5.0), ("H8","H5",1.8,5.0),("H2","H1'",1.8,5.0)]
-        stackPairs['AG'] = [("H8","H8",1.8,5.0),("H2","H1'",1.8,5.0)]
-        stackPairs['AA'] = [("H8","H8",1.8,5.0),("H2","H1'",1.8,5.0)]
-
-        stacks = stackTo[resNameI]
-        for stack in stacks:
-            aNameI, aNameJ,intra,inter = stack
-            lowerIntra = intra - 1.0
-            atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
-            atomNameJ = polyI.getName()+':'+resNumI+'.'+aNameJ
-            self.addDistanceConstraint(atomNameI,atomNameJ,lowerIntra,intra)
-
-        stacks = stackTo[resNameJ]
-        for stack in stacks:
-            aNameI, aNameJ,intra,inter = stack
-            lowerInter = inter - 1.0
-            atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
-            atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
-            self.addDistanceConstraint(atomNameI,atomNameJ,lowerInter,inter)
-
-        pairName = resNameI+resNameJ
-        if not pairName in stackPairs:
-            print("No data for pair " + pairName)
-        else:
-            pairs = stackPairs[pairName]
-            for pair in pairs:
-                aNameI, aNameJ,lower,upper = pair
-                atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
-                atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
-                self.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
-
-    def measureTree(self):
-        for entity in [entity for entity in self.molecule.getEntities()]:
-            if type(entity) is Polymer:
-                prfStartAtom = self.getEntityTreeStartAtom(entity)
-                treeStartAtom = self.entityEntryDict[entity]
-                if prfStartAtom == treeStartAtom:
-                    if len(self.molecule.getEntities()) > 1:
-                        continue
-                else:
-                    ### To remeasure, coordinates should be generated for the entity ###
-                    AngleTreeGenerator.genCoordinates(entity, prfStartAtom)
-            self.setupAtomProperties(entity)
-            if entity in self.entityEntryDict:
-                atom = self.entityEntryDict[entity]
-                AngleTreeGenerator.genMeasuredTree(entity, atom)
 
     def dumpProperties(self, nodeValidator):
         atoms = self.molecule.getAtoms()
@@ -2727,18 +1976,6 @@ class refine:
         print props[0]
         for atom,line in zip(atoms,props[1:]):
             print atom,line
-
-
-    def setupAtomProperties(self, compound):
-        pI = PathIterator(compound)
-        nodeValidator = NodeValidator()
-        pI.init(nodeValidator)
-        pI.processPatterns()
-        pI.setProperties("ar", "AROMATIC");
-        pI.setProperties("res", "RESONANT");
-        pI.setProperties("namide", "AMIDE");
-        pI.setProperties("r", "RING");
-        pI.setHybridization();
 
     def setupTree(self, treeDict):
         """Creates the tree path and setups the coordinates of the molecule from all the entities
@@ -3003,7 +2240,7 @@ class refine:
         self.useDegrees = False
         self.setupEnergy(self.molName,self.energyLists, usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
-        self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds  # fixme should not happen with rna riboses as they are added
+        ConstraintCreator.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds  # fixme should not happen with rna riboses as they are added
         self.setForces({'repel':0.5,'dis':1,'dih':5})
         self.setPars({'coarse':False,'useh':False,'dislim':self.disLim,'end':1000,'hardSphere':0.15,'shrinkValue':0.20})
         if writeTrajectory:
@@ -3011,20 +2248,6 @@ class refine:
             selection = "*.ca,c,n,o,p,o5',c5',c4',c3',o3'"
             self.molecule.selectAtoms(selection)
             self.molecule.setAtomProperty(2,True)
-
-    def addRingClosures(self):
-        """ Close ring structure using distance constraint on specified atoms within ring."""
-        ringClosures = self.molecule.getRingClosures();
-        entityIDs = [entity.getIDNum() for entity in self.molecule.getEntities()]
-        entityNames = [entity.getName() for entity in self.molecule.getEntities()]
-
-        if ringClosures:
-            for atom1 in ringClosures:
-                atomName1 = atom1.getFullName()
-                for atom2 in ringClosures[atom1]:
-                    atomName2 = atom2.getFullName()
-                    self.addDistanceConstraint(atomName1, atomName2, ringClosures[atom1][atom2]-.01, ringClosures[atom1][atom2]+.01, True)
-
 
     def prepare(self,steps=1000, gsteps=300, alg='cmaes'):
         ranfact=20.0

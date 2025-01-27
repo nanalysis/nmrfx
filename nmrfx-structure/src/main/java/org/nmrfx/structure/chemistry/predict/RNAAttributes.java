@@ -308,10 +308,10 @@ public class RNAAttributes {
                 yield 4;
             case InternalLoop j:
                 yield 5;
-            case NonLoop j:
-                yield 6;
             case Junction j:
                 yield 7;
+            case NonLoop j:
+                yield 6;
             default:
                 yield 0;
         };

@@ -23,6 +23,7 @@ import org.nmrfx.chemistry.SecondaryStructure;
 import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -76,14 +77,14 @@ public class SSGen {
         SecondaryStructure secondaryStructure = null;
         if (residues != null && !(residues.isEmpty()) && (null != type)) {
             secondaryStructure = switch (type) {
+                case INTERNALLOOP:
+                    yield new InternalLoop(residues);
                 case JUNCTION:
                     yield new Junction(residues);
                 case NONLOOP:
                     yield new NonLoop(residues);
                 case BULGE:
                     yield new Bulge(residues);
-                case INTERNALLOOP:
-                    yield new InternalLoop(residues);
                 case LOOP: {
                     yield new Loop(residues);
                 }
@@ -99,15 +100,60 @@ public class SSGen {
         if (residues.get(tracker).pairedTo == null) {
             List<Residue> currentSS = new ArrayList<>();
             while (tracker < residues.size() && residues.get(tracker).pairedTo == null) {
-                currentSS.add(residues.get(tracker));
+                Residue residue = residues.get(tracker);
+                if (residue.secStruct == null) {
+                    currentSS.add(residue);
+                }
                 tracker++;
             }
-            return buildOther(currentSS);
+            if (currentSS.isEmpty()) {
+                return currentSS;
+            } else {
+                return buildOther(currentSS);
+            }
         } else {
             return buildHelix();
         }
     }
 
+    private List<Residue> findNextPart(Residue residue) {
+        residue = residue.getNext();
+        residue = residue.pairedTo;
+        residue = residue.getNext();
+
+        List<Residue> newResidues = new ArrayList<>();
+        while (residue.pairedTo == null) {
+            newResidues.add(residue);
+            residue = residue.getNext();
+            if (residue == null) {
+                return Collections.emptyList();
+            }
+        }
+        return newResidues;
+    }
+
+    record InternalLoopOrJunction(List<Residue> residues, int nSections) {}
+    private InternalLoopOrJunction findInternalLoopOrJunction(List<Residue> residues) {
+        Residue ssFirstRes = residues.get(0);
+        Residue resBefore = ssFirstRes.getPrevious();
+        Residue resPaired = resBefore.pairedTo;
+        Residue resQuit = resPaired.getPrevious();
+        Residue residue = residues.getLast();
+        int nSections = 1;
+        while (true) {
+            List<Residue> newPart = findNextPart(residue);
+            if (newPart.isEmpty()) {
+                break;
+            }
+            residues.addAll(newPart);
+            nSections++;
+            residue = residues.getLast();
+            if (residue == resQuit) {
+                break;
+            }
+        }
+        return new InternalLoopOrJunction(residues, nSections);
+    }
     private List<Residue> buildOther(List<Residue> currentSS) {
         List<Residue> ssResidues = new ArrayList<>();
         Residue ssFirstRes = currentSS.get(0);
@@ -126,19 +172,16 @@ public class SSGen {
             add = true;
             type = SSTypes.LOOP;
         } else if (resBefore.pairedTo.iRes < resAfter.pairedTo.iRes) { //junction
+            InternalLoopOrJunction internalLoopOrJunction = findInternalLoopOrJunction(currentSS);
+            type = internalLoopOrJunction.nSections == 2 ? SSTypes.INTERNALLOOP : SSTypes.JUNCTION;
             add = true;
-            type = SSTypes.JUNCTION;
         } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
             add = true;
             type = SSTypes.BULGE;
         } else if (resBefore.pairedTo.getPrevious().pairedTo == null && (resBefore.iRes < resBefore.pairedTo.iRes)) { //second half of internal loop
-            Residue otherLoopRes = resBefore.pairedTo.getPrevious();
-            while (otherLoopRes.pairedTo == null) {
-                currentSS.add(otherLoopRes);
-                otherLoopRes = otherLoopRes.previous;
-            }
+            InternalLoopOrJunction internalLoopOrJunction = findInternalLoopOrJunction(currentSS);
+            type = internalLoopOrJunction.nSections == 2 ? SSTypes.INTERNALLOOP : SSTypes.JUNCTION;
             add = true;
-            type = SSTypes.INTERNALLOOP;
         } else {
             boolean hasType = true;
             for (Residue res : currentSS) {
@@ -190,6 +233,9 @@ public class SSGen {
     private void secondaryStructGen() {
         tracker = 0;
         structures.clear();
+        for (Residue residue : residues) {
+            residue.secStruct = null;
+        }
         while (tracker < residues.size()) {
             SecondaryStructure ss = classifyRes(genResList());
             if (ss != null) {
