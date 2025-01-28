@@ -134,83 +134,86 @@ public class NOEAssign {
             }
         } else {
             matchCriteria = new MatchCriteria[nDim];
-            for (int i =0 ;i<nDim;i++) {
+            for (int i = 0; i < nDim; i++) {
                 matchCriteria[i] = new MatchCriteria(i, 3.0, tol[i], atomPats[i], resPats[i], relation[i], folding[i], foldCount[i]);
             }
         }
         return matchCriteria;
     }
 
+    public static boolean checkAtoms(Atom[][] atoms) {
+        int nAtoms = 0;
+        boolean ok = true;
+        for (int iDim = 0; iDim < atoms.length; iDim++) {
+            if (atoms[iDim] == null) {
+                ok = false;
+                break;
+            }
+            if (iDim == 0) {
+                nAtoms = atoms[iDim].length;
+            } else if (atoms[iDim].length != nAtoms) {
+                ok = false;
+                break;
+            }
+        }
+        return ok;
+    }
+
+    public static Noe makeNoe(Peak peak, Atom[][] atoms, int[] atomIndex, int iPos, int nAssign) {
+        double scale = 1.0;
+        Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
+        noe.setIntensity(peak.getIntensity());
+        noe.setVolume(peak.getVolume1());
+        noe.setNPossible(nAssign);
+        return noe;
+    }
+
+    public static int countProtons(Peak peak, Atom[][] atoms, int[] atomIndex, int iPos) {
+        PeakList peakList = peak.getPeakList();
+        int nProtons = 0;
+        for (int iDim = 0; iDim < peakList.nDim; iDim++) {
+            if (atoms[iDim][iPos] == null) {
+                continue;
+            }
+            if (atoms[iDim][iPos].aNum == 1) {
+                if (nProtons > 1) {
+                    throw new IllegalArgumentException("too many protons for peak " + peak.getIdNum());
+                }
+                atomIndex[nProtons] = iDim;
+                nProtons++;
+            }
+        }
+        return nProtons;
+    }
+
     // unAmbiguous == true  only extract contraints for peaks with one assignment
     // unAmbiguous == false  extract constraints for peaks with one or more (ambiguous) assignments
-    public static void extractNoePeaks(NoeSet noeSet, PeakList peakList, boolean unAmbiguous, boolean onlyFrozen) {
-        double scale = 1.0;
+    public static void extractNoePeaks(NoeSet noeSet, PeakList peakList, boolean unAmbiguous, boolean onlyFrozen, boolean includeDiag) {
         int[] atomIndex = new int[2];
         int nPeaks;
-        boolean includeDiag = true;
         nPeaks = peakList.size();
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
-            if ((peak != null) && (peak.getStatus() >= 0)) {
-                Atom[][] atoms = Noe.getAtoms(peak);
-                boolean ok = true;
-                int nAtoms = 0;
-                for (int iDim = 0; iDim < atoms.length; iDim++) {
-                    if (atoms[iDim] == null) {
-                        ok = false;
-                        break;
-                    }
-                    if (iDim == 0) {
-                        nAtoms = atoms[iDim].length;
-                    } else if (atoms[iDim].length != nAtoms) {
-                        ok = false;
-                        break;
-                    }
-                }
-                if (!ok) {
-                    continue;
-                }
+            if ((peak == null) || (peak.getStatus() < 0) || (onlyFrozen) && !peak.isFrozen()) {
+                continue;
+            }
+            Atom[][] atoms = Noe.getAtoms(peak);
+            if (checkAtoms(atoms)) {
                 int nAssign = 0;
-                for (int iPass = 0; iPass < 2; iPass++) {
-                    for (int iPos = 0; iPos < atoms[0].length; iPos++) {
-                        int nProtons = 0;
-                        for (int iDim = 0; iDim < peakList.nDim; iDim++) {
-                            if (atoms[iDim][iPos] == null) {
-                                continue;
-                            }
-                            if (atoms[iDim][iPos].aNum == 1) {
-                                if (nProtons > 1) {
-                                    throw new IllegalArgumentException("too many protons for peak " + peak.getIdNum());
-                                }
-                                atomIndex[nProtons] = iDim;
-                                nProtons++;
-                            }
-                        }
-                        if (iPass == 0) {
-                            if (nProtons == 2) {
-                                if ((onlyFrozen) && !peak.getPeakDim(0).isFrozen()) {
-                                    break;
-                                }
-                                nAssign++;
-                            }
-                        } else if (includeDiag || !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName())) {
-                            if (nAssign == 1) {
-                                if (nProtons == 2) {
-                                    Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
-                                    noe.setIntensity(peak.getIntensity());
-                                    noe.setVolume(peak.getVolume1());
-                                    noe.setNPossible(nAssign);
-                                    noeSet.add(noe);
-                                }
-                            } else if ((nAssign > 1) && !unAmbiguous) {
-                                if (nProtons == 2) {
-                                    Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
-                                    noe.setIntensity(peak.getIntensity());
-                                    noe.setVolume(peak.getVolume1());
-                                    noe.setNPossible(nAssign);
-                                    noeSet.add(noe);
-                                }
-                            }
+                int[] nProton = new int[atoms[0].length];
+                for (int iPos = 0; iPos < atoms[0].length; iPos++) {
+                    int nProtons = countProtons(peak, atoms, atomIndex, iPos);
+                    if (nProtons == 2) {
+                        nAssign++;
+                    }
+                    nProton[iPos] = nProtons;
+                }
+                for (int iPos = 0; iPos < atoms[0].length; iPos++) {
+                    int nProtons = nProton[iPos];
+                    if (includeDiag || !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName())) {
+                        if ((nProtons == 2) && ((nAssign == 1) || ((nAssign > 1) && !unAmbiguous))) {
+                            Noe noe = makeNoe(peak, atoms, atomIndex, iPos, nAssign);
+                            noeSet.add(noe);
                         }
                     }
                 }

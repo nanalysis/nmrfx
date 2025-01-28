@@ -105,6 +105,7 @@ public class NOETableController implements Initializable, StageBasedController {
     IntRangeOperationItem maxAmbigItem;
     BooleanOperationItem strictItem;
     BooleanOperationItem unambiguousItem;
+    BooleanOperationItem includeDiagItem;
     BooleanOperationItem useDistancesItem;
     BooleanOperationItem autoAssignItem;
 
@@ -120,6 +121,7 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem maxDisItem;
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
+    FilteredList<Noe> filteredNOEs;
     private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
         @Override
@@ -181,6 +183,8 @@ public class NOETableController implements Initializable, StageBasedController {
 
         unambiguousItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Unambiguous", "Only extract unambiguous peaks");
 
+        includeDiagItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Include Diagonal", "Include diagonal peaks");
+
         useDistancesItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Use Distances", "Use distances in contributions");
 
         List<String> intVolChoice = List.of("Intensity", "Volume");
@@ -211,7 +215,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 "Min PPM Error", "Minimum ppmError allowed");
 
         propertySheet.getItems().addAll(
-                autoAssignItem, strictItem, onlyFrozenItem, unambiguousItem, useDistancesItem, maxAmbigItem,
+                autoAssignItem, strictItem, onlyFrozenItem, includeDiagItem, unambiguousItem, useDistancesItem, maxAmbigItem,
                 modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem,
                 maxViolationItem, minContributionItem, minPPMErrorItem
         );
@@ -503,7 +507,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 ObservableList<Noe> noes = FXCollections.observableList(noeSet.getConstraints());
                 log.info("noes {}", noes.size());
                 updateColumns();
-                FilteredList<Noe> filteredNOEs = new FilteredList<>(noes);
+                filteredNOEs = new FilteredList<>(noes);
                 filteredNOEs.predicateProperty().bind(tableView.predicateProperty());
 
                 tableView.setItems(filteredNOEs);
@@ -574,7 +578,8 @@ public class NOETableController implements Initializable, StageBasedController {
                 noeSetOpt = Optional.of(noeSet);
             }
             if (!autoAssignItem.getValue()) {
-                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguousItem.getValue(), onlyFrozenItem.getValue());
+                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguousItem.getValue(), onlyFrozenItem.getValue(),
+                        includeDiagItem.getValue());
             } else {
                 NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
             }
@@ -582,7 +587,6 @@ public class NOETableController implements Initializable, StageBasedController {
             noeCalibrator.updateContributions(useDistancesItem.getValue(), false, true);
             noeSet = noeSetOpt.get();
             log.info("active {}", noeSet.getName());
-
             setNoeSet(noeSet);
             updateNoeSetMenu();
         } catch (InvalidMoleculeException | IllegalArgumentException ex) {
@@ -593,6 +597,10 @@ public class NOETableController implements Initializable, StageBasedController {
 
     void clearNOESet() {
         if (GUIUtils.affirm("Clear active set")) {
+            if (filteredNOEs != null) {
+                filteredNOEs.predicateProperty().unbind();
+            }
+            tableView.setItems(FXCollections.emptyObservableList());
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             noeSetOpt.ifPresent(NoeSet::clear);
             refresh();
