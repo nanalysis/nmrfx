@@ -695,6 +695,9 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public List<String> getLabels() {
+        return resonance.getNames();
+    }
     public String getLabel() {
         return resonance.getName();
     }
@@ -704,8 +707,11 @@ public class PeakDim {
     }
 
     public void setLabel(String label) {
+        String[] labels = label.split(" +");
         List<String> labelArgs = new ArrayList<>();
-        labelArgs.add(label);
+        for (String newLabel : labels) {
+            labelArgs.add(newLabel);
+        }
         setLabel(labelArgs);
     }
 

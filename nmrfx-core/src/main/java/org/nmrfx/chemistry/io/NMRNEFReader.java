@@ -22,14 +22,10 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.AngleConstraintSet;
 import org.nmrfx.chemistry.constraints.NoeSet;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.peaks.*;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.STAR3;
-import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.*;
+import org.nmrfx.utilities.NvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -225,6 +221,14 @@ public class NMRNEFReader {
         var compoundMap = MoleculeBase.compoundMap();
         compoundMap.put(id, compound);
     }
+    void buildNEFPeakLists() throws ParseException {
+        for (Saveframe saveframe : nef.getSaveFrames().values()) {
+            if (saveframe.getCategoryName().equals("nef_nmr_spectrum")) {
+                log.debug("process peak list {}", saveframe.getName());
+                processNEFPeakList(saveframe);
+            }
+        }
+    }
 
     void buildNEFChemShifts(MoleculeBase moleculeBase, int fromSet, final int toSet) throws ParseException {
         int iSet = 0;
@@ -269,8 +273,13 @@ public class NMRNEFReader {
                 String molName = "noname";
                 molecule = MoleculeFactory.newMolecule(molName);
                 buildNEFChains(saveframe, molecule);
+                molecule.updateAtomArray();
                 molecule.updateSpatialSets();
-               // molecule.genCoords(false);
+                try {
+                    molecule.genCoords(false);
+                } catch (IllegalArgumentException iAE) {
+                    log.warn(iAE.getMessage(), iAE);
+                }
             }
         }
         return molecule;
@@ -342,6 +351,128 @@ public class NMRNEFReader {
             }
         }
         return compound;
+    }
+
+    void processNEFPeak(Peak peak, Map<String, String> map) throws ParseException {
+
+        peak.setVolume1( (float) STAR3Base.getTokenFromMap(map, "volume", 0.0));
+        peak.setIntensity( (float) STAR3Base.getTokenFromMap(map, "height", 0.0));
+        int nDim = peak.getNDim();
+        for (int i=0;i<nDim;i++) {
+            PeakDim peakDim = peak.getPeakDim(i);
+            int iDim = i + 1;
+            peakDim.setChemShiftValue( (float) STAR3.getTokenFromMap(map, "position_"+iDim, 0.0));
+            String chain = STAR3Base.getTokenFromMap(map, "chain_code_"+iDim, "");
+            String resNum = STAR3Base.getTokenFromMap(map, "sequence_code_"+iDim, "");
+            String aName = STAR3Base.getTokenFromMap(map, "atom_name_"+iDim, "");
+            String atomSpecifier = chain.isEmpty() ? resNum + "." + aName : chain + ":" + resNum + "." + aName;
+            if (atomSpecifier.equals(".")) {
+                atomSpecifier = "";
+            }
+            List<String> currentLabels = peakDim.getLabels();
+            List<String> newLabels = new ArrayList<>();
+
+            if (currentLabels != null) {
+                newLabels.addAll(currentLabels);
+            }
+            if (!atomSpecifier.isEmpty()){
+                newLabels.add(atomSpecifier);
+            }
+            peakDim.setLabel(newLabels);
+        }
+    }
+
+    void processNEFPeakList(Saveframe saveframe) throws ParseException {
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        String tagCategory1 = "_nef_nmr_spectrum";
+        String listName = saveframe.getValue(tagCategory1, "sf_framecode");
+        listName = listName.replace("nef_nmr_spectrum_","");
+        String nDimString = saveframe.getValue(tagCategory1, "num_dimensions");
+        String shiftList = saveframe.getOptionalValue(tagCategory1, "chemical_shift_list");
+        String expType = saveframe.getOptionalValue(tagCategory1, "experiment_type");
+
+
+        if (nDimString.equals("?")) {
+            return;
+        }
+        if (nDimString.equals(".")) {
+            return;
+        }
+        int nDim = NvUtil.toInt(nDimString);
+
+        PeakList peakList = new PeakList(listName, nDim);
+        peakList.setExperimentType(expType);
+
+        int nSpectralDim = saveframe.loopCount("_nef_spectrum_dimension");
+        if (nSpectralDim > nDim) {
+            throw new IllegalArgumentException("Too many _Spectral_dim values " + listName + " " + nSpectralDim + " " + nDim);
+        }
+
+        Loop loop = saveframe.getLoop("_nef_spectrum_dimension");
+        List<Integer> dimList = loop.getColumnAsIntegerList("dimension_id", 0);
+        List<String> axisCodeList = loop.getColumnAsList("axis_code", "");
+        List<String> labelList = loop.getColumnAsList("cyana_axis_label", ".");
+
+        for (int i = 0; i < nSpectralDim; i++) {
+            int iDim = dimList.get(i) - 1;
+            SpectralDim sDim = peakList.getSpectralDim(iDim);
+            String code = axisCodeList.get(i);
+            sDim.setNucleus(code);
+            if (code.toLowerCase().contains("h")) {
+                sDim.setIdTol(0.03);
+                sDim.setPattern("j.h*");
+            } else  if (code.toLowerCase().contains("c")) {
+                sDim.setIdTol(0.4);
+                sDim.setPattern("j.c*");
+            } else  if (code.toLowerCase().contains("n")) {
+                sDim.setIdTol(0.4);
+                sDim.setPattern("j.n*");
+            }
+            String label = labelList.get(i);
+            if (label.equals(".")) {
+                label = code + " " + (iDim+1);
+            }
+            sDim.setDimName(label);
+        }
+        Loop transferLoop = saveframe.getLoop("_nef_spectrum_dimension_transfer");
+        for (int i =0;i<transferLoop.getNRows();i++) {
+            Map<String, String> loopMap = transferLoop.getRowMap(i);
+            String sDim1 = loopMap.get("dimension_1");
+            String sDim2 = loopMap.get("dimension_2");
+            String transferType = loopMap.get("transfer_type");
+            try {
+                int iDim1 = Integer.parseInt(sDim1);
+                int iDim2 = Integer.parseInt(sDim2);
+                if (transferType.equals("onebond")) {
+                    SpectralDim dim1 = peakList.getSpectralDim(iDim1 -1);
+                    SpectralDim dim2 = peakList.getSpectralDim(iDim2 -1);
+                    if (dim1.getNucleus().contains("H")) {
+                        dim1.setRelation("D" + sDim2);
+                        dim1.setPattern(dim1.getPattern().replace("j","i"));
+                        dim2.setPattern(dim2.getPattern().replace("j","i"));
+                    } else {
+                        dim2.setRelation("D" + sDim1);
+                        dim1.setPattern(dim1.getPattern().replace("j","i"));
+                        dim2.setPattern(dim2.getPattern().replace("j","i"));
+                    }
+                }
+            } catch (NumberFormatException numberFormatException) {
+                throw new ParseException("Invalid dimension in _nef_spectrum_dimension_transfer " + numberFormatException.getMessage());
+            }
+
+        }
+            Loop peakLoop = saveframe.getLoop("_nef_peak");
+        for (int i =0;i<peakLoop.getNRows();i++) {
+            Map<String,String> loopMap = peakLoop.getRowMap(i);
+
+            int peakId = STAR3.getTokenFromMap(loopMap, "peak_id", 0);
+            Peak peak = peakList.getPeakByID(peakId);
+            if (peak == null) {
+                 peak = peakList.getNewPeak();
+                 peak.setIdNum(peakId);
+            }
+            processNEFPeak(peak, loopMap);
+        }
     }
 
     void processNEFChemicalShifts(MoleculeBase moleculeBase, Saveframe saveframe, int ppmSet) throws ParseException {
@@ -607,6 +738,8 @@ public class NMRNEFReader {
             log.debug("process molecule");
             molecule = buildNEFMolecule();
             ProjectBase.getActive().putMolecule(molecule);
+            log.debug("process peak lists]");
+            buildNEFPeakLists();
             log.debug("process chem shifts");
             buildNEFChemShifts(molecule, -1, 0);
             log.debug("process dist constraints");
