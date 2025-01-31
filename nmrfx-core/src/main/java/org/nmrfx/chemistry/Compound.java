@@ -20,10 +20,11 @@ package org.nmrfx.chemistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class Compound extends Entity implements AtomIterable {
 
-    protected HashMap atomMap;
+    protected Map<String, Atom> atomMap;
     public String number = "";
     Integer resNum;
     public int iRes = 0;
@@ -47,7 +48,7 @@ public class Compound extends Entity implements AtomIterable {
             resNum = null;
         }
         this.label = label;
-        atomMap = new HashMap();
+        atomMap = new HashMap<>();
     }
 
     @Override
@@ -112,7 +113,17 @@ public class Compound extends Entity implements AtomIterable {
     }
 
     public Atom getAtomLoose(String name) {
-        return getAtom(name);
+        Atom atom = getAtom(name);
+
+        if ((atom == null) && (name.endsWith("x") || name.endsWith("y") || name.endsWith("%") || name.endsWith("#") || name.endsWith("*"))) {
+            for (Atom testAtom : atomMap.values()) {
+                if (Util.nefMatch(testAtom, name.toLowerCase())) {
+                    atom = testAtom;
+                    break;
+                }
+            }
+        }
+        return atom;
     }
 
     public ArrayList<Atom> getAtoms(String match) {
