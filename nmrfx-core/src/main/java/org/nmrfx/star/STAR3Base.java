@@ -291,13 +291,42 @@ public class STAR3Base {
     }
 
     public static String getTokenFromMap(Map tokenMap, String tokenName, String defaultValue) throws ParseException {
-        String tokenValue = (String) tokenMap.get(tokenName);
-        if (tokenValue == null) {
+        String tokenString = (String) tokenMap.get(tokenName);
+        if ((tokenString == null) || tokenString.equals(".") || tokenString.equals("?")) {
+            if (defaultValue == null) {
+                throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
+            } else {
+                tokenString = defaultValue;
+            }
+        }
+        return tokenString;
+    }
+    public static double getTokenFromMap(Map tokenMap, String tokenName, Double defaultValue) throws ParseException {
+        String tokenString = (String) tokenMap.get(tokenName);
+        final double tokenValue;
+        if ((tokenString == null) || tokenString.equals(".") || tokenString.equals("?")) {
             if (defaultValue == null) {
                 throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
             } else {
                 tokenValue = defaultValue;
             }
+        } else {
+            tokenValue = Double.parseDouble(tokenString);
+        }
+        return tokenValue;
+    }
+
+    public static Integer getTokenFromMap(Map tokenMap, String tokenName, Integer defaultValue) throws ParseException {
+        String tokenString = (String) tokenMap.get(tokenName);
+        final Integer tokenValue;
+        if ((tokenString == null) || tokenString.equals(".") || tokenString.equals("?")) {
+            if (defaultValue == null) {
+                throw new ParseException("Token \"" + tokenName + "\" not in tokenMap");
+            } else {
+                tokenValue = defaultValue;
+            }
+        } else {
+            tokenValue = Integer.parseInt(tokenString);
         }
         return tokenValue;
     }
