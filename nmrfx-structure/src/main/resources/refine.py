@@ -954,6 +954,7 @@ class refine:
 
         ConstraintCreator.processBonds(structureBonds, 'break')
         ConstraintCreator.processBonds(structureBonds, 'add')
+        ConstraintCreator.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds  # fixme should not happen with rna riboses as they are added
 
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
@@ -2240,7 +2241,6 @@ class refine:
         self.useDegrees = False
         self.setupEnergy(self.molName,self.energyLists, usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
-        ConstraintCreator.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds  # fixme should not happen with rna riboses as they are added
         self.setForces({'repel':0.5,'dis':1,'dih':5})
         self.setPars({'coarse':False,'useh':False,'dislim':self.disLim,'end':1000,'hardSphere':0.15,'shrinkValue':0.20})
         if writeTrajectory:

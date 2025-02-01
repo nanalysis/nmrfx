@@ -393,7 +393,7 @@ public class Saveframe {
         if (loop == null) {
             throw new ParseException("Can't find loop \"" + tagCategory + "\"");
         }
-        return loop.getRowMap(tagCategory, iRow);
+        return loop.getRowMap(iRow);
     }
 
     public int loopCount(String tagCategory) throws ParseException {
