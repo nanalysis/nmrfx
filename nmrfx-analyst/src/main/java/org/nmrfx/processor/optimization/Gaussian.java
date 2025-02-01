@@ -5,8 +5,6 @@ package org.nmrfx.processor.optimization;
  */
 public class Gaussian extends FitEquation {
     final boolean fitC;
-    static final String[] abParNames = {"A", "B"};
-    static final String[] abcParNames = {"A", "B", "C"};
 
     public Gaussian() {
         this(false);
@@ -14,16 +12,30 @@ public class Gaussian extends FitEquation {
 
     public Gaussian(boolean fitC) {
         this.fitC = fitC;
+        nY = 0;
     }
 
     @Override
     public String[] parNames() {
-        return fitC ? abcParNames : abParNames;
+        int nPar = 1 + nY;
+        if (fitC) {
+            nPar += nY;
+        }
+        String[] parNames = new String[nPar];
+        for (int i = 0; i < nY; i++) {
+            parNames[i] = nY > 1 ? "A" + (i+1) : "A";
+            if (fitC) {
+                parNames[i + nY + 1] = nY > 1 ? "C" + (i + 1) : "C";
+            }
+        }
+        parNames[nY] = "B";
+
+        return  parNames;
     }
 
     @Override
     public int nY() {
-        return 1;
+        return nY;
     }
 
     @Override
@@ -32,32 +44,54 @@ public class Gaussian extends FitEquation {
     }
 
     public Guesses guess() {
-        double yStart = FitUtils.getYAtMinX(xValues[0], yValues[0]);
-        double yEnd = FitUtils.getYAtMaxX(xValues[0], yValues[0]);
-        double midX = FitUtils.getMidY0(xValues[0], yValues[0]);
-        double b = -Math.log(0.5) / (midX * midX);
-        double[] start;
-        double[] lower;
-        double[] upper;
-        if (fitC) {
-            start = new double[]{yStart, b, yEnd};
-            lower = new double[]{yStart / 5.0, b / 2.0, yEnd / 5.0};
-            upper = new double[]{yStart * 3.0, b * 3.0, yEnd * 3.0};
-        } else {
-            start = new double[]{yStart, b};
-            lower = new double[]{yStart / 5.0, b / 2.0};
-            upper = new double[]{yStart * 3.0, b * 3.0};
+        int nY = yValues.length;
+        double[] yStarts = new double[nY];
+        double[] yEnds = new double[nY];
+        double sumB = 0.0;
+        for (int i = 0; i < nY; i++) {
+            yStarts[i] = FitUtils.getYAtMinX(xValues[0], yValues[i]);
+            yEnds[i] = FitUtils.getYAtMaxX(xValues[0], yValues[i]);
+            double midX = FitUtils.getMidY0(xValues[0], yValues[i]);
+            sumB += -Math.log(0.5) / (midX * midX);
         }
+        double b = sumB / nY;
+        int nPar = 1 + nY;
+        if (fitC) {
+            nPar += nY;
+        }
+        double[] start = new double[nPar];
+        double[] lower = new double[nPar];
+        double[] upper = new double[nPar];
+        for (int i = 0; i < nY; i++) {
+            start[i] = yStarts[i];
+            lower[i] = yStarts[i] / 5.0;
+            upper[i] = yStarts[i] * 3.0;
+            if (fitC) {
+                start[i + nY + 1] = yEnds[i];
+                lower[i + nY + 1] = yEnds[i] / 5.0;
+                upper[i + nY + 1] = yEnds[i] * 3.0;
+            }
+        }
+        start[nY] = b;
+        lower[nY] = b / 2.0;
+        upper[nY] = b * 3.0;
+
         return new Guesses(start, lower, upper);
 
     }
 
     public double[] calcValue(double[] xA, double[] pars) {
         double x = xA[0];
-        double a = pars[0];
-        double b = pars[1];
-        double c = fitC ? pars[2] : 0.0;
-        double y = (a - c) * Math.exp(-b * x * x) + c;
-        return new double[]{y};
+        double[] y = new double[nY];
+        for (int i = 0;i<nY;i++) {
+            double a = pars[i];
+            double b = pars[nY];
+            double c = 0.0;
+            if (fitC) {
+                c = pars[i + nY + 1];
+            }
+            y[i] = (a - c) * Math.exp(-b * x * x) + c;
+        }
+        return y;
     }
 }

@@ -50,6 +50,8 @@ public class JCAMPData implements NMRData {
     private static final List<String> MATCHING_EXTENSIONS = List.of(".jdx", ".dx");
     private static final double AMBIENT_TEMPERATURE = 298.0; // in K, around 25° C
     private static final double SCALE = 1.0;
+
+    private static final double fidScale = 1.0e6;
     private final AcquisitionType[] symbolicCoefs = new AcquisitionType[2];
 
     /**
@@ -106,7 +108,7 @@ public class JCAMPData implements NMRData {
         NO, EM, GM, SINE, QSINE, TRAP, USER, SINC, QSINC, TRAF, TRAFS
     }
 
-    private final String path;
+    private final File file;
     private final JCampDocument document;
     private final JCampBlock block;
     private final double[][] real;
@@ -123,11 +125,10 @@ public class JCAMPData implements NMRData {
     private final Map<Integer, Integer> size = new HashMap<>();
     private final List<DatasetGroupIndex> datasetGroupIndices = new ArrayList<>();
 
-    public JCAMPData(String path) throws IOException {
-        this.path = path;
+    public JCAMPData(File file) throws IOException {
+        this.file = file;
 
-        log.info("Parsing JCAMP data: {}", path);
-        this.document = new JCampParser().parse(new File(path));
+        this.document = new JCampParser().parse(file);
 
         if (document.getBlockCount() == 0) {
             throw new IOException("Invalid JCamp document, doesn't contain any block.");
@@ -172,7 +173,7 @@ public class JCAMPData implements NMRData {
 
     @Override
     public String getFilePath() {
-        return path;
+        return file.toString();
     }
 
     private JCampRecord getRecord(String name) {
@@ -522,6 +523,17 @@ public class JCAMPData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        double ph0 = block.optional($PHC0, dim)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
+        double ph1 = block.optional($PHC1, dim)
+                .map(JCampRecord::getDouble)
+                .orElse(0.0);
+        return Math.abs(ph0) > 1.0e-9 || Math.abs(ph1) > 1.0e-9;
+    }
+
+    @Override
     public double getPH0(int dim) {
         double ph0 = block.optional($PHC0, dim)
                 .map(JCampRecord::getDouble)
@@ -653,7 +665,7 @@ public class JCAMPData implements NMRData {
             dvec.resize(n, false);
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
-                dvec.set(i, rValues[i]);
+                dvec.set(i, rValues[i] / fidScale);
             }
         } else {
             double[] iValues = imaginary[index];
@@ -661,7 +673,7 @@ public class JCAMPData implements NMRData {
             dvec.setTDSize(n);
             for (int i = 0; i < n; i++) {
                 //WARNING: real and imaginaries are inverted on purpose
-                dvec.set(i, iValues[i], rValues[i]);
+                dvec.set(i, iValues[i] / fidScale, rValues[i] / fidScale);
             }
         }
 
@@ -712,14 +724,14 @@ public class JCAMPData implements NMRData {
             for (int row = 0; row < n * 2; row += 2) {
                 double rValue = real[row][index];
                 double iValue = real[row + 1][index];
-                dvec.set(row / 2, rValue, iValue);
+                dvec.set(row / 2, rValue / fidScale, iValue / fidScale);
             }
         } else {
             dvec.resize(n, false);
             dvec.setTDSize(n);
             for (int row = 0; row < n; row++) {
                 double rValue = real[row][index];
-                dvec.set(row, rValue);
+                dvec.set(row, rValue / fidScale);
             }
         }
 
@@ -852,11 +864,11 @@ public class JCAMPData implements NMRData {
     /**
      * Check whether the path contains a JCamp FID file
      *
-     * @param bpath the path to check
+     * @param file the path to check
      * @return true if the path correspond to a JCamp FID file.
      */
-    public static boolean findFID(StringBuilder bpath) {
-        String lower = bpath.toString().toLowerCase();
+    public static boolean findFID(File file) {
+        String lower = file.getName().toLowerCase();
         return MATCHING_EXTENSIONS.stream().anyMatch(lower::endsWith);
     }
 
@@ -864,12 +876,12 @@ public class JCAMPData implements NMRData {
     /**
      * Check whether the path contains a JCamp dataset file
      *
-     * @param bpath the path to check
+     * @param file the path to check
      * @return true if the path correspond to a JCamp dataset file.
      */
-    public static boolean findData(StringBuilder bpath) {
+    public static boolean findData(File file) {
         // FID and Dataset have the same extensions
-        return findFID(bpath);
+        return findFID(file);
     }
 
     /**
@@ -908,7 +920,6 @@ public class JCAMPData implements NMRData {
      * @throws DatasetException
      */
     public Dataset toDataset(String datasetName) throws IOException, DatasetException {
-        File file = new File(path);
         Path fpath = file.toPath();
 
         int[] dimSizes = new int[getNDim()];

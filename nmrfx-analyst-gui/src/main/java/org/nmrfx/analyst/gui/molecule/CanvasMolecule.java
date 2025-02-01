@@ -805,6 +805,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             } else {
                 label = molPrims.labels[i];
             }
+            gC.setLineWidth(1.0);
             if ((label != null) && !label.equals("C") && !label.equals("")) {
                 try {
                     gC.setStroke(Color.BLACK);
@@ -911,6 +912,8 @@ public class CanvasMolecule implements CanvasAnnotation {
         if (!transformValid) {
             setupTransform();
         }
+        gC.setLineWidth(stroke3);
+
         for (int i = 0; i < molPrims.nLines; i++) {
             try {
                 x1 = molPrims.lineCoords[i * 6];

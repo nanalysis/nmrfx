@@ -113,7 +113,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
             'dislim' : 6.0
         },
         'force' : {
-            'cffnb' : 1.0,
+            'cffnb' : 0.1,
             'nbmin' : 1.0,
             'repel' : -1.0,
             'tors' : -0.1,
@@ -127,7 +127,7 @@ def getAnnealStages(dOpt, settings, mode='gen'):
         'nStepVal' : None,
         'switchFracVal'  : None,
         'force' : {
-            'cffnb' : 1.0,
+            'cffnb' : 0.1,
             'nbmin' : 0.50,
             'repel' : -1.0,
         },
@@ -167,15 +167,21 @@ def getAnnealStages(dOpt, settings, mode='gen'):
                             }
     }
 
-    if cffSteps != 0:
-        mode = 'cff'
+
+    if mode == 'gen' and cffSteps != 0:
+        mode = 'all'
+
 
     if mode == 'all':
         stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_cff_reduced, stage_cff_full, stage_low]
     elif mode == 'refine':
         stages = [stage_refine, stage_low]
+    elif mode == 'prep':
+        stages = [stage_prep]
+    elif mode == 'anneal':
+        stages = [stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_low]
     elif mode == 'cff':
-        stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_cff_reduced, stage_cff_full, stage_low]
+        stages = [stage_cff_reduced, stage_cff_full]
     else:
         stages = [stage_prep, stage_hi, stage_anneal_hi,stage_anneal_med,stage_anneal_low, stage_low]
     stageDict = {}

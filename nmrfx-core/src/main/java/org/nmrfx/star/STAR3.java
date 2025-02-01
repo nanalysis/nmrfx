@@ -43,7 +43,7 @@ public class STAR3 extends STAR3Base {
             String token = getNextToken();
             if (token == null) {
                 break;
-            } else if (token.startsWith("save_")) {
+            } else if (token.startsWith(STAR3Base.SAVE)) {
                 processSaveFrame(token);
             }
         }

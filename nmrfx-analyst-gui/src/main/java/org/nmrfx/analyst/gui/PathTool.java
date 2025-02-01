@@ -48,6 +48,8 @@ public class PathTool implements PeakNavigable, ControllerTool {
     PolyChart chart;
     ToolBar toolBar;
     ToolBar fitBar;
+
+    HBox fitParBox;
     Consumer<PathTool> closeAction;
     MenuButton actionMenu;
     Menu selectMenu;
@@ -57,6 +59,8 @@ public class PathTool implements PeakNavigable, ControllerTool {
     Label[] fitFields;
     Label nField;
     Button fitButton;
+
+    ChoiceBox<PeakPaths.BINDINGMODE> bindingModeChoice = new ChoiceBox<>();
     Button addButton;
     PeakPaths peakPaths;
     ObservableList<PeakPath> activePaths = FXCollections.observableArrayList();
@@ -85,8 +89,9 @@ public class PathTool implements PeakNavigable, ControllerTool {
     public void initialize(VBox vBox) {
         toolBar = new ToolBar();
         fitBar = new ToolBar();
+        fitParBox = new HBox();
         this.vBox = vBox;
-        vBox.getChildren().addAll(toolBar, fitBar);
+        vBox.getChildren().addAll(toolBar, fitBar, fitParBox);
         peakNavigator = PeakNavigator.create(this).onClose(this::close).initialize(toolBar);
         peakNavigator.setPeakList();
         controller.addScaleBox(peakNavigator, toolBar);
@@ -177,28 +182,26 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
-        Pane filler2 = new Pane();
-        filler2.setMinWidth(50);
         Pane filler3 = new Pane();
         filler3.setMinWidth(50);
-        Pane filler4 = new Pane();
-        filler4.setMinWidth(50);
-        Pane filler5 = new Pane();
-        HBox.setHgrow(filler5, Priority.ALWAYS);
 
         toolBar.getItems().add(gotoButton);
-        toolBar.getItems().add(filler1);
+        Pane filler4 = new Pane();
+        filler4.setMinWidth(30);
+        filler4.setMaxWidth(30);
+        toolBar.getItems().add(filler4);
         toolBar.getItems().add(actionMenu);
-        toolBar.getItems().add(filler2);
-        toolBar.getItems().addAll(dataButtons);
 
+        Pane filler5 = new Pane();
+        filler5.setMinWidth(30);
+        filler5.setMaxWidth(30);
         toolBar.getItems().add(filler5);
         radiusField = new TextField("0.5");
         radiusField.setPrefWidth(50);
-        toolBar.getItems().add(radiusField);
+        toolBar.getItems().addAll(new Label("Radius"), radiusField);
         tolField = new TextField("0.2");
         tolField.setPrefWidth(50);
-        toolBar.getItems().add(tolField);
+        toolBar.getItems().addAll(new Label("Tol."), tolField);
 
         Pane fillerf1 = new Pane();
         fillerf1.setMinWidth(5);
@@ -207,19 +210,26 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         fitButton = new Button("Fit");
         fitButton.setOnAction(e -> fitPath());
-        fitButton.setDisable(true);
+        fitButton.setDisable(false);
+        fitButton.setPrefWidth(80);
 
         addButton = new Button("Add");
         addButton.setOnAction(e -> addPathToTable());
         addButton.setDisable(true);
+        addButton.setPrefWidth(80);
 
         Button showButton = new Button("Show");
         showButton.setOnAction(e -> showPlotTool());
+        showButton.setPrefWidth(80);
 
         nField = new Label("");
         nField.setPrefWidth(100);
 
-        fitBar.getItems().addAll(nField, fillerf1, fitButton, addButton, showButton, fillerf2);
+        fitBar.getItems().addAll(nField, fillerf1, bindingModeChoice,  fitButton, addButton, showButton, fillerf2);
+        fitBar.getItems().addAll(dataButtons);
+
+        bindingModeChoice.getItems().addAll(PeakPaths.BINDINGMODE.values());
+        bindingModeChoice.setValue(PeakPaths.BINDINGMODE.SINGLE_SITE);
         setActionMenuDisabled(true);
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
@@ -239,6 +249,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
             peakNavigator.setPeak(selPeaks.get(0));
         }
     }
+
     void updatePathSelectMenu() {
         selectMenu.getItems().clear();
         Collection<String> peakPathNames = PeakPaths.getNames();
@@ -265,7 +276,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
         Background bg = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
         if ((fitFields == null) || (fitFields.length != nPars)) {
             if (fitFields != null) {
-                fitBar.getItems().remove(3, 3 + fitFields.length);
+                fitParBox.getChildren().clear();
             }
             fitFields = new Label[nPars];
             for (int i = 0; i < fitFields.length; i++) {
@@ -274,8 +285,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
                 fitFields[i].setBackground(bg);
                 Pane fillerf2 = new Pane();
                 fillerf2.setMinWidth(15);
-
-                fitBar.getItems().addAll(fillerf2, fitFields[i]);
+                fitParBox.getChildren().addAll(fillerf2, fitFields[i]);
             }
         } else {
             for (Label fitField : fitFields) {
@@ -286,7 +296,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
     }
 
     void setupChart(List<String> datasetNames) {
-        chart.updateDatasets(datasetNames);
+        chart.updateDatasetsByNames(datasetNames);
         var peakAttrs = chart.getPeakListAttributes();
         var peakListNames = new ArrayList<String>();
         chart.getDatasetAttributes().stream().map(DatasetAttributes::getDataset).forEach(dataset -> {
@@ -303,7 +313,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
                 peakListNames.add(peakList.getName());
             }
         });
-        chart.updatePeakLists(peakListNames);
+        chart.updatePeakListsByName(peakListNames);
 
         for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
             peakAttr.setColorType(PeakDisplayParameters.ColorTypes.Status);
@@ -350,6 +360,10 @@ public class PathTool implements PeakNavigable, ControllerTool {
             return;
         }
         String pathName = scanTable.getScanDir() != null ? scanTable.getScanDir().getName() : datasetNames.get(0).toString();
+        if (pathName.contains(".")) {
+            pathName = pathName.substring(0, pathName.indexOf("."));
+        }
+        pathName = pathName + "Paths";
         peakPaths = PeakPaths.loadPathData(pathMode, datasetNames, x0List, x1List, pathName);
     }
 
@@ -395,9 +409,21 @@ public class PathTool implements PeakNavigable, ControllerTool {
             colNames.add("Peak");
             colNames.add("Atom");
             String[] parNames = peakPaths.getParNames();
-            for (String col : parNames) {
-                colNames.add(col);
-                colNames.add(col + "Dev");
+            if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
+                for (String col : parNames) {
+                    colNames.add(col);
+                    colNames.add(col + "Dev");
+                }
+            } else {
+                int nStates = 2;
+                for (String col : parNames) {
+                    for (int i = 0; i < nStates; i++) {
+                        String colName = col + (i + 1);
+                        colNames.add(colName);
+                        colNames.add(colName + "Dev");
+                    }
+                }
+
             }
             plotTool = new PathPlotTool(this, colNames);
         }
@@ -414,6 +440,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
                 try {
                     if (pathUsable(path)) {
                         PathFitter fitPath = new PathFitter();
+                        fitPath.nStates(bindingModeChoice.getValue().nStates());
                         fitPath.setup(peakPaths, path);
                         fitPath.fit();
                     }
@@ -444,6 +471,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
             Peak peak = peakNavigator.getPeak();
             PathFitter fitPath = new PathFitter();
+            fitPath.nStates(bindingModeChoice.getValue().nStates());
             try {
                 PeakPath path = peakPaths.getPath(peak);
                 if (pathUsable(path)) {
@@ -458,9 +486,11 @@ public class PathTool implements PeakNavigable, ControllerTool {
         }
     }
 
-    void fitPathsGrouped() {
+    void fitPathsGrouped(PeakPaths.BINDINGMODE bindingMode) {
         if (peakPaths != null) {
             PathFitter fitPath = new PathFitter();
+            fitPath.nStates(bindingMode.nStates());
+
             List<PeakPath> fitPaths = plotTool.getSelected();
             if (fitPaths.isEmpty()) {
                 fitPaths.addAll(activePaths);
@@ -480,8 +510,9 @@ public class PathTool implements PeakNavigable, ControllerTool {
         }
     }
 
-    void fitPathsIndividual() {
+    void fitPathsIndividual(PeakPaths.BINDINGMODE bindingMode) {
         PathFitter fitPath = new PathFitter();
+        fitPath.nStates(bindingMode.nStates());
         List<PeakPath> fitPaths = plotTool.getSelected();
         if (fitPaths.isEmpty()) {
             fitPaths.addAll(activePaths);
@@ -654,6 +685,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.YES) {
                     peakPaths.clearPaths();
+                    chart.clearAnnotations();
                 }
             });
         }
@@ -662,6 +694,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
     void findPaths() {
         if (peakPaths != null) {
             peakPaths.clearPaths();
+            chart.clearAnnotations();
             int n = 10;
             double minRadius = 0.1;
             double maxRadius = Double.parseDouble(radiusField.getText());
@@ -728,7 +761,10 @@ public class PathTool implements PeakNavigable, ControllerTool {
         if (peakPaths != null) {
 
             chart.clearAnnotations();
+            String xDim = chart.getDimNames().get(0);
+            String yDim = chart.getDimNames().get(1);
             Collection<PeakPath> paths = peakPaths.getPaths();
+            int[] peakDim = chart.getPeakListAttributes().get(0).getPeakDim();
 
             for (PeakPath path : paths) {
                 int nValid = path.getNValid();
@@ -740,8 +776,8 @@ public class PathTool implements PeakNavigable, ControllerTool {
                     for (PeakDistance peakDist : path.getPeakDistances()) {
                         if (peakDist != null) {
                             Peak peak = peakDist.getPeak();
-                            x.add((double) peak.getPeakDim(0).getChemShiftValue());
-                            y.add((double) peak.getPeakDim(1).getChemShiftValue());
+                            x.add((double) peak.getPeakDim(peakDim[0]).getChemShiftValue());
+                            y.add((double) peak.getPeakDim(peakDim[1]).getChemShiftValue());
                         }
                     }
                     if (!x.isEmpty()) {
@@ -793,6 +829,9 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
                 if (fitPath == null) {
                     fitPath = new PathFitter();
+                    if ((path.getFitPars() != null) && (path.getFitPars().length > 0)) {
+                        fitPath.nStates(path.getFitPars().length / 2);
+                    }
                     fitPath.setup(peakPaths, path);
                 }
 
@@ -809,12 +848,15 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
                 double[] fitPars = path.getFitPars();
                 double[] fitErrs = path.getFitErrs();
-                String[] parNames = peakPaths.getParNames();
-                if (fitPars != null) {
+                if ((fitPars != null) && (fitPars.length > 0)) {
+                    String[] parNames = peakPaths.getParNames();
+                    int nStates = fitPars.length / parNames.length;
                     initFitFields(fitPars.length);
 
                     for (int i = 0; i < fitPars.length; i++) {
-                        fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
+                        int iState = i / nStates;
+                        String parName = parNames[iState] + (i % nStates + 1);
+                        fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parName, fitPars[i], fitErrs[i]));
                     }
                     double first = 0.0;
                     double last = FitUtils.getMaxValue(peakPaths.getXValues()[0]);
@@ -850,20 +892,25 @@ public class PathTool implements PeakNavigable, ControllerTool {
             int iSeries = 0;
             for (PeakPath path : paths) {
                 Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
-                showXYPath(path, color);
+                showXYPath(path, iSeries, paths.size());
                 iSeries++;
             }
         }
     }
 
-    public void showXYPath(PeakPath path, Color color) {
+    public void showXYPath(PeakPath path, int iSeries, int n) {
         PathFitter fitPath = new PathFitter();
+        fitPath.nStates(path.getFitPars().length / 2);
         fitPath.setup(peakPaths, path);
 
         double[][] xValues = fitPath.getX();
         double[][] yValues = fitPath.getY();
+        int j = 0;
         for (double[] yValue : yValues) {
+            int iColor = n < 2 ? j : iSeries;
+            Color color = XYCanvasChart.colors[iColor % XYCanvasChart.colors.length];
             plotTool.getChart().addLines(xValues[0], yValue, true, color);
+            j++;
         }
 
         double[] fitPars = path.getFitPars();
@@ -871,16 +918,36 @@ public class PathTool implements PeakNavigable, ControllerTool {
             double first = 0.0;
             double last = FitUtils.getMaxValue(peakPaths.getXValues()[0]);
             if (peakPaths.getPathMode() == PATHMODE.TITRATION) {
+                Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
                 double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
                 plotTool.getChart().addLines(xy[0], xy[1], false, color);
             } else if (peakPaths.getPathMode() == PATHMODE.PRESSURE) {
                 double[][] xy = fitPath.getPressureSimValues(fitPars, first, last, 100);
                 for (int i = 1; i < xy.length; i++) {
+                    int iColor = n < 2 ? i - 1 : iSeries;
+                    Color color = XYCanvasChart.colors[iColor % XYCanvasChart.colors.length];
                     plotTool.getChart().addLines(xy[0], xy[i], false, color);
                 }
             }
         }
 
+    }
+
+    double[] getPlaneRange(PeakPath path) {
+        int[] peakDims = chart.getPeakListAttributes().get(0).getPeakDim();
+        double minShift = Double.MAX_VALUE;
+        double maxShift = Double.NEGATIVE_INFINITY;
+        for (PeakDistance peakDistance : path.getPeakDistances()) {
+            if (peakDistance != null) {
+                float ppm = peakDistance.getPeak().getPeakDim(peakDims[2]).getChemShiftValue();
+                minShift = Math.min(minShift, ppm);
+                maxShift = Math.max(maxShift, ppm);
+                double delta = (maxShift - minShift) / 5.0;
+                minShift -= delta;
+                maxShift += delta;
+            }
+        }
+        return new double[]{minShift, maxShift};
     }
 
     void refreshPaths() {
@@ -893,6 +960,14 @@ public class PathTool implements PeakNavigable, ControllerTool {
 
         controller.refreshPeakView(peak);
         if ((peak != null) && (peakPaths != null)) {
+            if (peak.getPeakList().getNDim() > 2) {
+                PeakPath path = peakPaths.getPath(peak);
+                if (path != null) {
+                    double[] range = getPlaneRange(path);
+                    chart.getAxes().setMinMax(2, range[0], range[1]);
+                    chart.refresh();
+                }
+            }
             updatePathInfo(peak);
         }
     }

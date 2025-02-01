@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.APPENDIF;
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.APPENDREGION;
+
 /**
  * @author Bruce Johnson
  */
@@ -107,11 +110,14 @@ public class PeakPicking {
             }
         }
         if (peakPickPar.mode == null) {
-            peakPickPar.mode = "appendregion";
+            peakPickPar.mode = APPENDREGION;
         }
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
         int nFreqDim = datasetBase.getNFreqDims();
+        if (nFreqDim == 0) {
+            nFreqDim = datasetBase.getNDim();
+        }
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
             if ((iDim < 2) && (iDim < nFreqDim)) {
@@ -126,7 +132,7 @@ public class PeakPicking {
                         }
                         peakPickPar.limit(jDim, row, row);
                     }
-                } else if (peakPickPar.useCrossHairs) {
+                } else if (peakPickPar.useCrossHairs || (peakPickPar.region.equalsIgnoreCase("box") && chart.getCrossHairs().hasRegion())) {
                     Orientation orientation = iDim == 0 ? Orientation.VERTICAL : Orientation.HORIZONTAL;
                     peakPickPar.limit(jDim,
                             chart.getCrossHairs().getPosition(0, orientation),
@@ -211,7 +217,7 @@ public class PeakPicking {
             }
             level = Math.max(3.0 * threshold, y);
         }
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode(APPENDIF);
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.region("point").fixed(fixed);
         peakPickPar.calcRange();

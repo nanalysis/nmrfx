@@ -16,7 +16,7 @@ class NMRFxDatasetScripting:
 
     def open(self, fileName,writable=False):
         fileName = os.path.join(os.getcwd(), fileName)
-        dataset = Dataset(fileName,"",writable, False)
+        dataset = Dataset(fileName, "", writable, False, True)
         return dataset
 
     def names(self):
@@ -29,8 +29,10 @@ class NMRFxDatasetScripting:
         dataset = Dataset.getDataset(datasetName)
         return dataset
 
-    def create(self, fileName, sizes, srcDataset=None, title=""):
-        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, True, True) 
+    def create(self, fileName, sizes=None, srcDataset=None, title=""):
+        if (not sizes) and srcDataset:
+            sizes = srcDataset.getSizes()
+        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, False, True)
         dataset = self.open(fileName, True)
         if srcDataset:
             nDim = len(sizes)
@@ -38,7 +40,7 @@ class NMRFxDatasetScripting:
             for iDim in range(min(nDim,nDimSrc)):
                 srcDataset.copyHeader(dataset, iDim)
             dataset.writeHeader();
-            
+
         return dataset
 
     def createSub(self, fileName, nDim, srcDataset, title=""):
@@ -51,12 +53,12 @@ class NMRFxDatasetScripting:
         for iDim in range(nDim):
             sizes.append(srcDataset.getSizeTotal(iDim))
 
-        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, False, True) 
+        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, False, True)
         dataset = self.open(fileName, True)
         for iDim in range(nDim):
             srcDataset.copyHeader(dataset, iDim)
         dataset.writeHeader();
-            
+
         return dataset
 
     def getVector(self, dataset, iDim):
@@ -88,7 +90,7 @@ class NMRFxDatasetScripting:
 
     def combineN(self, func, outName, *datasets):
         nd = NMRFxDatasetScripting()
-        useDatasets = []  
+        useDatasets = []
         for i,dataset in enumerate(datasets):
             if isinstance(dataset,basestring):
                 dataset = nd.open(dataset,False)
@@ -122,7 +124,7 @@ class NMRFxDatasetScripting:
         if isinstance(dataset,basestring):
             dataset = self.get(dataset)
         if listName == None:
-           listName = PeakList.getNameForDataset(dataset.getName()) 
+           listName = PeakList.getNameForDataset(dataset.getName())
         peakPickPar = PeakPickParameters(dataset, listName).mode(mode).region(region).pos(pos).neg(neg).level(level)
         peakPickPar.calcRange()
         for dim in kwargs:
@@ -132,7 +134,7 @@ class NMRFxDatasetScripting:
 
         peakPicker = PeakPicker(peakPickPar)
         peakList = peakPicker.peakPick()
-      
+
         return peakList
 
     def diffRows(self, dataset, newName=None, row1=0, row2=1):
@@ -140,7 +142,7 @@ class NMRFxDatasetScripting:
             dataset = self.get(dataset)
         if newName == None:
             oldName = dataset.getName()
-            name,ext = os.path.splitext(oldName) 
+            name,ext = os.path.splitext(oldName)
             newName = name+'_diff_'+str(row1)+'_'+str(row2)+'.nv'
         oldFilePath = dataset.getCanonicalFile()
         dirName = os.path.dirname(oldFilePath)
@@ -157,7 +159,7 @@ class NMRFxDatasetScripting:
             dataset = self.get(dataset)
         if newName == None:
             oldName = dataset.getName()
-            name,ext = os.path.splitext(oldName) 
+            name,ext = os.path.splitext(oldName)
             newName = name+'_row_'+str(row1)+'.nv'
         oldFilePath = dataset.getCanonicalFile()
         dirName = os.path.dirname(oldFilePath)
@@ -167,5 +169,5 @@ class NMRFxDatasetScripting:
         newDataset.writeVector(v1)
         return newDataset
 
-        
+
 nd = NMRFxDatasetScripting()

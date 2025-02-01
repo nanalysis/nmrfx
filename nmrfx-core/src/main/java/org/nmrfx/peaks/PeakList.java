@@ -10,6 +10,8 @@ import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.Clusters;
 import org.nmrfx.peaks.events.*;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 import org.nmrfx.utilities.Updater;
 import org.nmrfx.utilities.Util;
 
@@ -723,6 +725,11 @@ public class PeakList {
         return specDim;
     }
 
+    public SpectralDim getFoldedDim(){
+        List<SpectralDim> foldedDim = Arrays.stream(spectralDims).filter((spectralDim) -> spectralDim.getFoldMode() != 'n').toList();
+        return foldedDim.isEmpty() ? null : foldedDim.getFirst();
+    }
+
     public List<SpectralDim> getSpectralDims() {
         return Arrays.asList(spectralDims);
     }
@@ -885,6 +892,15 @@ public class PeakList {
             indexMap.put(peak.getIdNum(), peak);
         }
         peakListUpdated(this);
+    }
+
+    public void reassignResonanceFactoryMap() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim: peak.getPeakDims()) {
+                AtomResonance resonance = peakDim.getResonance();
+                ProjectBase.activeResonanceFactory().reassignResonanceFactoryMap(resonance);
+            }
+        }
     }
 
     /**
@@ -1908,8 +1924,7 @@ public class PeakList {
     }
 
     public void writeSTAR3Header(Writer chan) throws IOException {
-        char stringQuote = '"';
-        chan.write("save_" + getName() + "\n");
+        chan.write(STAR3Base.SAVE + getName() + "\n");
         chan.write("_Spectral_peak_list.Sf_category                 ");
         chan.write("spectral_peak_list\n");
         chan.write("_Spectral_peak_list.Sf_framecode                 ");
@@ -1957,7 +1972,7 @@ public class PeakList {
         chan.write(String.valueOf(nDim) + "\n");
         chan.write("_Spectral_peak_list.Details                       ");
         if (getDetails().length() != 0) {
-            chan.write(stringQuote + getDetails() + stringQuote + "\n");
+            chan.write(STAR3.quote(getDetails()) + "\n");
         } else {
             chan.write(".\n");
         }

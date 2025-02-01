@@ -1,16 +1,16 @@
 package org.nmrfx.structure.seqassign;
 
+import javafx.beans.property.SimpleDoubleProperty;
+import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.Saveframe;
-import org.nmrfx.star.SaveframeWriter;
+import org.nmrfx.star.*;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RunAbout implements SaveframeWriter {
     static final List<String> peakListTags = List.of("ID", "Spectral_peak_list_ID");
     static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
+    public final static Map<Nuclei, Double> defaultTolearnces = Map.of(Nuclei.H1, 0.05, Nuclei.C13, 0.6, Nuclei.N15, 0.2);
+
     int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
@@ -33,7 +35,12 @@ public class RunAbout implements SaveframeWriter {
     Map<String, DatasetBase> datasetMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
+
+
+    EnumMap<SpinSystem.AtomEnum, Integer>[] countMap = new EnumMap[2];
+
     boolean active = false;
+    Map<Residue, SpinSystem> residueSpinSystemsMap = new HashMap<>();
 
     List<Map<String, Object>> typeList;
 
@@ -42,7 +49,19 @@ public class RunAbout implements SaveframeWriter {
         runaboutMap.put(id, this);
     }
 
-    public static final RunAbout getRunAbout(int id) {
+    public void close() {
+        spinSystems.clearAll();
+        peakListMap.clear();
+        peakLists.clear();
+        peakListTypes.clear();
+        datasetMap.clear();
+        aTypeMap.clear();
+        typeInfoMap.clear();
+        residueSpinSystemsMap.clear();
+        runaboutMap.clear();
+    }
+
+    public static RunAbout getRunAbout(int id) {
         return runaboutMap.get(id);
     }
 
@@ -65,6 +84,10 @@ public class RunAbout implements SaveframeWriter {
         return peakListMap.get(key);
     }
 
+    public PeakList getRefList() {
+        return refList;
+    }
+
     public List<PeakList> getPeakLists() {
         return peakLists;
     }
@@ -74,18 +97,30 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public int getTypeCount(String typeName) {
-        return typeInfoMap.get(typeName).nTotal;
+        int nTotal = 0;
+        if (typeInfoMap.containsKey(typeName)) {
+            nTotal =  typeInfoMap.get(typeName).nTotal;
+        }
+        return nTotal;
+    }
+
+    public int getExpected(int k, SpinSystem.AtomEnum atomEnum) {
+        return countMap[k].getOrDefault(atomEnum, 0);
     }
 
     List<String> getPatterns(PeakList peakList) {
-        double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
         List<String> aTypes = new ArrayList<>();
         for (var sDim : peakList.getSpectralDims()) {
             String patElem = sDim.getPattern();
-            patElems.add(patElem);
-            int dotPos = patElem.indexOf(".");
-            String aType = patElem.substring(dotPos + 1, dotPos + 2);
+            String aType = "";
+            if (!patElem.isBlank()) {
+                patElems.add(patElem);
+                int dotPos = patElem.indexOf(".");
+                if (dotPos != -1) {
+                    aType = patElem.substring(dotPos + 1, dotPos + 2);
+                }
+            }
             aTypes.add(aType);
         }
         aTypeMap.put(peakList.getExperimentType(), aTypes);
@@ -132,7 +167,24 @@ public class RunAbout implements SaveframeWriter {
         return typeInfoMap.get(typeName);
     }
 
-    void setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
+    public static List<String> getPatterns(SpectralDim sDim) {
+        String pattern = sDim.getPattern();
+        String[] parts = pattern.split("\\.");
+        List<String> choices = new ArrayList<>();
+        if (parts.length == 2) {
+            String[] types = parts[0].split(",");
+            String[] aNames = parts[1].split(",");
+            for (String type : types) {
+                for (String aName : aNames) {
+                    String pat = type + "." + aName;
+                    choices.add(pat);
+                }
+            }
+        }
+        return choices;
+    }
+
+    void setAtomCount(String typeName, List<String> patElems) {
         int[] dimCount = new int[patElems.size()];
         int i = 0;
         for (String elem : patElems) {
@@ -161,7 +213,6 @@ public class RunAbout implements SaveframeWriter {
         TypeInfo typeInfo = new TypeInfo(patElems.size(), total);
         for (String elem : patElems) {
             String[] parts = elem.split("\\.");
-            System.out.println("elem " + elem + " " + parts.length);
             if (parts.length == 2) {
                 String[] types = parts[0].split(",");
                 String[] aNames = parts[1].split(",");
@@ -184,8 +235,10 @@ public class RunAbout implements SaveframeWriter {
                             sign = 1;
                         }
                         aName = aName.toLowerCase();
-                        int nameIdx = stdNames.indexOf(aName);
-                        counts[iDir][nameIdx] += dimMult[i];
+                        SpinSystem.AtomEnum atomEnum = SpinSystem.AtomEnum.valueOf(aName.toUpperCase());
+                        Integer count = countMap[iDir].getOrDefault(atomEnum, 0);
+                        count += dimMult[i];
+                        countMap[iDir].put(atomEnum, count);
                         intraResidue[j] = iDir == 1;
                         allNames[j] = aName;
                         signs[j] = sign;
@@ -209,8 +262,8 @@ public class RunAbout implements SaveframeWriter {
     public void setPeakLists(List<PeakList> lists) {
         refList = lists.get(0);
         PeakList.clusterOrigin = refList;
-        List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
-        int[][] counts = new int[2][stdNames.size()];
+        countMap[0] = new EnumMap<>(SpinSystem.AtomEnum.class);
+        countMap[1] = new EnumMap<>(SpinSystem.AtomEnum.class);
         peakLists.clear();
         peakListMap.clear();
         datasetMap.clear();
@@ -223,9 +276,8 @@ public class RunAbout implements SaveframeWriter {
             peakListTypes.put(peakList.getName(), typeName);
             datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
             List<String> patElems = getPatterns(peakList);
-            setAtomCount(typeName, patElems, counts, stdNames);
+            setAtomCount(typeName, patElems);
         }
-        SpinSystem.nAtmPeaks = counts;
         active = true;
     }
 
@@ -300,8 +352,7 @@ public class RunAbout implements SaveframeWriter {
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
         List<SpectralDim> sDims = new ArrayList<>();
-        for (int i = 0; i < iDims.length; i++) {
-            int iDim = iDims[i];
+        for (int iDim : iDims) {
             String dataDimName = dataset.getLabel(iDim);
             SpectralDim sDim = peakList.getSpectralDim(dataDimName);
             sDims.add(sDim);
@@ -329,7 +380,6 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public void assemble() {
-        System.out.println("assemble " + peakListMap.keySet());
         getSpinSystems().assembleWithClustering(refList, peakLists);
     }
 
@@ -352,6 +402,37 @@ public class RunAbout implements SaveframeWriter {
         }
     }
 
+    public void setDefaultTolerances() {
+        setDefaultTolerances(peakLists);
+    }
+
+    public void setDefaultTolerances(Collection<PeakList> peakLists) {
+        for (var peakList : peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String nucName = peakList.getSpectralDim(i).getNucleus();
+                Nuclei nuclei = Nuclei.findNuclei(nucName);
+                Double tol = defaultTolearnces.get(nuclei);
+                if (tol != null) {
+                    peakList.getSpectralDim(i).setIdTol(tol);
+                }
+            }
+        }
+    }
+    public void setTolerances(Map<Nuclei, SimpleDoubleProperty> tolerances) {
+        for (var peakList : peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String nucName = peakList.getSpectralDim(i).getNucleus();
+                Nuclei nuclei = Nuclei.findNuclei(nucName);
+                Double tol = tolerances.get(nuclei).get();
+                if (tol != null) {
+                    peakList.getSpectralDim(i).setIdTol(tol);
+                }
+            }
+        }
+    }
+
     public void calcCombinations() {
         for (PeakList peakList : peakLists) {
             for (Peak peak : peakList.peaks()) {
@@ -366,6 +447,8 @@ public class RunAbout implements SaveframeWriter {
 
     public void compare() {
         getSpinSystems().compare();
+        getSpinSystems().checkConfirmed();
+        getSpinSystems().updateFragments();
         getSpinSystems().dump();
     }
 
@@ -393,8 +476,12 @@ public class RunAbout implements SaveframeWriter {
         return result;
     }
 
-    public void filterPeaks() {
+    public Map<String, Integer> filterPeaks() {
         double tolScale = 3.0;
+        Map<String, Integer> result = new HashMap<>();
+        if (peakLists.isEmpty()) {
+            return result;
+        }
         PeakList refList = peakLists.get(0);
         refList.clearSearchDims();
         List<String> commonDimNames = new ArrayList<>();
@@ -412,7 +499,7 @@ public class RunAbout implements SaveframeWriter {
                 int j = 0;
                 for (String dimName : commonDimNames) {
                     SpectralDim sDim = peakList.getSpectralDim(dimName);
-                    dims[j++] = sDim.getDataDim();
+                    dims[j++] = sDim.getIndex();
                 }
                 double[] ppms = new double[dims.length];
                 peakList.peaks().forEach(peak -> {
@@ -429,32 +516,34 @@ public class RunAbout implements SaveframeWriter {
                 peakList.compress();
                 peakList.reNumber();
             }
-            System.out.println(peakList.getName() + " " + nFiltered);
+            result.put(peakList.getName(), nFiltered.intValue());
         }
+        return result;
     }
 
     public boolean getHasAllAtoms(SpinSystem spinSystem) {
-        int nTypes = SpinSystem.getNAtomTypes();
         boolean ok = true;
         for (int k = 0; k < 2; k++) {
             boolean isGly = false;
             boolean justCB = true;
-            for (int i = 0; i < nTypes; i++) {
-                int n = SpinSystem.getNPeaksForType(k, i);
+            for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
+                int n = getExpected(k, atomEnum);
                 if (n != 0) {
-                    String aName = SpinSystem.getAtomName(i);
+                    String aName = atomEnum.name();
                     if (k == 0) {
                         aName = aName.toLowerCase();
                     } else {
                         aName = aName.toUpperCase();
                     }
-                    double value = spinSystem.getValue(k, i);
-                    if (!Double.isNaN(value) && aName.equalsIgnoreCase("ca")) {
-                        if ((value < 50.0) && (value > 40.0)) {
-                            isGly = true;
+                    Optional<Double> valueOpt = spinSystem.getValue(k, atomEnum);
+                    if (valueOpt.isPresent()) {
+                        double value = valueOpt.get();
+                        if (aName.equalsIgnoreCase("ca")) {
+                            if ((value < 50.0) && (value > 40.0)) {
+                                isGly = true;
+                            }
                         }
-                    }
-                    if (Double.isNaN(value)) {
+                    } else {
                         if (!aName.equalsIgnoreCase("cb")) {
                             justCB = false;
                         }
@@ -525,7 +614,7 @@ public class RunAbout implements SaveframeWriter {
         writeToSTAR(chan);
     }
 
-    void writeToSTAR(Writer chan) throws ParseException, IOException {
+    void writeToSTAR(Writer chan) throws IOException {
         String category = "_Runabout";
         String categoryName = "runabout";
         StringBuilder sBuilder = new StringBuilder();
@@ -540,7 +629,7 @@ public class RunAbout implements SaveframeWriter {
         spinSystems.writeSpinSystemPeaks(sBuilder);
 
         chan.write(sBuilder.toString());
-        chan.write("save_");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     void writePeakLists(StringBuilder sBuilder) {
@@ -573,4 +662,40 @@ public class RunAbout implements SaveframeWriter {
             setPeakLists(loopLists);
         }
     }
+
+    public void mapSpinSystemToResidue() {
+        var sortedSystems = getSpinSystems().getSortedSystems();
+        residueSpinSystemsMap.clear();
+        for (SpinSystem spinSys : sortedSystems) {
+            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
+            fragmentOpt.ifPresent(seqFragment -> {
+                if (seqFragment.isFrozen()) {
+                    var spinSystemMatches = seqFragment.getSpinSystemMatches();
+                    var resSeqScore = seqFragment.getResSeqScore();
+                    if (resSeqScore != null) {
+                        Residue residue = resSeqScore.getFirstResidue();
+                        for (int i = 0; i < resSeqScore.getNResidues(); i++) {
+                            int j = i < 3 ? 0 : i - 2;
+                            if (j < spinSystemMatches.size()) {
+                                var spinSystemMatch = spinSystemMatches.get(j);
+                                SpinSystem spinSystem;
+                                if (i < 2) {
+                                    spinSystem = spinSystemMatch.getSpinSystemA();
+                                } else {
+                                    spinSystem = spinSystemMatch.getSpinSystemB();
+                                }
+                                residueSpinSystemsMap.put(residue, spinSystem);
+                            }
+                            residue = residue.getNext();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    public SpinSystem getSpinSystemForResidue(Residue residue) {
+        return residueSpinSystemsMap.get(residue);
+    }
+
 }

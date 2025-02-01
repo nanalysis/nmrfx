@@ -141,54 +141,62 @@ public class Residue extends Compound {
     @Override
     public Atom getAtomLoose(String name) {
         String lName = name.toLowerCase();
-        Atom atom = (Atom) atomMap.get(lName);
+        Atom atom = atomMap.get(lName);
+        if ((atom == null) && (name.endsWith("x") || name.endsWith("y") || name.endsWith("%") || name.endsWith("#") || name.endsWith("*"))) {
+            for (Atom testAtom : atomMap.values()) {
+                if (Util.nefMatch(testAtom, name.toLowerCase())) {
+                    atom = testAtom;
+                    break;
+                }
+            }
+        }
         if (atom == null) {
             if (lName.charAt(0) == 'h') {
                 if (polymer.isCapped() && (polymer.getFirstResidue() == this)) {
                     switch (lName) {
                         case "hn":
-                            atom = (Atom) atomMap.get("h1");
+                            atom = atomMap.get("h1");
                             break;
                         case "h":
-                            atom = (Atom) atomMap.get("h1");
+                            atom = atomMap.get("h1");
                             break;
                         case "ht1":
-                            atom = (Atom) atomMap.get("h1");
+                            atom = atomMap.get("h1");
                             break;
                         case "ht2":
-                            atom = (Atom) atomMap.get("h2");
+                            atom = atomMap.get("h2");
                             break;
                         case "ht3":
-                            atom = (Atom) atomMap.get("h3");
+                            atom = atomMap.get("h3");
                             break;
                         default:
                             break;
                     }
                 } else if (lName.equals("hn")) {
-                    atom = (Atom) atomMap.get("h");
+                    atom = atomMap.get("h");
                 } else if (lName.equals("h")) {
-                    atom = (Atom) atomMap.get("hn");
+                    atom = atomMap.get("hn");
                 }
             } else if (lName.charAt(0) == 'o') {
                 if (polymer.isCapped() && (polymer.getLastResidue() == this)) {
                     switch (lName) {
                         case "o":
-                            atom = (Atom) atomMap.get("o'");
+                            atom = atomMap.get("o'");
                             break;
                         case "ot1":
-                            atom = (Atom) atomMap.get("o'");
+                            atom = atomMap.get("o'");
                             break;
                         case "o1":
-                            atom = (Atom) atomMap.get("o'");
+                            atom = atomMap.get("o'");
                             break;
                         case "ot2":
-                            atom = (Atom) atomMap.get("o''");
+                            atom = atomMap.get("o''");
                             break;
                         case "oxt":
-                            atom = (Atom) atomMap.get("o''");
+                            atom = atomMap.get("o''");
                             break;
                         case "o2":
-                            atom = (Atom) atomMap.get("o''");
+                            atom = atomMap.get("o''");
                             break;
                         default:
                             break;
@@ -523,7 +531,7 @@ public class Residue extends Compound {
             return this.getAtom(lastBackBoneAtomName);
         }
         String pType = polymer.getPolymerType();
-        String searchString = pType.equals("polypeptide") ? "C" : "O3'";
+        String searchString = pType.contains("polypeptide") ? "C" : "O3'";
         Atom atom = this.getAtom(searchString);
         return atom;
     }
@@ -556,7 +564,7 @@ public class Residue extends Compound {
          */
 
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
-        String[] atomStrings = pType.equals("polypeptide") ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
+        String[] atomStrings = pType.contains("polypeptide") ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
         for (String atomString : atomStrings) {
             Atom atom = this.getAtom(atomString);
             if (atom == null) {
@@ -568,7 +576,7 @@ public class Residue extends Compound {
     }
 
     Point3 getNBoundPoint() {
-        boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = this.polymer.getPolymerType().contains("polypeptide");
         Atom atom = this.getFirstBackBoneAtom();
         String preferedLookup = isProtein ? "H" : "OP1";
         String[] exclusionList = new String[2];
@@ -597,7 +605,7 @@ public class Residue extends Compound {
          * from the previous residue.
          *
          */
-        boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = this.polymer.getPolymerType().contains("polypeptide");
         String[] compliantArray = isProtein ? COMPLIANT_AMINO_ACID : COMPLIANT_NUCLEIC_ACID;
         Point3[] pts = new Point3[4];
         for (int i = 0; i < compliantArray.length; i++) {

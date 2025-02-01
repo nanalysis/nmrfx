@@ -14,7 +14,8 @@ import java.util.*;
 public class DatasetRegion implements Comparator, Comparable {
 
     private static final Logger log = LoggerFactory.getLogger(DatasetRegion.class);
-    private final double[] x;
+    DatasetRegion linkRegion = null;
+    private final double[] xPriv;
     private final double[] startIntensity;
     private final double[] endIntensity;
     private double integral;
@@ -22,6 +23,12 @@ public class DatasetRegion implements Comparator, Comparable {
     private double max;
     private int[] maxLocation;
     private boolean isAuto = false;
+
+    DatasetBase dataset = null;
+
+    private int index = 0;
+
+    private int group = 0;
     // Listeners for changes in this DatasetRegion
     private final Set<DatasetRegionListener> regionChangeListeners = new HashSet<>();
 
@@ -76,6 +83,13 @@ public class DatasetRegion implements Comparator, Comparable {
 
     }
 
+    public DatasetRegion getLinkRegion() {
+        return linkRegion;
+    }
+    public double[] getX() {
+        return linkRegion == null ? xPriv : linkRegion.xPriv;
+    }
+
     /**
      * Loads the long version of the region file as a list of DatasetRegions.
      *
@@ -90,7 +104,7 @@ public class DatasetRegion implements Comparator, Comparable {
         int nDim = 0;
         for (String line : lines) {
             line = line.trim();
-            if (line.length() == 0) {
+            if (line.isEmpty()) {
                 // Ignore blank lines
                 continue;
             }
@@ -190,6 +204,7 @@ public class DatasetRegion implements Comparator, Comparable {
     public String getHeader() {
         char sepChar = '\t';
         StringBuilder sBuilder = new StringBuilder();
+        double[] x = getX();
         int nDim = x.length / 2;
         for (int i = 0; i < nDim; i++) {
             for (int j = 0; j < 2; j++) {
@@ -211,6 +226,7 @@ public class DatasetRegion implements Comparator, Comparable {
     public String toString() {
         char sepChar = '\t';
         StringBuilder sBuilder = new StringBuilder();
+        double[] x = getX();
         for (double value : x) {
             sBuilder.append(value).append(sepChar);
         }
@@ -228,44 +244,52 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public DatasetRegion() {
-        x = null;
+        xPriv = null;
         startIntensity = new double[0];
         endIntensity = new double[0];
     }
 
+    public DatasetRegion(DatasetRegion linkRegion) {
+        this.linkRegion = linkRegion;
+        xPriv = null;
+        startIntensity = new double[linkRegion.startIntensity.length];
+        endIntensity = new double[linkRegion.endIntensity.length];
+        isAuto = linkRegion.isAuto();
+    }
+
     public DatasetRegion(final double x0, final double x1) {
-        x = new double[2];
+        xPriv = new double[2];
         startIntensity = new double[1];
         endIntensity = new double[1];
-        x[0] = x0;
-        x[1] = x1;
+        xPriv[0] = x0;
+        xPriv[1] = x1;
         sortEachDim();
     }
 
     public DatasetRegion(final double x0, final double x1, final double y0, final double y1) {
-        x = new double[4];
+        xPriv = new double[4];
         startIntensity = new double[2];
         endIntensity = new double[2];
-        x[0] = x0;
-        x[1] = x1;
-        x[2] = y0;
-        x[3] = y1;
+        xPriv[0] = x0;
+        xPriv[1] = x1;
+        xPriv[2] = y0;
+        xPriv[3] = y1;
         sortEachDim();
     }
 
     public DatasetRegion(final double[] newRegion) {
-        x = new double[newRegion.length];
-        startIntensity = new double[x.length / 2];
-        endIntensity = new double[x.length / 2];
-        System.arraycopy(newRegion, 0, x, 0, x.length);
+        xPriv = new double[newRegion.length];
+        startIntensity = new double[xPriv.length / 2];
+        endIntensity = new double[xPriv.length / 2];
+        System.arraycopy(newRegion, 0, xPriv, 0, xPriv.length);
         sortEachDim();
     }
 
     public DatasetRegion(final double[] newRegion, final double[] newIntensities) {
-        x = new double[newRegion.length];
-        startIntensity = new double[x.length / 2];
-        endIntensity = new double[x.length / 2];
-        System.arraycopy(newRegion, 0, x, 0, x.length);
+        xPriv = new double[newRegion.length];
+        startIntensity = new double[xPriv.length / 2];
+        endIntensity = new double[xPriv.length / 2];
+        System.arraycopy(newRegion, 0, xPriv, 0, xPriv.length);
         for (int i = 0; i < newIntensities.length; i += 2) {
             startIntensity[i / 2] = newIntensities[2 * i];
             endIntensity[i / 2] = newIntensities[2 * i + 1];
@@ -274,13 +298,14 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public DatasetRegion(final double[] newRegion, final double[] startIntensity, final double[] endIntensity) {
-        x = newRegion.clone();
+        xPriv = newRegion.clone();
         this.startIntensity = startIntensity.clone();
         this.endIntensity = endIntensity.clone();
         sortEachDim();
     }
 
     private void sortEachDim() {
+        double[] x = getX();
         int n = getNDims();
         for (int i = 0; i < n; i++) {
             int j = i * 2;
@@ -294,10 +319,12 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public int getNDims() {
+        double[] x = getX();
         return x.length / 2;
     }
 
     public double getRegionStart(int dim) {
+        double[] x = getX();
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
         }
@@ -305,6 +332,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public void setRegionStart(int dim, double value) {
+        double[] x = getX();
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
         }
@@ -313,6 +341,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public double getRegionEnd(int dim) {
+        double[] x = getX();
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
         }
@@ -320,6 +349,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public void setRegionEnd(int dim, double value) {
+        double[] x = getX();
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
         }
@@ -368,13 +398,13 @@ public class DatasetRegion implements Comparator, Comparable {
         DatasetRegion r1 = (DatasetRegion) o1;
         DatasetRegion r2 = (DatasetRegion) o2;
         if ((r1 != null) || (r2 != null)) {
-            if (r1 == null || r1.x == null) {
+            if (r1 == null || r1.getX() == null) {
                 result = -1;
-            } else if (r2 == null || r2.x == null) {
+            } else if (r2 == null || r2.getX() == null) {
                 result = 1;
-            } else if (r1.x[0] < r2.x[0]) {
+            } else if (r1.getX()[0] < r2.getX()[0]) {
                 result = -1;
-            } else if (r2.x[0] < r1.x[0]) {
+            } else if (r2.getX()[0] < r1.getX()[0]) {
                 result = 1;
             }
         }
@@ -382,6 +412,13 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
+    public DatasetBase getDataset() {
+        return dataset;
+    }
+
+    public String getDatasetName() {
+        return dataset != null ? dataset.getName() : "";
+    }
     @Override
     public int compareTo(Object o2) {
         return compare(this, o2);
@@ -389,6 +426,7 @@ public class DatasetRegion implements Comparator, Comparable {
 
     @Override
     public int hashCode() {
+        double[] x = getX();
         return x == null ? Objects.hashCode(x) : Double.hashCode(x[0]);
     }
 
@@ -425,6 +463,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public boolean removeOverlapping(Iterable<DatasetRegion> regions) {
+        double[] x = getX();
         Iterator<DatasetRegion> iter = regions.iterator();
         boolean result = false;
 
@@ -433,7 +472,7 @@ public class DatasetRegion implements Comparator, Comparable {
             if (overlaps(tRegion)) {
                 result = true;
                 iter.remove();
-            } else if (tRegion.x[0] > x[1]) {
+            } else if (tRegion.getX()[0] > x[1]) {
                 break;
             }
         }
@@ -441,6 +480,7 @@ public class DatasetRegion implements Comparator, Comparable {
     }
 
     public DatasetRegion split(double splitPosition0, double splitPosition1) {
+        double[] x = getX();
         DatasetRegion newRegion = new DatasetRegion(splitPosition1, x[1]);
         x[1] = splitPosition0;
         updateAllListeners();
@@ -491,7 +531,13 @@ public class DatasetRegion implements Comparator, Comparable {
         updateAllListeners();
     }
 
+    public void measure() throws IOException {
+        if (dataset != null) {
+            measure(dataset);
+        }
+    }
     public void measure(DatasetBase dataset) throws IOException {
+        this.dataset = dataset;
         int[] pt = new int[dataset.getNDim()];
         double start = getRegionStart(0);
         double end = getRegionEnd(0);
@@ -534,5 +580,20 @@ public class DatasetRegion implements Comparator, Comparable {
             }
         }
         return closest;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int i) {
+        index = i;
+    }
+    public int getGroup() {
+        return group;
+    }
+
+    public void setGroup(int i) {
+        group = i;
     }
 }

@@ -86,6 +86,7 @@ public class ScannerTool implements ControllerTool {
 
     TRACTGUI tractGUI = null;
     TablePlotGUI plotGUI = null;
+    TablePlotGUI diffusionGUI = null;
     MinerController miner;
     ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
 
@@ -135,6 +136,10 @@ public class ScannerTool implements ControllerTool {
 
     public void hideMenus() {
         borderPane.setTop(null);
+    }
+
+    public boolean scannerActive() {
+        return borderPane.getTop() != null;
     }
 
     @Override
@@ -235,9 +240,11 @@ public class ScannerTool implements ControllerTool {
         MenuButton menu = new MenuButton("Tools");
         MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
         plotMenuItem.setOnAction(e -> showPlotGUI());
+        MenuItem diffusionMenuItem = new MenuItem("Show Diffusion Tool");
+        diffusionMenuItem.setOnAction(e -> showDiffusionGUI());
         MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
         tractMenuItem.setOnAction(e -> showTRACTGUI());
-        menu.getItems().addAll(plotMenuItem, tractMenuItem);
+        menu.getItems().addAll(plotMenuItem, diffusionMenuItem, tractMenuItem);
         return menu;
     }
 
@@ -284,6 +291,7 @@ public class ScannerTool implements ControllerTool {
     }
 
     private void loadFromDataset() {
+        chart = controller.getActiveChart();
         scanTable.loadFromDataset();
         scanTable.setChart();
     }
@@ -327,18 +335,24 @@ public class ScannerTool implements ControllerTool {
     }
 
     private void measure() {
+        measure(null);
+    }
+
+    public void measure(double[] ppms) {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
         Optional<String> columNameOpt = textInput.showAndWait();
         if (columNameOpt.isPresent()) {
             String columnName = columNameOpt.get();
             columnName = columnName.replace(':', '_').replace(' ', '_');
-            if (!columnName.equals("") && hasColumnName(columnName)) {
+            if (!columnName.isEmpty() && hasColumnName(columnName)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
                 alert.showAndWait();
                 return;
             }
-            double[] ppms = chart.getCrossHairs().getVerticalPositions();
+            if (ppms == null) {
+                ppms = chart.getCrossHairs().getVerticalPositions();
+            }
             double[] wppms = new double[2];
             wppms[0] = chart.getAxes().get(0).getLowerBound();
             wppms[1] = chart.getAxes().get(0).getUpperBound();
@@ -358,7 +372,7 @@ public class ScannerTool implements ControllerTool {
                 if (itemDataset == null) {
                     File datasetFile = new File(scanTable.getScanDir(), datasetName);
                     try {
-                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                        itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                     } catch (IOException ioE) {
                         GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
                         return;
@@ -409,7 +423,7 @@ public class ScannerTool implements ControllerTool {
             if (itemDataset == null) {
                 File datasetFile = new File(scanTable.getScanDir(), datasetName);
                 try {
-                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false);
+                    itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                 } catch (IOException ioE) {
                     GUIUtils.warn("Measure", "Can't open dataset " + datasetFile.getPath());
                     return;
@@ -788,9 +802,15 @@ public class ScannerTool implements ControllerTool {
 
     void showPlotGUI() {
         if (plotGUI == null) {
-            plotGUI = new TablePlotGUI(tableView);
+            plotGUI = new TablePlotGUI(tableView, null);
         }
         plotGUI.showPlotStage();
+    }
+    void showDiffusionGUI() {
+        if (diffusionGUI == null) {
+            diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION);
+        }
+        diffusionGUI.showPlotStage();
     }
 
     void showTRACTGUI() {

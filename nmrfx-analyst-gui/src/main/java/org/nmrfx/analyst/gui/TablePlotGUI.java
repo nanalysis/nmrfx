@@ -32,6 +32,8 @@ import javafx.stage.Stage;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.controlsfx.control.CheckComboBox;
 import org.nmrfx.analyst.gui.tools.ScanTable;
+import org.nmrfx.analyst.gui.tools.fittools.DiffusionFitGUI;
+import org.nmrfx.analyst.gui.tools.fittools.FitGUI;
 import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.controls.FileTableItem;
@@ -63,20 +65,31 @@ public class TablePlotGUI {
     List<DataSeries> fitLineSeries = new ArrayList<>();
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
     TableView<ParItem> parTable = new TableView<>();
+    VBox extraBox = new VBox();
+
+    FitGUI fitGUI = null;
+
+    CheckBox fitSimCheckBox = new CheckBox("SimFit");
     VBox fitVBox;
     boolean showGroup = false;
 
+    public enum ExtraMode {
+        DIFFUSION
+    }
+
+    ExtraMode extraMode;
     /**
      * Creates a TablePlotGUI instance
      *
      * @param tableView the TableView object that will be used to get data to
      *                  plot
      */
-    public TablePlotGUI(TableView<FileTableItem> tableView) {
+    public TablePlotGUI(TableView<FileTableItem> tableView, ExtraMode extraMode) {
         this.tableView = tableView;
+        this.extraMode = extraMode;
     }
 
-    record ParItem(String columnName, int group, String parName, double value, double error) {
+    public record ParItem(String columnName, int group, String parName, double value, double error) {
     }
 
     /**
@@ -100,12 +113,12 @@ public class TablePlotGUI {
             xArrayChoice.setMinWidth(100);
             yArrayChoice.setMinWidth(150);
             try {
-                chartTypeChoice.valueProperty().addListener((Observable x) -> {
+                chartTypeChoice.valueProperty().addListener(x -> {
                     updateChartType();
                     updateAxisChoices();
                 });
 
-                xArrayChoice.valueProperty().addListener((Observable x) -> updatePlot());
+                xArrayChoice.valueProperty().addListener(x -> updatePlot());
                 yArrayChoice.getCheckModel().getCheckedItems().addListener((Observable y) -> updatePlot());
             } catch (NullPointerException npEmc1) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -132,15 +145,17 @@ public class TablePlotGUI {
             button.setOnAction(e -> analyze());
             equationChoice.getItems().addAll("ExpAB", "ExpABC", "GaussianAB", "GaussianABC", "A<->B");
             equationChoice.setValue("ExpABC");
-            toolBar2.getItems().addAll(equationChoice, button);
+            toolBar2.getItems().addAll(equationChoice, button, fitSimCheckBox);
             toolBar.getItems().addAll(fileMenu, typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
             ToolBarUtils.addFiller(toolBar, 10, 200);
             toolBar.getItems().add(showFitCheckBox);
 
+
+
             fitVBox = new VBox();
             fitVBox.setMinWidth(200);
-            fitVBox.getChildren().addAll(toolBar2, parTable);
+            fitVBox.getChildren().addAll(toolBar2, extraBox, parTable);
 
             chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
@@ -149,12 +164,24 @@ public class TablePlotGUI {
             borderPane.setRight(null);
             stage.setScene(stageScene);
             setupTable();
+            if (extraMode == ExtraMode.DIFFUSION) {
+                fitGUI = new DiffusionFitGUI();
+                fitGUI.setupGridPane(extraBox);
+                equationChoice.setValue("GaussianAB");
+                showFitCheckBox.setSelected(true);
+                toggleFitPane(showFitCheckBox);
+            }
         }
         updateAxisChoices();
+        if (extraMode == ExtraMode.DIFFUSION) {
+            fitGUI.setXYChoices(tableView, xArrayChoice, yArrayChoice);
+        }
+
         stage.show();
         stage.toFront();
         updatePlot();
     }
+
 
     private void toggleFitPane(CheckBox showFitBox) {
         if (showFitBox.isSelected()) {
@@ -191,11 +218,13 @@ public class TablePlotGUI {
         var groups = new HashMap<Integer, List<FileTableItem>>();
         List<FileTableItem> items = tableView.getItems();
         for (FileTableItem item : items) {
-            if (!groups.containsKey(item.getGroup())) {
-                groups.put(item.getGroup(), new ArrayList<>());
+            if (item.getActive()) {
+                if (!groups.containsKey(item.getGroup())) {
+                    groups.put(item.getGroup(), new ArrayList<>());
+                }
+                var itemList = groups.get(item.getGroup());
+                itemList.add(item);
             }
-            var itemList = groups.get(item.getGroup());
-            itemList.add(item);
         }
         return groups;
     }
@@ -210,6 +239,9 @@ public class TablePlotGUI {
     }
 
 
+    int nActive(List<FileTableItem> items) {
+       return (int) items.stream().filter(item -> item.getActive()).count();
+    }
     void updatePlotWithFitLines() {
         updateScatterPlot();
         for (var series : fitLineSeries) {
@@ -255,11 +287,14 @@ public class TablePlotGUI {
                         series.setFill(ScanTable.getGroupColor(groupNum));
 
                         series.clear();
-                        double[] ddata = new double[items.size()];
+                        int nItems = nActive(items);
+                        double[] ddata = new double[nItems];
                         int i = 0;
                         for (FileTableItem item : items) {
-                            double y = item.getDouble(nameMap.get(yElem));
-                            ddata[i++] = y;
+                            if (item.getActive()) {
+                                double y = item.getDouble(nameMap.get(yElem));
+                                ddata[i++] = y;
+                            }
                         }
                         BoxPlotData fiveNum = new BoxPlotData(ddata);
                         XYValue xy = new XYValue(iValue + 1.0, 0.0);
@@ -302,12 +337,14 @@ public class TablePlotGUI {
                             DataSeries series = new DataSeries();
                             series.clear();
                             for (FileTableItem item : items) {
-                                double x = item.getDouble(nameMap.get(xElem));
-                                double y = item.getDouble(nameMap.get(yElem));
-                                series.add(new XYValue(x, y));
-                                series.setFill(ScanTable.getGroupColor(groupNum));
-                                series.setStroke(ScanTable.getGroupColor(groupNum));
+                                if (item.getActive()) {
+                                    double x = item.getDouble(nameMap.get(xElem));
+                                    double y = item.getDouble(nameMap.get(yElem));
+                                    series.add(new XYValue(x, y));
+                                }
                             }
+                            series.setFill(ScanTable.getGroupColor(groupNum));
+                            series.setStroke(ScanTable.getGroupColor(groupNum));
                             activeChart.getData().add(series);
                             activeChart.autoScale(true);
                         }
@@ -380,9 +417,7 @@ public class TablePlotGUI {
                     currentChecks.remove(name);
                 }
             }
-            if (items.contains(null)) {
-                items.remove(null);
-            }
+            items.remove(null);
             for (String name : columnNames) {
                 if (!items.contains(name)) {
                     items.add(name);
@@ -437,6 +472,15 @@ public class TablePlotGUI {
             return;
         }
         int nY = fitEquation.nY();
+        if (nY == 0) {
+            if (fitSimCheckBox.isSelected()) {
+                nY = yElems.size();
+            } else {
+                nY = 1;
+            }
+        }
+        fitEquation.nY(nY);
+
         if ((nY == 2) && (nY != yElems.size())) {
             GUIUtils.warn("Fit Y values", "Need " + nY + " columns");
             return;
@@ -445,13 +489,17 @@ public class TablePlotGUI {
         ObservableList<ParItem> allResults = FXCollections.observableArrayList();
         if ((xElem != null) && !yElems.isEmpty()) {
             int iGroup = 0;
-            if (nY == 2) {
+            if (nY > 1) {
                 allResults.addAll(fit(xElem, yElems, fitEquation, nY, iGroup));
             } else {
                 for (var yElem : yElems) {
                     List<String> subYElem = new ArrayList<>(Collections.singleton(yElem));
                     allResults.addAll(fit(xElem, subYElem, fitEquation, nY, iGroup++));
                 }
+            }
+            if (fitGUI != null) {
+                List<TablePlotGUI.ParItem> newItems = fitGUI.addDerivedPars(allResults);
+                allResults.addAll(newItems);
             }
             updatePlotWithFitLines();
             parTable.getItems().setAll(allResults);
@@ -460,28 +508,31 @@ public class TablePlotGUI {
 
     private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY, int iGroup) {
         List<FileTableItem> items = tableView.getItems();
-        double[][] xValues = new double[1][items.size()];
-        double[][] yValues = new double[nY][items.size()];
-        double[][] errValues = new double[2][items.size()];
+        int nItems = nActive(items);
+        double[][] xValues = new double[1][nItems];
+        double[][] yValues = new double[nY][nItems];
+        double[][] errValues = new double[nY][nItems];
         int i = 0;
         double maxX = 0.0;
         for (FileTableItem item : items) {
-            double x = item.getDouble(nameMap.get(xElem));
-            xValues[0][i] = x;
-            maxX = Math.max(xValues[0][i], maxX);
-            int j = 0;
-            for (var yElem : yElems) {
-                yValues[j][i] = item.getDouble(nameMap.get(yElem));
-                errValues[j][i] = 1.0;
-                j++;
+            if (item.getActive()) {
+                double x = item.getDouble(nameMap.get(xElem));
+                xValues[0][i] = x;
+                maxX = Math.max(xValues[0][i], maxX);
+                int j = 0;
+                for (var yElem : yElems) {
+                    yValues[j][i] = item.getDouble(nameMap.get(yElem));
+                    errValues[j][i] = 1.0;
+                    j++;
+                }
+                i++;
             }
-            i++;
         }
         fitEquation.setXYE(xValues, yValues, errValues);
         PointValuePair result = fitEquation.fit();
         if (result == null) {
             GUIUtils.warn("Fitting", "Error fitting data");
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         double[] errs = fitEquation.getParErrs();
         String[] parNames = fitEquation.parNames();

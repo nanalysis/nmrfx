@@ -17,11 +17,12 @@
  */
 package org.nmrfx.chemistry.io;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.ConstraintSet;
 import org.nmrfx.chemistry.relax.*;
-import org.nmrfx.chemistry.relax.RelaxTypes;
+import org.nmrfx.chemistry.utilities.NvUtil;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.PeakPaths;
@@ -31,11 +32,9 @@ import org.nmrfx.peaks.io.PeakWriter;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -54,9 +53,24 @@ public class NMRStarWriter {
     private static final String[] chemCompAtomLoopStrings = {"_Chem_comp_atom.Atom_ID", "_Chem_comp_atom.PDB_atom_ID", "_Chem_comp_atom.Alt_atom_ID", "_Chem_comp_atom.Auth_atom_ID", "_Chem_comp_atom.Type_symbol", "_Chem_comp_atom.Isotope_number", "_Chem_comp_atom.Chirality", "_Chem_comp_atom.Charge", "_Chem_comp_atom.Partial_charge", "_Chem_comp_atom.Oxidation_number", "_Chem_comp_atom.PDBx_aromatic_flag", "_Chem_comp_atom.PDBx_leaving_atom_flag", "_Chem_comp_atom.Substruct_code", "_Chem_comp_atom.Ionizable", "_Chem_comp_atom.Details", "_Chem_comp_atom.Entry_ID", "_Chem_comp_atom.Comp_ID", "_Chem_comp_atom.Unpaired_electron_number"};
     private static final String[] chemShiftAssignmentStrings = {"_Atom_chem_shift.ID", "_Atom_chem_shift.Assembly_atom_ID", "_Atom_chem_shift.Entity_assembly_ID", "_Atom_chem_shift.Entity_ID", "_Atom_chem_shift.Comp_index_ID", "_Atom_chem_shift.Seq_ID", "_Atom_chem_shift.Comp_ID", "_Atom_chem_shift.Atom_ID", "_Atom_chem_shift.Atom_type", "_Atom_chem_shift.Atom_isotope_number", "_Atom_chem_shift.Val", "_Atom_chem_shift.Val_err", "_Atom_chem_shift.Assign_fig_of_merit", "_Atom_chem_shift.Ambiguity_code", "_Atom_chem_shift.Occupancy", "_Atom_chem_shift.Resonance_ID", "_Atom_chem_shift.Auth_seq_ID", "_Atom_chem_shift.Auth_comp_ID", "_Atom_chem_shift.Auth_atom_ID", "_Atom_chem_shift.Details", "_Atom_chem_shift.Assigned_chem_shift_list_ID"};
     private static final String[] atomCoordinateLoopStrings = {"_Atom_site.Assembly_ID", "_Atom_site.Model_ID", "_Atom_site.Model_site_ID", "_Atom_site.ID", "_Atom_site.Assembly_atom_ID", "_Atom_site.Label_entity_assembly_ID", "_Atom_site.Label_entity_ID", "_Atom_site.Label_comp_index_ID", "_Atom_site.Label_comp_ID", "_Atom_site.Label_atom_ID", "_Atom_site.Type_symbol", "_Atom_site.Cartn_x", "_Atom_site.Cartn_y", "_Atom_site.Cartn_z", "_Atom_site.Cartn_x_esd", "_Atom_site.Cartn_y_esd", "_Atom_site.Cartn_z_esd", "_Atom_site.Occupancy", "_Atom_site.Occupancy_esd", "_Atom_site.Uncertainty", "_Atom_site.Ordered_flag", "_Atom_site.Footnote_ID", "_Atom_site.Details", "_Atom_site.Entry_ID", "_Atom_site.Conformer_family_coord_set_ID"};
-
+    public enum StarTypes {
+        MOLECULES("Molecules"),
+        PEAKLISTS("Peak Lists"),
+        RESONANCES("Resonances"),
+        ASSIGNMENTS("Assignments"),
+        COORDINATES("Coordinates"),
+        CONSTRAINTS("Constraints"),
+        PEAKPATHS("Peak Paths"),
+        RELAXATION("Relaxation"),
+        ORDERPARAMETERS("Order Parameters")
+        ;
+        public final String name;
+        StarTypes(String name) {
+            this.name = name;
+        }
+    }
     public static void initSaveFrameOutput(StringBuilder sBuilder, String category, String categoryName, String id) {
-        sBuilder.append("save_").append(categoryName).append("_").append(id).append("\n");
+        sBuilder.append(STAR3Base.SAVE).append(categoryName).append("_").append(id).append("\n");
         NMRStarWriter.appendSTAR(sBuilder, category, "Sf_category", categoryName);
         NMRStarWriter.appendSTAR(sBuilder, category, "Sf_framecode", categoryName + "_" + id);
         NMRStarWriter.appendSTAR(sBuilder, category, "Entry_ID", ".");
@@ -122,14 +136,14 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         result.append(sep);
-        result.append(atom.entity.label);
+        result.append(atom.entity.name);
         result.append(sep);
         result.append("?");
         return result.toString();
     }
 
     public static void writeEntityCommonNamesSTAR3(Writer chan, Entity entity, int entityID) throws IOException {
-        if (entity.getCommonNames().size() > 0) {
+        if (!entity.getCommonNames().isEmpty()) {
             chan.write("loop_\n");
             for (String loopString : NMRStarWriter.entityCommonNameLoopStrings) {
                 chan.write(loopString + "\n");
@@ -149,7 +163,7 @@ public class NMRStarWriter {
         String sep = " ";
         result.append(compID);
         result.append(sep);
-        result.append("\"").append(entity.name).append("\"");
+        result.append(STAR3Base.quote(entity.getEntityAssemblyName()));
         result.append(sep);
         result.append(entity.entityID);
         result.append(sep);
@@ -169,39 +183,7 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entity.role);
         result.append(sep);
-        result.append(entity.details);
-        result.append(sep);
-        result.append(assemblyID);
-        result.append(sep);
-        return result.toString();
-    }
-
-    static String toSTAR3String(Polymer polymer, String coordSetName, int assemblyID, int compID) {
-        StringBuilder result = new StringBuilder();
-        String sep = " ";
-        result.append(compID);
-        result.append(sep);
-        result.append("\"").append(polymer.name).append("\"");
-        result.append(sep);
-        result.append(polymer.entityID);
-        result.append(sep);
-        result.append("$").append(polymer.label);
-        result.append(sep);
-        result.append(coordSetName);
-        result.append(sep);
-        result.append("yes");
-        result.append(sep);
-        result.append(polymer.physicalState);
-        result.append(sep);
-        result.append(polymer.conformationalIsomer);
-        result.append(sep);
-        result.append(polymer.chemicalExchangeState);
-        result.append(sep);
-        result.append(polymer.magneticEquivalenceGroupCode);
-        result.append(sep);
-        result.append(polymer.role);
-        result.append(sep);
-        result.append(polymer.details);
+        result.append(STAR3Base.quote(entity.details));
         result.append(sep);
         result.append(assemblyID);
         result.append(sep);
@@ -218,29 +200,30 @@ public class NMRStarWriter {
     }
 
     static void writeCompoundHeaderSTAR3(Writer chan, Compound compound, int entityID) throws ParseException, IOException {
+        String name = compound.name;
         String label = compound.label;
-        chan.write("save_" + label + "\n");
+        chan.write(STAR3Base.SAVE + name + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
-        chan.write("_Entity.framecode                           ");
-        chan.write(label + "\n");
+        chan.write("_Entity.Sf_framecode                           ");
+        chan.write(name + "\n");
         chan.write("_Entity.ID                           ");
         chan.write(entityID + "\n");
         chan.write("_Entity.Name                        ");
-        chan.write(label + "\n");
+        chan.write(name + "\n");
         chan.write("_Entity.Type                          ");
         chan.write("non-polymer\n");
         chan.write("\n");
-        STAR3.writeLoopStrings(chan, chemCompEntityIndexLoopStrings);
+        STAR3Base.writeLoopStrings(chan, chemCompEntityIndexLoopStrings);
         StringBuilder result = new StringBuilder();
         String sep = " ";
         result.append("1");
         result.append(sep);
         result.append(compound.getNumber());
         result.append(sep);
-        result.append(label);
+        result.append(STAR3Base.quote(label));
         result.append(sep);
-        result.append(label);
+        result.append(STAR3Base.quote(label));
         result.append(sep);
         result.append(".");
         result.append(sep);
@@ -283,24 +266,23 @@ public class NMRStarWriter {
      */
     static void writeEntityHeaderSTAR3(Writer chan, Entity entity, int entityID, boolean nonStandard) throws IOException {
         String label = entity.label;
-        chan.write("save_" + label + "\n");
+        chan.write(STAR3Base.SAVE + label + "\n");
         chan.write("_Entity.Sf_category                 ");
         chan.write("entity\n");
-        chan.write("_Entity.framecode                           ");
+        chan.write("_Entity.Sf_framecode                           ");
         chan.write(label + "\n");
         chan.write("_Entity.ID                           ");
         chan.write(entityID + "\n");
         chan.write("_Entity.Name                        ");
         chan.write(label + "\n");
         chan.write("_Entity.Type                          ");
-        if (entity instanceof Polymer) {
-            Polymer polymer = (Polymer) entity;
+        if (entity instanceof Polymer polymer) {
             chan.write("polymer\n");
             chan.write("_Entity.Polymer_type                  ");
             chan.write(polymer.getPolymerType() + "\n");
             chan.write("_Entity.Polymer_strand_ID            ");
             String strandID = polymer.getStrandID();
-            if (strandID.equals("")) {
+            if (strandID.isEmpty()) {
                 strandID = "?";
             }
             chan.write(strandID + "\n");
@@ -344,21 +326,21 @@ public class NMRStarWriter {
     }
 
     static void writeCompoundToSTAR3(Writer chan, Compound compound, int entityID, final String mode) throws IOException, ParseException {
-        String label = compound.label;
-        chan.write("save_chem_comp_" + label + mode + "\n");
+        String label = compound.name;
+        chan.write(STAR3Base.SAVE + "chem_comp_" + label + mode + "\n");
         chan.write("_Chem_comp.Sf_category                 ");
         chan.write("chem_comp\n");
-        chan.write("_Chem_comp.framecode                           ");
+        chan.write("_Chem_comp.Sf_framecode                           ");
         chan.write("chem_comp_" + label + mode + "\n");
-        STAR3.writeLoopStrings(chan, chemCompAtomLoopStrings);
+        STAR3Base.writeLoopStrings(chan, chemCompAtomLoopStrings);
         int iAtom = 0;
         for (Atom atom : compound.getAtoms()) {
             chan.write(toSTAR3CompoundString(iAtom, atom, entityID));
             chan.write("\n");
         }
         chan.write("stop_\n");
-        if (compound.getBonds().size() > 0) {
-            STAR3.writeLoopStrings(chan, chemCompBondLoopStrings);
+        if (!compound.getBonds().isEmpty()) {
+            STAR3Base.writeLoopStrings(chan, chemCompBondLoopStrings);
             int iBond = 1;
             for (Bond bond : compound.getBonds()) {
                 if (bond.begin.entity == bond.end.entity) {
@@ -369,7 +351,7 @@ public class NMRStarWriter {
             }
             chan.write("stop_\n");
         }
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     static String toSTAR3CompoundBondString(int ID, Bond bond, int entityID) {
@@ -405,16 +387,16 @@ public class NMRStarWriter {
         result.append(sep);
         result.append(entityID);
         result.append(sep);
-        result.append(bond.begin.entity.label);
+        result.append(bond.begin.entity.name);
         return result.toString();
     }
 
     static String toSTAR3CommonNameString(Entity.EntityCommonName eCN, int entityID) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        result.append(STAR3.quote(eCN.getName()));
+        result.append(STAR3Base.quote(eCN.getName()));
         result.append(sep);
-        result.append(STAR3.quote(eCN.getType()));
+        result.append(STAR3Base.quote(eCN.getType()));
         result.append(sep);
         result.append(entityID);
         return result.toString();
@@ -512,18 +494,17 @@ public class NMRStarWriter {
         chan.write("\n\n");
         while (entityIterator.hasNext()) {
             Entity entity = entityIterator.next();
-            if (entity instanceof Polymer) {
+            if (entity instanceof Polymer polymer) {
                 writeEntityHeaderSTAR3(chan, entity, entityID, false);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
-                Polymer polymer = (Polymer) entity;
                 writeEntitySeqSTAR3(chan, polymer, entityID);
-                chan.write("save_\n\n");
+                chan.write(STAR3Base.SAVE + "\n\n");
                 if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR") || true) {
                     writeComponentsSTAR3(chan, polymer, cmpdSet);
                 }
             } else {
                 writeCompoundHeaderSTAR3(chan, (Compound) entity, entityID);
-                chan.write("save_\n\n");
+                chan.write(STAR3Base.SAVE + "\n\n");
                 writeCompoundToSTAR3(chan, (Compound) entity, entityID, "");
             }
             entityID++;
@@ -534,7 +515,7 @@ public class NMRStarWriter {
         chan.write("    #  Molecular system (assembly) description  #\n");
         chan.write("    #############################################\n");
         chan.write("\n\n");
-        chan.write("save_" + "assembly\n");
+        chan.write(STAR3Base.SAVE + "assembly\n");
         chan.write("_Assembly.Sf_category                 ");
         chan.write("assembly\n");
         chan.write("_Assembly.Sf_framecode                 ");
@@ -554,7 +535,7 @@ public class NMRStarWriter {
         chan.write(nEntities + "\n");
         for (String key : molecule.getPropertyNames()) {
             String propValue = molecule.getProperty(key);
-            if ((propValue != null) && (!propValue.equals(""))) {
+            if ((propValue != null) && (!propValue.isEmpty())) {
                 chan.write("_Assembly.NvJ_prop_" + key + "                   ");
                 STAR3.writeString(chan, propValue, 1024);
             }
@@ -570,7 +551,7 @@ public class NMRStarWriter {
         }
         chan.write("stop_\n");
         chan.write("\n");
-        chan.write("save_\n");
+        chan.write(STAR3Base.SAVE + "\n");
     }
 
     public static String toSTARChemShiftAssignmentString(final SpatialSet spatialSet, final int id, final int ppmSet) {
@@ -640,7 +621,7 @@ public class NMRStarWriter {
         result.append(resIDStr);
         result.append(sep);
         String rNum = ((Compound) atom.getEntity()).getNumber();
-        if (rNum.trim().length() == 0) {
+        if (rNum.trim().isEmpty()) {
             rNum = ".";
         }
         result.append(rNum);
@@ -682,11 +663,11 @@ public class NMRStarWriter {
         chan.write("#                                                                 #\n");
         chan.write("###################################################################\n");
         chan.write("\n\n");
-        chan.write("save_assigned_chem_shift_list_" + ppmSet + "\n");
+        chan.write(STAR3Base.SAVE + "assigned_chem_shift_list_" + ppmSet + "\n");
         chan.write("_Assigned_chem_shift_list.Sf_category                 ");
         chan.write("assigned_chemical_shifts\n");
         chan.write("_Assigned_chem_shift_list.Sf_framecode                 ");
-        chan.write("assigned_chem_shift_list_1\n");
+        chan.write("assigned_chem_shift_list_" + ppmSet + "\n");
         chan.write("_Assigned_chem_shift_list.Sample_condition_list_ID      ");
         chan.write(".\n");
         chan.write("_Assigned_chem_shift_list.Sample_condition_list_label    ");
@@ -832,23 +813,13 @@ public class NMRStarWriter {
             resName = atom.getResidueName();
             atomName = atom.getName();
             nucName = atom.getElementName();
-            switch (nucName) {
-                case "C":
-                    isotope = 13;
-                    break;
-                case "N":
-                    isotope = 15;
-                    break;
-                case "F":
-                    isotope = 19;
-                    break;
-                case "P":
-                    isotope = 31;
-                    break;
-                default:
-                    isotope = 1;
-                    break;
-            }
+            isotope = switch (nucName) {
+                case "C" -> 13;
+                case "N" -> 15;
+                case "F" -> 19;
+                case "P" -> 31;
+                default -> 1;
+            };
         }
 
         sBuilder.append(String.format("%-4s ", "."));
@@ -897,7 +868,7 @@ public class NMRStarWriter {
         chan.write("    #  Heteronuclear NOE values  #\n");
         chan.write("    ########################################\n");
         chan.write("\n\n");
-        chan.write("save_" + frameName + "\n");
+        chan.write(STAR3Base.SAVE + frameName + "\n");
         chan.write("   _Heteronucl_NOE_list.Sf_category                    ");
         chan.write("heteronucl_NOEs\n");
         chan.write("   _Heteronucl_NOE_list.Sf_framecode                   ");
@@ -913,7 +884,7 @@ public class NMRStarWriter {
         chan.write("   _Heteronucl_NOE_list.Spectrometer_frequency_1H      ");
         chan.write(field + "\n");
         chan.write("   _Heteronucl_NOE_list.Heteronuclear_NOE_val_type      ");
-        chan.write(STAR3.quote("peak height") + "\n");
+        chan.write(STAR3Base.quote("peak height") + "\n");
         chan.write("   _Heteronucl_NOE_list.ref_val      ");
         chan.write("0\n"); //fixme get dynamically
         chan.write("   _Heteronucl_NOE_list.ref_description      ");
@@ -956,7 +927,7 @@ public class NMRStarWriter {
         }
 
         chan.write("   stop_\n");
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
 
     }
 
@@ -1021,7 +992,7 @@ public class NMRStarWriter {
         chan.write("    #  Heteronuclear " + expName + " relaxation values  #\n");
         chan.write("    ########################################\n");
         chan.write("\n\n");
-        chan.write("save_" + frameName + "\n");
+        chan.write(STAR3Base.SAVE + frameName + "\n");
         chan.write("   _Heteronucl_" + expName + "_list.Sf_category                    ");
         chan.write("heteronucl_" + expName + "_relaxation\n");
         chan.write("   _Heteronucl_" + expName + "_list.Sf_framecode                   ");
@@ -1084,8 +1055,12 @@ public class NMRStarWriter {
             results.add(value);
             results.add(error);
             if (expType.equals(RelaxTypes.R2) || expType.equals(RelaxTypes.R1RHO)) {
-                Double RexValue = ((RelaxationRex) relaxData).getRexValue();
-                Double RexError = ((RelaxationRex) relaxData).getRexError();
+                Double RexValue = null;
+                Double RexError = null;
+                if (relaxData instanceof RelaxationRex relaxationRex) {
+                    RexValue = relaxationRex.getRexValue();
+                    RexError = relaxationRex.getRexError();
+                }
                 results.add(RexValue);
                 results.add(RexError);
             }
@@ -1097,7 +1072,7 @@ public class NMRStarWriter {
             }
         }
         chan.write("   stop_\n");
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
 
     }
 
@@ -1152,7 +1127,7 @@ public class NMRStarWriter {
         chan.write("    #  Order parameters  #\n");
         chan.write("    ########################################\n");
         chan.write("\n\n");
-        chan.write("save_" + frameName + "\n");
+        chan.write(STAR3Base.SAVE + frameName + "\n");
         chan.write("   " + catName + ".Sf_category                    ");
         chan.write("order_parameters\n");
         chan.write("   " + catName + ".Sf_framecode                   ");
@@ -1221,7 +1196,7 @@ public class NMRStarWriter {
         }
 
         chan.write("   stop_\n");
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     /**
@@ -1233,7 +1208,7 @@ public class NMRStarWriter {
      * @param entityID int. The number of the molecular entity.
      * @param atom     Atom. The atom in the molecule.
      * @param orderPar The order parameter.
-     * @return
+     * @return String containing oreder parameter values
      */
     public static String toStarOrderParString(int idx, int listID, int entityID, Atom atom, OrderPar orderPar) {
         StringBuilder sBuilder = new StringBuilder();
@@ -1251,94 +1226,150 @@ public class NMRStarWriter {
 
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(fileName)) {
-            writeAll(writer);
+            writeAll(writer,null);
         }
     }
 
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(file)) {
-            writeAll(writer);
+            writeAll(writer,null);
         }
     }
 
-    public static void writeAll(Writer chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+    public static StringWriter writeToString(Map<StarTypes, SimpleBooleanProperty> starTypesMap){
+        try (StringWriter writer = new StringWriter()) {
+            writeAll(writer, starTypesMap);
+            return writer;
+        } catch (IOException | ParseException | InvalidPeakException | InvalidMoleculeException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-        Date date = new Date(System.currentTimeMillis());
-        chan.write("    ######################################\n");
-        chan.write("    # Saved " + date + " #\n");
-        chan.write("    ######################################\n");
+    public static void writeSoftwareSTAR3(Writer chan) throws  IOException {
+        String softwareSf = """
+                save_software_1
+                  _Software.Sf_category  software
+                  _Software.Sf_framecode  software_1
+                  _Software.ID            1
+                  _Software.Name          NMRFx
+                  _Software.Version       %s
+                  
+                  loop_
+                  _Task.Task
+                  
+                  'chemical shift assignment'
+                  'peak picking'
+                  
+                  stop_
+                  
+                save_
+                
+                """.formatted(NvUtil.getVersion());
+        chan.write(softwareSf);
+    }
+
+    public static void writeAll(Writer chan, Map<StarTypes, SimpleBooleanProperty> starTypesMap) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
+
+        String projectName = "NMRFx_Project";
+        if (ProjectBase.getActive().getDirectory() != null) {
+            String filename = ProjectBase.getActive().getDirectory().getFileName().toString();
+            if (!filename.isBlank()) {
+                projectName = filename.replace(' ', '_');
+            }
+        }
+        chan.write("data_" + projectName + "\n\n");
         ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         resFactory.clean();
+
+        writeSoftwareSTAR3(chan);
         
         MoleculeBase molecule = MoleculeFactory.getActive();
         if (molecule != null) {
-            writeMoleculeSTAR3(chan, molecule, 1);
+            if (starTypesMap == null || starTypesMap.get(StarTypes.MOLECULES).get()) {
+                writeMoleculeSTAR3(chan, molecule, 1);
+            }
         }
         // fixme Dataset.writeDatasetsToSTAR3(channelName);
-        Iterator<PeakList> iter = PeakList.iterator();
-        PeakWriter peakWriter = new PeakWriter();
-        while (iter.hasNext()) {
-            PeakList peakList = iter.next();
-            peakWriter.writePeaksSTAR3(chan, peakList);
+        if (starTypesMap == null || starTypesMap.get(StarTypes.PEAKLISTS).get()) {
+            Iterator<PeakList> iter = PeakList.iterator();
+            PeakWriter peakWriter = new PeakWriter();
+            while (iter.hasNext()) {
+                PeakList peakList = iter.next();
+                peakWriter.writePeaksSTAR3(chan, peakList);
+            }
+        }
+        if (starTypesMap == null || starTypesMap.get(StarTypes.RESONANCES).get()) {
+            resFactory.writeResonancesSTAR3(chan);
         }
 
-
-        resFactory.writeResonancesSTAR3(chan);
         if (molecule != null) {
-            int ppmSetCount = molecule.getPPMSetCount();
-            for (int iSet = 0; iSet < ppmSetCount; iSet++) {
-                writeAssignmentsSTAR3(chan, iSet);
+            if (starTypesMap == null || starTypesMap.get(StarTypes.ASSIGNMENTS).get()) {
+                int ppmSetCount = molecule.getPPMSetCount();
+                for (int iSet = 0; iSet < ppmSetCount; iSet++) {
+                    writeAssignmentsSTAR3(chan, iSet);
+                }
             }
-            CoordinateSTARWriter.writeToSTAR3(chan, molecule, 1);
+            if (starTypesMap == null || starTypesMap.get(StarTypes.COORDINATES).get()) {
+                CoordinateSTARWriter.writeToSTAR3(chan, molecule, 1);
+            }
+
             int setNum = 1;
-
-            for (ConstraintSet cSet : molecule.getMolecularConstraints().noeSets()) {
-                if (cSet.getSize() > 0) {
-                    ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+            if (starTypesMap == null || starTypesMap.get(StarTypes.CONSTRAINTS).get()) {
+                for (ConstraintSet cSet : molecule.getMolecularConstraints().noeSets()) {
+                    if (cSet.getSize() > 0) {
+                        ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+                    }
                 }
-            }
-            setNum = 1;
-            for (ConstraintSet cSet : molecule.getMolecularConstraints().angleSets()) {
-                if (cSet.getSize() > 0) {
-                    ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+
+                setNum = 1;
+                for (ConstraintSet cSet : molecule.getMolecularConstraints().angleSets()) {
+                    if (cSet.getSize() > 0) {
+                        ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+                    }
                 }
             }
         }
-        PeakPathWriter pathWriter = new PeakPathWriter();
-        int iPath = 0;
-        for (PeakPaths peakPath : PeakPaths.get()) {
-            pathWriter.writeToSTAR3(chan, peakPath, iPath + 1);
-            iPath++;
+        if (starTypesMap == null || starTypesMap.get(StarTypes.PEAKPATHS).get()) {
+            PeakPathWriter pathWriter = new PeakPathWriter();
+            int iPath = 0;
+            for (PeakPaths peakPath : PeakPaths.get()) {
+                pathWriter.writeToSTAR3(chan, peakPath, iPath + 1);
+                iPath++;
+            }
         }
         if (molecule != null) {
-            var molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
-            // loop over types so they always end up in same order in star file (useful for testing)
-            // also results in listID counting from 1 for each type
-            for (var type : RelaxTypes.values()) {
-                int listID = 1;
-                for (var relaxEntry : molRelaxData.entrySet()) {
-                    var relaxationSet = relaxEntry.getKey();
-                    if (!relaxationSet.data().isEmpty()) {
-                        var relaxType = relaxationSet.relaxType();
-                        if (relaxType == type) {
-                            if (relaxType == RelaxTypes.NOE) {
-                                writeNOE(chan, molecule, relaxationSet, listID);
-                            } else {
-                                writeRelaxation(chan, molecule, relaxationSet, listID);
+            if (starTypesMap == null || starTypesMap.get(StarTypes.RELAXATION).get()) {
+                var molRelaxData = RelaxationData.getRelaxationData(molecule.getAtomArray());
+                // loop over types so they always end up in same order in star file (useful for testing)
+                // also results in listID counting from 1 for each type
+                for (var type : RelaxTypes.values()) {
+                    int listID = 1;
+                    for (var relaxEntry : molRelaxData.entrySet()) {
+                        var relaxationSet = relaxEntry.getKey();
+                        if (!relaxationSet.data().isEmpty()) {
+                            var relaxType = relaxationSet.relaxType();
+                            if (relaxType == type) {
+                                if (relaxType == RelaxTypes.NOE) {
+                                    writeNOE(chan, molecule, relaxationSet, listID);
+                                } else {
+                                    writeRelaxation(chan, molecule, relaxationSet, listID);
+                                }
+                                listID++;
                             }
-                            listID++;
                         }
                     }
                 }
             }
-            var orderParData = OrderPar.getOrderParameters(molecule.getAtomArray());
-            int listID = 1;
-            for (var relaxEntry : orderParData.entrySet()) {
-                var orderParList = relaxEntry.getValue();
-                var orderParSet = relaxEntry.getKey();
-                if (!orderParList.isEmpty()) {
-                    writeOrderPars(chan, molecule, orderParSet,  orderParList, listID, orderParSet.name());
-                    listID++;
+            if (starTypesMap == null || starTypesMap.get(StarTypes.ORDERPARAMETERS).get()) {
+                var orderParData = OrderPar.getOrderParameters(molecule.getAtomArray());
+                int listID = 1;
+                for (var relaxEntry : orderParData.entrySet()) {
+                    var orderParList = relaxEntry.getValue();
+                    var orderParSet = relaxEntry.getKey();
+                    if (!orderParList.isEmpty()) {
+                        writeOrderPars(chan, molecule, orderParSet, orderParList, listID, orderParSet.name());
+                        listID++;
+                    }
                 }
             }
         }

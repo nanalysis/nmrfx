@@ -6,7 +6,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 /**
  * @author brucejohnson
  */
-class AtomSphere {
+public class AtomSphere {
 
     int atomIndex;
     Vector3D pt;

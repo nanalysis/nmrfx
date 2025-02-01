@@ -13,7 +13,9 @@ import java.util.Optional;
  * @author brucejohnson
  */
 public class SeqFragment {
-    static private double fragmentScoreProbability = 0.02;
+    static private double spinSysProbability = 0.02;
+
+    static private double fragmentScoreProbability = 0.1;
     static private int lastID = -1;
     int id = 0;
     List<SpinSystemMatch> spinSystemMatches = new ArrayList<>();
@@ -34,11 +36,11 @@ public class SeqFragment {
         SeqFragment result = new SeqFragment();
         SeqFragment fragmentA = null;
         SeqFragment fragmentB = null;
-        if (spinSysA.fragment.isPresent()) {
-            fragmentA = spinSysA.fragment.get();
+        if (spinSysA.fragment().isPresent()) {
+            fragmentA = spinSysA.fragment().get();
         }
-        if (spinSysB.fragment.isPresent()) {
-            fragmentB = spinSysB.fragment.get();
+        if (spinSysB.fragment().isPresent()) {
+            fragmentB = spinSysB.fragment().get();
         }
         if ((fragmentA != null) && (fragmentA == fragmentB)) {
             result.spinSystemMatches.addAll(fragmentA.spinSystemMatches);
@@ -70,6 +72,28 @@ public class SeqFragment {
         this.resSeqScore = residueSeqScore;
     }
 
+    public void setResidueSeqScoreAtPosition(SpinSystem spinSys, Residue residue) {
+        Polymer polymer = residue.getPolymer();
+        Molecule molecule = (Molecule) polymer.molecule;
+        int iRes = polymer.getResidues().indexOf(residue);
+        if (isFrozen()) {
+            thawFragment();
+        }
+
+        List<SpinSystem> spinSystems = getSpinSystems();
+        int index = spinSystems.indexOf(spinSys);
+        List<ResidueSeqScore> resSeqScores = scoreShifts(molecule);
+        for (ResidueSeqScore residueSeqScore: resSeqScores) {
+            Residue firstResidue = residueSeqScore.getFirstResidue();
+            int jRes = polymer.getResidues().indexOf(firstResidue);
+            int deltaRes = iRes - jRes;
+            if (index == (deltaRes - 1)) {
+                setResSeqScore(residueSeqScore);
+                break;
+            }
+        }
+    }
+
     public void setId(int value) {
         id = value;
     }
@@ -90,26 +114,41 @@ public class SeqFragment {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         SeqFragment result = null;
-        if (spinSysA.fragment.isEmpty() && spinSysB.fragment.isEmpty()) {
+        boolean newFrozen = false;
+        if (spinSysA.fragment().isEmpty() && spinSysB.fragment().isEmpty()) {
             result = new SeqFragment();
             result.spinSystemMatches.add(spinSysMatch);
-        } else if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            if (spinSysA.fragment.get() != spinSysB.fragment.get()) {
-                result = spinSysA.fragment.get();
+        } else if (spinSysA.fragment().isPresent() && spinSysB.fragment().isPresent()) {
+            if (spinSysA.fragment().get() != spinSysB.fragment().get()) {
+                result = spinSysA.fragment().get();
                 result.spinSystemMatches.add(spinSysMatch);
-                result.spinSystemMatches.addAll(spinSysB.fragment.get().spinSystemMatches);
+                result.spinSystemMatches.addAll(spinSysB.fragment().get().spinSystemMatches);
+                if (spinSysA.fragment().get().isFrozen() || spinSysB.fragment().get().isFrozen()) {
+                    newFrozen = true;
+                }
             }
 
-        } else if (spinSysA.fragment.isPresent()) {
-            result = spinSysA.fragment.get();
+        } else if (spinSysA.fragment().isPresent()) {
+            result = spinSysA.fragment().get();
             result.spinSystemMatches.add(spinSysMatch);
+            if (spinSysA.fragment().get().isFrozen()) {
+                newFrozen = true;
+            }
 
         } else {
-            result = spinSysB.fragment.get();
+            result = spinSysB.fragment().get();
             result.spinSystemMatches.add(0, spinSysMatch);
+            if (spinSysB.fragment().get().isFrozen()) {
+                newFrozen = true;
+            }
         }
         if ((result != null) && !testMode) {
+            if (newFrozen) {
+                result.setFrozen(true);
+                result.updateScore();
+            }
             result.updateFragment();
+
         }
         return result;
 
@@ -149,16 +188,16 @@ public class SeqFragment {
         SpinSystem spinSysA = spinSysMatch.spinSystemA;
         SpinSystem spinSysB = spinSysMatch.spinSystemB;
         List<SeqFragment> result = new ArrayList<>();
-        if (spinSysA.fragment.isPresent() && spinSysB.fragment.isPresent()) {
-            SeqFragment currentFragment = spinSysA.fragment.get();
+        if (spinSysA.fragment().isPresent() && spinSysB.fragment().isPresent()) {
+            SeqFragment currentFragment = spinSysA.fragment().get();
             List<SpinSystemMatch> spinSystemMatches = currentFragment.spinSystemMatches;
 
             currentFragment.dump();
 
             SpinSystemMatch firstMatch = spinSystemMatches.get(0);
             SpinSystemMatch lastMatch = spinSystemMatches.get(spinSystemMatches.size() - 1);
-            spinSysMatch.spinSystemA.fragment = Optional.empty();
-            spinSysMatch.spinSystemB.fragment = Optional.empty();
+            spinSysMatch.spinSystemA.setFragment(null);
+            spinSysMatch.spinSystemB.setFragment(null);
             if (spinSysMatch == firstMatch) {
                 spinSystemMatches.remove(0);
                 result.add(null);
@@ -202,11 +241,34 @@ public class SeqFragment {
         return index;
     }
 
+    void updateScore() {
+        var resSeqScores = scoreShifts(Molecule.getActive());
+        if (resSeqScores.size() == 1) {
+            freezeFragment(resSeqScores.get(0));
+            setResSeqScore(resSeqScores.get(0));
+        }
+
+    }
+
     void updateFragment() {
         for (SpinSystemMatch spinSysMatch : spinSystemMatches) {
-            spinSysMatch.spinSystemA.fragment = Optional.of(this);
-            spinSysMatch.spinSystemB.fragment = Optional.of(this);
+            spinSysMatch.spinSystemA.setFragment(this);
+            spinSysMatch.spinSystemB.setFragment(this);
         }
+        var resSeqScores = scoreShifts(Molecule.getActive());
+        if (resSeqScores.size() == 1) {
+            setResSeqScore(resSeqScores.get(0));
+        }
+    }
+
+    void updateSpinSystemMatches() {
+        List<SpinSystemMatch> newMatches = new ArrayList<>();
+        for (SpinSystemMatch spinSystemMatch : spinSystemMatches) {
+            SpinSystem systemA = spinSystemMatch.getSpinSystemA();
+            systemA.confirmS().ifPresent(match -> newMatches.add(match));
+        }
+        spinSystemMatches.clear();
+        spinSystemMatches.addAll(newMatches);
     }
 
     boolean addNext(SpinSystemMatch spinSysMatch) {
@@ -218,8 +280,23 @@ public class SeqFragment {
         return result;
     }
 
-    public double[][] getShifts() {
-        double[][] result = new double[spinSystemMatches.size() + 2][SpinSystem.ATOM_TYPES.length];
+    public static List<List<AtomShiftValue>> getShiftsForSystem(SpinSystem spinSystem) {
+        List<List<AtomShiftValue>> result = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            List<AtomShiftValue> values = new ArrayList<>();
+            result.add(values);
+
+            for (var entry : spinSystem.getShiftValues(i).entrySet()) {
+                AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
+                values.add(atomValue);
+            }
+        }
+
+        return result;
+    }
+
+    public List<List<AtomShiftValue>> getShifts() {
+        List<List<AtomShiftValue>> result = new ArrayList<>();
         int iSys = 0;
         SpinSystem spinSysA;
         SpinSystem spinSysB = null;
@@ -227,80 +304,91 @@ public class SeqFragment {
             spinSysA = spinMatch.spinSystemA;
             spinSysB = spinMatch.spinSystemB;
             if (iSys == 0) {
-                for (int idx = 0; idx < SpinSystem.ATOM_TYPES.length; idx++) {
-                    result[iSys][idx] = spinSysA.getValue(0, idx);
+                List<AtomShiftValue> values = new ArrayList<>();
+                result.add(values);
+
+                for (var entry : spinSysA.getShiftValues(0).entrySet()) {
+                    AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
+                    values.add(atomValue);
                 }
-                iSys++;
             }
-            for (int idx = 0; idx < SpinSystem.ATOM_TYPES.length; idx++) {
-                if (SpinSystem.RES_MTCH[idx]) {
-                    if (spinMatch.matched[idx]) {
-                        double vA = spinSysA.getValue(1, idx);
-                        double vB = spinSysB.getValue(0, idx);
-                        double avg = (vA + vB) / 2.0;
-                        result[iSys][idx] = avg;
-                    } else {
-                        result[iSys][idx] = Double.NaN;
+            List<AtomShiftValue> values = new ArrayList<>();
+            result.add(values);
+            for (SpinSystem.AtomEnum matchedAtom : spinMatch.matched) {
+                if (matchedAtom.resMatch) {
+                    Optional<Double> vAOpt = spinSysA.getValue(1, matchedAtom);
+                    Optional<Double> vBOpt = spinSysB.getValue(0, matchedAtom);
+                    if (vAOpt.isPresent() && vBOpt.isPresent()) {
+                        double avg = (vAOpt.get() + vBOpt.get()) / 2.0;
+                        AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, avg, null);
+                        values.add(atomValue);
                     }
-                } else {
-                    result[iSys][idx] = spinSysA.getValue(1, idx);
+                }
+            }
+            for (var shiftValue : spinSysA.shiftValues[1].entrySet()) {
+                if (!shiftValue.getKey().resMatch) {
+                    AtomShiftValue atomValue = new AtomShiftValue(shiftValue.getKey().name, shiftValue.getValue().value(), null);
+                    values.add(atomValue);
                 }
             }
             iSys++;
         }
         if (spinSysB != null) {
-            for (int idx = 0; idx < SpinSystem.ATOM_TYPES.length; idx++) {
-                result[iSys][idx] = spinSysB.getValue(1, idx);
-            }
-        }
-
-        return result;
-    }
-
-    List<List<AtomShiftValue>> getShiftValues(double[][] shifts, boolean useAll) {
-        List<List<AtomShiftValue>> result = new ArrayList<>();
-        for (double[] shift : shifts) {
             List<AtomShiftValue> values = new ArrayList<>();
-            for (int k = 0; k < shift.length; k++) {
-                if (useAll || SpinSystem.RES_SCORE_ATOM[k]) {
-                    String aName = SpinSystem.getAtomName(k);
-                    double value = shift[k];
-                    if (!Double.isNaN(value)) {
-                        AtomShiftValue atomValue = new AtomShiftValue(aName, value, null);
-                        values.add(atomValue);
-                    }
-                }
-            }
             result.add(values);
+
+            for (var entry : spinSysB.getShiftValues(1).entrySet()) {
+                AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
+                values.add(atomValue);
+            }
         }
         return result;
     }
 
-    public List<ResidueSeqScore> scoreFragment(Molecule molecule) {
+    public List<ResidueSeqScore> scoreShifts(Molecule molecule) {
+        List<List<AtomShiftValue>> shiftValues = getShifts();
+        return scoreShifts(molecule, shiftValues, this);
+    }
+
+    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, List<List<AtomShiftValue>> shiftValues, SeqFragment seqFragment) {
         List<ResidueSeqScore> result = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                result.addAll(scoreFragment(polymer));
+                result.addAll(scoreShifts(polymer, shiftValues, seqFragment));
             }
         }
         return result;
     }
 
-    public List<ResidueSeqScore> scoreFragment(Polymer polymer) {
+    public List<ResidueSeqScore> scoreShifts(Polymer polymer) {
+        List<List<AtomShiftValue>> shiftValues = getShifts();
+        return scoreShifts(polymer, shiftValues, this);
+    }
+
+    public static List<ResidueSeqScore> scoreShifts(Polymer polymer, List<List<AtomShiftValue>> shiftValues, SeqFragment fragment) {
         double sDevMul = 2.0;
-        double[][] shifts = getShifts();
         List<ResidueSeqScore> result = new ArrayList<>();
-        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, false);
-        int winSize = atomShiftValues.size();
+        int winSize = shiftValues.size();
+        if (winSize < 1) {
+            return result;
+        }
         List<Residue> residues = polymer.getResidues();
         int nResidues = residues.size();
         int n = nResidues - winSize + 1;
         for (int i = 0; i < n; i++) {
             boolean ok = true;
             double pScore = 1.0;
+            boolean isCurrent = false;
+            if ((fragment != null) && (fragment.isFrozen())) {
+                if (fragment.getResSeqScore().getFirstResidue() != residues.get(i)) {
+                    continue;
+                } else {
+                    isCurrent = true;
+                }
+            }
             for (int j = 0; j < winSize; j++) {
                 Residue residue = residues.get(i + j);
-                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(fragmentScoreProbability, sDevMul, residue, atomShiftValues.get(j));
+                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(spinSysProbability, sDevMul, residue, shiftValues.get(j));
                 if (!ppmScore.ok()) {
                     ok = false;
                     break;
@@ -315,7 +403,7 @@ public class SeqFragment {
 
         if (!result.isEmpty()) {
             ResidueSeqScore.norm(result);
-            result.sort(null);
+            result = result.stream().sorted().filter(r -> r.getScore() > fragmentScoreProbability).toList();
         }
         return result;
     }
@@ -330,35 +418,34 @@ public class SeqFragment {
 
     public void freezeFragment(ResidueSeqScore resSeqScore) {
         setFrozen(true);
-        double[][] shifts = getShifts();
-        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts, true);
+        List<List<AtomShiftValue>> atomShiftValues = getShifts();
         Residue firstResidue = resSeqScore.getFirstResidue();
         Residue residue = firstResidue;
-        int i = 0;
         for (var atomShiftValueList : atomShiftValues) {
             assignResidue(residue, atomShiftValueList);
             residue = residue.getNext();
-            if (i < spinSystemMatches.size()) {
-                if (i == 0) {
-                    spinSystemMatches.get(i).getSpinSystemA().assignPeaksInSystem(residue);
-                }
-                spinSystemMatches.get(i).getSpinSystemB().assignPeaksInSystem(residue);
-            }
-            i++;
+        }
+        residue = firstResidue.getNext();
+        spinSystemMatches.get(0).getSpinSystemA().assignPeaksInSystem(residue);
+        for (int i = 0; i < spinSystemMatches.size(); i++) {
+            residue = residue.getNext();
+            spinSystemMatches.get(i).getSpinSystemB().assignPeaksInSystem(residue);
         }
     }
 
     public void thawFragment() {
         setFrozen(false);
-        Residue residue = resSeqScore.getFirstResidue();
-        for (int i = 0; i < resSeqScore.nResidues; i++) {
-            for (Atom atom : residue.atoms) {
-                if ((i == 0) && (atom.getName().equals("N") || atom.getName().equals("H"))) {
-                    continue;
+        if (resSeqScore != null) {
+            Residue residue = resSeqScore.getFirstResidue();
+            for (int i = 0; i < resSeqScore.nResidues; i++) {
+                for (Atom atom : residue.atoms) {
+                    if ((i == 0) && (atom.getName().equals("N") || atom.getName().equals("H"))) {
+                        continue;
+                    }
+                    atom.setPPMValidity(0, false);
                 }
-                atom.setPPMValidity(0, false);
+                residue = residue.getNext();
             }
-            residue = residue.getNext();
         }
         for (SpinSystem spinSystem : getSpinSystems()) {
             spinSystem.clearPeaksInSystem();
@@ -368,15 +455,7 @@ public class SeqFragment {
     public static boolean testFrag(SpinSystemMatch spinSystemMatch) {
         SeqFragment fragment = getTestFragment(spinSystemMatch);
         Molecule molecule = Molecule.getActive();
-        boolean ok = false;
-        for (Polymer polymer : molecule.getPolymers()) {
-            List<ResidueSeqScore> resSeqScores = fragment.scoreFragment(polymer);
-            if (!resSeqScores.isEmpty()) {
-                ok = true;
-                break;
-            }
-        }
-        return ok;
+        return !fragment.scoreShifts(molecule).isEmpty();
     }
 
     String getFragmentSTARString() {

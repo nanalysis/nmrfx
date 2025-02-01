@@ -1,8 +1,6 @@
 package org.nmrfx.peaks;
 
 
-import org.nmrfx.chemistry.Atom;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -168,6 +166,25 @@ public class PeakPath implements Comparable<PeakPath> {
         this.parErrs = parErrs != null ? parErrs.clone() : null;
     }
 
+    public void setFitParErrors(Double[] parsIn, Double[] errsIn) {
+        int nOK = 0;
+        for (var par:parsIn) {
+            if (par != null) {
+                nOK++;
+            }
+        }
+        pars = new double[nOK];
+        parErrs = new double[nOK];
+        int j =0;
+        for (int i=0;i<parsIn.length;i++) {
+            if (parsIn[i] != null) {
+                pars[j] = parsIn[i];
+                parErrs[j] = errsIn[i];
+                j++;
+            }
+        }
+
+    }
     public int getPeak() {
         return firstPeak.getIdNum();
     }
@@ -177,11 +194,19 @@ public class PeakPath implements Comparable<PeakPath> {
     }
 
     public double getPar(int i) {
-        return pars[i];
+        if (i < pars.length) {
+            return pars[i];
+        } else {
+            return 0.0;
+        }
     }
 
     public double getErr(int i) {
-        return parErrs[i];
+        if (i < parErrs.length) {
+            return parErrs[i];
+        } else {
+            return 0.0;
+        }
     }
 
     public boolean hasPars() {
@@ -224,7 +249,7 @@ public class PeakPath implements Comparable<PeakPath> {
         }
     }
 
-    public Double getK() {
+    public Double getK(int iState) {
         if (pars == null) {
             return null;
         } else {
@@ -236,7 +261,7 @@ public class PeakPath implements Comparable<PeakPath> {
         }
     }
 
-    public Double getKDev() {
+    public Double getKDev(int iState) {
         if (parErrs == null) {
             return null;
         } else {
@@ -248,7 +273,7 @@ public class PeakPath implements Comparable<PeakPath> {
         }
     }
 
-    public Double getC() {
+    public Double getD(int iState) {
         if (pars == null) {
             return null;
         } else {
@@ -260,7 +285,7 @@ public class PeakPath implements Comparable<PeakPath> {
         }
     }
 
-    public Double getCDev() {
+    public Double getDDev(int iState) {
         if (parErrs == null) {
             return null;
         } else {
@@ -276,15 +301,36 @@ public class PeakPath implements Comparable<PeakPath> {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(String.format("%4d %4d %d %3s %3s", id, pathID, dim + 1,
                 (confirmed ? "yes" : "no"), (active ? "yes" : "no")));
-        int nPars = peakPaths.pathMode == PeakPaths.PATHMODE.PRESSURE ? 3 : 2;
+        Double[] outPars = null;
+        Double[] outErrs = null;
+        int nPars = peakPaths.pathMode == PeakPaths.PATHMODE.PRESSURE ? 3 : 4;
 
-        int start = dim * nPars;
+        if ((pars != null) && (pars.length > 0)) {
+            outPars = new Double[nPars];
+            outErrs = new Double[nPars];
+            if ((pars.length != nPars) && (peakPaths.getPathMode() == PeakPaths.PATHMODE.TITRATION)) {
+                for (int i = 0; i < 2; i++) {
+                    outPars[i * 2] = pars[i];
+                    outErrs[i * 2] = parErrs[i];
+                }
+            } else {
+                for (int i = 0; i < outPars.length; i++) {
+                    outPars[i] = pars[3 * dim + i];
+                    outErrs[i] = parErrs[3 * dim + i];
+                }
+            }
+        }
+
         for (int i = 0; i < nPars; i++) {
             sBuilder.append(" ");
-            if (pars == null) {
+            if (outPars == null) {
                 sBuilder.append(String.format("%10s %10s", "?", "?"));
             } else {
-                sBuilder.append(String.format("%10.4f %10.4f", pars[i + start], parErrs[i + start]));
+                if (outPars[i] == null) {
+                    sBuilder.append(". .");
+                } else {
+                    sBuilder.append(String.format("%10.4f %10.4f", outPars[i], outErrs[i]));
+                }
             }
         }
         return sBuilder.toString();

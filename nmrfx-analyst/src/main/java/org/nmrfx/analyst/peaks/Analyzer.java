@@ -142,7 +142,7 @@ public class Analyzer {
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
         double level = threshold;
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("replaceif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode(PeakPickParameters.PickMode.REPLACEIF);
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         PeakPicker picker = new PeakPicker(peakPickPar);
@@ -189,7 +189,7 @@ public class Analyzer {
         }
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode(PeakPickParameters.PickMode.APPENDIF);
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         peakPickPar.limit(0, ppm1, ppm2);
@@ -246,7 +246,7 @@ public class Analyzer {
         } else {
             listName = PeakList.getNameForDataset(datasetName);
         }
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode(PeakPickParameters.PickMode.APPENDIF);
         peakPickPar.region("point").fixed(true);
         for (double ppm : ppms) {
             peakPickPar.limit(0, ppm, ppm);
@@ -571,6 +571,12 @@ public class Analyzer {
         List<DatasetRegion> regions = getReadOnlyRegions();
         for (DatasetRegion region : regions) {
             region.measure(dataset);
+        }
+    }
+    public void integrate(Dataset integrateDataset) throws IOException {
+        List<DatasetRegion> regions = integrateDataset.getReadOnlyRegions();
+        for (DatasetRegion region : regions) {
+            region.measure(integrateDataset);
         }
     }
 
@@ -1148,14 +1154,6 @@ public class Analyzer {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
         }
-    }
-
-    public void findRegions() throws IOException {
-        calculateThreshold();
-        getThreshold();
-        autoSetRegions();
-        integrate();
-
     }
 
     public void analyze() throws IOException {

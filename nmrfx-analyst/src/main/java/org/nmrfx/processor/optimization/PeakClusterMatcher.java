@@ -1,6 +1,7 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.nmrfx.math.BipartiteMatcher;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 

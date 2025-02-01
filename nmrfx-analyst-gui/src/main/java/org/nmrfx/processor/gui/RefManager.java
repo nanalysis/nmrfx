@@ -45,6 +45,8 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -422,6 +424,9 @@ public class RefManager {
         String acqOrderValue = acqOrderCombo.getValue();
         boolean ok = processorController.chartProcessor.setAcqOrder(acqOrderValue);
         if (ok) {
+            if (acqOrderValue.equals("a2,p1,d1")) {
+                acqArrayChoice.setValue(2);
+            }
             invalidateScript();
         }
     }
@@ -438,27 +443,33 @@ public class RefManager {
 
     }
 
+    private void addAcqDimChoice(NMRData nmrData, List<Integer> permDims, List<String> choices) {
+        StringBuilder sBuilder = new StringBuilder();
+        if ((nmrData instanceof BrukerData) || (nmrData instanceof RS2DData)) {
+            sBuilder.append(nmrData.getNDim());
+        }
+        for (Integer iVal : permDims) {
+            sBuilder.append(iVal);
+        }
+        choices.add(sBuilder.toString());
+
+    }
+
     private ComboBox<String> setupAcqOrder(NMRData nmrData) {
         acqOrderCombo = new ComboBox();
         if (nmrData != null) {
-            ArrayList<String> choices = new ArrayList<>();
             if (nmrData.getNDim() > 1) {
-                ArrayList<Integer> dimList = new ArrayList<>();
+                List<String> choices = new ArrayList<>();
+                List<Integer> dimList = new ArrayList<>();
                 for (int i = 1; i <= (nmrData.getNDim() - 1); i++) {
                     dimList.add(i);
                 }
-                PermutationIterator permIter = new PermutationIterator(dimList);
-                StringBuilder sBuilder = new StringBuilder();
+                PermutationIterator<Integer> permIter = new PermutationIterator<>(dimList);
                 while (permIter.hasNext()) {
-                    ArrayList<Integer> permDims = (ArrayList<Integer>) permIter.next();
-                    sBuilder.setLength(0);
-                    if (nmrData.getVendor().equals("bruker") || nmrData.getVendor().equals("rs2d")) {
-                        sBuilder.append(nmrData.getNDim());
-                    }
-                    for (Integer iVal : permDims) {
-                        sBuilder.append(iVal);
-                    }
-                    choices.add(sBuilder.toString());
+                    addAcqDimChoice(nmrData, permIter.next(), choices);
+                }
+                if ((nmrData instanceof BrukerData) && (nmrData.getNDim() == 2)) {
+                    choices.add("a2,p1,d1");
                 }
                 acqOrderCombo.getItems().addAll(choices);
                 acqOrderCombo.setEditable(true);
@@ -518,6 +529,10 @@ public class RefManager {
                 case "Date" -> textField.setText(nmrData.getZonedDate().toString());
             }
         }
+    }
+
+    public void clearObjectPropertyMap() {
+        objectPropertyMap.clear();
     }
 
     public void updateReferencePane(NMRData nmrData, int nDim) {
@@ -587,7 +602,7 @@ public class RefManager {
 
         vBox.getChildren().add(zfBox);
 
-        if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
+        if ((nmrData != null) && (nmrData instanceof BrukerData)) {
             CheckBox checkBox = new CheckBox("Fix DSP");
             checkBox.setSelected(processorController.chartProcessor.getFixDSP());
             vBox.getChildren().add(checkBox);
@@ -666,9 +681,9 @@ public class RefManager {
                             referenceMenuTextField.setText(dataProp.getDataValue(nmrData, i));
                         }
                         referenceMenuTextField.getTextField().textProperty().bindBidirectional(prop);
-                        if (i == 0) {
-                            referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop));
-                        }
+                        int iDim = i;
+                        referenceMenuTextField.getTextField().textProperty().addListener(e -> updateReference(prop, iDim));
+
                         gridPane.add(referenceMenuTextField, i + start, row);
                     } else {
                         CustomTextField textField = new CustomTextField();
@@ -728,30 +743,32 @@ public class RefManager {
         invalidateScript();
     }
 
-    private void updateReference(SimpleObjectProperty property) {
-        String refString = property.getValue().toString();
-        NMRData nmrData = getNMRData();
-        double sf = nmrData.getSF(0);
-        String tn = nmrData.getTN(0);
-        Nuclei nuclei = Nuclei.findNuclei(tn);
-        double z;
-        if (refString.isEmpty()) {
-            nmrData.setZeroFreq(null);
-            z = nmrData.getZeroFreq();
-        } else if (refString.equals("H2O")) {
-            double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
-            z = sf / (1.0 + ref * 1.0e-6);
-        } else {
-            try {
-                double ref = Double.parseDouble(refString);
-                z = sf / (1.0 + ref * 1.0e-6);
-                z /= nuclei.getRatio() / 100.0;
-            } catch (NumberFormatException nfE) {
+    private void updateReference(SimpleObjectProperty property, int iDim) {
+        if (iDim == 0) {
+            String refString = property.getValue().toString();
+            NMRData nmrData = getNMRData();
+            double sf = nmrData.getSF(0);
+            String tn = nmrData.getTN(0);
+            Nuclei nuclei = Nuclei.findNuclei(tn);
+            double z;
+            if (refString.isEmpty()) {
+                nmrData.setZeroFreq(null);
                 z = nmrData.getZeroFreq();
+            } else if (refString.equals("H2O")) {
+                double ref = ReferenceCalculator.getH2ORefPPM(nmrData.getTempK());
+                z = sf / (1.0 + ref * 1.0e-6);
+            } else {
+                try {
+                    double ref = Double.parseDouble(refString);
+                    z = sf / (1.0 + ref * 1.0e-6);
+                    z /= nuclei.getRatio() / 100.0;
+                } catch (NumberFormatException nfE) {
+                    z = nmrData.getZeroFreq();
+                }
             }
+            zeroFieldProp.set(z);
+            processorController.chartProcessor.setZeroFreq(z);
         }
-        zeroFieldProp.set(z);
-        processorController.chartProcessor.setZeroFreq(z);
         invalidateScript();
     }
 
@@ -791,6 +808,7 @@ public class RefManager {
                 sBuilder.append(System.lineSeparator());
             }
         }
+        getSkipString().ifPresent(s -> sBuilder.append(s).append(System.lineSeparator()));
         return sBuilder.toString();
     }
 

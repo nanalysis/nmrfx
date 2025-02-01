@@ -157,9 +157,9 @@ public class PeakDisplayTool {
                 Dataset dataset = Dataset.getDataset(datasetName);
                 if (dataset != null) {
                     FXMLController controller = AnalystApp.getFXMLControllerManager().newController();
-                    controller.addDataset(dataset, false, false);
                     PolyChart chart = controller.getActiveChart();
-                    chart.updatePeakLists(List.of(peakList.getName()));
+                    controller.addDataset(chart, dataset, false, false);
+                    chart.updatePeakListsByName(List.of(peakList.getName()));
                     gotoPeak(peak, chart, getWidthScale(peak));
                 }
             }

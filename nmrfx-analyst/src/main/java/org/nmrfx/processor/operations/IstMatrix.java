@@ -43,7 +43,6 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Cutoff threshold as a fraction of maximum height : e.g. 0.98.
      *
-     * @see #ist
      * @see #cutAboveThreshold
      */
     private double threshold = 0.98;
@@ -51,7 +50,6 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Number of loops to iterate over : e.g. 300.
      *
-     * @see #ist
      */
     private int loops = 100;
 
@@ -59,8 +57,6 @@ public class IstMatrix extends MatrixOperation {
      * Sample schedule used for non-uniform sampling. Specifies array elements
      * where data is present.
      *
-     * @see #ist
-     * @see #zero_samples
      * @see SampleSchedule
      */
     private SampleSchedule sampleSchedule = null;
@@ -183,7 +179,7 @@ public class IstMatrix extends MatrixOperation {
      * @param schedule   sample schedule
      * @param alg        alternate cutoff algorithm
      * @param timeDomain result is in timeDomain
-     * @param ph         phase array : row p0, row p1, column p0, column p1
+     * @param phaseList         phase array : row p0, row p1, column p0, column p1
      * @throws ProcessingException
      */
     public IstMatrix(double threshold, int loops, SampleSchedule schedule, String alg,
@@ -280,23 +276,40 @@ public class IstMatrix extends MatrixOperation {
 
     public static int[] genSrcTargetMap(SampleSchedule sampleSchedule, MatrixND matrix) {
         int[][] samples = sampleSchedule.getSamples();
+        boolean phaseMode = sampleSchedule.isPhaseMode();
         int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
         int[] srcTargetMap = new int[samples.length * nComplex];
         int i = 0;
         for (int[] sample : samples) {
-            int[] complexSample = new int[sample.length];
-            for (int k = 0; k < nComplex; k++) {
-                int divisor = 1;
-                for (int j = 0; j < sample.length; j++) {
-                    int cDelta = (k / divisor) % 2;
-                    divisor *= 2;
-                    complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
-                }
-                int offset = matrix.getOffset(complexSample);
-                srcTargetMap[i++] = offset;
+            if (phaseMode) {
+                i = processSample(matrix, sample, srcTargetMap, i);
+
+            } else {
+                i = processSample(matrix, sample, nComplex, srcTargetMap, i);
             }
         }
         return srcTargetMap;
+    }
+
+    private static int processSample(MatrixND matrix, int[] sample, int[] srcTargetMap, int i) {
+        int offset = matrix.getOffset(sample);
+        srcTargetMap[i++] = offset;
+        return i;
+    }
+
+    private static int processSample(MatrixND matrix, int[] sample, int nComplex, int[] srcTargetMap, int i) {
+        int[] complexSample = new int[sample.length];
+        for (int k = 0; k < nComplex; k++) {
+            int divisor = 1;
+            for (int j = 0; j < sample.length; j++) {
+                int cDelta = (k / divisor) % 2;
+                divisor *= 2;
+                complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
+            }
+            int offset = matrix.getOffset(complexSample);
+            srcTargetMap[i++] = offset;
+        }
+        return i;
     }
 
     public static int[] genZFSrcTargetMap(MatrixND matrixND, int[] origSizes, boolean constrainEdges) {
@@ -387,24 +400,20 @@ public class IstMatrix extends MatrixOperation {
 
     public static int[] genZeroList(SampleSchedule sampleSchedule, MatrixND matrix) {
         int[][] samples = sampleSchedule.getSamples();
+        boolean phaseMode = sampleSchedule.isPhaseMode();
         boolean[] validPositions = new boolean[matrix.getNElems()];
         int nComplex = (int) Math.round(Math.pow(2, matrix.getNDim()));
-        int nZeros = matrix.getNElems() - samples.length * nComplex;
-        int nValid = 0;
+        int nZeros;
+        if (phaseMode) {
+            nZeros = matrix.getNElems() - samples.length;
+        }  else {
+            nZeros = matrix.getNElems() - samples.length * nComplex;
+        }
         for (int[] sample : samples) {
-            int[] complexSample = new int[sample.length];
-            for (int k = 0; k < nComplex; k++) {
-                int divisor = 1;
-                for (int j = 0; j < sample.length; j++) {
-                    int cDelta = (k / divisor) % 2;
-                    divisor *= 2;
-                    complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
-                }
-                int offset = matrix.getOffset(complexSample);
-                if (offset >= validPositions.length) {
-                }
-                validPositions[offset] = true;
-                nValid++;
+            if (phaseMode) {
+                processSample(matrix, sample, validPositions);
+            } else {
+                processSample(matrix, sample, nComplex, validPositions);
             }
         }
         int[] zeroList = new int[nZeros];
@@ -419,10 +428,41 @@ public class IstMatrix extends MatrixOperation {
         return zeroList;
     }
 
+    private static int processSample(MatrixND matrix, int[] sample, int nComplex, boolean[] validPositions) {
+        int[] complexSample = new int[sample.length];
+        int nValid = 0;
+        for (int k = 0; k < nComplex; k++) {
+            int divisor = 1;
+            for (int j = 0; j < sample.length; j++) {
+                int cDelta = (k / divisor) % 2;
+                divisor *= 2;
+                complexSample[sample.length - j - 1] = sample[sample.length - j - 1] * 2 + cDelta;
+            }
+            int offset = matrix.getOffset(complexSample);
+            validPositions[offset] = true;
+            nValid++;
+        }
+        return nValid;
+
+    }
+
+    private static void processSample(MatrixND matrix, int[] sample, boolean[] validPositions) {
+        int offset = matrix.getOffset(sample);
+        validPositions[offset] = true;
+    }
+
     private void istMatrixNDWithHFT(MatrixND matrix) {
         boolean report = false;
-        int[] srcTargetMap = genSrcTargetMap(sampleSchedule, matrix);
-        int[] zeroList = genZeroList(sampleSchedule, matrix);
+        int[] zeroList;
+        int[] srcTargetMap;
+        if (sampleSchedule != null) {
+            zeroList = IstMatrix.genZeroList(sampleSchedule, matrix);
+            srcTargetMap = genSrcTargetMap(sampleSchedule, matrix);
+        } else {
+            int[][] zeroTarget = matrix.findZeros();
+            zeroList = zeroTarget[0];
+            srcTargetMap = zeroTarget[1];
+        }
         boolean doPhase = false;
         for (double phaseVal : phase) {
             if (Math.abs(phaseVal) > 1.0e-6) {
@@ -460,8 +500,8 @@ public class IstMatrix extends MatrixOperation {
         }
         matrix.doHIFT(fpMul);
         if (calcStats) {
-            double delta = matrix.calcDifference(matrixCopy, srcTargetMap);
-            log.info("{} {} {} {}", loops, preValue, postValue, delta);
+            var deltaToOrig = matrix.calcDifference(matrixCopy, srcTargetMap);
+            log.info("{} {} {} {}", loops, preValue, postValue, deltaToOrig.mabs());
         }
         matrix.copyValuesFrom(matrixCopy, srcTargetMap);
     }
@@ -561,7 +601,7 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Get maximum of absolute value of a matrix.
      *
-     * @param input
+     * @param m matrix of values
      * @return position of maximum in input matrix
      * @see Matrix
      */
@@ -586,7 +626,7 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Get maximum of absolute value of a matrix.
      *
-     * @param input
+     * @param m matrix of values
      * @return position of maximum in input matrix
      * @see Matrix
      */

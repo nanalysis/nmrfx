@@ -6,6 +6,9 @@
 .idea/
 *.iml
 
+# jffi libraries
+jffi*
+
 # netbeans
 nbproject/
 build/
@@ -36,3 +39,7 @@ Thumbs.db
 
 # installer copied files
 additional-installer-jars
+
+# Simon's additions
+# vim swapfiles
+.*.swp

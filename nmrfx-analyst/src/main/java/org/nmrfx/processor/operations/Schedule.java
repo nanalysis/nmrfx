@@ -55,7 +55,7 @@ public class Schedule extends MatrixOperation {
     public Operation eval(Vec vector) throws ProcessingException {
         if ((fileName != null) && !fileName.equals("")) {
             if (schedule == null) {
-                schedule = new SampleSchedule(fileName, false);
+                schedule = new SampleSchedule(fileName, false, false);
             }
             if (schedule.reloadFile(fileName, vector.getSize())) {
                 zero_samples = null;
@@ -78,7 +78,7 @@ public class Schedule extends MatrixOperation {
     public Operation evalMatrix(MatrixType matrix) {
         if ((fileName != null) && !fileName.isEmpty()) {
             if (schedule == null) {
-                schedule = new SampleSchedule(fileName, false);
+                schedule = new SampleSchedule(fileName, false, false);
             }
             MatrixND matrixND = (MatrixND) matrix;
             matrixND.schedule(schedule);

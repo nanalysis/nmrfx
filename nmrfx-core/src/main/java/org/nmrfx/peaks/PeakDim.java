@@ -105,7 +105,7 @@ public class PeakDim {
             newMultiplet.myPeakDim = targetPeakDim;
             targetPeakDim.multiplet = newMultiplet;
         }
-        targetPeakDim.resonance = resonance.copy();
+        targetPeakDim.resonance = resonance.copy(targetPeakDim);
     }
 
     public void restoreFrom(PeakDim peakDim) {
@@ -236,7 +236,6 @@ public class PeakDim {
     public String toSTAR3LoopPeakCharString(int contributionID) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(getPeak().getIdNum()).append(sep);
         result.append(contributionID);
         result.append(sep);
@@ -268,12 +267,10 @@ public class PeakDim {
         result.append(STAR3.valueOf(getPhaseError())).append(sep);
         result.append(STAR3.valueOf(getDecayRate())).append(sep);
         result.append(STAR3.valueOf(getDecayRateError())).append(sep);
-        result.append(0).append(sep); // fixme derivation method
+        result.append(".").append(sep); // fixme derivation method
         result.append(getError()[0]).append("").append(getError()[1]);
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getUser()); // fixme only quote if more than one
-        result.append(stringQuote);
+        result.append(STAR3.quote(getUser()));// fixme only quote if more than one
         result.append(sep);
         if (multiplet != null) {
             Coupling coupling = multiplet.getCoupling();
@@ -282,9 +279,7 @@ public class PeakDim {
             } else if (coupling instanceof ComplexCoupling) {
                 result.append("m");
             } else {
-                result.append(stringQuote);
-                result.append(multiplet.getCouplingsAsString()); // fixme only quote if more than one
-                result.append(stringQuote);
+                result.append(STAR3.quote(multiplet.getCouplingsAsString())); // fixme only quote if more than one
             }
         } else {
             result.append(".");
@@ -369,7 +364,6 @@ public class PeakDim {
         RelMultipletComponent comp = coupling.getRelComponentList().get(iComp);
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(index).append(sep);
         result.append(getPeak().getIdNum()).append(sep);
         result.append((spectralDim + 1)).append(sep);
@@ -389,7 +383,6 @@ public class PeakDim {
     public String toSTAR3LoopMultipletCharString(int contributionID, CouplingPattern coupling, int iComp, int index) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
-        char stringQuote = '"';
         result.append(index).append(sep);
         result.append(getPeak().getIdNum()).append(sep);
         result.append((spectralDim + 1)).append(sep);
@@ -702,6 +695,9 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public List<String> getLabels() {
+        return resonance.getNames();
+    }
     public String getLabel() {
         return resonance.getName();
     }
@@ -711,8 +707,11 @@ public class PeakDim {
     }
 
     public void setLabel(String label) {
+        String[] labels = label.split(" +");
         List<String> labelArgs = new ArrayList<>();
-        labelArgs.add(label);
+        for (String newLabel : labels) {
+            labelArgs.add(newLabel);
+        }
         setLabel(labelArgs);
     }
 

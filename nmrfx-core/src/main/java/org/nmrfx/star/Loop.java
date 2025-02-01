@@ -70,7 +70,7 @@ public class Loop {
                 star3.unGetToken();
                 return null;
             }
-            if (token.equals("loop_")) {
+            if (token.equals(STAR3Base.LOOP)) {
                 star3.unGetToken();
                 return null;
             }
@@ -80,7 +80,7 @@ public class Loop {
             }
         }
         String[] tokenRow = null;
-        if (!token.equals("stop_")) {
+        if (!token.equals(STAR3Base.STOP)) {
             tokenRow = new String[nTokens];
             tokenRow[0] = token;
             for (int i = 1; i < nTokens; i++) {
@@ -88,7 +88,7 @@ public class Loop {
                 if (tokenRow[i] == null) {
                     throw new ParseException("File exhausted before all tokens found in row \"" + nRows + "\" in loop of \"" + saveFrame.name + "\"");
                 }
-                if (tokenRow[i].equals("stop_")) {
+                if (tokenRow[i].equals(STAR3Base.STOP)) {
                     throw new ParseException("Found stop_ at unexpected position in row \"" + nRows + "\" in loop of \"" + saveFrame.name + "\"");
                 }
             }
@@ -165,7 +165,7 @@ public class Loop {
         }
     }
 
-    public Map getRowMap(String tag, int loopIndex) throws ParseException {
+    public Map getRowMap(int loopIndex) throws ParseException {
         Map map = new LinkedHashMap();
 
         for (Map.Entry eSet : loopTags.entrySet()) {
@@ -311,6 +311,9 @@ public class Loop {
         return list;
     }
 
+    public boolean hasTag(String tag) {
+        return loopTags.containsKey(tag);
+    }
     public List<String> getColumn(String tag) throws ParseException {
         ArrayList<String> column = loopTags.get(tag);
         ArrayList<String> list = new ArrayList<>();

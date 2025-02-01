@@ -507,6 +507,15 @@ public interface NMRData {
         return "";
     }
 
+     /**
+     * Returns true if both the zero and first order phases for a specific dimension are not 0.0 before any conversions
+      * are applied
+     * @return
+     */
+    public default boolean arePhasesSet(int dim) {
+        return false;
+    }
+
     /**
      * Return the zeroth order phase value from parameter file.
      *
@@ -824,10 +833,10 @@ public interface NMRData {
      * @throws IOException         if an I/O error occurs
      * @throws ProcessingException if a processing error occurs
      */
-    default SampleSchedule readSampleSchedule(String path, boolean demo)
+    default SampleSchedule readSampleSchedule(String path, boolean demo, boolean phaseMode)
             throws IOException, ProcessingException {
         if ((new java.io.File(path)).exists()) {
-            SampleSchedule schedule = new SampleSchedule(path, demo);
+            SampleSchedule schedule = new SampleSchedule(path, demo, phaseMode);
             setSampleSchedule(schedule);
             return schedule;
         } else {

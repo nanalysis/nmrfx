@@ -21,7 +21,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
-import javafx.stage.FileChooser;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.analyst.gui.python.AnalystPythonInterpreter;
 import org.nmrfx.processor.datasets.AcquisitionType;
@@ -29,9 +28,12 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.nmrpipe.NMRPipeData;
 import org.nmrfx.processor.datasets.vendor.nmrview.NMRViewData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DProcUtil;
+import org.nmrfx.processor.datasets.vendor.varian.VarianData;
+import org.nmrfx.processor.gui.utils.FileNameDialog;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.*;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
@@ -46,6 +48,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -820,13 +823,16 @@ public class ChartProcessor {
                 Path newProcPath = RS2DProcUtil.findNextProcPath(datasetDir);
                 file = newProcPath.toFile();
             } else {
-                FileChooser fileChooser = new FileChooser();
-                fileChooser.setInitialDirectory(directory);
-                fileChooser.setInitialFileName(datasetName);
-                file = fileChooser.showSaveDialog(null);
-                if (file == null) {
-                    return emptyResult;
+                if (!filePath.endsWith(".dx") && !filePath.endsWith(".jdx")) {
+                    Optional<File> fileOpt = FileNameDialog.getFileName(datasetName, fxmlController.getStage());
+                    if (fileOpt.isEmpty()) {
+                        return emptyResult;
+                    }
+                    file = directory.toPath().resolve(fileOpt.get().toPath()).toFile();
+                } else {
+                    file = directory.toPath().resolve(datasetName).toFile();
                 }
+
                 Optional<DatasetType> fileTypeOpt = DatasetType.typeFromFile(file);
                 if (fileTypeOpt.isPresent() && fileTypeOpt.get() != getDatasetType()) {
                     GUIUtils.warn("Dataset creation", "File extension not consistent with dataset type");
@@ -869,6 +875,7 @@ public class ChartProcessor {
 
     private String suggestDatasetName() {
         String datasetName;
+        NMRData nmrData = getNMRData();
         String filePath = getNMRData().getFilePath();
         File file = new File(filePath);
         String fileName = file.getName();
@@ -876,12 +883,24 @@ public class ChartProcessor {
             datasetName = fileName;
         } else {
             File lastFile = NMRDataUtil.findNewestFile(getScriptDir().toPath());
+            if ((lastFile != null) && (nmrData instanceof BrukerData)) {
+                Pattern pattern = Pattern.compile("[1-9]r+");
+                if (pattern.matcher(lastFile.getName()).matches()) {
+                    lastFile = null;
+                }
+            }
             if (lastFile != null) {
                 datasetName = lastFile.getName();
             } else {
                 datasetName = getDatasetNameFromScript();
                 if (datasetName.isEmpty()) {
-                    datasetName = getNMRData().getSequence();
+                    if (nmrData instanceof BrukerData brukerData) {
+                        datasetName = brukerData.suggestName();
+                    } else if (nmrData instanceof VarianData varianData) {
+                        datasetName = varianData.suggestName();
+                    } else {
+                        datasetName = getNMRData().getSequence();
+                    }
                 }
             }
         }
@@ -1053,6 +1072,7 @@ public class ChartProcessor {
         acqMode = new AcquisitionType[nDim];
         processorController.removeOpListener();
         mapOpLists.clear();
+        processorController.refManager.clearObjectPropertyMap();
         Map<ProcessingSection, List<ProcessingOperationInterface>> listOfScripts = getScriptList();
         List<String> saveHeaderList = new ArrayList<>(headerList);
 
@@ -1255,7 +1275,16 @@ public class ChartProcessor {
     public String getGenScript(boolean arrayed) {
         addFIDToPython();
         String arrayVal = arrayed ? "True" : "False";
-        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal + ")", String.class);
+        String useApod = PreferencesController.getUseFIDParApodization() ? "True" : "False";
+        String usePhases = PreferencesController.getUseFIDParPhases() ? "True" : "False";
+        String doAutoPhase = PreferencesController.getDoAutoPhase() ? "True" : "False";
+        String doAutoPhase1 = PreferencesController.getDoAutoPhase1() ? "True" : "False";
+        return AnalystPythonInterpreter.eval("genScript(arrayed=" + arrayVal
+                + ", useapod=" + useApod
+                + ", usephases=" + usePhases
+                + ", doautophase=" + doAutoPhase
+                + ", doautophase1=" + doAutoPhase1
+                + ")", String.class);
     }
 
     public List<?> getDocs() {

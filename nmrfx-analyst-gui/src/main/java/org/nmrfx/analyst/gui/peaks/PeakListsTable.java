@@ -3,7 +3,6 @@ package org.nmrfx.analyst.gui.peaks;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
@@ -13,6 +12,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.project.ProjectBase;
 
 import java.util.Comparator;
@@ -30,12 +30,11 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
     private static final String NUMBER_ASSIGNED_COLUMN_NAME = "Assigned";
     private static final String NUMBER_PARTIAL_COLUMN_NAME = "Partial";
     private static final String NUMBER_UNASSIGNED_COLUMN_NAME = "Unassigned";
-    MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakLists();
 
     private String getPeakListLabels(PeakList peakList) {
         StringBuilder sBuilder = new StringBuilder();
         for (var sDim : peakList.getSpectralDims()) {
-            if (sBuilder.length() != 0) {
+            if (!sBuilder.isEmpty()) {
                 sBuilder.append(" ");
             }
             sBuilder.append(sDim.getDimName());
@@ -79,11 +78,11 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         unassignedNumberCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getNumberUnAssigned()));
         getColumns().add(unassignedNumberCol);
 
-        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
         updatePeakLists();
-        ProjectBase.getActive().addPeakListListener(mapChangeListener);
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakLists);
     }
 
     /**

@@ -27,6 +27,7 @@ import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.star.STAR3Base;
 
 import static org.nmrfx.peaks.io.PeakWriter.PIPEDIMS.D;
 
@@ -224,10 +225,10 @@ public class PeakWriter {
     }
 
     public void writePeaksNEF(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
-        chan.write("save_nef_nmr_spectrum_" + peakList.getName() + "\n");
-        chan.write("_nef_nmr_spectrum.sf_category                 ");
+        chan.write(STAR3Base.SAVE + "nef_nmr_spectrum_" + peakList.getName() + "\n");
+        chan.write("_nef_nmr_spectrum.Sf_category                 ");
         chan.write("nef_nmr_spectrum\n");
-        chan.write("_nef_nmr_spectrum.sf_framecode                 ");
+        chan.write("_nef_nmr_spectrum.Sf_framecode                 ");
         chan.write("nef_nmr_spectrum_" + peakList.getName() + "\n");
         chan.write("_nef_nmr_spectrum.chemical_shift_list                          ");
         chan.write(".\n");

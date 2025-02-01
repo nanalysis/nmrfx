@@ -19,6 +19,7 @@ package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.Residue.RES_POSITION;
+import org.nmrfx.project.ProjectBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,12 +101,12 @@ public class Sequence {
         connectBranch = null;
     }
 
+    /**
+     * makeConnection creates a bond for @param residue to the previous
+     * residue and sets this.connectAtom for the next residue in the
+     * sequence.
+     */
     public void makeConnection(Residue residue) {
-        /**
-         * makeConnection creates a bond for @param residue to the previous
-         * residue and sets this.connectAtom for the next residue in the
-         * sequence.
-         */
         Atom firstAtom = residue.getFirstBackBoneAtom();
         Atom parent = connectAtom != null ? connectAtom : null;
         if (parent != null) {
@@ -115,7 +116,7 @@ public class Sequence {
             residue.addBond(bond);
         }
         firstAtom.parent = parent;
-        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        boolean isProtein = residue.polymer.getPolymerType().contains("polypeptide");
         if (isProtein) {
             firstAtom.irpIndex = 0;
         }
@@ -713,7 +714,7 @@ public class Sequence {
                     polymerType = "nucleicacid";
                     setPolymerType = true;
                 } else if (AMINO_ACID_NAMES.contains(resName)) {
-                    polymerType = "polypeptide";
+                    polymerType = "polypeptide(L)";
                     setPolymerType = true;
                 }
                 if (setPolymerType) {
@@ -821,6 +822,7 @@ public class Sequence {
         if (polymerType != null) {
             polymer.setPolymerType(polymerType);
         }
+        ProjectBase.getActive().putMolecule(molecule);
 
         return polymer;
     }

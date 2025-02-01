@@ -74,11 +74,11 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
         PolyChartManager.getInstance().setActiveChart(chart);
         boolean isFID = false;
         try {
-            isFID = NMRDataUtil.getFID(files.get(0).getAbsolutePath()).isFID();
+            isFID = NMRDataUtil.getFID(files.get(0)).isFID();
         } catch (IOException e) {
             // If the file can't be opened as an FID NMRData, check if it is a datafile, since processed Bruker files
             // will not open with NMRDataUtil.getFID, otherwise return
-            if (NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) == null) {
+            if (NMRDataUtil.isDatasetFile(files.get(0)) == null) {
                 log.warn("Unable to open datafiles. {}", e.getMessage(), e);
                 return;
             }
@@ -102,9 +102,9 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
             }
             // If all the datasets have the same dimension add them in append mode
             if (dimensions.size() == 1) {
-                unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(datasetToAdd, true, false));
+                unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(chart, datasetToAdd, true, false));
             } else {
-                chart.updateDatasets(datasetNames);
+                chart.updateDatasetsByNames(datasetNames);
                 chart.updateProjections();
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();

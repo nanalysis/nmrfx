@@ -8,10 +8,13 @@ package org.nmrfx.structure.chemistry;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.MoleculeBase;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRNEFWriter;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,11 +55,6 @@ public class NEFFileTest {
         testAll();
     }
 
-    //    @Test
-//    public void testFile2PNG() throws IOException { //fails b/c distances % collapsing mismatches
-//        loadData("2png");
-//        testAll();
-//    }
     @Test
     public void testFile2KZN() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kzn");
@@ -123,23 +121,11 @@ public class NEFFileTest {
         testAll();
     }
 
-//    @Test
-//    public void testFile2K07() throws IOException { //fails b/c chem shift and distance % collapsing mismatches
-//        loadData("2k07");
-//        testAll();
-//    }
-
     @Test
     public void testFile2KCU() throws IOException, InvalidMoleculeException, ParseException, InvalidPeakException {
         loadData("2kcu");
         testAll();
     }
-
-//    @Test
-//    public void testFile6NBN() throws IOException { //fails b/c ACD chain code should be A, not B
-//        loadData("6nbn");
-//        testAll();
-//    }
 
     private List<List<Object>> convertFileLines(String filePath) throws IOException {
         List<List<Object>> convertedLines = new ArrayList<>();
@@ -149,7 +135,7 @@ public class NEFFileTest {
             if (line == null) {
                 break;
             }
-            List<String> sLine = Arrays.asList(line.trim().split("\\s+"));
+            String[] sLine = line.trim().split("\\s+");
             List<Object> cLine = new ArrayList<>();
             for (String s : sLine) {
                 try {
@@ -172,7 +158,7 @@ public class NEFFileTest {
         Map<String, List<Object>> seqMap = new HashMap<>();
         boolean inSeq = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("_sequence.index")) {
                     inSeq = true;
                 }
@@ -186,7 +172,7 @@ public class NEFFileTest {
                             values.add(line.get(i));
                         }
                         seqMap.put(key, values);
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -199,7 +185,7 @@ public class NEFFileTest {
         Map<String, List<Object>> shiftMap = new HashMap<>();
         boolean inShift = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("chemical_shift")) {
                     inShift = true;
                 }
@@ -218,7 +204,7 @@ public class NEFFileTest {
                         } else {
                             shiftMap.put(key, values);
                         }
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -232,7 +218,7 @@ public class NEFFileTest {
         Map<Integer, String> keys = new HashMap<>();
         boolean inDist = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("distance_restraint")) {
                     inDist = true;
                 }
@@ -262,7 +248,7 @@ public class NEFFileTest {
                         }
                         key = keys.get(restraintID);
                         distMap.put(key, values);
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -275,7 +261,7 @@ public class NEFFileTest {
         Map<String, List<Object>> dihedralMap = new HashMap<>();
         boolean inDihedral = false;
         for (List<Object> line : dataArray) {
-            if (line.size() > 0) {
+            if (!line.isEmpty()) {
                 if (line.get(0).toString().contains("dihedral_restraint")) {
                     inDihedral = true;
                 }
@@ -295,7 +281,7 @@ public class NEFFileTest {
                             values.add(line.get(i));
                         }
                         dihedralMap.put(key, values);
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -313,7 +299,8 @@ public class NEFFileTest {
         }
         String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
         if (orig.isEmpty()) {
-            NMRNEFReader.read(fileName);
+            MoleculeBase moleculeBase = NMRNEFReader.read(fileName);
+            MoleculeFactory.setActive(moleculeBase);
             NMRNEFWriter.writeAll(outFile);
             orig = convertFileLines(fileName);
             written = convertFileLines(outFile);
@@ -337,8 +324,7 @@ public class NEFFileTest {
                     for (int v = 0; v < origValues.size(); v++) {
                         if ((v == 1 || v == 3 || v == 4) &&
                                 !origValues.get(v).equals(writtenValues.get(v))) {
-                            for (int l = 0; l < allValues.size(); l++) {
-                                List<Object> valList = allValues.get(l);
+                            for (List<Object> valList : allValues) {
                                 double val = (double) valList.get(v);
                                 if (val >= 180.0 && val < 360.0) {
                                     valList.set(v, val - 180.0);
@@ -353,7 +339,7 @@ public class NEFFileTest {
                 }
                 for (int i = 0; i < origValues.size(); i++) {
                     if (!origValues.get(i).equals(writtenValues.get(i))) {
-                        System.out.println(mode + " " + key + " " + origValues.toString() + " " + writtenValues.toString());
+                        System.out.println(mode + " " + key + " " + origValues + " " + writtenValues);
                         ok = false;
                     }
                 }
@@ -369,35 +355,40 @@ public class NEFFileTest {
         return ok;
     }
 
-    public void testAll() throws IOException {
+    @Test
+    public void testAll() {
         testSeqBlock();
         testChemShiftBlock();
         testDistanceBlock();
         testDihedralBlock();
     }
 
-    public void testSeqBlock() throws IOException {
+    @Test
+    public void testSeqBlock() {
         Map<String, List<Object>> origSeq = buildSequenceMap(orig);
         Map<String, List<Object>> writtenSeq = buildSequenceMap(written);
         boolean ok = compareMaps("seq", origSeq, writtenSeq);
         Assert.assertTrue(ok);
     }
 
-    public void testChemShiftBlock() throws IOException {
+    @Test
+    public void testChemShiftBlock() {
         Map<String, List<Object>> origShift = buildChemShiftMap(orig);
         Map<String, List<Object>> writtenShift = buildChemShiftMap(written);
         boolean ok = compareMaps("shifts", origShift, writtenShift);
         Assert.assertTrue(ok);
     }
 
-    public void testDistanceBlock() throws IOException {
+    @Test
+    public void testDistanceBlock() {
         Map<String, List<Object>> origDist = buildDistanceMap(orig);
         Map<String, List<Object>> writtenDist = buildDistanceMap(written);
         boolean ok = compareMaps("distance", origDist, writtenDist);
         Assert.assertTrue(ok);
     }
 
-    public void testDihedralBlock() throws IOException {
+    @Test
+    public void testDihedralBlock() {
         Map<String, List<Object>> origDihedral = buildDihedralMap(orig);
         Map<String, List<Object>> writtenDihedral = buildDihedralMap(written);
         boolean ok = compareMaps("dihedral", origDihedral, writtenDihedral);
