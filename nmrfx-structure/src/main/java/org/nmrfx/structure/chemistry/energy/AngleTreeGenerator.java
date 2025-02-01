@@ -160,7 +160,7 @@ public class AngleTreeGenerator {
 
                 if (!bond.isRingClosure() && (iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin, iNodeEnd);
-                } else if (bond.isRingClosure()) {
+                } else if (bond.isRingClosure() && closeBond(bond, false)) {
                     closureBonds.add(bond);
                 }
             }
@@ -285,6 +285,21 @@ public class AngleTreeGenerator {
         return ringClosures;
     }
 
+    private boolean closeBond(Bond bond, boolean freezeRings) {
+        Atom a2 = bond.getBeginAtom();
+        Atom a3 = bond.getEndAtom();
+        boolean closable = true;
+
+        if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) { // wrong if connecting two rings
+            closable = false;
+        } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
+            if (freezeRings) {
+                closable = false;
+            }
+        }
+        return closable;
+    }
+
     public void measureAtomTree(ITree itree, List<List<Atom>> atomTree, boolean changeBonds, boolean freezeRings) {
         // get Atom array --> getAtomList() difference?
         for (Atom atom : itree.getAtomArray()) {
@@ -307,7 +322,7 @@ public class AngleTreeGenerator {
                     Point3 p1 = a1 != null ? a1.getPoint() : null;
                     Point3 p2 = a2 != null ? a2.getPoint() : null;
                     if ((p1 != null) && (p0 == null)) {
-                        Vector3D ps0 =  p1.subtract(new Point3(1.0,1.0, 0.0));
+                        Vector3D ps0 = p1.subtract(new Point3(1.0, 1.0, 0.0));
                         p0 = new Point3(ps0);
                     }
                     double lastAngle = 0.0;
@@ -444,9 +459,11 @@ public class AngleTreeGenerator {
 
             ringClosures = new HashMap<>();
             for (Bond bond : closureBonds) {
-                bond.begin.addBond(bond);
-                bond.end.addBond(bond);
-                addRingClosureSet(ringClosures, bond.begin, bond.end);
+                if (closeBond(bond, freezeRings)) {
+                    bond.begin.addBond(bond);
+                    bond.end.addBond(bond);
+                    addRingClosureSet(ringClosures, bond.begin, bond.end);
+                }
             }
             if (itree instanceof Molecule) {
                 mol = (Molecule) itree;
