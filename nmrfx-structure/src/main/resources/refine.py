@@ -2343,7 +2343,7 @@ class refine:
         if dOpt['dfreeSteps']> 0:
             self.refineNonDeriv(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
         ec = self.molecule.getEnergyCoords()
-        ec.exportConstraintPairs('constraints.txt')
+        #ec.exportConstraintPairs('constraints.txt')
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
