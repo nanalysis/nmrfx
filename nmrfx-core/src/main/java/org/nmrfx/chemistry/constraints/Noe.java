@@ -191,10 +191,6 @@ public class Noe extends DistanceConstraint {
         return noeSet.getSize();
     }
 
-    public static void resetConstraints(NoeSet noeSet) {
-        noeSet.clear();
-    }
-
     public String getPeakListName() {
         String listName = "";
         if (peak != null) {
@@ -312,15 +308,8 @@ public class Noe extends DistanceConstraint {
     }
 
     @Override
-    public String toSTARString() {
-        if (peak != NoeSet.lastPeakWritten) {
-            NoeSet.id++;
-            NoeSet.lastPeakWritten = peak;
-            NoeSet.memberId = 1;
-        } else {
-            NoeSet.memberId++;
-        }
-        String logic = ".";
+    public String toSTARString(int id, int memberId) {
+         String logic = ".";
         if (nPossible > 1) {
             logic = "OR";
         }
@@ -329,10 +318,10 @@ public class Noe extends DistanceConstraint {
         char sep = ' ';
 
         //        Gen_dist_constraint.ID
-        result.append(NoeSet.id);
+        result.append(id);
         result.append(sep);
         //_Gen_dist_constraint.Member_ID
-        result.append(NoeSet.memberId);
+        result.append(memberId);
         result.append(sep);
         //_Gen_dist_constraint.Member_logic_code
         result.append(logic);
@@ -612,6 +601,7 @@ public class Noe extends DistanceConstraint {
         filterSwapped = swapped;
     }
 
+    @Override
     public Peak getPeak() {
         return peak;
     }

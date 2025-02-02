@@ -105,7 +105,7 @@ public class DistanceConstraint implements Constraint {
     }
 
     @Override
-    public String toSTARString() {
+    public String toSTARString(int id, int memberId) {
         return null;
     }
 }

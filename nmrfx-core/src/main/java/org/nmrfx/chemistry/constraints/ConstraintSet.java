@@ -25,33 +25,31 @@ import java.util.Iterator;
  */
 public interface ConstraintSet {
 
-    public String getName();
+    String getName();
 
-    public int getSize();
+    int getSize();
 
-    public void clear();
+    void clear();
 
-    public void add(Constraint constraint);
+    void add(Constraint constraint);
 
-    public Constraint get(int i);
+    Constraint get(int i);
 
-    public void setDirty();
+    void setDirty();
 
-    public boolean isDirty();
+    boolean isDirty();
 
-    public Iterator<Constraint> iterator();
+    Iterator<Constraint> iterator();
     // Following for STAR
 
-    public String getType();
+    String getType();
 
-    public String getCategory();
+    String getCategory();
 
-    public String getListType();
+    String getListType();
 
-    public String[] getLoopStrings();
+    String[] getLoopStrings();
 
-    public void resetWriting();
-
-    public MolecularConstraints getMolecularConstraints();
+    MolecularConstraints getMolecularConstraints();
 
 }
