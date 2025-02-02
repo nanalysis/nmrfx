@@ -66,7 +66,7 @@ public class Noe extends DistanceConstraint {
     private double volume = 0.0;
     private double scale;
     private double atomScale = 1.0;
-    private double ppmError = 0.0;
+    private double ppmError = 1.0;
     private short active = 1;
     private boolean symmetrical = false;
     private double contribution = 1.0;
@@ -83,10 +83,9 @@ public class Noe extends DistanceConstraint {
         super();
         spg1 = new SpatialSetGroup(sp1);
         spg2 = new SpatialSetGroup(sp2);
-        if (spg1.compare(spg2) >= 0) {
+        if (spg1.compare(spg2) > 0) {
             swapped = true;
         }
-
         peak = p;
         scale = newScale;
         activeFlags = EnumSet.noneOf(Flags.class);
@@ -266,6 +265,10 @@ public class Noe extends DistanceConstraint {
             }
         }
         return protons;
+    }
+
+    public boolean isSwapped() {
+        return swapped;
     }
 
     public boolean isActive() {

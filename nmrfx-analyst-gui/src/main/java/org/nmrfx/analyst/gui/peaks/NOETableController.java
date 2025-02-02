@@ -364,7 +364,9 @@ public class NOETableController implements Initializable, StageBasedController {
         SouthFilter<Noe, Boolean> editorFirstNameFilter = new SouthFilter<>(activeColumn, Boolean.class);
         activeColumn.setSouthNode(editorFirstNameFilter);
 
-        tableView.getColumns().addAll(idNumCol, peakListCol, peakNumCol, nPossibleCol, activeColumn);
+        TableColumn<Noe, Boolean> swappedCol = new TableColumn<>("Swap");
+        swappedCol.setCellValueFactory(new PropertyValueFactory<>("Swapped"));
+        tableView.getColumns().addAll(idNumCol, peakListCol, peakNumCol, nPossibleCol, activeColumn, swappedCol);
 
         for (int i = 0; i < 2; i++) {
             final int iGroup = i;
@@ -575,17 +577,15 @@ public class NOETableController implements Initializable, StageBasedController {
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             if (noeSetOpt.isEmpty()) {
                 noeSet = molConstr.newNOESet("default");
-                noeSetOpt = Optional.of(noeSet);
             }
             if (!autoAssignItem.getValue()) {
                 NOEAssign.extractNoePeaks(noeSet, peakList, unambiguousItem.getValue(), onlyFrozenItem.getValue(),
                         includeDiagItem.getValue());
             } else {
-                NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
+                NOEAssign.extractNoePeaks2(noeSet, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
             }
-            NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSet);
             noeCalibrator.updateContributions(useDistancesItem.getValue(), false, true);
-            noeSet = noeSetOpt.get();
             log.info("active {}", noeSet.getName());
             setNoeSet(noeSet);
             updateNoeSetMenu();

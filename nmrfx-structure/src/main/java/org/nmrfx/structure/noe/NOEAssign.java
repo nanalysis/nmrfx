@@ -210,8 +210,8 @@ public class NOEAssign {
                 }
                 for (int iPos = 0; iPos < atoms[0].length; iPos++) {
                     int nProtons = nProton[iPos];
-                    if (includeDiag || !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName())) {
-                        if ((nProtons == 2) && ((nAssign == 1) || ((nAssign > 1) && !unAmbiguous))) {
+                    if ((nProtons == 2) && (includeDiag || !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName()))) {
+                        if (nAssign == 1 || (nAssign > 1 && !unAmbiguous)) {
                             Noe noe = makeNoe(peak, atoms, atomIndex, iPos, nAssign);
                             noeSet.add(noe);
                         }
@@ -223,14 +223,13 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig,
+    public static AssignResult extractNoePeaks2(final PeakList peakList, final int maxAmbig,
                                                 final boolean strict, final int ppmSet, boolean onlyFrozen)
             throws InvalidMoleculeException, IllegalArgumentException {
-        Optional<NoeSet> noeSetOpt = Optional.of(noeSet);
-        return extractNoePeaks2(noeSetOpt, peakList, maxAmbig, strict, ppmSet, onlyFrozen);
+        return extractNoePeaks2(null, peakList, maxAmbig, strict, ppmSet, onlyFrozen);
     }
 
-    public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakList peakList, final int maxAmbig,
+    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig,
                                                 final boolean strict, final int ppmSet, boolean onlyFrozen)
             throws InvalidMoleculeException, IllegalArgumentException {
         Peak peak;
@@ -396,8 +395,7 @@ public class NOEAssign {
                 } else if (nPossible > 0) {
                     nTotal += nPossible;
                     nAssigned++;
-                    if (noeSetOpt.isPresent()) {
-                        NoeSet noeSet = noeSetOpt.get();
+                    if (noeSet != null) {
                         for (Map.Entry<String, Noe.NoeMatch> entry : map.entrySet()) {
                             Noe.NoeMatch nM = entry.getValue();
                             final Noe noe = new Noe(peak, nM.sp1(), nM.sp2(), scale);
@@ -613,8 +611,7 @@ public class NOEAssign {
         for (int i = 0; i < nTries; i++) {
             double tol = i * mult;
             peakList.getSpectralDim(dim).setIdTol(tol);
-            Optional<NoeSet> emptyOpt = Optional.empty();
-            AssignResult result = extractNoePeaks2(emptyOpt, peakList, maxAmbig, strict, ppmSet, onlyFrozen);
+            AssignResult result = extractNoePeaks2(peakList, maxAmbig, strict, ppmSet, onlyFrozen);
             if (result.nAssigned > bestScore) {
                 bestScore = result.nAssigned;
                 bestTol = tol;
