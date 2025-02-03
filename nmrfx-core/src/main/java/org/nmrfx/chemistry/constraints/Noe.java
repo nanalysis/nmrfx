@@ -186,6 +186,13 @@ public class Noe extends DistanceConstraint {
             return spg2;
         }
     }
+    public SpatialSetGroup getSPGSwapped(int setNum) {
+        if (setNum == 0) {
+            return swapped ? spg2 : spg1;
+        } else {
+            return swapped ? spg1 : spg2;
+        }
+    }
 
     public static int getSize(NoeSet noeSet) {
         return noeSet.getSize();

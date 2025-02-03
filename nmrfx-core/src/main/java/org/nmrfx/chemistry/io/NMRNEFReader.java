@@ -581,11 +581,7 @@ public class NMRNEFReader {
                 }
             }
             double scale = 1.0;
-            try {
-                angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
-            } catch (InvalidMoleculeException imE) {
-                log.warn(imE.getMessage(), imE);
-            }
+            angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
 
         }
     }
