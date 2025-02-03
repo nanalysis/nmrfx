@@ -155,7 +155,7 @@ public class NOECalibrator {
     public static void updateNOEListDistances(MoleculeBase mol, List<? extends Noe> noeList) {
         for (Noe distanceConstraint : noeList) {
             updateDistanceStat(mol, distanceConstraint);
-         }
+        }
     }
 
     public static void updateDistanceStat(MoleculeBase mol, Noe distanceConstraint) {
@@ -176,7 +176,7 @@ public class NOECalibrator {
                 violStructures = new BitSet(nStructures);
             }
             violStructures.clear();
-            SpatialSetGroup spg1= distanceConstraint.getSpg1();
+            SpatialSetGroup spg1 = distanceConstraint.getSpg1();
             SpatialSetGroup spg2 = distanceConstraint.getSpg2();
 
             for (int iStruct : structures) {
@@ -204,6 +204,7 @@ public class NOECalibrator {
         distanceConstraint.disStat = dStat;
 
     }
+
     public void updateNOEListDistancesAvg(List<Noe> noeList, boolean requireActive) {
         int[] structures = molecule.getActiveStructures();
         if (structures.length == 0) {
@@ -450,121 +451,117 @@ public class NOECalibrator {
     }
 
     public void findNetworks(boolean useContrib) {
-        int nNoe = noeSet.getSize();
-        if (molecule == null) {
-            log.warn("null mol");
-            return;
+        Map<String, List<Noe>> resNoeMap = new HashMap<>();
+        for (Noe noe : noeSet.getConstraints()) {
+            if (noe.getSpg1().getAnAtom().getEntity() == noe.getSpg2().getAnAtom().getEntity()) {
+                noe.setNetworkValue(1.0);
+            } else {
+                Optional<String> cNameOpt = getNOEKey(noe);
+                cNameOpt.ifPresent(cName -> {
+                    var noeList = resNoeMap.computeIfAbsent(cName, k -> new ArrayList<>());
+                    noeList.add(noe);
+                });
+            }
         }
-        Map<String, Map<String, Noe>> resMap1 = new TreeMap<>();
+        for (var entry : resNoeMap.entrySet()) {
+            List<Noe> noeList = entry.getValue();
+            Map<String, Double> atomMap = new HashMap<>();
+                for (Noe noe : noeList) {
+                String atomKey = getAtomKey(noe);
+                Double contrib = atomMap.get(atomKey);
+                Double currentContribution = noe.getContribution();
+                if ((contrib == null) || (currentContribution > contrib)) {
+                    atomMap.put(atomKey, currentContribution);
+                }
+            }
+            double scale = countAtoms(noeList.getFirst());
+            double sum = 0.0;
+            for (var atomEntry : atomMap.entrySet()) {
+                if (useContrib) {
+                    Double contrib = atomEntry.getValue();
+                    sum += contrib;
+                } else {
+                    sum += 1.0;
+                }
+            }
+            for (Noe noe : noeList) {
+                noe.setNetworkValue(sum / scale);
+            }
+        }
+    }
 
+    double countAtoms(Noe iNoe) {
+        Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
+        Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
+        Residue r1 = checkEntityIsResidue(e1);
+        Residue r2 = checkEntityIsResidue(e2);
+        double scale = 1.0;
+
+        if ((r1 != null) && (r2 != null)) {
+
+            int nAtoms1 = r1.getAtoms("H*").size();
+
+            int nAtoms2 = r2.getAtoms("H*").size();
+            scale = Math.sqrt(nAtoms1 * nAtoms2);
+        }
+        return scale;
+    }
+
+    private String getAtomKey(Noe noe) {
+        String a1 = noe.getSpg1().getAnAtom().getName();
+        String a2 = noe.getSpg2().getAnAtom().getName();
+        String aName;
+        if (a1.compareTo(a2) >= 0) {
+            aName = a1 + "." + a2;
+        } else {
+            aName = a2 + "." + a1;
+        }
+        return aName;
+    }
+
+    private Optional<String> getNOEKey(Noe iNoe) {
+        Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
+        Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
+        Residue r1 = checkEntityIsResidue(e1);
+        Residue r2 = checkEntityIsResidue(e2);
         StringBuilder cName1 = new StringBuilder();
         StringBuilder cName2 = new StringBuilder();
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < nNoe; i++) {
-            cName1.setLength(0);
-            cName2.setLength(0);
-            Noe iNoe = noeSet.get(i);
-            iNoe.getSpg1().getName();
-            if (iNoe.getSpg1().getSpatialSet() == iNoe.getSpg2().getSpatialSet()) {  // don't include diagonal peaks
-                continue;
+        String cName = null;
+
+        if ((r1 != null) && (r2 != null)) {
+            String eName1, eName2;
+            if (e1 instanceof Residue) {
+                eName1 = ((Residue) e1).polymer.name;
+            } else {
+                eName1 = e1.getName();
             }
-            Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
-            Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
-            Residue r1 = checkEntityIsResidue(e1);
-            Residue r2 = checkEntityIsResidue(e2);
+            if (e2 instanceof Residue) {
+                eName2 = ((Residue) e2).polymer.name;
+            } else {
+                eName2 = e2.getName();
+            }
+            cName1.append(iNoe.getSpg1().getName());
+            cName1.append('.');
+            cName1.append(eName1);
+            cName1.append(':');
+            cName1.append(r1.getNumber());
+            cName2.append(iNoe.getSpg2().getName());
+            cName2.append('.');
+            cName2.append(eName2);
+            cName2.append(':');
+            cName2.append(r2.getNumber());
 
-            if ((r1 != null) && (r2 != null)) {
-                String eName1, eName2;
-                if (e1 instanceof Residue) {
-                    eName1 = ((Residue) e1).polymer.name;
-                } else {
-                    eName1 = e1.getName();
-                }
-                if (e2 instanceof Residue) {
-                    eName2 = ((Residue) e2).polymer.name;
-                } else {
-                    eName2 = e2.getName();
-                }
-                cName1.append(iNoe.getSpg1().getName());
-                cName1.append('.');
-                cName1.append(eName1);
-                cName1.append(':');
-                cName1.append(r1.getNumber());
-                cName2.append(iNoe.getSpg2().getName());
-                cName2.append('.');
-                cName2.append(eName2);
-                cName2.append(':');
-                cName2.append(r2.getNumber());
-
-                String cName;
-                String aName;
-                String a1 = iNoe.getSpg1().getAnAtom().getName();
-                String a2 = iNoe.getSpg2().getAnAtom().getName();
-                if (cName1.toString().compareTo(cName2.toString()) < 0) {
-                    cName1.append('_');
-                    cName1.append(cName2);
-                    cName = cName1.toString();
-                    aName = a1 + ">" + a2;
-                } else {
-                    cName2.append('_');
-                    cName2.append(cName1);
-                    cName = cName2.toString();
-                    aName = a2 + "<" + a1;
-                }
-                Map<String, Noe> resMap2 = resMap1.get(cName);
-                if (resMap2 == null) {
-                    resMap2 = new HashMap<>();
-                    resMap1.put(cName, resMap2);
-                }
-                Noe testNoe = resMap2.get(aName);
-                if ((testNoe == null) || (testNoe.getContribution() < iNoe.getContribution())) {
-                    resMap2.put(aName, iNoe);
-                }
-                iNoe.setResMap(resMap2);
+            if (cName1.toString().compareTo(cName2.toString()) < 0) {
+                cName1.append('_');
+                cName1.append(cName2);
+                cName = cName1.toString();
+            } else {
+                cName2.append('_');
+                cName2.append(cName1);
+                cName = cName2.toString();
             }
         }
-        long mid = System.currentTimeMillis();
-
-        Map<Residue, Integer> countMap = new HashMap<>();
-        for (Noe iNoe : noeSet.getConstraints()) {
-            Entity e1 = iNoe.getSpg1().getAnAtom().getEntity();
-            Entity e2 = iNoe.getSpg2().getAnAtom().getEntity();
-            Residue r1 = checkEntityIsResidue(e1);
-            Residue r2 = checkEntityIsResidue(e2);
-            if ((r1 != null) && (r2 != null)) {
-                if (r1 == r2) {
-                    iNoe.setNetworkValue(1.0);
-                } else {
-                    Integer count1 = countMap.get(r1);
-                    if (count1 == null) {
-                        int nAtoms1 = r1.getAtoms("H*").size();
-                        count1 = nAtoms1;
-                        countMap.put(r1, count1);
-                    }
-                    Integer count2 = countMap.get(r2);
-                    if (count2 == null) {
-                        int nAtoms2 = r2.getAtoms("H*").size();
-                        count2 = nAtoms2;
-                        countMap.put(r2, count2);
-                    }
-                    Map<String, Noe> resMap2 = iNoe.getResMap();
-                    double scale = Math.sqrt(count1 * count2);
-                    double sum = 0.01;
-                    if (resMap2 != null) {
-                        for (Noe jNoe : resMap2.values()) {
-                            if (useContrib) {
-                                sum += jNoe.getContribution();
-                            } else {
-                                sum += 1.0;
-                            }
-                        }
-                    }
-                    iNoe.setNetworkValue(sum / scale);
-                }
-            }
-        }
-        long done = System.currentTimeMillis();
-        log.info("{} {}", (mid - start), (done - mid));
+        return Optional.ofNullable(cName);
     }
 
     public void limitToAssigned() {
@@ -752,7 +749,7 @@ public class NOECalibrator {
             noeCal.calibrate(noe);
         }
     }
-    
+
     public void findSymmetrical() {
         int nNoe = noeSet.getSize();
         Map<String, Noe> symMap = new HashMap<>();
