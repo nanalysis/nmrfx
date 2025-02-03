@@ -210,7 +210,8 @@ public class NOEAssign {
                 }
                 for (int iPos = 0; iPos < atoms[0].length; iPos++) {
                     int nProtons = nProton[iPos];
-                    if ((nProtons == 2) && (includeDiag || !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName()))) {
+                    boolean gotAtoms = atoms[atomIndex[0]][iPos] != null && atoms[atomIndex[1]][iPos] != null;
+                    if ((nProtons == 2) && (includeDiag || (gotAtoms && !atoms[atomIndex[0]][iPos].getShortName().equals(atoms[atomIndex[1]][iPos].getShortName())))) {
                         if (nAssign == 1 || (nAssign > 1 && !unAmbiguous)) {
                             Noe noe = makeNoe(peak, atoms, atomIndex, iPos, nAssign);
                             noeSet.add(noe);
