@@ -20,6 +20,13 @@ import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
  * @author brucejohnson
  */
 public class SpinSystem {
+    public enum MatchMode {
+        ORIG,
+        SUMINVG
+    }
+
+    static MatchMode matchMode = MatchMode.SUMINVG;
+
     static final List<String> systemLoopTags = List.of("ID", "Spectral_peak_list_ID", "Peak_ID",
             "Confirmed_previous_ID", "Confirmed_next_ID", "Fragment_ID", "Fragment_index");
     static final List<String> peakLoopTags = List.of("ID", "Spin_system_ID", "Spectral_peak_list_ID", "Peak_ID", "Match_score");
@@ -35,6 +42,9 @@ public class SpinSystem {
     private SpinSystemMatch confirmS = null;
     private SeqFragment fragment = null;
     int fragmentPosition = -1;
+
+    int index = -1;
+
 
     public enum AtomEnum {
         H("h", 0.04, false),
@@ -275,6 +285,14 @@ public class SpinSystem {
                 break;
             }
         }
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int i) {
+        index = i;
     }
 
     public EnumMap<AtomEnum, ShiftValue> getShiftValues(int k) {
@@ -939,6 +957,9 @@ public class SpinSystem {
         int nMatch = 0;
         EnumSet<AtomEnum> matchedSet = EnumSet.noneOf(AtomEnum.class);
 
+        double c0 = -100.0;
+        double c1 = 50.0;
+
         for (var entryA : shiftValues[idxA].entrySet()) {
             var shiftValueB = spinSysB.shiftValues[idxB].get(entryA.getKey());
             double vA = entryA.getValue().value;
@@ -946,15 +967,22 @@ public class SpinSystem {
             double tolA = entryA.getKey().tol;
             if (Double.isFinite(vA) && Double.isFinite(vB)) {
                 double delta = Math.abs(vA - vB);
-                ok = true;
-                if (delta > 4.0 * tolA) {
-                    ok = false;
-                    break;
-                } else {
-                    matchedSet.add(entryA.getKey());
-                    delta /= tolA;
-                    sum += delta * delta;
+                if (matchMode == MatchMode.SUMINVG) {
+                    ok = true;
+                    double ratio = delta / 0.17;
+                    sum +=  c0 * Math.exp(-0.5 * ratio * ratio) + c1;
                     nMatch++;
+                } else {
+                    ok = true;
+                    if (delta > 4.0 * tolA) {
+                        ok = false;
+                        break;
+                    } else {
+                        matchedSet.add(entryA.getKey());
+                        delta /= tolA;
+                        sum += delta * delta;
+                        nMatch++;
+                    }
                 }
             }
         }
@@ -962,8 +990,13 @@ public class SpinSystem {
 
         Optional<SpinSystemMatch> result = Optional.empty();
         if (ok) {
-            double dis = Math.sqrt(sum);
-            double score = Math.exp(-dis);
+            double score;
+            if (matchMode == MatchMode.SUMINVG) {
+                score = sum;
+            } else {
+                double dis = Math.sqrt(sum);
+                score = Math.exp(-dis);
+            }
             SpinSystemMatch spinMatch;
             if (prev) {
                 spinMatch = new SpinSystemMatch(spinSysB, this, score, nMatch, matchedSet);
@@ -1098,27 +1131,8 @@ public class SpinSystem {
     public void compare() {
         spinMatchP.clear();
         spinMatchS.clear();
-        double sumsP = 0.0;
-        double sumsS = 0.0;
-        spinMatchP.addAll(spinSystems.compare(this, true));
-        spinMatchS.addAll(spinSystems.compare(this, false));
-        for (var match : spinMatchP) {
-            sumsP += match.score;
-        }
-        for (var match : spinMatchS) {
-            sumsS += match.score;
-        }
-
-
-        for (SpinSystemMatch spinMatch : spinMatchP) {
-            spinMatch.norm(sumsP);
-        }
-        for (SpinSystemMatch spinMatch : spinMatchS) {
-            spinMatch.norm(sumsS);
-        }
-
-        spinMatchP.sort((s1, s2) -> Double.compare(s2.score, s1.score));
-        spinMatchS.sort((s1, s2) -> Double.compare(s2.score, s1.score));
+        spinMatchP.addAll(spinSystems.compare(this, true).stream().filter(s -> s.score < 100.0).sorted(Comparator.comparingDouble(s -> s.score)).limit(10).toList());
+        spinMatchS.addAll(spinSystems.compare(this, false).stream().filter(s -> s.score < 100.0).sorted(Comparator.comparingDouble(s -> s.score)).limit(10).toList());
     }
 
     public void purgeDeleted() {
@@ -1146,7 +1160,13 @@ public class SpinSystem {
         }
     }
 
-    public void score() {
+    public List<ResidueSeqScore> score() {
+        List<List<AtomShiftValue>> shiftValues = SeqFragment.getShiftsForSystem(this);
+        Molecule molecule = Molecule.getActive();
+        return SeqFragment.scoreShifts(molecule, shiftValues);
+    }
+
+    public void printScores() {
         List<List<AtomShiftValue>> shiftValues = SeqFragment.getShiftsForSystem(this);
         Molecule molecule = Molecule.getActive();
         List<ResidueSeqScore> residueSeqScores = SeqFragment.scoreShifts(molecule, shiftValues, null);

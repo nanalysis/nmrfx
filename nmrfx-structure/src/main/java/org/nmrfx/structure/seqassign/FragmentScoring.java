@@ -18,6 +18,10 @@ public class FragmentScoring {
 
     static Map<String, MultivariateNormalDistribution> aaDistMap = new HashMap<>();
 
+    private FragmentScoring() {
+
+    }
+
     public static class AAScore {
 
         final double score;
@@ -157,26 +161,37 @@ public class FragmentScoring {
         String resName = residue.getName();
         resName = resName.toLowerCase();
 
-        if (!atomName.isEmpty()) {
-            if (!(resName.equalsIgnoreCase("gly")
-                    && atomName.equalsIgnoreCase("cb"))) {
-                Atom atom = residue.getAtom(atomName);
-                if (atom != null) {
-                    StandardPPM stdShift = null;
-                    PPMv ppmV = atom.spatialSet.getPPM(0);
-                    if ((ppmV != null) && ppmV.isValid()) {
-                        stdShift = new StandardPPM(ppmV.getValue(), 0.05);
-                    } else {
-                        PPMv refPPMV = atom.spatialSet.getRefPPM();
-                        if ((refPPMV != null) && refPPMV.isValid()) {
-                            stdShift = new StandardPPM(refPPMV.getValue(), refPPMV.getError());
-                        }
-                    }
-                    if (stdShift != null) {
-                        double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
-                        result = normDev * normDev;
+        if (!atomName.isEmpty() && !(resName.equalsIgnoreCase("gly")
+                && atomName.equalsIgnoreCase("cb"))) {
+            Atom atom = residue.getAtom(atomName);
+            if (atom != null) {
+                StandardPPM stdShift = null;
+                PPMv ppmV = atom.spatialSet.getPPM(0);
+                if ((ppmV != null) && ppmV.isValid()) {
+                    stdShift = new StandardPPM(ppmV.getValue(), 0.05);
+                } else {
+                    PPMv refPPMV = atom.spatialSet.getRefPPM();
+                    if ((refPPMV != null) && refPPMV.isValid()) {
+                        stdShift = new StandardPPM(refPPMV.getValue(), refPPMV.getError());
                     }
                 }
+                if (stdShift != null) {
+                    double normDev = (stdShift.getAvg() - ppm) / (stdShift.getSdev() * sdevMul);
+                    result = normDev * normDev;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static Optional<Double> getPScore(int nValues, double resScore, double pOK) {
+        double pValue;
+        Optional<Double> result = Optional.empty();
+        if (nValues > 0) {
+            ChiSquaredDistribution chiSquare = new ChiSquaredDistribution(nValues);
+            pValue = 1.0 - chiSquare.cumulativeProbability(resScore);
+            if (!Double.isNaN(pValue) && (pValue > pOK)) {
+                result = Optional.of(pValue);
             }
         }
         return result;
@@ -198,21 +213,36 @@ public class FragmentScoring {
                 nValues++;
             }
         }
-        double pValue;
-        if (nValues < 1) {
-            matchScore.ok = false;
-            pValue = 0.0;
+        Optional<Double> scoreOpt = getPScore(nValues, resScore, pOK);
+        if (scoreOpt.isPresent()) {
+            matchScore.ok = true;
+            matchScore.totalScore = scoreOpt.get();
         } else {
-            ChiSquaredDistribution chiSquare = new ChiSquaredDistribution(nValues);
-            pValue = 1.0 - chiSquare.cumulativeProbability(resScore);
-            if (Double.isNaN(pValue) || (pValue < pOK)) {
-                matchScore.ok = false;
-            }
+            matchScore.ok = false;
+            matchScore.totalScore = 0.0;
         }
-
-        matchScore.totalScore = pValue;
-
         return matchScore;
     }
 
+    public static Optional<Double> scoreResidueAtomPPM(final double pOK, final double sdevMul, final Residue rootResidue, final List<List<AtomShiftValue>> atomShiftValues) {
+        double resScore = 0.0;
+        int nValues = 0;
+
+        for (int i = 0; i < 2; i++) {
+            Residue residue = i == 0 ? rootResidue.getPrevious() : rootResidue;
+            for (AtomShiftValue atomShiftValue : atomShiftValues.get(i)) {
+                if (residue.getAtom(atomShiftValue.getAName()) == null) { // fail residues like proline without HN
+                    nValues = 0;
+                    break;
+                }
+                Double score = scoreAtomPPM(residue, atomShiftValue.getAName(), atomShiftValue.getPPM(), sdevMul);
+                if (score != null) {
+                    resScore += score;
+                    nValues++;
+                }
+            }
+        }
+
+        return getPScore(nValues, resScore, pOK);
+    }
 }

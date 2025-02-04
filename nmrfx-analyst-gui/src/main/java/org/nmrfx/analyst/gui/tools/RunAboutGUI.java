@@ -162,6 +162,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     List<Color> paletteColors = new ArrayList<>();
     Map<SpinSystem, Color> spinSystemColorMap = new HashMap<>();
 
+    ResSeqMatcher resSeqMatcher = null;
+
     public RunAboutGUI(FXMLController controller, Consumer<RunAboutGUI> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
@@ -744,6 +746,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         analyzeItem.setOnAction(e -> analyzeSystem());
         spinSysMenuButton.getItems().add(analyzeItem);
 
+        MenuItem bipartiteItem = new MenuItem("GraphAssign");
+        bipartiteItem.setOnAction(e -> bipartiteAnalyze());
+        spinSysMenuButton.getItems().add(bipartiteItem);
+
         MenuItem trimItem = new MenuItem("Trim");
         trimItem.setOnAction(e -> trimSystem());
         spinSysMenuButton.getItems().add(trimItem);
@@ -1243,7 +1249,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
                         sysFields[i].setText(String.valueOf(otherSys.getId()));
                         nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
-                        scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
+                        scoreFields[i].setText(String.format("%5.0f", spinMatch.getScore()));
                         ok = true;
                     } else {
                         sysFields[i].setText("");
@@ -1749,6 +1755,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         gotoSpinSystems();
     }
 
+    void bipartiteAnalyze() {
+        if (resSeqMatcher == null) {
+            resSeqMatcher = new ResSeqMatcher();
+            resSeqMatcher.compareMatrix(runAbout.getSpinSystems());
+        }
+
+        resSeqMatcher.graphMatch();
+    }
     public void setSpinSystems(List<SpinSystem> spinSystems, boolean useBest) {
         drawSpinSystems(spinSystems, useBest);
         setPeakIdField();

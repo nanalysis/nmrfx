@@ -83,7 +83,7 @@ public class SeqFragment {
         List<SpinSystem> spinSystems = getSpinSystems();
         int index = spinSystems.indexOf(spinSys);
         List<ResidueSeqScore> resSeqScores = scoreShifts(molecule);
-        for (ResidueSeqScore residueSeqScore: resSeqScores) {
+        for (ResidueSeqScore residueSeqScore : resSeqScores) {
             Residue firstResidue = residueSeqScore.getFirstResidue();
             int jRes = polymer.getResidues().indexOf(firstResidue);
             int deltaRes = iRes - jRes;
@@ -359,6 +359,15 @@ public class SeqFragment {
         }
         return result;
     }
+    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, List<List<AtomShiftValue>> shiftValues) {
+        List<ResidueSeqScore> result = new ArrayList<>();
+        for (Polymer polymer : molecule.getPolymers()) {
+            if (polymer.isPeptide()) {
+                result.addAll(scoreShifts1(polymer, shiftValues));
+            }
+        }
+        return result;
+    }
 
     public List<ResidueSeqScore> scoreShifts(Polymer polymer) {
         List<List<AtomShiftValue>> shiftValues = getShifts();
@@ -404,6 +413,27 @@ public class SeqFragment {
         if (!result.isEmpty()) {
             ResidueSeqScore.norm(result);
             result = result.stream().sorted().filter(r -> r.getScore() > fragmentScoreProbability).toList();
+        }
+        return result;
+    }
+
+    public static List<ResidueSeqScore> scoreShifts1(Polymer polymer, List<List<AtomShiftValue>> shiftValues) {
+        double sDevMul = 2.0;
+        List<ResidueSeqScore> result = new ArrayList<>();
+        int winSize = shiftValues.size();
+        if (winSize < 1) {
+            return result;
+        }
+        List<Residue> residues = polymer.getResidues();
+        int nResidues = residues.size();
+        int n = nResidues - winSize + 1;
+        for (int i = 1; i < n; i++) {
+            Residue residue = residues.get(i);
+            Optional<Double> scoreOpt = FragmentScoring.scoreResidueAtomPPM(spinSysProbability, sDevMul, residue, shiftValues);
+            scoreOpt.ifPresent(scoreVal -> {
+                ResidueSeqScore resScore = new ResidueSeqScore(residue, winSize, scoreVal);
+                result.add(resScore);
+            });
         }
         return result;
     }
@@ -469,4 +499,14 @@ public class SeqFragment {
                 String.format("%9.5f", resSeqScore.score) : ".";
         return String.format("%3d %3s %3s %3s %9s\n", id, polyID, resID, nResidues, score);
     }
+
+    public Residue getResidueAtPostion(int pos) {
+        Residue firstResidue = resSeqScore.getFirstResidue();
+        Residue residue = firstResidue;
+        for (int i = 0; i < pos; i++) {
+            residue = residue.getNext();
+        }
+        return residue;
+    }
+
 }
