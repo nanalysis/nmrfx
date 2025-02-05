@@ -89,6 +89,10 @@
             <groupId>org.python</groupId>
             <artifactId>jython-slim</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.jenetics</groupId>
+            <artifactId>jenetics</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

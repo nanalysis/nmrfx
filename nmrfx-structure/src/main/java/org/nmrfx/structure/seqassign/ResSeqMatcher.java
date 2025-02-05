@@ -26,9 +26,18 @@ public class ResSeqMatcher {
     Map<Residue, Integer> residueIndexMap = new HashMap<>();
     Random random = new Random();
     PartionedGraph paritionedGraph = null;
+    SeqGeneticAlgorithm seqGeneticAlgorithm;
 
     record PartionedGraph(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph,
                           Set<Integer> partition1, Set<Integer> partition2) {
+    }
+
+    public List<List<Integer>> getSysResidueList() {
+        return sysResidueList;
+    }
+
+    public List<List<Integer>> getResidueSysList() {
+        return residueSysList;
     }
 
     public void compareMatrix(SpinSystems spinSystems) {
@@ -110,8 +119,7 @@ public class ResSeqMatcher {
 
     public double score(int[] sysToRes, int[] resToSys) {
         double score = 0.0;
-        int nSystems = sysToRes.length;
-        for (int iSys = 0; iSys < nSystems; iSys++) {
+        for (int iSys = 0; iSys < nSys; iSys++) {
             int iRes = sysToRes[iSys];
             if ((iRes >= 0) && (iRes < nResidues)) {
                 double resScore = residueScores[iRes][iSys];
@@ -120,7 +128,7 @@ public class ResSeqMatcher {
                 int nextRes = iRes + 1;
                 if (nextRes < nResidues) {
                     int nextSys = resToSys[nextRes];
-                    if (nextSys >= 0) {
+                    if ((nextSys >= 0) && (nextSys < nSys)) {
                         double adjScore = adjScores[iSys][nextSys];
                         score += adjScore;
                     }
@@ -141,7 +149,7 @@ public class ResSeqMatcher {
     public double matcher(int[] sysToRes) {
         int[] resToSys = new int[nResidues];
         Arrays.fill(resToSys, -1);
-        for (int iSys = 0; iSys < sysToRes.length; iSys++) {
+        for (int iSys = 0; iSys < nSys; iSys++) {
             int iRes = sysToRes[iSys];
             if ((iRes >= 0) && (iRes < nResidues)) {
                 resToSys[iRes] = iSys;
@@ -181,11 +189,14 @@ public class ResSeqMatcher {
         System.out.println("global score " + score);
     }
 
+    public record Matching(double score, int[] matches) {}
     public void graphMatch() {
         buildGraph();
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
         double ranFrac = 0.0;
-        for (int iTry=0;iTry<100;iTry++) {
+        List<Matching> initMatches = new ArrayList<>();
+        int nTries = 100;
+        for (int iTry=0;iTry<nTries;iTry++) {
             setGraphWeights(simpleGraph, ranFrac);
             var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
                     paritionedGraph.partition1, paritionedGraph.partition2);
@@ -196,24 +207,29 @@ public class ResSeqMatcher {
                 sysToRes[i] = matches.get(i);
             }
             double score = matcher(sysToRes);
-            System.out.println(iTry + " " + score);
+            Matching matching = new Matching(score, sysToRes);
+            initMatches.add(matching);
+            System.out.println(iTry + " " + score + " " + matches);
             ranFrac = 0.05;
         }
+        seqGeneticAlgorithm = new SeqGeneticAlgorithm(this);
+        SeqGeneticAlgorithm.seqResMatches = sysResidueList;
+        seqGeneticAlgorithm.setup(initMatches);
     }
 
     List<Integer> getMatches(MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult) {
         var simpleGraph = matchResult.getGraph();
         List<Integer> result = new ArrayList<>();
-        int[] seqToRes = new int[nSys];
-        Arrays.fill(seqToRes, -1);
+        int[] sysToRes = new int[nSys];
+        Arrays.fill(sysToRes, -1);
         matchResult.getEdges()
                 .forEach(edge -> {
-                    int r = simpleGraph.getEdgeSource(edge);
-                    int c = simpleGraph.getEdgeTarget(edge) - nSys;
-                    seqToRes[r] = c;
+                    int sys = simpleGraph.getEdgeSource(edge);
+                    int res = simpleGraph.getEdgeTarget(edge) - nSys;
+                    sysToRes[sys] = res;
                 });
         for (int iSeq = 0; iSeq < nSys; iSeq++) {
-            int iRes = seqToRes[iSeq];
+            int iRes = sysToRes[iSeq];
             result.add(iRes);
         }
         return result;
@@ -228,7 +244,8 @@ public class ResSeqMatcher {
             simpleGraph.addVertex(i);
             partition1.add(i);
         }
-        for (int i = 0; i < nResidues; i++) {
+        int nTotal = nSys + nResidues;
+        for (int i = 0; i < nTotal; i++) {
             simpleGraph.addVertex(i + nSys);
             partition2.add(i + nSys);
         }
@@ -237,6 +254,8 @@ public class ResSeqMatcher {
                 DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
                 simpleGraph.addEdge(iSys, iRes + nSys, weightedEdge1);
             }
+            DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
+            simpleGraph.addEdge(iSys, nSys + nResidues + iSys, weightedEdge1);
         }
         paritionedGraph = new PartionedGraph(simpleGraph, partition1, partition2);
     }
@@ -265,7 +284,12 @@ public class ResSeqMatcher {
         for (var edge : graph.edgeSet()) {
             int iSys = graph.getEdgeSource(edge);
             int iRes = graph.getEdgeTarget(edge) - nSys;
-            double score = getTriScore(iRes, iSys);
+            double score;
+            if (iRes >= nResidues) {
+                score = 0.0;
+            } else {
+                score = getTriScore(iRes, iSys);
+            }
 
             double weight = 500.0 - score;
             if (random.nextDouble() < randomLimit) {
