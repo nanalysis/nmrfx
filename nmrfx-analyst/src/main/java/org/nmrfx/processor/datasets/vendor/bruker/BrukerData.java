@@ -160,7 +160,7 @@ public class BrukerData implements NMRData {
         int lastSize = 0;
         int xdim;
         for (int i = 0; i < dim; i++) {
-            Integer thisBlockSize = getParInt("XWIN," + (i + 1));
+            Integer thisBlockSize = getParInt("XDIM," + (i + 1));
             if ((thisBlockSize == null) || (thisBlockSize == 0)) {
                 thisBlockSize = getParInt("SI," + (i + 1));
             }
