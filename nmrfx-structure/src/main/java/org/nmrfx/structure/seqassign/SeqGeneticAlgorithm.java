@@ -19,24 +19,14 @@ public class SeqGeneticAlgorithm {
 
     public static List<List<Integer>> seqResMatches;
     ResSeqMatcher resSeqMatcher;
-    private int populationSize = 1000;
-    private double mutationRate = 0.1;
-    private double crossoverRate = 0.1;
-    int eliteNumber = 100;
-    int maximumPhenoTypeAge = 50;
-
-    private int steadyLimit = 200;
-    private int multiMaxLimit = 30;
-    private int nGenerations = 2000;
 
     Consumer<Double> progressConsumer;
 
-    public int getNGenerations() {
-        return nGenerations;
-    }
+    SeqGenParameters seqGenParameters = new SeqGenParameters();
 
-    public SeqGeneticAlgorithm(ResSeqMatcher resSeqMatcher) {
+    public SeqGeneticAlgorithm(ResSeqMatcher resSeqMatcher, SeqGenParameters seqGenParameters) {
         this.resSeqMatcher = resSeqMatcher;
+        this.seqGenParameters = seqGenParameters;
     }
 
     public double getValue(int[] matching) {
@@ -127,9 +117,8 @@ public class SeqGeneticAlgorithm {
 
     private List<Genotype<EnumGene<Integer>>> initGenotypes(List<ResSeqMatcher.Matching> initMatches, int stops) {
         initMatches.sort(Comparator.comparing(ResSeqMatcher.Matching::score));
-        multiMaxLimit = (int) (initMatches.size() * 0.7);
-        int nMulti = Math.min(multiMaxLimit, initMatches.size());
-       // System.out.println(" nMultiMatches " + initMatches.size() + " multiLimit " + multiMaxLimit + " nMulti " + nMulti);
+        int nMulti = Math.min(seqGenParameters.multiMaxLimit(), initMatches.size());
+        // System.out.println(" nMultiMatches " + initMatches.size() + " multiLimit " + multiMaxLimit + " nMulti " + nMulti);
         List<Integer> alleleList = new ArrayList<>();
         for (int i = 0; i < stops; i++) {
             alleleList.add(i);
@@ -138,7 +127,7 @@ public class SeqGeneticAlgorithm {
         List<Genotype<EnumGene<Integer>>> genotypes = new ArrayList<>();
 
         for (ResSeqMatcher.Matching matching : initMatches.subList(0, nMulti)) {
-          //  System.out.println("multi value " + matching.score());
+            //  System.out.println("multi value " + matching.score());
             ArrayList<Integer> matchArray = new ArrayList<>();
             boolean[] used = new boolean[stops];
             for (int i : matching.matches()) {
@@ -148,11 +137,11 @@ public class SeqGeneticAlgorithm {
             int j = seqResMatches.size();
             for (int i = 0; i < used.length; i++) {
                 if (!used[i]) {
-                   matchArray.add(i);
+                    matchArray.add(i);
                 }
             }
             final ISeq<Integer> alleles = ISeq.of(matchArray);
-           // System.out.println(alleles);
+            // System.out.println(alleles);
             AssignmentChromosome<EnumGene<Integer>> permCh = new AssignmentChromosome(matchArray.stream().map(i -> EnumGene.of(i, alleleSeq)).collect(ISeq.toISeq()));
 
             Genotype gtype = Genotype.of(permCh);
@@ -172,13 +161,13 @@ public class SeqGeneticAlgorithm {
                         SeqGeneticAlgorithm.ofPermutation(stops)
                 )
                 .optimize(Optimize.MINIMUM)
-                .maximalPhenotypeAge(maximumPhenoTypeAge)
-                .populationSize(populationSize)
-                .survivorsSelector(new EliteSelector<>(eliteNumber))
+                .maximalPhenotypeAge(seqGenParameters.maximumPhenoTypeAge())
+                .populationSize(seqGenParameters.populationSize())
+                .survivorsSelector(new EliteSelector<>(seqGenParameters.eliteNumber()))
                 .offspringSelector(new TournamentSelector<>())
                 .alterers(
-                        new ConstrainedSwapMutatorResSeq<>(resSeqMatcher, this, mutationRate),
-                        new PartiallyMatchedCrossover<>(crossoverRate))
+                        new ConstrainedSwapMutatorResSeq<>(resSeqMatcher, this, seqGenParameters.mutationRate()),
+                        new PartiallyMatchedCrossover<>(seqGenParameters.crossoverRate()))
                 .build();
 
         List<Genotype<EnumGene<Integer>>> genotypes = initGenotypes(initMatches, stops);
@@ -188,11 +177,11 @@ public class SeqGeneticAlgorithm {
                 = engine.stream(genotypes)
                 // Truncate the evolution stream after n "steady"
                 // generations.
-                .limit(bySteadyFitness(steadyLimit))
+                .limit(bySteadyFitness(seqGenParameters.steadyLimit()))
                 .sequential()
                 // The evolution will stop after maximal n
                 // generations.
-                .limit(nGenerations)
+                .limit(seqGenParameters.nGenerations())
                 // Update the evaluation statistics after
                 // each generation
                 .peek(statistics)
@@ -209,5 +198,9 @@ public class SeqGeneticAlgorithm {
 //            System.out.println(i + " " + finalMatching[i]);
 //        }
         return matching;
+    }
+
+    public int getNGenerations() {
+        return seqGenParameters.nGenerations();
     }
 }

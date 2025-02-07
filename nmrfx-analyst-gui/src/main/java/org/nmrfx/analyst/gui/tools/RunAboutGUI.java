@@ -1763,16 +1763,19 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     void assignFragments() {
         if (resSeqMatcher != null) {
             resSeqMatcher.assignMatches(runAbout.getSpinSystems());
+            gotoSpinSystems();
+            updateClusterCanvas();
         }
     }
     void bipartiteAnalyze() {
         resSeqMatcher = new ResSeqMatcher();
         resSeqMatcher.compareMatrix(runAbout.getSpinSystems());
+        SeqGenParameters seqGenParameters = new SeqGenParameters();
 
         Task<Double> task = new Task<>() {
             @Override
             protected Double call() throws Exception {
-                double result = resSeqMatcher.graphMatch();
+                double result = resSeqMatcher.graphMatch(25, seqGenParameters);
                 return result;
             }
         };
@@ -2754,13 +2757,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void extendSystem() {
-        SpinSystem.extend(currentSpinSystem, 0.5);
+        SpinSystem.extend(currentSpinSystem, -50.0);
         gotoSpinSystems();
         updateClusterCanvas();
     }
 
     void extendAllSystems() {
-        runAbout.getSpinSystems().extendAll(0.5);
+        runAbout.getSpinSystems().extendAll(-50.0);
         gotoSpinSystems();
         updateClusterCanvas();
     }

@@ -269,12 +269,11 @@ public class ResSeqMatcher {
     public record Matching(double score, int[] matches) {
     }
 
-    public double graphMatch() {
-        int nTries = 25;
+    public double graphMatch(int nTries, SeqGenParameters seqGenParameters) {
         bestMatching = null;
         List<Matching> matchings = new ArrayList<>();
         for (int i = 0; i < nTries; i++) {
-            Matching matching = runGraphGenetics((v) -> updateProgress((Double) v));
+            Matching matching = runGraphGenetics(seqGenParameters, (v) -> updateProgress((Double) v));
             matchings.add(matching);
             if ((bestMatching == null) || (matching.score < bestMatching.score)) {
                 bestMatching = matching;
@@ -294,12 +293,12 @@ public class ResSeqMatcher {
         return bestMatching.score;
     }
 
-    public Matching runGraphGenetics(Consumer consumer) {
+    public Matching runGraphGenetics(SeqGenParameters seqGenParameters, Consumer consumer) {
         buildGraph();
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
         double ranFrac = 0.0;
         List<Matching> initMatches = new ArrayList<>();
-        int nTries = 500;
+        int nTries = seqGenParameters.populationSize();
         for (int iTry = 0; iTry < nTries; iTry++) {
             setGraphWeights(simpleGraph, ranFrac);
             var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
@@ -315,7 +314,7 @@ public class ResSeqMatcher {
             initMatches.add(matching);
             ranFrac = 0.1;
         }
-        seqGeneticAlgorithm = new SeqGeneticAlgorithm(this);
+        seqGeneticAlgorithm = new SeqGeneticAlgorithm(this, seqGenParameters);
         SeqGeneticAlgorithm.seqResMatches = sysResidueList;
         Matching seqToResMatch = seqGeneticAlgorithm.apply(initMatches, consumer);
         return seqToResMatch;

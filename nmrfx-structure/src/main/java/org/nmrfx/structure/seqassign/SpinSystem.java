@@ -1244,7 +1244,7 @@ public class SpinSystem {
             int n = match.getN();
             double score = match.getScore();
             boolean available = !match.spinSystemA.confirmed(false);
-            if (isRecipricol && available && viable && (n == 3) && (score > minScore)) {
+            if (isRecipricol && available && viable && (n == 3) && (score < minScore)) {
                 spinSys.confirm(match, true);
                 spinSys = match.getSpinSystemA();
             } else {
@@ -1265,7 +1265,7 @@ public class SpinSystem {
             int n = match.getN();
             double score = match.getScore();
             boolean available = !match.spinSystemB.confirmed(true);
-            if (isRecipricol && available && viable && (n == 3) && (score > minScore)) {
+            if (isRecipricol && available && viable && (n == 3) && (score < minScore)) {
                 spinSys.confirm(match, false);
                 spinSys = match.getSpinSystemB();
             } else {
