@@ -384,9 +384,6 @@ public class SpinSystem {
             target.setConfirmP(spinSysMatch);
         }
         SeqFragment fragment = SeqFragment.join(spinSysMatch, false);
-        if (fragment != null) {
-            fragment.dump();
-        }
     }
 
     public void unconfirm(SpinSystemMatch spinSysMatch, boolean prev) {
@@ -403,12 +400,6 @@ public class SpinSystem {
             target.setConfirmP(null);
         }
         List<SeqFragment> fragments = SeqFragment.remove(spinSysMatch, false);
-        for (SeqFragment fragment : fragments) {
-
-            if (fragment != null) {
-                fragment.dump();
-            }
-        }
     }
 
     public Optional<SeqFragment> getFragment() {
@@ -969,8 +960,9 @@ public class SpinSystem {
                 double delta = Math.abs(vA - vB);
                 if (matchMode == MatchMode.SUMINVG) {
                     ok = true;
+                    matchedSet.add(entryA.getKey());
                     double ratio = delta / 0.17;
-                    sum +=  c0 * Math.exp(-0.5 * ratio * ratio) + c1;
+                    sum += c0 * Math.exp(-0.5 * ratio * ratio) + c1;
                     nMatch++;
                 } else {
                     ok = true;
@@ -986,7 +978,6 @@ public class SpinSystem {
                 }
             }
         }
-
 
         Optional<SpinSystemMatch> result = Optional.empty();
         if (ok) {
@@ -1100,6 +1091,23 @@ public class SpinSystem {
 
     public List<SpinSystemMatch> getMatchToPrevious() {
         return spinMatchP;
+    }
+
+    public Optional<SpinSystemMatch> getMatchToPrevious(SpinSystem spinSystem) {
+        for (SpinSystemMatch spinMatch : spinMatchP) {
+            if (spinMatch.spinSystemA == spinSystem) {
+                return Optional.of(spinMatch);
+            }
+        }
+        return Optional.empty();
+    }
+    public Optional<SpinSystemMatch> getMatchToNext(SpinSystem spinSystem) {
+        for (SpinSystemMatch spinMatch : spinMatchS) {
+            if (spinMatch.spinSystemB == spinSystem) {
+                return Optional.of(spinMatch);
+            }
+        }
+        return Optional.empty();
     }
 
     public int getConfirmedPrevious() {

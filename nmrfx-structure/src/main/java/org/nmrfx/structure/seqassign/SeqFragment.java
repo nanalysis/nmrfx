@@ -192,8 +192,6 @@ public class SeqFragment {
             SeqFragment currentFragment = spinSysA.fragment().get();
             List<SpinSystemMatch> spinSystemMatches = currentFragment.spinSystemMatches;
 
-            currentFragment.dump();
-
             SpinSystemMatch firstMatch = spinSystemMatches.get(0);
             SpinSystemMatch lastMatch = spinSystemMatches.get(spinSystemMatches.size() - 1);
             spinSysMatch.spinSystemA.setFragment(null);
@@ -441,8 +439,11 @@ public class SeqFragment {
     private void assignResidue(Residue residue, List<AtomShiftValue> atomShiftValues) {
         for (AtomShiftValue atomShiftValue : atomShiftValues) {
             String aName = atomShiftValue.getAName();
-            double ppm = atomShiftValue.getPPM();
-            residue.getAtom(aName).setPPM(ppm);
+            Atom atom = residue.getAtom(aName);
+            if (atom != null) {
+                double ppm = atomShiftValue.getPPM();
+                atom.setPPM(ppm);
+            }
         }
     }
 

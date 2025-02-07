@@ -7,6 +7,7 @@ import io.jenetics.util.ISeq;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -18,15 +19,17 @@ public class SeqGeneticAlgorithm {
 
     public static List<List<Integer>> seqResMatches;
     ResSeqMatcher resSeqMatcher;
-    private int populationSize = 100;
+    private int populationSize = 1000;
     private double mutationRate = 0.1;
     private double crossoverRate = 0.1;
     int eliteNumber = 100;
     int maximumPhenoTypeAge = 50;
 
-    private int steadyLimit = 100;
+    private int steadyLimit = 200;
     private int multiMaxLimit = 30;
-    private int nGenerations = 1000;
+    private int nGenerations = 2000;
+
+    Consumer<Double> progressConsumer;
 
     public int getNGenerations() {
         return nGenerations;
@@ -110,17 +113,23 @@ public class SeqGeneticAlgorithm {
         return result;
     }
 
-    private static void update(final EvolutionResult<EnumGene<Integer>, Double> result) {
-        DescriptiveStatistics dStat = new DescriptiveStatistics();
-        result.population().stream().forEach(pheno -> dStat.addValue(pheno.fitness()));
-        System.out.printf("%5d %10.3f %10.3f %10.4f\n", result.generation(), dStat.getMin(), dStat.getMean(), dStat.getMax());
+    private void update(final EvolutionResult<EnumGene<Integer>, Double> result) {
+        long generation = result.generation();
+        if ((generation % 10) == 0) {
+            DescriptiveStatistics dStat = new DescriptiveStatistics();
+            result.population().stream().forEach(pheno -> dStat.addValue(pheno.fitness()));
+            // System.out.printf("%5d %10.3f %10.3f %10.4f\n", result.generation(), dStat.getMin(), dStat.getMean(), dStat.getMax());
+            if (progressConsumer != null) {
+                progressConsumer.accept(dStat.getMin());
+            }
+        }
     }
 
     private List<Genotype<EnumGene<Integer>>> initGenotypes(List<ResSeqMatcher.Matching> initMatches, int stops) {
         initMatches.sort(Comparator.comparing(ResSeqMatcher.Matching::score));
         multiMaxLimit = (int) (initMatches.size() * 0.7);
         int nMulti = Math.min(multiMaxLimit, initMatches.size());
-        System.out.println(" nMultiMatches " + initMatches.size() + " multiLimit " + multiMaxLimit + " nMulti " + nMulti);
+       // System.out.println(" nMultiMatches " + initMatches.size() + " multiLimit " + multiMaxLimit + " nMulti " + nMulti);
         List<Integer> alleleList = new ArrayList<>();
         for (int i = 0; i < stops; i++) {
             alleleList.add(i);
@@ -129,7 +138,7 @@ public class SeqGeneticAlgorithm {
         List<Genotype<EnumGene<Integer>>> genotypes = new ArrayList<>();
 
         for (ResSeqMatcher.Matching matching : initMatches.subList(0, nMulti)) {
-            System.out.println("multi value " + matching.score());
+          //  System.out.println("multi value " + matching.score());
             ArrayList<Integer> matchArray = new ArrayList<>();
             boolean[] used = new boolean[stops];
             for (int i : matching.matches()) {
@@ -143,7 +152,7 @@ public class SeqGeneticAlgorithm {
                 }
             }
             final ISeq<Integer> alleles = ISeq.of(matchArray);
-            System.out.println(alleles);
+           // System.out.println(alleles);
             AssignmentChromosome<EnumGene<Integer>> permCh = new AssignmentChromosome(matchArray.stream().map(i -> EnumGene.of(i, alleleSeq)).collect(ISeq.toISeq()));
 
             Genotype gtype = Genotype.of(permCh);
@@ -152,11 +161,10 @@ public class SeqGeneticAlgorithm {
         return genotypes;
     }
 
-    public void setup(List<ResSeqMatcher.Matching> initMatches) {
-        System.out.println("nsys " + resSeqMatcher.getSysResidueList().size());
-        System.out.println("nres " + resSeqMatcher.getResidueSysList().size());
+    public ResSeqMatcher.Matching apply(List<ResSeqMatcher.Matching> initMatches, Consumer<Double> progressConsumer) {
         int nSys = resSeqMatcher.getSysResidueList().size();
         int nRes = resSeqMatcher.getResidueSysList().size();
+        this.progressConsumer = progressConsumer;
         final int stops = nSys + nRes;
         final Engine<EnumGene<Integer>, Double> engine = Engine
                 .builder(
@@ -188,15 +196,18 @@ public class SeqGeneticAlgorithm {
                 // Update the evaluation statistics after
                 // each generation
                 .peek(statistics)
-                .peek(SeqGeneticAlgorithm::update)
+                //.peek(this::update)
                 // Collect (reduce) the evolution stream to
                 // its best phenotype.
                 .collect(toBestPhenotype());
 
 
         int[] finalMatching = Codecs.ofPermutation(stops).decoder().apply(best.genotype());
-        for (int i=0;i<finalMatching.length;i++) {
-            System.out.println(i + " " + finalMatching[i]);
-        }
+        double fitness = best.fitness();
+        ResSeqMatcher.Matching matching = new ResSeqMatcher.Matching(fitness, finalMatching);
+//        for (int i=0;i<finalMatching.length;i++) {
+//            System.out.println(i + " " + finalMatching[i]);
+//        }
+        return matching;
     }
 }

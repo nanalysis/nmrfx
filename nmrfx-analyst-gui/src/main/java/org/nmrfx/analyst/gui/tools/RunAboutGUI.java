@@ -9,6 +9,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -746,9 +747,12 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         analyzeItem.setOnAction(e -> analyzeSystem());
         spinSysMenuButton.getItems().add(analyzeItem);
 
-        MenuItem bipartiteItem = new MenuItem("GraphAssign");
+        MenuItem bipartiteItem = new MenuItem("GraphMatching");
         bipartiteItem.setOnAction(e -> bipartiteAnalyze());
         spinSysMenuButton.getItems().add(bipartiteItem);
+        MenuItem graphAssignItem = new MenuItem("GraphAssign");
+        graphAssignItem.setOnAction(e -> assignFragments());
+        spinSysMenuButton.getItems().add(graphAssignItem);
 
         MenuItem trimItem = new MenuItem("Trim");
         trimItem.setOnAction(e -> trimSystem());
@@ -1755,13 +1759,31 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         gotoSpinSystems();
     }
 
-    void bipartiteAnalyze() {
-        if (resSeqMatcher == null) {
-            resSeqMatcher = new ResSeqMatcher();
-            resSeqMatcher.compareMatrix(runAbout.getSpinSystems());
-        }
 
-        resSeqMatcher.graphMatch();
+    void assignFragments() {
+        if (resSeqMatcher != null) {
+            resSeqMatcher.assignMatches(runAbout.getSpinSystems());
+        }
+    }
+    void bipartiteAnalyze() {
+        resSeqMatcher = new ResSeqMatcher();
+        resSeqMatcher.compareMatrix(runAbout.getSpinSystems());
+
+        Task<Double> task = new Task<>() {
+            @Override
+            protected Double call() throws Exception {
+                double result = resSeqMatcher.graphMatch();
+                return result;
+            }
+        };
+
+
+        task.setOnSucceeded(event -> {
+            double result = task.getValue();
+            System.out.println("result " + result);
+        });
+
+        new Thread(task).start();
     }
     public void setSpinSystems(List<SpinSystem> spinSystems, boolean useBest) {
         drawSpinSystems(spinSystems, useBest);
