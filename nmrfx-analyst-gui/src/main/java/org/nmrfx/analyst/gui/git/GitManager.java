@@ -19,6 +19,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.project.GitBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,15 +31,13 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class GitManager {
+public class GitManager extends GitBase {
     private static final Logger log = LoggerFactory.getLogger(GitManager.class);
     public static GitConflictController conflictController = null;
     public static GitDiffController diffController = null;
     protected static GitHistoryController historyController = null;
     private static boolean commitActive = false;
     GUIProject guiProject;
-    Path projectDir;
-    Git git;
 
     public GitManager(GUIProject guiProject) throws IllegalArgumentException {
         projectDir = guiProject.getProjectDir();
@@ -153,16 +152,6 @@ public class GitManager {
         }
     }
 
-    public Git createAndInitializeGitObject(File gitDirectory) {
-        try {
-            git = Git.init().setDirectory(gitDirectory).call();
-            return git;
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-        return null;
-    }
-
     public boolean gitOpen() {
         if (git == null) {
             try {
@@ -190,50 +179,14 @@ public class GitManager {
     }
 
     public boolean gitCommit(String msg) {
-        boolean didSomething = false;
         commitActive = true;
         if (git == null) {
             if (!gitOpen()) {
                 return false;
             }
         }
-        try {
-
-            DirCache index = git.add().addFilepattern(".").call();
-            Status status = git.status().call();
-            StringBuilder sBuilder = new StringBuilder();
-            Set<String> actionMap = new HashSet<>();
-            if (!status.isClean() || status.hasUncommittedChanges()) {
-                Set<String> addedFiles = status.getAdded();
-                for (String addedFile : addedFiles) {
-                    String action = "add:" + Paths.get(addedFile).getName(0);
-                    actionMap.add(action);
-                }
-                Set<String> changedFiles = status.getChanged();
-                for (String changedFile : changedFiles) {
-                    String action = "change:" + Paths.get(changedFile).getName(0);
-                    actionMap.add(action);
-                }
-                Set<String> removedFiles = status.getRemoved();
-                for (String removedFile : removedFiles) {
-                    String action = "remove:" + Paths.get(removedFile).getName(0);
-                    actionMap.add(action);
-                    git.rm().addFilepattern(removedFile).call();
-                }
-                Set<String> missingFiles = status.getMissing();
-                for (String missingFile : missingFiles) {
-                    String action = "missing:" + Paths.get(missingFile).getName(0);
-                    actionMap.add(action);
-                    git.rm().addFilepattern(missingFile).call();
-                }
-                actionMap.forEach(action -> sBuilder.append(action).append(","));
-                git.commit().setMessage(msg + " " + sBuilder).call();
-                didSomething = true;
-
-            }
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        } finally {
+        boolean didSomething = super.gitCommit(msg);
+        if (didSomething) {
             // fixme, should we do this after each commit, or leave git open
             git.close();
             git = null;
