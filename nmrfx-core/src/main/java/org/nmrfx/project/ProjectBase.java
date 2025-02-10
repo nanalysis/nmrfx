@@ -5,6 +5,7 @@
  */
 package org.nmrfx.project;
 
+import org.eclipse.jgit.util.FS;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -664,6 +665,60 @@ public class ProjectBase {
             return result;
         }
 
+    }
+
+    public void writeIgnore() {
+        Path path = Paths.get(projectDir.toString(), ".gitignore");
+        try (FileWriter writer = new FileWriter(path.toFile())) {
+            writer.write("*.nv\n*.ucsf\njffi*\n");
+        } catch (IOException ioE) {
+            log.warn("{}", ioE.getMessage(), ioE);
+        }
+
+    }
+
+    /***
+     * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
+     * home path in the preference of XDG_CONFIG_HOME, HOME, (HOMEDRIVE, HOMEPATH) and HOMESHARE. If XDG_CONGIG_HOME is set, then that
+     * path is used regardless of whether its writable. Otherwise the first environment variable that is set is checked
+     * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
+     * property.
+     */
+    public static void checkUserHomePath() {
+        if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
+            return;
+        }
+        boolean setUserHome;
+        String home = getEnvironmentVariable("HOME");
+        if (home != null) {
+            setUserHome = isFileWritable(new File(home));
+        } else {
+            String homeDrive = getEnvironmentVariable("HOMEDRIVE");
+            String homePath = getEnvironmentVariable("HOMEPATH");
+            if (homeDrive != null && homePath != null) {
+                setUserHome = isFileWritable(new File(homeDrive, homePath));
+            } else {
+                String homeShare = getEnvironmentVariable("HOMESHARE");
+                if (homeShare != null) {
+                    setUserHome = isFileWritable(new File(homeShare));
+                } else {
+                    setUserHome = true;
+                }
+            }
+        }
+        if (setUserHome) {
+            File userHome = new File(System.getProperty("user.home"));
+            FS.DETECTED.setUserHome(userHome);
+            log.info("Setting jgit config file path to: {}", userHome);
+        }
+    }
+
+    private static boolean isFileWritable(File file) {
+        return !file.exists() || (file.exists() && !file.canWrite());
+    }
+
+    public static String getEnvironmentVariable(String name) {
+        return System.getenv(name);
     }
 
     /**

@@ -5,17 +5,13 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-import org.eclipse.jgit.treewalk.TreeWalk;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.project.GUIProject;
@@ -27,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,21 +31,11 @@ public class GitManager extends GitBase {
     public static GitConflictController conflictController = null;
     public static GitDiffController diffController = null;
     protected static GitHistoryController historyController = null;
-    private static boolean commitActive = false;
+
     GUIProject guiProject;
 
     public GitManager(GUIProject guiProject) throws IllegalArgumentException {
-        projectDir = guiProject.getProjectDir();
-        try {
-            git = Git.open(projectDir.toFile());
-        } catch (IOException ioE) {
-            GUIProject.checkUserHomePath();
-            git = createAndInitializeGitObject(projectDir.toFile());
-            if (git == null) {
-                throw new IllegalArgumentException("Can't create git");
-            }
-            guiProject.writeIgnore();
-        }
+        super(guiProject);
     }
 
     public static GitConflictController getConflictController() {
@@ -136,36 +121,11 @@ public class GitManager extends GitBase {
     }
 
     public void setProject(GUIProject guiProject) {
-        this.guiProject = guiProject;
-        Path currentDir = projectDir;
-        this.projectDir = guiProject.getProjectDir();
-        if ((git == null) || (currentDir == null) || !currentDir.equals(this.projectDir)) {
-            if (git != null) {
-                git.close();
-            }
-            git = null;
-            gitOpen();
-        }
+        super.setProject(guiProject);
         if (historyController != null) {
             historyController.setProject(guiProject);
             historyController.updateHistory();
         }
-    }
-
-    public boolean gitOpen() {
-        if (git == null) {
-            try {
-                git = Git.open(projectDir.toFile());
-            } catch (IOException ioE) {
-                GUIProject.checkUserHomePath();
-                git = createAndInitializeGitObject(projectDir.toFile());
-                if (git == null) {
-                    return false;
-                }
-                guiProject.writeIgnore();
-            }
-        }
-        return true;
     }
 
     public void gitCommitOnThread() {
@@ -178,6 +138,7 @@ public class GitManager extends GitBase {
         gitCommit(msg);
     }
 
+    @Override
     public boolean gitCommit(String msg) {
         commitActive = true;
         if (git == null) {
@@ -198,109 +159,6 @@ public class GitManager extends GitBase {
             });
         }
         return didSomething;
-    }
-
-    /**
-     * Get the current git status.
-     *
-     * @return Status. The git status.
-     */
-    public Status gitStatus() {
-        Status status = null;
-        try {
-            if (git == null) {
-                gitOpen();
-            }
-            status = git.status().call();
-        } catch (GitAPIException ex) {
-            log.error("Error getting status", ex);
-        }
-        return status;
-    }
-
-    /**
-     * Get the git log, a list of commits, for the given branch.
-     *
-     * @param branchName String. The name of the branch to get the log of.
-     * @return List<RevCommit>. The git log: a list of commits for the branch.
-     */
-    public List<RevCommit> gitLog(String branchName) {
-        List<RevCommit> gitLog = new ArrayList<>();
-        try {
-            if (git == null) {
-                gitOpen();
-            }
-            ObjectId branch = git.getRepository().resolve(branchName);
-            if (branch != null) {
-                Iterable<RevCommit> iterable = git.log().add(branch).call();
-                iterable.forEach(gitLog::add);
-            }
-        } catch (IOException | GitAPIException | RevisionSyntaxException ex) {
-            log.error("Error getting log", ex);
-        }
-        return gitLog;
-    }
-
-    /**
-     * List the branches in the current git repository.
-     *
-     * @return List<Ref>. List of the git branches.
-     */
-    public List<Ref> gitBranches() {
-        List<Ref> branchList = new ArrayList<>();
-        try {
-            if (git == null) {
-                gitOpen();
-            } else {
-                branchList = git.branchList().call();
-            }
-        } catch (GitAPIException ex) {
-            log.error("Error getting branches", ex);
-        }
-        return branchList;
-    }
-
-    /**
-     * Get the full name (filepath) of the current branch.
-     *
-     * @return String. Full name of the current branch.
-     */
-    public String gitCurrentBranch() {
-        String branch = "";
-        try {
-            if (git == null) {
-                gitOpen();
-            } else {
-                branch = git.getRepository().getBranch();
-            }
-        } catch (IOException ex) {
-            log.error("Error getting current branch", ex);
-        }
-        return branch;
-    }
-
-    /**
-     * Get the short name of the given branch, not the full filepath.
-     *
-     * @param branch String. The full name (filepath) of the branch.
-     * @return String. The branch name.
-     */
-    public String gitShortBranch(String branch) {
-        String[] branchSplit = branch.split(File.separator);
-        String shortBranch = branchSplit[branchSplit.length - 1];
-        return shortBranch;
-    }
-
-    private ObjectLoader gitFindFile(String branch, String fileName) throws IOException {
-        ObjectLoader fileObject = null;
-        Repository repository = git.getRepository();
-        ObjectId treeId = repository.resolve(String.join(File.separator, "refs", "heads", branch + "^{tree}"));
-        TreeWalk treeWalk = TreeWalk.forPath(repository, fileName, treeId);
-        if (treeWalk != null) {
-            ObjectId blobID = treeWalk.getObjectId(0);
-            fileObject = repository.open(blobID);
-        }
-        return fileObject;
     }
 
     private void resolveFileConflicts(String branchName, String message) {
