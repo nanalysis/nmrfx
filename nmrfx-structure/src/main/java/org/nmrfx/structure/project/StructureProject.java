@@ -137,7 +137,6 @@ public class StructureProject extends ProjectBase {
         } catch (ParseException | InvalidPeakException | InvalidMoleculeException ex) {
             throw new IOException(ex.getMessage());
         }
-        gitManager.gitCommit("");
         currentProject.setActive();
     }
 

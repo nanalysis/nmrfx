@@ -449,7 +449,6 @@ public class ProjectBase {
         }
         savePeakLists();
         saveDatasets();
-        gitManager.gitCommit("");
         currentProject.setActive();
     }
 
