@@ -438,8 +438,6 @@ public class ProjectBase {
 
         }
         setProjectDir(projectDir);
-        gitManager.setProject(this);
-        gitManager.gitOpen();
         currentProject.setActive();
     }
 
