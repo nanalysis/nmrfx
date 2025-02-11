@@ -71,7 +71,7 @@ public class ProjectBase {
     protected Map<String, PeakList> peakLists = new HashMap<>();
     protected List<SaveframeWriter> extraSaveframes = new ArrayList<>();
 
-    GitBase gitBase;
+    protected GitBase gitManager;
 
     protected ProjectBase(String name) {
         this.name = name;
@@ -299,6 +299,10 @@ public class ProjectBase {
         return peakLists.values().stream().min(Comparator.comparingInt(PeakList::getId));
     }
 
+    public GitBase getGitManager() {
+        return gitManager;
+    }
+
     public void putPeakList(PeakList peakList) {
         peakLists.put(peakList.getName(), peakList);
     }
@@ -434,6 +438,8 @@ public class ProjectBase {
 
         }
         setProjectDir(projectDir);
+        gitManager.setProject(this);
+        gitManager.gitOpen();
         currentProject.setActive();
     }
 
@@ -445,6 +451,7 @@ public class ProjectBase {
         }
         savePeakLists();
         saveDatasets();
+        gitManager.gitCommit("");
         currentProject.setActive();
     }
 
@@ -686,7 +693,7 @@ public class ProjectBase {
     public void createProject(Path projectDir) throws IOException {
         createProjectDirectory(projectDir);
         checkUserHomePath();
-        gitBase = new GitBase(this);
+        gitManager = new GitBase(this);
         setActive();
     }
 

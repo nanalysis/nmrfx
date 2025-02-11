@@ -173,12 +173,12 @@ public class GitManager extends GitBase {
             GitConflictController conflictInterface = getConflictController();
             if (conflictInterface != null) {
                 conflictInterface.getFileMenu().setItems(FXCollections.observableList(files));
-                conflictInterface.getFileMenu().setValue(files.get(0));
-                conflictInterface.viewFile(files.get(0));
+                conflictInterface.getFileMenu().setValue(files.getFirst());
+                conflictInterface.viewFile(files.getFirst());
             }
         } else if (response.isPresent() && (response.get() == ButtonType.CANCEL)) {
             try {
-                git.checkout().setForced(true).setName(branchName).call();
+                super.gitForcedCheckout(branchName);
             } catch (GitAPIException ex1) {
                 log.error("Error resolving conflicts", ex1);
             }
@@ -353,8 +353,8 @@ public class GitManager extends GitBase {
                 List<DiffEntry> entries = formatter.scan(oldTreeIter, newTreeIter);
                 if (!entries.isEmpty()) {
                     diffInterface.getEntryMenu().setItems(FXCollections.observableList(entries));
-                    diffInterface.getEntryMenu().setValue(entries.get(0));
-                    diffInterface.viewEntry(entries.get(0));
+                    diffInterface.getEntryMenu().setValue(entries.getFirst());
+                    diffInterface.viewEntry(entries.getFirst());
                 }
             }
         } catch (IOException | RevisionSyntaxException ex) {

@@ -70,12 +70,11 @@ public class GUIProject extends StructureProject {
         newProject.resFactory = project.resFactory;
         return newProject;
     }
-
+@Override
     public GitManager getGitManager() {
         return gitManager;
     }
 
-    @Override
     public void createProject(Path projectDir) throws IOException {
         createProjectDirectory(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());

@@ -7,8 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -20,7 +18,6 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +27,6 @@ public class GitBase {
     protected ProjectBase project;
     protected Path projectDir;
     protected Git git;
-    protected GitBase gitBase;
 
     public GitBase(ProjectBase project) throws IllegalArgumentException {
         projectDir = project.getProjectDir();
@@ -268,6 +264,9 @@ public class GitBase {
 
     public void gitCheckout(String name) throws GitAPIException {
         git.checkout().setName(name).call();
+    }
+    public void gitForcedCheckout(String branchName) throws GitAPIException {
+        git.checkout().setForced(true).setName(branchName).call();
     }
 
     public void gitMerge(RevCommit commitToMerge) throws GitAPIException {
