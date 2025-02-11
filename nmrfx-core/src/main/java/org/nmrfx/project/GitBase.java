@@ -2,12 +2,13 @@ package org.nmrfx.project;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -19,6 +20,7 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,7 @@ public class GitBase {
     protected ProjectBase project;
     protected Path projectDir;
     protected Git git;
+    protected GitBase gitBase;
 
     public GitBase(ProjectBase project) throws IllegalArgumentException {
         projectDir = project.getProjectDir();
@@ -229,5 +232,45 @@ public class GitBase {
             fileObject = repository.open(blobID);
         }
         return fileObject;
+    }
+
+    private void gitDeleteFile(String fileName) throws GitAPIException, IOException {
+        git.rm().addFilepattern(fileName).call();
+        String filePath = String.join(File.separator, projectDir.toString(), fileName);
+        File file = new File(filePath);
+        Files.deleteIfExists(file.toPath());
+    }
+
+    public boolean gitResetToCommit(int idx, RevCommit commit, String branch) throws GitAPIException, IOException {
+        for (int i = idx + 1; i < gitLog(branch).size() + 1; i++) {
+            String file = String.join(File.separator, "windows", "commit_" + gitShortBranch(branch) + "_" + i + ".yaml");
+            gitDeleteFile(file);
+        }
+        git.reset().setRef(commit.getName()).call();
+        return true;
+    }
+
+    public void gitRevertCommit(RevCommit commit) throws GitAPIException {
+        git.revert().include(commit).call();
+    }
+
+    public void gitCreateBranch(String newBranch, String commitID) throws GitAPIException {
+        git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
+    }
+
+    public void gitDeleteBranch(String branchName) throws GitAPIException {
+        git.branchDelete().setBranchNames(branchName).call();
+    }
+
+    public void gitForceDeleteBranch(String branchName) throws GitAPIException {
+        git.branchDelete().setBranchNames(branchName).setForce(true).call();
+    }
+
+    public void gitCheckout(String name) throws GitAPIException {
+        git.checkout().setName(name).call();
+    }
+
+    public void gitMerge(RevCommit commitToMerge) throws GitAPIException {
+        git.merge().include(commitToMerge).call();
     }
 }

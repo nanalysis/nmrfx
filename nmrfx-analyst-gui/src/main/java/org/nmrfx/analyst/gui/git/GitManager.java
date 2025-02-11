@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,8 +30,6 @@ public class GitManager extends GitBase {
     public static GitConflictController conflictController = null;
     public static GitDiffController diffController = null;
     protected static GitHistoryController historyController = null;
-
-    GUIProject guiProject;
 
     public GitManager(GUIProject guiProject) throws IllegalArgumentException {
         super(guiProject);
@@ -74,7 +71,7 @@ public class GitManager extends GitBase {
             historyController = GitHistoryController.create(this);
         }
         if (historyController != null) {
-            guiProject = GUIProject.getActive();
+            GUIProject guiProject = GUIProject.getActive();
             historyController.setProject(guiProject);
             if (guiProject.getProjectDir() != null) {
                 historyController.getStage().setTitle("Git History (Project = " + guiProject.getName() + ", Current Branch = " + guiProject.getGitManager().gitCurrentBranch() + ")");
@@ -188,12 +185,6 @@ public class GitManager extends GitBase {
         }
     }
 
-    private void gitDeleteFile(String fileName) throws GitAPIException, IOException {
-        git.rm().addFilepattern(fileName).call();
-        String filePath = String.join(File.separator, projectDir.toString(), fileName);
-        File file = new File(filePath);
-        Files.deleteIfExists(file.toPath());
-    }
 
     /**
      * Reset to the specified commit. All subsequent commits will be deleted.
@@ -203,6 +194,7 @@ public class GitManager extends GitBase {
      * @param branch String. The name of the branch of the commit to reset to.
      * @return boolean. Confirmation of the reset.
      */
+    @Override
     public boolean gitResetToCommit(int idx, RevCommit commit, String branch) {
         boolean reset = false;
         String shortBranch = gitShortBranch(branch);
@@ -211,14 +203,9 @@ public class GitManager extends GitBase {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, ButtonType.YES);
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
-            try {
-                for (int i = idx + 1; i < gitLog(branch).size() + 1; i++) {
-                    String file = String.join(File.separator, "windows", "commit_" + shortBranch + "_" + i + ".yaml");
-                    gitDeleteFile(file);
-                }
-                Ref resetRef = git.reset().setRef(commit.getName()).call();
-                reset = true;
-            } catch (GitAPIException | IOException ex) {
+            try{
+            reset = super.gitResetToCommit(idx, commit, branch);}
+            catch (GitAPIException | IOException ex) {
                 log.error("Error reseting to commit", ex);
             }
         }
@@ -242,8 +229,9 @@ public class GitManager extends GitBase {
             try {
                 GitHistoryController hold = historyController;
                 Path oldProjectDir = projectDir;
+                GUIProject guiProject = GUIProject.getActive();
                 guiProject.close();
-                git.revert().include(commit).call();
+                super.gitRevertCommit(commit);
                 guiProject.loadGUIProject(oldProjectDir);
                 if (hold != null) {
                     historyController = hold;
@@ -275,8 +263,9 @@ public class GitManager extends GitBase {
                 gitOpen();
             }
             Path oldProjectDir = projectDir;
+            GUIProject guiProject = GUIProject.getActive();
             guiProject.close();
-            git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
+            super.gitCreateBranch(newBranch, commitID);
             guiProject.loadGUIProject(oldProjectDir);
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Creating branch", ex);
@@ -303,7 +292,7 @@ public class GitManager extends GitBase {
                     if (git == null) {
                         gitOpen();
                     }
-                    git.branchDelete().setBranchNames(branchName).call();
+                    super.gitDeleteBranch(branchName);
                 } catch (GitAPIException ex) {
                     log.error("Deleting branch", ex);
                     String exMessage = ex.getMessage();
@@ -313,7 +302,7 @@ public class GitManager extends GitBase {
                         Optional<ButtonType> mergeResponse = mergeAlert.showAndWait();
                         if (mergeResponse.isPresent() && (mergeResponse.get() == ButtonType.OK)) {
                             try {
-                                git.branchDelete().setBranchNames(branchName).setForce(true).call();
+                                super.gitForceDeleteBranch(branchName);
                             } catch (GitAPIException ex1) {
                                 log.error("Deleting branch", ex1);
                             }
@@ -384,9 +373,10 @@ public class GitManager extends GitBase {
                 gitOpen();
             }
             Path oldProjectDir = projectDir;
+            GUIProject guiProject = GUIProject.getActive();
             String projectName = guiProject.getName();
             guiProject.close();
-            git.checkout().setName(name).call();
+            super.gitCheckout(name);
             GUIProject project = new GUIProject(projectName);
             guiProject.loadGUIProject(oldProjectDir);
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
@@ -417,7 +407,7 @@ public class GitManager extends GitBase {
             if (response.isPresent() && (response.get() == ButtonType.OK)) {
                 gitCheckout(mergeDestBranch);
                 if (gitCurrentBranch().equals(mergeDestBranch)) {
-                    git.merge().include(commitToMerge).call();
+                    super.gitMerge(commitToMerge);
                     gitCommit("Merged branch " + origBranch + " into " + mergeDestBranch);
                 }
             }

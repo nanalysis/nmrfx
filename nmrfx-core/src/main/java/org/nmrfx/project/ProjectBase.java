@@ -50,6 +50,8 @@ public class ProjectBase {
     private static final String PROJECT_DIR_NOT_SET = "Project directory not set";
     private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 
+    protected static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
+
     private static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     private static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     private static final Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
@@ -68,6 +70,8 @@ public class ProjectBase {
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
     protected List<SaveframeWriter> extraSaveframes = new ArrayList<>();
+
+    GitBase gitBase;
 
     protected ProjectBase(String name) {
         this.name = name;
@@ -665,6 +669,25 @@ public class ProjectBase {
             return result;
         }
 
+    }
+
+    protected void createProjectDirectory(Path projectDir) throws IOException {
+        FileSystem fileSystem = FileSystems.getDefault();
+        if (Files.exists(projectDir)) {
+            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
+        }
+        Files.createDirectory(projectDir);
+        for (String subDir : SUB_DIR_TYPES) {
+            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+            Files.createDirectory(subDirectory);
+        }
+        setProjectDir(projectDir);}
+
+    public void createProject(Path projectDir) throws IOException {
+        createProjectDirectory(projectDir);
+        checkUserHomePath();
+        gitBase = new GitBase(this);
+        setActive();
     }
 
     public void writeIgnore() {

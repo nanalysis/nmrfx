@@ -36,7 +36,6 @@ import java.nio.file.*;
  */
 public class GUIProject extends StructureProject {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
-    private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     GitManager gitManager;
 
     private final SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
@@ -76,17 +75,9 @@ public class GUIProject extends StructureProject {
         return gitManager;
     }
 
+    @Override
     public void createProject(Path projectDir) throws IOException {
-        if (Files.exists(projectDir)) {
-            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
-        }
-        FileSystem fileSystem = FileSystems.getDefault();
-        Files.createDirectory(projectDir);
-        for (String subDir : SUB_DIR_TYPES) {
-            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-            Files.createDirectory(subDirectory);
-        }
-        setProjectDir(projectDir);
+        createProjectDirectory(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
         checkUserHomePath();
         gitManager = new GitManager(this);
