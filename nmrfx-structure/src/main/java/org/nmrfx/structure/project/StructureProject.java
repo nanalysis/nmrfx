@@ -103,6 +103,8 @@ public class StructureProject extends ProjectBase {
         loadStructureSubDirs(projectDir);
 
         setProjectDir(projectDir);
+        gitManager.setProject(this);
+        gitManager.gitOpen();
         currentProject.setActive();
     }
 
@@ -133,6 +135,7 @@ public class StructureProject extends ProjectBase {
         } catch (ParseException | InvalidPeakException | InvalidMoleculeException ex) {
             throw new IOException(ex.getMessage());
         }
+        gitManager.gitCommit("");
         currentProject.setActive();
     }
 
