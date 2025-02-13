@@ -73,4 +73,15 @@ public class RelaxationSet implements ValueSet {
     public double temperature() {
         return temperature;
     }
+
+    public Map<Atom, ValueWithError> getAtomValueWithErrorMap() {
+        Map<Atom, ValueWithError> atomValueMap = new HashMap<>();
+        for (var entry : data.entrySet()) {
+            Atom atom = entry.getKey().getAtom();
+            RelaxationData relaxationData = entry.getValue();
+            ValueWithError valueWithError = new ValueWithError(relaxationData.getValue(), relaxationData.getError());
+            atomValueMap.put(atom, valueWithError);
+        }
+        return atomValueMap;
+    }
 }
