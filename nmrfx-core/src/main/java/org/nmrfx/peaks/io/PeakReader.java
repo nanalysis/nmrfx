@@ -254,6 +254,9 @@ public class PeakReader {
                 }
             } else {
                 Integer dataIndex = dataMap.get(field);
+                if (getID) {
+                    dataIndex += 1;
+                }
                 //   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U
                 // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
                 // volume  intensity       status  comment flags
@@ -465,10 +468,9 @@ public class PeakReader {
                 try {
 
                     if (dataHeader == null) {
-                        //fields.add(0, "id");
                         dataHeader = new String[fields.size()];
                         fields.toArray(dataHeader);
-                        data = new String[fields.size()];
+                        data = new String[fields.size() + 1];
                     } else {
                         if (dataMap == null) {
                             dataMap = headerMap(dataHeader);
