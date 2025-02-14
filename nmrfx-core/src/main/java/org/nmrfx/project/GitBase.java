@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 public class GitBase {
     private static final Logger log = LoggerFactory.getLogger(GitBase.class);
-    protected static boolean commitActive = false;
+    protected boolean commitActive = false;
     protected ProjectBase project;
     protected Path projectDir;
     protected Git git;
@@ -86,6 +86,7 @@ public class GitBase {
         commitActive = true;
         if (git == null) {
             if (!gitOpen()) {
+                commitActive = false;
                 return false;
             }
         }
@@ -126,6 +127,7 @@ public class GitBase {
         } catch (GitAPIException ex) {
             log.error(ex.getMessage(), ex);
         }
+        commitActive = false;
         return didSomething;
     }
 

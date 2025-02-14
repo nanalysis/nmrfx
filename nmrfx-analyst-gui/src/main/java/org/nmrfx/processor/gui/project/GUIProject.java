@@ -200,6 +200,7 @@ public class GUIProject extends StructureProject {
         gitManager.gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();
+        projectChanged(false);
     }
 
     @Override

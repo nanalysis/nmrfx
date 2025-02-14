@@ -43,7 +43,7 @@ public class GitManager extends GitBase {
         return diffController;
     }
 
-    public static boolean isCommitting() {
+    public boolean isCommitting() {
         return commitActive;
     }
 
@@ -51,6 +51,7 @@ public class GitManager extends GitBase {
         if (git != null) {
             git.close();
         }
+        commitActive = false;
         if (historyController != null) {
             historyController.close();
             historyController = null;
@@ -140,6 +141,7 @@ public class GitManager extends GitBase {
         commitActive = true;
         if (git == null) {
             if (!gitOpen()) {
+                commitActive = false;
                 return false;
             }
         }
