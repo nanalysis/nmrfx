@@ -502,7 +502,7 @@ public class NOECalibrator {
             int nAtoms1 = r1.getAtoms("H*").size();
 
             int nAtoms2 = r2.getAtoms("H*").size();
-            scale = Math.sqrt(nAtoms1 * nAtoms2);
+            scale = Math.sqrt((double) nAtoms1 * nAtoms2);
         }
         return scale;
     }
