@@ -48,12 +48,13 @@ public interface RelaxationValues {
         }
     }
 
-    public static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue) {
+    public static void appendValueError(StringBuilder stringBuilder, Double val, Double err, String format, String defaultValue, String sepChar) {
         if (val != null) {
             stringBuilder.append(String.format(format, val));
         } else {
             stringBuilder.append(defaultValue);
         }
+        stringBuilder.append(sepChar);
         if (err != null) {
             stringBuilder.append(String.format(format, err));
         } else {
