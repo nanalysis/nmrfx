@@ -72,11 +72,7 @@ public class NoeSet implements ConstraintSet, Iterable {
             "_Gen_dist_constraint.Entry_ID",
             "_Gen_dist_constraint.Gen_dist_constraint_list_ID",};
 
-    public static Peak lastPeakWritten = null;
-    public static int memberId = 0;
-    public static int id = 0;
     boolean containsBonds = false;
-
     private final MolecularConstraints molecularConstraints;
 
     private final List<Noe> constraints = new ArrayList<>(64);
@@ -94,9 +90,7 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public static NoeSet newSet(MolecularConstraints molecularConstraints,
                                 String name) {
-        NoeSet noeSet = new NoeSet(molecularConstraints,
-                name);
-        return noeSet;
+        return new NoeSet(molecularConstraints, name);
     }
 
     @Override
@@ -132,14 +126,14 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     private Peak getPeak() {
         try {
-             peakList = NMRStarReader.getPeakList(getName(), ".", peakList);
+            peakList = NMRStarReader.getPeakList(getName(), ".", peakList);
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
-        Peak peak = peakList.getNewPeak();
-        return peak;
+        return peakList.getNewPeak();
 
     }
+
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
                                       final double rUp, boolean isBond) throws IllegalArgumentException {
         addDistanceConstraint(getPeak(), List.of(filterString1), List.of(filterString2), rLow, rUp, isBond, 1.0, null, null);
@@ -239,12 +233,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public List<Noe> getConstraintsForPeak(Peak peak) {
-        List<Noe> noeList = peakMap.get(peak);
-        if (noeList == null) {
-            noeList = new ArrayList<>();
-            peakMap.put(peak, noeList);
-        }
-        return noeList;
+        return peakMap.computeIfAbsent(peak, k -> new ArrayList<>());
     }
 
     public Set<Entry<Peak, List<Noe>>> getPeakMapEntries() {
@@ -286,20 +275,13 @@ public class NoeSet implements ConstraintSet, Iterable {
         return noeLoopStrings;
     }
 
-    @Override
-    public void resetWriting() {
-        memberId = -1;
-        lastPeakWritten = null;
-        id = 0;
-    }
-
     public void writeNMRFxFile(File file) throws IOException {
-        Map<Peak, Integer> peakMap = new HashMap<>();
+        Map<Peak, Integer> myPeakMap = new HashMap<>();
         try (FileWriter fileWriter = new FileWriter(file)) {
             int i = 0;
             for (Noe noe : constraints) {
                 if (noe.isActive()) {
-                    Integer iGroup = peakMap.computeIfAbsent(noe.getPeak(), peak -> peakMap.size());
+                    Integer iGroup = myPeakMap.computeIfAbsent(noe.getPeak(), peak -> myPeakMap.size());
                     double lower = noe.getLower();
                     double upper = noe.getUpper();
                     SpatialSetGroup spg1 = noe.getSpg1();
@@ -316,8 +298,8 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public void updateNPossible(PeakList whichList) {
         for (Map.Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().getPeakList();
-            if ((whichList != null) && (whichList != peakList)) {
+            PeakList entryPeakList = entry.getKey().getPeakList();
+            if ((whichList != null) && (whichList != entryPeakList)) {
                 continue;
             }
             List<Noe> noeList = entry.getValue();

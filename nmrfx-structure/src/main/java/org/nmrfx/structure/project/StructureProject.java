@@ -9,6 +9,7 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.*;
 import org.nmrfx.peaks.InvalidPeakException;
+import org.nmrfx.project.GitBase;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -101,8 +102,11 @@ public class StructureProject extends ProjectBase {
 
         loadProject(projectDir, "datasets");
         loadStructureSubDirs(projectDir);
+        gitManager = new GitBase(this);
 
         setProjectDir(projectDir);
+        gitManager.setProject(this);
+        gitManager.gitOpen();
         currentProject.setActive();
     }
 

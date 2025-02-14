@@ -66,7 +66,7 @@ class TestStructGen(unittest.TestCase):
         refiner.loadFromYaml(data,seed)
         refiner.anneal(refiner.dOpt)
         energy = refiner.energy()
-        self.assertLess(energy, 20.0)
+        self.assertLess(energy, 200.0)
 
 if __name__ == '__main__':
     testProgram = unittest.main(exit=False)

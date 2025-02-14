@@ -58,8 +58,6 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
             "_RDC.RDC_list_ID",};
 
     public static char[] violCharArray = new char[0];
-    public static int id = 1;
-
     private final MolecularConstraints molecularConstraints;
     private final ArrayList<RDCConstraint> constraints = new ArrayList<>(64);
     int nStructures = 0;
@@ -207,11 +205,6 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     @Override
     public String[] getLoopStrings() {
         return rdcConstraintLoopStrings;
-    }
-
-    @Override
-    public void resetWriting() {
-        id = 1;
     }
 
     public void readInputFile(File file) throws IOException {

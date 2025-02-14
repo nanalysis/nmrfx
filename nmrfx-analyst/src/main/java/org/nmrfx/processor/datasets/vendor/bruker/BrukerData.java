@@ -124,9 +124,9 @@ public class BrukerData implements NMRData {
         }
         File fidFile = dirFile.toPath().resolve(FID).toFile();
         File serFile = dirFile.toPath().resolve(SER).toFile();
-        if (fidFile.exists()) {
+        if (fidFile.exists() && fidFile.isFile()) {
             dataFile = fidFile;
-        } else if (serFile.exists()) {
+        } else if (serFile.exists() && serFile.isFile()) {
             dataFile = serFile;
         } else {
             dataFile = null;
@@ -160,7 +160,7 @@ public class BrukerData implements NMRData {
         int lastSize = 0;
         int xdim;
         for (int i = 0; i < dim; i++) {
-            Integer thisBlockSize = getParInt("XWIN," + (i + 1));
+            Integer thisBlockSize = getParInt("XDIM," + (i + 1));
             if ((thisBlockSize == null) || (thisBlockSize == 0)) {
                 thisBlockSize = getParInt("SI," + (i + 1));
             }
@@ -1446,9 +1446,9 @@ public class BrukerData implements NMRData {
         Path fidPath = file.toPath().resolve(FID);
         Path serPath = file.toPath().resolve(SER);
         Path filePath;
-        if (fidPath.toFile().exists()) {
+        if (fidPath.toFile().exists() && fidPath.toFile().isFile()) {
             filePath = fidPath;
-        } else if (serPath.toFile().exists()) {
+        } else if (serPath.toFile().exists() && serPath.toFile().isFile()) {
             filePath = serPath;
         } else {
             return;
