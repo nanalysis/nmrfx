@@ -311,7 +311,6 @@ public class AnalystApp extends Application {
         boolean projectChanged = ProjectBase.getActive().projectChanged();
         if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
             saveDatasets();
-            waitForCommit();
             Platform.exit();
             System.exit(0);
         }
