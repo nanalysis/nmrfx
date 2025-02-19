@@ -535,13 +535,9 @@ public class SpinSystems {
             SpinSystem previousSystem = previousSystems.get(system);
             SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
             if (fragment != null) {
-               // System.out.println("got  frag " + i + " " + fragmentIDColumn.get(i) + " " + system);
                 system.setFragment(fragment);
-            } else {
-                System.out.println("null frag " + i + " " + fragmentIDColumn.get(i) + " " + system);
             }
             if (nextSystem != null) {
-                // find match that is to next, confirm and add to a fragment
                 for (SpinSystemMatch match : system.getMatchToNext()) {
                     if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
                         if (fragment == null) {
