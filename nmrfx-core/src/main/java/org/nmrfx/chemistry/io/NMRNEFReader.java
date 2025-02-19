@@ -521,9 +521,9 @@ public class NMRNEFReader {
             throw new ParseException("No \"_nef_dihedral_restraint\" loop");
         }
         var compoundMap = MoleculeBase.compoundMap();
-        List<String>[] chainCodeColumns = new ArrayList[4];
-        List<String>[] sequenceCodeColumns = new ArrayList[4];
-        List<String>[] atomNameColumns = new ArrayList[4];
+        List<String>[] chainCodeColumns = new List[4];
+        List<String>[] sequenceCodeColumns = new List[4];
+        List<String>[] atomNameColumns = new List[4];
 
         List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
         for (int i = 1; i <= 4; i++) {
