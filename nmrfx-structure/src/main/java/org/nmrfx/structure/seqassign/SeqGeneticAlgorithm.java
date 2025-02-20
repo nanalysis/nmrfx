@@ -64,19 +64,19 @@ public class SeqGeneticAlgorithm {
         int nSys = seqResMatches.size();
         int nRes = size - nSys;
         List<Integer> elements = new ArrayList<>(nSys);
-        for (int i = 0; i < seqResMatches.size(); i++) {
+        for (int i = 0; i < nSys; i++) {
             elements.add(i);
         }
         int[] result = new int[size];
         boolean[] used = new boolean[size];
         Collections.shuffle(elements);
 
-        for (int i = 0; i < seqResMatches.size(); i++) {
+        for (int i = 0; i < nSys; i++) {
             int index = elements.get(i);
             int iPeak = -1;
             List<Integer> itemMatches = seqResMatches.get(index);
             List<Integer> sortedMatches = new ArrayList<>(itemMatches);
-            sortedMatches.add(i + nSys);
+            sortedMatches.add(i + nRes);
             if (sortedMatches.size() == 1) {
                 iPeak = sortedMatches.get(0);
             } else {
@@ -108,7 +108,7 @@ public class SeqGeneticAlgorithm {
         if ((generation % 10) == 0) {
             DescriptiveStatistics dStat = new DescriptiveStatistics();
             result.population().stream().forEach(pheno -> dStat.addValue(pheno.fitness()));
-            // System.out.printf("%5d %10.3f %10.3f %10.4f\n", result.generation(), dStat.getMin(), dStat.getMean(), dStat.getMax());
+            System.out.printf("%5d %10.3f %10.3f %10.4f\n", result.generation(), dStat.getMin(), dStat.getMean(), dStat.getMax());
             if (progressConsumer != null) {
                 progressConsumer.accept(dStat.getMin());
             }
@@ -185,7 +185,7 @@ public class SeqGeneticAlgorithm {
                 // Update the evaluation statistics after
                 // each generation
                 .peek(statistics)
-                //.peek(this::update)
+                 .peek(this::update)
                 // Collect (reduce) the evolution stream to
                 // its best phenotype.
                 .collect(toBestPhenotype());
