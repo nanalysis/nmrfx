@@ -29,7 +29,6 @@ public class SpinSystems {
         EXTRA
     }
 
-    int spinSystemID = 1;
     RunAbout runAbout;
     private List<SpinSystem> systems = new ArrayList<>();
     Map<PeakList, double[]> sums;
@@ -168,9 +167,7 @@ public class SpinSystems {
     Map<PeakList, double[]> calcNormalization(List<PeakList> peakLists) {
         PeakList refList = peakLists.get(0);
         Map<PeakList, double[]> sumMap = new HashMap<>();
-        int i = 0;
         for (Peak pkA : refList.peaks()) {
-            int j = 0;
             for (PeakList peakListB : peakLists) {
                 int[] aMatch = matchDims(refList, peakListB);
                 if (peakListB != refList) {
@@ -182,10 +179,8 @@ public class SpinSystems {
                         sumMap.put(peakListB, sumArray);
                     }
                     sumArray[pkA.getIndex()] = sumF;
-                    j++;
                 }
             }
-            i++;
         }
         return sumMap;
     }
@@ -218,7 +213,6 @@ public class SpinSystems {
     public static boolean[] getUseDims(PeakList refList, List<PeakList> peakLists) {
         boolean[] useDim = new boolean[refList.getNDim()];
         Arrays.fill(useDim, true);
-        int nPeakTypes = 0;
         for (PeakList peakList : peakLists) {
             if (peakList != refList) {
                 int[] aMatch = matchDims(refList, peakList);
@@ -303,7 +297,6 @@ public class SpinSystems {
 
         systems.clear();
         PeakList.clusterPeaks(peakLists);
-        int i = 0;
         for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA, this);
             systems.add(spinSys);
@@ -321,47 +314,38 @@ public class SpinSystems {
                     }
                 }
             }
-            i++;
-            int nPeaks = spinSys.peakMatches.size();
         }
     }
 
     public void assemble(List<PeakList> peakLists) {
         systems.clear();
-        peakLists.forEach(peakListA -> peakListA.unLinkPeaks());
+        peakLists.forEach(PeakList::unLinkPeaks);
         peakLists.forEach(peakListA -> {
             // set status to 0 for all active (status >= 0) peaks
             peakListA.peaks().stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
-            int nDim = peakListA.getNDim();
-            for (int i = 0; i < nDim; i++) {
-                SpectralDim sDim = peakListA.getSpectralDim(i);
-            }
         });
 
-        int spinID = 0;
-        peakLists.forEach(peakListA -> {
-            peakListA.peaks().stream().filter(pkA -> pkA.getStatus() == 0).forEach(pkA -> {
-                SpinSystem spinSys = new SpinSystem(pkA, this);
-                systems.add(spinSys);
-                pkA.setStatus(1);
-                peakLists.stream().filter(peakListB -> peakListB != peakListA).forEach(peakListB -> {
-                    int[] aMatch = matchDims(peakListA, peakListB);
-                    double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
-                            mapToDouble(pkB -> comparePeaks(pkA, pkB, aMatch)).sum();
-                    peakListB.peaks().stream().filter(pkB -> pkB.getStatus() == 0).
-                            forEach(pkB -> {
-                                double f = comparePeaks(pkA, pkB, aMatch);
-                                if (f > 0.0) {
-                                    double p = f / sumF;
-                                    if (p > 0.0) {
-                                        spinSys.addPeak(pkB, p);
-                                        pkB.setStatus(1);
-                                    }
+        peakLists.forEach(peakListA -> peakListA.peaks().stream().filter(pkA -> pkA.getStatus() == 0).forEach(pkA -> {
+            SpinSystem spinSys = new SpinSystem(pkA, this);
+            systems.add(spinSys);
+            pkA.setStatus(1);
+            peakLists.stream().filter(peakListB -> peakListB != peakListA).forEach(peakListB -> {
+                int[] aMatch = matchDims(peakListA, peakListB);
+                double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
+                        mapToDouble(pkB -> comparePeaks(pkA, pkB, aMatch)).sum();
+                peakListB.peaks().stream().filter(pkB -> pkB.getStatus() == 0).
+                        forEach(pkB -> {
+                            double f = comparePeaks(pkA, pkB, aMatch);
+                            if (f > 0.0) {
+                                double p = f / sumF;
+                                if (p > 0.0) {
+                                    spinSys.addPeak(pkB, p);
+                                    pkB.setStatus(1);
                                 }
-                            });
-                });
+                            }
+                        });
             });
-        });
+        }));
     }
 
     public List<SpinSystemMatch> compare(SpinSystem spinSystemA, boolean prevMode) {
@@ -386,7 +370,7 @@ public class SpinSystems {
         for (SpinSystem spinSys : systems) {
             spinSys.confirmP().ifPresent(spinSystemMatch -> {
                 spinSys.setConfirmP(null);
-                for (SpinSystemMatch spinSystemMatch1: spinSys.spinMatchP) {
+                for (SpinSystemMatch spinSystemMatch1 : spinSys.spinMatchP) {
                     if (spinSystemMatch1.spinSystemB == spinSys) {
                         spinSys.setConfirmP(spinSystemMatch1);
                         break;
@@ -395,7 +379,7 @@ public class SpinSystems {
             });
             spinSys.confirmS().ifPresent(spinSystemMatch -> {
                 spinSys.setConfirmS(null);
-                for (SpinSystemMatch spinSystemMatch1: spinSys.spinMatchS) {
+                for (SpinSystemMatch spinSystemMatch1 : spinSys.spinMatchS) {
                     if (spinSystemMatch1.spinSystemA == spinSys) {
                         spinSys.setConfirmS(spinSystemMatch1);
                         break;
@@ -407,7 +391,7 @@ public class SpinSystems {
 
     public void updateFragments() {
         var fragments = getSortedFragments();
-        for (SeqFragment seqFragment: fragments) {
+        for (SeqFragment seqFragment : fragments) {
             seqFragment.updateSpinSystemMatches();
         }
     }
@@ -458,15 +442,18 @@ public class SpinSystems {
     public List<SeqFragment> getSortedFragments() {
         Set<SeqFragment> fragments = new HashSet<>();
         for (SpinSystem spinSys : systems) {
-            if (spinSys.fragment().isPresent()) {
-                fragments.add(spinSys.fragment().get());
-            }
+            spinSys.fragment().ifPresent(frag -> {
+                if (frag.spinSystemMatches.isEmpty()) {
+                    spinSys.setFragment(null);
+                } else {
+                    fragments.add(frag);
+                }
+            });
         }
-        List<SeqFragment> sortedFragments = fragments.stream().sorted((e1, e2)
+        return fragments.stream().sorted((e1, e2)
                         -> Integer.compare(e2.spinSystemMatches.size(),
                         e1.spinSystemMatches.size())).
                 collect(Collectors.toList());
-        return sortedFragments;
     }
 
     public List<SpinSystem> getUnconnectedSpinSystems() {
@@ -519,13 +506,55 @@ public class SpinSystems {
         return Optional.empty();
     }
 
-    void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
-        Loop fragmentLoop = saveframe.getLoop("_Fragments");
-        Loop systemLoop = saveframe.getLoop("_Spin_system");
-        Loop peakLoop = saveframe.getLoop("_Spin_system_peaks");
+    void readSTARPeakInfo(Map<Integer, SpinSystem> systemMap, Loop peakLoop) throws ParseException {
+        List<Integer> peakIDs = peakLoop.getColumnAsIntegerList("ID", -1);
+        List<Integer> peakSpinSystemID = peakLoop.getColumnAsIntegerList("Spin_system_ID", -1);
+        List<Integer> peakListIDColumn = peakLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
+        List<Integer> peakIDColumn = peakLoop.getColumnAsIntegerList("Peak_ID", -1);
+        List<Double> matchScoreColumn = peakLoop.getColumnAsDoubleList("Match_score", 0.0);
+        for (int i = 0; i < peakIDs.size(); i++) {
+            Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+            if (peakListOpt.isPresent()) {
+                PeakList peakList = peakListOpt.get();
+                Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
+                SpinSystem spinSystem = systemMap.get(peakSpinSystemID.get(i));
+                if ((spinSystem != null) && (peak != spinSystem.rootPeak)) {
+                    double score = matchScoreColumn.get(i);
+                    spinSystem.addPeak(peak, score);
+                }
+            }
+        }
+    }
 
+    void readSTARMatchInfo(Map<Integer, SpinSystem> systemMap, List<Integer> spinSystemIDs, Map<Integer,
+            SeqFragment> fragmentMap, List<Integer> fragmentIDColumn, Map<SpinSystem, SpinSystem> previousSystems,
+                           Map<SpinSystem, SpinSystem> nextSystems) throws ParseException {
+        for (int i = 0; i < spinSystemIDs.size(); i++) {
+            SpinSystem system = systemMap.get(spinSystemIDs.get(i));
+            SpinSystem nextSystem = nextSystems.get(system);
+            SpinSystem previousSystem = previousSystems.get(system);
+            SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
+            if (fragment != null) {
+                system.setFragment(fragment);
+            }
+            if (nextSystem != null) {
+                for (SpinSystemMatch match : system.getMatchToNext()) {
+                    if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
+                        if (fragment == null) {
+                            throw new ParseException("Could not parse STAR saveframe. Fragment was null.");
+                        }
+                        fragment.getSpinSystemMatches().add(match);
+                        system.setConfirmS(match);
+                        nextSystem.setConfirmP(match);
+                    }
+                }
+            }
+        }
+
+    }
+
+    Map<Integer, SeqFragment> readSTARFragmentLoop(Loop fragmentLoop) throws ParseException {
         Map<Integer, SeqFragment> fragmentMap = new HashMap<>();
-        Map<Integer, SpinSystem> systemMap = new HashMap<>();
         if (fragmentLoop != null) {
             List<Integer> idColumn = fragmentLoop.getColumnAsIntegerList("ID", -1);
             List<Integer> polymerIDColumn = fragmentLoop.getColumnAsIntegerList("Polymer_ID", -1);
@@ -551,89 +580,71 @@ public class SpinSystems {
             }
 
         }
-        List<SpinSystem> thisSystems = new ArrayList<>();
-        List<SpinSystem> nextSystems = new ArrayList<>();
-        List<SpinSystem> previousSystems = new ArrayList<>();
+        return fragmentMap;
+
+    }
+
+    record SpinSystemInfo(Map<Integer, SpinSystem> systemMap, List<Integer> spinSystemIDs,
+                          List<Integer> fragmentIDColumn,
+                          Map<SpinSystem, SpinSystem> previousSystems, Map<SpinSystem, SpinSystem> nextSystems) {
+
+    }
+
+    SpinSystemInfo readSTARSystemLoop(Loop systemLoop) throws ParseException {
+        List<Integer> spinSystemIDs = systemLoop.getColumnAsIntegerList("ID", -1);
+        List<Integer> peakListIDColumn = systemLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
+        List<Integer> peakIDColumn = systemLoop.getColumnAsIntegerList("Peak_ID", -1);
+        List<Integer> previousIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_previous_ID", -1);
+        List<Integer> nextIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_next_ID", -1);
+        List<Integer> fragmentIDColumn = systemLoop.getColumnAsIntegerList("Fragment_ID", -1);
+        Map<Integer, SpinSystem> systemMap = new HashMap<>();
+        Map<SpinSystem, SpinSystem> nextSystems = new HashMap<>();
+        Map<SpinSystem, SpinSystem> previousSystems = new HashMap<>();
+        for (int i = 0; i < spinSystemIDs.size(); i++) {
+            Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+            if (peakListOpt.isPresent()) {
+                PeakList peakList = peakListOpt.get();
+                Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
+                int id = spinSystemIDs.get(i);
+                SpinSystem spinSystem = new SpinSystem(peak, this);
+                systemMap.put(id, spinSystem);
+            }
+        }
+        for (int i = 0; i < spinSystemIDs.size(); i++) {
+            Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
+            if (peakListOpt.isPresent()) {
+                SpinSystem spinSystem = systemMap.get(spinSystemIDs.get(i));
+                Integer prev = previousIDColumn.get(i);
+                SpinSystem prevSystem = prev != -1 ? systemMap.get(prev) : null;
+                Integer next = nextIDColumn.get(i);
+                SpinSystem nextSystem = next != -1 ? systemMap.get(next) : null;
+                nextSystems.put(spinSystem, nextSystem);
+                previousSystems.put(spinSystem, prevSystem);
+            }
+        }
+        return new SpinSystemInfo(systemMap, spinSystemIDs, fragmentIDColumn, previousSystems, nextSystems);
+    }
+
+    void readSTARSaveFrame(Saveframe saveframe) throws ParseException {
+        Loop fragmentLoop = saveframe.getLoop("_Fragments");
+        Loop systemLoop = saveframe.getLoop("_Spin_system");
+        Loop peakLoop = saveframe.getLoop("_Spin_system_peaks");
+
         if ((systemLoop != null) && (peakLoop != null)) {
-            List<Integer> idColumn = systemLoop.getColumnAsIntegerList("ID", -1);
-            List<Integer> peakListIDColumn = systemLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
-            List<Integer> peakIDColumn = systemLoop.getColumnAsIntegerList("Peak_ID", -1);
-            List<Integer> previousIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_previous_ID", -1);
-            List<Integer> nextIDColumn = systemLoop.getColumnAsIntegerList("Confirmed_next_ID", -1);
-            List<Integer> fragmentIDColumn = systemLoop.getColumnAsIntegerList("Fragment_ID", -1);
-            List<Integer> fragmentIndexColumn = systemLoop.getColumnAsIntegerList("Fragment_index", -1);
-            for (int i = 0; i < idColumn.size(); i++) {
-                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
-                if (peakListOpt.isPresent()) {
-                    PeakList peakList = peakListOpt.get();
-                    Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                    int id = idColumn.get(i);
-                    SpinSystem spinSystem = new SpinSystem(peak, this);
-                    thisSystems.add(spinSystem);
-                    systemMap.put(id, spinSystem);
-                }
-            }
-            for (int i = 0; i < idColumn.size(); i++) {
-                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
-                if (peakListOpt.isPresent()) {
-                    Integer prev = previousIDColumn.get(i);
-                    SpinSystem prevSystem = prev != -1 ? systemMap.get(prev) : null;
-                    Integer next = nextIDColumn.get(i);
-                    SpinSystem nextSystem = next != -1 ? systemMap.get(next) : null;
-                    nextSystems.add(nextSystem);
-                    previousSystems.add(prevSystem);
-                }
-            }
+            SpinSystemInfo spinSystemInfo = readSTARSystemLoop(systemLoop);
+            Map<Integer, SeqFragment> fragmentMap = readSTARFragmentLoop(fragmentLoop);
+            readSTARPeakInfo(spinSystemInfo.systemMap, peakLoop);
 
-
-            idColumn = peakLoop.getColumnAsIntegerList("ID", -1);
-            List<Integer> spinSystemIDColumn = peakLoop.getColumnAsIntegerList("Spin_system_ID", -1);
-            peakListIDColumn = peakLoop.getColumnAsIntegerList("Spectral_peak_list_ID", -1);
-            peakIDColumn = peakLoop.getColumnAsIntegerList("Peak_ID", -1);
-            List<Double> matchScoreColumn = peakLoop.getColumnAsDoubleList("Match_score", 0.0);
-            for (int i = 0; i < idColumn.size(); i++) {
-                Optional<PeakList> peakListOpt = PeakList.get(peakListIDColumn.get(i));
-                if (peakListOpt.isPresent()) {
-                    PeakList peakList = peakListOpt.get();
-                    Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                    SpinSystem spinSystem = systemMap.get(spinSystemIDColumn.get(i));
-                    if (peak != spinSystem.rootPeak) {
-                        double score = matchScoreColumn.get(i);
-                        spinSystem.addPeak(peak, score);
-                    }
-                }
-            }
-            systems = systemMap.values().stream().
+            systems = spinSystemInfo.systemMap.values().stream().
                     sorted(Comparator.comparingInt(SpinSystem::getId)).collect(Collectors.toList());
             for (SpinSystem spinSystem : systems) {
                 spinSystem.updateSpinSystem();
             }
             compare();
-
-            for (int i = 0; i < systems.size(); i++) {
-                SpinSystem system = thisSystems.get(i);
-                SpinSystem nextSystem = nextSystems.get(i);
-                SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
-                if (fragment != null) {
-                    system.setFragment(fragment);
-                }
-                if (nextSystem != null) {
-                    // find match that is to next, confirm and add to a fragment
-                    for (SpinSystemMatch match : system.getMatchToNext()) {
-                        if ((match.getSpinSystemA() == system) && (match.getSpinSystemB() == nextSystem)) {
-                            if (fragment == null) {
-                                throw new ParseException("Could not parse STAR saveframe. Fragment was null.");
-                            }
-                            fragment.getSpinSystemMatches().add(match);
-                            system.setConfirmS(match);
-                            nextSystem.setConfirmP(match);
-                        }
-                    }
-                }
-            }
+            readSTARMatchInfo(spinSystemInfo.systemMap, spinSystemInfo.spinSystemIDs, fragmentMap, spinSystemInfo.fragmentIDColumn, spinSystemInfo.previousSystems, spinSystemInfo.nextSystems);
         }
-
     }
+
     public void trimAll() {
         for (SpinSystem spinSystem : systems) {
             runAbout.trim(spinSystem);
@@ -653,7 +664,7 @@ public class SpinSystems {
         for (PeakList peakList : runAbout.peakLists) {
             peakList.clearAtomLabels();
         }
-        getSortedFragments().forEach(frag -> frag.thawFragment());
+        getSortedFragments().forEach(SeqFragment::thawFragment);
     }
 
     public void clearAll() {

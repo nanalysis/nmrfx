@@ -50,35 +50,45 @@ public class FragmentScoring {
     static void initMolAaDistMap() {
         BMRBStats.loadAllIfEmpty();
         Molecule molecule = Molecule.getActive();
-        var names = molecule.getPolymers().stream().
+        var resNames = molecule.getPolymers().stream().
                 flatMap(poly -> poly.getResidues().
                         stream()).map(Residue::getName).
                 toList();
-        for (String aaName : names) {
-            double[] means;
-            double[][] vars;
-            if (aaName.equalsIgnoreCase("gly")) {
-                means = new double[1];
-                vars = new double[1][1];
-            } else {
-                means = new double[2];
-                vars = new double[2][2];
-            }
+        for (String resName : resNames) {
+            double[] means2 = new double[2];
+            double[][] vars2 = new double[2][2];
+            double[] meansCA = new double[1];
+            double[][] varsCA = new double[1][1];
+            double[] meansCB = new double[1];
+            double[][] varsCB = new double[1][1];
             String[] aNames = {"CA", "CB"};
             for (String aName : aNames) {
-                Optional<PPMv> ppmVOpt = BMRBStats.getValue(aaName, aName);
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(resName, aName);
                 ppmVOpt.ifPresent(ppmV -> {
-                    int i = aName.equals("CA") ? 0 : 1;
-                    means[i] = ppmV.getValue();
-                    vars[i][i] = ppmV.getError() * ppmV.getError();
-                    if (aaName.equalsIgnoreCase("CYS") && aName.equalsIgnoreCase("CB")) {
-                        means[i] = 29.0;
-                        vars[i][i] = 3.0;
+                    if (aName.equals("CA")) {
+                        meansCA[0] = ppmV.getValue();
+                        varsCA[0][0] = ppmV.getError() * ppmV.getError();
+                    } else if (!resName.equalsIgnoreCase("GLY")) {
+                        if (resName.equalsIgnoreCase("CYS")) {
+                            meansCB[0] = 29.0;
+                            varsCB[0][0] = 3.0;
+                        } else {
+                            meansCB[0] = ppmV.getValue();
+                            varsCB[0][0] = ppmV.getError() * ppmV.getError();
+                        }
                     }
                 });
             }
-            MultivariateNormalDistribution dist = new MultivariateNormalDistribution(means, vars);
-            aaDistMap.put(aaName, dist);
+            MultivariateNormalDistribution distCA = new MultivariateNormalDistribution(meansCA, varsCA);
+            aaDistMap.put(resName + "_CA", distCA);
+            if (!resName.equalsIgnoreCase("GLY")) {
+                MultivariateNormalDistribution distCB = new MultivariateNormalDistribution(meansCB, varsCB);
+                aaDistMap.put(resName + "_CB", distCB);
+                double[] means = {meansCA[0], meansCB[0]};
+                double[][] vars = {{varsCA[0][0], 0.0}, {0.0, varsCB[0][0]}};
+                MultivariateNormalDistribution dist = new MultivariateNormalDistribution(means, vars);
+                aaDistMap.put(resName, dist);
+            }
         }
     }
 
@@ -114,28 +124,41 @@ public class FragmentScoring {
             initMolAaDistMap();
         }
         List<AAScore> scores = new ArrayList<>();
+        String mode;
+        double[] ppm1 = new double[1];
+        if (!Double.isNaN(ppms[0]) && Double.isNaN(ppms[1])) {
+            mode = "_CA";
+            ppm1[0] = ppms[0];
+        } else if (Double.isNaN(ppms[0]) && !Double.isNaN(ppms[1])) {
+            mode = "_CB";
+            ppm1[0] = ppms[1];
+        } else if (!Double.isNaN(ppms[0]) && !Double.isNaN(ppms[1])) {
+            mode = "";
+        } else {
+            return scores;
+        }
+
         for (Map.Entry<String, MultivariateNormalDistribution> entry : aaDistMap.entrySet()) {
-            double p;
+            final double p;
             boolean ok = true;
-            if (entry.getKey().equalsIgnoreCase("gly")) {
-                double[] ppmGly = new double[1];
-                ppmGly[0] = ppms[0];
-                if (Double.isNaN(ppms[0])) {
-                    ok = false;
-                    p = 0.0;
-                } else {
-                    p = entry.getValue().density(ppmGly);
-                }
+            String key = entry.getKey();
+            if (mode.contains("_") && key.endsWith(mode)) {
+                p = entry.getValue().density(ppm1);
+            }  else if (mode.equals("") && !key.contains("_")) {
+                p = entry.getValue().density(ppms);
             } else {
-                if (Double.isNaN(ppms[0]) || Double.isNaN(ppms[1])) {
-                    ok = false;
-                    p = 0.0;
-                } else {
-                    p = entry.getValue().density(ppms);
-                }
+                p = 0.0;
+                ok = false;
             }
             if (ok) {
-                AAScore score = new AAScore(entry.getKey(), p);
+                String resName;
+                int underPos = key.indexOf("_");
+                if (underPos != -1) {
+                    resName = key.substring(0, underPos);
+                } else {
+                    resName = key;
+                }
+                AAScore score = new AAScore(resName, p);
                 scores.add(score);
             }
         }
