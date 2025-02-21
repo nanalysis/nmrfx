@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class ResSeqMatcher {
+    List<Matching> initMatches = new ArrayList<>();
     double[][] residueScores;
     double[][] adjScores;
 
@@ -120,7 +121,11 @@ public class ResSeqMatcher {
         double ecsMax = 100.0;
         for (int iSys = 0; iSys < nSys; iSys++) {
             for (int iRes = 0; iRes < nResidues; iRes++) {
-                residueScores[iRes][iSys] = Math.min(ecsMax, ecsMin / Math.log(nResidues) * Math.log(residueScores[iRes][iSys] * nResidues));
+                if (residueScores[iRes][iSys] < 1.0e-6) {
+                    residueScores[iRes][iSys] = ecsMax;
+                } else {
+                    residueScores[iRes][iSys] = Math.min(ecsMax, ecsMin / Math.log(nResidues) * Math.log(residueScores[iRes][iSys] * nResidues));
+                }
             }
         }
     }
@@ -138,6 +143,9 @@ public class ResSeqMatcher {
                     int nextSys = resToSys[nextRes];
                     if ((nextSys >= 0) && (nextSys < nSys)) {
                         double adjScore = adjScores[iSys][nextSys];
+                        if (adjScore > 100.0) {
+                            adjScore += 200.0;
+                        }
                         score += adjScore;
                     }
                 }
@@ -151,6 +159,12 @@ public class ResSeqMatcher {
         double resScore = residueScores[iRes][i];
         double adjScore = adjScores[i][j];
         return resScore + adjScore;
+    }
+    public String reportScore(Residue residue, int i, int j) {
+        int iRes = residueIndexMap.get(residue);
+        double resScore = residueScores[iRes][i];
+        double adjScore = adjScores[i][j];
+        return i + " " + j + " " + iRes + " " + resScore + " " + adjScore + " " + (resScore + adjScore);
     }
 
     public double matcher(int[] sysToRes) {
@@ -234,16 +248,31 @@ public class ResSeqMatcher {
         for (int i = 1; i < nResidues; i++) {
             int iSys = residues[i - 1];
             int jSys = residues[i];
-            if ((iSys != -1) && (jSys != -1)) {
-                SpinSystem spinSystemA = spinSystems.get(iSys);
-                SpinSystem spinSystemB = spinSystems.get(jSys);
+            SpinSystem spinSystemA = iSys != -1 ? spinSystems.get(iSys) : null;
+            SpinSystem spinSystemB = jSys != -1 ? spinSystems.get(jSys) : null;
+            boolean ok = true;
+            double residueScore = 0.0;
+            Residue residue = residueList.get(i);
+            if ((spinSystemA == null) || (spinSystemB == null) || !spinSystemA.getMatchToNext(spinSystemB).isPresent()) {
+                ok = false;
+            } else {
+                residueScore = score(residue, iSys, jSys);
+                if (residueScore >= 10.0) {
+                    ok = false;
+                    String scoreReport = reportScore(residue, iSys, jSys);
+                    System.out.println(scoreReport);
+                }
+            }
+            if (ok) {
+                if (spinSystemA.getMatchToNext(spinSystemB).isEmpty()) {
+                    System.out.println("no match " + i + " " + iSys + " " + jSys);
+                }
                 if (startRes == -1) {
                     startRes = i - 1 - 1;
                     startSys = spinSystemA;
                     startResidue = residueList.get(startRes);
                 }
-                Residue residue = residueList.get(i);
-                score += score(residue, iSys, jSys);
+                score += residueScore;
                 Optional<SpinSystemMatch> spinSystemMatchOpt = spinSystemB.getMatchToPrevious(spinSystemA);
                 if (!spinSystemMatchOpt.isPresent()) {
                     spinSystemMatchOpt = spinSystemA.compare(spinSystemB, false);
@@ -272,9 +301,23 @@ public class ResSeqMatcher {
     public double graphMatch(int nTries, SeqGenParameters seqGenParameters) {
         bestMatching = null;
         List<Matching> matchings = new ArrayList<>();
-        for (int i = 0; i < nTries; i++) {
-            Matching matching = runGraphGenetics(seqGenParameters, (v) -> updateProgress((Double) v));
+
+        List<Matching> currentBestMatchings = new ArrayList<>();
+        int nStart = 5;
+        for (int i = 0; i < nStart; i++) {
+            Matching matching = runGraphGenetics(seqGenParameters, Collections.emptyList(), (v) -> updateProgress((Double) v));
+            System.out.println("matching " + matching.score);
             matchings.add(matching);
+            currentBestMatchings.add(matching);
+            if ((bestMatching == null) || (matching.score < bestMatching.score)) {
+                bestMatching = matching;
+            }
+        }
+        for (int i = 0; i < nTries-nStart; i++) {
+            Matching matching = runGraphGenetics(seqGenParameters, currentBestMatchings, (v) -> updateProgress((Double) v));
+            System.out.println("matching " + matching.score);
+            matchings.add(matching);
+            currentBestMatchings.add(matching);
             if ((bestMatching == null) || (matching.score < bestMatching.score)) {
                 bestMatching = matching;
             }
@@ -293,13 +336,17 @@ public class ResSeqMatcher {
         return bestMatching.score;
     }
 
-    public Matching runGraphGenetics(SeqGenParameters seqGenParameters, Consumer consumer) {
-        buildGraph();
+    public void genInitMatches(int nInitial, int nReplace) {
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
         double ranFrac = 0.0;
-        List<Matching> initMatches = new ArrayList<>();
-        int nTries = seqGenParameters.populationSize();
-        for (int iTry = 0; iTry < nTries; iTry++) {
+        List<Integer> replaceList = new ArrayList<>();
+        for (int i=0;i<nInitial;i++) {
+            replaceList.add(i);
+        }
+        boolean fillFirst = initMatches.isEmpty();
+        Collections.shuffle(replaceList);
+        int n = initMatches.isEmpty() ? nInitial : nReplace;
+        for (int iTry = 0; iTry < n; iTry++) {
             setGraphWeights(simpleGraph, ranFrac);
             var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
                     paritionedGraph.partition1, paritionedGraph.partition2);
@@ -311,9 +358,27 @@ public class ResSeqMatcher {
             }
             double score = matcher(sysToRes);
             Matching matching = new Matching(score, sysToRes);
-            initMatches.add(matching);
+            if (fillFirst) {
+                initMatches.add(matching);
+            } else {
+                initMatches.set(replaceList.get(iTry), matching);
+            }
             ranFrac = 0.1;
+            System.out.println("try " + iTry + " " + score);
         }
+
+    }
+    public Matching runGraphGenetics(SeqGenParameters seqGenParameters, List<Matching> currentBestMatchings, Consumer consumer) {
+        buildGraph();
+        SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
+        int nInitial = seqGenParameters.populationSize();
+        System.out.println("run gen");
+        genInitMatches(nInitial, nInitial / 5);
+        int i = 0;
+        for (Matching currentBestMatching : currentBestMatchings) {
+            initMatches.set(i++, currentBestMatching);
+        }
+
         seqGeneticAlgorithm = new SeqGeneticAlgorithm(this, seqGenParameters);
         SeqGeneticAlgorithm.seqResMatches = sysResidueList;
         Matching seqToResMatch = seqGeneticAlgorithm.apply(initMatches, consumer);

@@ -1781,11 +1781,18 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Task<Double> task = new Task<>() {
             @Override
             protected Double call() throws Exception {
-                double result = resSeqMatcher.graphMatch(25, seqGenParameters);
-                return result;
+                try {
+                    return resSeqMatcher.graphMatch(25, seqGenParameters);
+                } catch (Exception e) {
+                    log.error("Error in graph match", e);
+                    e.printStackTrace();
+                    throw(e);
+                }
             }
         };
-
+        task.setOnFailed(event -> {
+            System.out.println("failed");
+        });
 
         task.setOnSucceeded(event -> {
             double result = task.getValue();

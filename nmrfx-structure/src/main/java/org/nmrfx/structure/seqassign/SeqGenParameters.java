@@ -1,7 +1,7 @@
 package org.nmrfx.structure.seqassign;
 
 public class SeqGenParameters {
-    private int populationSize = 1000;
+    private int populationSize = 500;
     private double mutationRate = 0.1;
     private double crossoverRate = 0.1;
     private int eliteNumber = 100;
