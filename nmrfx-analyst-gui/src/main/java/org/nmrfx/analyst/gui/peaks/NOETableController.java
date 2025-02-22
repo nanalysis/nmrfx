@@ -105,6 +105,7 @@ public class NOETableController implements Initializable, StageBasedController {
     IntRangeOperationItem maxAmbigItem;
     BooleanOperationItem strictItem;
     BooleanOperationItem unambiguousItem;
+    BooleanOperationItem includeDiagItem;
     BooleanOperationItem useDistancesItem;
     BooleanOperationItem autoAssignItem;
 
@@ -120,6 +121,8 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem maxDisItem;
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
+    FilteredList<Noe> filteredNOEs;
+
     private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
         @Override
@@ -181,6 +184,8 @@ public class NOETableController implements Initializable, StageBasedController {
 
         unambiguousItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Only Unambiguous", "Only extract unambiguous peaks");
 
+        includeDiagItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Include Diagonal", "Include diagonal peaks");
+
         useDistancesItem = new BooleanOperationItem(propertySheet, (a, b, c) -> refresh(), false, CONSTRAINT_GENERATION_STRING, "Use Distances", "Use distances in contributions");
 
         List<String> intVolChoice = List.of("Intensity", "Volume");
@@ -211,7 +216,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 "Min PPM Error", "Minimum ppmError allowed");
 
         propertySheet.getItems().addAll(
-                autoAssignItem, strictItem, onlyFrozenItem, unambiguousItem, useDistancesItem, maxAmbigItem,
+                autoAssignItem, strictItem, onlyFrozenItem, includeDiagItem, unambiguousItem, useDistancesItem, maxAmbigItem,
                 modeItem, refDistanceItem, expItem, minDisItem, maxDisItem, fErrorItem,
                 maxViolationItem, minContributionItem, minPPMErrorItem
         );
@@ -303,12 +308,13 @@ public class NOETableController implements Initializable, StageBasedController {
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns();
         tableView.setOnMouseClicked(e -> {
-            if ((e.getClickCount() == 2) && !tableView.getSelectionModel().getSelectedItems().isEmpty()){
+            if ((e.getClickCount() == 2) && !tableView.getSelectionModel().getSelectedItems().isEmpty()) {
                 Noe noe = tableView.getSelectionModel().getSelectedItems().get(0);
                 showPeakInfo(noe);
             }
         });
     }
+
     public static void addConstraintColumns(TableView tableView) {
         TableColumn<? extends Noe, Float> lowerCol = new TableColumn<>("Lower");
         lowerCol.setCellValueFactory(new PropertyValueFactory<>("Lower"));
@@ -330,9 +336,76 @@ public class NOETableController implements Initializable, StageBasedController {
         });
 
 
-
         tableView.getColumns().addAll(lowerCol, upperCol, meanCol);
 
+    }
+
+    TableColumn<Noe, Double> makeBoundsColumn() {
+        TableColumn<Noe, Double> boundsColumn = new TableColumn<>("Bounds");
+
+        boundsColumn.setCellFactory((tableColumn) -> {
+
+            return new TableCell<Noe, Double>() {
+                @Override
+                protected void updateItem(Double item, boolean empty) {
+                    super.updateItem(item, empty);
+                    var tableRow = getTableRow();
+                    if (empty || (tableRow == null)) {
+                        this.setText(null);
+                        this.setGraphic(null);
+                    } else {
+                        Noe distanceConstraint = tableRow.getItem();
+                        if (distanceConstraint != null) {
+                            DistanceStat distanceStat = distanceConstraint.getStat();
+                            double scale = 30.0;
+                            double width = getTableColumn().getWidth();
+                            double lower = distanceConstraint.getLower() * scale;
+                            double upper = distanceConstraint.getUpper() * scale;
+                            double disMin = distanceStat.getMin() * scale;
+                            double disMax = distanceStat.getMax() * scale;
+                            double disMean = distanceStat.getMean() * scale;
+
+                            double height = 20;
+                            Pane pane = new Pane();
+                            double top = 2;
+                            double bottom = height - 2;
+                            Rectangle rect = new Rectangle(disMin, top, disMax - disMin, bottom - top);
+                            Color color;
+                            if (disMax < upper) {
+                                color = Color.LIGHTGREEN;
+                            } else if (disMean < upper) {
+                                color = Color.ORANGE;
+                            } else {
+                                color = Color.RED;
+                            }
+                            rect.setFill(color);
+                            Line line = new Line(disMean, top, disMean, bottom);
+                            line.setStroke(color);
+                            Line lineH = new Line(2, height / 2.0, width - 2, height / 2.0);
+                            line.setStrokeWidth(5);
+                            Polygon lowerArrow = new Polygon();
+                            double delta = 5.0;
+                            lowerArrow.getPoints().addAll(new Double[]{
+                                    lower - delta, bottom,
+                                    lower, height / 2.0,
+                                    lower + delta, bottom});
+                            Polygon upperArrow = new Polygon();
+                            upperArrow.getPoints().addAll(new Double[]{
+                                    upper - delta, top,
+                                    upper, height / 2.0,
+                                    upper + delta, top});
+
+                            pane.getChildren().addAll(rect, line, lineH, lowerArrow, upperArrow);
+                            this.setText(null);
+                            this.setGraphic(pane);
+                        }
+                    }
+                }
+            };
+        });
+        boundsColumn.setPrefWidth(150);
+        boundsColumn.widthProperty().addListener(e -> tableView.refresh());
+        return boundsColumn;
     }
 
     void updateColumns() {
@@ -360,14 +433,16 @@ public class NOETableController implements Initializable, StageBasedController {
         SouthFilter<Noe, Boolean> editorFirstNameFilter = new SouthFilter<>(activeColumn, Boolean.class);
         activeColumn.setSouthNode(editorFirstNameFilter);
 
-        tableView.getColumns().addAll(idNumCol, peakListCol, peakNumCol, nPossibleCol, activeColumn);
+        TableColumn<Noe, Boolean> swappedCol = new TableColumn<>("Swap");
+        swappedCol.setCellValueFactory(new PropertyValueFactory<>("Swapped"));
+        tableView.getColumns().addAll(idNumCol, peakListCol, peakNumCol, nPossibleCol, activeColumn, swappedCol);
 
         for (int i = 0; i < 2; i++) {
             final int iGroup = i;
             FilteredTableColumn<Noe, Integer> entityCol = new FilteredTableColumn<>("entity" + (iGroup + 1));
             entityCol.setCellValueFactory((CellDataFeatures<Noe, Integer> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
+                SpatialSetGroup spg = noe.getSPGSwapped(iGroup);
                 Integer res = spg.getSpatialSet().atom.getTopEntity().getIDNum();
                 return new ReadOnlyObjectWrapper<>(res);
             });
@@ -377,7 +452,7 @@ public class NOETableController implements Initializable, StageBasedController {
             FilteredTableColumn<Noe, Integer> resCol = new FilteredTableColumn<>("res" + (iGroup + 1));
             resCol.setCellValueFactory((CellDataFeatures<Noe, Integer> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
+                SpatialSetGroup spg = noe.getSPGSwapped(iGroup);
                 Integer res = spg.getSpatialSet().atom.getResidueNumber();
                 return new ReadOnlyObjectWrapper<>(res);
             });
@@ -387,7 +462,7 @@ public class NOETableController implements Initializable, StageBasedController {
             FilteredTableColumn<Noe, String> atomCol = new FilteredTableColumn<>("aname" + (iGroup + 1));
             atomCol.setCellValueFactory((CellDataFeatures<Noe, String> p) -> {
                 Noe noe = p.getValue();
-                SpatialSetGroup spg = iGroup == 0 ? noe.getSpg1() : noe.getSpg2();
+                SpatialSetGroup spg = noe.getSPGSwapped(iGroup);
                 String aname = spg.getSpatialSet().atom.getName();
                 return new ReadOnlyObjectWrapper<>(aname);
             });
@@ -400,67 +475,6 @@ public class NOETableController implements Initializable, StageBasedController {
         addConstraintColumns(tableView);
 
 
-        TableColumn<Noe, Double> boundsColumn = new TableColumn<>("Bounds");
-
-        boundsColumn.setCellFactory((tableColumn) -> {
-            TableCell<Noe, Double> tableCell = new TableCell<>() {
-                @Override
-                protected void updateItem(Double item, boolean empty) {
-                    super.updateItem(item, empty);
-                    var tableRow = getTableRow();
-                    if (tableRow != null) {
-                        Noe distanceConstraint = tableRow.getItem();
-                        if (distanceConstraint != null) {
-                            DistanceStat distanceStat = distanceConstraint.getStat();
-                            double scale = 30.0;
-                            double width = getTableColumn().getWidth();
-                            double lower = distanceConstraint.getLower() * scale;
-                            double upper = distanceConstraint.getUpper() * scale;
-                            double disMin = distanceStat.getMin() * scale;
-                            double disMax = distanceStat.getMax() * scale;
-                            double disMean = distanceStat.getMean() * scale;
-
-                            double height = 20;
-                            Pane pane = new Pane();
-                            double top = 2;
-                            double bottom = height - 2;
-                            Rectangle rect = new Rectangle(disMin, top, disMax - disMin, bottom - top);
-                            Color color;
-                            if (disMax < upper) {
-                                color = Color.LIGHTGREEN;
-                            } else if (disMean < upper) {
-                                color = Color.ORANGE;
-                            } else {
-                                color = Color.RED;
-                            }
-                            rect.setFill(color);
-                            Line line = new Line(disMean, top, disMean, bottom);
-                            Line lineH = new Line(2, height / 2.0, width - 2, height / 2.0);
-                            line.setStrokeWidth(3);
-                            Polygon lowerArrow = new Polygon();
-                            double delta = 5.0;
-                            lowerArrow.getPoints().addAll(new Double[]{
-                                    lower - delta, bottom,
-                                    lower, height / 2.0,
-                                    lower + delta, bottom});
-                            Polygon upperArrow = new Polygon();
-                            upperArrow.getPoints().addAll(new Double[]{
-                                    upper - delta, top,
-                                    upper, height / 2.0,
-                                    upper + delta, top});
-
-                            pane.getChildren().addAll(rect, line, lineH, lowerArrow, upperArrow);
-                            this.setText(null);
-                            this.setGraphic(pane);
-                        }
-                    }
-                }
-            };
-
-            return tableCell;
-        });
-        boundsColumn.setPrefWidth(150);
-        boundsColumn.widthProperty().addListener(e -> tableView.refresh());
         TableColumn<Noe, Float> ppmCol = new TableColumn<>("PPM");
         ppmCol.setCellValueFactory(new PropertyValueFactory<>("PpmError"));
         ppmCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".00")));
@@ -485,6 +499,8 @@ public class NOETableController implements Initializable, StageBasedController {
         flagCol.setCellValueFactory(new PropertyValueFactory<>("ActivityFlags"));
         flagCol.setPrefWidth(75);
 
+        TableColumn<Noe, Double> boundsColumn = makeBoundsColumn();
+
 
         tableView.getColumns().addAll(boundsColumn, ppmCol, disContribCol, networkCol, contribCol, flagCol);
 
@@ -503,7 +519,7 @@ public class NOETableController implements Initializable, StageBasedController {
                 ObservableList<Noe> noes = FXCollections.observableList(noeSet.getConstraints());
                 log.info("noes {}", noes.size());
                 updateColumns();
-                FilteredList<Noe> filteredNOEs = new FilteredList<>(noes);
+                filteredNOEs = new FilteredList<>(noes);
                 filteredNOEs.predicateProperty().bind(tableView.predicateProperty());
 
                 tableView.setItems(filteredNOEs);
@@ -520,6 +536,7 @@ public class NOETableController implements Initializable, StageBasedController {
         noeCalibrator.limitToMinContrib(minContributionItem.getValue());
         noeCalibrator.limitToMinPPMError(minPPMErrorItem.getValue());
     }
+
     void calibrate() {
         if (noeSet == null) {
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
@@ -543,6 +560,7 @@ public class NOETableController implements Initializable, StageBasedController {
             refresh();
         }
     }
+
     void update() {
         if (noeSet == null) {
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
@@ -571,18 +589,16 @@ public class NOETableController implements Initializable, StageBasedController {
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             if (noeSetOpt.isEmpty()) {
                 noeSet = molConstr.newNOESet("default");
-                noeSetOpt = Optional.of(noeSet);
             }
             if (!autoAssignItem.getValue()) {
-                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguousItem.getValue(), onlyFrozenItem.getValue());
+                NOEAssign.extractNoePeaks(noeSet, peakList, unambiguousItem.getValue(), onlyFrozenItem.getValue(),
+                        includeDiagItem.getValue());
             } else {
-                NOEAssign.extractNoePeaks2(noeSetOpt, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
+                NOEAssign.extractNoePeaks2(noeSet, peakList, maxAmbigItem.get(), strictItem.getValue(), 0, onlyFrozenItem.getValue());
             }
-            NOECalibrator noeCalibrator = new NOECalibrator(noeSetOpt.get());
+            NOECalibrator noeCalibrator = new NOECalibrator(noeSet);
             noeCalibrator.updateContributions(useDistancesItem.getValue(), false, true);
-            noeSet = noeSetOpt.get();
             log.info("active {}", noeSet.getName());
-
             setNoeSet(noeSet);
             updateNoeSetMenu();
         } catch (InvalidMoleculeException | IllegalArgumentException ex) {
@@ -593,6 +609,10 @@ public class NOETableController implements Initializable, StageBasedController {
 
     void clearNOESet() {
         if (GUIUtils.affirm("Clear active set")) {
+            if (filteredNOEs != null) {
+                filteredNOEs.predicateProperty().unbind();
+            }
+            tableView.setItems(FXCollections.emptyObservableList());
             Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
             noeSetOpt.ifPresent(NoeSet::clear);
             refresh();

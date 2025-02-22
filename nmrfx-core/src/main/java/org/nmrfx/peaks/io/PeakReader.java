@@ -19,6 +19,7 @@ package org.nmrfx.peaks.io;
 
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
 import org.python.util.PythonInterpreter;
 
@@ -189,12 +190,30 @@ public class PeakReader {
         return peakList;
     }
 
+    void setDefaultWidths(Peak peak) {
+        PeakList peakList = peak.getPeakList();
+        for (int i =0 ;i<peakList.getNDim();i++) {
+            SpectralDim spectralDim = peakList.getSpectralDim(i);
+            peak.getPeakDim(i).setLineWidthHz(10.0f);
+            peak.getPeakDim(i).setBoundsHz(20.0f);
+        }
+    }
     public void processLine(PeakList peakList, String[] dataHeader, Map<String, Integer> dataMap, String[] data) {
         Peak peak = peakList.getNewPeak();
+        setDefaultWidths(peak);
+        boolean getID = false;
+        if (data.length > dataHeader.length) {
+            getID = true;
+            peak.setIdNum(Integer.parseInt(data[0]));
+        }
+
         for (String field : dataHeader) {
             int dotIndex = field.indexOf('.');
             if (dotIndex != -1) {
                 Integer dataIndex = dataMap.get(field);
+                if (getID) {
+                    dataIndex += 1;
+                }
                 String dimLabel = field.substring(0, dotIndex);
                 field = field.substring(dotIndex + 1);
                 PeakDim peakDim = peak.getPeakDim(dimLabel);
@@ -235,6 +254,9 @@ public class PeakReader {
                 }
             } else {
                 Integer dataIndex = dataMap.get(field);
+                if (getID) {
+                    dataIndex += 1;
+                }
                 //   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U
                 // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
                 // volume  intensity       status  comment flags
@@ -349,6 +371,17 @@ public class PeakReader {
         return map;
     }
 
+    List<String> getLabels(List<String> listFields) {
+        List<String> labels = new ArrayList<>();
+        for (String field : listFields) {
+            if (field.endsWith(".P")) {
+                int dot = field.indexOf(".");
+                String label = field.substring(0, dot);
+                labels.add(label);
+            }
+        }
+        return labels;
+    }
     public PeakList readXPKPeaks(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
@@ -356,37 +389,69 @@ public class PeakReader {
         String listName = fileTail;
         String[] dataHeader = null;
         Map<String, Integer> dataMap = null;
+        PeakList peakList;
+        String[] data = null;
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             String line = fileReader.readLine();
             List<String> listFields = parseXPKLine(line);
-            Map<String, List<String>> listMap = new HashMap<>();
+            boolean useStandardHeader = true;
             for (String field : listFields) {
-                line = fileReader.readLine();
-                List<String> values = parseXPKLine(line);
-                listMap.put(field, values);
+                if (field.contains(".")) {
+                    useStandardHeader = false;
+                }
             }
-            int nDim = listMap.get("label").size();
-            PeakList peakList = new PeakList(listName, nDim);
-            for (String field : listFields) {
-                if (!field.equals(DATASET) && !field.equals(CONDITION)) {
-                    for (int iDim = 0; iDim < nDim; iDim++) {
-                        SpectralDim sDim = peakList.getSpectralDim(iDim);
-                        String value = listMap.get(field).get(iDim);
-                        switch (field) {
-                            case "label" -> sDim.setDimName(value);
-                            case "sf" -> sDim.setSf(Double.parseDouble(value));
-                            case "sw" -> sDim.setSw(Double.parseDouble(value));
+            Map<String, List<String>> listMap = new HashMap<>();
+            if (useStandardHeader) {
+                for (String field : listFields) {
+                    line = fileReader.readLine();
+                    List<String> values = parseXPKLine(line);
+                    listMap.put(field, values);
+                }
+                int nDim = listMap.get("label").size();
+                peakList = new PeakList(listName, nDim);
+                for (String field : listFields) {
+                    if (!field.equals(DATASET) && !field.equals(CONDITION)) {
+                        for (int iDim = 0; iDim < nDim; iDim++) {
+                            SpectralDim sDim = peakList.getSpectralDim(iDim);
+                            String value = listMap.get(field).get(iDim);
+                            switch (field) {
+                                case "label" -> sDim.setDimName(value);
+                                case "sf" -> sDim.setSf(Double.parseDouble(value));
+                                case "sw" -> sDim.setSw(Double.parseDouble(value));
+                            }
                         }
                     }
                 }
+                if (listMap.containsKey(DATASET)) {
+                    peakList.setDatasetName(listMap.get(DATASET).get(0));
+                }
+                if (listMap.containsKey(CONDITION)) {
+                    peakList.setSampleConditionLabel(listMap.get(CONDITION).get(0));
+                }
+            } else {
+                List<String> labels = getLabels(listFields);
+
+                peakList = new PeakList(listName, labels.size());
+                int i = 0;
+                for (String label : labels) {
+                    SpectralDim spectralDim = peakList.getSpectralDim(i++);
+                    spectralDim.setDimName(label);
+                    if (label.contains("H")) {
+                        spectralDim.setNucleus("1H");
+                        spectralDim.setSf(600.0);
+                    } else if (label.contains("N")) {
+                        spectralDim.setNucleus("15N");
+                        spectralDim.setSf(600.0 * Nuclei.N15.getFreqRatio());
+                    } else if (label.contains("C")) {
+                        spectralDim.setNucleus("13C");
+                        spectralDim.setSf(600.0 * Nuclei.C13.getFreqRatio());
+                    }
+                }
+                dataHeader = new String[listFields.size()];
+                listFields.toArray(dataHeader);
+                data = new String[listFields.size()];
+
             }
-            if (listMap.containsKey(DATASET)) {
-                peakList.setDatasetName(listMap.get(DATASET).get(0));
-            }
-            if (listMap.containsKey(CONDITION)) {
-                peakList.setSampleConditionLabel(listMap.get(CONDITION).get(0));
-            }
-            String[] data = null;
             while (true) {
                 line = fileReader.readLine();
                 if (line == null) {
@@ -403,10 +468,9 @@ public class PeakReader {
                 try {
 
                     if (dataHeader == null) {
-                        fields.add(0, "id");
                         dataHeader = new String[fields.size()];
                         fields.toArray(dataHeader);
-                        data = new String[fields.size()];
+                        data = new String[fields.size() + 1];
                     } else {
                         if (dataMap == null) {
                             dataMap = headerMap(dataHeader);
@@ -588,14 +652,14 @@ public class PeakReader {
                 peakList.getSpectralDim(i).setDimName("1H" + "_" + atomDim.merge("H", 1, (a, b) -> a + b));
                 peakList.getSpectralDim(i).setNucleus("1H");
             } else if (atomName.startsWith("N")) {
-                sf = 60.0;
+                sf = 600.0 * Nuclei.N15.getFreqRatio();
                 sw = 2000.0;
                 widthHz = 30.0f;
                 peakList.getSpectralDim(i).setDimName("15N" + "_" + atomDim.merge("N", 1, (a, b) -> a + b));
                 peakList.getSpectralDim(i).setNucleus("15N");
             } else if (atomName.startsWith("C")) {
                 widthHz = 30.0f;
-                sf = 150.0;
+                sf = 600.0 * Nuclei.C13.getFreqRatio();
                 sw = 4000.0;
                 peakList.getSpectralDim(i).setDimName("13C" + "_" + atomDim.merge("C", 1, (a, b) -> a + b));
                 peakList.getSpectralDim(i).setNucleus("13C");

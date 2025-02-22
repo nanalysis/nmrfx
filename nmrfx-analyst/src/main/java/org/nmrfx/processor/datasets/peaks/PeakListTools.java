@@ -1563,6 +1563,10 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
         if (peaks.isEmpty()) {
             return peaksResult;
         }
+        boolean noIntensities = peakList.peaks().stream().filter(peak -> Math.abs(peak.getIntensity()) > 1.0e-12).findFirst().isEmpty();
+        if (noIntensities) {
+            quantifyPeaks(peakList, "center");
+        }
         boolean fitC = false;
         int nPeakDim = peakList.getNDim();
         int dataDim = theFile.getNDim();
@@ -1914,11 +1918,12 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                 for (int pkDim = 0; pkDim < nPeakDim; pkDim++) {
                     int dDim = pdim[pkDim];
                     PeakDim peakDim = peak.getPeakDim(pkDim);
-                    double lineWidth = theFile.ptWidthToPPM(dDim, values[index]);
-                    double lineWidthHz = values[index++];
-                    peakDim.setLineWidthValue((float) lineWidth);
+                    double lineWidthPt = values[index++];
+                    double lineWidthPPM = theFile.ptWidthToPPM(dDim, lineWidthPt);
+                    double lineWidthHz = theFile.ptWidthToHz(dDim, lineWidthPt);
+                    peakDim.setLineWidthValue((float) lineWidthPPM);
                     lineWidthAll *= lineWidthHz;
-                    peakDim.setBoundsValue((float) (lineWidth * 1.5));
+                    peakDim.setBoundsValue((float) (lineWidthPPM * 1.5));
                     peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(dDim, values[index++]));
                     int nZZ = zzMode ? 3 : 0;
                     double shapeFactor = values[values.length - nZZ - nPeakDim + pkDim];

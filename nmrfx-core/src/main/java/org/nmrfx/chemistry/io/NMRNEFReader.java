@@ -521,9 +521,9 @@ public class NMRNEFReader {
             throw new ParseException("No \"_nef_dihedral_restraint\" loop");
         }
         var compoundMap = MoleculeBase.compoundMap();
-        List<String>[] chainCodeColumns = new ArrayList[4];
-        List<String>[] sequenceCodeColumns = new ArrayList[4];
-        List<String>[] atomNameColumns = new ArrayList[4];
+        List<String>[] chainCodeColumns = new List[4];
+        List<String>[] sequenceCodeColumns = new List[4];
+        List<String>[] atomNameColumns = new List[4];
 
         List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
         for (int i = 1; i <= 4; i++) {
@@ -581,11 +581,7 @@ public class NMRNEFReader {
                 }
             }
             double scale = 1.0;
-            try {
-                angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
-            } catch (InvalidMoleculeException imE) {
-                log.warn(imE.getMessage(), imE);
-            }
+            angleSet.addAngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
 
         }
     }
@@ -616,7 +612,7 @@ public class NMRNEFReader {
         atomNameColumns[1] = loop.getColumnAsList("atom_name_2");
 
         List<Double> weightColumn = loop.getColumnAsDoubleList("weight", 1.0);
-        List<String> targetValueColumn = loop.getColumnAsList("target_value");
+        List<String> targetValueColumn = loop.getColumnAsList("target_value", ".");
         List<Double> targetErrColumn = loop.getColumnAsDoubleList("target_value_uncertainty", 0.0);
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
@@ -674,18 +670,19 @@ public class NMRNEFReader {
             String targetValue = targetValueColumn.get(i);
             String upperValue = upperColumn.get(i);
             String lowerValue = lowerColumn.get(i);
-            double upper = 1000000.0;
-            if (upperValue.equals(".")) {
-                log.warn("Upper value is a \".\" at line {}", i);
-            } else {
-                upper = Double.parseDouble(upperValue);
-            }
             double lower = 1.8;
             if (!lowerValue.equals(".")) {
                 lower = Double.parseDouble(lowerValue);
             }
-            double weight = weightColumn.get(i);
+            double upper = 1000000.0;
             double target = 0.0;
+            if (upperValue.equals(".") && targetValue.equals(".")) {
+                log.warn("No target or upper value  at line {}", i);
+            } else if (!upperValue.equalsIgnoreCase(".")) {
+                upper = Double.parseDouble(upperValue);
+                target = (upper + lower) / 2.0;
+            }
+            double weight = weightColumn.get(i);
             if (!targetValue.equals(".")) {
                 target = Double.parseDouble(targetValue);
             }

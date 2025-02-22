@@ -311,7 +311,6 @@ public class AnalystApp extends Application {
         boolean projectChanged = ProjectBase.getActive().projectChanged();
         if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
             saveDatasets();
-            waitForCommit();
             Platform.exit();
             System.exit(0);
         }
@@ -360,15 +359,18 @@ public class AnalystApp extends Application {
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GitManager.isCommitting() && (iTry < nTries)) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ex) {
-                break;
+        GUIProject guiProject = GUIProject.getActive();
+        if (guiProject != null) {
+            GitManager gitManager = guiProject.getGitManager();
+            while (gitManager.isCommitting() && (iTry < nTries)) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    break;
+                }
+                iTry++;
             }
-            iTry++;
         }
-
     }
 
     private void addAdvancedTools() {
@@ -572,6 +574,8 @@ public class AnalystApp extends Application {
                 removeStage(stage);
             }
         }
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
+        controller.setNCharts(1);
         PolyChart chart = PolyChartManager.getInstance().getActiveChart();
         if (chart != null) {
             chart.clearOnRegionAdded();

@@ -165,8 +165,8 @@ public class Loop {
         }
     }
 
-    public Map getRowMap(int loopIndex) throws ParseException {
-        Map map = new LinkedHashMap();
+    public Map<String, String> getRowMap(int loopIndex) throws ParseException {
+        Map<String, String> map = new LinkedHashMap<>();
 
         for (Map.Entry eSet : loopTags.entrySet()) {
             ArrayList column = (ArrayList) eSet.getValue();

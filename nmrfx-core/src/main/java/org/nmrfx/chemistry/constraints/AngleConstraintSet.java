@@ -19,7 +19,6 @@ package org.nmrfx.chemistry.constraints;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.Point3;
 
@@ -30,8 +29,6 @@ import java.util.*;
  */
 public class AngleConstraintSet implements ConstraintSet, Iterable {
     public static char[] violCharArray = new char[0];
-    public static int id = 1;
-
     private final MolecularConstraints molecularConstraints;
     private final ArrayList<AngleConstraint> constraints = new ArrayList<>();
     private final Map<String, Integer> map = new HashMap<>();
@@ -47,18 +44,17 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     public static AngleConstraintSet newSet(MolecularConstraints molecularConstraints,
                                             String name) {
-        AngleConstraintSet angleSet = new AngleConstraintSet(molecularConstraints,
+        return new AngleConstraintSet(molecularConstraints,
                 name);
-        return angleSet;
     }
 
-    public void addAngleConstraint(Atom[] atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+    public void addAngleConstraint(Atom[] atoms, double lower, double upper, final double scale) {
         AngleConstraint angleConstraint = new AngleConstraint(atoms, lower, upper, scale, 1.0, (lower + upper) / 2.0, upper - lower, "");
         add(angleConstraint);
     }
 
     public void addAngleConstraint(Atom[] atoms, double lower, double upper, final double scale,
-                                   Double weight, Double target, Double targetErr, String name) throws InvalidMoleculeException {
+                                   Double weight, Double target, Double targetErr, String name) {
         AngleConstraint angleConstraint = new AngleConstraint(atoms, lower, upper, scale, weight, target, targetErr, name);
         add(angleConstraint);
     }
@@ -112,7 +108,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         add((AngleConstraint) constraint);
     }
 
-    public ArrayList<AngleConstraint> get() {
+    public List<AngleConstraint> get() {
         if (dirty) {
             updateAngleData();
         }
@@ -155,7 +151,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         }
         int lastStruct = 0;
         for (int iStruct : structures) {
-            lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
+            lastStruct = Math.max(iStruct, lastStruct);
         }
         nStructures = structures.length;
         violCharArray = new char[lastStruct + 1];
@@ -205,7 +201,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
         dirty = false;
     }
 
-    private final static String[] angleConstraintLoopStrings = {
+    private static final String[] angleConstraintLoopStrings = {
             "_Torsion_angle_constraint.ID",
             "_Torsion_angle_constraint.Torsion_angle_name",
             "_Torsion_angle_constraint.Assembly_atom_ID_1",
@@ -251,10 +247,5 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     @Override
     public String[] getLoopStrings() {
         return angleConstraintLoopStrings;
-    }
-
-    @Override
-    public void resetWriting() {
-        id = 1;
     }
 }

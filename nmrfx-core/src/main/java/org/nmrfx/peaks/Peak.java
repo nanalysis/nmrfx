@@ -1281,6 +1281,16 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    public boolean isFrozen() {
+        boolean frozen = true;
+        for (PeakDim peakDim : peakDims) {
+            if (!peakDim.isFrozen()) {
+                frozen = false;
+                break;
+            }
+        }
+        return frozen;
+    }
     public void tweak(DatasetBase dataset, int[] pdim, int[] planes) throws IOException {
         RegionData regionData = Peak.analyzePeakRegion(this, dataset, planes, pdim);
         double[] maxPoint = regionData.getMaxDPoint();

@@ -190,11 +190,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             widthMap.put(Nuclei.findNuclei(entry.getKey()), new SimpleDoubleProperty(entry.getValue()));
         }
     }
+
     public void setToleranceMap(Map<String, Double> map) {
         for (var entry : map.entrySet()) {
             toleranceMap.put(Nuclei.findNuclei(entry.getKey()), new SimpleDoubleProperty(entry.getValue()));
         }
     }
+
     public ToolBar getToolBar() {
         return navigatorToolBar;
     }
@@ -275,7 +277,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     }
 
-    public  class PeakListSelection {
+    public class PeakListSelection {
         PeakList peakList;
         private BooleanProperty active;
 
@@ -315,7 +317,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             String typeName = peakList.getExperimentType();
             int count = 0;
             if (runAbout != null) {
-                 count = runAbout.getTypeCount(typeName);
+                count = runAbout.getTypeCount(typeName);
             }
             return count;
         }
@@ -333,6 +335,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             return pattern;
         }
+
         public String getTolerance() {
             String tol = "";
             boolean first = true;
@@ -539,7 +542,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         borderPane.setCenter(hBox);
         GridPane gridPane = new GridPane();
         gridPane.setPrefWidth(300);
-        gridPane.setPadding(new Insets(20,20,20,20));
+        gridPane.setPadding(new Insets(20, 20, 20, 20));
         gridPane.setVgap(5);
         gridPane.setHgap(10);
         gridPane.add(new Label("Nucleus"), 0, 0);
@@ -549,17 +552,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         for (Nuclei nucleus : toleranceMap.keySet()) {
             gridPane.add(new Label(nucleus.getNumberName()), 0, row);
             SimpleDoubleProperty toleranceProp = toleranceMap.get(nucleus);
-            TextField tolField = GUIUtils.getDoubleTextField(toleranceProp,2);
+            TextField tolField = GUIUtils.getDoubleTextField(toleranceProp, 2);
             tolField.setPrefWidth(70);
             gridPane.add(tolField, 1, row);
             SimpleDoubleProperty widthProp = widthMap.get(nucleus);
-            TextField widthField = GUIUtils.getDoubleTextField(widthProp,2);
+            TextField widthField = GUIUtils.getDoubleTextField(widthProp, 2);
             widthField.setPrefWidth(70);
             gridPane.add(widthField, 2, row);
             row++;
         }
 
-        hBox.getChildren().addAll(gridPane,  peakTableView);
+        hBox.getChildren().addAll(gridPane, peakTableView);
         HBox.setHgrow(peakTableView, Priority.ALWAYS);
         var model = peakTableView.getSelectionModel();
         configureButton.setDisable(true);
@@ -647,6 +650,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     public void unifyLimits(boolean value) {
         unifyLimitsCheckBox.setSelected(value);
     }
+
     void initPeakNavigator(ToolBar toolBar) {
         this.navigatorToolBar = toolBar;
         peakIdField = new TextField();
@@ -977,17 +981,19 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 int iScore = 0;
                 for (AAScore aaScore : scores) {
                     String name = AtomParser.convert3To1(aaScore.getName());
-                    ResidueLabel resLabel = k == 0 ? leftResidues.get(iScore) : rightResidues.get(iScore);
-                    Color color = Color.WHITE;
-                    Color color2 = Color.LIGHTGRAY;
-                    color = color2.interpolate(color, aaScore.getNorm());
-                    if (aaScore.getNorm() < 1.0e-3) {
-                        name = name.toLowerCase();
-                        color = Color.DARKGRAY;
+                    if (!name.equalsIgnoreCase("p") || (k == 0)) {
+                        ResidueLabel resLabel = k == 0 ? leftResidues.get(iScore) : rightResidues.get(iScore);
+                        Color color = Color.WHITE;
+                        Color color2 = Color.LIGHTGRAY;
+                        color = color2.interpolate(color, aaScore.getNorm());
+                        if (aaScore.getNorm() < 1.0e-3) {
+                            name = name.toLowerCase();
+                            color = Color.DARKGRAY;
+                        }
+                        resLabel.setText(name);
+                        resLabel.setColor(color);
+                        iScore++;
                     }
-                    resLabel.setText(name);
-                    resLabel.setColor(color);
-                    iScore++;
                 }
                 for (int i = iScore; i < leftResidues.size(); i++) {
                     ResidueLabel resLabel = k == 0 ? leftResidues.get(i) : rightResidues.get(i);
@@ -2123,7 +2129,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     Double[] getDimWidth(PeakList peakList, Dataset dataset, List<String> dimNames, int[] iDims, List<String> widthTypes,
-                          String row) {
+                         String row) {
         Double[] dimWidths = new Double[dataset.getNDim()];
         for (int i = 0; i < dimNames.size(); i++) {
             Double width;
@@ -2202,6 +2208,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             peakTableView.refresh();
         }
     }
+
     void setTolerances() {
         if (runAbout.isActive()) {
             runAbout.setTolerances(toleranceMap);
@@ -2374,29 +2381,35 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             Menu menuItem = new Menu("Pattern");
             peakMenu.chartMenu.getItems().add(menuItem);
-            peakMenu.chartMenu.setOnShown(e -> updateChartPeakMenu(peakMenu, menuItem));
+            peakMenu.chartMenu.setOnShown(e -> updateChartPeakMenu(chart, peakMenu, menuItem));
 
         }
     }
 
-    void updateChartPeakMenu(PeakMenu peakMenu, Menu menu) {
+
+    void updateChartPeakMenu(PolyChart chart, PeakMenu peakMenu, Menu menu) {
         Peak peak = peakMenu.getPeak();
         menu.getItems().clear();
+        int[] peakDims = chart.getPeakListAttributes().get(0).getPeakDim();
+        int yDim = peakDims[1];
         if (peak != null) {
             PeakList peakList = peak.getPeakList();
-            for (var sDim : peakList.getSpectralDims()) {
-                var pats = RunAbout.getPatterns(sDim);
-                if (pats.size() > 1) {
-                    for (String pattern : pats) {
-                        PeakDim peakDim = peak.getPeakDim(sDim.getDataDim());
-                        String patternChoice = sDim.getDimName() + " " + pattern.toLowerCase();
-                        if (pattern.equalsIgnoreCase(peakDim.getUser())) {
-                            patternChoice += " <<";
-                        }
-                        MenuItem menuItem = new MenuItem(patternChoice);
-                        menu.getItems().add(menuItem);
-                        menuItem.setOnAction(e -> updatePeakPattern(peak, sDim, pattern.toLowerCase()));
+            SpectralDim sDim = peakList.getSpectralDim(yDim);
+            var pats = RunAbout.getPatterns(sDim);
+            if (pats.size() > 1) {
+                for (String pattern : pats) {
+                    PeakDim peakDim = peak.getPeakDim(sDim.getIndex());
+                    String patternChoice = sDim.getDimName() + " " + pattern.toLowerCase();
+                    String currentPattern = peakDim.getUser();
+                    String testPattern = pattern.endsWith("-") || pattern.endsWith("+")
+                            ? pattern.substring(0, pattern.length() - 1) : pattern;
+
+                    if (testPattern.equalsIgnoreCase(currentPattern)) {
+                        patternChoice += " <<";
                     }
+                    MenuItem menuItem = new MenuItem(patternChoice);
+                    menu.getItems().add(menuItem);
+                    menuItem.setOnAction(e -> updatePeakPattern(peak, sDim, pattern.toLowerCase()));
                 }
             }
         }
@@ -2406,7 +2419,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (pattern.endsWith("-")) {
             pattern = pattern.substring(0, pattern.length() - 1);
         }
-        peak.getPeakDim(sDim.getDataDim()).setUser(pattern);
+        peak.getPeakDim(sDim.getIndex()).setUser(pattern);
         currentSpinSystem.updateSpinSystem();
         currentSpinSystem.compare();
         gotoSpinSystems();
