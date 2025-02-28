@@ -34,8 +34,8 @@ public class ProteinPredictor {
 
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
-    Map<String, Double> rmsMap = new HashMap<>();
-    Map<String, double[]> minMaxMap = new HashMap<>();
+    static Map<String, Double> rmsMap = new HashMap<>();
+    static Map<String, double[]> minMaxMap = new HashMap<>();
     ArrayList<String> attrNames = new ArrayList<>();
     Map<String, Double> shiftMap = new HashMap<>();
     Map<String, Double> tempMap = new HashMap<>();
@@ -232,6 +232,15 @@ public class ProteinPredictor {
         return true;
     }
 
+    public static boolean checkVars(Double... values) {
+        for (Double value : values) {
+            if ((value == null) || Double.isNaN(value) || Double.isInfinite(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void predict(int iRef, int structureNum) throws InvalidMoleculeException, IOException {
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
@@ -246,7 +255,7 @@ public class ProteinPredictor {
         }
     }
 
-    Optional<String> getAtomNameType(Atom atom) {
+    static Optional<String> getAtomNameType(Atom atom) {
         Optional<String> atomType = Optional.empty();
         String aName = atom.getName();
         int aLen = aName.length();
@@ -283,6 +292,13 @@ public class ProteinPredictor {
             atomType = Optional.of(useName);
         }
         return atomType;
+    }
+
+    public static double[] getMinMax(String type) throws IOException {
+        if (minMaxMap.isEmpty()) {
+            initMinMax();
+        }
+        return minMaxMap.get(type);
     }
 
     public void predict(Residue residue, int iRef, int structureNum) throws IOException {
@@ -331,8 +347,8 @@ public class ProteinPredictor {
         }
     }
 
-    private void initMinMax() throws IOException {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/fitOutput.txt");
+    public static void initMinMax() throws IOException {
+        InputStream iStream = ProteinPredictor.class.getResourceAsStream("/data/predict/protein/fitOutput.txt");
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {
                 String line = reader.readLine();
@@ -559,5 +575,4 @@ public class ProteinPredictor {
 
         return result;
     }
-
 }

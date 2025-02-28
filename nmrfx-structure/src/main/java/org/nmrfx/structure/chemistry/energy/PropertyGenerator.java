@@ -579,8 +579,11 @@ public class PropertyGenerator {
         atomName = atomName.toUpperCase();
         String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
         Atom atom = molecule.findAtom(atomSpec);
+        if (atom == null) {
+            log.error("atom not found in getAtomProperties " + atomSpec);
+            return false;
+        }
         return getAtomProperties(atom, structureNum);
-
     }
 
     public boolean getAtomProperties(Atom atom, int structureNum) {

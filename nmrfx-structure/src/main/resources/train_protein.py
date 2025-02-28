@@ -1,24 +1,24 @@
-import smile.validation.Validation;
-import smile.validation.CrossValidation;
-import smile.data.DataFrame;
-import smile.data.formula.Formula;
-import smile.regression.DataFrameRegression;
-import smile.regression.LASSO;
 
-from org.nmrfx.processor.optimization import SMILECrossValidator
+from org.tribuo import MutableDataset
+from org.tribuo.data.csv import CSVLoader
+from org.tribuo.evaluation import TrainTestSplitter
+from org.tribuo.evaluation import CrossValidation
+from org.tribuo.regression import RegressionFactory
+from org.tribuo.regression import Regressor
+from org.tribuo.regression.evaluation import RegressionEvaluator
+from org.tribuo.regression.slm import LARSLassoTrainer
+from  java.nio.file import Paths
+from java.lang import Double
+
 from org.nmrfx.structure.chemistry.energy import PropertyGenerator
 from org.nmrfx.structure.chemistry.predict import ProteinPredictor
+from org.nmrfx.structure.chemistry.predict import Predictor
+from org.nmrfx.structure.chemistry.predict import ProteinPredictorTrainer
 from org.nmrfx.structure.chemistry import Molecule
-from smile.regression import LASSO
-from smile.validation import Validation
-from smile.validation import CrossValidation
-from smile.validation import RMSE
-from smile.data import DataFrame
-from smile.data.formula import Formula
 from org.apache.commons.math3.linear import Array2DRowRealMatrix
 from org.nmrfx.structure.chemistry import SmithWatermanBioJava
-from org.nmrfx.project import StructureProject
-from java.util.function import BiFunction
+from org.nmrfx.structure.project import StructureProject
+from org.nmrfx.chemistry.io import NMRStarWriter
 import array
 import molio
 import star
@@ -37,13 +37,15 @@ proteinPredictor = None
 
 #set directories
 bmrbHome = '/data/star3/bmr'
-pdbHome = '/data/pdb/'
+bmrbHome = '/mnt/data/star3a/bmr'
+pdbHome = '../pdb/'
 
 #local directory for unzipped pdb files
 pdbDir = '../pdb/'
 
 #set paths
 homeDir = '../output/080620'
+datasetFileName = 'train.txt'
 datasetFileName = 'train_and_test_dataset_clean.txt'
 testSetFile = 'testSet.txt'
 
@@ -59,8 +61,8 @@ aaS = ['ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLU', 'GLN', 'GLY', 'HIS', 'ILE', 'LE
 attrDir = 'baseAttrs'
 aaGroups = {}
 
-aaGroups['C'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'], ['ALA'], ['PRO'], ['GLY'], ['ILE', 'VAL', 'LEU'], ['THR'], ['CYS', 'SER'], ['ARG', 'LYS'], ['MET']]
-aaGroups['CA'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'], ['ALA'], ['PRO'], ['GLY'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['CYS', 'SER', 'MET'], ['ARG', 'LYS']]
+aaGroups['C'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'], ['ALA'], ['PRO'], ['GLY'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['CYS', 'SER'], ['ARG', 'LYS'], ['MET']]
+aaGroups['CA'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'], ['ALA'], ['PRO'], ['GLY'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['CYS', 'SER'], ['MET'], ['ARG', 'LYS']]
 aaGroups['CB'] = [['ASP', 'ASN'], ['GLU', 'GLN'], ['HIS', 'TRP', 'PHE', 'TYR'],  ['PRO'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['CYS'], ['SER'], ['MET'], ['ARG', 'LYS']]
 aaGroups['CD'] = [['LYS'],['ARG'], ['PRO']]
 aaGroups['ACD'] = [['HIS'], ['TRP'],[ 'PHE', 'TYR']]
@@ -71,7 +73,7 @@ aaGroups['ACE'] = [['PHE', 'TYR']]
 aaGroups['ACZ'] = [['PHE']]
 aaGroups['CG'] = [['GLU'], ['GLN'], ['VAL'], ['LEU'], ['ILE'], ['PRO'], ['ARG'], ['LYS'], ['MET']]
 aaGroups['H'] = [['ALA', 'GLY'], ['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET']]
-aaGroups['HA'] = [['ALA', 'GLY'], ['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET'], ['PRO']]
+aaGroups['HA'] = [['ALA'], ['GLY'], ['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET'], ['PRO']]
 aaGroups['HB'] = [['ASP'], ['ASN'], ['GLU'], ['GLN'], ['HIS'], ['TRP'], ['PHE'], ['TYR'], ['ALA'], ['ILE'], ['VAL'], ['LEU'], ['THR'], ['SER'], ['CYS'], ['ARG'], ['LYS'], ['MET'], ['PRO']]
 aaGroups['HD'] = [['ARG'],  ['PRO'], ['LEU'], ['LYS']]
 aaGroups['AHD'] = [['HIS'], ['TRP', 'PHE', 'TYR']]
@@ -90,6 +92,7 @@ aaGroups['MHG'] = [['ILE'], ['THR'], ['VAL']]
 aaGroups['MHE'] = [['MET']]
 aaGroups['MCE'] = [['MET']]
 aaGroups['N'] = [['ALA'], ['ARG'], ['ASN'], ['ASP'], ['CYS'], ['GLN'], ['GLU'], ['GLY'], ['HIS'], ['ILE'], ['LEU'], ['LYS'], ['MET'], ['PHE'], ['SER'], ['THR'], ['TRP'], ['TYR'], ['VAL']]
+atoms = ["MHB",  "ACE","ACD","AHD","AHE","C", "CA", "CB", "CG", "CD", "CE", "ACZ", "H", "HA", "HB", "HG", "HD", "HE", "AHZ", "N"]
 
 
 
@@ -196,12 +199,18 @@ def loadBMRB(bmrbId):
 
 def getUseFields2(fields, aName, aa, residues):
     use = []
+    skipChi = False
     skipChi2 = False
-    if aa in ['ALA','GLY']:
+    if aa in ['ALA','GLY','PRO']:
+        skipChi2 = True
+        skipChi = True
+    if aa in ['SER','CYS','THR','ASP','ASN','SER','VAL']:
         skipChi2 = True
     for (i,field) in enumerate(fields):
         ok = True
         if skipChi2 and field.find('chi2C') != -1:
+            ok = False
+        if skipChi and field.find('chiC') != -1:
             ok = False
         if (not 'CYS' in residues)  and field == "DIS":
             ok = False
@@ -221,7 +230,7 @@ def disorderCalc(contactSum, minS, maxS):
     eValue = math.exp(sValue)
     return (1.0 - eValue) / (1.0 + eValue)
 
-def filterAttr(fileName, outFileName, use, aName, aa, residues, errDict, trimDict):
+def filterAttr(fileName, outFileName, use, aName, aa, residues, errDict, trimDict, testMode):
     global iLine
     global homeDir
     writeHeader = False
@@ -230,7 +239,9 @@ def filterAttr(fileName, outFileName, use, aName, aa, residues, errDict, trimDic
     use = None
     dir, file = os.path.split(fileName)
     mapFileName = os.path.join(homeDir, "maps", file)
-    print fileName
+    if testMode:
+        testpdbs = getTestSet()
+    hMode = aName[0] == 'H' or aName[0] == 'M'
     with open(outFileName, 'a') as fOut, open(mapFileName, 'a') as fOut2:
         with open(fileName, 'r') as f1:
             header = f1.readline().strip()
@@ -242,6 +253,10 @@ def filterAttr(fileName, outFileName, use, aName, aa, residues, errDict, trimDic
                if len(line) > 0:
                    fields = line.split('\t')
                    pdbID = fields[0]
+                   if testMode and not pdbID in testpdbs:
+                       continue
+                   elif not testMode and pdbID in testpdbs:
+                       continue
                    atomName = fields[2]
                    #check whether atom should be trimmed
                    if trimDict and (pdbID, atomName) in trimDict[aName]:
@@ -253,7 +268,7 @@ def filterAttr(fileName, outFileName, use, aName, aa, residues, errDict, trimDic
                        continue
                    if errDict and pdbID in errDict:
                        v.cs -= float(errDict[pdbID])
-                   a = getAttr(v, aa)
+                   a = getAttr(v, aa, hMode)
                    fields = []
                    names = []
                    for (name,value) in zip(a[0::2],a[1::2]):
@@ -337,14 +352,16 @@ def safeCos(v):
     else:
         return math.cos(v)
 
-def getAttr(v, resName):
+def getAttr(v, resName, hMode):
     a = []
+    hMode = False
     if useContacts:
         a += ['ring',v.ring]
-        a += ['hshift3',v.hshift3]
-        a += ['hshift2',v.hshift2]
-        a += ['hshift1',v.hshift1]
-        a += ['eshift',v.eshift]
+        if hMode:
+            a += ['hshift3',v.hshift3]
+            a += ['hshift2',v.hshift2]
+            a += ['hshift1',v.hshift1]
+            a += ['eshift',v.eshift]
 
     a += ['cos(chiC)',safeCos(v.chiC)]
     a += ['cos(chi2C)',safeCos(v.chi2C)]
@@ -481,13 +498,13 @@ def getAttr(v, resName):
     a += ['DIS',v.DIS]
     for aa in aaS:
         a += [aa,isRes(resName,aa)]
-    a += ['h3',v.h3]
+#    a += ['h3',v.h3]
     #a += ['methyl',v.methyl]
     #a += ['fRandom',v.fRandom]
     #a += ['acs',v.acs]
     #a += ['acscorr',v.acscorr]
     a += ['cs',v.cs]
-    a += ['contacts',v.contacts]
+#    a += ['contacts',v.contacts]
     return a
 
 def getBaseAttr(values, resName, proP, proS):
@@ -562,6 +579,8 @@ def setChemShifts(pdbMol, bmrbMol, refSet='R'):
         return None, None
     pdbResidues = pdbMol.getEntity(pdbChain).getResidues()
     bmrbResidues = bmrbMol.getEntity(bmrbChain).getResidues()
+    for atom in pdbMol.getAtoms():
+        atom.setPPMValidity(refSet, False)
     for pdbResidue, index in izip(pdbResidues, alignIndex):
         if index is None:
             continue
@@ -571,18 +590,23 @@ def setChemShifts(pdbMol, bmrbMol, refSet='R'):
         if pdbResName == bmrbResName:
             for bmrbAtom in bmrbResidue.getAtoms():
                 aName = bmrbAtom.getName()
-                ppm = bmrbAtom.getPPM()
+
                 pdbResNum = pdbResidue.getNumber()
-                if ppm is None:
-                    continue
                 pdbAtomName = pdbChain + ':' + str(pdbResNum) + '.' + aName
                 pdbAtom = pdbMol.findAtom(pdbAtomName)
                 if pdbAtom is None:
                     continue
+
+                ppm = bmrbAtom.getPPM()
+                if ppm is None:
+                    continue
+                print(aName, ppm, pdbAtom)
                 if refSet == 'R':
                     pdbAtom.setRefPPM(ppm)
                 else:
                     pdbAtom.setPPM(refSet, ppm)
+                print('pdbatom', pdbAtom, pdbAtom.getPPM()) 
+
     return pdbChain, bmrbChain
 
 def getAtomNameType(atom):
@@ -611,7 +635,6 @@ def getAtomNameType(atom):
 
 #loads molecule object and generates attr file
 def doProtein(mol, chain, pg):
-    print 'do Protein'
     results = {}
     polymer = mol.getEntity(chain)
     residues = polymer.getResidues()
@@ -627,7 +650,7 @@ def doProtein(mol, chain, pg):
         if residue.next != None:
             if residue.next.getName() == "PRO":
                 proS = 1
-        if not pg.getResidueProperties(polymer, residue):
+        if not pg.getResidueProperties(polymer, residue, 0):
             print "skip", res, resName
             continue
         resAtoms = residue.getAtoms()
@@ -635,7 +658,7 @@ def doProtein(mol, chain, pg):
             atomName = atom.getName()
             aType = getAtomNameType(atom)
             if aType != None:
-                if not pg.getAtomProperties(polymer, res, resName, atomName):
+                if not pg.getAtomProperties(polymer, res, resName, atomName, 0):
                     print "skip", res, resName, atomName
                     continue
 
@@ -663,7 +686,7 @@ def doProteinOn(mol, chain, pg):
         if residue.next != None:
             if residue.next.getName() == "PRO":
                 proS = 1
-        if not pg.getResidueProperties(polymer, residue):
+        if not pg.getResidueProperties(polymer, residue, 0):
             print "skip", res, resName
             continue
         for rootAName in nativeAtoms:
@@ -685,8 +708,7 @@ def doProteinOn(mol, chain, pg):
                 atom = residue.getAtom(atomName)
                 if atom == None:
                     continue
-
-                if not pg.getAtomProperties(polymer, res, resName, atomName):
+                if not pg.getAtomProperties(atom, 0):
                     continue
 
                 values = pg.getValues()
@@ -714,18 +736,19 @@ def setShifts(pdbMol, bmrbId, refSet='R'):
 
     bmrbMol = loadBMRB(bmrbId)
     if bmrbMol == None:
-        return None, None
+        return None, None,None
 
     pdbChain, bmrbChain = setChemShifts(pdbMol, bmrbMol, refSet)
-    return pdbChain, bmrbChain
+    return pdbChain, bmrbChain, bmrbMol
 
 def doAtoms(mol, chain):
     attrsDict = {}
     pg = PropertyGenerator()
     try:
-        pg.init(mol)
+        pg.init(mol, 0)
         atomDict = doProteinOn(mol, chain, pg)
-    except:
+    except Exception, e:
+        print("Caught Python Exception:", e)
         return None
     attrsDict.update(atomDict)
     return attrsDict
@@ -738,24 +761,77 @@ def genAttrsFromList(fileName):
             line = line.split('\t')
             pdbId = line[0].strip()
             bmrbId = line[1].strip()
-            print pdbId, bmrbId
             Molecule.removeAll()
             if pdbExists(pdbId) is False:
                 print 'cannot locate pdb', pdbId
                 continue
             pdbFile = getPDBFile(pdbId)
             pdbMol = molio.readPDB(pdbFile)
-            pdbChain, bmrbChain = setShifts(pdbMol, bmrbId)
+            print('setshifts')
+            pdbChain, bmrbChain, bmrbMol = setShifts(pdbMol, bmrbId)
             if pdbChain and bmrbChain:
-                print pdbChain, bmrbChain
                 pdbMol.setActive()
                 molDict = doAtoms(pdbMol, pdbChain)
                 if molDict is None:
                     saveError(pdbId, bmrbId)
                     continue
+                print('savebase')
                 saveAllBaseAttrs(pdbId, mode, molDict)
+                print('savedbase')
             else:
                 saveError(pdbId, bmrbId)
+
+def genSTARFromList(fileName):
+    global homeDir
+    global proteinPredictor
+    if proteinPredictor == None:
+        proteinPredictor = ProteinPredictor()
+    predictor = Predictor()
+    with open(fileName, 'r') as f1:
+        for line in f1:
+            line = line.split('\t')
+            pdbId = line[0].strip()
+            bmrbId = line[1].strip()
+            Molecule.removeAll()
+            StructureProject.getActive().clearAllMolecules()
+            StructureProject.getActive().clearAllPeakLists()
+            StructureProject.getActive().clearAllDatasets()
+            if pdbExists(pdbId) is False:
+                print 'cannot locate pdb', pdbId
+                continue
+            pdbFile = getPDBFile(pdbId)
+            pdbMol = molio.readPDB(pdbFile)
+            print('setshifts',pdbId, bmrbId)
+            pdbChain, bmrbChain, bmrbMol = setShifts(pdbMol, bmrbId, 0)
+            StructureProject.getActive().clearAllPeakLists()
+            StructureProject.getActive().clearAllDatasets()
+            if pdbChain and bmrbChain:
+                bmrbMol.remove()
+                pdbMol.setActive()
+                predictor.setToBMRBValues(1)
+                proteinPredictor.predictRandom(pdbMol, 1)
+                outFile = os.path.join(homeDir,'starshift',bmrbId+'.str')
+                NMRStarWriter.writeAll(outFile)
+            else:
+                saveError(pdbId, bmrbId)
+
+def genAttrFromSTAR():
+    attrsPath = os.path.join(homeDir, 'starshift', '*.str')
+    print(attrsPath)
+    files = glob.glob(attrsPath)
+    trainer = ProteinPredictorTrainer()
+    iStructure = 0
+    for i,filename in enumerate(files):
+        print(filename)
+        Molecule.removeAll()
+        star3 = star.read(filename)
+        molecule = Molecule.getActive()
+        print("gen data")
+        trainer.addTrainData(molecule, iStructure)
+        print("gen data")
+    #    if i > 20:
+    #        break
+    trainer.saveData("valuemaps")
 
 def saveError(pdbId, bmrbId):
     with open('errorEntries.txt', 'a') as f:
@@ -814,7 +890,7 @@ def assessPdbInternal(pdbId, bmrbId):
     Molecule.removeAll()
     pdbFile = getPDBFile(pdbId)
     pdbMol = molio.readPDB(pdbFile)
-    pdbChain, bmrbChain = setShifts(pdbMol, bmrbId, 0)
+    pdbChain, bmrbChain, bmrbMol = setShifts(pdbMol, bmrbId, 0)
     proteinPredictor.init(pdbMol)
     proteinPredictor.setReportAtom(reportAtom)
     proteinPredictor.predict(-1)
@@ -867,6 +943,18 @@ def getAtomType(atom):
     if len(atomtype) > 2:
         atomtype = atomtype[:2]
     return atomtype
+
+def getShortName(aName):
+    if aName[0] == 'M':
+        if len(aName) > 3:
+            aName = aName[:3]
+    elif aName[0] == 'A':
+        if len(aName) > 3:
+            aName = aName[:3]
+    else:
+        if len(aName) > 2:
+            aName = aName[:2]
+    return aName
 
 def doStdTrim(delta, atomType):
     limitsStd = {'C':5.0,'CA':5.0,'CB':5.0,'CG':5.0,'CD':5.0,'CE':5.0,'ACZ':5.0,'ACD':5.0,'ACE':5.0,
@@ -990,15 +1078,17 @@ def filterEntries(pdbIds, bmrbIds):
                 cleanFile.write('{}\t{}\n'.format(pdbId, bmrbId))
     exit(0)
 
-def combine(trimDict=None, reRef=False):
+def combine(trimDict=None, reRef=False, testMode=False):
     global homeDir
     cmode = 'all'
+    combineMethylene()
     for mode in ['sngl']:
         for aName in atoms:
             for aaGroup in aaGroups[aName]:
                 groupName = '_'.join(aaGroup)
-                outFile = os.path.join(homeDir, 'attrs', cmode + '_' + aName + '_' + groupName + '.txt')
-                mapFilePath = os.path.join(homeDir, 'maps', mode + '_' + aName + '_*.txt')
+                atomType = getShortName(aName)
+                outFile = os.path.join(homeDir, 'attrs', cmode + '_' + atomType + '_' + groupName + '.txt')
+                mapFilePath = os.path.join(homeDir, 'maps', mode + '_' + atomType + '_*.txt')
                 mapFiles = glob.glob(mapFilePath)
                 if os.path.exists(outFile):
                     os.remove(outFile)
@@ -1007,19 +1097,23 @@ def combine(trimDict=None, reRef=False):
                         os.remove(mapFile)
     for mode in ['sngl']:
         for aName in atoms:
+            atomType = getShortName(aName)
             for aaGroup in aaGroups[aName]:
                 groupName = '_'.join(aaGroup)
-                outFile = os.path.join(homeDir, 'attrs', cmode + '_' + aName + '_' + groupName + '.txt')
+                outFile = os.path.join(homeDir, 'attrs', cmode + '_' + atomType + '_' + groupName)
+                if testMode:
+                    outFile += '_test'
+                outFile += '.txt'
                 use = None
                 for aa in aaGroup:
-                    fileName = os.path.join(homeDir, attrDir, mode + '_' + aName + '_' + aa + '.txt')
+                    fileName = os.path.join(homeDir, attrDir, mode + '_' + atomType + '_' + aa + '.txt')
                     if not os.path.exists(fileName):
                         continue
                     if reRef is True:
                         errDict = getCorr(aName)
                     else:
                         errDict = {}
-                    filterAttr(fileName, outFile, use, aName, aa, aaGroup, errDict, trimDict)
+                    filterAttr(fileName, outFile, use, atomType, aa, aaGroup, errDict, trimDict, testMode)
 
 def scaleMatrix(matrix, contacts, minSum, maxSum):
     rows = len(matrix)
@@ -1050,36 +1144,19 @@ def readMap(fileName):
                 map.append((pdbID, atomName))
     return map
 
-def getMatrix(fileName, map, testMode=False):
-    if testMode:
-        testpdbs = getTestSet()
-    with open(fileName, 'r') as attrFile:
-        header = attrFile.readline()
-        headerFields = header.strip().split('\t')
-        trainMatrix = []
-        traincValues = []
-        testMatrix = []
-        testcValues = []
-        for attrline, mapItem in zip(attrFile, map):
-            pdb, atom = mapItem
-            attrline = attrline.strip()
-            fields = attrline.split('\t')
-            if len(fields) != len(headerFields):
-                exit(0)
-            values = [float(v) for v in fields]
-            contacts = values[-1]
-            if testMode and pdb in testpdbs:
-                xRow = array.array('d', values[:-1])
-                testMatrix.append(xRow)
-                testcValues.append(contacts)
-            else:
-                xRow = array.array('d', values[:-1])
-                trainMatrix.append(xRow)
-                traincValues.append(contacts)
-        if testMode:
-            return headerFields, trainMatrix, traincValues, testMatrix, testcValues
-        else:
-            return headerFields, trainMatrix, traincValues
+def getMatrix(fileName, splitMode=False):
+    regressionFactory = RegressionFactory()
+    csvLoader = CSVLoader('\t',regressionFactory)
+    dataSource = csvLoader.loadDataSource(Paths.get(fileName),"cs")
+    if splitMode:
+        splitter = TrainTestSplitter(dataSource, 0.7, 0)
+        trainData = MutableDataset(splitter.getTrain())
+        evalData = MutableDataset(splitter.getTest())
+    else:
+        trainData = MutableDataset(dataSource)
+        evalData = None
+    return(trainData, evalData)
+
 
 def processMatrix(headerFields, matrix):
     dict = {}
@@ -1095,83 +1172,69 @@ def processMatrix(headerFields, matrix):
             noAttr.append(header)
     return noAttr
 
+def train(name, trainer, trainData):
+    model = trainer.train(trainData)
+
+    eval = RegressionEvaluator()
+    evaluation = eval.evaluate(model,trainData)
+ 
+    dimension = Regressor("DIM-0",Double.NaN)
+    outStr = "RMSE %7.4f MAE %7.4f R2 %7.4f" % (evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension))
+    print(outStr)
+    return model
+
+def crossVal(name, trainer, trainData):
+    eval = RegressionEvaluator()
+    crossValidator = CrossValidation(trainer, trainData, eval, 10)
+    evs = crossValidator.evaluate()
+    for ev in evs:
+        print(ev)
+    return evs
+ 
+
+def evaluate(model, testData):
+    eval = RegressionEvaluator()
+    evaluation = eval.evaluate(model,testData)
+    dimension = Regressor("DIM-0",Double.NaN)
+    return evaluation.mae(dimension)
+
+
 # generates matrix from combined attrs file, passes scaled matrix to lasso predictor
 # maps pdbId and atomName to experimental shift and predicted shift
 def fit(fileName, minSum, maxSum, testMode=False, coefsSave=False, optMinMax=False):
     map = readMap(fileName)
+    trainData, evalData = getMatrix(fileName)
+    lasso = LARSLassoTrainer()
+    model = train(fileName, lasso, trainData)
+    predictions = model.predict(trainData)
+    yValues = []
+    pValues = []
+    for i,pred in enumerate(predictions):
+        mValue = map[i]
+        example = pred.getExample()
+        eValue = example.getOutput().getValues()[0] 
+        pValue = pred.getOutput().getValues()[0] 
+        yValues.append(eValue)
+        pValues.append(pValue)
+        delta = pValue - eValue
 
-    if testMode:
-        headerFields, trainMatrix, traincValues, testMatrix, testcValues = getMatrix(fileName, map, testMode)
-    else:
-        headerFields, trainMatrix, traincValues = getMatrix(fileName, map)
+    mae = evaluate(model, trainData)
 
     dir, file = os.path.split(fileName)
-    tail = '_'.join('{}'.format(i) for i in file.split('.')[0].split('_')[1:])
-
-    if optMinMax:
-        bestRMS = 1000.0
-        for j in range(0, 10):
-            minSum = 100 * j
-            for k in range(j+1, 20):
-                maxSum = 200 * k
-                trainscaledMatrix = scaleMatrix(trainMatrix, traincValues, minSum, maxSum)
-                ols = LASSO(trainscaledMatrix, trainyValues, 0.001)
-                intercept = ols.intercept()
-                rms = math.sqrt(ols.RSS() / len(trainyValues))
-                if rms < bestRMS:
-                    bestMin = minSum
-                    bestMax = maxSum
-                    bestRMS = rms
-        minSum = bestMin
-        maxSum = bestMax
-
-    trainscaledMatrix = scaleMatrix(trainMatrix, traincValues, minSum, maxSum)
-    dropHeaders = processMatrix(headerFields[:-1], trainscaledMatrix)
-    trainDf = DataFrame.of(trainscaledMatrix, headerFields)
-    trainDf = trainDf.drop(dropHeaders)
-    trimHeaderFields = trainDf.names()
-
-    formula = Formula("cs")
-    lassoModel = LASSO.fit(formula, trainDf, lamVal)
-
-
-    rms = math.sqrt(lassoModel.RSS() / trainDf.nrows())
-    smileCV = SMILECrossValidator(formula, trainDf, lamVal)
-    xValidPreds = smileCV.cv(10)
-    xrms = RMSE.of(trainDf.column("cs").array(), xValidPreds)
-
-    if testMode:
-        testscaledMatrix = scaleMatrix(testMatrix, testcValues, minSum, maxSum)
-        testDf = DataFrame.of(testscaledMatrix, headerFields)
-        testDf = testDf.drop(dropHeaders)
-        testValidPreds = Validation.test(lassoModel, testDf)
-        testrms = RMSE.of(testDf.column("cs").array(), testValidPreds)
-
-    intercept = lassoModel.intercept()
-    coefs = lassoModel.coefficients()
-    cols = len(coefs)
-
-    if testMode:
-        yValues = testDf.column("cs").array()
-        dataframe = testDf.toArray()
-        resultsPath = os.path.join(homeDir,'testresults', file)
-        print '{:20}\t{}\t{}\t{}'.format(tail, testrms, testDf.nrows(), xrms)
-    else:
-        yValues = trainDf.column("cs").array()
-        dataframe = trainDf.toArray()
-        resultsPath = os.path.join(homeDir, 'results', file)
-        print '{:20}\t{}\t{}\t{}'.format(tail, rms, xrms, trainDf.nrows())
+    resultsPath = os.path.join(homeDir, 'results', file)
 
     with open(resultsPath, 'w') as fOut:
-        for yValue, row,  descript in zip(yValues, dataframe, map):
-            predValue = lassoModel.predict(row[:-1])
-            delta = yValue - predValue
-            fOut.write('{}\t{}\t{}\t{}\t{}\n'.format(yValue, predValue, delta, descript[0], descript[1]))
+        for yValue, pValue, descript in zip(yValues,pValues, map):
+            delta = yValue - pValue
+            fOut.write('{}\t{}\t{}\t{}\t{}\n'.format(yValue, pValue, delta, descript[0], descript[1]))
+            # fOut.write('{}\t{}\t{}\n'.format(yValue, predValue, delta))
     if coefsSave:
-        saveCoefs(tail, trimHeaderFields, coefs, cols, intercept)
-    if testMode:
-        return testrms, testDf.nrows(), xrms
-    return rms, trainDf.nrows(), xrms
+        dir, file = os.path.split(fileName)
+        file = file[0:-4] + '.model'
+        modelFile = os.path.join(homeDir, 'models', file)
+        model.serializeToFile(Paths.get(modelFile))
+
+    return mae, trainData.size(), mae
 
 def saveCoefs(filename, headerFields, coefs, cols, intercept):
     coefDir = os.path.join(homeDir, 'coefs', filename+'.txt')
@@ -1209,13 +1272,48 @@ def getTestSet():
             testpdbs.append(pdbId)
     return testpdbs
 
+def combineMethylene():
+    mode = 'sngl'
+    baseAttrsPath = os.path.join(homeDir, attrDir, mode + "_" + 'H[BGD][23]' + "_" + '*' + ".txt")
+    files = glob.glob(baseAttrsPath)
+    atomNameMap = {}
+    for filename in files:
+        dir,file = os.path.split(filename)
+        parts = file.split('_')
+        aname = parts[-2]
+        if aname[0] == 'H' and len(aname) >  2:
+            rootName = aname[0:-1]
+        else:
+            rootName = aname
+        resName = parts[-1][0:-4]
+        resRoot = (resName, rootName)
+        if not resRoot in atomNameMap:
+            atomNameMap[resRoot] = []
+        atomNameMap[resRoot].append(aname)
+    for resRoot in atomNameMap:
+        (resName,rootName) = resRoot
+        baseAttrsPath = os.path.join(homeDir, attrDir, mode + "_" + rootName + "_" + resName + ".txt")
+        print('make', baseAttrsPath)
+        with open(baseAttrsPath, 'w') as fOut:
+            first = True
+            for aName in atomNameMap[resRoot]:
+                baseAttrsPath2 = os.path.join(homeDir, attrDir, mode + "_" + aName + "_" + resName + ".txt")
+                print('add', baseAttrsPath2)
+                with open(baseAttrsPath2, 'r') as fIn:
+                    if not first:
+                        fIn.readline()
+                    else:
+                        first = False
+                    for line in fIn:
+                        fOut.write(line)
+
+
 def fitAll(testMode=False, coefsSave=False, getRMS=False, optMinMax=False):
     fitFilename = os.path.join(homeDir, 'fitOutput.txt')
     rmsDict = {}
-    print 'fitall', fitFilename
     with open(fitFilename, 'w') as fitFile:
         for atom in atoms:
-            print atom
+            print 'fit',atom
             minSum, maxSum = minMaxSums[atom]
             sum = 0.0
             sumx = 0.0
@@ -1237,7 +1335,6 @@ def fitAll(testMode=False, coefsSave=False, getRMS=False, optMinMax=False):
             if total == 0:
                 print atom,attrsPath
             rmsDict[atom] = math.sqrt(sum / total)
-            print atom, rmsDict[atom]
             fitFile.write('{}\t{}\t{}\t{}\n'.format(atom, rmsDict[atom], xrms, totalx))
     if getRMS:
         return rmsDict
@@ -1301,13 +1398,11 @@ def calCorr(trimDict):
                         currValues[0] += 1
                         currValues[1] += float(delta)
     
-    print refErrorDict                    
     for corrType in refErrorDict:
         refErrorFile = os.path.join(homeDir, 'refErrors', corrType + '.txt')
         errDict = getCorrFromType(corrType)
         with open(refErrorFile, 'w') as f1:
             corrDict = refErrorDict[corrType]
-            print refErrorFile
             for pdbId in corrDict:
                 values = corrDict[pdbId]
                 currValue = 0.0
@@ -1468,7 +1563,9 @@ def gen(args):
     homeDir = args.homeDir
     newDir(homeDir)
     print homeDir, args.dataset, 'gen'
-    genAttrsFromList(args.dataset)
+    #genAttrsFromList(args.dataset)
+    #genSTARFromList(args.dataset)
+    genAttrFromSTAR()
 
 
 def cpAttrs(args):
@@ -1509,7 +1606,7 @@ def initialProp(args):
     global homeDir
     homeDir = args.homeDir
     #combine sngl attr files from genAttrs() into all files based on aa groups
-    combine()
+    combine(testMode=args.test)
     #initial fit to generate result files, subsequent trim and rereference is based on the delta value
     fitAll()
 
@@ -1617,7 +1714,8 @@ parser_doall.add_argument('-nocontacts', action='store_true', default=False)
 parser_doall.add_argument('-test', action='store_true', default=False)
 parser_doall.set_defaults(func=doAll)
 
-parser_init = subparsers.add_parser('init', help='initial fit from base attr files, home dir')
+parser_init = subparsers.add_parser('init', help='initial fit from base attr files, home dir, test')
+parser_init.add_argument('-test', action='store_true', default=False)
 parser_init.add_argument('homeDir', nargs='?', default=homeDir, type=str)
 parser_init.set_defaults(func=initialProp)
 
