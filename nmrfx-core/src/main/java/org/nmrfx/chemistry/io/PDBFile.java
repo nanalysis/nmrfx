@@ -449,7 +449,7 @@ public class PDBFile {
 
             if (structureNumber < 0) {
                 readJustOne = false;
-                structureNumber = 0;
+                structureNumber = molecule.getActiveStructures().length;
             }
 
             if (readJustOne && !molecule.structures.contains(Integer.valueOf(structureNumber))) {
