@@ -44,7 +44,7 @@ public class SuperMol {
         this.molecule = Molecule.get(molName);
     }
 
-    public ArrayList<SuperResult> doSuper(int fixMol, int moveMol, boolean changeCoordinates) {
+    public ArrayList<SuperResult> doSuper(int fixMol, int moveMol, boolean changeCoordinates, int[] moveStructures) {
         int j = 0;
         SpatialSet spatialSet;
         Point3 pt1;
@@ -54,7 +54,9 @@ public class SuperMol {
         x = new double[selected.size()][3];
         y = new double[selected.size()][3];
         ArrayList<SuperResult> superRMS = new ArrayList<SuperResult>();
-        int moveStructures[] = molecule.getActiveStructures();
+        if (moveStructures == null) {
+            moveStructures = molecule.getActiveStructures();
+        }
         int fixStructures[] = moveStructures;
         if (fixMol >= 0) {
             fixStructures = new int[1];
