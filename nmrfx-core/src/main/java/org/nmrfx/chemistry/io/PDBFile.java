@@ -446,7 +446,7 @@ public class PDBFile {
 
             if (structureNumber < 0) {
                 readJustOne = false;
-                structureNumber = molecule.getActiveStructures().length;
+                structureNumber = molecule.getActiveStructures().length > 0 ? molecule.getActiveStructureList().getLast() + 1 : 0;
             }
 
             if (readJustOne) {
@@ -582,7 +582,7 @@ public class PDBFile {
                     atom.setBFactor((float) atomParse.bfactor);
 
                 } else if (string.startsWith("MODEL ")) {
-                    if (!readJustOne) {
+                    if (readJustOne) {
                         String modString = string.substring(6).trim();
                         if (!modString.isEmpty()) {
                             structureNumber = Integer.parseInt(modString);
