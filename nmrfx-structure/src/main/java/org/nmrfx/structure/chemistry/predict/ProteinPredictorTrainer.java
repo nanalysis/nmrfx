@@ -444,6 +444,7 @@ public class ProteinPredictorTrainer {
         getErrorsByMolecule();
         for (var entry : types.entrySet()) {
             errorMap.clear();
+            skipMap.clear();
             doPredict(entry.getValue());
             getSkip(fitResult.rmsd * trimRatio);
             fitResult = allErrors();
