@@ -283,7 +283,11 @@ public class ProteinPredictor {
                 useName = "AC" + aName.charAt(1);
             }
         } else {
-            useName = aName;
+            if (aName.length() > 2) {
+                useName = aName.substring(0, 2);
+            } else {
+                useName = aName;
+            }
         }
         if (useName != null) {
             useName += "_" + atom.getEntity().getName();
