@@ -23,7 +23,6 @@ import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class SuperMol {
@@ -45,19 +44,18 @@ public class SuperMol {
     }
 
     public ArrayList<SuperResult> doSuper(int fixMol, int moveMol, boolean changeCoordinates, int[] moveStructures) {
-        int j = 0;
+        int j;
         SpatialSet spatialSet;
         Point3 pt1;
         Point3 pt2;
-        double t_rms = 0.0;
         List<SpatialSet> selected = molecule.getAtomsByProp(Atom.SUPER);
         x = new double[selected.size()][3];
         y = new double[selected.size()][3];
-        ArrayList<SuperResult> superRMS = new ArrayList<SuperResult>();
+        ArrayList<SuperResult> superRMS = new ArrayList<>();
         if (moveStructures == null) {
             moveStructures = molecule.getActiveStructures();
         }
-        int fixStructures[] = moveStructures;
+        int[] fixStructures = moveStructures;
         if (fixMol >= 0) {
             fixStructures = new int[1];
             fixStructures[0] = fixMol;
@@ -73,16 +71,16 @@ public class SuperMol {
                     continue;
                 }
                 j = 0;
-                for (int i = 0; i < selected.size(); i++) {
-                    spatialSet = selected.get(i);
+                for (SpatialSet set : selected) {
+                    spatialSet = set;
 
-                    pt1 = (Point3) spatialSet.getPoint(iFix);
+                    pt1 = spatialSet.getPoint(iFix);
 
                     if (pt1 == null) {
                         continue;
                     }
 
-                    pt2 = (Point3) spatialSet.getPoint(iMov);
+                    pt2 = spatialSet.getPoint(iMov);
 
                     if (pt2 == null) {
                         continue;
@@ -101,13 +99,12 @@ public class SuperMol {
                     cal_super(x, y, j);
                     SuperResult sResult = new SuperResult(iFix, iMov, rms);
                     superRMS.add(sResult);
-                    t_rms += rms;
                     if (changeCoordinates) {
                         double[] t = new double[3];
                         double[] s = new double[3];
-                        Iterator iter = molecule.getSpatialSetIterator();
+                        MoleculeBase.SpatialSetIterator iter = molecule.getSpatialSetIterator();
                         while (iter.hasNext()) {
-                            SpatialSet sSet = (SpatialSet) iter.next();
+                            SpatialSet sSet = iter.next();
                             pt2 = sSet.getPoint(iMov);
                             if (pt2 != null) {
                                 s[0] = pt2.getX();
@@ -273,6 +270,5 @@ public class SuperMol {
 
         rms = Math.sqrt(rms / n);
 
-        return;
     }
 }
