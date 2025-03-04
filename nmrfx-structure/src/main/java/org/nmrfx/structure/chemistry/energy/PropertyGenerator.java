@@ -110,7 +110,7 @@ public class PropertyGenerator {
                 shift = hBond.getShift(structureNum, power);
             }
         }
-        return 100.0 * shift;
+        return shift;
     }
 
     public double calcHBondDistance(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, int structureNum) {
