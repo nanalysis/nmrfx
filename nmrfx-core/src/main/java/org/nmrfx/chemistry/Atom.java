@@ -1124,6 +1124,25 @@ public class Atom implements IAtom, Comparable<Atom> {
         return new Point3(pt1);
     }
 
+    public Point3 avgAcrossStructures(List<Integer> structureNums) {
+        Vector3D pt;
+        Vector3D pt1 = new Vector3D(0.0, 0.0, 0.0);
+        int nPoints = 0;
+        for (int structureNum : structureNums) {
+            pt = this.getPoint(structureNum);
+
+            if (pt != null) {
+                nPoints++;
+                pt1 = pt1.add(pt);
+            }
+        }
+        if (nPoints == 0) {
+            return null;
+        }
+        pt1 = pt1.scalarMultiply(1.0 / nPoints);
+        return new Point3(pt1);
+    }
+
     public double rmsAtom() {
         return rmsAtom(spatialSet);
     }
