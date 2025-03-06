@@ -1564,8 +1564,8 @@ def gen(args):
     newDir(homeDir)
     print homeDir, args.dataset, 'gen'
     #genAttrsFromList(args.dataset)
-    #genSTARFromList(args.dataset)
-    genAttrFromSTAR()
+    genSTARFromList(args.dataset)
+    #genAttrFromSTAR()
 
 
 def cpAttrs(args):
