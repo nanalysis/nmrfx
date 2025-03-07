@@ -469,6 +469,20 @@ public class PeakList {
         this.fileName = datasetName;
     }
 
+    public void linkToDataset(String datasetName) {
+        DatasetBase dataset = DatasetBase.getDataset(datasetName);
+        int[] pdim = this.getDimsForDataset(dataset, true);
+        this.getSpectralDims().forEach(dim -> {
+            int datasetDim = pdim[dim.getIndex()];
+            if (datasetDim != -1) {
+                dim.setSf(dataset.getSf(datasetDim));
+                dim.setSw(dataset.getSw(datasetDim));
+                dim.setDimName(dataset.getLabel(datasetDim));
+                dim.setNucleus(dataset.getNucleus(datasetDim).getNumberName());
+            }
+        });
+    }
+
     public List<SearchDim> getSearchDims() {
         return searchDims;
     }
