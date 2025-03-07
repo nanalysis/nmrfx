@@ -86,7 +86,15 @@ public class ProjectBase {
             projectBase = (ProjectBase) constructor.newInstance(name);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
                  InvocationTargetException | NoSuchMethodException | SecurityException ex) {
-            projectBase = new ProjectBase(name);
+            try {
+                Class<?> c = Class.forName("org.nmrfx.structure.project.StructureProject");
+                Class[] parameterTypes = {String.class};
+                Constructor constructor = c.getDeclaredConstructor(parameterTypes);
+                projectBase = (ProjectBase) constructor.newInstance(name);
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException |
+                     InvocationTargetException | NoSuchMethodException | SecurityException ex2) {
+                projectBase = new ProjectBase(name);
+            }
         }
         return projectBase;
     }

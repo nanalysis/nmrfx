@@ -33,19 +33,15 @@ import java.util.stream.Stream;
 public class StructureProject extends ProjectBase {
 
     private static final Logger log = LoggerFactory.getLogger(StructureProject.class);
-    static StructureProject activeProject = null;
 
     public StructureProject(String name) {
         super(name);
-        activeProject = this;
+        this.setActive();
         activeMol = null;
     }
 
     public static StructureProject getActive() {
-        if (activeProject == null) {
-            activeProject = new StructureProject("Untitled 1");
-        }
-        return activeProject;
+        return (StructureProject) ProjectBase.getActive();
     }
 
     @Override
