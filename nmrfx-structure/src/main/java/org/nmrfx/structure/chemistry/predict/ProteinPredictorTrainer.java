@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProteinPredictorTrainer {
 
@@ -93,6 +94,7 @@ public class ProteinPredictorTrainer {
         propNames = p.getValueNames();
         int nPolymers = 0;
         int nResidues = 0;
+        AtomicInteger nShifts = new AtomicInteger();
 
         for (Polymer polymer : molecule.getPolymers()) {
             nPolymers++;
@@ -111,6 +113,7 @@ public class ProteinPredictorTrainer {
                             List<ValuesWithCS> valueList = valueMap.computeIfAbsent(atomType, k -> new ArrayList<>());
                             ValuesWithCS valuesWithCS = new ValuesWithCS(molecule.getName(), atom.getFullName(), expPPM.getValue(), refPPM.getValue(), values);
                             valueList.add(valuesWithCS);
+                            nShifts.getAndIncrement();
                         }
                     });
                 }
@@ -118,7 +121,7 @@ public class ProteinPredictorTrainer {
         }
         long eTime1 = start2 - start;
         long eTime = System.currentTimeMillis() - start2;
-        System.out.println("npolymers " + nPolymers + " nresidues " + nResidues + " etime " + (eTime1 / 1000.0) + " " + (eTime / 1000.0));
+        System.out.println("MOL " + molecule.getName() + " npolymers " + nPolymers + " nresidues " + nResidues + " etime1 " + (eTime1 / 1000.0) + " etime2 " + (eTime / 1000.0) + " shifts " + nShifts.get());
     }
 
     public void saveData(String dirName) throws IOException {
@@ -294,13 +297,17 @@ public class ProteinPredictorTrainer {
     }
 
     void getSkip(String groupName, double tol) {
-        var groupEntryMap = errorMap.get(groupName);
-        groupEntryMap.forEach((key, deltaShift) -> {
-            double error = deltaShift.delta();
-            if (Math.abs(error) > tol) {
-                skipMap.put(key, deltaShift);
-            }
-        });
+        if (errorMap.containsKey(groupName)) {
+            var groupEntryMap = errorMap.get(groupName);
+            groupEntryMap.forEach((key, deltaShift) -> {
+                double error = deltaShift.delta();
+                if (Math.abs(error) > tol) {
+                    skipMap.put(key, deltaShift);
+                }
+            });
+        } else {
+            System.out.println("can't find " + groupName + " in " + errorMap.keySet());
+        }
     }
 
     public void getErrorsByMolecule() {
@@ -320,6 +327,11 @@ public class ProteinPredictorTrainer {
 
     FitResult getFitResults(String groupName) {
         var groupEntryMap = errorMap.get(groupName);
+        if (groupEntryMap == null) {
+            System.out.println("can't find " + groupName + " in " + errorMap.keySet());
+            return new FitResult(0,0,0.0, 0.0);
+        }
+
         double sumSq = 0.0;
         double sumAbs = 0.0;
         int n = 0;
@@ -381,6 +393,10 @@ public class ProteinPredictorTrainer {
     }
 
     public void writeDeltas(Path path, String groupName) throws IOException {
+        if (!errorMap.containsKey(groupName)) {
+            System.out.println("can't find " + groupName + " in " + errorMap.keySet());
+            return;
+        }
         String fileName = "error_" + groupName + ".txt";
         fileName = fileName.replace("*", "X");
         fileName = fileName.replace("?", "x");
@@ -405,6 +421,8 @@ public class ProteinPredictorTrainer {
             stringBuilder.append(s);
         }
         String fileName = "skips_" + groupName + ".txt";
+        fileName = fileName.replace("*", "X");
+        fileName = fileName.replace("?", "x");
         File file = path.resolve(fileName).toFile();
         try (FileWriter fileWriter = new FileWriter(file)) {
             fileWriter.write(stringBuilder.toString());
@@ -446,7 +464,7 @@ public class ProteinPredictorTrainer {
         }
     }
 
-    public void fitAll(String dirName, Map<String, List<String>> types, double trimLevel) throws IOException {
+    public void fitAll(String valueMapDir, String resultDir, Map<String, List<String>> types, double trimLevel) throws IOException {
         this.types = types;
         ProteinPredictorGen p = new ProteinPredictorGen();
         propNames = p.getValueNames();
@@ -456,7 +474,7 @@ public class ProteinPredictorTrainer {
         pdbMeans.clear();
         for (var entry : types.entrySet()) {
             for (String type : entry.getValue()) {
-                loadData(dirName, type);
+                loadData(valueMapDir, type);
             }
         }
         for (var entry : types.entrySet()) {
@@ -482,8 +500,10 @@ public class ProteinPredictorTrainer {
         for (var entry : types.entrySet()) {
             doTrainAndPredict(entry.getValue(), entry.getKey());
             String fileName = "coef_" + entry.getKey() + ".txt";
-            File file = new File(fileName);
-            writeCoefficients(entry.getKey(), file);
+            fileName = fileName.replace("*", "X");
+            fileName = fileName.replace("?", "x");
+            Path path = Path.of(resultDir, fileName);
+            writeCoefficients(entry.getKey(), path.toFile());
         }
         getErrorsByMolecule();
         for (var entry : types.entrySet()) {
@@ -506,7 +526,7 @@ public class ProteinPredictorTrainer {
             getSkip(entry.getKey(), fitResult.rmsd * trimRatio);
             fitResult = getFitResults(entry.getKey());
             System.out.println("FITRESULT " + entry.getKey() + " " + fitResult);
-            Path path = Path.of(dirName);
+            Path path = Path.of(resultDir);
             writeDeltas(path, entry.getKey());
             writeSkips(path, entry.getKey());
         }

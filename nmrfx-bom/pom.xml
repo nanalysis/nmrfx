@@ -368,6 +368,11 @@
         </dependency>
         <dependency>
             <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-sgd</artifactId>
+            <version>4.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
             <artifactId>tribuo-data</artifactId>
             <version>4.3.1</version>
         </dependency>

@@ -97,6 +97,10 @@
         </dependency>
         <dependency>
             <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-sgd</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
             <artifactId>tribuo-data</artifactId>
         </dependency>
         <dependency>

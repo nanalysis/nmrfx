@@ -304,7 +304,7 @@ public class RNAAttributes {
             }
             case Bulge j:
                 yield 3;
-            case Loop j:
+            case Loop loop:
                 yield 4;
             case InternalLoop j:
                 yield 5;
