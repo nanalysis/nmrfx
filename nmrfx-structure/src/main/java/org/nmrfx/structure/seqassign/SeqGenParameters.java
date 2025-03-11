@@ -15,7 +15,7 @@ public class SeqGenParameters {
 
     }
 
-    SeqGenParameters(int populationSize, int nGenerations, double mutationRate, double crossoverRate, int eliteNumber,
+    public SeqGenParameters(int populationSize, int nGenerations, double mutationRate, double crossoverRate, int eliteNumber,
                      int maximumPhenoTypeAge, int steadyLimit, int multiMaxLimit) {
         this.nGenerations = nGenerations;
         this.populationSize = populationSize;

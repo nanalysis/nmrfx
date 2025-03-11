@@ -9,7 +9,6 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
@@ -752,11 +751,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         spinSysMenuButton.getItems().add(analyzeItem);
 
         MenuItem bipartiteItem = new MenuItem("GraphMatching");
-        bipartiteItem.setOnAction(e -> bipartiteAnalyze());
+        bipartiteItem.setOnAction(e -> makeGraphMatcher());
         spinSysMenuButton.getItems().add(bipartiteItem);
-        MenuItem graphAssignItem = new MenuItem("GraphAssign");
-        graphAssignItem.setOnAction(e -> assignFragments());
-        spinSysMenuButton.getItems().add(graphAssignItem);
 
         MenuItem trimItem = new MenuItem("Trim");
         trimItem.setOnAction(e -> trimSystem());
@@ -1766,41 +1762,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
 
-    void assignFragments() {
-        if (resSeqMatcher != null) {
-            resSeqMatcher.assignMatches(runAbout.getSpinSystems());
-            gotoSpinSystems();
-            updateClusterCanvas();
-        }
-    }
-    void bipartiteAnalyze() {
+
+    void makeGraphMatcher() {
         resSeqMatcher = new ResSeqMatcher();
-        resSeqMatcher.compareMatrix(runAbout.getSpinSystems());
-        SeqGenParameters seqGenParameters = new SeqGenParameters();
+        GraphMatcherGUI graphMatcherGUI = new GraphMatcherGUI(this, resSeqMatcher, runAbout);
 
-        Task<Double> task = new Task<>() {
-            @Override
-            protected Double call() throws Exception {
-                try {
-                    return resSeqMatcher.graphMatch(25, seqGenParameters);
-                } catch (Exception e) {
-                    log.error("Error in graph match", e);
-                    e.printStackTrace();
-                    throw(e);
-                }
-            }
-        };
-        task.setOnFailed(event -> {
-            System.out.println("failed");
-        });
-
-        task.setOnSucceeded(event -> {
-            double result = task.getValue();
-            System.out.println("result " + result);
-        });
-
-        new Thread(task).start();
     }
+
     public void setSpinSystems(List<SpinSystem> spinSystems, boolean useBest) {
         drawSpinSystems(spinSystems, useBest);
         setPeakIdField();

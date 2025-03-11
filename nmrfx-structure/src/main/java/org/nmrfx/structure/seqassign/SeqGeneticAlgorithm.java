@@ -20,7 +20,7 @@ public class SeqGeneticAlgorithm {
     public static List<List<Integer>> seqResMatches;
     ResSeqMatcher resSeqMatcher;
 
-    Consumer<Double> progressConsumer;
+    Consumer<Progress> progressConsumer;
 
     SeqGenParameters seqGenParameters = new SeqGenParameters();
 
@@ -103,6 +103,9 @@ public class SeqGeneticAlgorithm {
         return result;
     }
 
+    public record Progress(long generation, double best) {
+
+    }
     private void update(final EvolutionResult<EnumGene<Integer>, Double> result) {
         long generation = result.generation();
         if ((generation % 10) == 0) {
@@ -110,7 +113,8 @@ public class SeqGeneticAlgorithm {
             result.population().stream().forEach(pheno -> dStat.addValue(pheno.fitness()));
             System.out.printf("%5d %10.3f %10.3f %10.4f\n", result.generation(), dStat.getMin(), dStat.getMean(), dStat.getMax());
             if (progressConsumer != null) {
-                progressConsumer.accept(dStat.getMin());
+                Progress progress = new Progress(result.generation(), dStat.getMin());
+                progressConsumer.accept(progress);
             }
         }
     }
@@ -150,7 +154,7 @@ public class SeqGeneticAlgorithm {
         return genotypes;
     }
 
-    public ResSeqMatcher.Matching apply(List<ResSeqMatcher.Matching> initMatches, Consumer<Double> progressConsumer) {
+    public ResSeqMatcher.Matching apply(List<ResSeqMatcher.Matching> initMatches, Consumer<Progress> progressConsumer) {
         int nSys = resSeqMatcher.getSysResidueList().size();
         int nRes = resSeqMatcher.getResidueSysList().size();
         this.progressConsumer = progressConsumer;
