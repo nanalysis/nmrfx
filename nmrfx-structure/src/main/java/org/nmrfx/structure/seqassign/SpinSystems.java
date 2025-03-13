@@ -297,10 +297,12 @@ public class SpinSystems {
 
         systems.clear();
         PeakList.clusterPeaks(peakLists);
+        var searchDim = refList.getSearchDims().get(0);
         for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA, this);
             systems.add(spinSys);
-            for (Peak pkB : PeakList.getLinks(pkA, 0)) {// fixme calculate correct dim
+            var linkedPeaks = PeakList.getLinks(pkA, searchDim.getDim());
+            for (Peak pkB : linkedPeaks) {
                 if (pkA != pkB) {
                     PeakList peakListB = pkB.getPeakList();
                     double[] sumArray = sums.get(peakListB);
