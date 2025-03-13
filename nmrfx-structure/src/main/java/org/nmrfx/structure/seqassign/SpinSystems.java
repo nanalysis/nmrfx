@@ -12,6 +12,8 @@ import org.nmrfx.star.Loop;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.star.Saveframe;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
  * @author brucejohnson
  */
 public class SpinSystems {
+    private static final Logger log = LoggerFactory.getLogger(SpinSystems.class);
+
     public enum ClusterModes {
         ALL,
         CORRECT,
@@ -173,11 +177,7 @@ public class SpinSystems {
                 if (peakListB != refList) {
                     double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
                             mapToDouble(pkB -> comparePeaks(pkA, pkB, aMatch)).sum();
-                    double[] sumArray = sumMap.get(peakListB);
-                    if (sumArray == null) {
-                        sumArray = new double[refList.size()];
-                        sumMap.put(peakListB, sumArray);
-                    }
+                    double[] sumArray = sumMap.computeIfAbsent(peakListB, k -> new double[refList.size()]);
                     sumArray[pkA.getIndex()] = sumF;
                 }
             }
@@ -322,10 +322,10 @@ public class SpinSystems {
     public void assemble(List<PeakList> peakLists) {
         systems.clear();
         peakLists.forEach(PeakList::unLinkPeaks);
-        peakLists.forEach(peakListA -> {
-            // set status to 0 for all active (status >= 0) peaks
-            peakListA.peaks().stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
-        });
+        peakLists.forEach(peakListA ->
+                // set status to 0 for all active (status >= 0) peaks
+                peakListA.peaks().stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0))
+        );
 
         peakLists.forEach(peakListA -> peakListA.peaks().stream().filter(pkA -> pkA.getStatus() == 0).forEach(pkA -> {
             SpinSystem spinSys = new SpinSystem(pkA, this);
@@ -397,12 +397,6 @@ public class SpinSystems {
         }
     }
 
-    public void dump() {
-        for (SpinSystem spinSys : systems) {
-            System.out.println(spinSys.toString());
-        }
-    }
-
     public void calcCombinations() {
         for (SpinSystem spinSys : systems) {
             spinSys.calcCombinations(false);
@@ -419,6 +413,7 @@ public class SpinSystems {
         }
         compare();
     }
+
     public List<SpinSystem> getSystems() {
         return systems;
     }
@@ -426,21 +421,16 @@ public class SpinSystems {
     public List<SpinSystem> getSystemsByType(ClusterModes clusterMode) {
         return systems.stream().filter(s -> {
                     int extraOrMissing = runAbout.getExtraOrMissing(s);
-                    if (clusterMode == ClusterModes.CORRECT) {
-                        return extraOrMissing == 0;
-                    } else if (clusterMode == ClusterModes.EXTRA) {
-                        return (extraOrMissing & 1) != 0;
-                    } else if (clusterMode == ClusterModes.MISSING) {
-                        return (extraOrMissing & 2) != 0;
-                    } else if (clusterMode == ClusterModes.LONELY) {
-                        return s.peakMatches.size() < 3;
-                    } else if (clusterMode == ClusterModes.MISSING_PPM) {
-                        return !runAbout.getHasAllAtoms(s);
-                    } else {
-                        return true;
-                    }
+                    return switch (clusterMode) {
+                        case ClusterModes.CORRECT -> extraOrMissing == 0;
+                        case ClusterModes.EXTRA -> (extraOrMissing & 1) != 0;
+                        case ClusterModes.MISSING -> (extraOrMissing & 2) != 0;
+                        case ClusterModes.LONELY -> s.peakMatches.size() < 3;
+                        case ClusterModes.MISSING_PPM -> !runAbout.getHasAllAtoms(s);
+                        default -> true;
+                    };
                 }
-        ).collect(Collectors.toList());
+        ).toList();
     }
 
     public List<SeqFragment> getSortedFragments() {
@@ -456,8 +446,7 @@ public class SpinSystems {
         }
         return fragments.stream().sorted((e1, e2)
                         -> Integer.compare(e2.spinSystemMatches.size(),
-                        e1.spinSystemMatches.size())).
-                collect(Collectors.toList());
+                        e1.spinSystemMatches.size())).toList();
     }
 
     public List<SpinSystem> getUnconnectedSpinSystems() {
@@ -536,7 +525,6 @@ public class SpinSystems {
         for (int i = 0; i < spinSystemIDs.size(); i++) {
             SpinSystem system = systemMap.get(spinSystemIDs.get(i));
             SpinSystem nextSystem = nextSystems.get(system);
-            SpinSystem previousSystem = previousSystems.get(system);
             SeqFragment fragment = fragmentMap.get(fragmentIDColumn.get(i));
             if (fragment != null) {
                 system.setFragment(fragment);

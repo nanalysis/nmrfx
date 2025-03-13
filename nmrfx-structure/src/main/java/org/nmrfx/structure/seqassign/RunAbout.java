@@ -472,7 +472,6 @@ public class RunAbout implements SaveframeWriter {
         getSpinSystems().compare();
         getSpinSystems().checkConfirmed();
         getSpinSystems().updateFragments();
-        getSpinSystems().dump();
     }
 
     public static String getHDimName(PeakList peakList) {
