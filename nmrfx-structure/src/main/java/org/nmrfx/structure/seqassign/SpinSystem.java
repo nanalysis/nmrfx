@@ -717,7 +717,7 @@ public class SpinSystem {
         }
         for (Entry<String, List<PeakMatch>> entry : listOfMatches.entrySet()) {
             String peakListName = entry.getKey();
-            String typeName = spinSystems.runAbout.peakListTypes.get(peakListName);
+            String typeName = spinSystems.runAbout.peakListTypeMap.get(peakListName);
             TypeInfo typeInfo = spinSystems.runAbout.typeInfoMap.get(typeName);
             int nExpected = typeInfo.nTotal;
             List<PeakMatch> matches = entry.getValue();
