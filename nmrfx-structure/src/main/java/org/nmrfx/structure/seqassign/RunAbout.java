@@ -414,7 +414,7 @@ public class RunAbout implements SaveframeWriter {
             peakListTypes = PeakPatternReader.loadYaml();
         }
         Set<PeakList> foundLists = new HashSet<>();
-        String[] typeNames = {"CBCACONNH", "HNCOCACB", "HNCACB", "CBCANH", "HNCOCA", "HNCACO", "HNCA", "HNCO"};
+        String[] typeNames = {"CBCACONNH", "CBCACONH", "HNCOCACB", "HNCACB", "CBCANH", "HNCOCA", "HNCACO", "HNCA", "HNCO"};
         for (String typeName : typeNames) {
             peakListTypes.getType(typeName).ifPresent(peakListType -> {
                 for (var peakList : PeakList.peakLists()) {
