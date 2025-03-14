@@ -168,8 +168,7 @@ public class SpinSystems {
         return result;
     }
 
-    Map<PeakList, double[]> calcNormalization(List<PeakList> peakLists) {
-        PeakList refList = peakLists.get(0);
+    Map<PeakList, double[]> calcNormalization(PeakList refList, List<PeakList> peakLists) {
         Map<PeakList, double[]> sumMap = new HashMap<>();
         for (Peak pkA : refList.peaks()) {
             for (PeakList peakListB : peakLists) {
@@ -187,7 +186,7 @@ public class SpinSystems {
 
     public void addPeak(SpinSystem spinSys, Peak pkB) {
         if ((sums == null) || (sums.get(pkB.getPeakList()).length != spinSys.rootPeak.getPeakList().size())) {
-            sums = calcNormalization(runAbout.getPeakLists());
+            sums = calcNormalization(runAbout.getRefList(), runAbout.getPeakLists());
         }
         Peak rootPeak = spinSys.rootPeak;
         if (rootPeak != pkB) {
@@ -235,7 +234,7 @@ public class SpinSystems {
         allLists.addAll(runAbout.getPeakLists());
         allLists.addAll(newPeakLists);
         runAbout.setPeakLists(allLists);
-        sums = calcNormalization(allLists);
+        sums = calcNormalization(refList, allLists);
         var searchDims = refList.getSearchDims();
         double[] ppm = new double[searchDims.size()];
         int[] refDims = new int[searchDims.size()];
@@ -277,11 +276,14 @@ public class SpinSystems {
         }
     }
 
-    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) {
-        sums = calcNormalization(peakLists);
+    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) throws IllegalStateException {
+        sums = calcNormalization(refList, peakLists);
         PeakList.clusterOrigin = refList;
         for (PeakList peakList : peakLists) {
             peakList.unLinkPeaks();
+            if ((peakList != refList) && !sums.containsKey(peakList)) {
+                throw new IllegalStateException("Peaklist " + peakList.getName() + " not setup");
+            }
         }
         boolean[] useDim = getUseDims(refList, peakLists);
         for (PeakList peakList : peakLists) {
@@ -296,7 +298,7 @@ public class SpinSystems {
         }
 
         systems.clear();
-        PeakList.clusterPeaks(peakLists);
+        PeakList.clusterPeaks(peakLists, refList);
         var searchDim = refList.getSearchDims().get(0);
         for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA, this);
