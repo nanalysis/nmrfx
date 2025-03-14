@@ -30,6 +30,7 @@ public class GraphMatcherGUI {
     Task<Double> task;
     TextField progressField = new TextField();
     Button assignButton;
+    Button stopButton;
     SimpleIntegerProperty popSizeProp = new SimpleIntegerProperty(500);
     SimpleIntegerProperty nGenProp = new SimpleIntegerProperty(2000);
     SimpleIntegerProperty eliteNumberProp = new SimpleIntegerProperty(100);
@@ -62,11 +63,12 @@ public class GraphMatcherGUI {
         ToolBar toolBar = new ToolBar();
         Button matchButton = new Button("Match");
         matchButton.setOnAction(e -> bipartiteAnalyze());
-        Button stopButton = new Button("Stop");
+        stopButton = new Button("Stop");
         stopButton.setOnAction(e -> stop());
         assignButton = new Button("Assign");
         assignButton.setOnAction(e -> assignFragments());
         assignButton.setDisable(true);
+        stopButton.setDisable(true);
 
         toolBar.getItems().addAll(matchButton, stopButton, assignButton);
         progressField.setPrefWidth(200);
@@ -122,6 +124,8 @@ public class GraphMatcherGUI {
     void bipartiteAnalyze() {
         best = 0.0;
         assignButton.setDisable(true);
+        stopButton.setDisable(false);
+        progressField.setText("Initializing");
         resSeqMatcher.compareMatrix(runAbout.getSpinSystems());
 
             SeqGenParameters seqGenParameters = new SeqGenParameters(popSizeProp.get(), nGenProp.get(),
@@ -149,6 +153,7 @@ public class GraphMatcherGUI {
             System.out.println("result " + result);
             Fx.runOnFxThread(() -> {
                 assignButton.setDisable(false);
+                stopButton.setDisable(true);
             });
         });
 
