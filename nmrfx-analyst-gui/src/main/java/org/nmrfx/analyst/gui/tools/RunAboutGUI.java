@@ -29,6 +29,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
@@ -1687,7 +1688,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void assemble() {
-        runAbout.assemble();
+        try {
+            runAbout.assemble();
+        } catch (IllegalStateException e) {
+            var eDialog = new ExceptionDialog(e);
+            eDialog.showAndWait();
+            return;
+        }
         updatePeakListMenu();
         useSpinSystem = true;
     }
@@ -2196,6 +2203,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
         }
         peakTableView.refresh();
+        var hncoOpt = foundPeakLists.stream().filter(p -> p.getExperimentType().equals("HNCO")).findFirst();
+        hncoOpt.ifPresent(p -> refListObj.set(p));
     }
     void setupRunAbout() {
         if (!runAbout.isActive() ||
