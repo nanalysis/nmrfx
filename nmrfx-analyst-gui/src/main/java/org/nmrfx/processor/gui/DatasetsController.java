@@ -481,6 +481,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = AnalystApp.getFXMLControllerManager().newController();
+            chart = controller.getActiveChart();
         }
         boolean appendFile = false;
         for (DatasetBase dataset : datasets) {
@@ -495,6 +496,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = AnalystApp.getFXMLControllerManager().newController();
+            chart = controller.getActiveChart();
         }
         controller.setNCharts(datasets.size());
         controller.arrange(orient);
