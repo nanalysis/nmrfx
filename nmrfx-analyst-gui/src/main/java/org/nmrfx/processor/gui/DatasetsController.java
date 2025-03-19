@@ -29,7 +29,6 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -58,7 +57,6 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
-import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.ColumnMath;
@@ -70,7 +68,6 @@ import java.beans.PropertyChangeListener;
 import java.net.URL;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
-import java.util.stream.Collectors;
 
 /**
  * @author johnsonb
@@ -496,7 +493,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = AnalystApp.getFXMLControllerManager().newController();
-            chart = controller.getActiveChart();
         }
         controller.setNCharts(datasets.size());
         controller.arrange(orient);
