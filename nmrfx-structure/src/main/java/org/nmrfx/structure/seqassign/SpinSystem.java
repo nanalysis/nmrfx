@@ -1168,16 +1168,21 @@ public class SpinSystem {
         }
     }
 
-    public List<ResidueSeqScore> score() {
+    public List<ResidueSeqScore> score(double sdevRatio) {
         List<List<AtomShiftValue>> shiftValues = SeqFragment.getShiftsForSystem(this);
         Molecule molecule = Molecule.getActive();
-        return SeqFragment.scoreShifts(molecule, shiftValues);
+        return SeqFragment.scoreShifts(molecule, shiftValues, sdevRatio);
     }
 
-    public void printScores() {
+    public void printScores(double sdevRatio) {
         List<List<AtomShiftValue>> shiftValues = SeqFragment.getShiftsForSystem(this);
         Molecule molecule = Molecule.getActive();
-        List<ResidueSeqScore> residueSeqScores = SeqFragment.scoreShifts(molecule, shiftValues, null);
+        for (var v: shiftValues) {
+            for (var vs : v) {
+                System.out.println(vs);
+            }
+        }
+        List<ResidueSeqScore> residueSeqScores = SeqFragment.scoreShifts(molecule, shiftValues, sdevRatio);
         for (ResidueSeqScore residueSeqScore : residueSeqScores) {
             System.out.println(residueSeqScore.getFirstResidue() + " " + residueSeqScore.getNResidues() + " " + residueSeqScore.getScore());
         }

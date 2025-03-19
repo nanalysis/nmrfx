@@ -357,11 +357,11 @@ public class SeqFragment {
         }
         return result;
     }
-    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, List<List<AtomShiftValue>> shiftValues) {
+    public static List<ResidueSeqScore> scoreShifts(Molecule molecule, List<List<AtomShiftValue>> shiftValues, double sdevRatio) {
         List<ResidueSeqScore> result = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                result.addAll(scoreShifts1(polymer, shiftValues));
+                result.addAll(scoreShifts1(polymer, shiftValues, sdevRatio));
             }
         }
         return result;
@@ -415,8 +415,7 @@ public class SeqFragment {
         return result;
     }
 
-    public static List<ResidueSeqScore> scoreShifts1(Polymer polymer, List<List<AtomShiftValue>> shiftValues) {
-        double sDevMul = 2.0;
+    public static List<ResidueSeqScore> scoreShifts1(Polymer polymer, List<List<AtomShiftValue>> shiftValues, double sDevMul) {
         List<ResidueSeqScore> result = new ArrayList<>();
         int winSize = shiftValues.size();
         if (winSize < 1) {

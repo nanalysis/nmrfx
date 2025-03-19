@@ -55,7 +55,7 @@ public class ResSeqMatcher {
         return residueSysList;
     }
 
-    public void compareMatrix(SpinSystems spinSystems) {
+    public void compareMatrix(SpinSystems spinSystems, double sdevRatio) {
         List<SpinSystem> spinSystemList = spinSystems.getSystems();
         int i = 0;
 
@@ -67,11 +67,14 @@ public class ResSeqMatcher {
         spinSystems.compare();
         adjScores = new double[nSys][nSys];
         for (SpinSystem spinSysA : spinSystemList) {
+            int aSys = spinSysA.getIndex();
+            Arrays.fill(adjScores[aSys], 1000.0);
+        }
+        for (SpinSystem spinSysA : spinSystemList) {
+            int aSys = spinSysA.getIndex();
             for (SpinSystemMatch spinSystemMatch : spinSysA.spinMatchS) {
-                int iSys = spinSysA.getIndex();
-                int jSys = spinSystemMatch.spinSystemB.getIndex();
-                adjScores[iSys][jSys] = spinSystemMatch.getScore();
-                adjScores[jSys][iSys] = spinSystemMatch.getScore();
+                int bSys = spinSystemMatch.spinSystemB.getIndex();
+                adjScores[aSys][bSys] = spinSystemMatch.getScore();
             }
         }
         Molecule molecule = Molecule.getActive();
@@ -101,7 +104,7 @@ public class ResSeqMatcher {
         double priorScale = 1.0 / nPossibleRes;
         residueScores = new double[nResidues][nSys];
         for (SpinSystem spinSystem : spinSystemList) {
-            List<ResidueSeqScore> residueSeqScores = spinSystem.score();
+            List<ResidueSeqScore> residueSeqScores = spinSystem.score(sdevRatio);
             List<Integer> resList = new ArrayList<>();
             sysResidueList.add(resList);
             for (var residueSeqScore : residueSeqScores) {
@@ -162,19 +165,39 @@ public class ResSeqMatcher {
         return score;
     }
 
-    public double score(Residue residue, int i, int j) {
+    public ResidueScore score(Residue residue, int i, int j) {
         int iRes = residueIndexMap.get(residue);
-        double resScore = residueScores[iRes][i];
+        double resScore = residueScores[iRes][j];
         double adjScore = adjScores[i][j];
-        return resScore + adjScore;
-    }
-    public String reportScore(Residue residue, int i, int j) {
-        int iRes = residueIndexMap.get(residue);
-        double resScore = residueScores[iRes][i];
-        double adjScore = adjScores[i][j];
-        return i + " " + j + " " + iRes + " " + resScore + " " + adjScore + " " + (resScore + adjScore);
+        return new ResidueScore(resScore, adjScore, (resScore+adjScore));
     }
 
+    record ResidueScore(double resScore, double adjScore, double totalScore) {
+
+    }
+    public ResidueScore reportScore(Residue residue, int i, int j) {
+        int iRes = residueIndexMap.get(residue);
+        double resScore = residueScores[iRes][i];
+        double adjScore = adjScores[i][j];
+        return new ResidueScore(resScore, adjScore, (resScore+adjScore));
+    }
+
+    public void dumpScores(int iSys) {
+        System.out.printf("%3d", iSys);
+        for (int i=0;i<adjScores[iSys].length;i++) {
+            if (adjScores[iSys][i] < 200.0) {
+                System.out.printf(" %3d %3.0f", i, adjScores[iSys][i]);
+            }
+        }
+        System.out.print(" res ");
+        for (int i=0;i<residueScores.length;i++) {
+            double score = residueScores[i][iSys];
+            if (score < 0.0) {
+                System.out.printf(" %3d %3.0f", i, score);
+            }
+        }
+        System.out.println();
+    }
     public double matcher(int[] sysToRes) {
         int[] resToSys = new int[nResidues];
         Arrays.fill(resToSys, -1);
@@ -231,7 +254,6 @@ public class ResSeqMatcher {
             ResidueSeqScore resScore = new ResidueSeqScore(residue, nRes, pScore);
             seqFragment.setResSeqScore(resScore);
             seqFragment.freezeFragment(resScore);
-            seqFragment.dump();
         });
 
     }
@@ -245,6 +267,7 @@ public class ResSeqMatcher {
         Arrays.fill(residues, -1);
         for (int i = 0; i < nSys; i++) {
             int iRes = bestMatching.matches[i];
+            System.out.println(" isys " + i + " res " + iRes);
             if ((iRes >= 0) && (iRes < nResidues)) {
                 residues[iRes] = i;
             }
@@ -260,28 +283,25 @@ public class ResSeqMatcher {
             SpinSystem spinSystemA = iSys != -1 ? spinSystems.get(iSys) : null;
             SpinSystem spinSystemB = jSys != -1 ? spinSystems.get(jSys) : null;
             boolean ok = true;
-            double residueScore = 0.0;
             Residue residue = residueList.get(i);
+            ResidueScore residueScore = new ResidueScore(0.0,0.0,1000.0);
             if ((spinSystemA == null) || (spinSystemB == null) || !spinSystemA.getMatchToNext(spinSystemB).isPresent()) {
                 ok = false;
             } else {
                 residueScore = score(residue, iSys, jSys);
-                if (residueScore >= 10.0) {
+                if (residueScore.totalScore >= 50.0) {
                     ok = false;
-                    String scoreReport = reportScore(residue, iSys, jSys);
-                    System.out.println(scoreReport);
                 }
             }
+            String outString = String.format("iRes %d seq %d %d %d ok %b resScore %3f adjScore %3f totalScore %3f",
+                    i,residue.getResNum(), iSys, jSys, ok, residueScore.resScore, residueScore.adjScore, residueScore.totalScore);
             if (ok) {
-                if (spinSystemA.getMatchToNext(spinSystemB).isEmpty()) {
-                    System.out.println("no match " + i + " " + iSys + " " + jSys);
-                }
                 if (startRes == -1) {
                     startRes = i - 1 - 1;
                     startSys = spinSystemA;
                     startResidue = residueList.get(startRes);
                 }
-                score += residueScore;
+                score += residueScore.totalScore;
                 Optional<SpinSystemMatch> spinSystemMatchOpt = spinSystemB.getMatchToPrevious(spinSystemA);
                 if (!spinSystemMatchOpt.isPresent()) {
                     spinSystemMatchOpt = spinSystemA.compare(spinSystemB, false);
@@ -291,12 +311,14 @@ public class ResSeqMatcher {
                 if (startResidue != null) {
                     final int nRes = i - startRes + 1;
                     assignFragment(startSys, nRes, startResidue, score);
+                    outString += String.format("startsys %d startres %d nres %d",startSys.getId(), startRes, nRes);
                 }
                 startRes = -1;
                 startResidue = null;
                 startSys = null;
                 score = 0.0;
             }
+            System.out.println(outString);
         }
         if (startResidue != null) {
             final int nRes = nResidues - startRes;
@@ -327,6 +349,7 @@ public class ResSeqMatcher {
             }
         }
         for (int i = 0; i < nTries-nStart; i++) {
+           // List<Matching> useTheseMatchings = ((i %2) == 1) ? Collections.emptyList() : currentBestMatchings;
             Matching matching = runGraphGenetics(seqGenParameters, currentBestMatchings, (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v));
             System.out.println("matching " + matching.score);
             matchings.add(matching);
@@ -388,8 +411,8 @@ public class ResSeqMatcher {
         buildGraph();
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
         int nInitial = seqGenParameters.populationSize();
-        System.out.println("run gen");
-        genInitMatches(nInitial, nInitial / 5);
+        int nReplace = currentBestMatchings.isEmpty() ? nInitial : nInitial / 5;
+        genInitMatches(nInitial, nReplace);
         int i = 0;
         for (Matching currentBestMatching : currentBestMatchings) {
             initMatches.set(i++, currentBestMatching);

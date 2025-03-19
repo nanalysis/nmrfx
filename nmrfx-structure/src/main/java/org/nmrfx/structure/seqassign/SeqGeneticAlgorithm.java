@@ -121,7 +121,8 @@ public class SeqGeneticAlgorithm {
 
     private List<Genotype<EnumGene<Integer>>> initGenotypes(List<ResSeqMatcher.Matching> initMatches, int stops) {
         initMatches.sort(Comparator.comparing(ResSeqMatcher.Matching::score));
-        int nMulti = Math.min(seqGenParameters.multiMaxLimit(), initMatches.size());
+        //int nMulti = Math.min(seqGenParameters.multiMaxLimit(), initMatches.size());
+        int nMulti = Math.min(initMatches.size(), seqGenParameters.populationSize());
         // System.out.println(" nMultiMatches " + initMatches.size() + " multiLimit " + multiMaxLimit + " nMulti " + nMulti);
         List<Integer> alleleList = new ArrayList<>();
         for (int i = 0; i < stops; i++) {
@@ -170,7 +171,7 @@ public class SeqGeneticAlgorithm {
                 .survivorsSelector(new EliteSelector<>(seqGenParameters.eliteNumber()))
                 .offspringSelector(new TournamentSelector<>())
                 .alterers(
-                        new ConstrainedSwapMutatorResSeq<>(resSeqMatcher, this, seqGenParameters.mutationRate()),
+                        new ConstrainedSwapMutatorResSeq<>(resSeqMatcher, this, seqGenParameters.mutationRate(), seqGenParameters.mutationProfile()),
                         new PartiallyMatchedCrossover<>(seqGenParameters.crossoverRate()))
                 .build();
 

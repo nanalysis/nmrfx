@@ -29,13 +29,17 @@ public class ConstrainedSwapMutatorResSeq<
     double startProbability;
     double probability;
 
-    public ConstrainedSwapMutatorResSeq(double p) {
+    boolean mutationProfile;
+
+    public ConstrainedSwapMutatorResSeq(double p, boolean mutationProfile) {
         super(p);
         probability = p;
         startProbability = p;
+        this.mutationProfile = mutationProfile;
+
     }
 
-    ConstrainedSwapMutatorResSeq(ResSeqMatcher resSeqMatcher,  SeqGeneticAlgorithm seqGeneticAlgorithm, double p) {
+    ConstrainedSwapMutatorResSeq(ResSeqMatcher resSeqMatcher,  SeqGeneticAlgorithm seqGeneticAlgorithm, double p, boolean mutationProfile) {
         super(p);
         this.resSeqMatcher = resSeqMatcher;
         this.seqGeneticAlgorithm = seqGeneticAlgorithm;
@@ -53,6 +57,7 @@ public class ConstrainedSwapMutatorResSeq<
         }
         probability = p;
         startProbability = p;
+        this.mutationProfile = mutationProfile;
     }
 
     int getIndex(Object o) {
@@ -61,8 +66,19 @@ public class ConstrainedSwapMutatorResSeq<
     }
 
     private synchronized void updateProbability(int nGenes, long generation) {
-        int nGenerations = seqGeneticAlgorithm.getNGenerations();
-        probability = 0.1 / (2.0 + generation * (nGenes - 2.0) / (nGenerations - 1.0));
+        if (mutationProfile) {
+            int nGenerations = seqGeneticAlgorithm.getNGenerations();
+            //probability = startProbability / (2.0 + generation * (nGenes - 2.0) / (nGenerations - 1.0));
+            double freq0 = 1.0 / (nGenerations / 10.0);
+            double freq1 = 1.0 / (nGenerations / 2.0);
+            double f = generation / (nGenerations - 1);
+            double freq = freq0 + f * (freq1 - freq0);
+            long midGeneration = nGenerations / 4;
+            double k = 1.0;
+            double fSigmoid = 1.0 - 1.0 / (1.0 + Math.exp(-k * (generation - midGeneration)));
+            probability =  fSigmoid * startProbability * (Math.sin(2.0 * Math.PI * freq * generation) + 1.0) / 2.0;
+        }
+
     }
 
 

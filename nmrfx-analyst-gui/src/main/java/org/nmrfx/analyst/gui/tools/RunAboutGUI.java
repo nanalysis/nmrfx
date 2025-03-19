@@ -1697,6 +1697,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
         updatePeakListMenu();
         useSpinSystem = true;
+        gotoSpinSystems();
+        updateClusterCanvas();
     }
 
     public void updatePeakListMenu() {
@@ -1774,8 +1776,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
 
     void makeGraphMatcher() {
-        resSeqMatcher = new ResSeqMatcher();
-        GraphMatcherGUI graphMatcherGUI = new GraphMatcherGUI(this, resSeqMatcher, runAbout);
+        GraphMatcherGUI graphMatcherGUI = new GraphMatcherGUI(this, runAbout);
 
     }
 
@@ -1921,13 +1922,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             spinStatus.updateFragment(spinSys);
             refreshRefChart(currentSpinSystem.getRootPeak());
             updateActiveSystem();
-            if ((spinSys != null) && spinSys.getFragment().isEmpty()) {
-                spinSys.score();
-            }
         }
 
     }
 
+    public SpinSystem getCurrentSpinSystem() {
+        return currentSpinSystem;
+    }
     public void scoreFragment() {
         var spinSys = currentSpinSystem;
         spinStatus.updateFragment(spinSys);
