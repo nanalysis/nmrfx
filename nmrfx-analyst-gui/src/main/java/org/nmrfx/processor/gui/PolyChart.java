@@ -150,6 +150,10 @@ public class PolyChart extends Region {
     private static ViewBuffer viewBuffer = null;
     private  ViewBuffer chartViewBuffer = null;
 
+    private List<InsetChart> insetCharts = new ArrayList<>();
+
+    InsetChart insetChart = null;
+
     record IntegralLabelPosition(DatasetAttributes datasetAttributes, DatasetRegion region, BoundingBox boundingBox) {}
 
     List<IntegralLabelPosition> integralLabelPositions = new ArrayList<>();
@@ -192,6 +196,23 @@ public class PolyChart extends Region {
         }
     }
 
+    public InsetChart addInsetChart(PolyChart chart) {
+        chart.insetChart = new InsetChart(chart, this);
+        chart.insetChart.shift(0.1 * insetCharts.size(),  0.2 * insetCharts.size());
+        insetCharts.add(chart.insetChart);
+        return chart.insetChart;
+    }
+
+    public void removeInsetChart(InsetChart insetChart) {
+        insetCharts.remove(insetChart);
+    }
+    public List<InsetChart> getInsetCharts() {
+        return insetCharts;
+    }
+
+    public Optional<InsetChart> getInsetChart() {
+        return Optional.ofNullable(insetChart);
+    }
     /**
      * Called by PeakSlider to prevent handling peak events during peak alignment
      *
@@ -1908,6 +1929,11 @@ public class PolyChart extends Region {
         useImmediateMode = state;
     }
 
+    void setWH(double width, double height) {
+        setWidth(width);
+        setHeight(height);
+    }
+
     protected void layoutPlotChildren() {
         double xPos = getLayoutX();
         double yPos = getLayoutY();
@@ -2017,6 +2043,10 @@ public class PolyChart extends Region {
 
         } catch (GraphicsIOException ioE) {
             log.warn(ioE.getMessage(), ioE);
+        }
+        for (InsetChart insetChart : insetCharts) {
+            insetChart.setPosition(xPos, yPos, width, height, borders);
+            insetChart.refresh();
         }
     }
 

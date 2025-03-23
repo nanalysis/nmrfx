@@ -6,10 +6,7 @@ import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.GUIScripter;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.structure.seqassign.RunAbout;
@@ -112,20 +109,23 @@ public class GUIScripterAdvanced extends GUIScripter {
 
     public String genYAMLOnFx(FXMLController controller) {
         Stage stage = controller.getStage();
-        Map<String, Object> winMap = new HashMap<>();
+        Map<String, Object> winMap = new LinkedHashMap<>();
         winMap.put(GEOMETRY, geometryOnFx(controller));
         winMap.put("title", stage.getTitle());
         winMap.put("grid", gridOnFx(controller));
         winMap.put(SCONFIG, controller.getPublicPropertiesValues());
         List<Object> spectra = new ArrayList<>();
         winMap.put(SPECTRA, spectra);
-        int nCharts = controller.getCharts().size();
-        for (int iChart = 0; iChart < nCharts; iChart++) {
-            PolyChart chart = controller.getCharts().get(iChart);
+        for (PolyChart chart : controller.getAllCharts()) {
             Map<String, Object> sd = new HashMap<>();
             spectra.add(sd);
-            GridPaneCanvas.GridPosition gridValue = controller.getGridPaneCanvas().getGridLocation(chart);
-            sd.put("grid", List.of(gridValue.rows(), gridValue.columns(), gridValue.rowSpan(), gridValue.columnSpan()));
+            if (chart.getInsetChart().isPresent()) {
+                InsetChart insetChart = chart.getInsetChart().get();
+                sd.put("inset", insetChart.getPosition());
+            } else {
+                GridPaneCanvas.GridPosition gridValue = controller.getGridPaneCanvas().getGridLocation(chart);
+                sd.put("grid", List.of(gridValue.rows(), gridValue.columns(), gridValue.rowSpan(), gridValue.columnSpan()));
+            }
             sd.put("lim", limitOnFx(chart));
             sd.put(CCONFIG, chart.getChartProperties().getPublicPropertiesValues());
             List<CanvasAnnotation> annoTypes = chart.getCanvasAnnotations();
@@ -196,8 +196,9 @@ public class GUIScripterAdvanced extends GUIScripter {
              spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
         }
         if (data.containsKey("grid")) {
+            int nGridSpectra = countGridSpectra(spectraList);
             var grid = (List<Integer>) data.get("grid");
-            gridOnFx(controller, grid.get(0), grid.get(1), spectraList.size());
+            gridOnFx(controller, grid.get(0), grid.get(1), nGridSpectra);
         }
         if (data.containsKey(SCONFIG)) {
             var map = (Map<String, Object>) data.get(SCONFIG);
@@ -236,31 +237,48 @@ public class GUIScripterAdvanced extends GUIScripter {
         return controller;
     }
 
+    private int countGridSpectra(List<Map<String, Object>> spectraList) {
+        return spectraList.size() - (int) spectraList.stream().filter(map -> map.containsKey("inset")).count();
+    }
     private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList) {
         int iWin = 0;
+        PolyChart lastGridChart = null;
         for (var spectraMap : spectraList) {
             int iRow;
             int iCol;
             int rowSpan = 1;
             int columnSpan = 1;
-            if (spectraMap.containsKey("grid")) {
-                var grid = (List<Integer>) spectraMap.get("grid");
-                iRow = grid.get(0);
-                iCol = grid.get(1);
-                if (grid.size() > 3) {
-                    rowSpan = grid.get(2);
-                    columnSpan = grid.get(3);
-                }
+            PolyChart chart;
+            if (spectraMap.containsKey("inset")) {
+                var inset = (List<Double>) spectraMap.get("inset");
+                double fX = inset.get(0);
+                double fY = inset.get(1);
+                double fWidth = inset.get(2);
+                double fHeight = inset.get(3);
+                InsetChart insetChart = controller.addInsetChartTo(lastGridChart);
+                insetChart.setFractionalPosition(fX, fY, fWidth, fHeight);
+                chart = insetChart.getChart();
             } else {
-                iRow = 0;
-                iCol = 0;
+                chart = controller.getCharts().get(iWin++);
+                if (spectraMap.containsKey("grid")) {
+                    var grid = (List<Integer>) spectraMap.get("grid");
+                    iRow = grid.get(0);
+                    iCol = grid.get(1);
+                    if (grid.size() > 3) {
+                        rowSpan = grid.get(2);
+                        columnSpan = grid.get(3);
+                    }
+                    lastGridChart = chart;
+                } else {
+                    iRow = 0;
+                    iCol = 0;
+                    lastGridChart = chart;
+                }
+                grid(chart, iRow, iCol, rowSpan, columnSpan);
+                controller.setActiveChart(chart);
             }
-            PolyChart chart = controller.getCharts().get(iWin);
-            grid(chart, iRow, iCol, rowSpan, columnSpan);
-            controller.setActiveChart(chart);
             processChart(chart, spectraMap);
             chart.refresh();
-            iWin++;
         }
     }
 
