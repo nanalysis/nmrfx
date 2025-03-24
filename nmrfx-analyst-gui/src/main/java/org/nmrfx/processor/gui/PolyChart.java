@@ -2010,7 +2010,6 @@ public class PolyChart extends Region {
         double fY = (y1 - yPos) / height;
         double fWidth = (x2-x1) / width;
         double fHeight = (y2-y1) /height;
-        System.out.println(x1 + " " + y1 + " " + x2 + " " + y2 + " " + fX + " " + fY + " " + fWidth + " " + fHeight);
         return new Rectangle2D(fX, fY, fWidth, fHeight);
     }
 
@@ -3379,6 +3378,9 @@ public class PolyChart extends Region {
         }
 
         drawPeakLists(false);
+        for (var iChart : insetCharts) {
+            iChart.chart.drawPeakLists(false);
+        }
         boolean hitPeak = false;
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
             if (peakListAttr.getDrawPeaks()) {
