@@ -1175,9 +1175,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (chart != null) {
             chartDrawingLayers.getGrid().getChildren().remove(chart);
             charts.remove(chart);
-            chart.getInsetChart().ifPresent( insetChart -> {
-                insetChart.remove();
-            });
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
                     activeChart = null;
@@ -1373,7 +1370,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void refresh() {
         getAllCharts().forEach(PolyChart::refresh);
-
     }
     public void addGrid() {
         GridPaneCanvas.GridDimensions gdims = getGridDimensionInput();
@@ -1395,7 +1391,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void removeSelectedChart() {
-        if (charts.size() > 1) {
+        if (getAllCharts().size() > 1) {
             PolyChart chart = getActiveChart();
             if (chart.getInsetChart().isPresent()) {
                 chart.getInsetChart().ifPresent(insetChart -> {

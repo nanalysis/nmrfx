@@ -30,6 +30,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -103,6 +104,7 @@ public class PolyChart extends Region {
     private final ChartDrawingLayers drawingLayers;
     private final Path bcPath = new Path();
     private final Rectangle highlightRect = new Rectangle();
+    private final Rectangle[] handleRects = {new Rectangle(), new Rectangle(), new Rectangle(), new Rectangle()};
     private final DrawSpectrum drawSpectrum;
     private final DrawPeaks drawPeaks;
     private final List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
@@ -170,6 +172,9 @@ public class PolyChart extends Region {
         setVisible(false);
     }
 
+    public ChartDrawingLayers getDrawingLayers() {
+        return drawingLayers;
+    }
     class ViewBuffer {
         int[] dim;
         double[][] limits;
@@ -205,6 +210,7 @@ public class PolyChart extends Region {
 
     public void removeInsetChart(InsetChart insetChart) {
         insetCharts.remove(insetChart);
+        getFXMLController().refresh();
     }
     public List<InsetChart> getInsetCharts() {
         return insetCharts;
@@ -286,19 +292,53 @@ public class PolyChart extends Region {
         return disDimProp;
     }
 
+    private void configHighlightRects(boolean handle, Rectangle... rectangles) {
+        int i = 0;
+        for (Rectangle rectangle : rectangles) {
+            rectangle.setVisible(false);
+            rectangle.setStroke(Color.BLUE);
+            rectangle.setStrokeWidth(1.0);
+            rectangle.setFill(null);
+            if (!handle) {
+                rectangle.visibleProperty().bind(
+                        PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)
+                                .and(PolyChartManager.getInstance().multipleChartsProperty()));
+            } else {
+                rectangle.setFill(Color.BLUE);
+                rectangle.visibleProperty().bind(PolyChartManager.getInstance().selectedChartProperty().isEqualTo(this)
+                        .and(PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)));
+
+                rectangle.setMouseTransparent(false);
+                int mode = i;
+                rectangle.setOnMousePressed(e -> dragHandle(e, "press", mode));
+                rectangle.setOnMouseDragged(e -> dragHandle(e,"drag", mode));
+                rectangle.setOnMouseReleased(e -> dragHandle(e,"release", mode));
+                i++;
+            }
+            drawingLayers.getTopPane().getChildren().add(rectangle);
+        }
+    }
+
+    private void dragHandle(MouseEvent mouseEvent, String mode, int i) {
+        if (mode.equals("press")) {
+            insetChart.set(mouseEvent.getX(), mouseEvent.getY());
+        } else if (mode.equals("drag")) {
+            insetChart.drag(i, mouseEvent.getX(), mouseEvent.getY());
+        } else if (mode.equals("release")) {
+            insetChart.release(i, mouseEvent.getX(), mouseEvent.getY());
+        }
+    }
+
     private void initChart() {
         useImmediateMode = PreferencesController.getUseImmediateMode();
         crossHairs = new CrossHairs(this);
         drawingLayers.getTopPane().getChildren().addAll(crossHairs.getAllGraphicalLines());
+        configHighlightRects(false, highlightRect);
+        configHighlightRects(true, handleRects);
+        highlightRect.setOnMousePressed(e -> dragHandle(e, "press", -1));
+        highlightRect.setOnMouseDragged(e -> dragHandle(e, "drag", -1));
+        highlightRect.setOnMouseReleased(e -> dragHandle(e, "release", -1));
 
-        highlightRect.setVisible(false);
-        highlightRect.setStroke(Color.BLUE);
-        highlightRect.setStrokeWidth(1.0);
-        highlightRect.setFill(null);
-        highlightRect.visibleProperty().bind(
-                PolyChartManager.getInstance().activeChartProperty().isEqualTo(this)
-                        .and(PolyChartManager.getInstance().multipleChartsProperty()));
-        drawingLayers.getTopPane().getChildren().add(highlightRect);
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
         GUIProject.getActive().addPeakListSubscription(this::purgeInvalidPeakListAttributes);
@@ -326,11 +366,18 @@ public class PolyChart extends Region {
         return axes;
     }
 
+    private void removeHighlightRects(Rectangle... rectangles) {
+        for (Rectangle rectangle : rectangles) {
+            rectangle.visibleProperty().unbind();
+            drawingLayers.getTopPane().getChildren().remove(rectangle);
+
+        }
+    }
     public void close() {
         drawingLayers.getTopPane().getChildren().removeAll(crossHairs.getAllGraphicalLines());
 
-        highlightRect.visibleProperty().unbind();
-        drawingLayers.getTopPane().getChildren().remove(highlightRect);
+        removeHighlightRects(highlightRect);
+        removeHighlightRects(handleRects);
 
         PolyChartManager.getInstance().unregisterChart(this);
         drawSpectrum.clearThreads();
@@ -1916,6 +1963,24 @@ public class PolyChart extends Region {
         highlightRect.setY(yPos + 1);
         highlightRect.setWidth(width - 2);
         highlightRect.setHeight(height - 2);
+        if (insetChart != null) {
+            insetChart.setHandlePositions(handleRects);
+        }
+    }
+
+    public void selectHighlight(boolean state) {
+        if (state) {
+            Color color = Color.color(1.0, 1.0,0.0, 0.1);
+            highlightRect.setFill(color);
+        } else {
+            highlightRect.setFill(null);
+        }
+    }
+    void moveHighlightChart(double x, double y, double width, double height) {
+        highlightRect.setX(x);
+        highlightRect.setY(y);
+        highlightRect.setWidth(width);
+        highlightRect.setHeight(height);
     }
 
     public static void updateImmediateModes(boolean state) {
@@ -1934,6 +1999,21 @@ public class PolyChart extends Region {
         setHeight(height);
     }
 
+    Rectangle2D getFractionalPosition(double x1, double y1, double x2, double y2) {
+        double xPos = getLayoutX() + borders.getLeft();
+        double yPos = getLayoutY() + borders.getTop();
+        double width = getWidth();
+        double height = getHeight();
+        width -= borders.getLeft() + borders.getRight();
+        height -= borders.getTop() + borders.getBottom();
+        double fX = (x1 - xPos) / width;
+        double fY = (y1 - yPos) / height;
+        double fWidth = (x2-x1) / width;
+        double fHeight = (y2-y1) /height;
+        System.out.println(x1 + " " + y1 + " " + x2 + " " + y2 + " " + fX + " " + fY + " " + fWidth + " " + fHeight);
+        return new Rectangle2D(fX, fY, fWidth, fHeight);
+    }
+
     protected void layoutPlotChildren() {
         double xPos = getLayoutX();
         double yPos = getLayoutY();
@@ -1945,7 +2025,6 @@ public class PolyChart extends Region {
         if (is1D()) {
             axes.setYAxisByLevel();
         }
-
         GraphicsContextInterface gC = drawingLayers.getGraphicsProxyFor(ChartDrawingLayers.Item.Spectrum);
         try {
             gC.save();
@@ -2845,6 +2924,11 @@ public class PolyChart extends Region {
     public void deleteSelectedItems() {
         deleteSelectedPeaks();
         deleteSelectedAnnotations();
+        PolyChartManager.getInstance().getSelectedChart().ifPresent(sChart -> {
+            sChart.getInsetChart().ifPresent(iChart -> {
+                iChart.remove();
+            });
+        });
     }
 
     public void deleteSelectedPeaks() {
