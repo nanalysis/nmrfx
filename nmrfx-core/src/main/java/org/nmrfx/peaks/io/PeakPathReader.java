@@ -139,8 +139,10 @@ public class PeakPathReader {
                             i++;
                         }
                         PeakPath path = makePath(peakPath, peakListIDColumn.subList(start, i), peakIDColumn.subList(start, i), idMap);
-                        int useID = pathIDColumn.get(start);
-                        pathMap.put(useID, path);
+                        if (path != null) {
+                            int useID = pathIDColumn.get(start);
+                            pathMap.put(useID, path);
+                        }
                         start = i;
                     }
                     lastID = id;
@@ -206,13 +208,15 @@ public class PeakPathReader {
                         i++;
                     }
                     PeakPath path = pathMap.get(id);
-                    if (ok) {
-                        path.setFitParErrors(pars, errors);
+                    if (path != null) {
+                        if (ok) {
+                            path.setFitParErrors(pars, errors);
+                        }
+                        if (confirmed) {
+                            path.confirm();
+                        }
+                        path.setActive(active);
                     }
-                    if (confirmed) {
-                        path.confirm();
-                    }
-                    path.setActive(active);
                 }
             }
         }
@@ -225,6 +229,9 @@ public class PeakPathReader {
             int peakID = peakIDs.get(i);
             PeakList peakList = idMap.get(listID);
             Peak peak = peakID < 0 ? null : peakList.getPeakByID(peakID);
+            if ((i==0) && (peak ==null)) {
+                return null;
+            }
             peaks.add(peak);
         }
         return peakPath.addPath(peaks);
