@@ -511,6 +511,7 @@ public class GUIScripter {
             List<CanvasAnnotation> annoTypes = (List<CanvasAnnotation>) yaml.load(stream);
             for (CanvasAnnotation annoType : annoTypes) {
                 chart.addAnnotation(annoType);
+                annoType.setChart(chart);
             }
         } catch (IOException e) {
             log.error("Error loading annotations", e);

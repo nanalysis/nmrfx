@@ -12,6 +12,7 @@ import javafx.scene.transform.Affine;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -48,7 +49,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     Color negColor = Color.BLUE;
     int colorBy = BY_VALUE;
     boolean scaleShape = true;
-    boolean drawLabels = true;
+    AtomLabels.LabelTypes drawLabels = AtomLabels.LabelTypes.LABEL_NONHCO;
     int iStructure = 0;
     boolean transformValid = false;
     String molName = null;
@@ -72,10 +73,10 @@ public class CanvasMolecule implements CanvasAnnotation {
     double x2;
     double y2;
 
-    double bx1;
-    double by1;
-    double bx2;
-    double by2;
+    double xp1;
+    double yp1;
+    double xp2;
+    double yp2;
 
     double startX1;
     double startY1;
@@ -95,11 +96,47 @@ public class CanvasMolecule implements CanvasAnnotation {
         this.chart = chart;
     }
 
+    public void setChart(PolyChart chart) {
+        this.chart = chart;
+    }
+
+    public double getX1() {
+        return x1;
+    }
+
+    public void setX1(double x1) {
+        this.x1 = x1;
+    }
+
+    public double getY1() {
+        return y1;
+    }
+
+    public void setY1(double y1) {
+        this.y1 = y1;
+    }
+
+    public double getX2() {
+        return x2;
+    }
+
+    public void setX2(double x2) {
+        this.x2 = x2;
+    }
+
+    public double getY2() {
+        return y2;
+    }
+
+    public void setY2(double y2) {
+        this.y2 = y2;
+    }
+
     public void setPosition(double x1, double y1, double x2, double y2, POSTYPE xPosType, POSTYPE yPosType) {
-        bx1 = x1;
-        by1 = y1;
-        bx2 = x2;
-        by2 = y2;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
         this.xPosType = xPosType;
         this.yPosType = yPosType;
     }
@@ -177,6 +214,10 @@ public class CanvasMolecule implements CanvasAnnotation {
         transformValid = false;
     }
 
+    public String getMolName() {
+        return molName;
+    }
+
     public void setMolName(String molName) {
         setMolName(molName, 0);
     }
@@ -209,8 +250,8 @@ public class CanvasMolecule implements CanvasAnnotation {
         scaleShape = bVal;
     }
 
-    public void setLabels(boolean bVal) {
-        drawLabels = bVal;
+    public void setLabels(AtomLabels.LabelTypes labelTypes) {
+        drawLabels = labelTypes;
     }
 
     public void setColorBy(String colorString) {
@@ -271,8 +312,8 @@ public class CanvasMolecule implements CanvasAnnotation {
         double dYMol = maxY - minY;
         double xCenterMol = (maxX + minX) / 2.0;
         double yCenterMol = (maxY + minY) / 2.0;
-        double dX = x2 - x1;
-        double dY = y2 - y1;
+        double dX = xp2 - xp1;
+        double dY = yp2 - yp1;
         double scaleX = dX / dXMol;
         double scaleY = dY / dYMol;
         double scale;
@@ -281,8 +322,8 @@ public class CanvasMolecule implements CanvasAnnotation {
             scale = scaleX;
         }
         scale *= 0.9;
-        double xCenter = (x2 + x1) / 2.0;
-        double yCenter = (y2 + y1) / 2.0;
+        double xCenter = (xp2 + xp1) / 2.0;
+        double yCenter = (yp2 + yp1) / 2.0;
         canvasTransform.setToIdentity();
         canvasTransform.appendTranslation(xCenter, yCenter);
         canvasTransform.appendScale(scale, -scale);
@@ -335,7 +376,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     void assignPeak(PeakDim peakDim, List<Atom> atoms) {
         Atom currentAtom = peakDim.getResonance().getAtom();
         if (!atoms.isEmpty() && ((currentAtom == null) || (GUIUtils.affirm("Already assigned, change assignment?")))) {
-            for (Atom atom: atoms) {
+            for (Atom atom : atoms) {
                 peakDim.getResonance().setAtom(atom);
                 peakDim.setLabel(atom.getShortName());
                 atom.setPPM(peakDim.getChemShiftValue());
@@ -344,6 +385,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
 
     }
+
     void assignPeak(Molecule molecule) {
         var selectedSpatialSets = molecule.selectedSpatialSets();
         var peaks = chart.getSelectedPeaks();
@@ -379,13 +421,16 @@ public class CanvasMolecule implements CanvasAnnotation {
             }
         }
     }
+
     void selectMolecule(boolean selectMode) {
         Molecule molecule = Molecule.get(molName);
-        if (!molecule.globalSelected.isEmpty()) {
-            molecule.clearSelected();
-        }
-        if (selectMode && selectable) {
-            selected = true;
+        if (molecule != null) {
+            if (!molecule.globalSelected.isEmpty()) {
+                molecule.clearSelected();
+            }
+            if (selectMode && selectable) {
+                selected = true;
+            }
         }
     }
 
@@ -400,10 +445,10 @@ public class CanvasMolecule implements CanvasAnnotation {
             return false;
         } else {
             hitAtom = pick(null, x, y);
-            startX1 = bx1;
-            startY1 = by1;
-            startX2 = bx2;
-            startY2 = by2;
+            startX1 = x1;
+            startY1 = y1;
+            startX2 = x2;
+            startY2 = y2;
             if (hitAtom == -1) {
                 selectMolecule(selectMode);
             } else {
@@ -429,57 +474,63 @@ public class CanvasMolecule implements CanvasAnnotation {
         double dy = pos[1] - start[1];
         double handleSeparationLimit = getHandleSeparationLimit(bounds, world);
         if (activeHandle < 0) {
-            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
 
         } else if (activeHandle == 0) { // upper left
-            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            bx1 = Math.min(bx1, bx2 - handleSeparationLimit);
-            by1 = Math.min(by1, by2 - handleSeparationLimit);
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            x1 = Math.min(x1, x2 - handleSeparationLimit);
+            y1 = Math.min(y1, y2 - handleSeparationLimit);
         } else if (activeHandle == 1) { // upper right
-            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            by1 = yPosType.move(startY1, dy, bounds[1], world[1]);
-            bx2 = Math.max(bx1 + handleSeparationLimit, bx2);
-            by1 = Math.min(by1, by2 - handleSeparationLimit);
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            y1 = yPosType.move(startY1, dy, bounds[1], world[1]);
+            x2 = Math.max(x1 + handleSeparationLimit, x2);
+            y1 = Math.min(y1, y2 - handleSeparationLimit);
         } else if (activeHandle == 2) { // bottom right
-            bx2 = xPosType.move(startX2, dx, bounds[0], world[0]);
-            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
-            bx2 = Math.max(bx1 + handleSeparationLimit, bx2);
-            by2 = Math.max(by1 + handleSeparationLimit, by2);
+            x2 = xPosType.move(startX2, dx, bounds[0], world[0]);
+            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+            x2 = Math.max(x1 + handleSeparationLimit, x2);
+            y2 = Math.max(y1 + handleSeparationLimit, y2);
         } else if (activeHandle == 3) { // bottom left
-            bx1 = xPosType.move(startX1, dx, bounds[0], world[0]);
-            by2 = yPosType.move(startY2, dy, bounds[1], world[1]);
-            bx1 = Math.min(bx1, bx2 - handleSeparationLimit);
-            by2 = Math.max(by1 + handleSeparationLimit, by2);
+            x1 = xPosType.move(startX1, dx, bounds[0], world[0]);
+            y2 = yPosType.move(startY2, dy, bounds[1], world[1]);
+            x1 = Math.min(x1, x2 - handleSeparationLimit);
+            y2 = Math.max(y1 + handleSeparationLimit, y2);
         }
     }
 
     public void zoom(double factor) {
-        double deltaBx = (factor - 1.0) * (bx2 - bx1);
-        double deltaBy = (factor - 1.0) * (by2 - by1);
-        bx1 = bx1 + deltaBx;
-        by1 = by1 + deltaBy;
-        bx2 = bx2 - deltaBx;
-        by2 = by2 - deltaBy;
+        double deltaBx = (factor - 1.0) * (x2 - x1);
+        double deltaBy = (factor - 1.0) * (y2 - y1);
+        x1 = x1 + deltaBx;
+        y1 = y1 + deltaBy;
+        x2 = x2 - deltaBx;
+        y2 = y2 - deltaBy;
         if (chart != null) {
             chart.drawPeakLists(false);
         }
 
     }
 
+    public void redraw() {
+        if (chart != null) {
+            chart.drawPeakLists(false);
+        }
+    }
+
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
         validate();
-        x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
-        x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
-        y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
-        y2 = yPosType.transform(by2, canvasBounds[1], worldBounds[1]);
-        double xMin = Math.min(x1, x2);
-        double yMin = Math.min(y1, y2);
-        double width = Math.abs(x2 - x1);
-        double height = Math.abs(y2 - y1);
+        xp1 = xPosType.transform(x1, canvasBounds[0], worldBounds[0]);
+        xp2 = xPosType.transform(x2, canvasBounds[0], worldBounds[0]);
+        yp1 = yPosType.transform(y1, canvasBounds[1], worldBounds[1]);
+        yp2 = yPosType.transform(y2, canvasBounds[1], worldBounds[1]);
+        double xMin = Math.min(xp1, xp2);
+        double yMin = Math.min(yp1, yp2);
+        double width = Math.abs(xp2 - xp1);
+        double height = Math.abs(yp2 - yp1);
 
         bounds2D = new Rectangle2D(xMin, yMin, width, height);
         transformValid = false;
@@ -518,7 +569,8 @@ public class CanvasMolecule implements CanvasAnnotation {
             }
         }
 
-        }
+    }
+
     public void paintShape(GraphicsContextInterface g2) {
         boolean drawSpheres = true;
         boolean drawLines = true;
@@ -530,7 +582,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
         if (molecule != null) {
             drawSpheres = false;
-            drawLabels = true;
             valueMode = false;
             posShape = CIRCLE_SHAPE;
             negShape = CIRCLE_SHAPE;
@@ -554,9 +605,6 @@ public class CanvasMolecule implements CanvasAnnotation {
                 drawLines = false;
             }
 
-            if (molecule.label == 0) {
-                drawLabels = false;
-            }
         }
         if (drawSpheres) {
             genSpheres(g2, false, 0, 0);
@@ -566,7 +614,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             genLines(g2);
         }
 
-        if (drawLabels) {
+        if (drawLabels != AtomLabels.LabelTypes.LABEL_NONE) {
             genLabels(g2);
         }
         getSelectionCoords();
@@ -801,7 +849,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             String label = null;
 
             if (molPrims.atoms != null) {
-                label = molPrims.atoms[i].label;
+                label = AtomLabels.getAtomLabel(molPrims.atoms[i], drawLabels);
             } else {
                 label = molPrims.labels[i];
             }
@@ -978,7 +1026,7 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     //@Override
     //public void setSelectable(boolean state) {
-     //   selectable = state;
+    //   selectable = state;
     //}
 
     @Override
@@ -1012,5 +1060,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         y2 = newType.itransform(y2Pix, bounds, world);
         yPosType = newType;
     }
+
 
 }

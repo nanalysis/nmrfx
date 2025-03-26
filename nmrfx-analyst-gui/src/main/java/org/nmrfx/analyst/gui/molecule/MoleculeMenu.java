@@ -5,8 +5,7 @@
  */
 package org.nmrfx.analyst.gui.molecule;
 
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 
@@ -31,6 +30,29 @@ public class MoleculeMenu extends ChartMenu {
         MenuItem zoomOutItem = new MenuItem("Zoom In");
         chartMenu.getItems().add(zoomOutItem);
         zoomOutItem.setOnAction(e -> canvasMolecule.zoom(0.75));
+        Menu labelMenu = new Menu("Labels");
+
+        ToggleGroup toggleGroup = new ToggleGroup();
+        AtomLabels.LabelTypes[] labelTypes = {AtomLabels.LabelTypes.LABEL_NONE, AtomLabels.LabelTypes.LABEL_NONHCO,
+        AtomLabels.LabelTypes.LABEL_PPM, AtomLabels.LabelTypes.LABEL_NAME};
+        for (var labelType : labelTypes) {
+            RadioMenuItem noneLabelMenuItem = new RadioMenuItem(labelType.toString().substring(6));
+            noneLabelMenuItem.setUserData(labelType);
+            toggleGroup.getToggles().add(noneLabelMenuItem);
+            labelMenu.getItems().add(noneLabelMenuItem);
+            if (labelType == AtomLabels.LabelTypes.LABEL_NONHCO) {
+                toggleGroup.selectToggle(noneLabelMenuItem);
+            }
+        }
+
+
+
+        toggleGroup.selectedToggleProperty().addListener(e -> {
+            canvasMolecule.setLabels((AtomLabels.LabelTypes) toggleGroup.getSelectedToggle().getUserData());
+            canvasMolecule.redraw();
+        });
+
+        chartMenu.getItems().add(labelMenu);
     }
 
 }

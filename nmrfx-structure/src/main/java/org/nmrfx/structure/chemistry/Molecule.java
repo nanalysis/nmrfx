@@ -1179,6 +1179,7 @@ public class Molecule extends MoleculeBase {
                         double x3 = -dy / bondSpace;
                         double y3 = dx / bondSpace;
                         double z3 = dz / bondSpace;
+                        Point3 v3 = new Point3(-dy / bondSpace, dx / bondSpace, dz / bondSpace);
 
                         if (((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens < atomB.nonHydrogens))
                                 || ((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
@@ -1309,6 +1310,7 @@ public class Molecule extends MoleculeBase {
                             }
 
                             if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 8)) {
+                                Line3 lineB = new Line3(ptB.add(v3), ptE.add(v3));
                                 coords[i++] = (float) (ptB.getX() + x3);
                                 coords[i++] = (float) (ptB.getY() + y3);
                                 coords[i++] = (float) (ptB.getZ() + z3);
