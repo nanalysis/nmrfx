@@ -23,8 +23,14 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomColors;
+import org.nmrfx.chemistry.Line3;
+import org.nmrfx.chemistry.Point3;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Johnbruc
@@ -37,6 +43,8 @@ public class MoleculePrimitives {
     public float[] sphereValues = null;
     public int nLines = 0;
     public float[] lineCoords = null;
+
+    List<Line3> lines = new ArrayList<>();
     public float[] lineColors = null;
     public int nSelected = 0;
     public float[] selectionCoords = null;
