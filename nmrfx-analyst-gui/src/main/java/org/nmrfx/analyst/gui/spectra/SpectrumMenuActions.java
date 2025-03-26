@@ -59,12 +59,17 @@ public class SpectrumMenuActions extends MenuActions {
         normalizeItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().setBorderState(false));
 
         arrangeMenu.getItems().addAll(createGridItem, horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
+
+        MenuItem insetsMenuItem = new MenuItem("Add Inset Spectrum");
+        insetsMenuItem.setOnAction(e -> addInsetSpectrum());
+
+
         MenuItem favoritesMenuItem = new MenuItem("Favorites");
         favoritesMenuItem.setOnAction(e -> showFavorites());
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG");
         copyItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().copySVGAction(e));
-        menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem);
-        MenuItem[] disableItems = {deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem, copyItem};
+        menu.getItems().addAll(newMenuItem, deleteItem, arrangeMenu, insetsMenuItem, favoritesMenuItem, syncMenuItem, copyItem);
+        MenuItem[] disableItems = {deleteItem, arrangeMenu, insetsMenuItem, favoritesMenuItem, syncMenuItem, copyItem};
         for (var item : disableItems) {
             item.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
         }
@@ -79,6 +84,11 @@ public class SpectrumMenuActions extends MenuActions {
                 alignMenuItem);
     }
 
+    void addInsetSpectrum() {
+        PolyChart chart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
+        chart.getFXMLController().addInsetChartTo(chart);
+        chart.getFXMLController().refresh();
+    }
     void showFavorites() {
         if (windowIO == null) {
             windowIO = new WindowIO();
