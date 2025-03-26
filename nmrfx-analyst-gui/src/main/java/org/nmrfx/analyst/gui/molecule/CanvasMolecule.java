@@ -12,6 +12,7 @@ import javafx.scene.transform.Affine;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.InvalidMoleculeException;
+import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -48,7 +49,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     Color negColor = Color.BLUE;
     int colorBy = BY_VALUE;
     boolean scaleShape = true;
-    boolean drawLabels = true;
+    AtomLabels.LabelTypes drawLabels = AtomLabels.LabelTypes.LABEL_NONHCO;
     int iStructure = 0;
     boolean transformValid = false;
     String molName = null;
@@ -249,8 +250,8 @@ public class CanvasMolecule implements CanvasAnnotation {
         scaleShape = bVal;
     }
 
-    public void setLabels(boolean bVal) {
-        drawLabels = bVal;
+    public void setLabels(AtomLabels.LabelTypes labelTypes) {
+        drawLabels = labelTypes;
     }
 
     public void setColorBy(String colorString) {
@@ -375,7 +376,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     void assignPeak(PeakDim peakDim, List<Atom> atoms) {
         Atom currentAtom = peakDim.getResonance().getAtom();
         if (!atoms.isEmpty() && ((currentAtom == null) || (GUIUtils.affirm("Already assigned, change assignment?")))) {
-            for (Atom atom: atoms) {
+            for (Atom atom : atoms) {
                 peakDim.getResonance().setAtom(atom);
                 peakDim.setLabel(atom.getShortName());
                 atom.setPPM(peakDim.getChemShiftValue());
@@ -384,6 +385,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
 
     }
+
     void assignPeak(Molecule molecule) {
         var selectedSpatialSets = molecule.selectedSpatialSets();
         var peaks = chart.getSelectedPeaks();
@@ -419,6 +421,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             }
         }
     }
+
     void selectMolecule(boolean selectMode) {
         Molecule molecule = Molecule.get(molName);
         if (molecule != null) {
@@ -512,6 +515,12 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     }
 
+    public void redraw() {
+        if (chart != null) {
+            chart.drawPeakLists(false);
+        }
+    }
+
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
         validate();
         xp1 = xPosType.transform(x1, canvasBounds[0], worldBounds[0]);
@@ -560,7 +569,8 @@ public class CanvasMolecule implements CanvasAnnotation {
             }
         }
 
-        }
+    }
+
     public void paintShape(GraphicsContextInterface g2) {
         boolean drawSpheres = true;
         boolean drawLines = true;
@@ -572,7 +582,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
         if (molecule != null) {
             drawSpheres = false;
-            drawLabels = true;
             valueMode = false;
             posShape = CIRCLE_SHAPE;
             negShape = CIRCLE_SHAPE;
@@ -596,9 +605,6 @@ public class CanvasMolecule implements CanvasAnnotation {
                 drawLines = false;
             }
 
-            if (molecule.label == 0) {
-                drawLabels = false;
-            }
         }
         if (drawSpheres) {
             genSpheres(g2, false, 0, 0);
@@ -608,7 +614,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             genLines(g2);
         }
 
-        if (drawLabels) {
+        if (drawLabels != AtomLabels.LabelTypes.LABEL_NONE) {
             genLabels(g2);
         }
         getSelectionCoords();
@@ -843,7 +849,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             String label = null;
 
             if (molPrims.atoms != null) {
-                label = molPrims.atoms[i].label;
+                label = AtomLabels.getAtomLabel(molPrims.atoms[i], drawLabels);
             } else {
                 label = molPrims.labels[i];
             }
@@ -1020,7 +1026,7 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     //@Override
     //public void setSelectable(boolean state) {
-     //   selectable = state;
+    //   selectable = state;
     //}
 
     @Override
@@ -1054,5 +1060,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         y2 = newType.itransform(y2Pix, bounds, world);
         yPosType = newType;
     }
+
 
 }
