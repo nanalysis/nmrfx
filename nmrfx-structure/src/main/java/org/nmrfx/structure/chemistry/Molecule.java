@@ -42,6 +42,7 @@ import org.nmrfx.structure.project.StructureProject;
 import org.nmrfx.structure.rdc.AlignmentCalc;
 import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rna.BasePair;
+import org.nmrfx.utilities.NMRFxColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -576,6 +577,7 @@ public class Molecule extends MoleculeBase {
         }
         return atomTree;
     }
+
     public void dumpCoordsGen() {
         if (genVecs == null) {
             return;
@@ -1153,13 +1155,14 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public int createLineArray(int iStructure, float[] coords, int i, float[] colors) {
+    public void createLineArray(int iStructure,  List<Line3> lines) {
         int j;
         Atom atomB;
         Atom atomE;
         Point3 ptB;
         Point3 ptE;
         updateBondArray();
+        lines.clear();
         for (Bond bond : bonds) {
             if (bond.getProperty(Bond.DISPLAY)) {
                 atomB = bond.begin;
@@ -1171,181 +1174,85 @@ public class Molecule extends MoleculeBase {
                     ptE = atomE.getFlatPoint(iStructure);
 
                     if ((ptB != null) && (ptE != null)) {
-                        j = i;
-
                         double dx = ptE.getX() - ptB.getX();
                         double dy = ptE.getY() - ptB.getY();
                         double dz = ptE.getZ() - ptB.getZ();
                         double x3 = -dy / bondSpace;
                         double y3 = dx / bondSpace;
                         double z3 = dz / bondSpace;
+
                         Point3 v3 = new Point3(-dy / bondSpace, dx / bondSpace, dz / bondSpace);
+                        int m = 1;
+                        Point3 d1 = new Point3(x3 + (dx / 5 * m), y3 + (dy / 5 * m), z3 + (dz / 5 * m));
+                        Point3 d1m = new Point3(-x3 + (dx / 5 * m), -y3 + (dy / 5 * m), -z3 + (dz / 5 * m));
+                        m = 2;
+                        Point3 d2 = new Point3(x3 + (dx / 5 * m), y3 + (dy / 5 * m), z3 + (dz / 5 * m));
+                        Point3 d2m = new Point3(-x3 + (dx / 5 * m), -y3 + (dy / 5 * m), -z3 + (dz / 5 * m));
+                        m = 3;
+                        Point3 d3 = new Point3(x3 + (dx / 5 * m), y3 + (dy / 5 * m), z3 + (dz / 5 * m));
+                        Point3 d3m = new Point3(-x3 + (dx / 5 * m), -y3 + (dy / 5 * m), -z3 + (dz / 5 * m));
+                        m = 4;
+                        Point3 d4 = new Point3(x3 + (dx / 5 * m), y3 + (dy / 5 * m), z3 + (dz / 5 * m));
+                        Point3 d4m = new Point3(-x3 + (dx / 5 * m), -y3 + (dy / 5 * m), -z3 + (dz / 5 * m));
 
                         if (((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens < atomB.nonHydrogens))
                                 || ((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
-                            coords[i++] = (float) (ptB.getX());
-                            coords[i++] = (float) (ptB.getY());
-                            coords[i++] = (float) (ptB.getZ());
-                            coords[i++] = (float) (ptE.getX() + x3);
-                            coords[i++] = (float) (ptE.getY() + y3);
-                            coords[i++] = (float) (ptE.getZ() + z3);
+                            NMRFxColor colorB = new NMRFxColor(atomB.getRed(), atomB.getGreen(), atomB.getBlue());
+                            NMRFxColor colorE = new NMRFxColor(atomE.getRed(), atomE.getGreen(), atomE.getBlue());
 
-                            coords[i++] = (float) (ptB.getX());
-                            coords[i++] = (float) (ptB.getY());
-                            coords[i++] = (float) (ptB.getZ());
-                            coords[i++] = (float) (ptE.getX() - x3);
-                            coords[i++] = (float) (ptE.getY() - y3);
-                            coords[i++] = (float) (ptE.getZ() - z3);
+                            Line3 line1 = new Line3(ptB, ptE.add(v3), colorB, colorE);
+                            lines.add(line1);
 
-                            coords[i++] = (float) (ptE.getX() - x3);
-                            coords[i++] = (float) (ptE.getY() - y3);
-                            coords[i++] = (float) (ptE.getZ() - z3);
-                            coords[i++] = (float) (ptE.getX() + x3);
-                            coords[i++] = (float) (ptE.getY() + y3);
-                            coords[i++] = (float) (ptE.getZ() + z3);
+                            Line3 line2 = new Line3(ptB, ptE.subtract(v3), colorB, colorE);
+                            lines.add(line2);
 
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
+                            Line3 line3 = new Line3(ptE.subtract(v3), ptE.add(v3), colorB, colorE);
+                            lines.add(line3);
                         } else if (((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens < atomB.nonHydrogens))
                                 || ((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
-                            coords[i++] = (float) (ptB.getX() + x3);
-                            coords[i++] = (float) (ptB.getY() + y3);
-                            coords[i++] = (float) (ptB.getZ() + z3);
-                            coords[i++] = (float) (ptB.getX() - x3);
-                            coords[i++] = (float) (ptB.getY() - y3);
-                            coords[i++] = (float) (ptB.getZ() - z3);
+                            NMRFxColor colorB = new NMRFxColor(atomB.getRed(), atomB.getGreen(), atomB.getBlue());
+                            NMRFxColor colorE = new NMRFxColor(atomE.getRed(), atomE.getGreen(), atomE.getBlue());
+                            Line3 line1 = new Line3(ptB.add(v3), ptB.subtract(v3), colorB, colorE);
+                            lines.add(line1);
 
-                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5));
-                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5));
-                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5));
-                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5));
-                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5));
-                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5));
+                            Line3 line2 = new Line3(ptB.add(d1), ptB.add(d1m), colorB, colorE);
+                            lines.add(line2);
 
-                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5 * 2));
-                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5 * 2));
-                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5 * 2));
-                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5 * 2));
-                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5 * 2));
-                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5 * 2));
+                            Line3 line3 = new Line3(ptB.add(d2), ptB.add(d2m), colorB, colorE);
+                            lines.add(line3);
 
-                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5 * 3));
-                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5 * 3));
-                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5 * 3));
-                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5 * 3));
-                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5 * 3));
-                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5 * 3));
+                            Line3 line4 = new Line3(ptB.add(d3), ptB.add(d3m), colorB, colorE);
+                            lines.add(line4);
 
-                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5 * 4));
-                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5 * 4));
-                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5 * 4));
-                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5 * 4));
-                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5 * 4));
-                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5 * 4));
-
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
-                            colors[j++] = atomB.getRed();
-                            colors[j++] = atomB.getGreen();
-                            colors[j++] = atomB.getBlue();
-                            colors[j++] = atomE.getRed();
-                            colors[j++] = atomE.getGreen();
-                            colors[j++] = atomE.getBlue();
+                            Line3 line5 = new Line3(ptB.add(d4), ptB.add(d4m), colorB, colorE);
+                            lines.add(line5);
                         } else {
                             if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 7)
                                     || (bond.order.getOrderNum() == 9)) {
                                 atomB.setProperty(Atom.LABEL);
                                 atomE.setProperty(Atom.LABEL);
 
-                                coords[i++] = (float) ptB.getX();
-                                coords[i++] = (float) ptB.getY();
-                                coords[i++] = (float) ptB.getZ();
-                                coords[i++] = (float) ptE.getX();
-                                coords[i++] = (float) ptE.getY();
-                                coords[i++] = (float) ptE.getZ();
-                                colors[j++] = atomB.getRed();
-                                colors[j++] = atomB.getGreen();
-                                colors[j++] = atomB.getBlue();
-                                colors[j++] = atomE.getRed();
-                                colors[j++] = atomE.getGreen();
-                                colors[j++] = atomE.getBlue();
-                            }
+                                NMRFxColor colorB = new NMRFxColor(atomB.getRed(), atomB.getGreen(), atomB.getBlue());
+                                NMRFxColor colorE = new NMRFxColor(atomE.getRed(), atomE.getGreen(), atomE.getBlue());
+                                Line3 line = new Line3(ptB, ptE, colorB, colorE);
+                                lines.add(line);
+                        }
 
                             if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 8)) {
-                                Line3 lineB = new Line3(ptB.add(v3), ptE.add(v3));
-                                coords[i++] = (float) (ptB.getX() + x3);
-                                coords[i++] = (float) (ptB.getY() + y3);
-                                coords[i++] = (float) (ptB.getZ() + z3);
-                                coords[i++] = (float) (ptE.getX() + x3);
-                                coords[i++] = (float) (ptE.getY() + y3);
-                                coords[i++] = (float) (ptE.getZ() + z3);
+                                NMRFxColor colorB = new NMRFxColor(atomB.getRed(), atomB.getGreen(), atomB.getBlue());
+                                NMRFxColor colorE = new NMRFxColor(atomE.getRed(), atomE.getGreen(), atomE.getBlue());
+                                Line3 line1 = new Line3(ptB.add(v3), ptE.add(v3), colorB, colorE);
+                                lines.add(line1);
 
-                                coords[i++] = (float) (ptB.getX() - x3);
-                                coords[i++] = (float) (ptB.getY() - y3);
-                                coords[i++] = (float) (ptB.getZ() - z3);
-                                coords[i++] = (float) (ptE.getX() - x3);
-                                coords[i++] = (float) (ptE.getY() - y3);
-                                coords[i++] = (float) (ptE.getZ() - z3);
-
-                                colors[j++] = atomB.getRed();
-                                colors[j++] = atomB.getGreen();
-                                colors[j++] = atomB.getBlue();
-                                colors[j++] = atomE.getRed();
-                                colors[j++] = atomE.getGreen();
-                                colors[j++] = atomE.getBlue();
-                                colors[j++] = atomB.getRed();
-                                colors[j++] = atomB.getGreen();
-                                colors[j++] = atomB.getBlue();
-                                colors[j++] = atomE.getRed();
-                                colors[j++] = atomE.getGreen();
-                                colors[j++] = atomE.getBlue();
-                            }
+                                Line3 line2 = new Line3(ptB.subtract(v3), ptE.subtract(v3), colorB, colorE);
+                                lines.add(line2);
+                         }
                         }
                     }
                 }
 
             }
         }
-
-        return i;
     }
 
     public int getBonds(int iStructure, Bond[] bondArray) {
@@ -1579,7 +1486,7 @@ public class Molecule extends MoleculeBase {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix calcSVDAxes(int iStructure, double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix(iStructure,true);
+        RealMatrix rotMat = getSVDRotationMatrix(iStructure, true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1741,32 +1648,23 @@ public class Molecule extends MoleculeBase {
         return list;
     }
 
-    public int createSphereArray(int iStructure, float[] coords, int i, float[] colors, float[] values) {
-        int j;
-        int k = 0;
+    public void createSphereArray(int iStructure, List<Point3C> points) {
         Point3 pt;
         updateAtomArray();
+        points.clear();
         for (Atom atom : atoms) {
             atom.unsetProperty(Atom.LABEL);
 
             if (atom.getProperty(Atom.DISPLAY)) {
                 pt = atom.getFlatPoint(iStructure);
-
                 if (pt != null) {
                     atom.setProperty(Atom.LABEL);
-                    j = i;
-                    coords[i++] = (float) pt.getX();
-                    coords[i++] = (float) pt.getY();
-                    coords[i++] = (float) pt.getZ();
-                    colors[j++] = atom.getRed();
-                    colors[j++] = atom.getGreen();
-                    colors[j++] = atom.getBlue();
-                    values[k++] = atom.value;
+                    NMRFxColor color = new NMRFxColor(atom.getRed(), atom.getGreen(), atom.getBlue());
+                    Point3C point3C = new Point3C(atom, pt, color, atom.value);
+                    points.add(point3C);
                 }
             }
         }
-
-        return i;
     }
 
     public int createLabelArray(int iStructure, float[] coords, int i) {
@@ -1789,18 +1687,17 @@ public class Molecule extends MoleculeBase {
         return i;
     }
 
-    public int createSelectionArray(int iStructure, float[] coords, int[] levels) {
+    public int createSelectionArray(int iStructure,List<SelectionPoint> selectionPoints) {
         int i;
         int j;
         Point3 ptB = null;
         Point3 ptE = null;
         SpatialSet spatialSet1 = null;
         SpatialSet spatialSet2 = null;
-
+        selectionPoints.clear();
         int n = globalSelected.size();
         j = 0;
         i = 0;
-
         for (int k = 0; k < n; k++) {
             spatialSet1 = globalSelected.get(k);
 
@@ -1816,58 +1713,14 @@ public class Molecule extends MoleculeBase {
 
                     if ((spatialSet1 == spatialSet2) || (Molecule.selCycleCount == 0) || ((k + 1) >= n)
                             || ((Molecule.selCycleCount != 1) && (((k + 1) % Molecule.selCycleCount) == 0))) {
-                        coords[i++] = (float) ptB.getX();
-                        coords[i++] = (float) ptB.getY();
-                        coords[i++] = (float) ptB.getZ();
-                        coords[i++] = (float) ptB.getX() + 0.2f;
-                        coords[i++] = (float) ptB.getY() - 0.2f;
-                        coords[i++] = (float) ptB.getZ();
-                        coords[i++] = (float) ptB.getX() - 0.2f;
-                        coords[i++] = (float) ptB.getY() - 0.2f;
-                        coords[i++] = (float) ptB.getZ();
-                        coords[i++] = (float) ptB.getX();
-                        coords[i++] = (float) ptB.getY();
-                        coords[i++] = (float) ptB.getZ();
-                        coords[i++] = (float) ptB.getX() + 0.2f;
-                        coords[i++] = (float) ptB.getY() - 0.2f;
-                        coords[i++] = (float) ptB.getZ();
-                        coords[i++] = (float) ptB.getX() - 0.2f;
-                        coords[i++] = (float) ptB.getY() - 0.2f;
-                        coords[i++] = (float) ptB.getZ();
-                        levels[j++] = selected;
+                        SelectionPoint selectionPoint = new SelectionPoint(spatialSet1.getAtom(), ptB, selected);
+                        selectionPoints.add(selectionPoint);
                     } else {
                         ptE = spatialSet2.atom.getFlatPoint(iStructure);
 
                         if (ptE != null) {
-                            float dx = (float) (ptE.getX() - ptB.getX());
-                            float dy = (float) (ptE.getY() - ptB.getY());
-                            float dz = (float) (ptE.getZ() - ptB.getZ());
-                            float len = (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-                            float xy3 = -dy / len * 0.2f;
-                            float yx3 = dx / len * 0.2f;
-                            float z3 = dz / len * 0.2f;
-                            float xz3 = -dz / len * 0.2f;
-                            float y3 = dy / len * 0.2f;
-                            float zx3 = dx / len * 0.2f;
-                            coords[i++] = (float) (ptB.getX() - xy3);
-                            coords[i++] = (float) (ptB.getY() - yx3);
-                            coords[i++] = (float) (ptB.getZ() - z3);
-                            coords[i++] = (float) (ptB.getX() + xy3);
-                            coords[i++] = (float) (ptB.getY() + yx3);
-                            coords[i++] = (float) (ptB.getZ() + z3);
-                            coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
-                            coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
-                            coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
-                            coords[i++] = (float) (ptB.getX() + xz3);
-                            coords[i++] = (float) (ptB.getY() + y3);
-                            coords[i++] = (float) (ptB.getZ() + zx3);
-                            coords[i++] = (float) (ptB.getX() - xz3);
-                            coords[i++] = (float) (ptB.getY() - y3);
-                            coords[i++] = (float) (ptB.getZ() - zx3);
-                            coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
-                            coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
-                            coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
-                            levels[j++] = selected;
+                            SelectionPoint selectionPoint = new SelectionPoint(spatialSet2.getAtom(), ptE, selected);
+                            selectionPoints.add(selectionPoint);
                         }
                     }
                 }
@@ -1940,7 +1793,7 @@ public class Molecule extends MoleculeBase {
     public double guessMolecularWeight() {
         updateAtomArray();
         double weight = 0.0;
-        for (Atom atom:atoms) {
+        for (Atom atom : atoms) {
             if (atom.getAtomicNumber() == 1) {
                 weight += 1.0;
             } else {
@@ -1949,6 +1802,7 @@ public class Molecule extends MoleculeBase {
         }
         return weight;
     }
+
     public List<Atom> getAtoms() {
         List<Atom> atomVector = new ArrayList<>(32);
         updateAtomArray();

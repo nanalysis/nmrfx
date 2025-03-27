@@ -9,10 +9,7 @@ import javafx.geometry.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Bond;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -96,6 +93,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         this.chart = chart;
     }
 
+    @Override
     public void setChart(PolyChart chart) {
         this.chart = chart;
     }
@@ -178,12 +176,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             return;
         }
 
-        molPrims.nLines = molecule.getLineCount(0);
-
-        int nCoords = molPrims.nLines * 2 * 3;
-        float[] coords = new float[nCoords];
-        float[] colors = new float[nCoords];
-        molecule.createLineArray(0, coords, 0, colors);
+        molecule.createLineArray(0, molPrims.lines);
         maxX = Double.NEGATIVE_INFINITY;
         maxY = Double.NEGATIVE_INFINITY;
         maxZ = Double.NEGATIVE_INFINITY;
@@ -191,19 +184,21 @@ public class CanvasMolecule implements CanvasAnnotation {
         minY = Double.MAX_VALUE;
         minZ = Double.MAX_VALUE;
 
-        for (int i = 0; i < molPrims.nLines; i++) {
-            double x = molPrims.lineCoords[i * 6];
-            double y = molPrims.lineCoords[(i * 6) + 1];
-            double z = molPrims.lineCoords[(i * 6) + 2];
+        for (Line3 line3 : molPrims.lines) {
+            Point3 pt1 = line3.pt1();
+            double x = pt1.getX();
+            double y = pt1.getY();
+            double z = pt1.getZ();
             maxX = Math.max(maxX, x);
             maxY = Math.max(maxY, y);
             maxZ = Math.max(maxZ, z);
             minX = Math.min(minX, x);
             minY = Math.min(minY, y);
             minZ = Math.min(minZ, z);
-            x = molPrims.lineCoords[i * 6 + 3];
-            y = molPrims.lineCoords[(i * 6) + 4];
-            z = molPrims.lineCoords[(i * 6) + 5];
+            Point3 pt2 = line3.pt2();
+            x = pt2.getX();
+            y = pt2.getY();
+            z = pt2.getZ();
             maxX = Math.max(maxX, x);
             maxY = Math.max(maxY, y);
             maxZ = Math.max(maxZ, z);
@@ -236,7 +231,6 @@ public class CanvasMolecule implements CanvasAnnotation {
             bonds.forEach(bond -> bond.setProperty(Bond.DISPLAY));
             getSphereCoords();
             getLineCoords();
-            getLabelCoords();
         }
     }
 
@@ -347,8 +341,8 @@ public class CanvasMolecule implements CanvasAnnotation {
     String getHit() {
         if (hitAtom == -1) {
             return ("");
-        } else if (molPrims.atoms != null) {
-            return (molPrims.atoms[hitAtom].getFullName());
+        } else if (molPrims.pointCs != null) {
+            return (molPrims.pointCs.get(hitAtom).atom().getFullName());
         } else {
             return (String.valueOf(hitAtom));
         }
@@ -548,25 +542,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
         boolean ok = true;
         if (molecule != null) {
-            int nSpheres = molecule.getSphereCount(iStructure);
-            if (molPrims.nSpheres != nSpheres) {
-                ok = false;
-            }
-            if (ok) {
-                int nLines = molecule.getLineCount(iStructure);
-                if (molPrims.nLines != nLines) {
-                    ok = false;
-                }
-            }
-            if (ok) {
-                int nLabels = molecule.getLineCount(iStructure);
-                if (molPrims.nLabels != nLabels) {
-                    ok = false;
-                }
-            }
-            if (!ok) {
-                setMolName(molName, iStructure);
-            }
         }
 
     }
@@ -617,8 +592,9 @@ public class CanvasMolecule implements CanvasAnnotation {
         if (drawLabels != AtomLabels.LabelTypes.LABEL_NONE) {
             genLabels(g2);
         }
-        getSelectionCoords();
-        genSelectionSymbols(g2);
+        List<SelectionPoint> selectionPoints = new ArrayList<>();
+        molecule.createSelectionArray(iStructure, selectionPoints);
+        genSelectionSymbols(g2, selectionPoints);
 
     }
 
@@ -637,20 +613,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             return;
         }
 
-        molPrims.nSpheres = molecule.getSphereCount(iStructure);
-
-        if ((molPrims.sphereCoords == null)
-                || (molPrims.sphereCoords.length != (molPrims.nSpheres * 3))) {
-            molPrims.sphereCoords = new float[molPrims.nSpheres * 3];
-            molPrims.sphereColors = new float[molPrims.nSpheres * 3];
-            molPrims.sphereValues = new float[molPrims.nSpheres];
-        }
-
-        int nVertices = molecule.createSphereArray(iStructure,
-                molPrims.sphereCoords, 0, molPrims.sphereColors,
-                molPrims.sphereValues);
-        molPrims.atoms = new Atom[nVertices];
-        molecule.getAtoms(iStructure, molPrims.atoms);
+        molecule.createSphereArray(iStructure, molPrims.pointCs);
     }
 
     public void getLabelCoords() {
@@ -678,36 +641,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         molecule.createLabelArray(iStructure,
                 molPrims.labelCoords, 0);
     }
-
-    public void getSelectionCoords() {
-        if (molName == null) {
-            return;
-        }
-
-        Molecule molecule = Molecule.get(molName);
-
-        if (molecule == null) {
-            return;
-        }
-
-        if (iStructure >= molecule.structures.size()) {
-            return;
-        }
-
-        molPrims.nSelected = molecule.globalSelected.size();
-
-        int n = molPrims.nSelected;
-
-        if ((molPrims.selectionCoords == null)
-                || (molPrims.selectionCoords.length != (n * 18))) {
-            molPrims.selectionCoords = new float[n * 18];
-            molPrims.selectionLevels = new int[n];
-        }
-
-        molecule.createSelectionArray(iStructure,
-                molPrims.selectionCoords, molPrims.selectionLevels);
-    }
-
     public int genSpheres(GraphicsContextInterface gC, boolean pickMode, double pickX, double pickY) {
         float dX = radius * canvasScale;
         float dY = radius * canvasScale;
@@ -719,17 +652,17 @@ public class CanvasMolecule implements CanvasAnnotation {
         if (!transformValid) {
             setupTransform();
         }
-        for (int i = 0; i < molPrims.nSpheres; i++) {
-            double x = molPrims.sphereCoords[i * 3];
-            double y = molPrims.sphereCoords[(i * 3) + 1];
-            double z = molPrims.sphereCoords[(i * 3) + 2];
-            Point3D vecIn = new Point3D(x, y, z);
+
+        int i = 0;
+        for (Point3C point3C : molPrims.pointCs) {
+            Point3 pt1 = point3C.pt1();
+            Point3D vecIn = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
             Point3D vecOut = canvasTransform.transform(vecIn);
 
-            x = vecOut.getX() + (float) transformPt.getX();
-            y = vecOut.getY() + (float) transformPt.getY();
+            double x = vecOut.getX() + (float) transformPt.getX();
+            double y = vecOut.getY() + (float) transformPt.getY();
 
-            z = vecOut.getZ();
+            double z = vecOut.getZ();
 
             float value = 0;
 
@@ -739,13 +672,12 @@ public class CanvasMolecule implements CanvasAnnotation {
                     return i;
                 }
             } else {
-                float[] sphereColors = molPrims.sphereColors;
                 int shapeMode = 0;
                 float vRadius = canvasScale * radius;
                 float triangleHeight = canvasScale * radius;
 
-                if (valueMode && (molPrims.sphereValues != null)) {
-                    value = molPrims.sphereValues[i] - valueZero;
+                if (valueMode) {
+                    value = (float) point3C.value();
 
                     if (scaleShape) {
                         vRadius = (canvasScale * radius * Math.abs(value)) / valueScale;
@@ -775,12 +707,8 @@ public class CanvasMolecule implements CanvasAnnotation {
                     }
                 } else {
                     try {
-                        outline = Color.color(sphereColors[i * 3],
-                                sphereColors[(i * 3) + 1], sphereColors[(i * 3)
-                                        + 2]);
-                        fill = Color.color(sphereColors[i * 3],
-                                sphereColors[(i * 3) + 1], sphereColors[(i * 3)
-                                        + 2]);
+                        outline = Color.rgb(point3C.color1().getRed(), point3C.color1().getGreen(), point3C.color1().getBlue());
+                        fill = Color.rgb(point3C.color1().getRed(), point3C.color1().getGreen(), point3C.color1().getBlue());
                         gC.setFill(fill);
                         gC.setStroke(outline);
                         gC.setLineWidth(stroke3);
@@ -816,6 +744,7 @@ public class CanvasMolecule implements CanvasAnnotation {
 
                 }
             }
+            i++;
         }
 
         return -1;
@@ -832,90 +761,68 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
 
         float[] anchor = {0.5f, 0.5f};
-        for (int i = 0; i < molPrims.nLabels; i++) {
-            double x = molPrims.labelCoords[i * 3];
-            double y = molPrims.labelCoords[(i * 3) + 1];
-            double z = molPrims.labelCoords[(i * 3) + 2];
-            Point3D vecIn = new Point3D(x, y, z);
+        for (Point3C point3C : molPrims.pointCs) {
+            Point3 pt1 = point3C.pt1();
+            Point3D vecIn = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
             Point3D vecOut = canvasTransform.transform(vecIn);
 
-            x = vecOut.getX() + transformPt.getX();
-            y = vecOut.getY() + transformPt.getY();
+            double x = vecOut.getX() + (float) transformPt.getX();
+            double y = vecOut.getY() + (float) transformPt.getY();
 
-            z = vecOut.getZ();
-
+            double z = vecOut.getZ();
             float vRadius = canvasScale * radius;
 
             String label = null;
-
-            if (molPrims.atoms != null) {
-                label = AtomLabels.getAtomLabel(molPrims.atoms[i], drawLabels);
-            } else {
-                label = molPrims.labels[i];
-            }
-            gC.setLineWidth(1.0);
-            if ((label != null) && !label.equals("C") && !label.equals("")) {
-                try {
-                    gC.setStroke(Color.BLACK);
-                    gC.setTextAlign(TextAlignment.CENTER);
-                    gC.setTextBaseline(VPos.CENTER);
-                    gC.strokeText(label, x, y);
-                } catch (Exception ex) {
-                    log.error(ex.getMessage(), ex);
-                }
-            }
-        }
-
-        return -1;
-    }
-
-    public int genSelectionSymbols(GraphicsContextInterface gC) {
-
-        if (!transformValid) {
-            setupTransform();
-        }
-
-        int j;
-        int k = 0;
-
-        for (int i = 0; i < molPrims.nSelected; i++) {
-            for (j = 0; j < 6; j++) {
-                double x = molPrims.selectionCoords[(i * 18) + (j * 3)];
-                double y = molPrims.selectionCoords[(i * 18) + (j * 3)
-                        + 1];
-                double z = molPrims.selectionCoords[(i * 18) + (j * 3)
-                        + 2];
-
-                Point3D vecIn = new Point3D(x, y, z);
-                Point3D vecOut = canvasTransform.transform(vecIn);
-
-                x = vecOut.getX() + transformPt.getX();
-                y = vecOut.getY() + transformPt.getY();
-
-                z = vecOut.getZ();
-
-                if ((Molecule.selCycleCount == 0)
-                        || ((k + 1) >= molPrims.nSelected)
-                        || ((Molecule.selCycleCount != 1)
-                        && (((k + 1) % Molecule.selCycleCount) == 0))) {
+            Atom atom = point3C.atom();
+            if (true || atom.getProperty(Atom.LABEL)) {
+                label = AtomLabels.getAtomLabel(atom, drawLabels);
+                gC.setLineWidth(1.0);
+                if ((label != null) && !label.equals("C") && !label.equals("")) {
                     try {
-                        float vRadius = (canvasScale * radius) / 2.0f * (1
-                                + molPrims.selectionLevels[i]) + 2;
-                        gC.setStroke(Color.ORANGE);
-                        gC.strokeOval(x - vRadius, y - vRadius, vRadius * 2,
-                                vRadius * 2);
-
-                        break;
+                        gC.setStroke(Color.BLACK);
+                        gC.setTextAlign(TextAlignment.CENTER);
+                        gC.setTextBaseline(VPos.CENTER);
+                        gC.strokeText(label, x, y);
                     } catch (Exception ex) {
                         log.error(ex.getMessage(), ex);
                     }
                 }
             }
-
-            k++;
         }
 
+
         return -1;
+    }
+
+    public void genSelectionSymbols(GraphicsContextInterface gC, List<SelectionPoint> selectionPoints) {
+
+        if (!transformValid) {
+            setupTransform();
+        }
+
+        int k = 0;
+        for (SelectionPoint selectionPoint : selectionPoints) {
+            Point3 pt1 = selectionPoint.pt1();
+            Point3D vecIn1 = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
+            Point3D vecOut1 = canvasTransform.transform(vecIn1);
+            double x = vecOut1.getX() + transformPt.getX();
+            double y = vecOut1.getY() + transformPt.getY();
+            if ((Molecule.selCycleCount == 0)
+                    || ((Molecule.selCycleCount != 1)
+                    && (((k + 1) % Molecule.selCycleCount) == 0))) {
+                try {
+                    float vRadius = (canvasScale * radius) / 2.0f * (1
+                            + selectionPoint.selectionLevel()) + 2;
+                    gC.setStroke(Color.ORANGE);
+                    gC.strokeOval(x - vRadius, y - vRadius, vRadius * 2,
+                            vRadius * 2);
+
+                    break;
+                } catch (Exception ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+            }
+        }
     }
 
     public void getLineCoords() {
@@ -933,25 +840,11 @@ public class CanvasMolecule implements CanvasAnnotation {
             return;
         }
 
-        molPrims.nLines = molecule.getLineCount(0);
-
-        int nCoords = molPrims.nLines * 2 * 3;
-        molPrims.lineCoords = new float[nCoords];
-        molPrims.lineColors = new float[nCoords];
-
-        molecule.createLineArray(0, molPrims.lineCoords, 0,
-                molPrims.lineColors);
+        molecule.createLineArray(0, molPrims.lines);
     }
 
     public void genLines(GraphicsContextInterface gC) {
-        double x1;
-        double y1;
-        double z1;
-        double x2;
-        double y2;
-        double z2;
-        double xm;
-        double ym;
+
 
         if (!getCoordSystemTransform()) {
             return;
@@ -962,44 +855,30 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
         gC.setLineWidth(stroke3);
 
-        for (int i = 0; i < molPrims.nLines; i++) {
+        for (Line3 line3 : molPrims.lines) {
             try {
-                x1 = molPrims.lineCoords[i * 6];
-                y1 = molPrims.lineCoords[(i * 6) + 1];
-                z1 = molPrims.lineCoords[(i * 6) + 2];
-
-                Point3D vecIn1 = new Point3D(x1, y1, z1);
+                Point3 pt1 = line3.pt1();
+                Point3D vecIn1 = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
                 Point3D vecOut1 = canvasTransform.transform(vecIn1);
-                x1 = vecOut1.getX() + transformPt.getX();
-                y1 = vecOut1.getY() + transformPt.getY();
-                z1 = vecOut1.getZ();
+                double vx1 = vecOut1.getX() + transformPt.getX();
+                double vy1 = vecOut1.getY() + transformPt.getY();
 
-                x2 = molPrims.lineCoords[(i * 6) + 3];
-                y2 = molPrims.lineCoords[(i * 6) + 4];
-                z2 = molPrims.lineCoords[(i * 6) + 5];
-
-                Point3D vecIn2 = new Point3D(x2, y2, z2);
+                Point3 pt2 = line3.pt2();
+                Point3D vecIn2 = new Point3D(pt2.getX(), pt2.getY(), pt2.getZ());
                 Point3D vecOut2 = canvasTransform.transform(vecIn2);
+                double vx2 = vecOut2.getX() + transformPt.getX();
+                double vy2 = vecOut2.getY() + transformPt.getY();
 
-                x2 = vecOut2.getX() + transformPt.getX();
-                y2 = vecOut2.getY() + transformPt.getY();
-                z2 = vecOut2.getZ();
-
-                xm = (x1 + x2) / 2.0f;
-                ym = (y1 + y2) / 2.0f;
-                Color color = Color.color(molPrims.lineColors[i * 6],
-                        molPrims.lineColors[(i * 6) + 1],
-                        molPrims.lineColors[(i * 6) + 2]);
+                double xm = (vx1 + vx2) / 2.0f;
+                double ym = (vy1 + vy2) / 2.0f;
+                Color color = Color.rgb(line3.color1().getRed(), line3.color1().getGreen(), line3.color1().getBlue());
 
                 gC.setStroke(color);
+                gC.strokeLine(vx1, vy1, xm, ym);
 
-                gC.strokeLine(x1, y1, xm, ym);
-
-                Color color2 = Color.color(molPrims.lineColors[(i * 6) + 3],
-                        molPrims.lineColors[(i * 6) + 4],
-                        molPrims.lineColors[(i * 6) + 5]);
+                Color color2 = Color.rgb(line3.color2().getRed(), line3.color2().getGreen(), line3.color2().getBlue());
                 gC.setStroke(color2);
-                gC.strokeLine(xm, ym, x2, y2);
+                gC.strokeLine(xm, ym, vx2, vy2);
             } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
             }
@@ -1061,5 +940,56 @@ public class CanvasMolecule implements CanvasAnnotation {
         yPosType = newType;
     }
 
+    void drawSelection() {
+//        coords[i++] = (float) ptB.getX();
+//        coords[i++] = (float) ptB.getY();
+//        coords[i++] = (float) ptB.getZ();
+//        coords[i++] = (float) ptB.getX() + 0.2f;
+//        coords[i++] = (float) ptB.getY() - 0.2f;
+//        coords[i++] = (float) ptB.getZ();
+//        coords[i++] = (float) ptB.getX() - 0.2f;
+//        coords[i++] = (float) ptB.getY() - 0.2f;
+//        coords[i++] = (float) ptB.getZ();
+//        coords[i++] = (float) ptB.getX();
+//        coords[i++] = (float) ptB.getY();
+//        coords[i++] = (float) ptB.getZ();
+//        coords[i++] = (float) ptB.getX() + 0.2f;
+//        coords[i++] = (float) ptB.getY() - 0.2f;
+//        coords[i++] = (float) ptB.getZ();
+//        coords[i++] = (float) ptB.getX() - 0.2f;
+//        coords[i++] = (float) ptB.getY() - 0.2f;
+//        coords[i++] = (float) ptB.getZ();
+
+
+//        float dx = (float) (ptE.getX() - ptB.getX());
+//        float dy = (float) (ptE.getY() - ptB.getY());
+//        float dz = (float) (ptE.getZ() - ptB.getZ());
+//        float len = (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+//        float xy3 = -dy / len * 0.2f;
+//        float yx3 = dx / len * 0.2f;
+//        float z3 = dz / len * 0.2f;
+//        float xz3 = -dz / len * 0.2f;
+//        float y3 = dy / len * 0.2f;
+//        float zx3 = dx / len * 0.2f;
+//        coords[i++] = (float) (ptB.getX() - xy3);
+//        coords[i++] = (float) (ptB.getY() - yx3);
+//        coords[i++] = (float) (ptB.getZ() - z3);
+//        coords[i++] = (float) (ptB.getX() + xy3);
+//        coords[i++] = (float) (ptB.getY() + yx3);
+//        coords[i++] = (float) (ptB.getZ() + z3);
+//        coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
+//        coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
+//        coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
+//        coords[i++] = (float) (ptB.getX() + xz3);
+//        coords[i++] = (float) (ptB.getY() + y3);
+//        coords[i++] = (float) (ptB.getZ() + zx3);
+//        coords[i++] = (float) (ptB.getX() - xz3);
+//        coords[i++] = (float) (ptB.getY() - y3);
+//        coords[i++] = (float) (ptB.getZ() - zx3);
+//        coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
+//        coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
+//        coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
+
+    }
 
 }
