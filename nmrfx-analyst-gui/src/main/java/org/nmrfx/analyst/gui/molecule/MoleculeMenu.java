@@ -34,7 +34,7 @@ public class MoleculeMenu extends ChartMenu {
 
         ToggleGroup toggleGroup = new ToggleGroup();
         AtomLabels.LabelTypes[] labelTypes = {AtomLabels.LabelTypes.LABEL_NONE, AtomLabels.LabelTypes.LABEL_NONHCO,
-        AtomLabels.LabelTypes.LABEL_PPM, AtomLabels.LabelTypes.LABEL_NAME};
+        AtomLabels.LabelTypes.LABEL_PPM, AtomLabels.LabelTypes.LABEL_RPPM, AtomLabels.LabelTypes.LABEL_NAME};
         for (var labelType : labelTypes) {
             RadioMenuItem noneLabelMenuItem = new RadioMenuItem(labelType.toString().substring(6));
             noneLabelMenuItem.setUserData(labelType);

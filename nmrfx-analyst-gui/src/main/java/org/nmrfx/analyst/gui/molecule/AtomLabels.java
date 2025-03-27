@@ -28,6 +28,7 @@ public class AtomLabels {
         LABEL_NAME,
         LABEL_HPPM,
         LABEL_PPM,
+        LABEL_RPPM,
         LABEL_NONHC,
         LABEL_NONHCO
     }
@@ -128,6 +129,13 @@ public class AtomLabels {
                     yield "";
                 } else {
                     yield String.format("%.2f",ppmV.getValue());
+                }
+            case LABEL_RPPM:
+                PPMv rppmV = atom.getRefPPM(0);
+                if ((rppmV == null) || ((atom.getElementNumber() == 1) && atom.isMethyl() && !atom.isFirstInMethyl())) {
+                    yield "";
+                } else {
+                    yield String.format("%.2f",rppmV.getValue());
                 }
         };
     }
