@@ -804,7 +804,6 @@ public class CanvasMolecule implements CanvasAnnotation {
             setupTransform();
         }
 
-        float[] anchor = {0.5f, 0.5f};
         for (Point3C point3C : molPrims.pointCs) {
             Point3 pt1 = point3C.pt1();
             Point3D vecIn = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
@@ -812,9 +811,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
             double x = vecOut.getX() + (float) transformPt.getX();
             double y = vecOut.getY() + (float) transformPt.getY();
-
-            double z = vecOut.getZ();
-            float vRadius = canvasScale * radius;
 
             String label = null;
             Atom atom = point3C.atom();
@@ -899,43 +895,28 @@ public class CanvasMolecule implements CanvasAnnotation {
 
         for (Line3 line3 : molPrims.lines) {
             try {
-                double px1 = molPrims.lineCoords[i * 6];
-                double py1 = molPrims.lineCoords[(i * 6) + 1];
-                double pz1 = molPrims.lineCoords[(i * 6) + 2];
-
-                Point3D vecIn1 = new Point3D(px1, py1, pz1);
+                Point3 pt1 = line3.pt1();
+                Point3D vecIn1 = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
                 Point3D vecOut1 = canvasTransform.transform(vecIn1);
-                px1 = vecOut1.getX() + transformPt.getX();
-                py1 = vecOut1.getY() + transformPt.getY();
+                double vx1 = vecOut1.getX() + transformPt.getX();
+                double vy1 = vecOut1.getY() + transformPt.getY();
 
-                double px2 = molPrims.lineCoords[(i * 6) + 3];
-                double py2 = molPrims.lineCoords[(i * 6) + 4];
-                double pz2 = molPrims.lineCoords[(i * 6) + 5];
-
-                Point3D vecIn2 = new Point3D(px2, py2, pz2);
+                Point3 pt2 = line3.pt2();
+                Point3D vecIn2 = new Point3D(pt2.getX(), pt2.getY(), pt2.getZ());
                 Point3D vecOut2 = canvasTransform.transform(vecIn2);
                 double vx2 = vecOut2.getX() + transformPt.getX();
                 double vy2 = vecOut2.getY() + transformPt.getY();
 
-                px2 = vecOut2.getX() + transformPt.getX();
-                py2 = vecOut2.getY() + transformPt.getY();
-
-                double xm = (px1 + px2) / 2.0f;
-                double ym = (py1 + py2) / 2.0f;
-                Color color = Color.color(molPrims.lineColors[i * 6],
-                        molPrims.lineColors[(i * 6) + 1],
-                        molPrims.lineColors[(i * 6) + 2]);
+                double xm = (vx1 + vx2) / 2.0f;
+                double ym = (vy1 + vy2) / 2.0f;
+                Color color = Color.rgb(line3.color1().getRed(), line3.color1().getGreen(), line3.color1().getBlue());
 
                 gC.setStroke(color);
                 gC.strokeLine(vx1, vy1, xm, ym);
 
-                gC.strokeLine(px1, py1, xm, ym);
-
-                Color color2 = Color.color(molPrims.lineColors[(i * 6) + 3],
-                        molPrims.lineColors[(i * 6) + 4],
-                        molPrims.lineColors[(i * 6) + 5]);
+                Color color2 = Color.rgb(line3.color2().getRed(), line3.color2().getGreen(), line3.color2().getBlue());
                 gC.setStroke(color2);
-                gC.strokeLine(xm, ym, px2, py2);
+                gC.strokeLine(xm, ym, vx2, vy2);
             } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
             }
@@ -991,57 +972,4 @@ public class CanvasMolecule implements CanvasAnnotation {
         y2 = newType.itransform(y2Pix, bounds, world);
         yPosType = newType;
     }
-
-    void drawSelection() {
-//        coords[i++] = (float) ptB.getX();
-//        coords[i++] = (float) ptB.getY();
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() + 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() - 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX();
-//        coords[i++] = (float) ptB.getY();
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() + 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() - 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-
-
-//        float dx = (float) (ptE.getX() - ptB.getX());
-//        float dy = (float) (ptE.getY() - ptB.getY());
-//        float dz = (float) (ptE.getZ() - ptB.getZ());
-//        float len = (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-//        float xy3 = -dy / len * 0.2f;
-//        float yx3 = dx / len * 0.2f;
-//        float z3 = dz / len * 0.2f;
-//        float xz3 = -dz / len * 0.2f;
-//        float y3 = dy / len * 0.2f;
-//        float zx3 = dx / len * 0.2f;
-//        coords[i++] = (float) (ptB.getX() - xy3);
-//        coords[i++] = (float) (ptB.getY() - yx3);
-//        coords[i++] = (float) (ptB.getZ() - z3);
-//        coords[i++] = (float) (ptB.getX() + xy3);
-//        coords[i++] = (float) (ptB.getY() + yx3);
-//        coords[i++] = (float) (ptB.getZ() + z3);
-//        coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
-//        coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
-//        coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
-//        coords[i++] = (float) (ptB.getX() + xz3);
-//        coords[i++] = (float) (ptB.getY() + y3);
-//        coords[i++] = (float) (ptB.getZ() + zx3);
-//        coords[i++] = (float) (ptB.getX() - xz3);
-//        coords[i++] = (float) (ptB.getY() - y3);
-//        coords[i++] = (float) (ptB.getZ() - zx3);
-//        coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
-//        coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
-//        coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
-
-    }
-
 }
