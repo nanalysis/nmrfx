@@ -685,8 +685,6 @@ public class CanvasMolecule implements CanvasAnnotation {
             double x = vecOut.getX() + (float) transformPt.getX();
             double y = vecOut.getY() + (float) transformPt.getY();
 
-            double z = vecOut.getZ();
-
             float value = 0;
 
             if (pickMode) {
@@ -775,7 +773,6 @@ public class CanvasMolecule implements CanvasAnnotation {
                         }
 
                         case TRIANGLE_SHAPE: {
-                            System.out.println("tri " + triangleHeight);
                             gC.beginPath();
                             gC.moveTo(x - dX, y + triangleHeight);
                             gC.lineTo(x + dX, y + triangleHeight);
@@ -794,7 +791,6 @@ public class CanvasMolecule implements CanvasAnnotation {
             }
             i++;
         }
-
         return -1;
     }
 
@@ -892,8 +888,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void genLines(GraphicsContextInterface gC) {
-
-
         if (!getCoordSystemTransform()) {
             return;
         }
@@ -905,28 +899,43 @@ public class CanvasMolecule implements CanvasAnnotation {
 
         for (Line3 line3 : molPrims.lines) {
             try {
-                Point3 pt1 = line3.pt1();
-                Point3D vecIn1 = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
-                Point3D vecOut1 = canvasTransform.transform(vecIn1);
-                double vx1 = vecOut1.getX() + transformPt.getX();
-                double vy1 = vecOut1.getY() + transformPt.getY();
+                double px1 = molPrims.lineCoords[i * 6];
+                double py1 = molPrims.lineCoords[(i * 6) + 1];
+                double pz1 = molPrims.lineCoords[(i * 6) + 2];
 
-                Point3 pt2 = line3.pt2();
-                Point3D vecIn2 = new Point3D(pt2.getX(), pt2.getY(), pt2.getZ());
+                Point3D vecIn1 = new Point3D(px1, py1, pz1);
+                Point3D vecOut1 = canvasTransform.transform(vecIn1);
+                px1 = vecOut1.getX() + transformPt.getX();
+                py1 = vecOut1.getY() + transformPt.getY();
+
+                double px2 = molPrims.lineCoords[(i * 6) + 3];
+                double py2 = molPrims.lineCoords[(i * 6) + 4];
+                double pz2 = molPrims.lineCoords[(i * 6) + 5];
+
+                Point3D vecIn2 = new Point3D(px2, py2, pz2);
                 Point3D vecOut2 = canvasTransform.transform(vecIn2);
                 double vx2 = vecOut2.getX() + transformPt.getX();
                 double vy2 = vecOut2.getY() + transformPt.getY();
 
-                double xm = (vx1 + vx2) / 2.0f;
-                double ym = (vy1 + vy2) / 2.0f;
-                Color color = Color.rgb(line3.color1().getRed(), line3.color1().getGreen(), line3.color1().getBlue());
+                px2 = vecOut2.getX() + transformPt.getX();
+                py2 = vecOut2.getY() + transformPt.getY();
+
+                double xm = (px1 + px2) / 2.0f;
+                double ym = (py1 + py2) / 2.0f;
+                Color color = Color.color(molPrims.lineColors[i * 6],
+                        molPrims.lineColors[(i * 6) + 1],
+                        molPrims.lineColors[(i * 6) + 2]);
 
                 gC.setStroke(color);
                 gC.strokeLine(vx1, vy1, xm, ym);
 
-                Color color2 = Color.rgb(line3.color2().getRed(), line3.color2().getGreen(), line3.color2().getBlue());
+                gC.strokeLine(px1, py1, xm, ym);
+
+                Color color2 = Color.color(molPrims.lineColors[(i * 6) + 3],
+                        molPrims.lineColors[(i * 6) + 4],
+                        molPrims.lineColors[(i * 6) + 5]);
                 gC.setStroke(color2);
-                gC.strokeLine(xm, ym, vx2, vy2);
+                gC.strokeLine(xm, ym, px2, py2);
             } catch (Exception ex) {
                 log.error(ex.getMessage(), ex);
             }
@@ -950,11 +959,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     public boolean isSelectable() {
         return selectable;
     }
-
-    //@Override
-    //public void setSelectable(boolean state) {
-    //   selectable = state;
-    //}
 
     @Override
     public int hitHandle(double x, double y) {
