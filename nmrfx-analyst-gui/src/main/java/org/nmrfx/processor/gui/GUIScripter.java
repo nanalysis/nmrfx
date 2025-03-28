@@ -614,9 +614,7 @@ public class GUIScripter {
             FXMLController controller1 = getActiveController();
             controller1.setChartDisable(true);
             var insetChartOpt = chart.getInsetChart();
-            insetChartOpt.ifPresent(insetChart -> {
-                insetChart.setFractionalPosition(x, y, w, h);
-            });
+            insetChartOpt.ifPresent(insetChart -> insetChart.setFractionalPosition(x, y, w, h));
             controller1.setChartDisable(false);
             controller1.draw();
         });

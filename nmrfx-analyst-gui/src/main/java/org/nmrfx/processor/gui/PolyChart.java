@@ -82,10 +82,18 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import static org.nmrfx.processor.gui.PolyChart.MouseActionType.*;
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
 @PluginAPI("parametric")
 public class PolyChart extends Region {
+
+    enum MouseActionType {
+        PRESS,
+        RELEASE,
+        MOVE,
+        DRAG
+    }
     public static final int HORIZONTAL = 0;
     private static final Logger log = LoggerFactory.getLogger(PolyChart.class);
     private static final int VERTICAL = 1;
@@ -144,15 +152,15 @@ public class PolyChart extends Region {
     private MouseBindings mouseBindings;
     private GestureBindings gestureBindings;
     private CrossHairs crossHairs;
-    private List<ChartUndo> undos = new ArrayList<>();
-    private List<ChartUndo> redos = new ArrayList<>();
+    private final List<ChartUndo> undos = new ArrayList<>();
+    private final List<ChartUndo> redos = new ArrayList<>();
 
     private static PolyChart chartBuffer = null;
 
     private static ViewBuffer viewBuffer = null;
     private  ViewBuffer chartViewBuffer = null;
 
-    private List<InsetChart> insetCharts = new ArrayList<>();
+    private final List<InsetChart> insetCharts = new ArrayList<>();
 
     InsetChart insetChart = null;
 
@@ -310,21 +318,21 @@ public class PolyChart extends Region {
 
                 rectangle.setMouseTransparent(false);
                 int mode = i;
-                rectangle.setOnMousePressed(e -> dragHandle(e, "press", mode));
-                rectangle.setOnMouseDragged(e -> dragHandle(e,"drag", mode));
-                rectangle.setOnMouseReleased(e -> dragHandle(e,"release", mode));
+                rectangle.setOnMousePressed(e -> dragHandle(e, PRESS, mode));
+                rectangle.setOnMouseDragged(e -> dragHandle(e,DRAG, mode));
+                rectangle.setOnMouseReleased(e -> dragHandle(e,RELEASE, mode));
                 i++;
             }
             drawingLayers.getTopPane().getChildren().add(rectangle);
         }
     }
 
-    private void dragHandle(MouseEvent mouseEvent, String mode, int i) {
-        if (mode.equals("press")) {
+    private void dragHandle(MouseEvent mouseEvent, MouseActionType mode, int i) {
+        if (mode == PRESS) {
             insetChart.set(mouseEvent.getX(), mouseEvent.getY());
-        } else if (mode.equals("drag")) {
+        } else if (mode == DRAG) {
             insetChart.drag(i, mouseEvent.getX(), mouseEvent.getY());
-        } else if (mode.equals("release")) {
+        } else if (mode == RELEASE) {
             insetChart.release(i, mouseEvent.getX(), mouseEvent.getY());
         }
     }
@@ -335,9 +343,9 @@ public class PolyChart extends Region {
         drawingLayers.getTopPane().getChildren().addAll(crossHairs.getAllGraphicalLines());
         configHighlightRects(false, highlightRect);
         configHighlightRects(true, handleRects);
-        highlightRect.setOnMousePressed(e -> dragHandle(e, "press", -1));
-        highlightRect.setOnMouseDragged(e -> dragHandle(e, "drag", -1));
-        highlightRect.setOnMouseReleased(e -> dragHandle(e, "release", -1));
+        highlightRect.setOnMousePressed(e -> dragHandle(e, PRESS, -1));
+        highlightRect.setOnMouseDragged(e -> dragHandle(e, DRAG, -1));
+        highlightRect.setOnMouseReleased(e -> dragHandle(e, RELEASE, -1));
 
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
@@ -698,8 +706,6 @@ public class PolyChart extends Region {
             double maxX = axes.getX().getUpperBound();
             double minY = axes.getY().getLowerBound();
             double maxY = axes.getY().getUpperBound();
-            double minZ = axes.get(2).getLowerBound();
-            double maxZ = axes.get(2).getUpperBound();
             if (orientation == Orientation.VERTICAL) {
                 datasetAttributes.setDim(dim2, 0);
                 datasetAttributes.setDim(dim1, 1);
@@ -1418,7 +1424,7 @@ public class PolyChart extends Region {
             refPoint = dataset.getRefPt(datasetAttributes.dim[0]);
             refPPM = dataset.getRefValue(datasetAttributes.dim[0]);
             ppmPosition = dataset.pointToPPM(0, position);
-            centerPPM = dataset.pointToPPM(0, size / 2);
+            centerPPM = dataset.pointToPPM(0, (double) size / 2);
         } else {
             position = axes.getMode(vecDim).getIndex(datasetAttributes, vecDim, crossHairs.getPosition(0, Orientation.HORIZONTAL));
             size = dataset.getSizeReal(datasetAttributes.dim[vecDim]);
@@ -2122,9 +2128,9 @@ public class PolyChart extends Region {
         } catch (GraphicsIOException ioE) {
             log.warn(ioE.getMessage(), ioE);
         }
-        for (InsetChart insetChart : insetCharts) {
-            insetChart.setPosition(xPos, yPos, width, height, borders);
-            insetChart.refresh();
+        for (InsetChart insetChart1 : insetCharts) {
+            insetChart1.setPosition(xPos, yPos, width, height, borders);
+            insetChart1.refresh();
         }
     }
 
@@ -2912,7 +2918,7 @@ public class PolyChart extends Region {
         }
     }
     public void updatePeakLists(List<PeakList> targets) {
-        removeUnusedPeakLists(targets.stream().map(p -> p.getName()).toList());
+        removeUnusedPeakLists(targets.stream().map(PeakList::getName).toList());
         for (PeakList peakList : targets) {
             if (peakList != null) {
                 setupPeakListAttributes(peakList);
@@ -2924,9 +2930,7 @@ public class PolyChart extends Region {
         deleteSelectedPeaks();
         deleteSelectedAnnotations();
         PolyChartManager.getInstance().getSelectedChart().ifPresent(sChart -> {
-            sChart.getInsetChart().ifPresent(iChart -> {
-                iChart.remove();
-            });
+            sChart.getInsetChart().ifPresent(InsetChart::remove);
         });
     }
 
