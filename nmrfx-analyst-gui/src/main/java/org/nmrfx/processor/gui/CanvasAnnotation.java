@@ -101,7 +101,7 @@ public interface CanvasAnnotation {
         return false;
     }
 
-    private static double getHOffset(Pos pos) {
+    static double getHOffset(Pos pos) {
         return switch (pos.getHpos()) {
             case LEFT -> HANDLE_WIDTH;
             case RIGHT -> -HANDLE_WIDTH;
@@ -109,12 +109,16 @@ public interface CanvasAnnotation {
         };
     }
 
-    private static double getVOffset(Pos pos) {
+    static double getVOffset(Pos pos) {
         return switch (pos.getVpos()) {
             case TOP -> HANDLE_WIDTH;
             case CENTER -> -HANDLE_WIDTH / 2;
             case BOTTOM, BASELINE -> -HANDLE_WIDTH;
         };
+    }
+
+    static double getHandleWidth() {
+        return HANDLE_WIDTH;
     }
 
     default void drawHandle(GraphicsContextInterface gC, double x, double y, Pos pos) {

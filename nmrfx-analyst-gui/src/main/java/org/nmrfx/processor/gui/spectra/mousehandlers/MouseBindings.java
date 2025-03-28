@@ -269,6 +269,14 @@ public class MouseBindings {
         mouseX = mouseEvent.getX();
         mouseY = mouseEvent.getY();
         PolyChartManager.getInstance().setActiveChart(chart);
+        if (mouseEvent.getClickCount() == 2) {
+            if (chart.getInsetChart().isPresent()) {
+                PolyChartManager.getInstance().setSelectedChart(chart);
+            }
+        } else {
+            chart.getDrawingLayers().getTopPane().setMouseTransparent(true);
+            PolyChartManager.getInstance().setSelectedChart(null);
+        }
         dragStart[0] = mouseX;
         dragStart[1] = mouseY;
         moved = false;
