@@ -33,6 +33,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     private static final String PEAKLISTS = "peaklists";
     private static final String STRIPS = "strips";
     private static final String RUNABOUT = "runabout";
+    private static final String INSET = "inset";
 
     public Map<String, String> strips(FXMLController controller) {
         StripController stripController = (StripController) controller.getTool(StripController.class);
@@ -117,9 +118,10 @@ public class GUIScripterAdvanced extends GUIScripter {
         for (PolyChart chart : controller.getAllCharts()) {
             Map<String, Object> sd = new HashMap<>();
             spectra.add(sd);
-            if (chart.getInsetChart().isPresent()) {
-                InsetChart insetChart = chart.getInsetChart().get();
-                sd.put("inset", insetChart.getPosition());
+            var insetOpt = chart.getInsetChart();
+            if (insetOpt.isPresent()) {
+                InsetChart insetChart = insetOpt.get();
+                sd.put(INSET, insetChart.getPosition());
             } else {
                 GridPaneCanvas.GridPosition gridValue = controller.getGridPaneCanvas().getGridLocation(chart);
                 sd.put("grid", List.of(gridValue.rows(), gridValue.columns(), gridValue.rowSpan(), gridValue.columnSpan()));
@@ -236,7 +238,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     }
 
     private int countGridSpectra(List<Map<String, Object>> spectraList) {
-        return spectraList.size() - (int) spectraList.stream().filter(map -> map.containsKey("inset")).count();
+        return spectraList.size() - (int) spectraList.stream().filter(map -> map.containsKey(INSET)).count();
     }
     private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList) {
         int iWin = 0;
@@ -247,8 +249,8 @@ public class GUIScripterAdvanced extends GUIScripter {
             int rowSpan = 1;
             int columnSpan = 1;
             PolyChart chart;
-            if (spectraMap.containsKey("inset")) {
-                var inset = (List<Double>) spectraMap.get("inset");
+            if (spectraMap.containsKey(INSET)) {
+                var inset = (List<Double>) spectraMap.get(INSET);
                 double fX = inset.get(0);
                 double fY = inset.get(1);
                 double fWidth = inset.get(2);

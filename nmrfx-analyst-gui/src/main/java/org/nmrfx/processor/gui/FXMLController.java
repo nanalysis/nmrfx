@@ -907,6 +907,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         initStatusBar();
         charts.add(activeChart);
         chartDrawingLayers.getGrid().addCharts(1, charts);
+        Background background = Background.fill(Color.WHITE);
+        chartPane.setBackground(background);
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
                 return;
@@ -1341,23 +1343,28 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return allCharts;
     }
 
+    private Optional<PolyChart> handleInsetChart(PolyChart chart, double x, double y) {
+        Optional<PolyChart> hitChart = Optional.empty();
+        for (InsetChart insetChart : chart.getInsetCharts()) {
+            PolyChart iChart = insetChart.chart;
+            if (iChart.contains(x, y)) {
+                hitChart = Optional.of(iChart);
+                break;
+            }
+        }
+        if (hitChart.isEmpty() && chart.contains(x, y)) {
+                hitChart = Optional.of(chart);
+        }
+
+        return hitChart;
+    }
     public Optional<PolyChart> getChart(double x, double y) {
         Optional<PolyChart> hitChart = Optional.empty();
         // go backwards so we find the last added chart if they overlap
         for (int i = charts.size() - 1; i >= 0; i--) {
             PolyChart chart = charts.get(i);
-            for (InsetChart insetChart : chart.getInsetCharts()) {
-                PolyChart iChart = insetChart.chart;
-                if (iChart.contains(x, y)) {
-                    hitChart = Optional.of(iChart);
-                    break;
-                }
-            }
+            hitChart = handleInsetChart(chart, x, y);
             if (hitChart.isPresent()) {
-                break;
-            }
-            if (chart.contains(x, y)) {
-                hitChart = Optional.of(chart);
                 break;
             }
         }

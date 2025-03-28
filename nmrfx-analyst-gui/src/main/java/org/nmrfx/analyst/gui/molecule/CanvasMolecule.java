@@ -27,7 +27,19 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.nmrfx.analyst.gui.molecule.CanvasMolecule.ValueMode.ATOM;
+import static org.nmrfx.analyst.gui.molecule.CanvasMolecule.ValueMode.NONE;
+
 public class CanvasMolecule implements CanvasAnnotation {
+
+    public enum ValueMode {
+        NONE,
+        ATOM,
+        PPM,
+        VALUE
+    }
+
+    ValueMode valueMode = NONE;
     private static final Logger log = LoggerFactory.getLogger(CanvasMolecule.class);
     private static final int BY_ATOM = 0;
     private static final int BY_VALUE = 1;
@@ -37,13 +49,12 @@ public class CanvasMolecule implements CanvasAnnotation {
     PolyChart chart = null;
     ChartMenu menu = null;
     float radius = 0.4f;
-    float valueScale = 10.0f;
+    float valueScale = 1.0f;
     float valueZero = 0.0f;
-    boolean valueMode = true;
     int posShape = CIRCLE_SHAPE;
     int negShape = SQUARE_SHAPE;
-    Color posColor = Color.RED;
-    Color negColor = Color.BLUE;
+    Color posColor = Color.GREEN;
+    Color negColor = Color.RED;
     int colorBy = BY_VALUE;
     boolean scaleShape = true;
     AtomLabels.LabelTypes drawLabels = AtomLabels.LabelTypes.LABEL_NONHCO;
@@ -85,6 +96,8 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     POSTYPE xPosType;
     POSTYPE yPosType;
+
+    double ppm;
 
     public CanvasMolecule() {
     }
@@ -246,6 +259,13 @@ public class CanvasMolecule implements CanvasAnnotation {
 
     public void setLabels(AtomLabels.LabelTypes labelTypes) {
         drawLabels = labelTypes;
+    }
+    public void setValueMode(ValueMode valueMode) {
+        this.valueMode = valueMode;
+    }
+
+    public ValueMode getValueMode() {
+        return valueMode;
     }
 
     public void setColorBy(String colorString) {
@@ -557,7 +577,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
         if (molecule != null) {
             drawSpheres = false;
-            valueMode = false;
             posShape = CIRCLE_SHAPE;
             negShape = CIRCLE_SHAPE;
 
@@ -570,7 +589,6 @@ public class CanvasMolecule implements CanvasAnnotation {
                 drawSpheres = true;
 
                 if (molecule.display.equals("pball")) {
-                    valueMode = true;
                     setPosShape(molecule.posShapeType);
                     setNegShape(molecule.negShapeType);
                 }
@@ -581,9 +599,9 @@ public class CanvasMolecule implements CanvasAnnotation {
             }
 
         }
-        if (drawSpheres) {
-            genSpheres(g2, false, 0, 0);
-        }
+
+        genSpheres(g2, false, 0, 0);
+
 
         if (drawLines) {
             genLines(g2);
@@ -641,6 +659,12 @@ public class CanvasMolecule implements CanvasAnnotation {
         molecule.createLabelArray(iStructure,
                 molPrims.labelCoords, 0);
     }
+
+    public void showPPM(double ppm) {
+        this.ppm = ppm;
+        redraw();
+    }
+
     public int genSpheres(GraphicsContextInterface gC, boolean pickMode, double pickX, double pickY) {
         float dX = radius * canvasScale;
         float dY = radius * canvasScale;
@@ -652,7 +676,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         if (!transformValid) {
             setupTransform();
         }
-
         int i = 0;
         for (Point3C point3C : molPrims.pointCs) {
             Point3 pt1 = point3C.pt1();
@@ -661,8 +684,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
             double x = vecOut.getX() + (float) transformPt.getX();
             double y = vecOut.getY() + (float) transformPt.getY();
-
-            double z = vecOut.getZ();
 
             float value = 0;
 
@@ -676,13 +697,37 @@ public class CanvasMolecule implements CanvasAnnotation {
                 float vRadius = canvasScale * radius;
                 float triangleHeight = canvasScale * radius;
 
-                if (valueMode) {
-                    value = (float) point3C.value();
-
-                    if (scaleShape) {
-                        vRadius = (canvasScale * radius * Math.abs(value)) / valueScale;
+                if (valueMode == ValueMode.PPM) {
+                    if (!point3C.atom().getElementName().startsWith("H")) {
+                        continue;
+                    }
+                    PPMv ppMv = point3C.atom().getPPM(0);
+                    PPMv refPPM = point3C.atom().getRefPPM(0);
+                    Double atomPPM = null;
+                    if ((ppMv != null) && ppMv.isValid()) {
+                        atomPPM = ppMv.getValue();
+                    } else if ((refPPM != null) && refPPM.isValid()) {
+                        atomPPM = refPPM.getValue();
+                    }
+                    if (atomPPM != null) {
+                        double deltaPPM = Math.min(1.0, Math.abs(ppm - atomPPM));
+                        value = (float) (1.0 - deltaPPM);
+                    } else {
+                        continue;
                     }
 
+                    shapeMode = TRIANGLE_SHAPE;
+                } else if (valueMode == ValueMode.VALUE) {
+                    value = (float) point3C.value();
+                    shapeMode = TRIANGLE_SHAPE;
+                } else {
+                    shapeMode = CIRCLE_SHAPE;
+                    vRadius = radius * canvasScale;
+                }
+
+
+
+                if (valueMode != ATOM) {
                     if (value > 0) {
                         shapeMode = posShape;
                         triangleHeight = vRadius;
@@ -690,14 +735,13 @@ public class CanvasMolecule implements CanvasAnnotation {
                         triangleHeight = -vRadius;
                         shapeMode = negShape;
                     }
-                } else {
-                    valueMode = false;
-                    shapeMode = 0;
-                    vRadius = radius * canvasScale;
+                    if (scaleShape) {
+                        vRadius = (canvasScale * radius * Math.abs(value)) / valueScale;
+                    }
                 }
                 Color fill;
                 Color outline;
-                if (valueMode && (colorBy == BY_VALUE)) {
+                if ((valueMode != ATOM) && (colorBy == BY_VALUE)) {
                     if (value > 0) {
                         fill = posColor;
                         outline = posColor;
@@ -706,47 +750,47 @@ public class CanvasMolecule implements CanvasAnnotation {
                         outline = negColor;
                     }
                 } else {
-                    try {
-                        outline = Color.rgb(point3C.color1().getRed(), point3C.color1().getGreen(), point3C.color1().getBlue());
-                        fill = Color.rgb(point3C.color1().getRed(), point3C.color1().getGreen(), point3C.color1().getBlue());
-                        gC.setFill(fill);
-                        gC.setStroke(outline);
-                        gC.setLineWidth(stroke3);
-
-                        switch (shapeMode) {
-                            case CIRCLE_SHAPE: {
-                                gC.fillOval(x, y, vRadius, vRadius);
-                                gC.strokeOval(x, y, vRadius, vRadius);
-                                break;
-                            }
-
-                            case SQUARE_SHAPE: {
-                                gC.fillRect(x - vRadius, y - vRadius, vRadius * 2, vRadius * 2);
-                                gC.strokeRect(x - vRadius, y - vRadius, vRadius * 2, vRadius * 2);
-                                break;
-                            }
-
-                            case TRIANGLE_SHAPE: {
-                                gC.beginPath();
-                                gC.moveTo(x - dX, y + triangleHeight);
-                                gC.lineTo(x + dX, y + triangleHeight);
-                                gC.lineTo(x, y - triangleHeight);
-                                gC.closePath();
-                                gC.fill();
-                                gC.stroke();
-                                break;
-                            }
-                            default: // fixme should throw Exception
-                        }
-                    } catch (Exception ex) {
-                        log.error(ex.getMessage(), ex);
-                    }
-
+                    outline = Color.rgb(point3C.color1().getRed(), point3C.color1().getGreen(), point3C.color1().getBlue());
+                    fill = Color.rgb(point3C.color1().getRed(), point3C.color1().getGreen(), point3C.color1().getBlue());
                 }
+                try {
+                    gC.setFill(fill);
+                    gC.setStroke(outline);
+                    gC.setLineWidth(stroke3);
+                    double vWidth = vRadius * 2.0;
+
+                    switch (shapeMode) {
+                        case CIRCLE_SHAPE: {
+                            gC.fillOval(x - vRadius, y - vRadius, vWidth, vWidth);
+                            gC.strokeOval(x - vRadius, y - vRadius, vWidth, vWidth);
+                            break;
+                        }
+
+                        case SQUARE_SHAPE: {
+                            gC.fillRect(x - vRadius, y - vRadius, vWidth, vWidth);
+                            gC.strokeRect(x - vRadius, y - vRadius, vWidth, vWidth);
+                            break;
+                        }
+
+                        case TRIANGLE_SHAPE: {
+                            gC.beginPath();
+                            gC.moveTo(x - dX, y + triangleHeight);
+                            gC.lineTo(x + dX, y + triangleHeight);
+                            gC.lineTo(x, y - triangleHeight);
+                            gC.closePath();
+                            gC.fill();
+                            gC.stroke();
+                            break;
+                        }
+                        default: // fixme should throw Exception
+                    }
+                } catch (Exception ex) {
+                    log.error(ex.getMessage(), ex);
+                }
+
             }
             i++;
         }
-
         return -1;
     }
 
@@ -760,7 +804,6 @@ public class CanvasMolecule implements CanvasAnnotation {
             setupTransform();
         }
 
-        float[] anchor = {0.5f, 0.5f};
         for (Point3C point3C : molPrims.pointCs) {
             Point3 pt1 = point3C.pt1();
             Point3D vecIn = new Point3D(pt1.getX(), pt1.getY(), pt1.getZ());
@@ -768,9 +811,6 @@ public class CanvasMolecule implements CanvasAnnotation {
 
             double x = vecOut.getX() + (float) transformPt.getX();
             double y = vecOut.getY() + (float) transformPt.getY();
-
-            double z = vecOut.getZ();
-            float vRadius = canvasScale * radius;
 
             String label = null;
             Atom atom = point3C.atom();
@@ -844,8 +884,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void genLines(GraphicsContextInterface gC) {
-
-
         if (!getCoordSystemTransform()) {
             return;
         }
@@ -903,11 +941,6 @@ public class CanvasMolecule implements CanvasAnnotation {
         return selectable;
     }
 
-    //@Override
-    //public void setSelectable(boolean state) {
-    //   selectable = state;
-    //}
-
     @Override
     public int hitHandle(double x, double y) {
         if (hitHandle(x, y, Pos.BOTTOM_RIGHT, bounds2D.getMinX(), bounds2D.getMinY())) {
@@ -939,57 +972,4 @@ public class CanvasMolecule implements CanvasAnnotation {
         y2 = newType.itransform(y2Pix, bounds, world);
         yPosType = newType;
     }
-
-    void drawSelection() {
-//        coords[i++] = (float) ptB.getX();
-//        coords[i++] = (float) ptB.getY();
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() + 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() - 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX();
-//        coords[i++] = (float) ptB.getY();
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() + 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-//        coords[i++] = (float) ptB.getX() - 0.2f;
-//        coords[i++] = (float) ptB.getY() - 0.2f;
-//        coords[i++] = (float) ptB.getZ();
-
-
-//        float dx = (float) (ptE.getX() - ptB.getX());
-//        float dy = (float) (ptE.getY() - ptB.getY());
-//        float dz = (float) (ptE.getZ() - ptB.getZ());
-//        float len = (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-//        float xy3 = -dy / len * 0.2f;
-//        float yx3 = dx / len * 0.2f;
-//        float z3 = dz / len * 0.2f;
-//        float xz3 = -dz / len * 0.2f;
-//        float y3 = dy / len * 0.2f;
-//        float zx3 = dx / len * 0.2f;
-//        coords[i++] = (float) (ptB.getX() - xy3);
-//        coords[i++] = (float) (ptB.getY() - yx3);
-//        coords[i++] = (float) (ptB.getZ() - z3);
-//        coords[i++] = (float) (ptB.getX() + xy3);
-//        coords[i++] = (float) (ptB.getY() + yx3);
-//        coords[i++] = (float) (ptB.getZ() + z3);
-//        coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
-//        coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
-//        coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
-//        coords[i++] = (float) (ptB.getX() + xz3);
-//        coords[i++] = (float) (ptB.getY() + y3);
-//        coords[i++] = (float) (ptB.getZ() + zx3);
-//        coords[i++] = (float) (ptB.getX() - xz3);
-//        coords[i++] = (float) (ptB.getY() - y3);
-//        coords[i++] = (float) (ptB.getZ() - zx3);
-//        coords[i++] = (float) ptB.getX() + (dx / len * 0.5f);
-//        coords[i++] = (float) ptB.getY() + (dy / len * 0.5f);
-//        coords[i++] = (float) ptB.getZ() + (dz / len * 0.5f);
-
-    }
-
 }

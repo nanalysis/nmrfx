@@ -9,6 +9,8 @@ import javafx.scene.control.*;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 
+import static org.nmrfx.analyst.gui.molecule.CanvasMolecule.ValueMode.NONE;
+
 /**
  * @author brucejohnson
  */
@@ -34,7 +36,7 @@ public class MoleculeMenu extends ChartMenu {
 
         ToggleGroup toggleGroup = new ToggleGroup();
         AtomLabels.LabelTypes[] labelTypes = {AtomLabels.LabelTypes.LABEL_NONE, AtomLabels.LabelTypes.LABEL_NONHCO,
-        AtomLabels.LabelTypes.LABEL_PPM, AtomLabels.LabelTypes.LABEL_NAME};
+                AtomLabels.LabelTypes.LABEL_PPM, AtomLabels.LabelTypes.LABEL_RPPM, AtomLabels.LabelTypes.LABEL_NAME};
         for (var labelType : labelTypes) {
             RadioMenuItem noneLabelMenuItem = new RadioMenuItem(labelType.toString().substring(6));
             noneLabelMenuItem.setUserData(labelType);
@@ -46,13 +48,31 @@ public class MoleculeMenu extends ChartMenu {
         }
 
 
-
         toggleGroup.selectedToggleProperty().addListener(e -> {
             canvasMolecule.setLabels((AtomLabels.LabelTypes) toggleGroup.getSelectedToggle().getUserData());
             canvasMolecule.redraw();
         });
 
         chartMenu.getItems().add(labelMenu);
-    }
+        ToggleGroup toggleValueGroup = new ToggleGroup();
 
+        Menu valueModeMenu = new Menu("Atom Shape");
+        CanvasMolecule.ValueMode[] valueTypes = {NONE, CanvasMolecule.ValueMode.ATOM, CanvasMolecule.ValueMode.VALUE,
+                CanvasMolecule.ValueMode.PPM};
+        for (var valueType : valueTypes) {
+            RadioMenuItem menuItem = new RadioMenuItem(valueType.toString());
+            menuItem.setUserData(valueType);
+            toggleValueGroup.getToggles().add(menuItem);
+            valueModeMenu.getItems().add(menuItem);
+            if (valueType == NONE) {
+                toggleValueGroup.selectToggle(menuItem);
+            }
+        }
+        toggleValueGroup.selectedToggleProperty().addListener(e -> {
+            canvasMolecule.setValueMode((CanvasMolecule.ValueMode) toggleValueGroup.getSelectedToggle().getUserData());
+            canvasMolecule.redraw();
+        });
+
+        chartMenu.getItems().add(valueModeMenu);
+    }
 }
