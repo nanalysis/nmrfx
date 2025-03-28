@@ -908,6 +908,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         initStatusBar();
         charts.add(activeChart);
         chartDrawingLayers.getGrid().addCharts(1, charts);
+        Background background = Background.fill(Color.WHITE);
+        chartPane.setBackground(background);
 
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {

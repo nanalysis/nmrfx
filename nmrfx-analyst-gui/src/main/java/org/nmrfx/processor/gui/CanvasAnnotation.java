@@ -80,6 +80,9 @@ public interface CanvasAnnotation {
 
     }
 
+    default void setChart(PolyChart chart) {
+
+    }
     void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
 
     boolean hit(double x, double y, boolean selectMode);
