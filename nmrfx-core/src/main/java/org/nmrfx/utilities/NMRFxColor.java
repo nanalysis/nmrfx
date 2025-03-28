@@ -23,6 +23,13 @@ public class NMRFxColor {
         this.alpha = 255;
     }
 
+    public NMRFxColor(double r, double g, double b) {
+        this.r = (int) (r * 255);
+        this.g = (int) (g * 255);
+        this.b = (int) (b * 255);
+        this.alpha = 255;
+    }
+
     public NMRFxColor(int r, int g, int b, int alpha) {
         this.r = r;
         this.g = g;
