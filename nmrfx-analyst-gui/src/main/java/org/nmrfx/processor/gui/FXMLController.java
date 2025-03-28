@@ -102,7 +102,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.DoubleFunction;
 
@@ -216,7 +215,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // resulting in a java.util.ConcurrentModificationException
         removeRunaboutTool();
         saveDatasets();
-        List<PolyChart> tempCharts = new ArrayList<>(charts);
+        List<PolyChart> tempCharts = new ArrayList<>(getAllCharts());
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
@@ -768,7 +767,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
                 pdfGC.create(true, chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), fileName);
-                for (PolyChart chart : charts) {
+                for (PolyChart chart : getAllCharts()) {
                     chart.exportVectorGraphics(pdfGC);
                 }
                 pdfGC.saveFile();
@@ -802,7 +801,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
                 svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), fileName);
-                for (PolyChart chart : charts) {
+                for (PolyChart chart : getAllCharts()) {
                     chart.exportVectorGraphics(svgGC);
                 }
                 svgGC.saveFile();
@@ -819,7 +818,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), stream);
-            for (PolyChart chart : charts) {
+            for (PolyChart chart : getAllCharts()) {
                 chart.exportVectorGraphics(svgGC);
             }
             svgGC.saveFile();
@@ -885,7 +884,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     @Override
     public void refreshPeakView(Peak peak) {
         if (peak != null) {
-            PeakDisplayTool.gotoPeak(peak, charts, widthScale);
+            PeakDisplayTool.gotoPeak(peak, getAllCharts(), widthScale);
         }
     }
 
@@ -908,7 +907,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         initStatusBar();
         charts.add(activeChart);
         chartDrawingLayers.getGrid().addCharts(1, charts);
-
+        Background background = Background.fill(Color.WHITE);
+        chartPane.setBackground(background);
         mainBox.layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth() < 1.0 || arg2.getHeight() < 1.0) {
                 return;
@@ -1026,7 +1026,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void setCursor() {
         Cursor cursor = cursorProperty.getValue();
         chartDrawingLayers.setCursor(cursor);
-        for (PolyChart chart : charts) {
+        for (PolyChart chart : getAllCharts()) {
             chart.getCrossHairs().setAllStates(CanvasCursor.isCrosshair(cursor));
         }
         statusBar.updateCursorBox();
@@ -1185,7 +1185,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
                 }
             }
             chartDrawingLayers.getGrid().requestLayout();
-            for (PolyChart refreshChart : charts) {
+            for (PolyChart refreshChart : getAllCharts()) {
                 refreshChart.layoutPlotChildren();
             }
         }
@@ -1209,7 +1209,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void setChartDisable(boolean state) {
-        for (PolyChart chart : charts) {
+        for (PolyChart chart : getAllCharts()) {
             chart.setChartDisabled(state);
         }
     }
@@ -1248,6 +1248,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         chart.setChartDisabled(true);
         chartDrawingLayers.getGrid().addChart(chart);
         activeChart = chart;
+    }
+
+    public InsetChart addInsetChartTo(PolyChart chart) {
+        PolyChart insetChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
+        return chart.addInsetChart(insetChart);
     }
 
     public void setBorderState(boolean state) {
@@ -1327,14 +1332,39 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public List<PolyChart> getCharts() {
         return charts;
     }
+    public List<PolyChart> getAllCharts() {
+        List<PolyChart> allCharts = new ArrayList<>();
+        for (PolyChart chart : charts) {
+            allCharts.add(chart);
+            for (InsetChart insetChart : chart.getInsetCharts()) {
+                allCharts.add(insetChart.chart);
+            }
+        }
+        return allCharts;
+    }
 
+    private Optional<PolyChart> handleInsetChart(PolyChart chart, double x, double y) {
+        Optional<PolyChart> hitChart = Optional.empty();
+        for (InsetChart insetChart : chart.getInsetCharts()) {
+            PolyChart iChart = insetChart.chart;
+            if (iChart.contains(x, y)) {
+                hitChart = Optional.of(iChart);
+                break;
+            }
+        }
+        if (hitChart.isEmpty() && chart.contains(x, y)) {
+                hitChart = Optional.of(chart);
+        }
+
+        return hitChart;
+    }
     public Optional<PolyChart> getChart(double x, double y) {
         Optional<PolyChart> hitChart = Optional.empty();
         // go backwards so we find the last added chart if they overlap
         for (int i = charts.size() - 1; i >= 0; i--) {
             PolyChart chart = charts.get(i);
-            if (chart.contains(x, y)) {
-                hitChart = Optional.of(chart);
+            hitChart = handleInsetChart(chart, x, y);
+            if (hitChart.isPresent()) {
                 break;
             }
         }
@@ -1345,6 +1375,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // fixme
     }
 
+    public void refresh() {
+        getAllCharts().forEach(PolyChart::refresh);
+    }
     public void addGrid() {
         GridPaneCanvas.GridDimensions gdims = getGridDimensionInput();
         if (gdims == null) {
@@ -1365,8 +1398,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void removeSelectedChart() {
-        if (charts.size() > 1) {
-            getActiveChart().close();
+        if (getAllCharts().size() > 1) {
+            PolyChart chart = getActiveChart();
+            if (chart.getInsetChart().isPresent()) {
+                chart.getInsetChart().ifPresent(insetChart -> {
+                    insetChart.remove();
+                    insetChart.chart.close();
+                });
+            } else {
+                getActiveChart().close();
+            }
             arrange(chartDrawingLayers.getGrid().getOrientation());
         }
     }
@@ -1591,7 +1632,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         int orientationIndex = orientation.ordinal();
         crossHairStates[index][orientationIndex] = !crossHairStates[index][orientationIndex];
         boolean state = crossHairStates[index][orientationIndex];
-        for (PolyChart chart : charts) {
+        for (PolyChart chart : getAllCharts()) {
             CrossHairs crossHairs = chart.getCrossHairs();
             crossHairs.setState(index, orientation, state);
         }
