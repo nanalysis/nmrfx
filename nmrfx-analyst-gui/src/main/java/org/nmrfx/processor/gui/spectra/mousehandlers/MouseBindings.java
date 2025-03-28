@@ -24,6 +24,7 @@ import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.molecule.CanvasMolecule;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
@@ -224,6 +225,7 @@ public class MouseBindings {
                         pause.stop();
                     }
                     unsetCursor();
+                    handleMoleculePPM(mouseX);
                 }
             }
         }
@@ -233,6 +235,16 @@ public class MouseBindings {
         }
     }
 
+    void handleMoleculePPM(double x) {
+        var molsAnno = chart.findAnnoTypes(CanvasMolecule.class);
+        if (!molsAnno.isEmpty()) {
+            CanvasMolecule canvasMolecule = (CanvasMolecule) molsAnno.get(0);
+            if (canvasMolecule.getValueMode() == CanvasMolecule.ValueMode.PPM) {
+                double ppmX = chart.getAxes().getX().getValueForDisplay(x).doubleValue();
+                ((CanvasMolecule) molsAnno.getFirst()).showPPM(ppmX);
+            }
+        }
+    }
     private void setCursor(Cursor cursor) {
         FXMLController controller = chart.getFXMLController();
         if (controller.getCurrentCursor() != cursor) {
