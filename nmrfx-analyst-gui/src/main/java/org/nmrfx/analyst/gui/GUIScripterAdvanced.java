@@ -259,7 +259,7 @@ public class GUIScripterAdvanced extends GUIScripter {
                 double fHeight = inset.get(3);
                 InsetChart insetChart = controller.addInsetChartTo(lastGridChart);
                 insetChart.setFractionalPosition(fX, fY, fWidth, fHeight);
-                chart = insetChart.getChart();
+                chart = insetChart.chart();
             } else {
                 chart = controller.getCharts().get(iWin++);
                 if (spectraMap.containsKey("grid")) {

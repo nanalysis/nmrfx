@@ -7,6 +7,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
+import org.nmrfx.processor.gui.InsetChart;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
@@ -86,7 +87,9 @@ public class SpectrumMenuActions extends MenuActions {
 
     void addInsetSpectrum() {
         PolyChart chart = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().getActiveChart();
-        chart.getFXMLController().addInsetChartTo(chart);
+        InsetChart insetChart = chart.getFXMLController().addInsetChartTo(chart);
+        insetChart.parent().setToBuffer();
+        insetChart.chart().pasteFromBuffer();
         chart.getFXMLController().refresh();
     }
     void showFavorites() {

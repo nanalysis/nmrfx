@@ -62,8 +62,12 @@ public class InsetChart {
         chart.refresh();
     }
 
-    public PolyChart getChart() {
+    public PolyChart chart() {
         return chart;
+    }
+
+    public PolyChart parent() {
+        return parent;
     }
 
     public List<Double> getPosition() {
@@ -85,6 +89,39 @@ public class InsetChart {
         mouseAction(i, x, y, true);
     }
 
+    Rectangle2D adjustPosition(double nxp1, double nyp1, double nxp2, double nyp2, boolean retainExtent) {
+        Rectangle2D innerConrners = parent.getInnerCorners();
+        double width = nxp2 - nxp1;
+        double height = nyp2 - nyp1;
+        if (nxp2 > innerConrners.getMaxX()) {
+            nxp2 = innerConrners.getMaxX();
+            if (retainExtent) {
+                nxp1 = nxp2 - width;
+            }
+        }
+
+        if (nxp1 < innerConrners.getMinX()) {
+            nxp1 = innerConrners.getMinX();
+            if (retainExtent) {
+                nxp2 = nxp1 + width;
+            }
+        }
+        if (nyp2 > innerConrners.getMaxY()) {
+            nyp2 = innerConrners.getMaxY();
+            if (retainExtent) {
+                nyp1 = nyp2 - height;
+            }
+        }
+
+        if (nyp1 < innerConrners.getMinY()) {
+            nyp1 = innerConrners.getMinY();
+            if (retainExtent) {
+                nyp2 = nyp1 + height;
+            }
+        }
+        return new Rectangle2D(nxp1, nyp1, nxp2 - nxp1, nyp2 - nyp1);
+    }
+
     void mouseAction(int i, double x, double y, boolean release) {
         double dX = x - startX;
         double dY = y - startY;
@@ -92,39 +129,36 @@ public class InsetChart {
         double nyp1 = yp1;
         double nxp2 = xp2;
         double nyp2 = yp2;
-        switch (i) {
-            case 0 -> {
-                nxp1 += dX;
-                nyp1 += dY;
-            }
-            case 1 -> {
-                nxp2 += dX;
-                nyp1 += dY;
-            }
-            case 2 -> {
-                nxp2 += dX;
-                nyp2 += dY;
-            }
-            case 3 -> {
-                nxp1 += dX;
-                nyp2 += dY;
-            }
-            default -> {
-                nxp1 += dX;
-                nxp2 += dX;
-                nyp1 += dY;
-                nyp2 += dY;
-            }
+        if ((i == 0) || (i == 3)) {
+            nxp1 = Math.min(nxp1 + dX, nxp2 - 5);
         }
+        if ((i == 1) || (i == 2)){
+            nxp2 = Math.max(nxp1 + 5, nxp2 + dX);
+        }
+
+        if ((i == 0) || (i == 1)) {
+            nyp1 = Math.min(nyp1 + dY, nyp2 - 5);
+        }
+        if ((i == 2) || (i == 3)) {
+            nyp2 = Math.max(nyp1 + 5, nyp2 + dY);
+        }
+        if (i == -1) {
+            nxp1 += dX;
+            nxp2 += dX;
+            nyp1 += dY;
+            nyp2 += dY;
+        }
+
+        Rectangle2D r = adjustPosition(nxp1, nyp1, nxp2, nyp2, i == -1);
         if (release) {
-            Rectangle2D rectangle2D = parent.getFractionalPosition(nxp1, nyp1, nxp2, nyp2);
+            Rectangle2D rectangle2D = parent.getFractionalPosition(r.getMinX(), r.getMinY(), r.getMaxX(), r.getMaxY());
             fX = rectangle2D.getMinX();
             fY = rectangle2D.getMinY();
             fWidth = rectangle2D.getWidth();
             fHeight = rectangle2D.getHeight();
             parent.refresh();
         } else {
-            chart.moveHighlightChart(nxp1, nyp1, nxp2 - nxp1, nyp2 - nyp1);
+            chart.moveHighlightChart(r.getMinX(), r.getMinY(), r.getWidth(), r.getHeight());
         }
     }
 
@@ -142,6 +176,13 @@ public class InsetChart {
         drawHandle(rectangles[1], xp2, yp1);
         drawHandle(rectangles[2], xp2, yp2);
         drawHandle(rectangles[3], xp1, yp2);
+    }
+
+    void setHandlePositions(Rectangle[] rectangles, Rectangle r) {
+        drawHandle(rectangles[0], r.getX(), r.getY());
+        drawHandle(rectangles[1], r.getX() + r.getWidth(), r.getY());
+        drawHandle(rectangles[2], r.getX() + r.getWidth(), r.getY() + r.getHeight());
+        drawHandle(rectangles[3], r.getX(), r.getY() + r.getHeight());
     }
 
     void drawHandle(Rectangle rectangle, double x, double y) {
