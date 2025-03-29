@@ -72,11 +72,8 @@ public class PeakListType {
                     sDims.put(dimName, sDim);
                     used[i] = true;
                     break;
-                } else if (dim.getName().startsWith("N") && sDim.getDimName().contains("N") && !sDim.getDimName().contains("H")) {
-                    used[i] = true;
-                    sDims.put(dimName, sDim);
-                    break;
-                } else if (dim.getName().startsWith("C") && sDim.getDimName().contains("C") && !sDim.getDimName().contains("H")) {
+                } else if ((dim.getName().startsWith("N") && sDim.getDimName().contains("N") && !sDim.getDimName().contains("H"))
+                        || (dim.getName().startsWith("C") && sDim.getDimName().contains("C") && !sDim.getDimName().contains("H"))) {
                     used[i] = true;
                     sDims.put(dimName, sDim);
                     break;

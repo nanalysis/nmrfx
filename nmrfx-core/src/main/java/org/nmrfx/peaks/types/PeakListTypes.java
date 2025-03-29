@@ -3,6 +3,7 @@ package org.nmrfx.peaks.types;
 import org.nmrfx.annotations.YamlEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 @YamlEntity("peakpat")
 public class PeakListTypes {
@@ -21,5 +22,9 @@ public class PeakListTypes {
         return "Types{" +
                 ", types=" + types +
                 '}';
+    }
+
+    public Optional<PeakListType> getType(String name) {
+        return types.stream().filter(p -> p.getName().equals(name)).findFirst();
     }
 }

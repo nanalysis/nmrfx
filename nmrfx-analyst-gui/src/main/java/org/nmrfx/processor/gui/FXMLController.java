@@ -1251,6 +1251,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public InsetChart addInsetChartTo(PolyChart chart) {
+        var currentInsetOpt = chart.getInsetChart();
+        if (currentInsetOpt.isPresent()) {
+            chart = currentInsetOpt.get().parent;
+        }
         PolyChart insetChart = PolyChartManager.getInstance().create(this, chartDrawingLayers);
         return chart.addInsetChart(insetChart);
     }

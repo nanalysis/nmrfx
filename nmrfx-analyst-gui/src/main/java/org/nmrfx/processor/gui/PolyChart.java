@@ -1987,6 +1987,7 @@ public class PolyChart extends Region {
         highlightRect.setY(y);
         highlightRect.setWidth(width);
         highlightRect.setHeight(height);
+        insetChart.setHandlePositions(handleRects, highlightRect);
     }
 
     public static void updateImmediateModes(boolean state) {
@@ -2005,6 +2006,15 @@ public class PolyChart extends Region {
         setHeight(height);
     }
 
+    Rectangle2D getInnerCorners() {
+        double xPos = getLayoutX() + borders.getLeft();
+        double yPos = getLayoutY() + borders.getTop();
+        double width = getWidth();
+        double height = getHeight();
+        width -= borders.getLeft() + borders.getRight();
+        height -= borders.getTop() + borders.getBottom();
+        return new Rectangle2D(xPos, yPos, width, height);
+    }
     Rectangle2D getFractionalPosition(double x1, double y1, double x2, double y2) {
         double xPos = getLayoutX() + borders.getLeft();
         double yPos = getLayoutY() + borders.getTop();

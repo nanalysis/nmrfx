@@ -9,6 +9,8 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.peaks.io.PeakPatternReader;
+import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.*;
 
@@ -25,13 +27,14 @@ public class RunAbout implements SaveframeWriter {
     static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
     public final static Map<Nuclei, Double> defaultTolearnces = Map.of(Nuclei.H1, 0.05, Nuclei.C13, 0.6, Nuclei.N15, 0.2);
 
+    PeakListTypes peakListTypes = null;
     int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
     PeakList refList;
     List<PeakList> peakLists = new ArrayList<>();
     Map<String, List<String>> dimLabels;
-    Map<String, String> peakListTypes = new HashMap<>();
+    Map<String, String> peakListTypeMap = new HashMap<>();
     Map<String, DatasetBase> datasetMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
@@ -53,7 +56,7 @@ public class RunAbout implements SaveframeWriter {
         spinSystems.clearAll();
         peakListMap.clear();
         peakLists.clear();
-        peakListTypes.clear();
+        peakListTypeMap.clear();
         datasetMap.clear();
         aTypeMap.clear();
         typeInfoMap.clear();
@@ -99,7 +102,7 @@ public class RunAbout implements SaveframeWriter {
     public int getTypeCount(String typeName) {
         int nTotal = 0;
         if (typeInfoMap.containsKey(typeName)) {
-            nTotal =  typeInfoMap.get(typeName).nTotal;
+            nTotal = typeInfoMap.get(typeName).nTotal;
         }
         return nTotal;
     }
@@ -267,13 +270,13 @@ public class RunAbout implements SaveframeWriter {
         peakLists.clear();
         peakListMap.clear();
         datasetMap.clear();
-        peakListTypes.clear();
+        peakListTypeMap.clear();
         peakLists.addAll(lists);
 
         for (var peakList : peakLists) {
             String typeName = peakList.getExperimentType();
             peakListMap.put(typeName, peakList);
-            peakListTypes.put(peakList.getName(), typeName);
+            peakListTypeMap.put(peakList.getName(), typeName);
             datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
             List<String> patElems = getPatterns(peakList);
             setAtomCount(typeName, patElems);
@@ -406,6 +409,25 @@ public class RunAbout implements SaveframeWriter {
         setDefaultTolerances(peakLists);
     }
 
+    public Set<PeakList> guessPeakLists() throws IOException {
+        if (peakListTypes == null) {
+            peakListTypes = PeakPatternReader.loadYaml();
+        }
+        Set<PeakList> foundLists = new HashSet<>();
+        String[] typeNames = {"CBCACONNH", "CBCACONH", "HNCOCACB", "HNCACB", "CBCANH", "HNCOCA", "HNCACO", "HNCA", "HNCO"};
+        for (String typeName : typeNames) {
+            peakListTypes.getType(typeName).ifPresent(peakListType -> {
+                for (var peakList : PeakList.peakLists()) {
+                    if (!foundLists.contains(peakList) && peakList.getName().toLowerCase().contains(peakListType.getName().toLowerCase())) {
+                        peakListType.setPeakList(peakList);
+                        foundLists.add(peakList);
+                    }
+                }
+            });
+        }
+        return foundLists;
+    }
+
     public void setDefaultTolerances(Collection<PeakList> peakLists) {
         for (var peakList : peakLists) {
             int nDim = peakList.getNDim();
@@ -419,6 +441,7 @@ public class RunAbout implements SaveframeWriter {
             }
         }
     }
+
     public void setTolerances(Map<Nuclei, SimpleDoubleProperty> tolerances) {
         for (var peakList : peakLists) {
             int nDim = peakList.getNDim();
@@ -449,7 +472,6 @@ public class RunAbout implements SaveframeWriter {
         getSpinSystems().compare();
         getSpinSystems().checkConfirmed();
         getSpinSystems().updateFragments();
-        getSpinSystems().dump();
     }
 
     public static String getHDimName(PeakList peakList) {

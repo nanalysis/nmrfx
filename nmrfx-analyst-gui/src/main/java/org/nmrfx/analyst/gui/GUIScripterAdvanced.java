@@ -102,8 +102,6 @@ public class GUIScripterAdvanced extends GUIScripter {
             PeakList refList = PeakList.get(refListName);
             runAboutGUI.getRunAbout().setRefList(refList);
             runAboutGUI.unifyLimits(unifyLimits);
-            runAboutGUI.setToleranceMap(tolMap);
-            runAboutGUI.setWidthMap(widthMap);
             runAboutGUI.genWin(arrangement);
         });
     }
@@ -259,7 +257,7 @@ public class GUIScripterAdvanced extends GUIScripter {
                 double fHeight = inset.get(3);
                 InsetChart insetChart = controller.addInsetChartTo(lastGridChart);
                 insetChart.setFractionalPosition(fX, fY, fWidth, fHeight);
-                chart = insetChart.getChart();
+                chart = insetChart.chart();
             } else {
                 chart = controller.getCharts().get(iWin++);
                 if (spectraMap.containsKey("grid")) {
