@@ -1890,7 +1890,7 @@ public class PeakList {
      * @return
      */
     public DoubleSummaryStatistics widthStatsPPM(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).filter(d -> Double.isFinite(d)).summaryStatistics();
         return stats;
     }
 
@@ -1995,7 +1995,7 @@ public class PeakList {
      */
     public DescriptiveStatistics shiftDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShiftValue()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShiftValue()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
@@ -2004,7 +2004,7 @@ public class PeakList {
      * @return
      */
     public DoubleSummaryStatistics shiftStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShift()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShift()).filter(d -> Double.isFinite(d)).summaryStatistics();
         return stats;
     }
 
@@ -2014,7 +2014,7 @@ public class PeakList {
      */
     public DescriptiveStatistics widthDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
@@ -2024,7 +2024,7 @@ public class PeakList {
      */
     public DescriptiveStatistics widthDStatsPPM(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidth()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidth()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
@@ -2033,13 +2033,13 @@ public class PeakList {
      * @return
      */
     public DoubleSummaryStatistics widthStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).filter(d -> Double.isFinite(d)).summaryStatistics();
         return stats;
     }
 
     public DescriptiveStatistics intensityDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.getPeakDim(iDim).getPeak().getIntensity()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.getPeakDim(iDim).getPeak().getIntensity()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
