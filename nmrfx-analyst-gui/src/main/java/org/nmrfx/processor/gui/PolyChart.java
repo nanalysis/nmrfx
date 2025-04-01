@@ -1720,6 +1720,9 @@ public class PolyChart extends Region {
             datasetFileProp.set(dataset.getFile());
             datasetAttributes.drawList.clear();
             PolyChartManager.getInstance().currentDatasetProperty().set(dataset);
+            if (PreferencesController.getAutoAddPeakMode()) {
+                addPeakListForDataset((Dataset) dataset);
+            }
         } else {
             setSliceStatus(false);
 
@@ -2917,6 +2920,14 @@ public class PolyChart extends Region {
             peakAttrs.addAll(newList);
         }
     }
+
+    void addPeakListForDataset(Dataset dataset) {
+        PeakList peakList = PeakList.getPeakListForDataset(dataset.getName());
+        if (peakList != null) {
+            setupPeakListAttributes(peakList);
+        }
+    }
+
 
     public void updatePeakListsByName(List<String> targets) {
         removeUnusedPeakLists(targets);
