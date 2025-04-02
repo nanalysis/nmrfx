@@ -72,6 +72,11 @@ def dumpStages(mode, nefFile):
             else:
                 print "        " + k + " : " + str(v)
 
+def readYamlToString(yamlFile):
+    with open(yamlFile, "r") as fin:
+        return ''.join([line for line in fin])
+
+
 def parseArgs():
     homeDir = os.getcwd()
     parser = OptionParser()
@@ -79,6 +84,7 @@ def parseArgs():
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-v", "--viol", action="store_true",dest="report",default=False, help="Report violations during calculations in energy dump file ")
     parser.add_option("-y", "--yaml", dest="dumpYamlMode",default="", help="Dump stages to .yaml file")
+    parser.add_option("-Y", "--Yaml", dest="readYamlFile",default="", help="Read parameters from .yaml file")
     parser.add_option("-r", "--refine", dest="refineFile",default="", help="Name of file to refine ")
     parser.add_option("-i", "--init", action="store_true", dest="init", default=False, help="Only initialize structure (False)")
     parser.add_option("-f", "--file", dest="sourceFile",default="", help="Name of file to load ")
@@ -91,6 +97,10 @@ def parseArgs():
     if options.dumpYamlMode != "":
         dumpStages(options.dumpYamlMode, sourceFile)
         exit(0)
+
+    if options.readYamlFile != "":
+        global yamlStr
+        yamlStr = readYamlToString(options.readYamlFile)
 
     homeDir = options.directory
     outDir = os.path.join(homeDir,'output')
