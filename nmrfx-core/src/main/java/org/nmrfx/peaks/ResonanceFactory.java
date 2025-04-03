@@ -33,6 +33,7 @@ import java.util.*;
  * @author Bruce Johnson
  */
 public class ResonanceFactory implements FreezeListener {
+
     private static final String[] resonanceLoopStrings = {
             "_Resonance.ID",
             "_Resonance.Name",
@@ -224,7 +225,34 @@ public class ResonanceFactory implements FreezeListener {
         }
     }
 
-
+    public void renumber(int offset, String polymerName) {
+        for (AtomResonance res : map.values()) {
+            List<String> labels = new ArrayList<>();
+            boolean updated = false;
+            var oldLabels = res.getNames();
+            if (oldLabels != null) {
+                for (String label : oldLabels) {
+                    if (!label.isBlank()) {
+                        Optional<PeakLabeller.ChainResAtomSpecifier> optionalChainResAtomSpecifier = PeakLabeller.parse(label);
+                        if (optionalChainResAtomSpecifier.isPresent()) {
+                            PeakLabeller.ChainResAtomSpecifier cSpec = optionalChainResAtomSpecifier.get();
+                            if (polymerName.isEmpty() || (cSpec.chain() == null) || cSpec.chain().isEmpty() || cSpec.chain().equalsIgnoreCase(polymerName)) {
+                                label = cSpec.offset(offset).toString();
+                                updated = true;
+                            }
+                        }
+                    }
+                    labels.add(label);
+                }
+            }
+            if (updated) {
+                res.setName(labels);
+                for (PeakDim peakDim : res.getPeakDims()) {
+                    peakDim.peakDimUpdated();
+                }
+            }
+        }
+    }
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         for (PeakDim peakDim : peak.peakDims) {
