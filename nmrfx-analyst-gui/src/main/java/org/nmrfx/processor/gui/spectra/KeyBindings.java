@@ -237,6 +237,12 @@ public class KeyBindings {
                 chart.getFXMLController().exportGraphics();
                 keyMonitor.clear();
             }
+            case "si" -> {
+                chart.getFXMLController().addInsetChartTo(chart);
+                chart.getFXMLController().refresh();
+                keyMonitor.clear();
+            }
+
             case "sn" -> {
                 Stage stage = new Stage(StageStyle.DECORATED);
                 AnalystApp.getFXMLControllerManager().newController(stage);

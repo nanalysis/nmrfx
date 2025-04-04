@@ -1,9 +1,10 @@
 package org.nmrfx.analyst.gui.molecule;
 
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -11,9 +12,11 @@ import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
 import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.io.*;
+import org.nmrfx.peaks.ResonanceFactory;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
@@ -27,6 +30,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
@@ -84,6 +88,9 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(app));
 
+        MenuItem renumberItem = new MenuItem("Renumber residues...");
+        renumberItem.setOnAction(e -> renumberSequence());
+
         MenuItem atomsMenuItem = new MenuItem("Atom Table...");
         atomsMenuItem.setOnAction(this::showAtoms);
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
@@ -107,7 +114,7 @@ public class MoleculeMenuActions extends MenuActions {
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, molConstraintsMenu, rnaPeakGenMenuItem);
+                sequenceMenuItem, molMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
     }
 
     void clearExisting() {
@@ -332,5 +339,89 @@ public class MoleculeMenuActions extends MenuActions {
         noeTableController.getStage().show();
         noeTableController.getStage().toFront();
         noeTableController.updateNoeSetMenu();
+    }
+
+    private void renumberSequence() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            GUIUtils.warn("Renumbering ", "No molecule present");
+            return;
+        }
+        var result = renumberingDialog();
+        if (result.isPresent()) {
+            Renumbering renumbering = result.get();
+            List<Polymer> polymers = renumbering.polymer == null ? molecule.getPolymers() : List.of(renumbering.polymer);
+            for (Polymer polymer : polymers) {
+                if (renumbering.updateResidues) {
+                    polymer.addResidueOffset(renumbering.offset);
+                    if (atomController != null) {
+                        atomController.refreshAtomTable();
+                    }
+                }
+                if (renumbering.updatePeaks()) {
+                    ResonanceFactory resonanceFactory = ProjectBase.activeResonanceFactory();
+                    resonanceFactory.renumber(renumbering.offset(), polymer.getName());
+                }
+            }
+        }
+    }
+
+    public record Renumbering(Polymer polymer, int offset, boolean updateResidues, boolean updatePeaks) {
+
+    }
+    public static Optional<Renumbering> renumberingDialog() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            GUIUtils.warn("Renumbering ", "No molecule present");
+            return Optional.empty();
+        }
+
+        Dialog<Renumbering> dialog = new Dialog<>();
+        dialog.setTitle("Renumbering");
+        dialog.setHeaderText("Enter offset information:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 100;
+        ComboBox<Polymer> polymerComboBox = new ComboBox<>();
+        polymerComboBox.getItems().addAll(molecule.getPolymers());
+        polymerComboBox.getItems().add(null);
+        polymerComboBox.setValue(molecule.getPolymers().getFirst());
+        polymerComboBox.setMinWidth(comboBoxWidth);
+        polymerComboBox.setMaxWidth(comboBoxWidth);
+
+        CheckBox residueCheckBox = new CheckBox("");
+        CheckBox peakCheckBox = new CheckBox("");
+
+
+        SimpleIntegerProperty offsetProp = new SimpleIntegerProperty(0);
+        TextField offsetField = GUIUtils.getIntegerTextField(offsetProp);
+
+
+        grid.add(new Label("Polymer"), 0, 0);
+        grid.add(polymerComboBox, 2, 0);
+
+        grid.add(new Label("Update Residues"), 0, 1);
+        grid.add(residueCheckBox, 1, 1);
+
+        grid.add(new Label("Update Peaks"), 0, 2);
+        grid.add(peakCheckBox, 1, 2);
+
+        grid.add(new Label("Offset number"), 0, 3);
+        grid.add(offsetField, 2, 3);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                // The value set in the formatter may not have been set yet so commit the value before retrieving
+                polymerComboBox.commitValue();
+                offsetField.commitValue();
+                return new Renumbering(polymerComboBox.getValue(), offsetProp.get(), residueCheckBox.isSelected(), peakCheckBox.isSelected());
+            }
+            return null;
+        });
+
+        return  dialog.showAndWait();
     }
 }
