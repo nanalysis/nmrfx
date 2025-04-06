@@ -1936,9 +1936,9 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                 }
                 if (nPlanes > 1) {
                     double err;
-                    if (noise != null) {
+                    if ((noise != null) && (measures != null)) {
                         if (nPeakDim == 2) {
-                            nPoints = (int) ((nPoints / 4) * Math.PI);  // area of an ellipse
+                            nPoints = (int) (((double) nPoints / 4.0) * Math.PI);  // area of an ellipse
                         }
                         err = nPoints < 2 ? noise.floatValue() : Math.sqrt(nPoints) * noise.floatValue();
                         for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
