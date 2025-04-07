@@ -511,6 +511,7 @@ public class GUIScripter {
             List<CanvasAnnotation> annoTypes = (List<CanvasAnnotation>) yaml.load(stream);
             for (CanvasAnnotation annoType : annoTypes) {
                 chart.addAnnotation(annoType);
+                annoType.setChart(chart);
             }
         } catch (IOException e) {
             log.error("Error loading annotations", e);
@@ -604,6 +605,16 @@ public class GUIScripter {
             controller1.setChartDisable(true);
             GridPaneCanvas gridPaneCanvas = controller1.getGridPaneCanvas();
             gridPaneCanvas.setPosition(chart, row, column, rowSpan, columnSpan);
+            controller1.setChartDisable(false);
+            controller1.draw();
+        });
+    }
+    public void insetPosition(PolyChart chart, Double x, Double y, Double w, Double h) {
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            controller1.setChartDisable(true);
+            var insetChartOpt = chart.getInsetChart();
+            insetChartOpt.ifPresent(insetChart -> insetChart.setFractionalPosition(x, y, w, h));
             controller1.setChartDisable(false);
             controller1.draw();
         });

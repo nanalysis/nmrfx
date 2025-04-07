@@ -1891,9 +1891,12 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
             int offset = p2[centerRef.dim][0];
             values[centerRef.index] += offset;
         }
+        Double noise = theFile.getNoiseLevel();
+
         if (fitPars.updatePeaks()) {
             int index = 1;
             int jPeak = 0;
+            double[][] measures = null;
             for (Peak peak : peaks) {
                 peak.setIntensity((float) values[index++]);
                 if ((delays != null) && (delays.length > 0)) {
@@ -1907,7 +1910,7 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                         }
                     }
                 } else if (nPlanes > 1) {
-                    double[][] measures = new double[2][nPlanes];
+                    measures = new double[2][nPlanes];
                     index--;
                     for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
                         measures[0][iPlane] = values[index++];
@@ -1915,10 +1918,12 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                     peak.setMeasures(measures);
                 }
                 double lineWidthAll = 1.0;
+                int nPoints = 1;
                 for (int pkDim = 0; pkDim < nPeakDim; pkDim++) {
                     int dDim = pdim[pkDim];
                     PeakDim peakDim = peak.getPeakDim(pkDim);
                     double lineWidthPt = values[index++];
+                    nPoints *= lineWidthPt;
                     double lineWidthPPM = theFile.ptWidthToPPM(dDim, lineWidthPt);
                     double lineWidthHz = theFile.ptWidthToHz(dDim, lineWidthPt);
                     peakDim.setLineWidthValue((float) lineWidthPPM);
@@ -1928,6 +1933,20 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                     int nZZ = zzMode ? 3 : 0;
                     double shapeFactor = values[values.length - nZZ - nPeakDim + pkDim];
                     peakDim.setShapeFactorValue((float) shapeFactor);
+                }
+                if (nPlanes > 1) {
+                    double err;
+                    if ((noise != null) && (measures != null)) {
+                        if (nPeakDim == 2) {
+                            nPoints = (int) (((double) nPoints / 4.0) * Math.PI);  // area of an ellipse
+                        }
+                        err = nPoints < 2 ? noise.floatValue() : Math.sqrt(nPoints) * noise.floatValue();
+                        for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
+                            measures[1][iPlane] = err;
+                        }
+                        peak.setMeasures(measures);
+
+                    }
                 }
                 peak.setVolume1((float) (peak.getIntensity() * lineWidthAll));
                 jPeak++;
