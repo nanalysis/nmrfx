@@ -34,7 +34,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ProteinPredictorTrainer {
+public class ShiftPredictorTrainer {
 
     Map<String, List<String>> types = Collections.emptyMap();
     Map<String, List<ValuesWithCS>> valueMap = new HashMap<>();
