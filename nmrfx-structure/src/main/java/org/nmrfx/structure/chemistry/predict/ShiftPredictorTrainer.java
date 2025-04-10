@@ -21,7 +21,6 @@ import org.tribuo.regression.evaluation.RegressionEvaluator;
 import org.tribuo.regression.slm.LARSLassoTrainer;
 
 import org.tribuo.regression.sgd.objectives.SquaredLoss;
-import org.tribuo.regression.sgd.objectives.AbsoluteLoss;
 import org.tribuo.regression.sgd.fm.FMRegressionTrainer;
 import org.tribuo.math.optimisers.AdaGrad;
 
@@ -43,7 +42,7 @@ public class ShiftPredictorTrainer {
     Map<String, List<String>> propNameMap = new HashMap<>();
     List<String> proteinPropNames = Collections.emptyList();
     List<String> keyList = new ArrayList<>();
-    Map<String, Double> refPPMMap = new HashMap();
+    Map<String, Double> refPPMMap = new HashMap<>();
 
     Map<String, String> testMap = new HashMap<>();
 
@@ -62,7 +61,7 @@ public class ShiftPredictorTrainer {
 
     boolean crossValidate = false;
 
-    enum TrainModes {
+    public enum TrainModes {
         TRAIN,
         TEST,
         ALL
@@ -203,8 +202,7 @@ public class ShiftPredictorTrainer {
                 String[] fields = line.split("\t");
                 if (header == null) {
                     header = fields;
-                    List<String> propNames = new ArrayList<>();
-                    propNames.addAll(Arrays.asList(header).subList(2, header.length - 2));
+                    List<String> propNames = new ArrayList<>(Arrays.asList(header).subList(2, header.length - 2));
                     propNameMap.put(type, propNames);
                     propNameMap.put(label, propNames);
                 } else {
@@ -297,7 +295,7 @@ public class ShiftPredictorTrainer {
             String key = valuesWithCS.getKey();
             boolean inTest = testMap.containsKey(valuesWithCS.molName);
 
-            if (skipMap.containsKey(key) || ((trainMode == TrainModes.TRAIN) && inTest) || ((trainMode == TrainModes.TEST && !inTest))) {
+            if (skipMap.containsKey(key) || ((trainMode == TrainModes.TRAIN) && inTest) || (trainMode == TrainModes.TEST && !inTest)) {
                 continue;
             }
 
@@ -322,9 +320,7 @@ public class ShiftPredictorTrainer {
         Trainer<Regressor> trainer;
         if (useFactorMachine) {
             var sqLoss = new SquaredLoss();
-            var absLoss = new AbsoluteLoss();
-            var adaGrad = new AdaGrad(learningRate);
-            var optimizer = adaGrad;
+            var optimizer = new AdaGrad(learningRate);
             int seed = 1;
 
             trainer = new FMRegressionTrainer(sqLoss, optimizer, epochs, seed, factorDim, factorVariance, true);
@@ -351,12 +347,11 @@ public class ShiftPredictorTrainer {
     public Double doCrossValidation(MutableDataset<Regressor> trainData) {
         var trainer = getTrainer();
         var regressionEvaluator = new RegressionEvaluator();
-        CrossValidation crossValidation = new CrossValidation<Regressor, RegressionEvaluation>(trainer, trainData, regressionEvaluator, 10);
+        CrossValidation<Regressor, RegressionEvaluation> crossValidation = new CrossValidation<>(trainer, trainData, regressionEvaluator, 10);
         var results = crossValidation.evaluate();
         var evAgg = EvaluationAggregator.summarizeCrossValidation(results);
         Double rmse = null;
-        for (var ev1 : evAgg.entrySet()) {
-            Map.Entry eventry = (Map.Entry) ev1;
+        for (Map.Entry<MetricID<Regressor>, DescriptiveStats> eventry : evAgg.entrySet()) {
             if (eventry.getKey() instanceof MetricID metricID) {
                 if (metricID.getA() instanceof MetricTarget metricA) {
                     if (metricID.getB().equals("RMSE") && metricA.getOutputTarget().isPresent()) {
@@ -435,7 +430,6 @@ public class ShiftPredictorTrainer {
             if (dStat.getN() > 20) {
                 pdbMeans.put(entry.getKey(), dStat.getPercentile(50));
             }
-            String mode = testMap.containsKey(entry.getKey()) ? "TEST" : "TRAIN";
         }
     }
 
