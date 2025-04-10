@@ -6,13 +6,24 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 import org.tribuo.*;
+import org.tribuo.evaluation.CrossValidation;
+import org.tribuo.evaluation.DescriptiveStats;
+import org.tribuo.evaluation.EvaluationAggregator;
+import org.tribuo.evaluation.metrics.MetricID;
+import org.tribuo.evaluation.metrics.MetricTarget;
 import org.tribuo.impl.ArrayExample;
 import org.tribuo.provenance.DataProvenance;
 import org.tribuo.provenance.SimpleDataSourceProvenance;
 import org.tribuo.regression.RegressionFactory;
 import org.tribuo.regression.Regressor;
+import org.tribuo.regression.evaluation.RegressionEvaluation;
 import org.tribuo.regression.evaluation.RegressionEvaluator;
 import org.tribuo.regression.slm.LARSLassoTrainer;
+
+import org.tribuo.regression.sgd.objectives.SquaredLoss;
+import org.tribuo.regression.sgd.objectives.AbsoluteLoss;
+import org.tribuo.regression.sgd.fm.FMRegressionTrainer;
+import org.tribuo.math.optimisers.AdaGrad;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -29,7 +40,8 @@ public class ProteinPredictorTrainer {
     Map<String, List<ValuesWithCS>> valueMap = new HashMap<>();
     Map<String, List<Double>> refErrors = new HashMap<>();
     Map<String, Double> pdbMeans = new HashMap<>();
-    List<String> propNames = Collections.emptyList();
+    Map<String, List<String>> propNameMap = new HashMap<>();
+    List<String> proteinPropNames = Collections.emptyList();
     List<String> keyList = new ArrayList<>();
     Map<String, Double> refPPMMap = new HashMap();
 
@@ -42,6 +54,19 @@ public class ProteinPredictorTrainer {
 
     double contactMin = 0.5;
     double trimRatio = 3.0;
+    boolean useFactorMachine = false;
+    int factorDim = 5;
+    int epochs = 1000;
+    double factorVariance = 0.050;
+    double learningRate = 0.1;
+
+    boolean crossValidate = false;
+
+    enum TrainModes {
+        TRAIN,
+        TEST,
+        ALL
+    }
 
     public record FitResult(int n, int nSkip, double rmsd, double mae) {
         public String toString() {
@@ -59,6 +84,30 @@ public class ProteinPredictorTrainer {
 
     public void trimRatio(double value) {
         trimRatio = value;
+    }
+
+    public void factorVariance(double value) {
+        factorVariance = value;
+    }
+
+    public void learningRate(double value) {
+        learningRate = value;
+    }
+
+    public void factorDim(int value) {
+        factorDim = value;
+    }
+
+    public void epochs(int value) {
+        epochs = value;
+    }
+
+    public void useFactorMachine(boolean state) {
+        useFactorMachine = state;
+    }
+
+    public void crossValidate(boolean state) {
+        crossValidate = state;
     }
 
     public void dumpValueMap() {
@@ -91,7 +140,7 @@ public class ProteinPredictorTrainer {
         ProteinPredictor.initMinMax();
         propertyGenerator.init(molecule, iStructure);
         long start2 = System.currentTimeMillis();
-        propNames = p.getValueNames();
+        proteinPropNames = p.getValueNames();
         int nPolymers = 0;
         int nResidues = 0;
         AtomicInteger nShifts = new AtomicInteger();
@@ -129,7 +178,7 @@ public class ProteinPredictorTrainer {
             File file = Paths.get(dirName, entry.getKey() + ".txt").toFile();
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("mol").append("\t").append("atom").append("\t");
-            for (String propName : propNames) {
+            for (String propName : proteinPropNames) {
                 stringBuilder.append(propName).append("\t");
             }
             stringBuilder.append("refCS").append("\t");
@@ -145,7 +194,7 @@ public class ProteinPredictorTrainer {
         }
     }
 
-    public void loadData(String dirName, String label) throws IOException {
+    public void loadData(String dirName, String label, String type) throws IOException {
         Path path = Paths.get(dirName, label + ".txt");
         List<String> lines = Files.readAllLines(path);
         String[] header = null;
@@ -154,8 +203,10 @@ public class ProteinPredictorTrainer {
                 String[] fields = line.split("\t");
                 if (header == null) {
                     header = fields;
-                    propNames = new ArrayList<>();
+                    List<String> propNames = new ArrayList<>();
                     propNames.addAll(Arrays.asList(header).subList(2, header.length - 2));
+                    propNameMap.put(type, propNames);
+                    propNameMap.put(label, propNames);
                 } else {
                     double[] values = new double[fields.length - 4];
                     for (int i = 0; i < values.length; i++) {
@@ -172,9 +223,16 @@ public class ProteinPredictorTrainer {
                 }
             }
         }
+        for (var valueList : valueMap.values()) {
+            Collections.shuffle(valueList);
+        }
     }
 
     DescriptiveStatistics[] getStats(String atomLabel) {
+        List<String> propNames = propNameMap.get(atomLabel);
+        if (propNames == null) {
+            System.out.println(atomLabel + " " + propNameMap.keySet());
+        }
         DescriptiveStatistics[] descriptiveStatistics = new DescriptiveStatistics[propNames.size()];
         for (int i = 0; i < propNames.size(); i++) {
             descriptiveStatistics[i] = new DescriptiveStatistics();
@@ -200,16 +258,20 @@ public class ProteinPredictorTrainer {
         return useColumn;
     }
 
-    public List<Feature> getFeatures(ValuesWithCS valuesWithCS, boolean[] useColumn) {
+    public List<Feature> getFeatures(ValuesWithCS valuesWithCS, boolean[] useColumn, String atomLabel) {
         List<Feature> features = new ArrayList<>();
         int i = 0;
+        var propNames = propNameMap.get(atomLabel);
         int iContact = propNames.indexOf("contacts");
-        double contacts = valuesWithCS.values[iContact];
-        double[] minMax = {300.0, 3000.0};
-        double scale = ProteinPredictor.calcDisorderScale(contacts, minMax);
-        scale = Math.min(scale, 1.0);
-        scale = Math.max(scale, 0.0);
-        scale = 1.0 - (1.0 - scale) * (1.0 - contactMin);
+        double scale = 1.0;
+        if (iContact >= 0) {
+            double contacts = valuesWithCS.values[iContact];
+            double[] minMax = {300.0, 3000.0};
+            scale = ProteinPredictor.calcDisorderScale(contacts, minMax);
+            scale = Math.min(scale, 1.0);
+            scale = Math.max(scale, 0.0);
+            scale = 1.0 - (1.0 - scale) * (1.0 - contactMin);
+        }
         for (double value : valuesWithCS.values) {
             if (useColumn[i]) {
                 String propName = propNames.get(i);
@@ -224,7 +286,7 @@ public class ProteinPredictorTrainer {
         return features;
     }
 
-    public MutableDataset<Regressor> getDataset(String atomLabel, boolean trainMode) {
+    public MutableDataset<Regressor> getDataset(String atomLabel, TrainModes trainMode) {
         RegressionFactory regressionFactory = new RegressionFactory();
         DataProvenance provenance = new SimpleDataSourceProvenance("CS training data", regressionFactory);
         MutableDataset<Regressor> dataset = new MutableDataset<>(provenance, regressionFactory);
@@ -233,7 +295,9 @@ public class ProteinPredictorTrainer {
         keyList.clear();
         for (ValuesWithCS valuesWithCS : valueMap.get(atomLabel)) {
             String key = valuesWithCS.getKey();
-            if (skipMap.containsKey(key) || (trainMode && testMap.containsKey(valuesWithCS.molName)) || (!trainMode && !testMap.containsKey(valuesWithCS.molName))) {
+            boolean inTest = testMap.containsKey(valuesWithCS.molName);
+
+            if (skipMap.containsKey(key) || ((trainMode == TrainModes.TRAIN) && inTest) || ((trainMode == TrainModes.TEST && !inTest))) {
                 continue;
             }
 
@@ -243,7 +307,7 @@ public class ProteinPredictorTrainer {
 
             }
             double refCS = valuesWithCS.refCS();
-            var features = getFeatures(valuesWithCS, useColumn);
+            var features = getFeatures(valuesWithCS, useColumn, atomLabel);
             refPPMMap.put(key, refCS);
 
             Regressor regressor = new Regressor("cs", cs - refCS);
@@ -254,17 +318,68 @@ public class ProteinPredictorTrainer {
         return dataset;
     }
 
-    public Model<Regressor> trainDataset(MutableDataset<Regressor> trainData) {
-        var lassoTrainer = new LARSLassoTrainer();
-        var model = lassoTrainer.train(trainData);
+    public Trainer<Regressor> getTrainer() {
+        Trainer<Regressor> trainer;
+        if (useFactorMachine) {
+            var sqLoss = new SquaredLoss();
+            var absLoss = new AbsoluteLoss();
+            var adaGrad = new AdaGrad(learningRate);
+            var optimizer = adaGrad;
+            int seed = 1;
+
+            trainer = new FMRegressionTrainer(sqLoss, optimizer, epochs, seed, factorDim, factorVariance, true);
+        } else {
+            trainer = new LARSLassoTrainer();
+        }
+
+        return trainer;
+    }
+
+    public Model<Regressor> trainDataset(MutableDataset<Regressor> trainData, String name) {
+        var trainer = getTrainer();
+        Model<Regressor> model = trainer.train(trainData);
 
         var regressionEvaluator = new RegressionEvaluator();
         var evaluation = regressionEvaluator.evaluate(model, trainData);
 
         var dimension = new Regressor("cs", Double.NaN);
-        String outStr = String.format("RMSE %7.4f MAE %7.4f R2 %7.4f", evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension));
+        String outStr = String.format("RMSE %8s %8d %7.4f MAE %7.4f R2 %7.4f", name, trainData.size(), evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension));
         System.out.println(outStr);
         return model;
+    }
+
+    public Double doCrossValidation(MutableDataset<Regressor> trainData) {
+        var trainer = getTrainer();
+        var regressionEvaluator = new RegressionEvaluator();
+        CrossValidation crossValidation = new CrossValidation<Regressor, RegressionEvaluation>(trainer, trainData, regressionEvaluator, 10);
+        var results = crossValidation.evaluate();
+        var evAgg = EvaluationAggregator.summarizeCrossValidation(results);
+        Double rmse = null;
+        for (var ev1 : evAgg.entrySet()) {
+            Map.Entry eventry = (Map.Entry) ev1;
+            if (eventry.getKey() instanceof MetricID metricID) {
+                if (metricID.getA() instanceof MetricTarget metricA) {
+                    if (metricID.getB().equals("RMSE") && metricA.getOutputTarget().isPresent()) {
+                        var obj = eventry.getValue();
+                        if (obj instanceof DescriptiveStats stats) {
+                            rmse = stats.getMean();
+                        }
+                    }
+                }
+            }
+        }
+
+        return rmse;
+    }
+
+    public Map<String, Double> doCrossValidation(List<String> types, String groupName) {
+        Map<String, Double> rmseMap = new HashMap<>();
+        for (String type : types) {
+            var dataset = getDataset(type, TrainModes.ALL);
+            Double rmse = doCrossValidation(dataset);
+            rmseMap.put(type, rmse);
+        }
+        return rmseMap;
     }
 
     record DeltaShift(double predValue, double expValue) {
@@ -321,7 +436,6 @@ public class ProteinPredictorTrainer {
                 pdbMeans.put(entry.getKey(), dStat.getPercentile(50));
             }
             String mode = testMap.containsKey(entry.getKey()) ? "TEST" : "TRAIN";
-            System.out.println("ERROR " + mode + " " + entry.getKey() + " " + dStat.getN() + " " + dStat.getPercentile(50.0) + " " + dStat.getMean() + " " + dStat.getMin() + " " + dStat.getMax());
         }
     }
 
@@ -329,7 +443,7 @@ public class ProteinPredictorTrainer {
         var groupEntryMap = errorMap.get(groupName);
         if (groupEntryMap == null) {
             System.out.println("can't find " + groupName + " in " + errorMap.keySet());
-            return new FitResult(0,0,0.0, 0.0);
+            return new FitResult(0, 0, 0.0, 0.0);
         }
 
         double sumSq = 0.0;
@@ -354,8 +468,8 @@ public class ProteinPredictorTrainer {
 
     void doTrainAndPredict(List<String> types, String groupName) {
         for (String type : types) {
-            var dataset = getDataset(type, true);
-            var model = trainDataset(dataset);
+            var dataset = getDataset(type, TrainModes.TRAIN);
+            var model = trainDataset(dataset, type);
             modelMap.put(type, model);
             predictDataset(model, dataset, groupName);
         }
@@ -371,13 +485,12 @@ public class ProteinPredictorTrainer {
             Double value = pair.getB();
             parMap.put(coefName, value);
         }
-
         return parMap;
     }
 
-    void doPredict(List<String> types, String groupName) {
+    void doPredict(List<String> types, String groupName, TrainModes trainMode) {
         for (String type : types) {
-            var dataset = getDataset(type, false);
+            var dataset = getDataset(type, trainMode);
             predictDataset(modelMap.get(type), dataset, groupName);
         }
     }
@@ -412,6 +525,22 @@ public class ProteinPredictorTrainer {
         }
     }
 
+    public void writePDBMeans(Path path) throws IOException {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (var entry : refErrors.entrySet()) {
+            DescriptiveStatistics dStat = new DescriptiveStatistics();
+            for (double value : entry.getValue()) {
+                dStat.addValue(value);
+            }
+            String mode = testMap.containsKey(entry.getKey()) ? "TEST" : "TRAIN";
+            stringBuilder.append(String.format("ERROR %s %s %d %.3f %.3f %.3f %.3f\n", mode, entry.getKey(), dStat.getN(), dStat.getPercentile(50.0), dStat.getMean(), dStat.getMin(), dStat.getMax()));
+        }
+
+        try (FileWriter fileWriter = new FileWriter(path.toFile())) {
+            fileWriter.write(stringBuilder.toString());
+        }
+    }
+
     public void writeSkips(Path path, String groupName) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         for (var entry : skipMap.entrySet()) {
@@ -429,8 +558,24 @@ public class ProteinPredictorTrainer {
         }
     }
 
-    public void writeCoefficients(String groupName, File file) throws IOException {
+    public void serializeToFile(Path path, String groupName) throws IOException {
+        for (String type : types.get(groupName)) {
+            Model model = modelMap.get(type);
+            String fileName = "model_" + type + ".proto";
+            fileName = fileName.replace("*", "X");
+            fileName = fileName.replace("?", "x");
 
+            Path modelPath = path.resolve(fileName);
+            model.serializeToFile(modelPath);
+        }
+    }
+
+    public void writeCoefficients(String groupName, File file) throws IOException {
+        List<String> propNames = propNameMap.get(groupName);
+
+        if (propNames == null) {
+            System.out.println(groupName + " " + propNameMap.keySet());
+        }
         int j = 0;
         double[][] parValues = new double[propNames.size()][types.get(groupName).size()];
         for (String type : types.get(groupName)) {
@@ -442,7 +587,6 @@ public class ProteinPredictorTrainer {
             }
             j++;
         }
-
 
         String sepChar = "\t";
         StringBuilder stringBuilder = new StringBuilder();
@@ -466,15 +610,12 @@ public class ProteinPredictorTrainer {
 
     public void fitAll(String valueMapDir, String resultDir, Map<String, List<String>> types, double trimLevel) throws IOException {
         this.types = types;
-        ProteinPredictorGen p = new ProteinPredictorGen();
-        propNames = p.getValueNames();
-
         errorMap.clear();
         valueMap.clear();
         pdbMeans.clear();
         for (var entry : types.entrySet()) {
             for (String type : entry.getValue()) {
-                loadData(valueMapDir, type);
+                loadData(valueMapDir, type, entry.getKey());
             }
         }
         for (var entry : types.entrySet()) {
@@ -504,6 +645,7 @@ public class ProteinPredictorTrainer {
             fileName = fileName.replace("?", "x");
             Path path = Path.of(resultDir, fileName);
             writeCoefficients(entry.getKey(), path.toFile());
+            serializeToFile(Path.of(resultDir), entry.getKey());
         }
         getErrorsByMolecule();
         for (var entry : types.entrySet()) {
@@ -515,20 +657,41 @@ public class ProteinPredictorTrainer {
         errorMap.clear();
         refErrors.clear();
         for (var entry : types.entrySet()) {
-            doPredict(entry.getValue(), entry.getKey());
+            doPredict(entry.getValue(), entry.getKey(), TrainModes.ALL);
         }
         getErrorsByMolecule();
-        for (var entry : types.entrySet()) {
-            errorMap.clear();
-            skipMap.clear();
-            doPredict(entry.getValue(), entry.getKey());
-            var fitResult = getFitResults(entry.getKey());
-            getSkip(entry.getKey(), fitResult.rmsd * trimRatio);
-            fitResult = getFitResults(entry.getKey());
-            System.out.println("FITRESULT " + entry.getKey() + " " + fitResult);
+        Path pdbMeanPath = Path.of(resultDir, "pdboffset.txt");
+        writePDBMeans(pdbMeanPath);
+
+        if (crossValidate) {
+            Path crossValidatePath = Path.of(resultDir, "crossval.txt");
             Path path = Path.of(resultDir);
-            writeDeltas(path, entry.getKey());
-            writeSkips(path, entry.getKey());
+            try (FileWriter fileWriter = new FileWriter(crossValidatePath.toFile())) {
+                for (var entry : types.entrySet()) {
+                    var rmseMap = doCrossValidation(entry.getValue(), entry.getKey());
+                    for (var rmseEntry : rmseMap.entrySet()) {
+                        fileWriter.write("CROSSVAL " + rmseEntry.getKey() + " " + rmseEntry.getValue() + "\n");
+                    }
+                    writeDeltas(path, entry.getKey());
+                    writeSkips(path, entry.getKey());
+                }
+            }
+        } else {
+            Path resultsPath = Path.of(resultDir, "results.txt");
+            try (FileWriter fileWriter = new FileWriter(resultsPath.toFile())) {
+                for (var entry : types.entrySet()) {
+                    errorMap.clear();
+                    skipMap.clear();
+                    doPredict(entry.getValue(), entry.getKey(), TrainModes.TEST);
+                    var fitResult = getFitResults(entry.getKey());
+                    getSkip(entry.getKey(), fitResult.rmsd * trimRatio);
+                    fitResult = getFitResults(entry.getKey());
+                    fileWriter.write("FITRESULT " + entry.getKey() + " " + fitResult + "\n");
+                    Path path = Path.of(resultDir);
+                    writeDeltas(path, entry.getKey());
+                    writeSkips(path, entry.getKey());
+                }
+            }
         }
     }
 }
