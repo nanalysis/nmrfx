@@ -121,7 +121,9 @@ public class Util {
         int singleWildIndex = pat.indexOf('#');
         int wildIndex = pat.indexOf('*');
         String rePat = null;
-        if (percentIndex != -1) {
+        if ((percentIndex != -1) && pat.startsWith("hr")){
+            rePat = "H[DEZ][12]*";
+        } else if (percentIndex != -1) {
             rePat = pat.substring(0, percentIndex) + "[0-9']*";
         } else if (wildIndex != -1) {
             String substr = pat.substring(0, wildIndex);
@@ -130,6 +132,7 @@ public class Util {
             String substr = pat.substring(0, singleWildIndex);
             rePat = strictlyNEF ? substr + "[0-9]+" : substr + "[0-9]*";
         }
+
         if (rePat != null) {
             Pattern rePattern = Pattern.compile(rePat, Pattern.CASE_INSENSITIVE);
             Matcher matcher = rePattern.matcher(str);
