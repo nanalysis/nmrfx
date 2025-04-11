@@ -271,6 +271,12 @@ public class MoleculeBase implements Serializable, ITree {
                                     continue;
                                 }
                                 boolean nameMatches = Util.nefMatch(atom, atomName);
+                                if (!nameMatches && (compound.number.equals("1")) && atom.getName().equals("H1")
+                                        && atomName.equalsIgnoreCase("H")) {
+                                    nameMatches = Util.nefMatch(atom, "h1");
+
+                                }
+
                                 if (isInverse) {
                                     if (!nameMatches) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
