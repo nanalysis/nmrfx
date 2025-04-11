@@ -260,6 +260,7 @@ public class CanvasMolecule implements CanvasAnnotation {
     public void setLabels(AtomLabels.LabelTypes labelTypes) {
         drawLabels = labelTypes;
     }
+
     public void setValueMode(ValueMode valueMode) {
         this.valueMode = valueMode;
     }
@@ -369,8 +370,11 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public int pick(GraphicsContextInterface gC, double x, double y) {
-        validate();
-        return genSpheres(gC, true, x, y);
+        if (!validate()) {
+            return -1;
+        } else {
+            return genSpheres(gC, true, x, y);
+        }
     }
 
     void selectAtom(boolean selectMode) {
@@ -536,7 +540,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     }
 
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
-        validate();
         xp1 = xPosType.transform(x1, canvasBounds[0], worldBounds[0]);
         xp2 = xPosType.transform(x2, canvasBounds[0], worldBounds[0]);
         yp1 = yPosType.transform(y1, canvasBounds[1], worldBounds[1]);
@@ -547,6 +550,9 @@ public class CanvasMolecule implements CanvasAnnotation {
         double height = Math.abs(yp2 - yp1);
 
         bounds2D = new Rectangle2D(xMin, yMin, width, height);
+        if (!validate()) {
+            return;
+        }
         transformValid = false;
         paintShape(gC);
         if (isSelected()) {
@@ -554,16 +560,12 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
-    void validate() {
+    boolean validate() {
         Molecule molecule = null;
         if (molName != null) {
             molecule = Molecule.get(molName);
         }
-
-        boolean ok = true;
-        if (molecule != null) {
-        }
-
+        return molecule != null;
     }
 
     public void paintShape(GraphicsContextInterface g2) {
@@ -575,30 +577,31 @@ public class CanvasMolecule implements CanvasAnnotation {
             molecule = Molecule.get(molName);
         }
 
-        if (molecule != null) {
-            drawSpheres = false;
-            posShape = CIRCLE_SHAPE;
-            negShape = CIRCLE_SHAPE;
-
-            if (!molecule.labelsCurrent) {
-                molecule.updateLabels();
-            }
-
-            if (molecule.display.equals("ball")
-                    || molecule.display.equals("pball")) {
-                drawSpheres = true;
-
-                if (molecule.display.equals("pball")) {
-                    setPosShape(molecule.posShapeType);
-                    setNegShape(molecule.negShapeType);
-                }
-            }
-
-            if (molecule.display.equals("cpk")) {
-                drawLines = false;
-            }
-
+        if (molecule == null) {
+            return;
         }
+        drawSpheres = false;
+        posShape = CIRCLE_SHAPE;
+        negShape = CIRCLE_SHAPE;
+
+        if (!molecule.labelsCurrent) {
+            molecule.updateLabels();
+        }
+
+        if (molecule.display.equals("ball")
+                || molecule.display.equals("pball")) {
+            drawSpheres = true;
+
+            if (molecule.display.equals("pball")) {
+                setPosShape(molecule.posShapeType);
+                setNegShape(molecule.negShapeType);
+            }
+        }
+
+        if (molecule.display.equals("cpk")) {
+            drawLines = false;
+        }
+
 
         genSpheres(g2, false, 0, 0);
 
@@ -724,7 +727,6 @@ public class CanvasMolecule implements CanvasAnnotation {
                     shapeMode = CIRCLE_SHAPE;
                     vRadius = radius * canvasScale;
                 }
-
 
 
                 if (valueMode != ATOM) {
