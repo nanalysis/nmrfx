@@ -57,6 +57,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.project.GUIProject;
@@ -3980,8 +3981,19 @@ public class PolyChart extends Region {
                 updateProjectionBorders();
                 updateProjectionScale();
                 refresh();
-            } catch (IOException ex) {
+            } catch (IOException | DatasetException ex) {
                 log.warn(ex.getMessage(), ex);
+            }
+        } else if (dataset.getNDim() == 3) {
+            try {
+                Dataset projDataset = dataset.projectND(2);
+                FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
+                PolyChart newChart = newController.getActiveChart();
+                newChart.setDataset(projDataset, false, false);
+                newChart.refresh();
+
+            } catch (IOException | DatasetException e) {
+                GUIUtils.warn("Projection Error", e.getMessage());
             }
         }
 

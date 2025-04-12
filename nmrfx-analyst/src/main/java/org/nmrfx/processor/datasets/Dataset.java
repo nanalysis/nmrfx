@@ -2130,31 +2130,31 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void copyHeader(Dataset targetDataset) {
         for (int i = 0; i < nDim; i++) {
-            copyHeader(targetDataset, i);
+            copyHeader(targetDataset, i, i);
         }
         targetDataset.setSolvent(getSolvent());
         targetDataset.setTitle(getTitle());
         targetDataset.writeHeader();
     }
 
-    public void copyHeader(Dataset targetDataset, int iDim) {
-        targetDataset.setSf(iDim, getSf(iDim));
-        targetDataset.setSw(iDim, getSw(iDim));
-        targetDataset.setSw_r(iDim, getSw_r(iDim));
-        targetDataset.setRefValue_r(iDim, getRefValue_r(iDim));
-        targetDataset.setRefValue(iDim, getRefValue(iDim));
-        targetDataset.setRefPt_r(iDim, getRefPt_r(iDim));
-        targetDataset.setRefPt(iDim, getRefPt(iDim));
-        targetDataset.setRefUnits(iDim, getRefUnits(iDim));
-        targetDataset.setLabel(iDim, getLabel(iDim));
-        targetDataset.setDlabel(iDim, getDlabel(iDim));
-        targetDataset.setNucleus(iDim, getNucleus(iDim));
-        targetDataset.setFreqDomain(iDim, getFreqDomain(iDim));
-        targetDataset.setFreqDomain_r(iDim, getFreqDomain_r(iDim));
-        targetDataset.setComplex(iDim, getComplex(iDim));
-        targetDataset.setComplex_r(iDim, getComplex_r(iDim));
-        targetDataset.setVSize_r(iDim, getVSize_r(iDim));
-        targetDataset.setVSize(iDim, getVSize(iDim));
+    public void copyHeader(Dataset targetDataset, int sDim, int tDim) {
+        targetDataset.setSf(tDim, getSf(sDim));
+        targetDataset.setSw(tDim, getSw(sDim));
+        targetDataset.setSw_r(tDim, getSw_r(sDim));
+        targetDataset.setRefValue_r(tDim, getRefValue_r(sDim));
+        targetDataset.setRefValue(tDim, getRefValue(sDim));
+        targetDataset.setRefPt_r(tDim, getRefPt_r(sDim));
+        targetDataset.setRefPt(tDim, getRefPt(sDim));
+        targetDataset.setRefUnits(tDim, getRefUnits(sDim));
+        targetDataset.setLabel(tDim, getLabel(sDim));
+        targetDataset.setDlabel(tDim, getDlabel(sDim));
+        targetDataset.setNucleus(tDim, getNucleus(sDim));
+        targetDataset.setFreqDomain(tDim, getFreqDomain(sDim));
+        targetDataset.setFreqDomain_r(tDim, getFreqDomain_r(sDim));
+        targetDataset.setComplex(tDim, getComplex(sDim));
+        targetDataset.setComplex_r(tDim, getComplex_r(sDim));
+        targetDataset.setVSize_r(tDim, getVSize_r(sDim));
+        targetDataset.setVSize(tDim, getVSize(sDim));
 
     }
 
@@ -2591,24 +2591,64 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    public void project(int iDim) throws IOException {
+    public void project(int iDim) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
-        Vec projVec = new Vec(getSizeReal(iDim), getComplex(iDim));
-        projVec.setName(getName() + DatasetBase.DATASET_PROJECTION_TAG + (iDim + 1) + ".nv");
-        readVector(projVec, 0, iDim);
-        projVec.zeros();
-        Iterator<Vec> iter = vectors(iDim);
+        projections[iDim] = projectND(iDim);
+    }
+    public Dataset projectND(int iDim) throws IOException, DatasetException {
+        if (projections == null) {
+            projections = new Dataset[getNDim()];
+        }
+        int projNDim = nDim -1;
+        int[] dimSizes = new int[projNDim];
+        int[] dims = new int[projNDim];
+        String dimLabel = "";
+        int j = 0;
+        for (int i = 0;i< nDim;i++) {
+            if (i != iDim) {
+                dimSizes[j] = getSizeReal(i);
+                dims[j] = i;
+                dimLabel += (i + 1);
+                j++;
+            }
+        }
+        String projFileName = getFileName();
+        String extension = "";
+        if (projFileName.endsWith(".nv")) {
+            extension = ".nv";
+        } else if (projFileName.endsWith(".ucsf")) {
+            extension = ".ucsf";
+        }
+        if (!extension.isEmpty()) {
+            projFileName = projFileName.substring(0, projFileName.length() - extension.length());
+        }
+        projFileName = projFileName + DatasetBase.DATASET_PROJECTION_TAG + dimLabel + extension;
+        File projFile = new File(projFileName);
+
+        Dataset projDataset = Dataset.createDataset(projFileName, projFileName, projFile.getName(), dimSizes, false, true);
+        for (int i=0;i<projNDim;i++) {
+            copyHeader(projDataset, dims[i], i);
+        }
+
+        Iterator<Vec> iter = vectors(dims[0]);
         while (iter.hasNext()) {
             Vec vec = iter.next();
+            int[][] pt = vec.getPt();
+            Vec projVec = projDataset.readVector(pt[1][0], 0);
             projVec.max(vec);
+            projDataset.writeVector(projVec);
         }
-        projVec.makeReal();
-        Dataset projDataset = new Dataset(projVec);
-        projDataset.setRefPt(0, getRefPt(iDim));
-        projDataset.setLabel(0, getLabel(iDim));
-        projections[iDim] = projDataset;
+        for (int i=0;i<projNDim;i++) {
+            projDataset.setRefValue(i, getRefValue(dims[i]));
+            projDataset.setRefPt(i, getRefPt(dims[i]));
+        }
+
+        projDataset.writeHeader();
+        projDataset.close();
+        projDataset = new Dataset(projFileName, projFileName, false,false, true);
+        return  projDataset;
     }
 
     public Object getAnalyzerObject() {
