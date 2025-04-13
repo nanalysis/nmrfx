@@ -97,10 +97,10 @@ public class PDBFile {
     }
 
     public MoleculeBase read(String fileName) throws MoleculeIOException {
-        return read(fileName, false);
+        return read(null, fileName, false);
     }
 
-    public MoleculeBase read(String fileName, boolean strictMode)
+    public MoleculeBase read(MoleculeBase molecule, String fileName, boolean strictMode)
             throws MoleculeIOException {
         String string;
         String lastRes = "";
@@ -108,7 +108,7 @@ public class PDBFile {
         int dotPos = file.getName().lastIndexOf('.');
         int structureNumber = 0;
         Point3 pt;
-        MoleculeBase molecule;
+
         String molName;
 
         if (dotPos >= 0) {
@@ -117,7 +117,9 @@ public class PDBFile {
             molName = file.getName();
         }
 
-        molecule = MoleculeFactory.newMolecule(molName);
+        if (molecule == null) {
+            molecule = MoleculeFactory.newMolecule(molName);
+        }
 
         Polymer polymer = null;
         Residue residue = null;

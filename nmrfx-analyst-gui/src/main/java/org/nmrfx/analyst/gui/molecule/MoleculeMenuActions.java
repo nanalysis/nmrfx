@@ -246,7 +246,8 @@ public class MoleculeMenuActions extends MenuActions {
                     }
                     case "pdbx" -> {
                         PDBFile pdbReader = new PDBFile();
-                        molecule = (Molecule) pdbReader.read(file.toString(), false);
+                        molecule = Molecule.getActive();
+                        molecule = (Molecule) pdbReader.read(molecule, file.toString(), false);
                     }
                     case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
@@ -254,7 +255,15 @@ public class MoleculeMenuActions extends MenuActions {
                         pdb.readCoordinates(molecule, file.getPath(), -1, false, true);
                         molecule.updateAtomArray();
                     }
-                    case "sdf", "mol" -> molecule = (Molecule) SDFile.read(file.toString(), null);
+                    case "sdf", "mol" -> {
+                        molecule = (Molecule) MoleculeFactory.getActive();
+                        if (molecule == null) {
+                            molecule = (Molecule) SDFile.read(file.toString(), null);
+                        } else {
+                            SDFile.read(file.toString(), null, molecule, null, null);
+                        }
+
+                    }
                     case "mol2" -> molecule = (Molecule) Mol2File.read(file.toString(), null);
                     case "seq" -> {
                         Sequence seq = new Sequence();
