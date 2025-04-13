@@ -636,6 +636,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     public void addFile() {
         addFile(this.fileName);
     }
+
     private void addFile(String datasetName) {
         ProjectBase.getActive().addDataset(this, datasetName);
     }
@@ -1321,7 +1322,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
         int mDims = matrix.getNDim();
-        for (int i=mDims;i<nDim;i++) {
+        for (int i = mDims; i < nDim; i++) {
             point[dim[i]] = pt[i][0];
         }
         int[] mPoint = new int[mDims];
@@ -1390,7 +1391,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] point = new int[nDim];
 
         int mDims = matrix.getNDim();
-        for (int i=mDims;i<nDim;i++) {
+        for (int i = mDims; i < nDim; i++) {
             point[dim[i]] = pt[i][0];
         }
         int[] mPoint = new int[mDims];
@@ -1423,7 +1424,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     public static void writeMatrixToDataset(String fileName, MatrixND matrixND) throws DatasetException, IOException {
         int[] dSizes = new int[matrixND.getNDim()];
         int[] dims = new int[dSizes.length];
-        for (int i =0;i < dSizes.length;i++) {
+        for (int i = 0; i < dSizes.length; i++) {
             dSizes[i] = matrixND.getSize(i);
             dims[i] = i;
         }
@@ -1431,7 +1432,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         File file = new File(fileName);
         String name = file.getName();
         Dataset dataset = Dataset.createDataset(fileName, fileName, name, dSizes, false, true);
-        for (int i =0;i < dSizes.length;i++) {
+        for (int i = 0; i < dSizes.length; i++) {
             dataset.setComplex(i, false);
             dataset.setFreqDomain(i, true);
         }
@@ -2158,6 +2159,32 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     }
 
+    public void copyReducedHeader(Dataset targetDataset, int sDim, int tDim) {
+        targetDataset.setComplex(tDim, getComplex(sDim));
+        targetDataset.setComplex_r(tDim, getComplex_r(sDim));
+
+        targetDataset.setSf(tDim, getSf(sDim));
+        int sSize = getSizeReal(sDim);
+        int tSize = targetDataset.getSizeReal(tDim);
+        double f = (double) tSize / sSize;
+
+
+        targetDataset.setSw(tDim, getSw(sDim) * f);
+        targetDataset.setSw_r(tDim, getSw_r(sDim) * f);
+        targetDataset.setRefValue_r(tDim, getRefValue_r(sDim));
+        targetDataset.setRefValue(tDim, getRefValue(sDim));
+        targetDataset.setRefPt_r(tDim, getRefPt_r(sDim));
+        targetDataset.setRefPt(tDim, getRefPt(sDim));
+        targetDataset.setRefUnits(tDim, getRefUnits(sDim));
+        targetDataset.setLabel(tDim, getLabel(sDim));
+        targetDataset.setDlabel(tDim, getDlabel(sDim));
+        targetDataset.setNucleus(tDim, getNucleus(sDim));
+        targetDataset.setFreqDomain(tDim, getFreqDomain(sDim));
+        targetDataset.setFreqDomain_r(tDim, getFreqDomain_r(sDim));
+        targetDataset.setVSize_r(tDim, targetDataset.getSizeTotal(tDim));
+    }
+
+
     public String saveMemoryFile() throws IOException, DatasetException {
         String path = null;
         if (isMemoryFile()) {
@@ -2591,24 +2618,46 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    public void project(int iDim) throws IOException, DatasetException {
+    public void project(int iDim, int[][] viewPt) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
-        projections[iDim] = projectND(iDim);
+        projections[iDim] = projectND(iDim, viewPt);
     }
-    public Dataset projectND(int iDim) throws IOException, DatasetException {
+
+    public Dataset projectND(int iDim, int[][] viewPt) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
-        int projNDim = nDim -1;
+
+        int projNDim = nDim - 1;
         int[] dimSizes = new int[projNDim];
         int[] dims = new int[projNDim];
+        int[] projDims = new int[projNDim];
         String dimLabel = "";
-        int j = 0;
-        for (int i = 0;i< nDim;i++) {
+        int[] mPoint = new int[nDim];
+        int[] startPoint = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            if (viewPt != null) {
+                mPoint[i] = viewPt[i][1] - viewPt[i][0] + 1;
+                startPoint[i] = viewPt[i][0];
+                if (mPoint[i] == 1) {
+                    mPoint[i] = getSizeReal(i);
+                    startPoint[i] = 0;
+                }
+            } else {
+                mPoint[i] = getSizeReal(i);
+                startPoint[i] = 0;
+            }
+        }
+        boolean adjusted = false;
+        for (int i = 0, j = 0; i < nDim; i++) {
             if (i != iDim) {
-                dimSizes[j] = getSizeReal(i);
+                dimSizes[j] = mPoint[i];
+                if (dimSizes[j] != getSizeReal(i)) {
+                    adjusted = true;
+                }
+                projDims[j] = j;
                 dims[j] = i;
                 dimLabel += (i + 1);
                 j++;
@@ -2627,28 +2676,53 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         projFileName = projFileName + DatasetBase.DATASET_PROJECTION_TAG + dimLabel + extension;
         File projFile = new File(projFileName);
 
+        Dataset currProjection = Dataset.getDataset(projFile.getName());
+        if (currProjection != null) {
+            currProjection.close();
+        }
         Dataset projDataset = Dataset.createDataset(projFileName, projFileName, projFile.getName(), dimSizes, false, true);
-        for (int i=0;i<projNDim;i++) {
-            copyHeader(projDataset, dims[i], i);
+        projDataset.clear();
+        for (int i = 0; i < projNDim; i++) {
+            copyReducedHeader(projDataset, dims[i], i);
+        }
+        int[] projPoint = new int[projNDim];
+
+        MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
+        MultidimensionalCounter.Iterator iter = counter.iterator();
+        int[] point = new int[nDim];
+        while (iter.hasNext()) {
+            iter.next();
+            int[] index = iter.getCounts();
+            for (int i = 0; i < index.length; i++) {
+                point[i] = index[i] + startPoint[i];
+            }
+            double value = readPoint(point);
+            for (int k = 0; k < projNDim; k++) {
+                projPoint[k] = index[dims[k]];
+            }
+            double pValue = projDataset.readPoint(projPoint, projDims);
+            if (value > pValue) {
+                projDataset.writePoint(projPoint, value);
+            }
         }
 
-        Iterator<Vec> iter = vectors(dims[0]);
-        while (iter.hasNext()) {
-            Vec vec = iter.next();
-            int[][] pt = vec.getPt();
-            Vec projVec = projDataset.readVector(pt[1][0], 0);
-            projVec.max(vec);
-            projDataset.writeVector(projVec);
-        }
-        for (int i=0;i<projNDim;i++) {
-            projDataset.setRefValue(i, getRefValue(dims[i]));
-            projDataset.setRefPt(i, getRefPt(dims[i]));
+        for (int i = 0; i < projNDim; i++) {
+            if (!adjusted) {
+                projDataset.setRefValue(i, getRefValue(dims[i]));
+                projDataset.setRefPt(i, getRefPt(dims[i]));
+            } else {
+                double zeroPPM = pointToPPM(dims[i], startPoint[dims[i]]);
+                projDataset.setRefPt(i, 0);
+                projDataset.setRefPt_r(i, 0);
+                projDataset.setRefValue(i, zeroPPM);
+                projDataset.setRefValue_r(i, zeroPPM);
+            }
         }
 
         projDataset.writeHeader();
         projDataset.close();
-        projDataset = new Dataset(projFileName, projFileName, false,false, true);
-        return  projDataset;
+        projDataset = new Dataset(projFileName, projFileName, false, false, true);
+        return projDataset;
     }
 
     public Object getAnalyzerObject() {
