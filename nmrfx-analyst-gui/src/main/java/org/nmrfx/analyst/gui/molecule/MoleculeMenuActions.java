@@ -60,6 +60,9 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
         readPDBxyzItem.setOnAction(e -> readMolecule("pdbx"));
         molFileMenu.getItems().add(readPDBxyzItem);
+        MenuItem readPDBLigandItem = new MenuItem("Read PDB Ligand...");
+        readPDBLigandItem.setOnAction(e -> readMolecule("pdbLigand"));
+        molFileMenu.getItems().add(readPDBLigandItem);
         MenuItem readMMCIFItem = new MenuItem("Read mmCIF...");
         readMMCIFItem.setOnAction(e -> readMolecule("mmcif"));
         molFileMenu.getItems().add(readMMCIFItem);
@@ -253,6 +256,12 @@ public class MoleculeMenuActions extends MenuActions {
                         PDBFile pdb = new PDBFile();
                         molecule = Molecule.getActive();
                         pdb.readCoordinates(molecule, file.getPath(), -1, false, true);
+                        molecule.updateAtomArray();
+                    }
+                    case "pdbLigand" -> {
+                        PDBFile pdb = new PDBFile();
+                        molecule = Molecule.getActive();
+                        PDBFile.readResidue(file.toString(), null, molecule,null);
                         molecule.updateAtomArray();
                     }
                     case "sdf", "mol" -> {

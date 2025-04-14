@@ -940,10 +940,6 @@ public class PDBFile {
         } else {
             molName = molecule.getName();
         }
-        if (coordSetName == null) {
-            // XXX
-            coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
-        }
         int structureNumber = 0;
         String string;
         Compound compound = null;
@@ -960,6 +956,10 @@ public class PDBFile {
                         compound = residue != null ? residue : new Compound(atomParse.resNum, atomParse.resName);
                         compound.molecule = molecule;
                         compound.assemblyID = molecule.entityLabels.size() + 1;
+                        if (coordSetName == null) {
+                            coordSetName = compound.getName();
+                        }
+
                         if (residue == null) {
                             molecule.addEntity(compound, coordSetName);
                         }
