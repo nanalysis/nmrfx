@@ -138,11 +138,16 @@ public class SSLayout implements MultivariateFunction {
     public static List<List<String>> setupSequence(Molecule mol) {
         List<List<String>> sequences = new ArrayList<>();
         for (Polymer polymer : mol.getPolymers()) {
-            if (polymer.isRNA()) {
+            if (polymer.isRNA() || polymer.isDNA()) {
                 List<String> sequence = new ArrayList<>();
                 sequences.add(sequence);
                 for (Residue residue : polymer.getResidues()) {
-                    String resName = residue.getName().substring(0, 1);
+                    String resName = residue.getName();
+                    if (resName.length() > 1) {
+                        resName = resName.substring(1,2);
+                    } else {
+                        resName = resName.substring(0, 1);
+                    }
                     sequence.add(resName + residue.getNumber());
                 }
             }

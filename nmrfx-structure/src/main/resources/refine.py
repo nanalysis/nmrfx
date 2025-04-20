@@ -928,7 +928,7 @@ class refine:
 
         if 'tree' in data and not 'nef' in data:
             if len(self.molecule.getEntities()) > 1:
-                structureLinks = ConstraintCreator.validateLinkerList(structureLinks, treeDict, rnaLinkerDict)
+                structureLinks = ConstraintCreator.validateLinkers(self.molecule, structureLinks, treeDict, rnaLinkerDict)
             treeDict = ConstraintCreator.setEntityEntryDict(structureLinks, treeDict)
 
             ConstraintCreator.measureTree(self.molecule)

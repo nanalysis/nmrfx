@@ -60,6 +60,9 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
         readPDBxyzItem.setOnAction(e -> readMolecule("pdbx"));
         molFileMenu.getItems().add(readPDBxyzItem);
+        MenuItem readPDBLigandItem = new MenuItem("Read PDB Ligand...");
+        readPDBLigandItem.setOnAction(e -> readMolecule("pdbLigand"));
+        molFileMenu.getItems().add(readPDBLigandItem);
         MenuItem readMMCIFItem = new MenuItem("Read mmCIF...");
         readMMCIFItem.setOnAction(e -> readMolecule("mmcif"));
         molFileMenu.getItems().add(readMMCIFItem);
@@ -246,7 +249,8 @@ public class MoleculeMenuActions extends MenuActions {
                     }
                     case "pdbx" -> {
                         PDBFile pdbReader = new PDBFile();
-                        molecule = (Molecule) pdbReader.read(file.toString(), false);
+                        molecule = Molecule.getActive();
+                        molecule = (Molecule) pdbReader.read(molecule, file.toString(), false);
                     }
                     case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
@@ -254,7 +258,21 @@ public class MoleculeMenuActions extends MenuActions {
                         pdb.readCoordinates(molecule, file.getPath(), -1, false, true);
                         molecule.updateAtomArray();
                     }
-                    case "sdf", "mol" -> molecule = (Molecule) SDFile.read(file.toString(), null);
+                    case "pdbLigand" -> {
+                        PDBFile pdb = new PDBFile();
+                        molecule = Molecule.getActive();
+                        PDBFile.readResidue(file.toString(), null, molecule,null);
+                        molecule.updateAtomArray();
+                    }
+                    case "sdf", "mol" -> {
+                        molecule = (Molecule) MoleculeFactory.getActive();
+                        if (molecule == null) {
+                            molecule = (Molecule) SDFile.read(file.toString(), null);
+                        } else {
+                            SDFile.read(file.toString(), null, molecule, null, null);
+                        }
+
+                    }
                     case "mol2" -> molecule = (Molecule) Mol2File.read(file.toString(), null);
                     case "seq" -> {
                         Sequence seq = new Sequence();
