@@ -114,6 +114,16 @@ def getHelix(pairs,vie):
     nHelix = len(helixStarts)
     return helixStarts,helixEnds
 
+def snglToFull(resChar, polyType):
+    resChar = resChar.upper()
+    if polyType == "RNA":
+        pass
+    elif polyType == "DNA":
+        resChar = 'D' + resChar
+    else:
+        resChar = protein1To3(resChar)
+    return resChar
+
 def getSequenceArray(indexing,seqString,linkers,polyType):
     ''' getSequenceArray takes a seqString and returns a list of strings with
         the residue name followed by the residue number. The residue number is
@@ -123,7 +133,7 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
         be passed into a sequenceReader
     '''
     indexing = indexing if indexing else 1;
-    resNames = [char.upper() if polyType == "RNA" else protein1To3[char.upper()] for char in seqString]
+    resNames = [snglToFull(resChar, polyType) for resChar in seqString]
     linkers = [linker.split(':') for linker in linkers.split()] if linkers else []
     linkers = {int(i): int(n) for i,n in linkers} # resNum to number of linkers
     try :
