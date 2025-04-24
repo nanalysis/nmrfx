@@ -18,33 +18,34 @@
 package org.nmrfx.analyst.gui.molecule;
 
 import javafx.beans.Observable;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chart.*;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.RDC;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.constraints.RDCConstraint;
 import org.nmrfx.chemistry.constraints.RDCConstraintSet;
+import org.nmrfx.chemistry.relax.ValueWithError;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rdc.AlignmentCalc;
 import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rdc.RDCFitQuality;
 import org.nmrfx.structure.rdc.SVDFit;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -52,6 +53,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author brucejohnson
@@ -106,16 +108,27 @@ public class RDCGUI {
             }
 
             ToolBar toolBar = new ToolBar();
-            Button openButton = new Button("Read");
-            Button rdcButton = new Button("Perform RDC Analysis");
-            Button saveButton = new Button("Save Results to File");
-            Button exportButton = new Button("Export Plot");
-            toolBar.getItems().addAll(openButton, rdcButton, saveButton, exportButton);
 
+            MenuButton fileMenuButton = new MenuButton(("File"));
+
+            MenuItem openButton = new MenuItem("Read");
             openButton.setOnAction(e -> loadRDCTextFile());
-            rdcButton.setOnAction(e -> analyze());
+
+            MenuItem saveButton = new MenuItem("Save Results to File");
             saveButton.setOnAction(e -> saveToFile());
+
+            MenuItem exportButton = new MenuItem("Export Plot");
             exportButton.setOnAction(this::exportPlotSVGAction);
+
+            fileMenuButton.getItems().addAll(openButton, saveButton, exportButton);
+
+            Button rdcButton = new Button("Perform RDC Analysis");
+
+            Button peakListButton = new Button("Use PeakList...");
+            peakListButton.setOnAction(this::extractFromArtsy);
+            toolBar.getItems().addAll(fileMenuButton, rdcButton, peakListButton);
+
+            rdcButton.setOnAction(e -> analyze());
 
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
@@ -160,6 +173,7 @@ public class RDCGUI {
         stage.toFront();
         updateRDCplot();
     }
+
 
     void updateRDCplotWithLines() {
         updateRDCplot();
@@ -357,5 +371,127 @@ public class RDCGUI {
         }
 
     }
+    private void extractFromArtsy(ActionEvent actionEvent) {
+        var peakListopt = rdcPeakDialog();
+        peakListopt.ifPresent(peakListSelector ->
+                extractFromArtsyList(peakListSelector.peakListA, peakListSelector.peakListB, peakListSelector.tau));
+    }
 
+    ValueWithError variableFlipCalc(double i45, double i90, double tau, double noise) {
+        double ratio = i45 / i90;
+        double jValue = Math.atan(Math.sqrt(4.0 * ratio * ratio - 2.0)) / (Math.PI * tau);
+        double err = (2.0 * noise * Math.sqrt(ratio * ratio + 1.0) ) /
+                (i90 * Math.PI*tau * Math.sqrt(4.0*ratio-2.0) * (4.0*ratio-1.0));
+        return new ValueWithError(jValue, err);
+    }
+
+    ValueWithError artsyCalc(double intA, double intR, double tau, double noise) {
+        double ratio = intA / intR;
+        double jValue = -1.0 / tau + (2.0 / (Math.PI * tau)) * Math.asin(ratio / 2.0);
+        double err = Math.abs(1.0 / (Math.PI * tau * (intR / noise)));
+        return new ValueWithError(jValue, err);
+    }
+
+    ValueWithError peakValue(double[][] v, double tau) {
+        double i45 = v[0][0];
+        double i90 = v[0][1];
+        double noise = v[1][0];
+        return variableFlipCalc(i45, i90, tau, noise);
+    }
+
+    void extractFromArtsyList(PeakList peakListOrdered, PeakList peakListIsotropic, double tau) {
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
+        MolecularConstraints molConstraints = null;
+        if (molecule != null) {
+            molConstraints = molecule.getMolecularConstraints();
+        }
+        String setName = peakListOrdered.getName();
+        localRDCSet = RDCConstraintSet.newSet(molConstraints, setName);
+
+
+
+        peakListOrdered.peaks().stream().filter(p -> !p.getPeakDim(0).getLabel().isEmpty()).forEach( ordPeak ->{
+            String[] orderedLabel = {ordPeak.getPeakDim(0).getLabel()};
+            List<Peak> isoPeaks = peakListIsotropic.matchPeaks(orderedLabel, false, true);
+
+            if (isoPeaks.size() == 1)  {
+                Peak isoPeak = isoPeaks.getFirst();
+                Optional<double[][]> orderedOpt = ordPeak.getMeasures();
+                Optional<double[][]> isoOpt = isoPeak.getMeasures();
+                if (orderedOpt.isPresent() && isoOpt.isPresent()) {
+                    ValueWithError valueOrdered = peakValue(orderedOpt.get(), tau);
+                    ValueWithError valueIso = peakValue(isoOpt.get(), tau);
+                    Atom atom1 = MoleculeBase.getAtomByName(ordPeak.getPeakDim(0).getLabel());
+                    Atom atom2 = MoleculeBase.getAtomByName(ordPeak.getPeakDim(1).getLabel());
+                    if ((atom1 != null) && (atom2 != null)) {
+                        double rdcValue = valueIso.value() - valueOrdered.value();
+                        double err = valueIso.error();
+                        RDCConstraint rdc = new RDCConstraint(localRDCSet, atom1, atom2, rdcValue, err);
+                        System.out.println(rdcValue + " " + err);
+                        localRDCSet.add(rdc);
+                    }
+                }
+            };
+        });
+        updateRDCPlotChoices();
+        setChoice.setValue(setName);
+    }
+
+    public record PeakListSelector(PeakList peakListA, PeakList peakListB, Double tau) {
+
+    }
+
+    enum RDCCalcMode {
+        VFHMQC,
+        ARTSY
+    }
+    public static Optional<PeakListSelector> rdcPeakDialog() {
+
+        Dialog<PeakListSelector> dialog = new Dialog<>();
+        dialog.setTitle("RDC PeakList Extractor");
+        dialog.setHeaderText("Select peak list:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 250;
+
+        ChoiceBox<RDCCalcMode> rdcCalcModeChoiceBox = new ChoiceBox<>();
+        rdcCalcModeChoiceBox.getItems().addAll(RDCCalcMode.values());
+        rdcCalcModeChoiceBox.setValue(RDCCalcMode.ARTSY);
+
+        ChoiceBox<PeakList> peakListChoiceBox = new ChoiceBox<>();
+        peakListChoiceBox.getItems().addAll(PeakList.peakLists());
+        peakListChoiceBox.setMinWidth(comboBoxWidth);
+        peakListChoiceBox.setMaxWidth(comboBoxWidth);
+        ChoiceBox<PeakList> peakListIsoChoiceBox = new ChoiceBox<>();
+        peakListIsoChoiceBox.getItems().addAll(PeakList.peakLists());
+        peakListIsoChoiceBox.setMinWidth(comboBoxWidth);
+        peakListIsoChoiceBox.setMaxWidth(comboBoxWidth);
+
+        SimpleDoubleProperty tauProp = new SimpleDoubleProperty(0.0);
+        TextField tauPropField = GUIUtils.getDoubleTextField(tauProp, 3);
+
+        grid.add(new Label("RDC Calc Mode"), 0, 0);
+        grid.add(rdcCalcModeChoiceBox, 1, 0);
+
+        grid.add(new Label("PeakList-Aligned"), 0, 1);
+        grid.add(peakListChoiceBox, 1, 1);
+
+        grid.add(new Label("PeakList-Isotropic"), 0, 2);
+        grid.add(peakListIsoChoiceBox, 1, 2);
+
+        grid.add(new Label("Tau"), 0, 3);
+        grid.add(tauPropField, 1, 3);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return new PeakListSelector(peakListChoiceBox.getValue(),null, tauProp.getValue());
+            }
+            return null;
+        });
+
+        return  dialog.showAndWait();
+    }
 }
