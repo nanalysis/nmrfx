@@ -69,6 +69,10 @@ public class Compound extends Entity implements AtomIterable {
         return resNum;
     }
 
+    public void setResNum(Integer resNum) {
+        this.resNum = resNum;
+    }
+
     public void setNumber(final String number) {
         this.number = number;
     }

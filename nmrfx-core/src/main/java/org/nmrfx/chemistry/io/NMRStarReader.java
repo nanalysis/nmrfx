@@ -181,6 +181,7 @@ public class NMRStarReader {
             }
             if (ccSaveframe != null) {
                 compound.setNumber(seqNumber);
+                compound.setResNum(Integer.parseInt(seqNumber));
                 updateFromSTAR3ChemComp(ccSaveframe, compound);
             } else {
                 log.warn("No save frame: {}", ccSaveFrameName);
@@ -459,7 +460,7 @@ public class NMRStarReader {
                 Entity entity = molecule.getEntity(name);
                 if (entity == null) {
                     Compound compound = new Compound("1", name, name, entityAssemblyName);
-                    compound.setIDNum(1);
+                    compound.setIDNum(entityID);
                     compound.assemblyID = entityAssemblyID;
                     compound.setPDBChain(pdbLabel);
                     entities.put(entityAssemblyIDString + "." + entityIDString, compound);
