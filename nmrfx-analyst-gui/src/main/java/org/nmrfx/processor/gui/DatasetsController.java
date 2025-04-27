@@ -696,7 +696,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Close selected datasets");
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && response.get().getText().equals("OK")) {
-            ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
+            List<DatasetBase> datasets = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
             for (DatasetBase dataset : datasets) {
                 dataset.close();
             }
