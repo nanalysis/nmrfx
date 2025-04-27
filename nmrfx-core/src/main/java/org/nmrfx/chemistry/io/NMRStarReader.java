@@ -1526,6 +1526,7 @@ public class NMRStarReader {
         if (loop == null) {
             throw new ParseException("No \"_RDC\" loop");
         }
+        int iStructure = 0;
         List<String>[] entityAssemblyIDColumns = new ArrayList[2];
         List<String>[] entityIDColumns = new ArrayList[2];
         List<String>[] compIdxIDColumns = new ArrayList[2];
@@ -1562,7 +1563,7 @@ public class NMRStarReader {
                 } else {
                     err = errColumn.get(i);
                 }
-                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), err);
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), iStructure, valColumn.get(i), err);
                 rdcSet.add(aCon);
 
             }
