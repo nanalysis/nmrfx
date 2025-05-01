@@ -350,13 +350,13 @@ public class AlignmentMatrix {
         }
     }
 
-    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs) {
+    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs, int iStructure) {
         int nVectors = rdcs.size();
         double[][] A = new double[nVectors][5];
         int iRow = 0;
         // calculate the direction cosines and construct the matrix A. Based on orderten_svd_dipole.c
         for (RDC rdcVec : rdcs) {
-            rdcVec.updateVector();
+            rdcVec.updateVector(iStructure);
             Vector3D normVec = rdcVec.getVector().normalize();
             double dcosX = normVec.getX();
             double dcosY = normVec.getY();

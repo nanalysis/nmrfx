@@ -40,8 +40,8 @@ public class RDCConstraint extends RDC implements Constraint {
     private DistanceStat disStat = defaultStat;
     private int active = 1;
 
-    public RDCConstraint(RDCConstraintSet set, final Atom atom1, final Atom atom2, final double value, final double err) {
-        super(atom1, atom2);
+    public RDCConstraint(RDCConstraintSet set, final Atom atom1, final Atom atom2, int iStructure, final double value, final double err) {
+        super(atom1, atom2, iStructure);
         setExpRDC(value);
         setError(err);
         idNum = set.getSize();
