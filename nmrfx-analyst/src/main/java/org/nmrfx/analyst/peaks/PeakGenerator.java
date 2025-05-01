@@ -461,7 +461,7 @@ public class PeakGenerator {
         }
         Boolean[] editingModes = getFiltering(scheme);
         var map = InteractionType.getInteractionMap();
-        List<Residue> rnaResidues = RNAAnalysis.getRNAResidues(molecule);
+        List<Residue> rnaResidues = RNAAnalysis.getNAResidues(molecule);
         double scaleConst = 100.0 / Math.pow(2.0, -EXPONENT);
         peakList.setScale(scaleConst);
         for (int i = 0; i < rnaResidues.size(); i++) {

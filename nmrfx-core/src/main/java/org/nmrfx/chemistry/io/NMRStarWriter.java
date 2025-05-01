@@ -36,6 +36,7 @@ import org.nmrfx.star.STAR3Base;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author brucejohnson
@@ -542,11 +543,18 @@ public class NMRStarWriter {
         }
         chan.write("\n");
         STAR3.writeLoopStrings(chan, entityAssemblyLoopStrings);
-        int compID = 1;
+        AtomicInteger compID = new AtomicInteger(1);
+        List<IOException> ioExceptions = new ArrayList<>();
         for (CoordSet coordSet : molecule.coordSets.values()) {
-            for (Entity entity : coordSet.entities.values()) {
-                chan.write(toSTAR3String(entity, coordSet.getName(), assemblyID, compID) + "\n");
-                compID++;
+            coordSet.entities.values().stream().sorted(Comparator.comparing(Entity::getIDNum)).forEach( entity -> {
+                try {
+                    chan.write(toSTAR3String(entity, coordSet.getName(), assemblyID, compID.getAndIncrement()) + "\n");
+                } catch (IOException e) {
+                    ioExceptions.add(e);
+                }
+            });
+            if (!ioExceptions.isEmpty()) {
+                throw ioExceptions.getFirst();
             }
         }
         chan.write("stop_\n");

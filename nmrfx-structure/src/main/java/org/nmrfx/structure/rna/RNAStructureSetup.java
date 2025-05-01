@@ -331,20 +331,53 @@ public class RNAStructureSetup {
         double lowerIntra = atomAtomLowUp.lower() - 1.0;
         String atomNameI = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName1();
         String atomNameJ = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName2();
-        addDistanceConstraint(atomNameI, atomNameJ, lowerIntra, atomAtomLowUp.lower(), false);
+        Atom atomI = polyI.molecule.findAtom(atomNameI);
+        Atom atomJ = polyI.molecule.findAtom(atomNameJ);
+        if ((atomI != null) && (atomJ != null)) {
+            addDistanceConstraint(atomNameI, atomNameJ, lowerIntra, atomAtomLowUp.lower(), false);
+        }
     }
 
     public static void addStack(AtomAtomLowUp atomAtomLowUp, Polymer polyI, Polymer polyJ, String resNumI, String resNumJ) {
         double lowerInter = atomAtomLowUp.upper() - 1.0;
         String atomNameI = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName1();
         String atomNameJ = polyJ.getName() + ':' + resNumJ + '.' + atomAtomLowUp.aName2();
-        addDistanceConstraint(atomNameI, atomNameJ, lowerInter, atomAtomLowUp.upper(), false);
+        Atom atomI = polyI.molecule.findAtom(atomNameI);
+        Atom atomJ = polyI.molecule.findAtom(atomNameJ);
+        if ((atomI != null) && (atomJ != null)) {
+            addDistanceConstraint(atomNameI, atomNameJ, lowerInter, atomAtomLowUp.upper(), false);
+        }
     }
 
     public static void addStackPair(AtomAtomLowUp atomAtomLowUp, Polymer polyI, Polymer polyJ, String resNumI, String resNumJ) {
         String atomNameI = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName1();
         String atomNameJ = polyJ.getName() + ':' + resNumJ + '.' + atomAtomLowUp.aName2();
-        addDistanceConstraint(atomNameI, atomNameJ, atomAtomLowUp.lower(), atomAtomLowUp.upper(), false);
+        Atom atomI = polyI.molecule.findAtom(atomNameI);
+        Atom atomJ = polyI.molecule.findAtom(atomNameJ);
+        if ((atomI != null) && (atomJ != null)) {
+            addDistanceConstraint(atomNameI, atomNameJ, atomAtomLowUp.lower(), atomAtomLowUp.upper(), false);
+        }
+    }
+
+    public static String dnaToRNA(String resName) {
+        if (resName.startsWith("D") && resName.length() == 2) {
+            resName = resName.substring(1);
+        }
+        if (resName.equals("T")) {
+            resName = "U";
+        }
+        return resName;
+    }
+    public static List<AtomAtomLowUp> stackTo(String resName) {
+        resName = dnaToRNA(resName);
+        return stackTo.getOrDefault(resName, Collections.emptyList());
+    }
+
+    public static List<AtomAtomLowUp> stackPairs(String resName1, String resName2) {
+        resName1 = dnaToRNA(resName1);
+        resName2 = dnaToRNA(resName2);
+        String resPair = resName1 + resName2;
+        return stackPairs.getOrDefault(resPair, Collections.emptyList());
     }
 
     public static void addStackPair(Residue resI, Residue resJ) {
@@ -357,13 +390,13 @@ public class RNAStructureSetup {
         if (polyI != polyJ) {
             return;
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackTo.get(resNameI)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackTo(resNameI)) {
             addStack(atomAtomLowUp, polyI, resNumI);
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackTo.get(resNameJ)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackTo(resNameJ)) {
             addStack(atomAtomLowUp, polyI, polyJ, resNumI, resNumJ);
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackPairs.get(resNameI + resNameJ)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackPairs(resNameI , resNameJ)) {
             addStackPair(atomAtomLowUp, polyI, polyJ, resNumI, resNumJ);
         }
     }
@@ -720,7 +753,7 @@ public class RNAStructureSetup {
         if (ss instanceof RNAHelix rnaHelix) {
             int index = getHelixPos(rnaHelix, residue, false);
             SecondaryStructure ssNext2 = null;
-            if ((index == 1) && (nextRes != null)) {
+            if ((index == 1) && (nextRes != null) && (nextRes.getNext() != null)) {
                 ssNext2 = nextRes.getNext().getSecondaryStructure();
             }
             subType = getHelixSubType(ss.getResidues(), residue, ssNext, ssPrev, ssNext2);

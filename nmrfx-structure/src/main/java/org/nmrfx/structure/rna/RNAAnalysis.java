@@ -35,17 +35,18 @@ public class RNAAnalysis {
     /**
      * Generates a list of RNA residues in the given molecule
      *
-     * @param molecule The molecule to get RNA residues from
+     * @param molecule The molecule to get RNA or DNA residues from
      * @return list of RNA residues
      */
-    public static List<Residue> getRNAResidues(Molecule molecule) { //list of only rna residues
-        List<Residue> rnaResidues = new ArrayList<>();
+    public static List<Residue> getNAResidues(Molecule molecule) { //list of only rna or dna residues
+        List<Residue> naResidues = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
-            if (polymer.isRNA()) {
-                rnaResidues.addAll(polymer.getResidues());
+            System.out.println(polymer.getName() + " " + polymer.getPolymerType() + " " + polymer.getResidues());
+            if (polymer.isRNA() || polymer.isDNA()) {
+                naResidues.addAll(polymer.getResidues());
             }
         }
-        return rnaResidues;
+        return naResidues;
     }
 
     /**
@@ -84,7 +85,7 @@ public class RNAAnalysis {
      */
     public static List<BasePair> getPairList(Molecule molecule, int typeTarget) { //for RNA only
         List<BasePair> bpList = new ArrayList<>();
-        List<Residue> rnaResidues = getRNAResidues(molecule);
+        List<Residue> rnaResidues = getNAResidues(molecule);
         int iResA = 0;
         for (Residue residueA : rnaResidues) {
             int iResB = 0;
@@ -146,7 +147,7 @@ public class RNAAnalysis {
     public static char[] getViennaSequence(Molecule molecule) {
         Map<Integer, List<BasePair>> bpMap = getBasePairs(molecule);
         List<BasePair> bps = getPairList(molecule);
-        List<Residue> rnaResidues = getRNAResidues(molecule);
+        List<Residue> rnaResidues = getNAResidues(molecule);
         char[] vienna = new char[rnaResidues.size()];
         String leftBrackets = "[{ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String rightBrackets = "]}abcdefghijklmnopqrstuvwxyz";
@@ -180,7 +181,7 @@ public class RNAAnalysis {
      */
     public static char[] testViennaSequence(Molecule molecule) {
         Map<Integer, List<BasePair>> bpMap = getBasePairs(molecule);
-        List<Residue> rnaResidues = getRNAResidues(molecule);
+        List<Residue> rnaResidues = getNAResidues(molecule);
         char[] vienna = new char[rnaResidues.size()];
         String leftBrackets = "[{";
         String rightBrackets = "]}";

@@ -131,6 +131,41 @@ public class Sequence {
     private void addNonStandardResidue(Residue residue) {
         residue.molecule.addNonStandardResidue(this, residue);
     }
+    private static void createLinker(Atom atom1, Atom atom2, int numLinks,
+                             double linkLen, double valAngle, double dihAngle) {
+        /**
+         * createLinker is a method to create a link between atoms in two
+         * separate entities
+         *
+         * @param numLinks number of linker atoms to use
+         * @param atom1
+         * @param atom2
+         */
+
+        if (atom1 == null || atom2 == null) {
+            return;
+        }
+        Atom curAtom = atom1;
+        Atom newAtom;
+        String linkRoot = "X";
+        for (int i = 1; i <= numLinks; i++) {
+            newAtom = curAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
+            newAtom.bondLength = (float) linkLen;
+            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
+            newAtom.irpIndex = 1;
+            newAtom.rotActive = true;
+            newAtom.setType("XX");
+
+            curAtom = newAtom;
+            if ((i == numLinks) && (atom2 != null)) {
+                Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);
+                atom2.parent = curAtom;
+                curAtom.daughterAtom = atom2;
+            }
+        }
+    }
+
 
     public enum PRFFields {
 
@@ -187,12 +222,18 @@ public class Sequence {
                     throw new MoleculeIOException("No refAtom " + fields[2]);
                 }
                 boolean connectee = false;
+                boolean addedLinker = false;
                 if (parentField.equals("-")) {
                     if (sequence.connectAtom != null) {
                         parent = sequence.connectAtom;
-                        Bond connectBond = new Bond(parent, refAtom);
-                        parent.bonds.add(sequence.connectPosition, connectBond);
-                        connectee = true;
+                        if (parent.getTopEntity() != refAtom.getTopEntity()) {
+                            createLinker(parent, refAtom, 6, 5.0, 110.0, 135.0);
+                            addedLinker = true;
+                        } else {
+                            Bond connectBond = new Bond(parent, refAtom);
+                            parent.bonds.add(sequence.connectPosition, connectBond);
+                            connectee = true;
+                        }
                     } else {
                         parent = null;
                     }
@@ -200,7 +241,7 @@ public class Sequence {
                     parent = residue.getAtom(parentField);
                 }
                 Bond bond = null;
-                if (parent != null) {
+                if ((parent != null) && !addedLinker){
                     if (connectee) {
                         bond = new Bond(parent, refAtom);
                         parent.addBond(bond);
@@ -455,7 +496,7 @@ public class Sequence {
         ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
         boolean result = false;
         if (fieldArray.size() > 0) {
-            residue.libraryMode(true);
+            residue.libraryMode(residue.isStandard());
             result = true;
             for (String[] fields : fieldArray) {
                 try {

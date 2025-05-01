@@ -97,10 +97,10 @@ public class PDBFile {
     }
 
     public MoleculeBase read(String fileName) throws MoleculeIOException {
-        return read(fileName, false);
+        return read(null, fileName, false);
     }
 
-    public MoleculeBase read(String fileName, boolean strictMode)
+    public MoleculeBase read(MoleculeBase molecule, String fileName, boolean strictMode)
             throws MoleculeIOException {
         String string;
         String lastRes = "";
@@ -108,7 +108,7 @@ public class PDBFile {
         int dotPos = file.getName().lastIndexOf('.');
         int structureNumber = 0;
         Point3 pt;
-        MoleculeBase molecule;
+
         String molName;
 
         if (dotPos >= 0) {
@@ -117,7 +117,9 @@ public class PDBFile {
             molName = file.getName();
         }
 
-        molecule = MoleculeFactory.newMolecule(molName);
+        if (molecule == null) {
+            molecule = MoleculeFactory.newMolecule(molName);
+        }
 
         Polymer polymer = null;
         Residue residue = null;
@@ -938,10 +940,6 @@ public class PDBFile {
         } else {
             molName = molecule.getName();
         }
-        if (coordSetName == null) {
-            // XXX
-            coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
-        }
         int structureNumber = 0;
         String string;
         Compound compound = null;
@@ -958,6 +956,10 @@ public class PDBFile {
                         compound = residue != null ? residue : new Compound(atomParse.resNum, atomParse.resName);
                         compound.molecule = molecule;
                         compound.assemblyID = molecule.entityLabels.size() + 1;
+                        if (coordSetName == null) {
+                            coordSetName = compound.getName();
+                        }
+
                         if (residue == null) {
                             molecule.addEntity(compound, coordSetName);
                         }

@@ -49,6 +49,18 @@
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-simple</artifactId>
+                <version>1.6</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-sampling</artifactId>
+                <version>1.6</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
                 <groupId>javax.vecmath</groupId>
                 <artifactId>vecmath</artifactId>
                 <version>1.5.2</version>

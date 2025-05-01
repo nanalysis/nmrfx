@@ -48,7 +48,10 @@ public class PathIterator implements Iterator<List<Integer>> {
             bonds[i] = ac.getBond(i);
             IAtom atom0 = bonds[i].getAtom(0);
             IAtom atom1 = bonds[i].getAtom(1);
-            if ((atom0.getAtomicNumber() >= 1) && (atom1.getAtomicNumber() >= 1)) {
+            Atom atom00 = (Atom) atom0;
+            Atom atom10 = (Atom) atom0;
+            boolean sameEntity = atom00.getTopEntity() == atom10.getTopEntity();
+            if (sameEntity && (atom0.getAtomicNumber() >= 1) && (atom1.getAtomicNumber() >= 1)) {
                 Integer iAtom0 = atomMap.get(atom0);
                 Integer iAtom1 = atomMap.get(atom1);
                 if (iAtom0 == null) {
@@ -357,6 +360,9 @@ public class PathIterator implements Iterator<List<Integer>> {
             for (int i = 0; i < localSphere.size(); i++) {
                 int iAtom = getAtomIndex(localSphere, i);
                 int iBond = getBondIndex(localBonds, i);
+                if (iAtom < 0) {
+                    break;
+                }
                 boolean aType = checkAtom(pathLength, iAtom);
                 boolean bType = checkBond(pathLength, iBond);
 

@@ -57,6 +57,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.project.GUIProject;
@@ -3956,17 +3957,19 @@ public class PolyChart extends Region {
         }
     }
 
-    public void projectDataset() {
+    public void projectDataset(boolean view) {
         Dataset dataset = (Dataset) getDataset();
         if (dataset == null) {
             return;
         }
+        int[][] pt = view ? getDatasetAttributes().getFirst().pt : null;
         if (dataset.getNDim() == 2) {
             try {
                 List<String> datasetNames = new ArrayList<>();
                 datasetNames.add(dataset.getName());
-                dataset.project(0);
-                dataset.project(1);
+                updateDatasetsByNames(datasetNames);
+                dataset.project(0, pt);
+                dataset.project(1, pt);
                 Dataset proj0 = dataset.getProjection(0);
                 Dataset proj1 = dataset.getProjection(1);
                 if (proj0 != null) {
@@ -3980,8 +3983,19 @@ public class PolyChart extends Region {
                 updateProjectionBorders();
                 updateProjectionScale();
                 refresh();
-            } catch (IOException ex) {
+            } catch (IOException | DatasetException ex) {
                 log.warn(ex.getMessage(), ex);
+            }
+        } else if (dataset.getNDim() == 3) {
+            try {
+                Dataset projDataset = dataset.projectND(2, pt);
+                FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
+                PolyChart newChart = newController.getActiveChart();
+                newChart.setDataset(projDataset, false, false);
+                newChart.refresh();
+
+            } catch (IOException | DatasetException e) {
+                GUIUtils.warn("Projection Error", e.getMessage());
             }
         }
 
