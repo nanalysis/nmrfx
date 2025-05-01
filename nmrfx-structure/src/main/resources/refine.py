@@ -342,7 +342,7 @@ def createStrictDict(initDict, type):
         initDict = {}
     allowedKeys = {}
     allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap','updateAt']
-    allowedKeys['force'] = ['elec', 'cffnb', 'nbmin', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt','stack']
+    allowedKeys['force'] = ['elec', 'cffnb', 'nbmin', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt','stack', 'rdc']
     allowedKeys = allowedKeys[type]
 
     strictDict = StrictDict(defaultErr=type+'s')
@@ -363,6 +363,7 @@ class refine:
         self.xplorDistanceFiles = {}
         self.cyanaRDCFiles = {}
         self.xplorRDCFiles = {}
+        self.nmrfxRDCFiles = {}
         self.suiteAngleFiles = []
         self.nmrfxDistanceFiles = {}
         self.nvDistanceFiles = {}
@@ -485,10 +486,11 @@ class refine:
             'dih'    : forceWeightOrig.getDihedral(),
             'irp'    : forceWeightOrig.getIrp(),
             'shift'  : forceWeightOrig.getShift(),
+            'rdc'  : forceWeightOrig.getRDC(),
             'stack'  : forceWeightOrig.getStacking(),
             'bondWt' : forceWeightOrig.getBondWt()
         }
-        forces = ('elec','cffnb','repel','dis','tors','dih','irp','shift','bondWt','stack','nbmin')
+        forces = ('elec','cffnb','repel','dis','tors','dih','irp','shift','bondWt','stack',"rdc", 'nbmin')
         forceWeights = []
         if 'cffnb' in forceDict:
             if forceDict['cffnb'] > 0.0:
@@ -513,7 +515,7 @@ class refine:
         """
 
         fW = self.energyLists.getForceWeight()
-        output = "cffnb %5.2f nbmin %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f stack %5.2f" % (fW.getCFFNB(),fW.getNBMin(), fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt(), fW.getStacking())
+        output = "cffnb %5.2f nbmin %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f stack %5.2f rdc %5.2f" % (fW.getCFFNB(),fW.getNBMin(), fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt(), fW.getStacking(), fW.getRDC())
         return output
 
     def dump(self,limit,shiftLim, fileName):
@@ -628,6 +630,7 @@ class refine:
     def refineNonDeriv(self,nsteps=10000,stopFitness=0.0,radius=0.01,alg="cmaes",ninterp=1.2,lambdaMul=1, nFireflies=18, diagOnly=1.0,useDegrees=False):
         print self.energyLists.energy()
         self.energyLists.makeAtomListFast()
+        self.energyLists.setRDCSet("rdc_energy")
         print self.energyLists.energy()
         diagOnly = int(round(nsteps*diagOnly))
         if (alg == "cmaes"):
@@ -892,7 +895,7 @@ class refine:
             if not self.ssGen:
                 self.findRNAHelices(data['rna'])
             if 'vienna' in data['rna']:
-                RNAStructureSetup.addHelicesRestraints(self.ssGen)
+                RNAStructureSetup.addHelicesRestraints(self.ssGen, 2.0)
             if 'rna' in data and 'autolink' in data['rna'] and data['rna']['autolink']:
                 sLB = RNAStructureSetup.findSSLinks(self.ssGen)
                 structureLinks = sLB.links()
@@ -960,6 +963,8 @@ class refine:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
             angleWt = self.readAngleDict(data['angles'])
+        if 'rdcs' in data:
+            self.readRDCDict(data['rdcs'])
         if 'tree' in data:
             self.setupTree(treeDict)
 
@@ -987,6 +992,7 @@ class refine:
 
         self.readAngleFiles()
         self.readDistanceFiles()
+        self.readRDCFiles()
 
         if 'anneal' in data:
             self.dOpt = self.readAnnealDict(data['anneal'])
@@ -1266,6 +1272,19 @@ class refine:
             self.addAngleFile(file,mode=type)
         return wt
 
+    def readRDCDict(self,disDict):
+        wt = -1.0
+        for dic in disDict:
+            file = dic['file']
+            if 'type' in dic:
+                type = dic['type']
+            else:
+                type = 'nmrfx'
+            if 'weight' in dic:
+                wt = dic['weight']
+            self.addRDCFile(file,mode=type)
+        return wt
+
     def findRNAHelices(self, rnaDict):
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
@@ -1510,8 +1529,7 @@ class refine:
                                 Constraint.lastViewed.addPair(atomPair)
                                 self.constraints[atomPair] = Constraint.lastViewed
 
-    def readCYANARDCs(self, fileNames, molName, keepSetting=None):
-        for fileName in fileNames:
+    def readCYANARDCs(self, fileName, molName, keepSetting=None):
             if os.path.exists(fileName):
                 with open(fileName,'r') as fIn:
                     for lineNum, line in enumerate(fIn):
@@ -2048,6 +2066,8 @@ class refine:
             self.cyanaRDCFiles[file] = keep
         elif mode == 'xplor':
             self.xplorRDCFiles[file] = keep
+        elif mode == 'nmrfx':
+            self.nmrfxRDCFiles[file] = keep
 
     def readAngleFiles(self):
         for file in self.cyanaAngleFiles:
@@ -2078,15 +2098,21 @@ class refine:
         self.addDistanceConstraints()
 
     def readRDCFiles(self):
+        foundFile = False
         for file in self.cyanaRDCFiles.keys():
             fileName = file
             self.readCYANARDCs(fileName, self.molName, keepSetting=self.cyanaRDCFiles[file])
+            foundFile = True
 
         for file in self.xplorRDCFiles.keys():
             xplorConstraints = self.readXPLORrdcConstraints(file, keepSetting = self.xplorRDCFiles[file])
+            foundFile = True
 
-        # FIXME : should return the name of the file in which an error is found!
-        self.addRDCConstraints()
+        if foundFile:
+            self.addRDCConstraints()
+
+        for file in self.nmrfxRDCFiles.keys():
+            self.loadRDCTable(file)
 
 
     def addDistanceConstraints(self):
@@ -2124,6 +2150,12 @@ class refine:
                 errMsg += "\nJava Error Msg : %s" % (IAE.getMessage())
                 raise ValueError(errMsg)
 
+    def loadRDCTable(self, fileName):
+        molConstraints = self.molecule.getMolecularConstraints()
+        setName = "rdc_energy"
+        localRDCSet = RDCConstraintSet.newSet(molConstraints, setName);
+        localRDCSet.readInputFile(fileName);
+ 
     def addRDCConstraints(self):
         alreadyAdded = []
         if len(RDCConstraintSet.getNames()) > 0:
@@ -2341,6 +2373,8 @@ class refine:
 
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
         if dOpt['dfreeSteps']> 0:
+            molConstraints = self.molecule.getMolecularConstraints()
+            self.energyLists.setRDCSet("rdc_energy")
             self.refineNonDeriv(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
         ec = self.molecule.getEnergyCoords()
         #ec.exportConstraintPairs('constraints.txt')

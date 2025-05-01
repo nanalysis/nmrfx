@@ -23,6 +23,6 @@ public class RDCEnergy {
         aMat.calcAlignment();
         RDCFitQuality fitQuality = new RDCFitQuality();
         fitQuality.evaluate(aMat, rdcValues);
-        return fitQuality.getQRMS();
+        return fitQuality.getRChiSq();
     }
 }

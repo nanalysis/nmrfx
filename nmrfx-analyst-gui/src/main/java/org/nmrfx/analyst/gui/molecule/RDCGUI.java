@@ -38,7 +38,9 @@ import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.RDCConstraint;
 import org.nmrfx.chemistry.constraints.RDCConstraintSet;
 import org.nmrfx.chemistry.relax.ValueWithError;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -52,10 +54,8 @@ import org.nmrfx.utils.GUIUtils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author brucejohnson
@@ -70,7 +70,6 @@ public class RDCGUI {
 
     public ChoiceBox<String> setChoice = new ChoiceBox<>();
     public ChoiceBox<Integer> structureChoice = new ChoiceBox<>();
-    DataSeries series0 = new DataSeries();
     DataSeries series1 = new DataSeries();
     TextField qRMSField = new TextField("");
     TextField qRhombField = new TextField("");
@@ -118,16 +117,19 @@ public class RDCGUI {
 
             MenuButton fileMenuButton = new MenuButton(("File"));
 
-            MenuItem openButton = new MenuItem("Read");
+            MenuItem openButton = new MenuItem("Read...");
             openButton.setOnAction(e -> loadRDCTextFile());
 
-            MenuItem saveButton = new MenuItem("Save Results to File");
+            MenuItem saveButton = new MenuItem("Save Results to File...");
             saveButton.setOnAction(e -> saveToFile());
 
-            MenuItem exportButton = new MenuItem("Export Plot");
-            exportButton.setOnAction(this::exportPlotSVGAction);
+            MenuItem exportSVGButton = new MenuItem("Export SVG Plot...");
+            exportSVGButton.setOnAction(this::exportPlotSVGAction);
 
-            fileMenuButton.getItems().addAll(openButton, saveButton, exportButton);
+            MenuItem exportPDFButton = new MenuItem("Export PDF Plot...");
+            exportPDFButton.setOnAction(this::exportPlotPDFAction);
+
+            fileMenuButton.getItems().addAll(openButton, saveButton, exportSVGButton);
 
             Button rdcButton = new Button("Perform RDC Analysis");
 
@@ -219,20 +221,26 @@ public class RDCGUI {
     }
 
     void updateRDCplotWithLines() {
-        updateRDCplot();
-        if (!series0.isEmpty()) {
-            activeChart.getData().add(series0);
+        Map<String, DataSeries> seriesMap = updateRDCplot();
+        if (!seriesMap.isEmpty()) {
+            AtomicInteger atomicIndex = new AtomicInteger(0);
+            seriesMap.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(e -> {
+                e.getValue().setFill(XYCanvasChart.colors[atomicIndex.getAndIncrement()]);
+                activeChart.getData().add(e.getValue());
+            });
+
             activeChart.getData().add(series1);
         }
     }
 
-    void updateRDCplot() {
+    Map<String, DataSeries> updateRDCplot() {
+        Map<String, DataSeries> seriesMap = new HashMap<>();
         if (analystApp != null) {
 
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
             String xElem = setChoice.getValue();
-            activeChart.setShowLegend(false);
+            activeChart.setShowLegend(true);
 
             if ((xElem != null)) {
                 xAxis.setLabel("Experimental RDCs");
@@ -241,19 +249,31 @@ public class RDCGUI {
                 yAxis.setAutoRanging(false);
                 activeChart.getData().clear();
                 //Prepare XYChart.Series objects by setting data
-                series0.clear();
                 if (aMat != null) {
                     double min = Double.MAX_VALUE;
                     double max = Double.NEGATIVE_INFINITY;
                     List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
                     for (RDC rdcValue : rdcValues) {
-                        XYValue xyValue = new XYValue(rdcValue.getExpRDC(), rdcValue.getRDC());
-                        xyValue.setExtraValue(rdcValue);
-                        series0.add(xyValue);
-                        min = Math.min(min, rdcValue.getExpRDC());
-                        min = Math.min(min, rdcValue.getRDC());
-                        max = Math.max(max, rdcValue.getExpRDC());
-                        max = Math.max(max, rdcValue.getRDC());
+                        double scale = rdcValue.getMaxRDC() * 1.0e-4;
+                        double x =  rdcValue.getExpRDC() / scale;
+                        double y = rdcValue.getRDC() / scale;
+                        double err = rdcValue.getError() / scale;
+                        XYEValue xyeValue = new XYEValue(x, y, err);
+                        xyeValue.setExtraValue(rdcValue);
+                        String aName1 = rdcValue.getAtom1().getName();
+                        String aName2 = rdcValue.getAtom2().getName();
+                        String aName = aName1 + ":" + aName2;
+                        DataSeries series = seriesMap.computeIfAbsent(aName, k -> {
+                            DataSeries newSeries = new DataSeries();
+                            newSeries.setRadius(6);
+                            newSeries.setName(aName);
+                            return newSeries;
+                        });
+                        series.add(xyeValue);
+                        min = Math.min(x, min);
+                        min = Math.min(y, min);
+                        max = Math.max(x, max);
+                        max = Math.max(y, max);
                     }
                     xAxis.setLowerBound(min - 1.0);
                     yAxis.setLowerBound(min - 1.0);
@@ -264,6 +284,11 @@ public class RDCGUI {
                 }
             }
         }
+        AtomicInteger atomicIndex = new AtomicInteger(0);
+        seriesMap.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(e -> {
+            e.getValue().setFill(XYCanvasChart.colors[atomicIndex.getAndIncrement()]);
+        });
+        return seriesMap;
     }
 
     void updateRDCPlotChoices() {
@@ -391,8 +416,25 @@ public class RDCGUI {
             }
         }
     }
+    void exportPlotPDFAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to PDF");
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            PDFGraphicsContext pdfGC = new PDFGraphicsContext();
+            try {
+                Canvas canvas = activeChart.getCanvas();
+                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                exportChart(pdfGC);
+                pdfGC.saveFile();
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
+        }
+    }
 
-    protected void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
+    protected void exportChart(GraphicsContextInterface svgGC) throws GraphicsIOException {
         svgGC.beginPath();
         activeChart.drawChart(svgGC);
     }
@@ -423,6 +465,7 @@ public class RDCGUI {
         }
 
     }
+
     private void extractFromArtsy(ActionEvent actionEvent) {
         var peakListopt = rdcPeakDialog();
         peakListopt.ifPresent(peakListSelector ->
@@ -432,8 +475,8 @@ public class RDCGUI {
     ValueWithError variableFlipCalc(double i45, double i90, double tau, double noise) {
         double ratio = i45 / i90;
         double jValue = Math.atan(Math.sqrt(4.0 * ratio * ratio - 2.0)) / (Math.PI * tau);
-        double err = (2.0 * noise * Math.sqrt(ratio * ratio + 1.0) ) /
-                (i90 * Math.PI*tau * Math.sqrt(4.0*ratio-2.0) * (4.0*ratio-1.0));
+        double err = (2.0 * noise * Math.sqrt(ratio * ratio + 1.0)) /
+                (i90 * Math.PI * tau * Math.sqrt(4.0 * ratio - 2.0) * (4.0 * ratio - 1.0));
         return new ValueWithError(jValue, err);
     }
 
@@ -457,17 +500,16 @@ public class RDCGUI {
         if (molecule != null) {
             molConstraints = molecule.getMolecularConstraints();
         }
-        int iStructure= structureChoice.getValue();
+        int iStructure = structureChoice.getValue();
         String setName = peakListOrdered.getName();
         localRDCSet = RDCConstraintSet.newSet(molConstraints, setName);
 
 
-
-        peakListOrdered.peaks().stream().filter(p -> !p.getPeakDim(0).getLabel().isEmpty()).forEach( ordPeak ->{
+        peakListOrdered.peaks().stream().filter(p -> !p.getPeakDim(0).getLabel().isEmpty()).forEach(ordPeak -> {
             String[] orderedLabel = {ordPeak.getPeakDim(0).getLabel()};
             List<Peak> isoPeaks = peakListIsotropic.matchPeaks(orderedLabel, false, true);
 
-            if (isoPeaks.size() == 1)  {
+            if (isoPeaks.size() == 1) {
                 Peak isoPeak = isoPeaks.getFirst();
                 Optional<double[][]> orderedOpt = ordPeak.getMeasures();
                 Optional<double[][]> isoOpt = isoPeak.getMeasures();
@@ -483,7 +525,8 @@ public class RDCGUI {
                         localRDCSet.add(rdc);
                     }
                 }
-            };
+            }
+            ;
         });
         updateRDCPlotChoices();
         setChoice.setValue(setName);
@@ -497,6 +540,7 @@ public class RDCGUI {
         VFHMQC,
         ARTSY
     }
+
     public static Optional<PeakListSelector> rdcPeakDialog() {
 
         Dialog<PeakListSelector> dialog = new Dialog<>();
@@ -539,11 +583,11 @@ public class RDCGUI {
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
-                return new PeakListSelector(peakListAlignedChoiceBox.getValue(),peakListIsoChoiceBox.getValue(), tauProp.getValue() / 1000.0);
+                return new PeakListSelector(peakListAlignedChoiceBox.getValue(), peakListIsoChoiceBox.getValue(), tauProp.getValue() / 1000.0);
             }
             return null;
         });
 
-        return  dialog.showAndWait();
+        return dialog.showAndWait();
     }
 }
