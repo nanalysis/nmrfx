@@ -1,20 +1,22 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.PDBAtomParser;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import org.tribuo.Example;
+import org.tribuo.Feature;
+import org.tribuo.Model;
+import org.tribuo.Prediction;
+import org.tribuo.impl.ArrayExample;
+import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
 public class ProteinPredictor {
+
+    static Map<String, Model> proteinModels = new HashMap<>();
 
     public final static Map<String, Double> RANDOM_SCALES = new HashMap<>();
     // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
@@ -63,6 +65,43 @@ public class ProteinPredictor {
         }
 
     }
+
+    public static Optional<Model> loadTribuoModel(String name) {
+        String rnaModelResourceName = "data/predict/protein/tribuomodels/model_" + name + ".proto";
+        Optional<Model> result = Optional.empty();
+        File file = null;
+
+        if ((file != null) && file.exists()) {
+            try {
+                result = Optional.of(Model.deserializeFromFile(file.toPath()));
+            } catch (IOException e) {
+                result = Optional.empty();
+            }
+        } else {
+            try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(rnaModelResourceName)) {
+                if (inputStream != null) {
+                    result = Optional.of(Model.deserializeFromStream(inputStream));
+                } else {
+                    System.out.println("deserialize " + inputStream + " " + rnaModelResourceName);
+                }
+            } catch (IOException e) {
+                result = Optional.empty();
+            }
+        }
+        return result;
+    }
+
+    public static Optional<Model> getTribuoModel(String atomType) {
+        Optional<Model> modelOpt;
+        if (!proteinModels.containsKey(atomType)) {
+            modelOpt = loadTribuoModel(atomType);
+            proteinModels.put(atomType, modelOpt.orElse(null));
+        } else {
+            modelOpt = Optional.ofNullable(proteinModels.get(atomType));
+        }
+        return modelOpt;
+    }
+
 
     void loadCoefficients() throws IOException {
         InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/coefs3d.txt");
@@ -305,39 +344,58 @@ public class ProteinPredictor {
         if (values == null) {
             loadCoefficients();
         }
+        Map<Atom, Double> refShifts = new HashMap<>();
+        BMRBStats.loadAllIfEmpty();
+        for (Atom atom : residue.getAtoms()) {
+            Double rShift = predictRandom(residue, atom.getName(), 298.0);
+            if (rShift == null) {
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(residue.getName(), atom.getName());
+                if (ppmVOpt.isPresent()) {
+                    rShift = ppmVOpt.get().getValue();
+                }
+            }
+            refShifts.put(atom, rShift);
+        }
+
         Map<String, Double> valueMap = propertyGenerator.getValues();
         Polymer polymer = residue.getPolymer();
+        ProteinPredictorGen p = new ProteinPredictorGen();
         if (propertyGenerator.getResidueProperties(polymer, residue, structureNum)) {
             for (Atom atom : residue.getAtoms()) {
+                String aName = atom.getName();
+                String resName = atom.getEntity().getName();
                 Optional<String> atomTypeOpt = getAtomNameType(atom);
                 atomTypeOpt.ifPresent(atomType -> {
-                    propertyGenerator.getAtomProperties(atom, structureNum);
-                    String type = atomType;
-                    Integer jType = aaMap.get(type);
-                    if (jType != null) {
-                        double[] coefs = values[jType];
-                        double[] minMax = minMaxMap.get(type);
-                        ProteinPredictorResult predResult
-                                = ProteinPredictorGen.predict(valueMap,
-                                coefs, minMax, reportAtom != null);
-                        double value = predResult.ppm;
-                        value = Math.round(value * 100) / 100.0;
-                        double rms = getRMS(type);
-                        if (iRef < 0) {
-                            atom.setRefPPM(-iRef - 1, value);
-                            atom.setRefError(-iRef - 1, rms);
-                        } else {
-                            atom.setPPM(iRef, value);
-                            atom.setPPMError(iRef, rms);
-                        }
+                    var props = propertyGenerator.getAtomProperties(atom, structureNum);
+                    var atomValueMap = propertyGenerator.getValues();
+                    double[] atomValues = p.getValues(atomValueMap);
+                    List<String> valueNames = p.getValueNames();
+                    Map<String, Double> valueMap2 = p.getValueMap(valueMap);
 
-                        if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
-                            dumpResult(predResult);
+                    String type = atomType;
+                    var modelOpt = getTribuoModel(atomType);
+                    getTribuoModel(atomType).ifPresent(model -> {
+                        Example example = getExample(valueMap2);
+                        model.predict(example);
+                        Prediction<Regressor> prediction = model.predict(example);
+                        Regressor regressor = prediction.getOutput();
+                        double deltaShift = regressor.getValues()[0];
+                        if (refShifts.containsKey(atom)) {
+                            double value = refShifts.get(atom) + deltaShift;
+                            value = Math.round(value * 100) / 100.0;
+                            double rms = getRMS(type);
+                            if (iRef < 0) {
+                                atom.setRefPPM(-iRef - 1, value);
+                                atom.setRefError(-iRef - 1, rms);
+                            } else {
+                                atom.setPPM(iRef, value);
+                                atom.setPPMError(iRef, rms);
+                            }
+
                         }
-                    }
+                    });
                 });
             }
-
         }
     }
 
@@ -345,6 +403,17 @@ public class ProteinPredictor {
         for (int i = 0; i < predResult.attrs.length; i++) {
             System.out.println(attrNames.get(i) + " " + predResult.coefs[i] + " " + predResult.attrs[i]);
         }
+    }
+
+    public Example<Regressor> getExample(Map<String, Double> attributes) {
+        List<Feature> features = new ArrayList<>();
+        for (var entry : attributes.entrySet()) {
+            Feature feature = new Feature(entry.getKey(), entry.getValue());
+            features.add(feature);
+        }
+        Regressor regressor = new Regressor("cs", Double.NaN);
+        Example<Regressor> example = new ArrayExample<>(regressor, features);
+        return example;
     }
 
     public static void initMinMax() throws IOException {
