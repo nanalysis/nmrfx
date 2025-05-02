@@ -12,6 +12,8 @@ import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt32;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.*;
 
 public class SSPredictor {
@@ -62,7 +64,15 @@ public class SSPredictor {
         boolean ok = false;
         if (modelFilePath != null) {
             File file = new File(modelFilePath);
-            ok = file.exists();
+            PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:saved_model.pb");
+            try (DirectoryStream<Path> paths = Files.newDirectoryStream(file.toPath())) {
+                for (Path path : paths) {
+                    if (matcher.matches(path.getFileName())) {
+                        return file.exists();
+                    }
+                }
+            } catch (IOException ignored) {
+            }
         }
         return ok;
     }
@@ -72,7 +82,11 @@ public class SSPredictor {
             throw new IllegalArgumentException("No model file location set");
         }
         if (graphModel == null) {
-            graphModel = SavedModelBundle.load(modelFilePath, "serve");
+            try {
+                graphModel = SavedModelBundle.load(modelFilePath, "serve");
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Unable to load model. File may be corrupt.");
+            }
         }
     }
 
@@ -84,7 +98,6 @@ public class SSPredictor {
         this.rnaSequence = rnaSequence;
         if (graphModel == null) {
             load();
-
         }
         String rnaTokens = "AUGC";
         int nCols = 512;

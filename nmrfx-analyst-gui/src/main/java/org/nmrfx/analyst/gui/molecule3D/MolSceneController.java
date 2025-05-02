@@ -1093,7 +1093,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 ModelFetcher.fetch(outDirectory.toPath(), modelName);
                 Path path = outDirectory.toPath().resolve(modelName);
                 PreferencesController.setRNAModelDirectory(path.toString());
-                ssPredictor.setModelFile(path.toString());
+                SSPredictor.setModelFile(path.toString());
                 return true;
             }
         } catch (IOException e) {
@@ -1116,10 +1116,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
                     return;
                 } else {
                     PreferencesController.setRNAModelDirectory(file.toString());
-                    ssPredictor.setModelFile(file.toString());
+                    SSPredictor.setModelFile(file.toString());
                 }
             } else {
-                ssPredictor.setModelFile(rnaModelDir);
+                SSPredictor.setModelFile(rnaModelDir);
             }
             if (!ssPredictor.hasValidModelFile()) {
                 if (GUIUtils.affirm("No model in directory\nFetch one from NMRFx.org?")) {
