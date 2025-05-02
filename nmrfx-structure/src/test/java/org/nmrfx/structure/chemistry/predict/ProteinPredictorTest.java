@@ -2,7 +2,6 @@ package org.nmrfx.structure.chemistry.predict;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.Residue;
@@ -12,8 +11,6 @@ import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.IOException;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class ProteinPredictorTest {
 

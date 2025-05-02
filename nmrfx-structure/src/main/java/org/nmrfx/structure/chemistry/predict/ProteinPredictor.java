@@ -16,9 +16,9 @@ import java.util.*;
 
 public class ProteinPredictor {
 
-    static Map<String, Model> proteinModels = new HashMap<>();
+    static Map<String, Model<Regressor>> proteinModels = new HashMap<>();
 
-    public final static Map<String, Double> RANDOM_SCALES = new HashMap<>();
+    public static final Map<String, Double> RANDOM_SCALES = new HashMap<>();
     // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
 
     static {
@@ -66,21 +66,21 @@ public class ProteinPredictor {
 
     }
 
-    public static Optional<Model> loadTribuoModel(String name) {
+    public static Optional<Model<Regressor>> loadTribuoModel(String name) {
         String rnaModelResourceName = "data/predict/protein/tribuomodels/model_" + name + ".proto";
-        Optional<Model> result = Optional.empty();
+        Optional<Model<Regressor>> result = Optional.empty();
         File file = null;
 
         if ((file != null) && file.exists()) {
             try {
-                result = Optional.of(Model.deserializeFromFile(file.toPath()));
+                result = Optional.of((Model<Regressor>) Model.deserializeFromFile(file.toPath()));
             } catch (IOException e) {
                 result = Optional.empty();
             }
         } else {
             try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(rnaModelResourceName)) {
                 if (inputStream != null) {
-                    result = Optional.of(Model.deserializeFromStream(inputStream));
+                    result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
                 } else {
                     System.out.println("deserialize " + inputStream + " " + rnaModelResourceName);
                 }
@@ -91,8 +91,8 @@ public class ProteinPredictor {
         return result;
     }
 
-    public static Optional<Model> getTribuoModel(String atomType) {
-        Optional<Model> modelOpt;
+    public static Optional<Model<Regressor>> getTribuoModel(String atomType) {
+        Optional<Model<Regressor>> modelOpt;
         if (!proteinModels.containsKey(atomType)) {
             modelOpt = loadTribuoModel(atomType);
             proteinModels.put(atomType, modelOpt.orElse(null));
@@ -123,7 +123,7 @@ public class ProteinPredictor {
             }
         }
         int nCoef = lines.size();
-        int nTypes = lines.get(0).length - 1;
+        int nTypes = lines.getFirst().length - 1;
         values = new double[nTypes][nCoef];
         for (int j = 0; j < nCoef; j++) {
             attrNames.add(lines.get(j)[0].trim());
@@ -134,7 +134,7 @@ public class ProteinPredictor {
         initMinMax();
     }
 
-    class CorrComb {
+    static class CorrComb {
 
         int relPos;
         String centerAA;
@@ -154,8 +154,6 @@ public class ProteinPredictor {
 
     void loadPotenci() throws IOException {
         InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/potenci.txt");
-        List<String[]> lines = new ArrayList<>();
-        boolean firstLine = true;
         String mode = "";
         List<String> atomNames = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
@@ -177,9 +175,7 @@ public class ProteinPredictor {
                     case "SHIFT": {
                         if (fields[0].equals("aa")) {
                             atomNames.clear();
-                            for (int i = 1; i < fields.length; i++) {
-                                atomNames.add(fields[i]);
-                            }
+                            atomNames.addAll(Arrays.asList(fields).subList(1, fields.length));
                         } else {
                             String aaName = fields[0];
                             for (int i = 1; i < fields.length; i++) {
@@ -221,12 +217,12 @@ public class ProteinPredictor {
                         int relPos = Integer.parseInt(fields[1]);
                         String centerAA = fields[2];
                         String neighborType = fields[3];
-                        Double value1 = Double.parseDouble(fields[5]);
-                        Double value2 = Double.parseDouble(fields[6]);
+                        double value1 = Double.parseDouble(fields[5]);
+                        double value2 = Double.parseDouble(fields[6]);
 
                         CorrComb corrComb = new CorrComb(relPos, centerAA, neighborType, value1, value2);
                         if (!corrCombMap.containsKey(aName)) {
-                            corrCombMap.put(aName, new HashMap<String, CorrComb>());
+                            corrCombMap.put(aName, new HashMap<>());
                         }
                         Map<String, CorrComb> segMap = corrCombMap.get(aName);
                         segMap.put(segment, corrComb);
@@ -235,9 +231,7 @@ public class ProteinPredictor {
                     case "TEMPCORRS": {
                         if (fields[0].equals("aa")) {
                             atomNames.clear();
-                            for (int i = 1; i < fields.length; i++) {
-                                atomNames.add(fields[i]);
-                            }
+                            atomNames.addAll(Arrays.asList(fields).subList(1, fields.length));
                         } else {
                             String aaName = fields[0];
                             double[] values = new double[atomNames.size()];
@@ -362,20 +356,13 @@ public class ProteinPredictor {
         ProteinPredictorGen p = new ProteinPredictorGen();
         if (propertyGenerator.getResidueProperties(polymer, residue, structureNum)) {
             for (Atom atom : residue.getAtoms()) {
-                String aName = atom.getName();
-                String resName = atom.getEntity().getName();
                 Optional<String> atomTypeOpt = getAtomNameType(atom);
                 atomTypeOpt.ifPresent(atomType -> {
                     var props = propertyGenerator.getAtomProperties(atom, structureNum);
-                    var atomValueMap = propertyGenerator.getValues();
-                    double[] atomValues = p.getValues(atomValueMap);
-                    List<String> valueNames = p.getValueNames();
                     Map<String, Double> valueMap2 = p.getValueMap(valueMap);
 
-                    String type = atomType;
-                    var modelOpt = getTribuoModel(atomType);
                     getTribuoModel(atomType).ifPresent(model -> {
-                        Example example = getExample(valueMap2);
+                        Example<Regressor> example = getExample(valueMap2);
                         model.predict(example);
                         Prediction<Regressor> prediction = model.predict(example);
                         Regressor regressor = prediction.getOutput();
@@ -383,7 +370,7 @@ public class ProteinPredictor {
                         if (refShifts.containsKey(atom)) {
                             double value = refShifts.get(atom) + deltaShift;
                             value = Math.round(value * 100) / 100.0;
-                            double rms = getRMS(type);
+                            double rms = getRMS(atomType);
                             if (iRef < 0) {
                                 atom.setRefPPM(-iRef - 1, value);
                                 atom.setRefError(-iRef - 1, rms);
@@ -412,8 +399,7 @@ public class ProteinPredictor {
             features.add(feature);
         }
         Regressor regressor = new Regressor("cs", Double.NaN);
-        Example<Regressor> example = new ArrayExample<>(regressor, features);
-        return example;
+        return new ArrayExample<>(regressor, features);
     }
 
     public static void initMinMax() throws IOException {
