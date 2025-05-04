@@ -18,7 +18,7 @@ public class RNAProteinPredictorTest {
     @Test
     public void predictProtein() throws MoleculeIOException, IOException, InvalidMoleculeException {
         Sequence sequence = new Sequence();
-        var molecule = (Molecule) sequence.read("A", List.of("gly", "glu", "phe", "glu", "asn", "ser", "arg"), ".");
+        var molecule = (Molecule) sequence.read("A", List.of("gly", "glu", "phe", "glu","ile", "asn", "ser", "arg"), ".");
         Polymer polymer = molecule.getPolymers().getFirst();
         Residue residue = polymer.getResidues().get(2);
         ProteinPredictor proteinPredictor = new ProteinPredictor();
@@ -26,6 +26,32 @@ public class RNAProteinPredictorTest {
         proteinPredictor.predict(residue, 0, 0);
         double ppmCA = residue.getAtom("CA").getPPM();
         Assert.assertEquals(55.4, ppmCA, 0.1);
+    }
+    @Test
+    public void predictProtein2() throws MoleculeIOException, IOException, InvalidMoleculeException {
+        ProteinPredictor.initMinMax();
+        Sequence sequence = new Sequence();
+        var molecule = (Molecule) sequence.read("A", List.of("ala", "arg", "asn", "asp", "cys", "gln", "glu", "gly", "his",
+                "ile", "leu", "lys", "met", "phe", "pro", "ser", "trp", "tyr"
+        ), ".");
+        boolean missing = false;
+        ProteinPredictor proteinPredictor = new ProteinPredictor();
+        proteinPredictor.init(molecule, 0);
+        for (Residue residue : molecule.getPolymers().getFirst().getResidues()) {
+            proteinPredictor.predict(residue, 0, 0);
+            for (Atom atom : residue.getAtoms()) {
+                int aNum = atom.getAtomicNumber();
+                boolean exchangeable = (aNum == 1) && (atom.parent != null) && ((atom.parent.getAtomicNumber() == 8) || (atom.parent.getAtomicNumber() == 7) || atom.parent.getAtomicNumber() == 16);
+                boolean hcn = (aNum == 1) || (aNum == 6) || (aNum == 7);
+                if (hcn && !exchangeable && !atom.getName().equals("H1") && !(atom.isMethyl() && !atom.isFirstInMethyl())) {
+                    Double ppm = atom.getPPM();
+                    if (ppm == null) {
+                        System.out.println("failed " + atom.getEntity().getName() + "_" + atom.getName());
+                    }
+                }
+            }
+        }
+        Assert.assertFalse(missing);
     }
 
     @Test
@@ -87,4 +113,28 @@ public class RNAProteinPredictorTest {
         }
         Molecule.removeAll();
     }
+
+    @Test
+    public void getAtomTypes() throws MoleculeIOException, IOException, InvalidMoleculeException {
+        Molecule.removeAll();
+        ProteinPredictor.initMinMax();
+        Sequence sequence = new Sequence();
+        var molecule = (Molecule) sequence.read("A", List.of("ala", "arg", "asn", "asp", "cys", "gln", "glu", "gly", "his",
+                "ile","leu","lys","met","phe","pro","ser","trp","tyr"
+        ), ".");
+        boolean missing = false;
+        for (Atom atom  : molecule.getAtoms()) {
+            var nameOpt = ProteinPredictor.getAtomNameType(atom);
+            int aNum = atom.getAtomicNumber();
+            boolean exchangeable = (aNum == 1) && (atom.parent != null) && ((atom.parent.getAtomicNumber() == 8) || (atom.parent.getAtomicNumber() == 7) || atom.parent.getAtomicNumber() == 16);
+            boolean hcn = (aNum == 1) || (aNum == 6) || (aNum == 7);
+            if (nameOpt.isEmpty() && hcn && !exchangeable && !atom.getName().equals("H1") && !(atom.isMethyl() && !atom.isFirstInMethyl())) {
+                missing = true;
+                System.out.println(atom.getEntity().getName()+" " +atom.getShortName() + " " + aNum);
+            }
+        }
+        Molecule.removeAll();
+        Assert.assertFalse(missing);
+    }
+
 }

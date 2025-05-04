@@ -219,12 +219,6 @@ public class MMcifReader {
                     throw new ParseException(psE.getMessage());
                 }
             }
-            for (Atom atom : molecule.getAtomArray()) {
-                if (atom.getAtomicNumber() == 0) {
-                    atom.setAtomicNumber(atom.getElementNumber());
-                }
-            }
-
         }
 
     }
