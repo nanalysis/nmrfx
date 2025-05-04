@@ -2,15 +2,12 @@ package org.nmrfx.structure.chemistry.predict;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.SVMPredict;
 import org.nmrfx.structure.rna.*;
 import org.tribuo.*;
 import org.tribuo.impl.ArrayExample;
 import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -19,11 +16,6 @@ import java.util.regex.Pattern;
  */
 public class RNAAttributes {
 
-    static Map<String, Model> rnaModels = new HashMap<>();
-
-    SVMPredict svmPredict = null;
-
-    Map<String, List<String>> svmAttrMap = new HashMap<>();
     Map<String, Double> svmRMSMap = new HashMap<>();
 
     static Map<String, String> attrMap = new HashMap<>();
@@ -415,71 +407,6 @@ public class RNAAttributes {
         if (!RNAStats.loaded()) {
             RNAStats.readFile("data/rnadata.txt");
         }
-    }
-
-    void loadSVMRNAPredict() throws IOException {
-        svmPredict = new SVMPredict();
-        svmAttrMap.clear();
-        svmRMSMap.clear();
-        String resourceName = "data/rnasvm/svattr.txt";
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(ClassLoader.getSystemClassLoader().getResourceAsStream(resourceName)))) {
-
-            reader.lines().forEach(line -> {
-                String[] fields = line.split(" ");
-                List<String> fieldList = Arrays.asList(fields);
-                String atomName = fields[0];
-                String attrType = fields[1];
-                List<String> attrValues = fieldList.subList(2, fieldList.size());
-                svmAttrMap.put(atomName + "_" + attrType, attrValues);
-                String atomAttr = atomName + "_attrs";
-                if (!svmAttrMap.containsKey(atomAttr)) {
-                    svmAttrMap.put(atomAttr, new ArrayList<>());
-                }
-                List<String> aList = svmAttrMap.get(atomAttr);
-                aList.add(attrType);
-            });
-        }
-        String rmsResourceName = "data/rnapredsdev.txt";
-
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(ClassLoader.getSystemClassLoader().getResourceAsStream(rmsResourceName)))) {
-
-            reader.lines().forEach(line -> {
-                String[] fields = line.split(" ");
-                String atomName = fields[0];
-                String type = fields[1];
-                double sdev = Double.parseDouble(fields[2]);
-                svmRMSMap.put(atomName + "_" + type, sdev);
-            });
-        }
-    }
-
-    List<Double> svmGetAttrs(String atomName, Map<String, String> attributes) {
-        List<Double> output = new ArrayList<>();
-        for (String attrType : svmAttrMap.get(atomName + "_attrs")) {
-            for (String attrValue : svmAttrMap.get(atomName + "_" + attrType)) {
-                if (attrValue.equals(attributes.get(attrType))) {
-                    output.add(1.0);
-                } else {
-                    output.add(0.0);
-                }
-
-            }
-        }
-        return output;
-    }
-
-    double predictWithSVM(String atomName, Map<String, String> attributeValueMap) throws IOException {
-        if (svmPredict == null) {
-            loadSVMRNAPredict();
-        }
-        List<Double> output = svmGetAttrs(atomName, attributeValueMap);
-        double[] dArray = new double[output.size()];
-        for (int i = 0; i < output.size(); i++) {
-            dArray[i] = output.get(i);
-        }
-        return svmPredict.predict(atomName, dArray);
     }
 
     double getError(String atomName, PredType predType) {
