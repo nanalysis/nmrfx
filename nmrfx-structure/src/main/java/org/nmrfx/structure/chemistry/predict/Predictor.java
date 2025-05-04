@@ -19,11 +19,10 @@ import org.nmrfx.structure.chemistry.miner.PathIterator;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tribuo.Model;
+import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -31,6 +30,8 @@ import java.util.*;
  */
 public class Predictor {
     private static final Logger log = LoggerFactory.getLogger(Predictor.class);
+    static Map<String, Model<Regressor>> proteinModels = new HashMap<>();
+    static Map<String, Model<Regressor>> rnaModels = new HashMap<>();
 
     ProteinPredictor proteinPredictor = null;
 
@@ -158,6 +159,10 @@ public class Predictor {
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
+    public enum PredictionMolType {
+        RNA,
+        PROTEIN
+    }
     public enum PredictionModes {
         OFF,
         RNA_ATTRIBUTES,
@@ -167,6 +172,44 @@ public class Predictor {
         SHELL
     }
     public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {}
+
+    public static Optional<Model<Regressor>> loadTribuoModel(PredictionMolType type, String name) {
+        String resourceName = "data/predict/" + type.toString().toLowerCase() + "/tribuomodels/model_" + name + ".proto";
+        Optional<Model<Regressor>> result = Optional.empty();
+        File file = null;
+
+        if ((file != null) && file.exists()) {
+            try {
+                result = Optional.of((Model<Regressor>) Model.deserializeFromFile(file.toPath()));
+            } catch (IOException e) {
+                result = Optional.empty();
+            }
+        } else {
+            try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(resourceName)) {
+                if (inputStream != null) {
+                    result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
+                } else {
+                    System.out.println("deserialize " + inputStream + " " + resourceName);
+                }
+            } catch (IOException e) {
+                result = Optional.empty();
+            }
+        }
+        return result;
+    }
+
+    public static Optional<Model<Regressor>> getTribuoModel(PredictionMolType type, String atomType) {
+        Optional<Model<Regressor>> modelOpt;
+        Map<String, Model<Regressor>> models = type == PredictionMolType.PROTEIN ? proteinModels : rnaModels;
+        if (!models.containsKey(atomType)) {
+            modelOpt = loadTribuoModel(type, atomType);
+            models.put(atomType, modelOpt.orElse(null));
+        } else {
+            modelOpt = Optional.ofNullable(models.get(atomType));
+        }
+        return modelOpt;
+    }
+
 
     void clearRefPPMs(int iRef) {
         Molecule mol = Molecule.getActive();

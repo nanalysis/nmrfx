@@ -6,7 +6,6 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 import org.tribuo.Example;
 import org.tribuo.Feature;
-import org.tribuo.Model;
 import org.tribuo.Prediction;
 import org.tribuo.impl.ArrayExample;
 import org.tribuo.regression.Regressor;
@@ -15,8 +14,6 @@ import java.io.*;
 import java.util.*;
 
 public class ProteinPredictor {
-
-    static Map<String, Model<Regressor>> proteinModels = new HashMap<>();
 
     public static final Map<String, Double> RANDOM_SCALES = new HashMap<>();
     // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
@@ -65,43 +62,6 @@ public class ProteinPredictor {
         }
 
     }
-
-    public static Optional<Model<Regressor>> loadTribuoModel(String name) {
-        String rnaModelResourceName = "data/predict/protein/tribuomodels/model_" + name + ".proto";
-        Optional<Model<Regressor>> result = Optional.empty();
-        File file = null;
-
-        if ((file != null) && file.exists()) {
-            try {
-                result = Optional.of((Model<Regressor>) Model.deserializeFromFile(file.toPath()));
-            } catch (IOException e) {
-                result = Optional.empty();
-            }
-        } else {
-            try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(rnaModelResourceName)) {
-                if (inputStream != null) {
-                    result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
-                } else {
-                    System.out.println("deserialize " + inputStream + " " + rnaModelResourceName);
-                }
-            } catch (IOException e) {
-                result = Optional.empty();
-            }
-        }
-        return result;
-    }
-
-    public static Optional<Model<Regressor>> getTribuoModel(String atomType) {
-        Optional<Model<Regressor>> modelOpt;
-        if (!proteinModels.containsKey(atomType)) {
-            modelOpt = loadTribuoModel(atomType);
-            proteinModels.put(atomType, modelOpt.orElse(null));
-        } else {
-            modelOpt = Optional.ofNullable(proteinModels.get(atomType));
-        }
-        return modelOpt;
-    }
-
 
     void loadCoefficients() throws IOException {
         InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/coefs3d.txt");
@@ -361,7 +321,7 @@ public class ProteinPredictor {
                     var props = propertyGenerator.getAtomProperties(atom, structureNum);
                     Map<String, Double> valueMap2 = p.getValueMap(valueMap);
 
-                    getTribuoModel(atomType).ifPresent(model -> {
+                    Predictor.getTribuoModel(Predictor.PredictionMolType.PROTEIN, atomType).ifPresent(model -> {
                         Example<Regressor> example = getExample(valueMap2);
                         model.predict(example);
                         Prediction<Regressor> prediction = model.predict(example);
