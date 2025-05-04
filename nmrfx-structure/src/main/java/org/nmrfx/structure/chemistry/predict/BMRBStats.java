@@ -78,6 +78,13 @@ public class BMRBStats {
                             PPMv ppmV = new PPMv(avgValue);
                             ppmV.setError(sdevValue);
                             if (atomName.charAt(0) == 'M') {
+                                if (compName.equals("ILE") && atomName.equals("MD")) {
+                                    atomName = "MD1";
+                                } else if (compName.equals("ILE") && atomName.equals("MG")) {
+                                    atomName = "MG2";
+                                } else if (compName.equals("THR") && atomName.equals("MG")) {
+                                    atomName = "MG2";
+                                }
                                 atomName = "H" + atomName.substring(1);
                                 for (int i = 1; i <= 3; i++) {
                                     setValue(compName, atomName + i, ppmV);
