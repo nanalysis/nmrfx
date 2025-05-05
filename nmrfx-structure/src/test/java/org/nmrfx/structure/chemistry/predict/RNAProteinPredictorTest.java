@@ -34,7 +34,6 @@ public class RNAProteinPredictorTest {
         var molecule = (Molecule) sequence.read("A", List.of("ala", "arg", "asn", "asp", "cys", "gln", "glu", "gly", "his",
                 "ile", "leu", "lys", "met", "phe", "pro", "ser", "trp", "tyr"
         ), ".");
-        boolean missing = false;
         ProteinPredictor proteinPredictor = new ProteinPredictor();
         proteinPredictor.init(molecule, 0);
         StringBuilder stringBuilder = new StringBuilder();
@@ -52,12 +51,11 @@ public class RNAProteinPredictorTest {
                         !atom.isFirstInMethyl()) && !skipList.contains(skipName)) {
                     Double ppm = atom.getPPM();
                     if (ppm == null) {
-                       stringBuilder.append("\"" + skipName + "\",");
+                       stringBuilder.append("\"").append(skipName).append("\",");
                     }
                 }
             }
         }
-        System.out.println(stringBuilder);
         Assert.assertEquals("", stringBuilder.toString());
     }
 
@@ -121,7 +119,7 @@ public class RNAProteinPredictorTest {
     }
 
     @Test
-    public void getAtomTypes() throws MoleculeIOException, IOException, InvalidMoleculeException {
+    public void getAtomTypes() throws MoleculeIOException, IOException {
         Molecule.removeAll();
         ProteinPredictor.initMinMax();
         Sequence sequence = new Sequence();

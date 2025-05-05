@@ -163,6 +163,7 @@ public class Predictor {
         RNA,
         PROTEIN
     }
+
     public enum PredictionModes {
         OFF,
         RNA_ATTRIBUTES,
@@ -171,30 +172,24 @@ public class Predictor {
         THREED,
         SHELL
     }
-    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {}
+
+    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {
+    }
 
     public static Optional<Model<Regressor>> loadTribuoModel(PredictionMolType type, String name) {
         String resourceName = "data/predict/" + type.toString().toLowerCase() + "/tribuomodels/model_" + name + ".proto";
         Optional<Model<Regressor>> result = Optional.empty();
-        File file = null;
 
-        if ((file != null) && file.exists()) {
-            try {
-                result = Optional.of((Model<Regressor>) Model.deserializeFromFile(file.toPath()));
-            } catch (IOException e) {
-                result = Optional.empty();
+        try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (inputStream != null) {
+                result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
+            } else {
+                log.warn("No prediction model {}", resourceName);
             }
-        } else {
-            try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(resourceName)) {
-                if (inputStream != null) {
-                    result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
-                } else {
-                    System.out.println("deserialize " + inputStream + " " + resourceName);
-                }
-            } catch (IOException e) {
-                result = Optional.empty();
-            }
+        } catch (IOException e) {
+            result = Optional.empty();
         }
+
         return result;
     }
 
@@ -355,6 +350,7 @@ public class Predictor {
             }
         }
     }
+
     boolean checkCoordinates(Molecule molecule) {
         if (molecule == null) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
@@ -429,7 +425,7 @@ public class Predictor {
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
-            if  (molecule.getDotBracket().isEmpty()) {
+            if (molecule.getDotBracket().isEmpty()) {
                 GUIUtils.warn("RNA Prediction", "Please set secondary structure (dot-bracket)");
                 return;
             }
@@ -598,7 +594,7 @@ public class Predictor {
             Atom hoseAtom = null;
             double roundScale = 1.0;
             if (atom.getAtomicNumber() == 1) {
-                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().get(0) : null;
+                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().getFirst() : null;
                 if ((connectedAtom == null) || (connectedAtom.getAtomicNumber() != aNum)) {
                     continue;
                 }
@@ -634,8 +630,8 @@ public class Predictor {
                             shift = hoseStat.dStat.getElement(0);
                             error = defaultError * shellMult;
                         } else {
-                             shift = hoseStat.dStat.getPercentile(50);
-                             error = hoseStat.dStat.getStandardDeviation() * shellMult;
+                            shift = hoseStat.dStat.getPercentile(50);
+                            error = hoseStat.dStat.getStandardDeviation() * shellMult;
                         }
                         if (Double.isNaN(error)) {
                             error = defaultError;
@@ -650,13 +646,13 @@ public class Predictor {
                         error = Math.round(error * roundScale) / roundScale;
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, shift);
-                            atom.setRefError(-iRef -1, error);
+                            atom.setRefError(-iRef - 1, error);
                         } else {
                             atom.setPPM(iRef, shift);
                             atom.setRefError(iRef, error);
                         }
                     } else {
-                        log.warn("no hose prediction for {} {}",  hoseAtom.getFullName(), hoseCode);
+                        log.warn("no hose prediction for {} {}", hoseAtom.getFullName(), hoseCode);
                     }
                 }
             }
