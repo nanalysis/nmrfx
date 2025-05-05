@@ -1,5 +1,6 @@
 package org.nmrfx.structure.chemistry.predict;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.PDBAtomParser;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -321,26 +322,26 @@ public class ProteinPredictor {
                     var props = propertyGenerator.getAtomProperties(atom, structureNum);
                     Map<String, Double> valueMap2 = p.getValueMap(valueMap);
 
-                    Predictor.getTribuoModel(Predictor.PredictionMolType.PROTEIN, atomType).ifPresent(model -> {
-                        Example<Regressor> example = getExample(valueMap2);
-                        model.predict(example);
-                        Prediction<Regressor> prediction = model.predict(example);
-                        Regressor regressor = prediction.getOutput();
-                        double deltaShift = regressor.getValues()[0];
-                        if (refShifts.containsKey(atom)) {
-                            double value = refShifts.get(atom) + deltaShift;
-                            value = Math.round(value * 100) / 100.0;
-                            double rms = getRMS(atomType);
-                            if (iRef < 0) {
-                                atom.setRefPPM(-iRef - 1, value);
-                                atom.setRefError(-iRef - 1, rms);
-                            } else {
-                                atom.setPPM(iRef, value);
-                                atom.setPPMError(iRef, rms);
-                            }
-
+                    if (refShifts.containsKey(atom)) {
+                        AtomicDouble finalValue = new AtomicDouble(refShifts.get(atom));
+                        Predictor.getTribuoModel(Predictor.PredictionMolType.PROTEIN, atomType).ifPresent(model -> {
+                            Example<Regressor> example = getExample(valueMap2);
+                            model.predict(example);
+                            Prediction<Regressor> prediction = model.predict(example);
+                            Regressor regressor = prediction.getOutput();
+                            double deltaShift = regressor.getValues()[0];
+                            finalValue.addAndGet(deltaShift);
+                        });
+                        double value = Math.round(finalValue.get() * 100) / 100.0;
+                        double rms = getRMS(atomType);
+                        if (iRef < 0) {
+                            atom.setRefPPM(-iRef - 1, value);
+                            atom.setRefError(-iRef - 1, rms);
+                        } else {
+                            atom.setPPM(iRef, value);
+                            atom.setPPMError(iRef, rms);
                         }
-                    });
+                    }
                 });
             }
         }

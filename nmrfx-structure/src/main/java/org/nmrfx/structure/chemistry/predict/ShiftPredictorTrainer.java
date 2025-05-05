@@ -291,6 +291,7 @@ public class ShiftPredictorTrainer {
         DescriptiveStatistics[] descriptiveStatistics = getStats(atomLabel);
         boolean[] useColumn = getUseColumns(descriptiveStatistics);
         keyList.clear();
+        System.out.println(atomLabel);
         for (ValuesWithCS valuesWithCS : valueMap.get(atomLabel)) {
             String key = valuesWithCS.getKey();
             boolean inTest = testMap.containsKey(valuesWithCS.molName);
@@ -306,10 +307,14 @@ public class ShiftPredictorTrainer {
             }
             double refCS = valuesWithCS.refCS();
             var features = getFeatures(valuesWithCS, useColumn, atomLabel);
+            if (features.size() ==0) {
+                continue;
+            }
             refPPMMap.put(key, refCS);
 
             Regressor regressor = new Regressor("cs", cs - refCS);
             Example<Regressor> example = new ArrayExample<>(regressor, features);  // Assuming the label is "label"
+
             dataset.add(example);
             keyList.add(key);
         }
@@ -333,14 +338,20 @@ public class ShiftPredictorTrainer {
 
     public Model<Regressor> trainDataset(MutableDataset<Regressor> trainData, String name) {
         var trainer = getTrainer();
-        Model<Regressor> model = trainer.train(trainData);
+        System.out.println("train " + name + " " + trainData.size());
+        Model<Regressor> model = null;
+        try {
+           model = trainer.train(trainData);
 
-        var regressionEvaluator = new RegressionEvaluator();
-        var evaluation = regressionEvaluator.evaluate(model, trainData);
+            var regressionEvaluator = new RegressionEvaluator();
+            var evaluation = regressionEvaluator.evaluate(model, trainData);
 
-        var dimension = new Regressor("cs", Double.NaN);
-        String outStr = String.format("RMSE %8s %8d %7.4f MAE %7.4f R2 %7.4f", name, trainData.size(), evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension));
-        System.out.println(outStr);
+            var dimension = new Regressor("cs", Double.NaN);
+            String outStr = String.format("RMSE %8s %8d %7.4f MAE %7.4f R2 %7.4f", name, trainData.size(), evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension));
+            System.out.println(outStr);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return model;
     }
 
@@ -463,15 +474,22 @@ public class ShiftPredictorTrainer {
     void doTrainAndPredict(List<String> types, String groupName) {
         for (String type : types) {
             var dataset = getDataset(type, TrainModes.TRAIN);
-            var model = trainDataset(dataset, type);
-            modelMap.put(type, model);
-            predictDataset(model, dataset, groupName);
+            if (dataset.size() > 50) {
+                var model = trainDataset(dataset, type);
+                if (model != null) {
+                    modelMap.put(type, model);
+                    predictDataset(model, dataset, groupName);
+                }
+            }
         }
     }
 
     Map<String, Double> getCoefficients(String type) {
         var parMap = new HashMap<String, Double>();
         Model<Regressor> model = modelMap.get(type);
+        if (model == null) {
+            return parMap;
+        }
         Map<String, List<Pair<String, Double>>> parameters = model.getTopFeatures(-1);
         var listPar = parameters.get("cs");
         for (Pair<String, Double> pair : listPar) {
@@ -485,7 +503,10 @@ public class ShiftPredictorTrainer {
     void doPredict(List<String> types, String groupName, TrainModes trainMode) {
         for (String type : types) {
             var dataset = getDataset(type, trainMode);
-            predictDataset(modelMap.get(type), dataset, groupName);
+            Model model = modelMap.get(type);
+            if (model != null) {
+                predictDataset(modelMap.get(type), dataset, groupName);
+            }
         }
     }
 
@@ -555,12 +576,14 @@ public class ShiftPredictorTrainer {
     public void serializeToFile(Path path, String groupName) throws IOException {
         for (String type : types.get(groupName)) {
             Model model = modelMap.get(type);
-            String fileName = "model_" + type + ".proto";
-            fileName = fileName.replace("*", "X");
-            fileName = fileName.replace("?", "x");
+            if (model != null) {
+                String fileName = "model_" + type + ".proto";
+                fileName = fileName.replace("*", "X");
+                fileName = fileName.replace("?", "x");
 
-            Path modelPath = path.resolve(fileName);
-            model.serializeToFile(modelPath);
+                Path modelPath = path.resolve(fileName);
+                model.serializeToFile(modelPath);
+            }
         }
     }
 
@@ -574,6 +597,9 @@ public class ShiftPredictorTrainer {
         double[][] parValues = new double[propNames.size()][types.get(groupName).size()];
         for (String type : types.get(groupName)) {
             var parMap = getCoefficients(type);
+            if (parMap.isEmpty()) {
+                continue;
+            }
             int i = 0;
             for (String propName : propNames) {
                 Double propValue = parMap.get(propName);
