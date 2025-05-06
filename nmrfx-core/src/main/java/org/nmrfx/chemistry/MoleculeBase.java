@@ -1361,6 +1361,21 @@ public class MoleculeBase implements Serializable, ITree {
         chains.put(entity.getPDBChain(), entity);
     }
 
+    public void removeEntity(Entity entity) {
+        entityLabels.remove(entity.label);
+        entities.remove(entity.name);
+        List<CoordSet> removeList = new ArrayList<>();
+        for (CoordSet coordSet : coordSets.values()) {
+            int n = coordSet.removeEntity(entity);
+            if (n == 0) {
+                removeList.add(coordSet);
+            }
+        }
+        for (CoordSet coordSet : removeList) {
+            coordSets.remove(coordSet.getName());
+        }
+    }
+
     public Entity getEntity(String name) {
         if (name == null) {
             return null;

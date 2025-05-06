@@ -125,14 +125,14 @@ public class AtomLabels {
 
             case LABEL_PPM:
                 PPMv ppmV = atom.getPPM(0);
-                if ((ppmV == null) || ((atom.getElementNumber() == 1) && atom.isMethyl() && !atom.isFirstInMethyl())) {
+                if ((ppmV == null) || ((atom.getAtomicNumber() == 1) && atom.isMethyl() && !atom.isFirstInMethyl())) {
                     yield "";
                 } else {
                     yield String.format("%.2f",ppmV.getValue());
                 }
             case LABEL_RPPM:
                 PPMv rppmV = atom.getRefPPM(0);
-                if ((rppmV == null) || ((atom.getElementNumber() == 1) && atom.isMethyl() && !atom.isFirstInMethyl())) {
+                if ((rppmV == null) || ((atom.getAtomicNumber() == 1) && atom.isMethyl() && !atom.isFirstInMethyl())) {
                     yield "";
                 } else {
                     yield String.format("%.2f",rppmV.getValue());

@@ -2,12 +2,12 @@ package org.nmrfx.structure.chemistry.predict;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.SVMPredict;
 import org.nmrfx.structure.rna.*;
+import org.tribuo.*;
+import org.tribuo.impl.ArrayExample;
+import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -16,9 +16,6 @@ import java.util.regex.Pattern;
  */
 public class RNAAttributes {
 
-    SVMPredict svmPredict = null;
-
-    Map<String, List<String>> svmAttrMap = new HashMap<>();
     Map<String, Double> svmRMSMap = new HashMap<>();
 
     static Map<String, String> attrMap = new HashMap<>();
@@ -159,13 +156,13 @@ public class RNAAttributes {
         }
 
         boolean wobble() {
-            boolean wc = false;
+            boolean wobble = false;
             if (partner != null) {
                 String iName = residue.getName();
                 String jName = partner.getName();
-                wc = RNAAttributes.wc(iName, jName);
+                wobble = RNAAttributes.wobble(iName, jName);
             }
-            return wc;
+            return wobble;
         }
 
         boolean paired() {
@@ -289,7 +286,7 @@ public class RNAAttributes {
         Residue residue = rnaResidues.get(i);
         SecondaryStructure secondaryStructure = residue.getSecondaryStructure();
         int ss = switch (secondaryStructure) {
-            case RNAHelix j:{
+            case RNAHelix j: {
                 Residue r1 = rnaPairs.get(i).residue;
                 Residue r2 = rnaPairs.get(i).partner;
                 Polymer polymer1 = r1.getPolymer();
@@ -304,7 +301,7 @@ public class RNAAttributes {
             }
             case Bulge j:
                 yield 3;
-            case Loop j:
+            case Loop loop:
                 yield 4;
             case InternalLoop j:
                 yield 5;
@@ -412,71 +409,6 @@ public class RNAAttributes {
         }
     }
 
-    void loadSVMRNAPredict() throws IOException {
-        svmPredict = new SVMPredict();
-        svmAttrMap.clear();
-        svmRMSMap.clear();
-        String resourceName = "data/rnasvm/svattr.txt";
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(ClassLoader.getSystemClassLoader().getResourceAsStream(resourceName)))) {
-
-            reader.lines().forEach(line -> {
-                String[] fields = line.split(" ");
-                List<String> fieldList = Arrays.asList(fields);
-                String atomName = fields[0];
-                String attrType = fields[1];
-                List<String> attrValues = fieldList.subList(2, fieldList.size());
-                svmAttrMap.put(atomName + "_" + attrType, attrValues);
-                String atomAttr = atomName + "_attrs";
-                if (!svmAttrMap.containsKey(atomAttr)) {
-                    svmAttrMap.put(atomAttr, new ArrayList<>());
-                }
-                List<String> aList = svmAttrMap.get(atomAttr);
-                aList.add(attrType);
-            });
-        }
-        String rmsResourceName = "data/rnapredsdev.txt";
-
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(ClassLoader.getSystemClassLoader().getResourceAsStream(rmsResourceName)))) {
-
-            reader.lines().forEach(line -> {
-                String[] fields = line.split(" ");
-                String atomName = fields[0];
-                String type = fields[1];
-                double sdev = Double.parseDouble(fields[2]);
-                svmRMSMap.put(atomName + "_" + type, sdev);
-            });
-        }
-    }
-
-    List<Double> svmGetAttrs(String atomName, Map<String, String> attributes) {
-        List<Double> output = new ArrayList<>();
-        for (String attrType : svmAttrMap.get(atomName + "_attrs")) {
-            for (String attrValue : svmAttrMap.get(atomName + "_" + attrType)) {
-                if (attrValue.equals(attributes.get(attrType))) {
-                    output.add(1.0);
-                } else {
-                    output.add(0.0);
-                }
-
-            }
-        }
-        return output;
-    }
-
-    double predictWithSVM(String atomName, Map<String, String> attributeValueMap) throws IOException {
-        if (svmPredict == null) {
-            loadSVMRNAPredict();
-        }
-        List<Double> output = svmGetAttrs(atomName, attributeValueMap);
-        double[] dArray = new double[output.size()];
-        for (int i = 0; i < output.size(); i++) {
-            dArray[i] = output.get(i);
-        }
-        return svmPredict.predict(atomName, dArray);
-    }
-
     double getError(String atomName, PredType predType) {
         String mode = "c";
         if (!predType.helix) {
@@ -536,14 +468,40 @@ public class RNAAttributes {
         return new PredType(helix, canonical, tetraLoop);
     }
 
+    public Example<Regressor> getExample(List<String> attributes) {
+        int nNuc = 5;
+        String loopType = "";
+        List<Feature> features = new ArrayList<>();
+        for (int i = 0; i < nNuc; i++) {
+            String nucStr = "nuc" + i + "_" + attributes.get(i);
+            Feature feature = new Feature(nucStr, 1.0);
+            features.add(feature);
+        }
+        String attr = attributes.get(2 + nNuc);
+        if (attr.startsWith("gnra") || attr.startsWith("uncg") || attr.startsWith("tetr")) {
+            int loopIndex = Integer.parseInt(attr.substring(attr.length() - 1)) - 1;
+            String attrStr = "loop" + loopIndex;
+            Feature feature = new Feature(attrStr, 1.0);
+            features.add(feature);
+            loopType = attr.substring(0, attr.length() - 1);
+            Feature loopFeature = new Feature(loopType, 1.0);
+            features.add(feature);
+        }
+        Regressor regressor = new Regressor("cs", Double.NaN);
+        Example<Regressor> example = new ArrayExample<>(regressor, features);
+        return example;
+    }
+
     public void predictFromAttr(Molecule molecule, int ppmSet) throws IOException {
         List<Residue> rnaResidues = getSeqList(molecule);
         int nRes = rnaResidues.size();
         loadRNAShifts();
         List<List<String>> atomAttributes = genRNAData();
         setTypes(attrTypes);
+        molecule.updateAtomArray();
         for (int i = 0; i < nRes; i++) {
             List<String> attributes = atomAttributes.get(i);
+            Example<Regressor> example = getExample(attributes);
             Residue residue = rnaResidues.get(i);
             PredType predType = getType(attributes);
 
@@ -558,33 +516,53 @@ public class RNAAttributes {
             }
             for (String atomNucName : atoms) {
                 String targetNuc = atomNucName.substring(0, 1);
-                String aName = atomNucName.substring(1);
+                String fileAName = atomNucName.substring(1);
+                String fileAName1 = switch (fileAName) {
+                    case "H21", "H22" : yield  "H21_H22";
+                    case "H61", "H62" : yield  "H61_H62";
+                    case "H41", "H42" : yield  "H41_H42";
+                    case "H5p", "H5pp" : yield  "H5p_H5pp";
+                    default: yield fileAName;
+                };
+
                 List<String> nucValues = attributes.subList(0, 5);
                 String nuc = nucValues.get(2).substring(0, 1);
                 if (Objects.equals(nuc, targetNuc)) {
-                    double shift = predictWithSVM(atomNucName, attrValueMap);
-                    double errorValue = getError(atomNucName, predType);
-                    molecule.updateAtomArray();
-                    int aLen = aName.length();
-                    if (aName.endsWith("pp"))
-                        aName = aName.substring(0, aLen - 2) + "''";
-                    else if (aName.endsWith("p")) {
-                        aName = aName.substring(0, aLen - 1) + "'";
-                    }
+                    Predictor.getTribuoModel(Predictor.PredictionMolType.RNA, fileAName1 + "_A_G_U_C").ifPresent(model -> {
+                        int aLen = fileAName.length();
+                        final String aName;
+                        if (fileAName.endsWith("pp"))
+                            aName = fileAName.substring(0, aLen - 2) + "''";
+                        else if (fileAName.endsWith("p")) {
+                            aName = fileAName.substring(0, aLen - 1) + "'";
+                        } else {
+                            aName = fileAName;
+                        }
+                        String fullName = residue.getNumber() + "." + aName;
+                        Atom atom = MoleculeBase.getAtomByName(fullName);
+                        Prediction<Regressor> prediction = model.predict(example);
+                        Regressor regressor = prediction.getOutput();
+                        double rShift = regressor.getValues()[0];
+                        Double baseShift = Predictor.getDistBaseShift(atom);
+                        if (baseShift != null) {
+                            rShift = rShift + baseShift;
 
-                    String fullName = residue.getNumber() + "." + aName;
-                    Atom atom = MoleculeBase.getAtomByName(fullName);
-                    var shiftError = getRNAStats(atom, atomNucName + "_" + attrValues, shift, errorValue);
-                    shift = Math.round(shiftError.shift * 100.0) / 100.0;
-                    errorValue = Math.round(shiftError.error * 100.0) / 100.0;
+                            // double errorValue = getError(atomNucName, predType);
+                            double errorValue = 0.1;
 
-                    if (ppmSet < 0) {
-                        atom.setRefPPM(-ppmSet - 1, shift);
-                        atom.setRefError(-ppmSet - 1, errorValue);
-                    } else {
-                        atom.setPPM(ppmSet, shift);
-                        atom.setPPMError(ppmSet, errorValue);
-                    }
+                            var shiftError = getRNAStats(atom, atomNucName + "_" + attrValues, rShift, errorValue);
+                            double shift = Math.round(shiftError.shift * 100.0) / 100.0;
+                            errorValue = Math.round(shiftError.error * 100.0) / 100.0;
+
+                            if (ppmSet < 0) {
+                                atom.setRefPPM(-ppmSet - 1, shift);
+                                atom.setRefError(-ppmSet - 1, errorValue);
+                            } else {
+                                atom.setPPM(ppmSet, shift);
+                                atom.setPPMError(ppmSet, errorValue);
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -597,10 +575,11 @@ public class RNAAttributes {
         var rStats = RNAStats.get(atomAttr, true);
         RNAAttributes.putStats(atom, rStats);
         if (rStats != null) {
+            rStats.setPredValue(shift);
             int nAvg = rStats.getN();
             double mean = rStats.getMean();
             double sdev = rStats.getSDev();
-            double nSVM = 4.0;
+            double nSVM = 3.0;
             double totalShifts = nSVM + nAvg;
             double f = nSVM / totalShifts;
             errorValue = Math.sqrt(f * f * errorValue * errorValue + (1 - f) * (1 - f) * sdev * sdev);

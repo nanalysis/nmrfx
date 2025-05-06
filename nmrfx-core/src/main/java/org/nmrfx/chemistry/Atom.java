@@ -1892,10 +1892,6 @@ public class Atom implements IAtom, Comparable<Atom> {
         return AtomProperty.getElementName(aNum);
     }
 
-    public byte getElementNumber() {
-        return getElementNumber(name);
-    }
-
     public static byte getElementNumber(String elemName) {
         return AtomProperty.getElementNumber(elemName);
     }
