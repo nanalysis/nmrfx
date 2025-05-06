@@ -23,6 +23,7 @@ public class RNAProteinPredictorTest {
 
     @Test
     public void predictProtein() throws MoleculeIOException, IOException, InvalidMoleculeException {
+        Molecule.removeAll();
         Sequence sequence = new Sequence();
         var molecule = (Molecule) sequence.read("A", List.of("gly", "glu", "phe", "glu", "ile", "asn", "ser", "arg"), ".");
         Polymer polymer = molecule.getPolymers().getFirst();
@@ -32,10 +33,12 @@ public class RNAProteinPredictorTest {
         proteinPredictor.predict(residue, 0, 0);
         double ppmCA = residue.getAtom("CA").getPPM();
         Assert.assertEquals(57.5, ppmCA, 0.1);
+        Molecule.removeAll();
     }
 
     @Test
     public void predictProteinMet() throws MoleculeIOException, IOException, InvalidMoleculeException {
+        Molecule.removeAll();
         Sequence sequence = new Sequence();
         var molecule = (Molecule) sequence.read("A", List.of("met", "met", "met", "met", "ile", "asn", "ser", "arg"), ".");
         Polymer polymer = molecule.getPolymers().getFirst();
@@ -45,10 +48,12 @@ public class RNAProteinPredictorTest {
         proteinPredictor.predict(residue, 0, 0);
         double ppmCA = residue.getAtom("CG").getPPM();
         Assert.assertEquals(32, ppmCA, 0.5);
+        Molecule.removeAll();
     }
 
     @Test
     public void predictProtein2() throws MoleculeIOException, IOException, InvalidMoleculeException {
+        Molecule.removeAll();
         ProteinPredictor.initMinMax();
         Sequence sequence = new Sequence();
         var molecule = (Molecule) sequence.read("A", List.of("ala", "arg", "asn", "asp", "cys", "gln", "glu", "gly", "his",
@@ -76,6 +81,7 @@ public class RNAProteinPredictorTest {
                 }
             }
         }
+        Molecule.removeAll();
         Assert.assertEquals("", stringBuilder.toString());
     }
 
