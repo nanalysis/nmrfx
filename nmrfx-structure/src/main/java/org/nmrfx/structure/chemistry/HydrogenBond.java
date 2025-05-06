@@ -92,7 +92,7 @@ public class HydrogenBond {
                 }
                 Point3 donorPt = donor.getPoint(structureNum);
                 Point3 hydrogenPt = hydrogen.atom.getPoint(structureNum);
-                if (donorPt != null) {
+                if ((donorPt != null) && (hydrogenPt != null)) {
                     Point3 acceptorPt = acceptor.getPoint(structureNum);
                     if (acceptorPt != null) {
                         double distance = Atom.calcDistance(hydrogenPt, acceptorPt);
@@ -117,12 +117,16 @@ public class HydrogenBond {
         SpatialSet acceptorParent = acceptor.atom.getParent().spatialSet;
         Point3 hydrogenParentPt = hydrogenParent.getPoint(structureNum);
         Point3 acceptorParentPt = acceptorParent.getPoint(structureNum);
-        double dx = acceptorParentPt.getX() - hydrogenParentPt.getX();
-        double dy = acceptorParentPt.getY() - hydrogenParentPt.getY();
-        double dz = acceptorParentPt.getZ() - hydrogenParentPt.getZ();
-        Point3 acceptorOffsetPt = new Point3(acceptorPt.getX() - dx, acceptorPt.getY() - dy, acceptorPt.getZ() - dz);
-        double angle = Atom.calcAngle(hydrogenPt, hydrogenParentPt, acceptorOffsetPt);
-        return angle;
+        if ((hydrogenPt != null) && (acceptorPt != null) && (acceptorParentPt != null) && (hydrogenParentPt != null)) {
+            double dx = acceptorParentPt.getX() - hydrogenParentPt.getX();
+            double dy = acceptorParentPt.getY() - hydrogenParentPt.getY();
+            double dz = acceptorParentPt.getZ() - hydrogenParentPt.getZ();
+            Point3 acceptorOffsetPt = new Point3(acceptorPt.getX() - dx, acceptorPt.getY() - dy, acceptorPt.getZ() - dz);
+            double angle = Atom.calcAngle(hydrogenPt, hydrogenParentPt, acceptorOffsetPt);
+            return angle;
+        } else {
+            return 0.0;
+        }
 
     }
 
