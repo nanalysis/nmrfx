@@ -4,7 +4,10 @@ import com.oracle.labs.mlrg.olcut.util.Pair;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tribuo.*;
 import org.tribuo.evaluation.CrossValidation;
 import org.tribuo.evaluation.DescriptiveStats;
@@ -34,6 +37,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ShiftPredictorTrainer {
+    private static final Logger log = LoggerFactory.getLogger(ShiftPredictorTrainer.class);
 
     Map<String, List<String>> types = Collections.emptyMap();
     Map<String, List<ValuesWithCS>> valueMap = new HashMap<>();
@@ -350,7 +354,7 @@ public class ShiftPredictorTrainer {
             String outStr = String.format("RMSE %8s %8d %7.4f MAE %7.4f R2 %7.4f", name, trainData.size(), evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension));
             System.out.println(outStr);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error training", e);
         }
         return model;
     }
