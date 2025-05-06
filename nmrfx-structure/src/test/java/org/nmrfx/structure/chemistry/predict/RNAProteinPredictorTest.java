@@ -39,12 +39,12 @@ public class RNAProteinPredictorTest {
         Sequence sequence = new Sequence();
         var molecule = (Molecule) sequence.read("A", List.of("met", "met", "met", "met", "ile", "asn", "ser", "arg"), ".");
         Polymer polymer = molecule.getPolymers().getFirst();
-        Residue residue = polymer.getResidues().get(4);
+        Residue residue = polymer.getResidues().get(2);
         ProteinPredictor proteinPredictor = new ProteinPredictor();
         proteinPredictor.init(molecule, 0);
         proteinPredictor.predict(residue, 0, 0);
-        double ppmCA = residue.getAtom("CE").getPPM();
-        Assert.assertEquals(17, ppmCA, 0.5);
+        double ppmCA = residue.getAtom("CG").getPPM();
+        Assert.assertEquals(32, ppmCA, 0.5);
     }
 
     @Test
