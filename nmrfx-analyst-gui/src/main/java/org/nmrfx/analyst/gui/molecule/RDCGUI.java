@@ -18,40 +18,44 @@
 package org.nmrfx.analyst.gui.molecule;
 
 import javafx.beans.Observable;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chart.*;
-import org.nmrfx.chemistry.MoleculeBase;
-import org.nmrfx.chemistry.MoleculeFactory;
-import org.nmrfx.chemistry.RDC;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
+import org.nmrfx.chemistry.constraints.RDCConstraint;
 import org.nmrfx.chemistry.constraints.RDCConstraintSet;
+import org.nmrfx.chemistry.relax.ValueWithError;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakList;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rdc.AlignmentCalc;
 import org.nmrfx.structure.rdc.AlignmentMatrix;
 import org.nmrfx.structure.rdc.RDCFitQuality;
 import org.nmrfx.structure.rdc.SVDFit;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author brucejohnson
@@ -65,7 +69,7 @@ public class RDCGUI {
     Scene stageScene = new Scene(borderPane, 900, 600);
 
     public ChoiceBox<String> setChoice = new ChoiceBox<>();
-    DataSeries series0 = new DataSeries();
+    public ChoiceBox<Integer> structureChoice = new ChoiceBox<>();
     DataSeries series1 = new DataSeries();
     TextField qRMSField = new TextField("");
     TextField qRhombField = new TextField("");
@@ -74,7 +78,7 @@ public class RDCGUI {
     Slider fracSlider = new Slider(0.1, 15, 5);
     ChoiceBox<String> modeBox = new ChoiceBox<>();
     ChoiceBox<String> stericBox = new ChoiceBox<>();
-
+    TextField statusField = new TextField();
     RDCConstraintSet localRDCSet;
     public Label bmrbFile = new Label("");
     SVDFit svdFit;
@@ -89,11 +93,12 @@ public class RDCGUI {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("RDC Analysis");
-            Label setLabel = new Label("  RDC Constraint Set:  ");
+            Label setLabel = new Label("  RDC Set:  ");
             Label qRMSlabel = new Label("  Q (RMS): ");
             Label qRhomblabel = new Label("  Q (Rhombicity): ");
             Label rhomblabel = new Label("  Rhombicity: ");
             Label maglabel = new Label("  Magnitude: ");
+            setChoice.setPrefWidth(150);
             //Populate ChoiceBoxes with fitting variable names
             setChoice.getItems().clear();
             try {
@@ -104,18 +109,35 @@ public class RDCGUI {
                 alert.showAndWait();
                 return;
             }
+            structureChoice.getItems().add(0);
+            structureChoice.setValue(0);
+            structureChoice.setOnMousePressed(e -> updateStructureChoices());
 
             ToolBar toolBar = new ToolBar();
-            Button openButton = new Button("Read");
-            Button rdcButton = new Button("Perform RDC Analysis");
-            Button saveButton = new Button("Save Results to File");
-            Button exportButton = new Button("Export Plot");
-            toolBar.getItems().addAll(openButton, rdcButton, saveButton, exportButton);
 
+            MenuButton fileMenuButton = new MenuButton(("File"));
+
+            MenuItem openButton = new MenuItem("Read...");
             openButton.setOnAction(e -> loadRDCTextFile());
-            rdcButton.setOnAction(e -> analyze());
+
+            MenuItem saveButton = new MenuItem("Save Results to File...");
             saveButton.setOnAction(e -> saveToFile());
-            exportButton.setOnAction(this::exportPlotSVGAction);
+
+            MenuItem exportSVGButton = new MenuItem("Export SVG Plot...");
+            exportSVGButton.setOnAction(this::exportPlotSVGAction);
+
+            MenuItem exportPDFButton = new MenuItem("Export PDF Plot...");
+            exportPDFButton.setOnAction(this::exportPlotPDFAction);
+
+            fileMenuButton.getItems().addAll(openButton, saveButton, exportSVGButton);
+
+            Button rdcButton = new Button("Perform RDC Analysis");
+
+            Button peakListButton = new Button("Use PeakList...");
+            peakListButton.setOnAction(this::extractFromArtsy);
+            toolBar.getItems().addAll(fileMenuButton, setLabel, setChoice, peakListButton);
+
+            rdcButton.setOnAction(e -> analyze());
 
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
@@ -130,6 +152,7 @@ public class RDCGUI {
             Label fracValue = new Label("");
             fracSlider.setPrefWidth(200.0);
             hBox.getChildren().addAll(modeLabel, modeBox, stericLabel, stericBox, fracLabel, fracSlider, fracValue);
+            hBox.setSpacing(10);
             fracSlider.valueProperty().addListener(c -> {
                 double val = fracSlider.getValue();
                 fracValue.setText(String.format("%.3f", val / 100.0));
@@ -139,11 +162,12 @@ public class RDCGUI {
             HBox hBox2 = new HBox();
             HBox.setHgrow(hBox2, Priority.ALWAYS);
             hBox2.setMinWidth(600);
+            hBox2.setSpacing(10);
             qRMSField.setPrefWidth(60);
             qRhombField.setPrefWidth(60);
             rhombField.setPrefWidth(60);
             magField.setPrefWidth(60);
-            hBox2.getChildren().addAll(setLabel, setChoice, qRMSlabel, qRMSField, qRhomblabel, qRhombField, rhomblabel, rhombField, maglabel, magField);
+            hBox2.getChildren().addAll(rdcButton, new Label("Structure:"), structureChoice);
 
             VBox vBox = new VBox();
             vBox.setMinWidth(600);
@@ -151,8 +175,20 @@ public class RDCGUI {
             //Create the Scatter chart
             XYChartPane chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
+            chartPane.setBackground(Background.fill(Color.WHITE));
+            activeChart.canvas.setOnMousePressed(e -> pickChart(e));
             borderPane.setTop(vBox);
             borderPane.setCenter(chartPane);
+            statusField.setPrefWidth(250);
+            VBox bottomBox = new VBox();
+            HBox statusBox = new HBox();
+            HBox rdcResultBox = new HBox();
+            rdcResultBox.setSpacing(10);
+            statusBox.getChildren().addAll(statusField);
+            rdcResultBox.getChildren().addAll(qRMSlabel, qRMSField, qRhomblabel, qRhombField, rhomblabel, rhombField, maglabel, magField);
+            bottomBox.getChildren().addAll(statusBox, rdcResultBox);
+
+            borderPane.setBottom(bottomBox);
             stage.setScene(stageScene);
         }
         updateRDCPlotChoices();
@@ -161,44 +197,98 @@ public class RDCGUI {
         updateRDCplot();
     }
 
+    void pickChart(MouseEvent mouseEvent) {
+        var hitOpt = activeChart.pickChart(mouseEvent.getX(), mouseEvent.getY(), 10.0);
+        statusField.setText("");
+        hitOpt.ifPresent(hit -> {
+            Object extraValue = hit.getValue().getExtraValue();
+            if (extraValue instanceof RDC rdc) {
+                Atom atom1 = rdc.getAtom1();
+                Atom atom2 = rdc.getAtom2();
+                String status = String.format("%8s %8s Calc: %5.1f Exp: %5.1f", atom1.getShortName(), atom2.getShortName(), rdc.getRDC(), rdc.getExpRDC());
+                statusField.setText(status);
+            }
+        });
+    }
+
+    void updateStructureChoices() {
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
+        molecule.getStructures();
+        structureChoice.getItems().clear();
+        for (int iStructure : molecule.getStructures()) {
+            structureChoice.getItems().add(iStructure);
+        }
+    }
+
     void updateRDCplotWithLines() {
-        updateRDCplot();
-        if (!series0.isEmpty()) {
-            activeChart.getData().add(series0);
+        Map<String, DataSeries> seriesMap = updateRDCplot();
+        if (!seriesMap.isEmpty()) {
+            AtomicInteger atomicIndex = new AtomicInteger(0);
+            seriesMap.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(e -> {
+                e.getValue().setFill(XYCanvasChart.colors[atomicIndex.getAndIncrement()]);
+                activeChart.getData().add(e.getValue());
+            });
+
             activeChart.getData().add(series1);
         }
     }
 
-    void updateRDCplot() {
+    Map<String, DataSeries> updateRDCplot() {
+        Map<String, DataSeries> seriesMap = new HashMap<>();
         if (analystApp != null) {
 
             Axis xAxis = activeChart.getXAxis();
             Axis yAxis = activeChart.getYAxis();
             String xElem = setChoice.getValue();
-            activeChart.setShowLegend(false);
+            activeChart.setShowLegend(true);
 
             if ((xElem != null)) {
                 xAxis.setLabel("Experimental RDCs");
                 yAxis.setLabel("Calculated RDCs");
-                xAxis.setAutoRanging(true);
-                yAxis.setAutoRanging(true);
+                xAxis.setAutoRanging(false);
+                yAxis.setAutoRanging(false);
                 activeChart.getData().clear();
                 //Prepare XYChart.Series objects by setting data
-                series0.clear();
                 if (aMat != null) {
+                    double min = Double.MAX_VALUE;
+                    double max = Double.NEGATIVE_INFINITY;
                     List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
                     for (RDC rdcValue : rdcValues) {
-                        series0.add(new XYValue(rdcValue.getExpRDC(), rdcValue.getRDC()));
+                        double scale = rdcValue.getMaxRDC() * 1.0e-4;
+                        double x =  rdcValue.getExpRDC() / scale;
+                        double y = rdcValue.getRDC() / scale;
+                        double err = rdcValue.getError() / scale;
+                        XYEValue xyeValue = new XYEValue(x, y, err);
+                        xyeValue.setExtraValue(rdcValue);
+                        String aName1 = rdcValue.getAtom1().getName();
+                        String aName2 = rdcValue.getAtom2().getName();
+                        String aName = aName1 + ":" + aName2;
+                        DataSeries series = seriesMap.computeIfAbsent(aName, k -> {
+                            DataSeries newSeries = new DataSeries();
+                            newSeries.setRadius(6);
+                            newSeries.setName(aName);
+                            return newSeries;
+                        });
+                        series.add(xyeValue);
+                        min = Math.min(x, min);
+                        min = Math.min(y, min);
+                        max = Math.max(x, max);
+                        max = Math.max(y, max);
                     }
-                    series0.getData().sort(Comparator.comparing(XYValue::getXValue));
-                    long lb = Math.round(series0.getData().get(0).getXValue());
-                    long ub = Math.round(series0.getData().reversed().get(0).getXValue());
-                    series1.add(new XYValue(lb, lb));
-                    series1.add(new XYValue(ub, ub));
+                    xAxis.setLowerBound(min - 1.0);
+                    yAxis.setLowerBound(min - 1.0);
+                    xAxis.setUpperBound(max + 1.0);
+                    yAxis.setUpperBound(max + 1.0);
+                    series1.add(new XYValue(min, min));
+                    series1.add(new XYValue(max, max));
                 }
-                activeChart.autoScale(true);
             }
         }
+        AtomicInteger atomicIndex = new AtomicInteger(0);
+        seriesMap.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(e -> {
+            e.getValue().setFill(XYCanvasChart.colors[atomicIndex.getAndIncrement()]);
+        });
+        return seriesMap;
     }
 
     void updateRDCPlotChoices() {
@@ -231,11 +321,12 @@ public class RDCGUI {
     @FXML
     void analyze() {
         String name = setChoice.getValue();
+        int iStructure = structureChoice.getValue();
         localRDCSet = rdcSet(name);
         if (localRDCSet != null) {
             List<RDC> rdcValues = new ArrayList<>(localRDCSet.get());
 
-            RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues);
+            RealMatrix directionMatrix = AlignmentMatrix.setupDirectionMatrix(rdcValues, iStructure);
             if (modeBox.getValue().equals("SVD")) {
                 svdFit = new SVDFit(directionMatrix, rdcValues);
                 aMat = svdFit.fit();
@@ -325,8 +416,25 @@ public class RDCGUI {
             }
         }
     }
+    void exportPlotPDFAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to PDF");
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            PDFGraphicsContext pdfGC = new PDFGraphicsContext();
+            try {
+                Canvas canvas = activeChart.getCanvas();
+                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                exportChart(pdfGC);
+                pdfGC.saveFile();
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
+        }
+    }
 
-    protected void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
+    protected void exportChart(GraphicsContextInterface svgGC) throws GraphicsIOException {
         svgGC.beginPath();
         activeChart.drawChart(svgGC);
     }
@@ -358,4 +466,128 @@ public class RDCGUI {
 
     }
 
+    private void extractFromArtsy(ActionEvent actionEvent) {
+        var peakListopt = rdcPeakDialog();
+        peakListopt.ifPresent(peakListSelector ->
+                extractFromArtsyList(peakListSelector.peakListActive, peakListSelector.peakListRef, peakListSelector.tau));
+    }
+
+    ValueWithError variableFlipCalc(double i45, double i90, double tau, double noise) {
+        double ratio = i45 / i90;
+        double jValue = Math.atan(Math.sqrt(4.0 * ratio * ratio - 2.0)) / (Math.PI * tau);
+        double err = (2.0 * noise * Math.sqrt(ratio * ratio + 1.0)) /
+                (i90 * Math.PI * tau * Math.sqrt(4.0 * ratio - 2.0) * (4.0 * ratio - 1.0));
+        return new ValueWithError(jValue, err);
+    }
+
+    ValueWithError artsyCalc(double intR, double intA, double tau, double noise) {
+        double ratio = intA / intR;
+        double jValue = Math.abs(-1.0 / tau + (2.0 / (Math.PI * tau)) * Math.asin(ratio / 2.0));
+        double err = Math.abs(1.0 / (Math.PI * tau * (intR / noise)));
+        return new ValueWithError(jValue, err);
+    }
+
+    ValueWithError peakValue(double[][] v, double tau) {
+        double intR = v[0][0];
+        double intA = v[0][1];
+        double noise = v[1][0];
+        return artsyCalc(intR, intA, tau, noise);
+    }
+
+    void extractFromArtsyList(PeakList peakListOrdered, PeakList peakListIsotropic, double tau) {
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
+        MolecularConstraints molConstraints = null;
+        if (molecule != null) {
+            molConstraints = molecule.getMolecularConstraints();
+        }
+        int iStructure = structureChoice.getValue();
+        String setName = peakListOrdered.getName();
+        localRDCSet = RDCConstraintSet.newSet(molConstraints, setName);
+
+
+        peakListOrdered.peaks().stream().filter(p -> !p.getPeakDim(0).getLabel().isEmpty()).forEach(ordPeak -> {
+            String[] orderedLabel = {ordPeak.getPeakDim(0).getLabel()};
+            List<Peak> isoPeaks = peakListIsotropic.matchPeaks(orderedLabel, false, true);
+
+            if (isoPeaks.size() == 1) {
+                Peak isoPeak = isoPeaks.getFirst();
+                Optional<double[][]> orderedOpt = ordPeak.getMeasures();
+                Optional<double[][]> isoOpt = isoPeak.getMeasures();
+                if (orderedOpt.isPresent() && isoOpt.isPresent()) {
+                    ValueWithError valueOrdered = peakValue(orderedOpt.get(), tau);
+                    ValueWithError valueIso = peakValue(isoOpt.get(), tau);
+                    Atom atom1 = MoleculeBase.getAtomByName(ordPeak.getPeakDim(0).getLabel());
+                    Atom atom2 = MoleculeBase.getAtomByName(ordPeak.getPeakDim(1).getLabel());
+                    if ((atom1 != null) && (atom2 != null)) {
+                        double rdcValue = valueOrdered.value() - valueIso.value();
+                        double err = valueIso.error();
+                        RDCConstraint rdc = new RDCConstraint(localRDCSet, atom1, atom2, iStructure, rdcValue, err);
+                        localRDCSet.add(rdc);
+                    }
+                }
+            }
+            ;
+        });
+        updateRDCPlotChoices();
+        setChoice.setValue(setName);
+    }
+
+    public record PeakListSelector(PeakList peakListActive, PeakList peakListRef, Double tau) {
+
+    }
+
+    enum RDCCalcMode {
+        VFHMQC,
+        ARTSY
+    }
+
+    public static Optional<PeakListSelector> rdcPeakDialog() {
+
+        Dialog<PeakListSelector> dialog = new Dialog<>();
+        dialog.setTitle("RDC PeakList Extractor");
+        dialog.setHeaderText("Select peak list:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 250;
+
+        ChoiceBox<RDCCalcMode> rdcCalcModeChoiceBox = new ChoiceBox<>();
+        rdcCalcModeChoiceBox.getItems().addAll(RDCCalcMode.values());
+        rdcCalcModeChoiceBox.setValue(RDCCalcMode.ARTSY);
+
+        ChoiceBox<PeakList> peakListAlignedChoiceBox = new ChoiceBox<>();
+        peakListAlignedChoiceBox.getItems().addAll(PeakList.peakLists());
+        peakListAlignedChoiceBox.setMinWidth(comboBoxWidth);
+        peakListAlignedChoiceBox.setMaxWidth(comboBoxWidth);
+        ChoiceBox<PeakList> peakListIsoChoiceBox = new ChoiceBox<>();
+        peakListIsoChoiceBox.getItems().addAll(PeakList.peakLists());
+        peakListIsoChoiceBox.setMinWidth(comboBoxWidth);
+        peakListIsoChoiceBox.setMaxWidth(comboBoxWidth);
+
+        SimpleDoubleProperty tauProp = new SimpleDoubleProperty(0.0);
+        TextField tauPropField = GUIUtils.getDoubleTextField(tauProp, 1);
+
+        grid.add(new Label("RDC Calc Mode"), 0, 0);
+        grid.add(rdcCalcModeChoiceBox, 1, 0);
+
+        grid.add(new Label("PeakList-Aligned"), 0, 1);
+        grid.add(peakListAlignedChoiceBox, 1, 1);
+
+        grid.add(new Label("PeakList-Isotropic"), 0, 2);
+        grid.add(peakListIsoChoiceBox, 1, 2);
+
+        grid.add(new Label("Tau (ms)"), 0, 3);
+        grid.add(tauPropField, 1, 3);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return new PeakListSelector(peakListAlignedChoiceBox.getValue(), peakListIsoChoiceBox.getValue(), tauProp.getValue() / 1000.0);
+            }
+            return null;
+        });
+
+        return dialog.showAndWait();
+    }
 }

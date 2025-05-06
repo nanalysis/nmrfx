@@ -1,6 +1,5 @@
 package org.nmrfx.chemistry.constraints;
 
-import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 
