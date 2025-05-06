@@ -220,7 +220,6 @@ public class MMcifReader {
                 }
             }
         }
-
     }
 
     void buildEntities(final Saveframe saveframe) throws ParseException {
