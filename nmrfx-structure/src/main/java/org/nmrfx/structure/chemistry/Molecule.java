@@ -247,7 +247,7 @@ public class Molecule extends MoleculeBase {
         }
     }
 
-    public Set getStructures() {
+    public Set<Integer> getStructures() {
         return structures;
     }
 
