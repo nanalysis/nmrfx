@@ -342,13 +342,28 @@ public class PeakList {
      * @return
      * @throws IllegalArgumentException
      */
-    public static int clusterPeaks(List<PeakList> peakLists)
+    public static int clusterPeaks(List<PeakList> peakLists) {
+        return clusterPeaks(peakLists, null);
+    }
+
+    public static int clusterPeaks(List<PeakList> peakLists, PeakList refList)
             throws IllegalArgumentException {
         Clusters clusters = new Clusters();
         List<Peak> clustPeaks = new ArrayList<>();
         double[] tol = null;
+        List<PeakList> useLists = new ArrayList<>();
+        if (refList != null) {
+            useLists.add(refList);
+            for (var pList : peakLists) {
+                if (pList != refList) {
+                    useLists.add(pList);
+                }
+            }
+        } else {
+            useLists.addAll(peakLists);
+        }
 
-        for (PeakList peakList : peakLists) {
+        for (PeakList peakList : useLists) {
             // fixme  should remove unlink and properly support links below
             peakList.unLinkPeaks();
             peakList.peaks.stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
@@ -362,7 +377,7 @@ public class PeakList {
         int ii = 0;
         int fDim = 0;
         int iList = 0;
-        for (PeakList peakList : peakLists) {
+        for (PeakList peakList : useLists) {
 
             if (firstList) {
                 fDim = peakList.searchDims.size();
@@ -420,8 +435,8 @@ public class PeakList {
                     Peak jPeak = (Peak) objs.get(iObj);
                     PeakList.unLinkPeak(jPeak);
                     for (int iDim = 0; iDim < fDim; iDim++) {
-                        SearchDim iSDim = ((PeakList) iPeak.getPeakList()).searchDims.get(iDim);
-                        SearchDim jSDim = ((PeakList) jPeak.getPeakList()).searchDims.get(iDim);
+                        SearchDim iSDim = iPeak.getPeakList().searchDims.get(iDim);
+                        SearchDim jSDim = jPeak.getPeakList().searchDims.get(iDim);
                         linkPeaks(iPeak, iSDim.getDim(), jPeak, jSDim.getDim());
                     }
                 }
@@ -725,7 +740,7 @@ public class PeakList {
         return specDim;
     }
 
-    public SpectralDim getFoldedDim(){
+    public SpectralDim getFoldedDim() {
         List<SpectralDim> foldedDim = Arrays.stream(spectralDims).filter((spectralDim) -> spectralDim.getFoldMode() != 'n').toList();
         return foldedDim.isEmpty() ? null : foldedDim.getFirst();
     }
@@ -896,7 +911,7 @@ public class PeakList {
 
     public void reassignResonanceFactoryMap() {
         for (Peak peak : peaks) {
-            for (PeakDim peakDim: peak.getPeakDims()) {
+            for (PeakDim peakDim : peak.getPeakDims()) {
                 AtomResonance resonance = peakDim.getResonance();
                 ProjectBase.activeResonanceFactory().reassignResonanceFactoryMap(resonance);
             }

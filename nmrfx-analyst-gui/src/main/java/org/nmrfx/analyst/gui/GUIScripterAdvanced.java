@@ -102,8 +102,6 @@ public class GUIScripterAdvanced extends GUIScripter {
             PeakList refList = PeakList.get(refListName);
             runAboutGUI.getRunAbout().setRefList(refList);
             runAboutGUI.unifyLimits(unifyLimits);
-            runAboutGUI.setToleranceMap(tolMap);
-            runAboutGUI.setWidthMap(widthMap);
             runAboutGUI.genWin(arrangement);
         });
     }
