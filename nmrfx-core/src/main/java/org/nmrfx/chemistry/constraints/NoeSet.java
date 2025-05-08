@@ -22,8 +22,12 @@ import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.chemistry.io.NMRStarReader;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.star.ParseException;
 
 import java.io.File;
@@ -291,6 +295,65 @@ public class NoeSet implements ConstraintSet, Iterable {
                     String outputString = String.format("%d\t%d\t%s\t%s\t%.3f\t%.3f\n", i, iGroup, aName1, aName2, lower, upper);
                     fileWriter.write(outputString);
                     i++;
+                }
+            }
+        }
+    }
+
+    public void genPeakList(DatasetBase dataset) {
+        String peakListName = PeakList.getNameForDataset(dataset.getName());
+        PeakList peakList1 = PeakList.get(peakListName);
+        List<Integer> iDims = new ArrayList<>();
+        int idDimAtom = 0;
+        int iDim = -1;
+        if (peakList1 == null) {
+            peakList1 = new PeakList(peakListName, dataset.getNDim());
+            peakList1.setDatasetName(dataset.getName());
+            for (int i = 0; i < dataset.getNDim(); i++) {
+                SpectralDim dim = peakList1.getSpectralDim(i);
+                dim.setSf(dataset.getSf(i));
+                dim.setSw(dataset.getSw(i));
+                dim.setDimName(dataset.getLabel(i));
+                Nuclei nuclei = dataset.getNucleus(i);
+                if (nuclei.getNumberAsInt() == 1) {
+                    iDims.add(i);
+                } else {
+                    iDim = i;
+                }
+                dim.setNucleus(dataset.getNucleus(i).getNumberName());
+            }
+        }
+        for (Noe noe : constraints) {
+            if (noe.isActive()) {
+                Peak peak = peakList1.getNewPeak();
+                double upper = noe.getUpper();
+                double intensity = Math.pow(upper,-1.0/6.0);
+                peak.setIntensity((float) intensity);
+                SpatialSetGroup spg1 = noe.getSpg1();
+                SpatialSetGroup spg2 = noe.getSpg2();
+                String aName1 = spg1.getFullName();
+                String aName2 = spg2.getFullName();
+                Atom atom1 = MoleculeBase.getAtomByName(aName1);
+                Atom atom2 = MoleculeBase.getAtomByName(aName2);
+                if ((atom1 != null) && (atom2 != null)) {
+                    Double ppm1 = atom1.getPPM();
+                    Double ppm2 = atom2.getPPM();
+                    List<Double> ppms = new ArrayList<>();
+                    ppms.add(ppm1);
+                    ppms.add(ppm2);
+                    for (int i = 2; i < peakList1.getNDim(); i++) {
+                        Double ppm3 = idDimAtom == 0 ? atom1.getParent().getPPM() : atom2.getParent().getPPM();
+                        ppms.add(ppm3);
+                        iDims.add(iDim);
+                    }
+
+                    for (int j = 0; j < ppms.size(); j++) {
+                        PeakDim peakDim = peak.getPeakDim(iDims.get(j));
+                        peakDim.setChemShiftValue(ppms.get(j).floatValue());
+                        peakDim.setLineWidthHz(10.0f);
+                        peakDim.setBoundsHz(20.0f);
+                    }
+
                 }
             }
         }
