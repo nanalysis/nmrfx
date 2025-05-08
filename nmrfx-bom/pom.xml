@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.23-SNAPSHOT</version>
+        <version>11.4.24-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
