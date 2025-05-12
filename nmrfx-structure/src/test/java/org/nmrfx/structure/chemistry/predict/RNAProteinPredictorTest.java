@@ -1,6 +1,5 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import org.checkerframework.checker.units.qual.A;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.chemistry.Atom;
@@ -10,13 +9,16 @@ import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.Sequence;
-import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class RNAProteinPredictorTest {
@@ -297,6 +299,35 @@ public class RNAProteinPredictorTest {
         Assert.assertTrue(atomErrors1.rmsC() < 1.0);
         Assert.assertTrue(atomErrors1.rmsN() < 2.0);
         Assert.assertTrue(atomErrors1.nViol() < 6);
+    }
+@Test
+    public void predictAll() throws IOException, ParseException, InvalidMoleculeException {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("starFilePath"))) {
+            for (Path path : dirStream) {
+                if (!Files.isDirectory(path)) {
+                    Molecule.removeAll();
+                    ProteinPredictor.initMinMax();
+                    InputStream stream = RNAProteinPredictorTest.class.getClassLoader().getResourceAsStream(path.toString());
+                    try (InputStreamReader reader = new InputStreamReader(stream)) {
+                        NMRStarReader.read(reader, null);
+                    }
+                    Molecule molecule = Molecule.getActive();
+                    ProteinPredictor proteinPredictor = new ProteinPredictor();
+                    proteinPredictor.init(molecule, 0);
+                    proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
+                    AtomErrors atomErrors = getErrors(molecule, null);
+                    AtomErrors atomErrors1 = getErrors(molecule, atomErrors);
+
+                    Molecule.removeAll();
+                    Assert.assertTrue(atomErrors1.rmsH() < 0.3);
+                    Assert.assertTrue(atomErrors1.rmsC() < 1.0);
+                    Assert.assertTrue(atomErrors1.rmsN() < 2.0);
+                    Assert.assertTrue(atomErrors1.nViol() < 6);
+
+                }
+            }
+
+        }
     }
 
 }
