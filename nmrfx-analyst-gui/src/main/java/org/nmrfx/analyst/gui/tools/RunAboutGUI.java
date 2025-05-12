@@ -29,6 +29,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Polymer;
@@ -161,6 +162,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     List<Color> paletteColors = new ArrayList<>();
     Map<SpinSystem, Color> spinSystemColorMap = new HashMap<>();
+
+    ResSeqMatcher resSeqMatcher = null;
 
     public RunAboutGUI(FXMLController controller, Consumer<RunAboutGUI> closeAction) {
         this.controller = controller;
@@ -514,6 +517,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
 
+        Button guessButton = new Button("Guess");
+        guessButton.setOnAction(e -> guessPeakLists());
+
         Button setupButton = new Button("Setup");
         setupButton.setOnAction(e -> setupRunAbout());
         Button refreshButton = new Button("Refresh");
@@ -536,7 +542,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         unifyLimitsCheckBox = new CheckBox("Unify Limits");
         unifyLimitsCheckBox.setSelected(false);
 
-        buttonBar.getItems().addAll(configureButton, refreshButton, setupButton, arrangementsButton, toleranceButton, addListButton, unifyLimitsCheckBox);
+        buttonBar.getItems().addAll(configureButton, refreshButton, guessButton, setupButton, arrangementsButton, toleranceButton, addListButton, unifyLimitsCheckBox);
         borderPane.setTop(buttonBar);
         HBox hBox = new HBox();
         borderPane.setCenter(hBox);
@@ -747,6 +753,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         MenuItem analyzeItem = new MenuItem("Analyze");
         analyzeItem.setOnAction(e -> analyzeSystem());
         spinSysMenuButton.getItems().add(analyzeItem);
+
+        MenuItem bipartiteItem = new MenuItem("GraphMatching");
+        bipartiteItem.setOnAction(e -> makeGraphMatcher());
+        spinSysMenuButton.getItems().add(bipartiteItem);
 
         MenuItem trimItem = new MenuItem("Trim");
         trimItem.setOnAction(e -> trimSystem());
@@ -1249,7 +1259,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
                         sysFields[i].setText(String.valueOf(otherSys.getId()));
                         nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
-                        scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
+                        scoreFields[i].setText(String.format("%5.0f", spinMatch.getScore()));
                         ok = true;
                     } else {
                         sysFields[i].setText("");
@@ -1678,9 +1688,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void assemble() {
-        runAbout.assemble();
+        try {
+            runAbout.assemble();
+        } catch (IllegalStateException e) {
+            var eDialog = new ExceptionDialog(e);
+            eDialog.showAndWait();
+            return;
+        }
         updatePeakListMenu();
         useSpinSystem = true;
+        gotoSpinSystems();
+        updateClusterCanvas();
     }
 
     public void updatePeakListMenu() {
@@ -1753,6 +1771,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         var spinSys = currentSpinSystem;
         spinSys.calcCombinations(false);
         gotoSpinSystems();
+    }
+
+
+
+    void makeGraphMatcher() {
+        GraphMatcherGUI graphMatcherGUI = new GraphMatcherGUI(this, runAbout);
+
     }
 
     public void setSpinSystems(List<SpinSystem> spinSystems, boolean useBest) {
@@ -1897,13 +1922,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             spinStatus.updateFragment(spinSys);
             refreshRefChart(currentSpinSystem.getRootPeak());
             updateActiveSystem();
-            if ((spinSys != null) && spinSys.getFragment().isEmpty()) {
-                spinSys.score();
-            }
         }
 
     }
 
+    public SpinSystem getCurrentSpinSystem() {
+        return currentSpinSystem;
+    }
     public void scoreFragment() {
         var spinSys = currentSpinSystem;
         spinStatus.updateFragment(spinSys);
@@ -2165,6 +2190,23 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         return dimWidths;
     }
 
+    void guessPeakLists() {
+        Set<PeakList> foundPeakLists = null;
+        try {
+            foundPeakLists = runAbout.guessPeakLists();
+        } catch (IOException e) {
+            log.error("Couln't load peak list types", e);
+            return;
+        }
+        for (var item : peakTableView.getItems()) {
+            if (foundPeakLists.contains(item.peakList)) {
+                item.active.setValue(true);
+            }
+        }
+        peakTableView.refresh();
+        var hncoOpt = foundPeakLists.stream().filter(p -> p.getExperimentType().equals("HNCO")).findFirst();
+        hncoOpt.ifPresent(p -> refListObj.set(p));
+    }
     void setupRunAbout() {
         if (!runAbout.isActive() ||
                 GUIUtils.affirm("Peak lists already setup, Setup again?")) {
@@ -2731,13 +2773,13 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void extendSystem() {
-        SpinSystem.extend(currentSpinSystem, 0.5);
+        SpinSystem.extend(currentSpinSystem, -50.0);
         gotoSpinSystems();
         updateClusterCanvas();
     }
 
     void extendAllSystems() {
-        runAbout.getSpinSystems().extendAll(0.5);
+        runAbout.getSpinSystems().extendAll(-50.0);
         gotoSpinSystems();
         updateClusterCanvas();
     }

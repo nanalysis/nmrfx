@@ -355,18 +355,16 @@ public class Residue extends Compound {
 
     public Atom[] getChiAtoms() {
         switch (name) {
-            case "ALA":
-            case "GLY":
+            case "ALA", "GLY" -> {
                 return null;
-            case "U":
-            case "C": {
+            }
+            case "U", "DT", "DC", "C" -> {
                 return getAtoms("O4'", "C1'", "N1", "C2");
             }
-            case "G":
-            case "A": {
+            case "G", "DG", "DA", "A" -> {
                 return getAtoms("O4'", "C1'", "N9", "C4");
             }
-            default: {
+            default -> {
                 Atom[] atoms = new Atom[4];
                 atoms[0] = getAtom("N");
                 atoms[1] = getAtom("CA");

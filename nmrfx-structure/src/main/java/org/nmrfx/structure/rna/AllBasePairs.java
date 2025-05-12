@@ -102,11 +102,23 @@ public class AllBasePairs {
         return type + ", " + res1 + ", " + res2;
     }
 
+    static String dnaToRNA(String res) {
+        if (res.length() == 2) {
+            res = res.substring(1, 2);
+        }
+        if (res.equals("T")) {
+            res = "U";
+        }
+        return res;
+
+    }
     public static AllBasePairs getBasePair(int type, String res1, String res2) {
         if (bpMap.isEmpty()) {
             loadBasePairs();
         }
         String strType = String.valueOf(type);
+        res1 = dnaToRNA(res1);
+        res2 = dnaToRNA(res2);
         return bpMap.get(strType + res1 + res2);
     }
 

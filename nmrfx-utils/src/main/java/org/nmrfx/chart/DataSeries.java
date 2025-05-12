@@ -93,6 +93,10 @@ public class DataSeries {
         this.fill = color;
     }
 
+    public void setRadius(double value) {
+        radius = value;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
