@@ -274,8 +274,8 @@ public class RNAProteinPredictorTest {
                     int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
                     String resName = atom.getResidueName();
                     String atomId = molName + ":" + chainId + "." + atom.getShortName();
-                    writer.write(atomId + " " + resName + " " + String.format("%-2.3f",ratio) + " " +
-                            refPPM + " " + ppm + " " + delta + "\n");
+                    writer.write(atomId + " " + resName + " " + String.format("%-2.3f", ratio) + " " +
+                            refPPM + " " + ppm + " " + String.format("%-2.3f", delta) + "\n");
                 }
             }
         }
