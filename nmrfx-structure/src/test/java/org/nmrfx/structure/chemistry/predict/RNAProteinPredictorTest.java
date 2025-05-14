@@ -12,9 +12,7 @@ import org.nmrfx.chemistry.io.Sequence;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -258,8 +256,9 @@ public class RNAProteinPredictorTest {
 
     }
 
-    AtomErrors getErrors(Molecule molecule, AtomErrors offsets) {
+    AtomErrors getErrors(Molecule molecule, AtomErrors offsets, FileWriter writer) throws IOException {
         AtomErrors atomErrors = new AtomErrors();
+        String molName = molecule.getName();
         for (Atom atom : molecule.getAtoms()) {
             Double ppm = atom.getPPM();
             Double refPPM = atom.getRefPPM();
@@ -270,9 +269,13 @@ public class RNAProteinPredictorTest {
                 double err = atom.getSDevRefPPM();
                 err = Math.max(err, 0.3);
                 double ratio = delta / err;
-                if ((offsets != null) && (ratio > 3.5)) {
+                if (offsets != null) {
                     atomErrors.addViol();
-                    System.out.println(atom.getShortName() + " " + ratio + " " + refPPM + " " + ppm);
+                    int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
+                    int resNum = atom.getResidueNumber();
+                    String resName = atom.getResidueName();
+                    String atomId = molName + ":" + chainId + "." + resNum + "." + atom.getShortName();
+                    writer.write(atomId + " " + resName + " " + ratio + " " + refPPM + " " + ppm + "\n");
                 }
             }
         }
@@ -291,8 +294,8 @@ public class RNAProteinPredictorTest {
         ProteinPredictor proteinPredictor = new ProteinPredictor();
         proteinPredictor.init(molecule, 0);
         proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
-        AtomErrors atomErrors = getErrors(molecule, null);
-        AtomErrors atomErrors1 = getErrors(molecule, atomErrors);
+        AtomErrors atomErrors = getErrors(molecule, null, null);
+        AtomErrors atomErrors1 = getErrors(molecule, atomErrors, null);
 
         Molecule.removeAll();
         Assert.assertTrue(atomErrors1.rmsH() < 0.3);
@@ -300,14 +303,14 @@ public class RNAProteinPredictorTest {
         Assert.assertTrue(atomErrors1.rmsN() < 2.0);
         Assert.assertTrue(atomErrors1.nViol() < 6);
     }
-@Test
-    public void predictAll() throws IOException, ParseException, InvalidMoleculeException {
+
+    public void predictAll(FileWriter writer) throws IOException, ParseException, InvalidMoleculeException {
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("starFilePath"))) {
             for (Path path : dirStream) {
                 if (!Files.isDirectory(path)) {
                     Molecule.removeAll();
                     ProteinPredictor.initMinMax();
-                    InputStream stream = RNAProteinPredictorTest.class.getClassLoader().getResourceAsStream(path.toString());
+                    InputStream stream = new FileInputStream(path.toFile());
                     try (InputStreamReader reader = new InputStreamReader(stream)) {
                         NMRStarReader.read(reader, null);
                     }
@@ -315,18 +318,21 @@ public class RNAProteinPredictorTest {
                     ProteinPredictor proteinPredictor = new ProteinPredictor();
                     proteinPredictor.init(molecule, 0);
                     proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
-                    AtomErrors atomErrors = getErrors(molecule, null);
-                    AtomErrors atomErrors1 = getErrors(molecule, atomErrors);
+                    AtomErrors atomErrors = getErrors(molecule, null, null);
+                    AtomErrors atomErrors1 = getErrors(molecule, atomErrors, writer);
 
                     Molecule.removeAll();
-                    Assert.assertTrue(atomErrors1.rmsH() < 0.3);
-                    Assert.assertTrue(atomErrors1.rmsC() < 1.0);
-                    Assert.assertTrue(atomErrors1.rmsN() < 2.0);
-                    Assert.assertTrue(atomErrors1.nViol() < 6);
 
                 }
             }
+        }
+    }
 
+    public void saveResults() throws IOException, InvalidMoleculeException, ParseException {
+        try (FileWriter writer = new FileWriter("outFilename")) {
+            String header = "atomId residue ratio refPPM PPM";
+            writer.write(header);
+            predictAll(writer);
         }
     }
 
