@@ -167,7 +167,7 @@ public class RNAProteinPredictorTest {
         Assert.assertFalse(missing);
     }
 
-    class AtomErrors {
+    static class AtomErrors {
         double sumN = 0.0;
         double sumNA = 0.0;
         double sumN2 = 0.0;
@@ -272,10 +272,10 @@ public class RNAProteinPredictorTest {
                 if (offsets != null) {
                     atomErrors.addViol();
                     int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
-                    int resNum = atom.getResidueNumber();
                     String resName = atom.getResidueName();
-                    String atomId = molName + ":" + chainId + "." + resNum + "." + atom.getShortName();
-                    writer.write(atomId + " " + resName + " " + ratio + " " + refPPM + " " + ppm + "\n");
+                    String atomId = molName + ":" + chainId + "." + atom.getShortName();
+                    writer.write(atomId + " " + resName + " " + String.format("%-2.3f",ratio) + " " +
+                            refPPM + " " + ppm + " " + delta + "\n");
                 }
             }
         }
@@ -283,10 +283,11 @@ public class RNAProteinPredictorTest {
     }
 
     @Test
-    public void predictProteinFromSTAR() throws MoleculeIOException, IOException, ParseException, InvalidMoleculeException {
+    public void predictProteinFromSTAR() throws IOException, ParseException, InvalidMoleculeException {
         Molecule.removeAll();
         ProteinPredictor.initMinMax();
         InputStream stream = RNAProteinPredictorTest.class.getClassLoader().getResourceAsStream("data/star/17268.str");
+        assert stream != null;
         try (InputStreamReader reader = new InputStreamReader(stream)) {
             NMRStarReader.read(reader, null);
         }
@@ -305,7 +306,7 @@ public class RNAProteinPredictorTest {
     }
 
     public void predictAll(FileWriter writer) throws IOException, ParseException, InvalidMoleculeException {
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("starFilePath"))) {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("/Users/ekoag/fitshifts/testDataset/starshift"))) {
             for (Path path : dirStream) {
                 if (!Files.isDirectory(path)) {
                     Molecule.removeAll();
@@ -319,7 +320,7 @@ public class RNAProteinPredictorTest {
                     proteinPredictor.init(molecule, 0);
                     proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
                     AtomErrors atomErrors = getErrors(molecule, null, null);
-                    AtomErrors atomErrors1 = getErrors(molecule, atomErrors, writer);
+                    getErrors(molecule, atomErrors, writer);
 
                     Molecule.removeAll();
 
@@ -328,9 +329,10 @@ public class RNAProteinPredictorTest {
         }
     }
 
-    public void saveResults() throws IOException, InvalidMoleculeException, ParseException {
-        try (FileWriter writer = new FileWriter("outFilename")) {
-            String header = "atomId residue ratio refPPM PPM";
+    @Test
+    public void predictOnTestSet() throws IOException, InvalidMoleculeException, ParseException {
+        try (FileWriter writer = new FileWriter("/Users/ekoag/fitshifts/results.txt")) {
+            String header = "atomId residue ratio refPPM PPM delta \n";
             writer.write(header);
             predictAll(writer);
         }
