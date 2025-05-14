@@ -167,7 +167,7 @@ public class RNAProteinPredictorTest {
         Assert.assertFalse(missing);
     }
 
-    static class AtomErrors {
+    class AtomErrors {
         double sumN = 0.0;
         double sumNA = 0.0;
         double sumN2 = 0.0;
@@ -256,8 +256,7 @@ public class RNAProteinPredictorTest {
 
     }
 
-    AtomErrors getErrors(Molecule molecule, AtomErrors offsets, FileWriter writer) throws IOException {
-        AtomErrors atomErrors = new AtomErrors();
+    AtomErrors getErrors(Molecule molecule, AtomErrors atomErrors, AtomErrors offsets, FileWriter writer) throws IOException {
         String molName = molecule.getName();
         for (Atom atom : molecule.getAtoms()) {
             Double ppm = atom.getPPM();
@@ -295,8 +294,8 @@ public class RNAProteinPredictorTest {
         ProteinPredictor proteinPredictor = new ProteinPredictor();
         proteinPredictor.init(molecule, 0);
         proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
-        AtomErrors atomErrors = getErrors(molecule, null, null);
-        AtomErrors atomErrors1 = getErrors(molecule, atomErrors, null);
+        AtomErrors atomErrors = getErrors(molecule, new AtomErrors(),null, null);
+        AtomErrors atomErrors1 = getErrors(molecule, new AtomErrors(), atomErrors, null);
 
         Molecule.removeAll();
         Assert.assertTrue(atomErrors1.rmsH() < 0.3);
@@ -305,7 +304,8 @@ public class RNAProteinPredictorTest {
         Assert.assertTrue(atomErrors1.nViol() < 6);
     }
 
-    public void predictAll(FileWriter writer) throws IOException, ParseException, InvalidMoleculeException {
+    AtomErrors predictAll(AtomErrors offsets, FileWriter writer) throws IOException, ParseException, InvalidMoleculeException {
+        AtomErrors atomErrors = new AtomErrors();
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("/Users/ekoag/fitshifts/testDataset/starshift"))) {
             for (Path path : dirStream) {
                 if (!Files.isDirectory(path)) {
@@ -319,14 +319,14 @@ public class RNAProteinPredictorTest {
                     ProteinPredictor proteinPredictor = new ProteinPredictor();
                     proteinPredictor.init(molecule, 0);
                     proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
-                    AtomErrors atomErrors = getErrors(molecule, null, null);
-                    getErrors(molecule, atomErrors, writer);
+                    getErrors(molecule, atomErrors,offsets, writer);
 
                     Molecule.removeAll();
 
                 }
             }
         }
+        return atomErrors;
     }
 
     @Test
@@ -334,7 +334,11 @@ public class RNAProteinPredictorTest {
         try (FileWriter writer = new FileWriter("/Users/ekoag/fitshifts/results.txt")) {
             String header = "atomId residue ratio refPPM PPM delta \n";
             writer.write(header);
-            predictAll(writer);
+            AtomErrors allAtomErrors = predictAll(null, null);
+            AtomErrors allAtomErrors1 = predictAll(allAtomErrors, writer);
+            writer.write(String.format("%-2f.3",allAtomErrors1.rmsH()));
+            writer.write(String.format("%-2f.3",allAtomErrors1.rmsC()));
+            writer.write(String.format("%-2f.3",allAtomErrors1.rmsN()));
         }
     }
 
