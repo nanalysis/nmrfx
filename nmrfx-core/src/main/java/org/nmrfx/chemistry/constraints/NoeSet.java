@@ -128,6 +128,10 @@ public class NoeSet implements ConstraintSet, Iterable {
         peakMap.clear();
     }
 
+    public PeakList getPeakList() {
+        return peakList;
+    }
+
     private Peak getPeak() {
         try {
             peakList = NMRStarReader.getPeakList(getName(), ".", peakList);
@@ -300,12 +304,37 @@ public class NoeSet implements ConstraintSet, Iterable {
         }
     }
 
+    private void addPeak(Noe noe, List<Atom> atoms, List<Integer> iDims) {
+        List<Double> ppms = new ArrayList<>();
+        for (Atom atom : atoms) {
+            ppms.add(atom.getPPM());
+        }
+        boolean ok = ppms.size() == 3 && !ppms.stream().anyMatch(ppm -> ppm == null);
+
+        if (ok) {
+            Peak peak = peakList.getNewPeak();
+            if (noe != null) {
+                noe.peak(peak);
+                double upper = noe.getUpper();
+                double intensity = Math.pow(upper, -1.0 / 6.0);
+                peak.setIntensity((float) intensity);
+            } else {
+                peak.setIntensity(1.0f);
+            }
+            for (int j = 0; j < ppms.size(); j++) {
+                PeakDim peakDim = peak.getPeakDim(iDims.get(j));
+                peakDim.setLabel(atoms.get(j).getShortName());
+                peakDim.setChemShiftValue(ppms.get(j).floatValue());
+                peakDim.setLineWidthHz(20.0f);
+                peakDim.setBoundsHz(40.0f);
+            }
+        }
+
+    }
     public void genPeakList(DatasetBase dataset) {
         String peakListName = PeakList.getNameForDataset(dataset.getName());
         PeakList peakList1 = PeakList.get(peakListName);
         List<Integer> iDims = new ArrayList<>();
-        int idDimAtom = 0;
-        int iDim = -1;
         if (peakList1 == null) {
             peakList1 = new PeakList(peakListName, dataset.getNDim());
             peakList1.setDatasetName(dataset.getName());
@@ -317,46 +346,50 @@ public class NoeSet implements ConstraintSet, Iterable {
                 Nuclei nuclei = dataset.getNucleus(i);
                 if (nuclei.getNumberAsInt() == 1) {
                     iDims.add(i);
-                } else {
-                    iDim = i;
                 }
                 dim.setNucleus(dataset.getNucleus(i).getNumberName());
             }
         }
-        for (Noe noe : constraints) {
-            if (noe.isActive()) {
-                Peak peak = peakList1.getNewPeak();
-                double upper = noe.getUpper();
-                double intensity = Math.pow(upper,-1.0/6.0);
-                peak.setIntensity((float) intensity);
-                SpatialSetGroup spg1 = noe.getSpg1();
-                SpatialSetGroup spg2 = noe.getSpg2();
-                String aName1 = spg1.getFullName();
-                String aName2 = spg2.getFullName();
-                Atom atom1 = MoleculeBase.getAtomByName(aName1);
-                Atom atom2 = MoleculeBase.getAtomByName(aName2);
-                if ((atom1 != null) && (atom2 != null)) {
-                    Double ppm1 = atom1.getPPM();
-                    Double ppm2 = atom2.getPPM();
-                    List<Double> ppms = new ArrayList<>();
-                    ppms.add(ppm1);
-                    ppms.add(ppm2);
-                    for (int i = 2; i < peakList1.getNDim(); i++) {
-                        Double ppm3 = idDimAtom == 0 ? atom1.getParent().getPPM() : atom2.getParent().getPPM();
-                        ppms.add(ppm3);
-                        iDims.add(iDim);
+        peakList = peakList1;
+        Set<Atom> diagAtoms = new HashSet<>();
+        constraints.stream().filter(noe -> noe.isActive()).forEach(noe -> {
+            SpatialSetGroup spg1 = noe.getSpg1();
+            SpatialSetGroup spg2 = noe.getSpg2();
+            String aName1 = spg1.getFullName();
+            String aName2 = spg2.getFullName();
+            List<Atom> atoms = new ArrayList<>();
+            Atom atom1 = MoleculeBase.getAtomByName(aName1);
+            Atom atom2 = MoleculeBase.getAtomByName(aName2);
+            final int idDimAtom;
+            if ((atom1 != null) && (atom2 != null) && aName1.endsWith(".H")) {
+                atoms.add(atom1);
+                atoms.add(atom2);
+                idDimAtom = 0;
+            } else if ((atom1 != null) && (atom2 != null) && aName2.endsWith(".H")) {
+                atoms.add(atom2);
+                atoms.add(atom1);
+                idDimAtom = 1;
+            } else {
+                idDimAtom = -1;
+            }
+            if (!atoms.isEmpty()) {
+                diagAtoms.add(atoms.getFirst());
+                for (int i = 2; i < peakList.getNDim(); i++) {
+                    Atom idAtom = idDimAtom == 0 ? atom1.getParent() : atom2.getParent();
+                    if (idAtom.getAtomicNumber() == 7) {
+                        atoms.add(idAtom);
+                        iDims.add(i);
                     }
-
-                    for (int j = 0; j < ppms.size(); j++) {
-                        PeakDim peakDim = peak.getPeakDim(iDims.get(j));
-                        peakDim.setChemShiftValue(ppms.get(j).floatValue());
-                        peakDim.setLineWidthHz(10.0f);
-                        peakDim.setBoundsHz(20.0f);
-                    }
-
                 }
             }
-        }
+
+            addPeak(noe, atoms, iDims);
+        });
+        diagAtoms.forEach(atom -> {
+            List<Atom> atoms = List.of(atom, atom, atom.getParent());
+            addPeak(null, atoms, iDims);
+        });
+
     }
 
     public void updateNPossible(PeakList whichList) {
