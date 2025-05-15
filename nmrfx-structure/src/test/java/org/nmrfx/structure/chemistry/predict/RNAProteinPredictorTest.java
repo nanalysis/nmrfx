@@ -229,6 +229,9 @@ public class RNAProteinPredictorTest {
         void aggregate(AtomErrors atomErrors) {
             for (Map.Entry<String, AtomError> entry : atomErrors.atomTypes.entrySet()) {
                 String aName = entry.getKey();
+                if (!atomTypes.containsKey(aName)) {
+                    atomTypes.put(aName, new AtomError());
+                }
                 atomTypes.get(aName).sumSq += entry.getValue().sumSq;
                 atomTypes.get(aName).n += entry.getValue().n;
             }
@@ -312,6 +315,7 @@ public class RNAProteinPredictorTest {
         }
         aNames.forEach(aName -> {
             if (allAtomErrors.atomTypes.containsKey(aName)) {
+                stringBuilder.append(aName).append(" ");
                 stringBuilder.append(String.format("%-2.3f", allAtomErrors.rms(aName))).append("\n");
             }
         });
