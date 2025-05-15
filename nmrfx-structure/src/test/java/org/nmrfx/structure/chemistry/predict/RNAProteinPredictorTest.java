@@ -152,7 +152,7 @@ public class RNAProteinPredictorTest {
         ProteinPredictor.initMinMax();
         Sequence sequence = new Sequence();
         var molecule = (Molecule) sequence.read("A", List.of("ala", "arg", "asn", "asp", "cys", "gln", "glu", "gly", "his",
-                "ile", "leu", "lys", "met", "phe", "pro", "ser", "trp", "tyr"
+                "ile", "leu", "lys", "met", "phe", "pro", "ser", "thr", "trp", "tyr", "val"
         ), ".");
         boolean missing = false;
         for (Atom atom : molecule.getAtoms()) {
@@ -204,9 +204,14 @@ public class RNAProteinPredictorTest {
         void add(Atom atom, double delta, AtomErrors offsets) {
             String aName = atom.getName().length() > 1 ?
                     atom.getName().substring(0, 2) : atom.getName().substring(0, 1);
-            if (!atomTypes.containsKey(aName)) {
-                atomTypes.put(aName, new AtomError());
+            if (atom.isMethyl() && atom.getAtomicNumber() == 1 && atom.isFirstInMethyl()) {
+                aName = "MH";
+            } else if (atom.isMethylCarbon()) {
+                aName = "MC";
+            } else if (atom.isAAAromatic()) {
+                aName = atom.getAtomicNumber() == 1 ? "AH" : "AC";
             }
+            atomTypes.computeIfAbsent(aName, k -> new AtomError());
             AtomError e = atomTypes.get(aName);
             if (offsets != null) {
                 delta -= offsets.average(aName);
@@ -229,9 +234,7 @@ public class RNAProteinPredictorTest {
         void aggregate(AtomErrors atomErrors) {
             for (Map.Entry<String, AtomError> entry : atomErrors.atomTypes.entrySet()) {
                 String aName = entry.getKey();
-                if (!atomTypes.containsKey(aName)) {
-                    atomTypes.put(aName, new AtomError());
-                }
+                atomTypes.computeIfAbsent(aName, k -> new AtomError());
                 atomTypes.get(aName).sumSq += entry.getValue().sumSq;
                 atomTypes.get(aName).n += entry.getValue().n;
             }
