@@ -174,12 +174,6 @@ public class RNAProteinPredictorTest {
         Map<String, AtomError> atomTypes = new HashMap<>();
         int nViol = 0;
 
-        AtomErrors(List<String> atomNames) {
-            for (String name : atomNames) {
-                atomTypes.put(name, new AtomError());
-            }
-        }
-
         static class AtomError {
             double sum = 0.0;
             double sumAbs = 0.0;
@@ -208,18 +202,20 @@ public class RNAProteinPredictorTest {
         }
 
         void add(Atom atom, double delta, AtomErrors offsets) {
-            String aName = atom.getName().substring(0,2);
-            aName = atomTypes.containsKey(aName) ? aName : atom.getName().substring(0,1);
-            if (atomTypes.containsKey(aName)) {
-                AtomError e = atomTypes.get(aName);
-                if (offsets != null) {
-                    delta -= offsets.average(aName);
-                }
-                e.sum += delta;
-                e.sumAbs += Math.abs(delta);
-                e.sumSq += delta * delta;
-                e.n++;
+            String aName = atom.getName().length() > 1 ?
+                    atom.getName().substring(0, 2) : atom.getName().substring(0, 1);
+            if (!atomTypes.containsKey(aName)) {
+                atomTypes.put(aName, new AtomError());
             }
+            AtomError e = atomTypes.get(aName);
+            if (offsets != null) {
+                delta -= offsets.average(aName);
+            }
+            e.sum += delta;
+            e.sumAbs += Math.abs(delta);
+            e.sumSq += delta * delta;
+            e.n++;
+
         }
 
         double rms(String aName) {
@@ -240,8 +236,7 @@ public class RNAProteinPredictorTest {
     }
 
     AtomErrors getErrors(Molecule molecule, AtomErrors offsets, StringBuilder stringBuilder) {
-        List<String> aNames = List.of("N","C","H");
-        AtomErrors atomErrors = new AtomErrors(aNames);
+        AtomErrors atomErrors = new AtomErrors();
         String molName = molecule.getName();
         for (Atom atom : molecule.getAtoms()) {
             Double ppm = atom.getPPM();
@@ -297,9 +292,9 @@ public class RNAProteinPredictorTest {
         Assert.assertTrue(atomErrors.nViol() < 6);
     }
 
-    AtomErrors predictAll(StringBuilder stringBuilder) throws IOException, ParseException, InvalidMoleculeException {
-        List<String> aNames = List.of("N", "CA", "CB", "C", "H", "HA");
-        AtomErrors allAtomErrors = new AtomErrors(aNames);
+    void predictAll(StringBuilder stringBuilder) throws IOException, ParseException, InvalidMoleculeException {
+        List<String> aNames = List.of("N","CA","CB","C","H","HA","CG", "CD", "CE", "MC", "AC", "HB", "HG", "HD", "HE", "MH", "AH");
+        AtomErrors allAtomErrors = new AtomErrors();
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("/Users/ekoag/fitshifts/testDataset/starshift"))) {
             for (Path path : dirStream) {
                 if (!Files.isDirectory(path)) {
@@ -315,7 +310,11 @@ public class RNAProteinPredictorTest {
                 }
             }
         }
-        return allAtomErrors;
+        aNames.forEach(aName -> {
+            if (allAtomErrors.atomTypes.containsKey(aName)) {
+                stringBuilder.append(String.format("%-2.3f", allAtomErrors.rms(aName))).append("\n");
+            }
+        });
     }
 
     @Test
@@ -324,10 +323,7 @@ public class RNAProteinPredictorTest {
             String header = "atomId residue ratio refPPM PPM delta \n";
             writer.write(header);
             StringBuilder stringBuilder = new StringBuilder();
-            AtomErrors allAtomErrors1 = predictAll(stringBuilder);
-            stringBuilder.append(String.format("%-2.3f", allAtomErrors1.rms("H"))).append("\n");
-            stringBuilder.append(String.format("%-2f.3f", allAtomErrors1.rms("C"))).append("\n");
-            stringBuilder.append(String.format("%-2f.3f", allAtomErrors1.rms("N"))).append("\n");
+            predictAll(stringBuilder);
             writer.write(stringBuilder.toString());
         }
     }
