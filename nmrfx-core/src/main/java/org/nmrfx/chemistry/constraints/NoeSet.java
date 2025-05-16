@@ -309,7 +309,7 @@ public class NoeSet implements ConstraintSet, Iterable {
         for (Atom atom : atoms) {
             ppms.add(atom.getPPM());
         }
-        boolean ok = ppms.size() == 3 && !ppms.stream().anyMatch(ppm -> ppm == null);
+        boolean ok = ppms.size() == peakList.getNDim() && !ppms.stream().anyMatch(ppm -> ppm == null);
 
         if (ok) {
             Peak peak = peakList.getNewPeak();
@@ -325,19 +325,47 @@ public class NoeSet implements ConstraintSet, Iterable {
                 PeakDim peakDim = peak.getPeakDim(iDims.get(j));
                 peakDim.setLabel(atoms.get(j).getShortName());
                 peakDim.setChemShiftValue(ppms.get(j).floatValue());
-                peakDim.setLineWidthHz(20.0f);
-                peakDim.setBoundsHz(40.0f);
+                float width = j == 0 ? 20.0f : 50.0f;
+                peakDim.setLineWidthHz(width);
+                peakDim.setBoundsHz(width * 2.0f);
             }
         }
+    }
 
+    private void addPeak(Noe noe, Atom atom1, Atom atom2, Set<Atom> diagAtoms, List<Integer> dataDims) {
+        final int idDimAtom;
+        List<Atom> atoms = new ArrayList<>();
+        if ((atom1 != null) && (atom2 != null) && atom1.getName().equalsIgnoreCase("H")) {
+            atoms.add(atom1);
+            atoms.add(atom2);
+            idDimAtom = 0;
+        } else if ((atom1 != null) && (atom2 != null) && atom2.getName().equalsIgnoreCase("H")) {
+            atoms.add(atom2);
+            atoms.add(atom1);
+            idDimAtom = 1;
+        } else {
+            idDimAtom = -1;
+        }
+        if (!atoms.isEmpty()) {
+            diagAtoms.add(atoms.getFirst());
+            for (int i = 2; i < peakList.getNDim(); i++) {
+                Atom idAtom = idDimAtom == 0 ? atom1.getParent() : atom2.getParent();
+                if (idAtom.getAtomicNumber() == 7) {
+                    atoms.add(idAtom);
+                    dataDims.add(i);
+                }
+            }
+        }
+        addPeak(noe, atoms, dataDims);
     }
     public void genPeakList(DatasetBase dataset) {
         String peakListName = PeakList.getNameForDataset(dataset.getName());
         PeakList peakList1 = PeakList.get(peakListName);
-        List<Integer> iDims = new ArrayList<>();
+        List<Integer> dataDims = new ArrayList<>();
         if (peakList1 == null) {
             peakList1 = new PeakList(peakListName, dataset.getNDim());
             peakList1.setDatasetName(dataset.getName());
+            boolean firstProton = true;
             for (int i = 0; i < dataset.getNDim(); i++) {
                 SpectralDim dim = peakList1.getSpectralDim(i);
                 dim.setSf(dataset.getSf(i));
@@ -345,49 +373,32 @@ public class NoeSet implements ConstraintSet, Iterable {
                 dim.setDimName(dataset.getLabel(i));
                 Nuclei nuclei = dataset.getNucleus(i);
                 if (nuclei.getNumberAsInt() == 1) {
-                    iDims.add(i);
+                    dataDims.add(i);
+                    if (firstProton) {
+                        dim.setPattern("i.h*");
+                        firstProton = false;
+                    } else {
+                        dim.setPattern("j.h*");
+                    }
                 }
                 dim.setNucleus(dataset.getNucleus(i).getNumberName());
             }
         }
         peakList = peakList1;
         Set<Atom> diagAtoms = new HashSet<>();
-        constraints.stream().filter(noe -> noe.isActive()).forEach(noe -> {
+        constraints.stream().filter(Noe::isActive).forEach(noe -> {
             SpatialSetGroup spg1 = noe.getSpg1();
             SpatialSetGroup spg2 = noe.getSpg2();
             String aName1 = spg1.getFullName();
             String aName2 = spg2.getFullName();
-            List<Atom> atoms = new ArrayList<>();
             Atom atom1 = MoleculeBase.getAtomByName(aName1);
             Atom atom2 = MoleculeBase.getAtomByName(aName2);
-            final int idDimAtom;
-            if ((atom1 != null) && (atom2 != null) && aName1.endsWith(".H")) {
-                atoms.add(atom1);
-                atoms.add(atom2);
-                idDimAtom = 0;
-            } else if ((atom1 != null) && (atom2 != null) && aName2.endsWith(".H")) {
-                atoms.add(atom2);
-                atoms.add(atom1);
-                idDimAtom = 1;
-            } else {
-                idDimAtom = -1;
-            }
-            if (!atoms.isEmpty()) {
-                diagAtoms.add(atoms.getFirst());
-                for (int i = 2; i < peakList.getNDim(); i++) {
-                    Atom idAtom = idDimAtom == 0 ? atom1.getParent() : atom2.getParent();
-                    if (idAtom.getAtomicNumber() == 7) {
-                        atoms.add(idAtom);
-                        iDims.add(i);
-                    }
-                }
-            }
+            addPeak(noe, atom1, atom2, diagAtoms, dataDims);
 
-            addPeak(noe, atoms, iDims);
         });
         diagAtoms.forEach(atom -> {
             List<Atom> atoms = List.of(atom, atom, atom.getParent());
-            addPeak(null, atoms, iDims);
+            addPeak(null, atoms, new ArrayList<>(dataDims));
         });
 
     }
@@ -404,6 +415,4 @@ public class NoeSet implements ConstraintSet, Iterable {
             }
         }
     }
-
-
 }

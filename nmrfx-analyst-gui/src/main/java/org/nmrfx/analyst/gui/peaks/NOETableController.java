@@ -648,8 +648,8 @@ public class NOETableController implements Initializable, StageBasedController {
             }
             Collection<DatasetBase> datasets = Dataset.datasets();
             var selectDataset =   (Dataset) GUIUtils.choice(datasets, "Select dataset");
-            System.out.println(selectDataset);
             noeSet.genPeakList(selectDataset);
+            tableView.refresh();
         }
     }
 }
