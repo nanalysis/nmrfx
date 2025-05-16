@@ -209,7 +209,11 @@ public class RNAProteinPredictorTest {
             } else if (atom.isMethylCarbon()) {
                 aName = "MC";
             } else if (atom.isAAAromatic()) {
-                aName = atom.getAtomicNumber() == 1 ? "AH" : "AC";
+                if (atom.getAtomicNumber() == 1) {
+                    aName = "AH";
+                } else if (atom.getAtomicNumber() == 6) {
+                    aName = "AC";
+                }
             }
             atomTypes.computeIfAbsent(aName, k -> new AtomError());
             AtomError e = atomTypes.get(aName);
@@ -237,6 +241,7 @@ public class RNAProteinPredictorTest {
                 atomTypes.computeIfAbsent(aName, k -> new AtomError());
                 atomTypes.get(aName).sumSq += entry.getValue().sumSq;
                 atomTypes.get(aName).n += entry.getValue().n;
+                nViol += atomErrors.nViol();
             }
         }
     }
@@ -255,7 +260,9 @@ public class RNAProteinPredictorTest {
                 err = Math.max(err, 0.3);
                 double ratio = delta / err;
                 if (offsets != null) {
-                    atomErrors.addViol();
+                    if (ratio > 3.5) {
+                        atomErrors.addViol();
+                    }
                     int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
                     String resName = atom.getResidueName();
                     String atomId = molName + ":" + chainId + "." + atom.getShortName();
@@ -320,8 +327,11 @@ public class RNAProteinPredictorTest {
             if (allAtomErrors.atomTypes.containsKey(aName)) {
                 stringBuilder.append(aName).append(" ");
                 stringBuilder.append(String.format("%-2.3f", allAtomErrors.rms(aName))).append("\n");
+                System.out.println(aName + " " + allAtomErrors.atomTypes.get(aName).sumSq + " " +
+                        allAtomErrors.atomTypes.get(aName).n);
             }
         });
+        System.out.println(allAtomErrors.nViol());
     }
 
     @Test
