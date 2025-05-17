@@ -1620,6 +1620,30 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    public Optional<Dataset> getExtractSource() {
+        int sliceNamePos = getName().indexOf("_slice");
+        Dataset sourceDataset = null;
+        if (sliceNamePos != -1) {
+            String sourceName = getName().substring(0, sliceNamePos);
+            sourceDataset = Dataset.getDataset(sourceName);
+        }
+        return Optional.ofNullable(sourceDataset);
+    }
+
+    public void reloadVector(int iDim, int value) throws IOException {
+        if (vecMat != null) {
+            int[] vdim = vecMat.getDim();
+            int[][] vpts = vecMat.getPt();
+            value = Math.min(value, getSizeTotal(vdim[iDim]));
+            value = Math.max(value, 0);
+            vpts[iDim][0] = vpts[iDim][1] = value;
+            var sourceOpt = getExtractSource();
+            if (sourceOpt.isPresent()) {
+                sourceOpt.get().readVectorFromDatasetFile(vpts, vdim, vecMat);
+            }
+        }
+    }
+
     /**
      * Read values along specified row. Only appropriate for 2D datasets
      *
