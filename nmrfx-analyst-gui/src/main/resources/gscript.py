@@ -114,7 +114,7 @@ class NMRFxWindowScripting:
                     datasetNames.append(dataset)
                 else:
                     datasetNames.append(dataset.getName())
-            self.cmd.datasets(datasetNames)
+            self.cmd.datasetNames(datasetNames)
 
     def openFID(self, fidName):
         self.cmd.openFID(fidName)

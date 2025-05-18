@@ -100,15 +100,83 @@ public class PDBFile {
         return read(null, fileName, false);
     }
 
+    private void addAtom(Compound compound, AtomParser atomParse, int structureNumber) {
+        Atom atom = new Atom(atomParse);
+        atom.setEnergyProp();
+        atom.setPointValidity(structureNumber, true);
+        Point3 pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
+        atom.setPoint(structureNumber, pt);
+        atom.setOccupancy((float) atomParse.occupancy);
+        atom.setBFactor((float) atomParse.bfactor);
+        atom.entity = compound;
+        compound.addAtom(atom);
+    }
+    private boolean newChain(CompoundState compoundState, AtomParser atomParser) {
+        String thisChain;
+        if (atomParser.segment.equals("")) {
+            thisChain = atomParser.chainID;
+        } else {
+            thisChain = atomParser.segment;
+        }
+        return !thisChain.equals(compoundState.lastChain);
+    }
+
+    private void checkChain(CompoundState cs, AtomParser atomParse, Compound compound) {
+        String thisChain;
+        if (atomParse.segment.equals("")) {
+            thisChain = atomParse.chainID;
+        } else {
+            thisChain = atomParse.segment;
+        }
+        cs.compound = compound;
+        if (!thisChain.equals(cs.lastChain)) {
+            cs.lastChain = thisChain;
+
+            String polymerName;
+            if (cs.lastChain.trim().equals("")) {
+                cs.coordSetName = cs.molName;
+                polymerName = cs.molName;
+            } else {
+                cs.coordSetName = cs.lastChain;
+                polymerName = cs.lastChain;
+            }
+            if (compound instanceof Residue residue) {
+                cs.polymer = new Polymer(polymerName);
+                cs.polymer.assemblyID = cs.molecule.entityLabels.size() + 1;
+                cs.polymer.molecule = cs.molecule;
+                cs.molecule.addEntity(cs.polymer, cs.coordSetName);
+            } else {
+                compound.molecule = cs.molecule;
+                compound.assemblyID = cs.molecule.entityLabels.size() + 1;
+                cs.molecule.addEntity(compound);
+            }
+        }
+        if (compound instanceof Residue residue) {
+            residue.molecule = cs.molecule;
+            cs.polymer.addResidue(residue);
+        }
+    }
+
+    static class CompoundState {
+        MoleculeBase molecule;
+        String molName;
+        Polymer polymer = null;
+        Compound compound = null;
+        String lastChain = null;
+        String lastRes = "";
+        String coordSetName = "";
+        CompoundState(MoleculeBase molecule, String molName) {
+            this.molecule = molecule;
+            this.molName = molName;
+        }
+
+    }
     public MoleculeBase read(MoleculeBase molecule, String fileName, boolean strictMode)
             throws MoleculeIOException {
         String string;
-        String lastRes = "";
         File file = new File(fileName);
         int dotPos = file.getName().lastIndexOf('.');
         int structureNumber = 0;
-        Point3 pt;
-
         String molName;
 
         if (dotPos >= 0) {
@@ -121,11 +189,8 @@ public class PDBFile {
             molecule = MoleculeFactory.newMolecule(molName);
         }
 
-        Polymer polymer = null;
-        Residue residue = null;
         Compound compound = null;
-        String lastChain = null;
-        String coordSetName = "";
+        CompoundState compoundState = new CompoundState(molecule, molName);
 
         try (
                 BufferedReader bf = new BufferedReader(new FileReader(fileName));
@@ -143,99 +208,26 @@ public class PDBFile {
                     return molecule;
                 }
 
-                if (string.startsWith("ATOM  ") || (string.startsWith("HETATM") && !strictMode)) {
+                if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
 
-                    if (!lastRes.equals(atomParse.resNum)) {
-                        lastRes = atomParse.resNum;
-                        residue = new Residue(atomParse.resNum,
-                                atomParse.resName);
+                    if (!compoundState.lastRes.equals(atomParse.resNum)) {
+                        boolean compoundMode = false;
+                        if (string.startsWith("HETATM")  && newChain(compoundState, atomParse)) {
+                            compoundMode = true;
+                        }
 
-                        String thisChain;
-
-                        if (atomParse.segment.equals("")) {
-                            thisChain = atomParse.chainID;
+                        compoundState.lastRes = atomParse.resNum;
+                        if (!compoundMode) {
+                            compound = new Residue(atomParse.resNum, atomParse.resName);
                         } else {
-                            thisChain = atomParse.segment;
+                            compound = new Compound(atomParse.resNum, atomParse.resName);
                         }
-
-                        if (!thisChain.equals(lastChain)) {
-                            lastChain = thisChain;
-
-                            if (lastChain.trim().equals("")) {
-                                coordSetName = molName;
-                                polymer = new Polymer(molName);
-                            } else {
-                                coordSetName = lastChain;
-                                polymer = new Polymer(lastChain);
-                            }
-                            polymer.molecule = molecule;
-                            molecule.addEntity(polymer, coordSetName);
-                        }
-
-                        if (polymer == null) {
-                            throw new MoleculeIOException("didn't form polymer");
-                        }
-
-                        polymer.addResidue(residue);
+                        checkChain(compoundState, atomParse, compound);
                     }
-
-                    Atom atom = new Atom(atomParse);
-                    atom.setPointValidity(structureNumber, true);
-                    atom.entity = residue;
-                    atom.setEnergyProp();
-                    pt = atom.getPoint(structureNumber);
-                    pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
-                    atom.setPoint(structureNumber, pt);
-                    atom.setOccupancy((float) atomParse.occupancy);
-                    atom.setBFactor((float) atomParse.bfactor);
-                    residue.addAtom(atom);
-                } else if (string.startsWith("HETATM")) {
-                    PDBAtomParser atomParse = new PDBAtomParser(string);
-
-                    if (!lastRes.equals(atomParse.resNum)) {
-                        lastRes = atomParse.resNum;
-                        compound = new Compound(atomParse.resNum,
-                                atomParse.resName);
-
-                        String thisChain;
-
-                        if (atomParse.segment.equals("")) {
-                            thisChain = atomParse.chainID;
-                        } else {
-                            thisChain = atomParse.segment;
-                        }
-
-                        if (!thisChain.equals(lastChain)) {
-                            lastChain = thisChain;
-
-                            if (lastChain.equals(" ")) {
-                                coordSetName = molName;
-                            } else {
-                                coordSetName = lastChain;
-                            }
-                        }
-
-                        molecule.addEntity(compound, coordSetName);
-                    }
-
-                    if (compound == null) {
-                        throw new MoleculeIOException("didn't form compound");
-                    }
-
-                    Atom atom = new Atom(atomParse);
-                    atom.setEnergyProp();
-                    atom.setPointValidity(structureNumber, true);
-                    pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
-                    atom.setPoint(structureNumber, pt);
-                    atom.setOccupancy((float) atomParse.occupancy);
-                    atom.setBFactor((float) atomParse.bfactor);
-                    atom.entity = compound;
-                    compound.addAtom(atom);
+                    addAtom(compound, atomParse, structureNumber);
                 }
             }
-        } catch (MoleculeIOException tclE) {
-            throw tclE;
         } catch (FileNotFoundException fnf) {
             throw new MoleculeIOException(fnf.getMessage());
         } catch (Exception e) {
