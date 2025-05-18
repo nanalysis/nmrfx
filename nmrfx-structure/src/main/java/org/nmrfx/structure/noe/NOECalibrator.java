@@ -416,10 +416,10 @@ public class NOECalibrator {
             }
             if (weakestNoe != null) {
                 for (Noe noe : noeList) {
-                    if (noe.peak == null) {
+                    if (noe.peak() == null) {
                         continue;
                     }
-                    PeakList peakList = noe.peak.getPeakList();
+                    PeakList peakList = noe.peak().getPeakList();
                     NoeCalibration noeCal = getCalibration(peakList);
                     if (noeCal == null) {
                         noeCal = defaultCal(peakList);
@@ -756,7 +756,7 @@ public class NOECalibrator {
         for (int i = 0; i < nNoe; i++) {
             Noe iNoe = noeSet.get(i);
             iNoe.setSymmetrical(false);
-            Peak iPeak = iNoe.peak;
+            Peak iPeak = iNoe.peak();
             if (iPeak != null) {
                 String listName = iPeak.getPeakList().getName();
                 String spg1Name = iNoe.getSpg1().getFullName();
@@ -766,7 +766,7 @@ public class NOECalibrator {
         }
         for (int i = 0; i < nNoe; i++) {
             Noe iNoe = noeSet.get(i);
-            Peak iPeak = iNoe.peak;
+            Peak iPeak = iNoe.peak();
             if ((iPeak != null) && (!iNoe.getSymmetrical())) {
                 String listName = iPeak.getPeakList().getName();
                 String spg1Name = iNoe.getSpg1().getFullName();
