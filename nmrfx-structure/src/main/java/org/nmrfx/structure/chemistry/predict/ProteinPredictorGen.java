@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class ProteinPredictorGen {
     enum PredProps {
-        func0("cos(chiC)*sin(chi2C)") {
+        FUNC0("cos(chiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 Double chi2C = v.get("chi2C");
@@ -19,7 +19,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func1("sin(2*chi2C)") {
+        FUNC1("sin(2*chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chi2C = v.get("chi2C");
                 if (ProteinPredictor.checkVars(chi2C)) {
@@ -29,7 +29,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func2("cos(psiC)*cos(psiP)") {
+        FUNC2("cos(psiC)*cos(psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double psiP = v.get("psiP");
@@ -40,7 +40,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func3("sin(3*psiP)") {
+        FUNC3("sin(3*psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiP = v.get("psiP");
                 if (ProteinPredictor.checkVars(psiP)) {
@@ -50,7 +50,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func4("cos(2*psiS)") {
+        FUNC4("cos(2*psiS)") {
             double calcValue(Map<String, Double> v) {
                 Double psiS = v.get("psiS");
                 if (ProteinPredictor.checkVars(psiS)) {
@@ -60,7 +60,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func5("sin(phiC)*PRO_P") {
+        FUNC5("sin(phiC)*PRO_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double PRO_P = v.get("PRO_P");
@@ -71,7 +71,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func6("cos(2*chiC)") {
+        FUNC6("cos(2*chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 if (ProteinPredictor.checkVars(chiC)) {
@@ -81,7 +81,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func7("sin(phiP)") {
+        FUNC7("sin(phiP)") {
             double calcValue(Map<String, Double> v) {
                 Double phiP = v.get("phiP");
                 if (ProteinPredictor.checkVars(phiP)) {
@@ -91,7 +91,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func8("sin(3*psiC)") {
+        FUNC8("sin(3*psiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 if (ProteinPredictor.checkVars(psiC)) {
@@ -101,7 +101,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func9("cos(psiP)") {
+        FUNC9("cos(psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiP = v.get("psiP");
                 if (ProteinPredictor.checkVars(psiP)) {
@@ -111,7 +111,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func10("cos(2*phiP)") {
+        FUNC10("cos(2*phiP)") {
             double calcValue(Map<String, Double> v) {
                 Double phiP = v.get("phiP");
                 if (ProteinPredictor.checkVars(phiP)) {
@@ -121,7 +121,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func11("cos(phiC)*cos(chiC)") {
+        FUNC11("cos(phiC)*cos(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chiC = v.get("chiC");
@@ -132,7 +132,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func12("sin(psiC)*ARO_S") {
+        FUNC12("sin(psiC)*ARO_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double ARO_S = v.get("ARO_S");
@@ -143,7 +143,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func13("sin(3*phiP)") {
+        FUNC13("sin(3*phiP)") {
             double calcValue(Map<String, Double> v) {
                 Double phiP = v.get("phiP");
                 if (ProteinPredictor.checkVars(phiP)) {
@@ -153,7 +153,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func14("h3") {
+        FUNC14("h3") {
             double calcValue(Map<String, Double> v) {
                 Double h3 = v.get("h3");
                 if (ProteinPredictor.checkVars(h3)) {
@@ -163,7 +163,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func15("sin(psiC)*cos(chi2C)") {
+        FUNC15("sin(psiC)*cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chi2C = v.get("chi2C");
@@ -174,7 +174,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func16("sin(chi2C)") {
+        FUNC16("sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chi2C = v.get("chi2C");
                 if (ProteinPredictor.checkVars(chi2C)) {
@@ -184,7 +184,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func17("cos(phiP)") {
+        FUNC17("cos(phiP)") {
             double calcValue(Map<String, Double> v) {
                 Double phiP = v.get("phiP");
                 if (ProteinPredictor.checkVars(phiP)) {
@@ -194,7 +194,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func18("sin(3*psiS)") {
+        FUNC18("sin(3*psiS)") {
             double calcValue(Map<String, Double> v) {
                 Double psiS = v.get("psiS");
                 if (ProteinPredictor.checkVars(psiS)) {
@@ -204,7 +204,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func19("cos(3*psiS)") {
+        FUNC19("cos(3*psiS)") {
             double calcValue(Map<String, Double> v) {
                 Double psiS = v.get("psiS");
                 if (ProteinPredictor.checkVars(psiS)) {
@@ -214,7 +214,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func20("cos(psiC)*cos(chiC)") {
+        FUNC20("cos(psiC)*cos(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chiC = v.get("chiC");
@@ -225,7 +225,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func21("cos(phiC)*BULK_P") {
+        FUNC21("cos(phiC)*BULK_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double BULK_P = v.get("BULK_P");
@@ -236,7 +236,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func22("ring") {
+        FUNC22("ring") {
             double calcValue(Map<String, Double> v) {
                 Double ring = v.get("ring");
                 if (ProteinPredictor.checkVars(ring)) {
@@ -246,7 +246,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func23("cos(2*psiC)") {
+        FUNC23("cos(2*psiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 if (ProteinPredictor.checkVars(psiC)) {
@@ -256,7 +256,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func24("cos(phiC)*ARO_P") {
+        FUNC24("cos(phiC)*ARO_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double ARO_P = v.get("ARO_P");
@@ -267,7 +267,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func25("cos(phiC)*cos(chi2C)") {
+        FUNC25("cos(phiC)*cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chi2C = v.get("chi2C");
@@ -278,7 +278,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func26("cos(psiC)*cos(phiC)") {
+        FUNC26("cos(psiC)*cos(phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double phiC = v.get("phiC");
@@ -289,7 +289,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func27("sin(2*psiC)") {
+        FUNC27("sin(2*psiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 if (ProteinPredictor.checkVars(psiC)) {
@@ -299,7 +299,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func28("sin(phiC)*ARO_P") {
+        FUNC28("sin(phiC)*ARO_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double ARO_P = v.get("ARO_P");
@@ -310,7 +310,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func29("cos(psiC)*ARO_S") {
+        FUNC29("cos(psiC)*ARO_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double ARO_S = v.get("ARO_S");
@@ -321,7 +321,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func30("cos(psiC)*CHRG_S") {
+        FUNC30("cos(psiC)*CHRG_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double CHRG_S = v.get("CHRG_S");
@@ -332,7 +332,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func31("cos(psiC)*HPHB_S") {
+        FUNC31("cos(psiC)*HPHB_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double HPHB_S = v.get("HPHB_S");
@@ -343,7 +343,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func32("sin(psiC)*cos(psiP)") {
+        FUNC32("sin(psiC)*cos(psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double psiP = v.get("psiP");
@@ -354,7 +354,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func33("cos(psiS)") {
+        FUNC33("cos(psiS)") {
             double calcValue(Map<String, Double> v) {
                 Double psiS = v.get("psiS");
                 if (ProteinPredictor.checkVars(psiS)) {
@@ -364,7 +364,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func34("cos(chi2C)") {
+        FUNC34("cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chi2C = v.get("chi2C");
                 if (ProteinPredictor.checkVars(chi2C)) {
@@ -374,7 +374,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func35("hshift3") {
+        FUNC35("hshift3") {
             double calcValue(Map<String, Double> v) {
                 Double hshift3 = v.get("hshift3");
                 if (ProteinPredictor.checkVars(hshift3)) {
@@ -384,7 +384,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func36("hshift2") {
+        FUNC36("hshift2") {
             double calcValue(Map<String, Double> v) {
                 Double hshift2 = v.get("hshift2");
                 if (ProteinPredictor.checkVars(hshift2)) {
@@ -394,7 +394,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func37("hshift1") {
+        FUNC37("hshift1") {
             double calcValue(Map<String, Double> v) {
                 Double hshift1 = v.get("hshift1");
                 if (ProteinPredictor.checkVars(hshift1)) {
@@ -404,7 +404,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func38("sin(phiC)*sin(chiC)") {
+        FUNC38("sin(phiC)*sin(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chiC = v.get("chiC");
@@ -415,7 +415,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func39("sin(psiC)*PRO_S") {
+        FUNC39("sin(psiC)*PRO_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double PRO_S = v.get("PRO_S");
@@ -426,7 +426,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func40("sin(phiC)*sin(chi2C)") {
+        FUNC40("sin(phiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chi2C = v.get("chi2C");
@@ -437,7 +437,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func41("cos(psiC)*BULK_S") {
+        FUNC41("cos(psiC)*BULK_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double BULK_S = v.get("BULK_S");
@@ -448,7 +448,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func42("cos(chiC)*cos(chi2C)") {
+        FUNC42("cos(chiC)*cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 Double chi2C = v.get("chi2C");
@@ -459,7 +459,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func43("cos(3*psiC)") {
+        FUNC43("cos(3*psiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 if (ProteinPredictor.checkVars(psiC)) {
@@ -469,7 +469,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func44("sin(psiS)") {
+        FUNC44("sin(psiS)") {
             double calcValue(Map<String, Double> v) {
                 Double psiS = v.get("psiS");
                 if (ProteinPredictor.checkVars(psiS)) {
@@ -479,7 +479,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func45("cos(2*psiP)") {
+        FUNC45("cos(2*psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiP = v.get("psiP");
                 if (ProteinPredictor.checkVars(psiP)) {
@@ -489,7 +489,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func46("intercept") {
+        FUNC46("intercept") {
             double calcValue(Map<String, Double> v) {
                 Double intercept = v.get("intercept");
                 if (ProteinPredictor.checkVars(intercept)) {
@@ -499,7 +499,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func47("cos(2*phiC)") {
+        FUNC47("cos(2*phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 if (ProteinPredictor.checkVars(phiC)) {
@@ -509,7 +509,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func48("sin(psiC)*sin(chiC)") {
+        FUNC48("sin(psiC)*sin(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chiC = v.get("chiC");
@@ -520,7 +520,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func49("sin(psiC)*HPHB_S") {
+        FUNC49("sin(psiC)*HPHB_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double HPHB_S = v.get("HPHB_S");
@@ -531,7 +531,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func50("cos(2*phiS)") {
+        FUNC50("cos(2*phiS)") {
             double calcValue(Map<String, Double> v) {
                 Double phiS = v.get("phiS");
                 if (ProteinPredictor.checkVars(phiS)) {
@@ -541,7 +541,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func51("sin(2*psiS)") {
+        FUNC51("sin(2*psiS)") {
             double calcValue(Map<String, Double> v) {
                 Double psiS = v.get("psiS");
                 if (ProteinPredictor.checkVars(psiS)) {
@@ -551,7 +551,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func52("sin(phiS)") {
+        FUNC52("sin(phiS)") {
             double calcValue(Map<String, Double> v) {
                 Double phiS = v.get("phiS");
                 if (ProteinPredictor.checkVars(phiS)) {
@@ -561,7 +561,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func53("cos(phiC)*sin(chi2C)") {
+        FUNC53("cos(phiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chi2C = v.get("chi2C");
@@ -572,7 +572,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func54("sin(2*phiP)") {
+        FUNC54("sin(2*phiP)") {
             double calcValue(Map<String, Double> v) {
                 Double phiP = v.get("phiP");
                 if (ProteinPredictor.checkVars(phiP)) {
@@ -582,7 +582,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func55("sin(psiP)") {
+        FUNC55("sin(psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiP = v.get("psiP");
                 if (ProteinPredictor.checkVars(psiP)) {
@@ -592,7 +592,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func56("cos(phiS)") {
+        FUNC56("cos(phiS)") {
             double calcValue(Map<String, Double> v) {
                 Double phiS = v.get("phiS");
                 if (ProteinPredictor.checkVars(phiS)) {
@@ -602,7 +602,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func57("cos(3*phiS)") {
+        FUNC57("cos(3*phiS)") {
             double calcValue(Map<String, Double> v) {
                 Double phiS = v.get("phiS");
                 if (ProteinPredictor.checkVars(phiS)) {
@@ -612,7 +612,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func58("cos(psiC)*sin(chi2C)") {
+        FUNC58("cos(psiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chi2C = v.get("chi2C");
@@ -623,7 +623,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func59("sin(phiC)*cos(chi2C)") {
+        FUNC59("sin(phiC)*cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chi2C = v.get("chi2C");
@@ -634,7 +634,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func60("sin(psiC)*CHRG_S") {
+        FUNC60("sin(psiC)*CHRG_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double CHRG_S = v.get("CHRG_S");
@@ -645,7 +645,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func61("sin(2*phiC)") {
+        FUNC61("sin(2*phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 if (ProteinPredictor.checkVars(phiC)) {
@@ -655,7 +655,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func62("cos(psiC)*sin(chiC)") {
+        FUNC62("cos(psiC)*sin(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chiC = v.get("chiC");
@@ -666,7 +666,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func63("cos(phiC)") {
+        FUNC63("cos(phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 if (ProteinPredictor.checkVars(phiC)) {
@@ -676,7 +676,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func64("sin(phiC)") {
+        FUNC64("sin(phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 if (ProteinPredictor.checkVars(phiC)) {
@@ -686,7 +686,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func65("cos(3*phiC)") {
+        FUNC65("cos(3*phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 if (ProteinPredictor.checkVars(phiC)) {
@@ -696,7 +696,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func66("sin(chiC)*sin(chi2C)") {
+        FUNC66("sin(chiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 Double chi2C = v.get("chi2C");
@@ -707,7 +707,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func67("cos(psiC)*PRO_S") {
+        FUNC67("cos(psiC)*PRO_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double PRO_S = v.get("PRO_S");
@@ -718,7 +718,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func68("sin(psiC)*cos(chiC)") {
+        FUNC68("sin(psiC)*cos(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chiC = v.get("chiC");
@@ -729,7 +729,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func69("sin(psiC)") {
+        FUNC69("sin(psiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 if (ProteinPredictor.checkVars(psiC)) {
@@ -739,7 +739,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func70("sin(chiC)*cos(chi2C)") {
+        FUNC70("sin(chiC)*cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 Double chi2C = v.get("chi2C");
@@ -750,7 +750,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func71("cos(phiC)*HPHB_P") {
+        FUNC71("cos(phiC)*HPHB_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double HPHB_P = v.get("HPHB_P");
@@ -761,7 +761,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func72("cos(phiC)*CHRG_P") {
+        FUNC72("cos(phiC)*CHRG_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double CHRG_P = v.get("CHRG_P");
@@ -772,7 +772,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func73("cos(psiC)") {
+        FUNC73("cos(psiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 if (ProteinPredictor.checkVars(psiC)) {
@@ -782,7 +782,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func74("sin(2*phiS)") {
+        FUNC74("sin(2*phiS)") {
             double calcValue(Map<String, Double> v) {
                 Double phiS = v.get("phiS");
                 if (ProteinPredictor.checkVars(phiS)) {
@@ -792,7 +792,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func75("cos(chiC)") {
+        FUNC75("cos(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 if (ProteinPredictor.checkVars(chiC)) {
@@ -802,7 +802,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func76("cos(phiC)*PRO_P") {
+        FUNC76("cos(phiC)*PRO_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double PRO_P = v.get("PRO_P");
@@ -813,7 +813,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func77("sin(phiC)*CHRG_P") {
+        FUNC77("sin(phiC)*CHRG_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double CHRG_P = v.get("CHRG_P");
@@ -824,7 +824,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func78("cos(psiC)*sin(phiC)") {
+        FUNC78("cos(psiC)*sin(phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double phiC = v.get("phiC");
@@ -835,7 +835,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func79("sin(3*phiC)") {
+        FUNC79("sin(3*phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 if (ProteinPredictor.checkVars(phiC)) {
@@ -845,7 +845,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func80("cos(3*psiP)") {
+        FUNC80("cos(3*psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiP = v.get("psiP");
                 if (ProteinPredictor.checkVars(psiP)) {
@@ -855,7 +855,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func81("cos(psiC)*sin(psiP)") {
+        FUNC81("cos(psiC)*sin(psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double psiP = v.get("psiP");
@@ -866,7 +866,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func82("DIS") {
+        FUNC82("DIS") {
             double calcValue(Map<String, Double> v) {
                 Double DIS = v.get("DIS");
                 if (ProteinPredictor.checkVars(DIS)) {
@@ -876,7 +876,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func83("sin(psiC)*sin(psiP)") {
+        FUNC83("sin(psiC)*sin(psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double psiP = v.get("psiP");
@@ -887,7 +887,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func84("eshift") {
+        FUNC84("eshift") {
             double calcValue(Map<String, Double> v) {
                 Double eshift = v.get("eshift");
                 if (ProteinPredictor.checkVars(eshift)) {
@@ -897,7 +897,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func85("sin(2*psiP)") {
+        FUNC85("sin(2*psiP)") {
             double calcValue(Map<String, Double> v) {
                 Double psiP = v.get("psiP");
                 if (ProteinPredictor.checkVars(psiP)) {
@@ -907,7 +907,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func86("sin(phiC)*cos(chiC)") {
+        FUNC86("sin(phiC)*cos(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chiC = v.get("chiC");
@@ -918,7 +918,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func87("sin(psiC)*sin(phiC)") {
+        FUNC87("sin(psiC)*sin(phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double phiC = v.get("phiC");
@@ -929,7 +929,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func88("sin(chiC)") {
+        FUNC88("sin(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 if (ProteinPredictor.checkVars(chiC)) {
@@ -939,7 +939,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func89("sin(phiC)*BULK_P") {
+        FUNC89("sin(phiC)*BULK_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double BULK_P = v.get("BULK_P");
@@ -950,7 +950,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func90("sin(psiC)*cos(phiC)") {
+        FUNC90("sin(psiC)*cos(phiC)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double phiC = v.get("phiC");
@@ -961,7 +961,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func91("sin(psiC)*sin(chi2C)") {
+        FUNC91("sin(psiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chi2C = v.get("chi2C");
@@ -972,7 +972,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func92("cos(psiC)*cos(chi2C)") {
+        FUNC92("cos(psiC)*cos(chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double chi2C = v.get("chi2C");
@@ -983,7 +983,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func93("cos(2*chi2C)") {
+        FUNC93("cos(2*chi2C)") {
             double calcValue(Map<String, Double> v) {
                 Double chi2C = v.get("chi2C");
                 if (ProteinPredictor.checkVars(chi2C)) {
@@ -993,7 +993,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func94("sin(phiC)*HPHB_P") {
+        FUNC94("sin(phiC)*HPHB_P") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double HPHB_P = v.get("HPHB_P");
@@ -1004,7 +1004,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func95("cos(3*phiP)") {
+        FUNC95("cos(3*phiP)") {
             double calcValue(Map<String, Double> v) {
                 Double phiP = v.get("phiP");
                 if (ProteinPredictor.checkVars(phiP)) {
@@ -1014,7 +1014,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func96("cos(phiC)*sin(chiC)") {
+        FUNC96("cos(phiC)*sin(chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double phiC = v.get("phiC");
                 Double chiC = v.get("chiC");
@@ -1025,7 +1025,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func97("sin(2*chiC)") {
+        FUNC97("sin(2*chiC)") {
             double calcValue(Map<String, Double> v) {
                 Double chiC = v.get("chiC");
                 if (ProteinPredictor.checkVars(chiC)) {
@@ -1035,7 +1035,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func98("sin(3*phiS)") {
+        FUNC98("sin(3*phiS)") {
             double calcValue(Map<String, Double> v) {
                 Double phiS = v.get("phiS");
                 if (ProteinPredictor.checkVars(phiS)) {
@@ -1045,7 +1045,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func99("sin(psiC)*BULK_S") {
+        FUNC99("sin(psiC)*BULK_S") {
             double calcValue(Map<String, Double> v) {
                 Double psiC = v.get("psiC");
                 Double BULK_S = v.get("BULK_S");
@@ -1056,7 +1056,7 @@ public class ProteinPredictorGen {
                 }
             }
         },
-        func100("contacts") {
+        FUNC100("contacts") {
             double calcValue(Map<String, Double> v) {
                 Double contacts = v.get("contacts");
                 if (ProteinPredictor.checkVars(contacts)) {
