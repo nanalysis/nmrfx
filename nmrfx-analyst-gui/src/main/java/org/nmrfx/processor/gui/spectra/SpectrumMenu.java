@@ -169,7 +169,7 @@ public class SpectrumMenu extends ChartMenu {
         refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem,
                 diagRefMenuItem, shiftPeaksMenuItem,
                 undoRefMenuItem, writeRefMenuItem);
-        Menu extractMenu = new Menu("Extract Slice/Projection");
+        Menu projectMenu = new Menu("Projections");
 
         MenuItem projectMenuItem = new MenuItem("Project Full");
         projectMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset(false));
@@ -178,13 +178,21 @@ public class SpectrumMenu extends ChartMenu {
         MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
         removeProjectionsItem.visibleProperty().bind(chart.getDisDimProperty().isEqualTo(PolyChart.DISDIM.TwoD));
         removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());
-        MenuItem extractXMenuItem = new MenuItem("Extract-X");
-        extractXMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(0));
-        MenuItem extractYMenuItem = new MenuItem("Extract-Y");
-        extractYMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(1));
-        MenuItem extractZMenuItem = new MenuItem("Extract-Z");
-        extractZMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(2));
-        extractMenu.getItems().addAll(projectMenuItem, projectViewMenuItem, removeProjectionsItem, extractXMenuItem, extractYMenuItem, extractZMenuItem);
+        projectMenu.getItems().addAll(projectMenuItem, projectViewMenuItem, removeProjectionsItem);
+
+        Menu extractMenu = new Menu("Extract");
+        Menu extractAddMenu = new Menu("Extract-Add");
+
+        String[] dimNames = {"X", "Y", "Z"};
+        for (int i = 0;i<3;i++) {
+            final int iOrient = i;
+            MenuItem extractMenuItem = new MenuItem( dimNames[iOrient]);
+            extractMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(iOrient, false));
+            MenuItem extractAddMenuItem = new MenuItem(dimNames[iOrient]);
+            extractAddMenuItem.setOnAction((ActionEvent e) -> chart.extractSlice(iOrient, true));
+            extractMenu.getItems().add(extractMenuItem);
+            extractAddMenu.getItems().add(extractAddMenuItem);
+        }
 
         Menu linkMenu = new Menu("Peak Linking");
         MenuItem linkColumnMenuItem = new MenuItem("Link Selected Column");
@@ -240,6 +248,8 @@ public class SpectrumMenu extends ChartMenu {
         chartMenu.getItems().add(peakMenu);
         chartMenu.getItems().add(refMenu);
         chartMenu.getItems().add(linkMenu);
+        chartMenu.getItems().add(projectMenu);
         chartMenu.getItems().add(extractMenu);
+        chartMenu.getItems().add(extractAddMenu);
     }
 }

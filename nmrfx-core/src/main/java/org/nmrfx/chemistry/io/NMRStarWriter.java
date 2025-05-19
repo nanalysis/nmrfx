@@ -233,11 +233,14 @@ public class NMRStarWriter {
         chan.write("\nstop_\n\n");
     }
 
-    public static void writeComponentsSTAR3(Writer chan, Polymer polymer, Set<String> cmpdSet) throws IOException, ParseException {
+    public static void writeComponentsSTAR3(Writer chan, Polymer polymer, Set<String> cmpdSet, boolean onlyNonStandard) throws IOException, ParseException {
         Iterator<Residue> residueIterator = polymer.iterator();
         int i = 1;
         while (residueIterator.hasNext()) {
             Residue residue = residueIterator.next();
+            if (onlyNonStandard && residue.isStandard()) {
+                continue;
+            }
             if (!residue.libraryMode()) {
                 String mode;
                 if (i == 1) {
@@ -247,6 +250,7 @@ public class NMRStarWriter {
                 } else {
                     mode = "";
                 }
+                mode = "";
                 if (!cmpdSet.contains(residue.label + mode)) {
                     writeCompoundToSTAR3(chan, residue, i, mode);
                     cmpdSet.add(residue.label + mode);
@@ -493,15 +497,17 @@ public class NMRStarWriter {
         chan.write("    #  Biological polymers and ligands #\n");
         chan.write("    ####################################\n");
         chan.write("\n\n");
-        while (entityIterator.hasNext()) {
-            Entity entity = entityIterator.next();
+        var entities = molecule.entities.values().stream().sorted(Comparator.comparingInt(a -> a.entityID)) .toList();
+        for (var entity : entities) {
             if (entity instanceof Polymer polymer) {
                 writeEntityHeaderSTAR3(chan, entity, entityID, false);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
                 writeEntitySeqSTAR3(chan, polymer, entityID);
                 chan.write(STAR3Base.SAVE + "\n\n");
-                if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR") || true) {
-                    writeComponentsSTAR3(chan, polymer, cmpdSet);
+                if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR")) {
+                    writeComponentsSTAR3(chan, polymer, cmpdSet, false);
+                } else {
+                    writeComponentsSTAR3(chan, polymer, cmpdSet, true);
                 }
             } else {
                 writeCompoundHeaderSTAR3(chan, (Compound) entity, entityID);

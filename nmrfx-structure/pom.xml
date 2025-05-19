@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.24-SNAPSHOT</version>
+        <version>11.4.25-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>11.4.24-SNAPSHOT</version>
+                <version>11.4.25-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -30,7 +30,7 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-core</artifactId>
-            <version>11.4.24-SNAPSHOT</version>
+            <version>11.4.25-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>javax.vecmath</groupId>

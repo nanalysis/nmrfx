@@ -126,6 +126,15 @@ public class GUIUtils {
         alert.showAndWait();
     }
 
+    public static Object choice(Collection choices, String message) {
+        ChoiceDialog choiceDialog = new ChoiceDialog(null, choices);
+        choiceDialog.setHeaderText(message);
+        choiceDialog.setContentText("Value:");
+        Optional result = choiceDialog.showAndWait();
+        return result.orElse(null);
+
+    }
+
     public static String input(String message) {
         return input(message, "");
     }
