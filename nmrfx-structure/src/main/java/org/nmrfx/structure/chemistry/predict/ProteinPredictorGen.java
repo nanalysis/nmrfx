@@ -5,8 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProteinPredictorGen {
 
+public class ProteinPredictorGen {
     enum PredProps {
         func0("cos(chiC)*sin(chi2C)") {
             double calcValue(Map<String, Double> v) {
@@ -1058,10 +1058,17 @@ public class ProteinPredictorGen {
         },
         func100("contacts") {
             double calcValue(Map<String, Double> v) {
-                return v.get("contacts");
+                Double contacts = v.get("contacts");
+                if (ProteinPredictor.checkVars(contacts)) {
+                    return contacts;
+                } else {
+                    return 0.0;
+                }
             }
-        };
+        },
 
+
+        ;
 
         abstract double calcValue(Map<String, Double> v);
 
@@ -1071,7 +1078,7 @@ public class ProteinPredictorGen {
             this.functionName = functionName;
         }
 
-        }
+    }
 
     public List<String> getValueNames() {
         List<String> names = new ArrayList<>();
@@ -1100,3 +1107,4 @@ public class ProteinPredictorGen {
     }
 
 }
+
