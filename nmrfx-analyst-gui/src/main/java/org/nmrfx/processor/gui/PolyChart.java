@@ -4056,7 +4056,7 @@ public class PolyChart extends Region {
                     Vec sliceVec = new Vec(32, false);
                     double xPos = crossHairs.getPosition(iCross, Orientation.VERTICAL);
                     double yPos = crossHairs.getPosition(iCross, Orientation.HORIZONTAL);
-                    DatasetAttributes.PointRange pointRange = dataAttr.getPointRange(iOrient, xPos, yPos);
+                    DatasetAttributes.PointRange pointRange = dataAttr.getPointRange(iOrient, xPos, yPos, true);
                     String sliceName = String.format("%s_slice_%d_%.2f_%.2f_%d", dataAttr.getDataset().getName(), iOrient, xPos, yPos, sliceDatasets.size());
                     sliceVec.setName(sliceName);
                     try {
@@ -4075,6 +4075,11 @@ public class PolyChart extends Region {
                 sliceController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
                 newChart.disDimProp.set(DISDIM.OneDX);
                 newChart.autoScale();
+                newChart.expand();
+                double min = getAxes().get(iOrient).getLowerBound();
+                double max = getAxes().get(iOrient).getUpperBound();
+                newChart.getAxes().getX().setMinMax(min, max);
+
                 double lvl = newChart.getDatasetAttributes().get(0).getLvl();
                 double offset = newChart.getDatasetAttributes().get(0).getOffset();
                 for (DatasetAttributes dataAttr : newChart.getDatasetAttributes()) {
