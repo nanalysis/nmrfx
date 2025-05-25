@@ -74,6 +74,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
+    int[][] projectionLimits = null;
+    boolean projectionViewMode = false;
     private Object analyzerObject = null;
     boolean memoryMode = false;
     String script = "";
@@ -2642,18 +2644,70 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    public void project(int iDim, int[][] viewPt) throws IOException, DatasetException {
-        if (projections == null) {
-            projections = new Dataset[getNDim()];
+    public void updateProjections(int[][] viewPt) throws IOException, DatasetException {
+        if ((projections != null)) {
+            for (int i = 0; i < projections.length; i++) {
+                Dataset projDataset = projections[i];
+                if (projDataset != null) {
+                    boolean matches = true;
+                    if (projDataset.projectionLimits != null) {
+                        for (int j = 0; j < viewPt.length; j++) {
+                            if ((viewPt[j][0] != projDataset.projectionLimits[j][0]) ||
+                                    (viewPt[j][1] != projDataset.projectionLimits[j][1])) {
+                                matches = false;
+                            }
+                        }
+                    } else {
+                        matches = false;
+                    }
+                    if (!matches) {
+                        project(i, viewPt, projectionViewMode);
+                    }
+                }
+            }
         }
-        projections[iDim] = projectND(iDim, viewPt);
     }
 
-    public Dataset projectND(int iDim, int[][] viewPt) throws IOException, DatasetException {
+    public void project(int iDim, int[][] viewPt, boolean viewMode) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
+        projectionViewMode = viewMode;
+        if (!viewMode || (viewPt != null)) {
+            Dataset projDataset = projectND(iDim, viewPt, viewMode);
+            projections[iDim] = projDataset;
+            if (viewMode) {
+                if ((projDataset.projectionLimits == null) || (projDataset.projectionLimits.length != viewPt.length)) {
+                    projDataset.projectionLimits = new int[getNDim()][2];
+                }
+                projDataset.projectionLimits[iDim][0] = viewPt[iDim][0];
+                projDataset.projectionLimits[iDim][1] = viewPt[iDim][1];
+            }
+        }
 
+    }
+
+    private File getProjFileName(String dimLabel) {
+        String projFileName = getFileName();
+        String extension = "";
+        if (projFileName.endsWith(".nv")) {
+            extension = ".nv";
+        } else if (projFileName.endsWith(".ucsf")) {
+            extension = ".ucsf";
+        }
+        if (!extension.isEmpty()) {
+            projFileName = projFileName.substring(0, projFileName.length() - extension.length());
+        }
+        projFileName = projFileName + DatasetBase.DATASET_PROJECTION_TAG + dimLabel + extension;
+        File projFile = new File(projFileName);
+        return projFile;
+    }
+
+    public Dataset projectND(int iDim, int[][] viewPt, boolean viewMode) throws IOException, DatasetException {
+        if (projections == null) {
+            projections = new Dataset[getNDim()];
+        }
+        projectionViewMode = viewMode;
         int projNDim = nDim - 1;
         int[] dimSizes = new int[projNDim];
         int[] dims = new int[projNDim];
@@ -2661,8 +2715,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         String dimLabel = "";
         int[] mPoint = new int[nDim];
         int[] startPoint = new int[nDim];
+
+
         for (int i = 0; i < nDim; i++) {
-            if (viewPt != null) {
+            if (viewMode && (viewPt != null)) {
                 mPoint[i] = viewPt[i][1] - viewPt[i][0] + 1;
                 startPoint[i] = viewPt[i][0];
                 if (mPoint[i] == 1) {
@@ -2687,24 +2743,25 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 j++;
             }
         }
-        String projFileName = getFileName();
-        String extension = "";
-        if (projFileName.endsWith(".nv")) {
-            extension = ".nv";
-        } else if (projFileName.endsWith(".ucsf")) {
-            extension = ".ucsf";
-        }
-        if (!extension.isEmpty()) {
-            projFileName = projFileName.substring(0, projFileName.length() - extension.length());
-        }
-        projFileName = projFileName + DatasetBase.DATASET_PROJECTION_TAG + dimLabel + extension;
-        File projFile = new File(projFileName);
-
+        File projFile = getProjFileName(dimLabel);
         Dataset currProjection = Dataset.getDataset(projFile.getName());
+        boolean resize = false;
         if (currProjection != null) {
-            currProjection.close();
+            for (int i = 0; i < dimSizes.length; i++) {
+                if (dimSizes[i] != currProjection.getSizeTotal(i)) {
+                    resize = true;
+                }
+            }
         }
-        Dataset projDataset = Dataset.createDataset(projFileName, projFileName, projFile.getName(), dimSizes, false, true);
+        Dataset projDataset;
+        if (currProjection != null) {
+            projDataset = currProjection;
+            if (resize) {
+                projDataset.resizeDims(dimSizes);
+            }
+        } else {
+            projDataset = new Dataset(projFile.getName(), projFile, dimSizes, false);
+        }
         projDataset.clear();
         for (int i = 0; i < projNDim; i++) {
             copyReducedHeader(projDataset, dims[i], i);
@@ -2744,8 +2801,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
 
         projDataset.writeHeader();
-        projDataset.close();
-        projDataset = new Dataset(projFileName, projFileName, false, false, true);
         return projDataset;
     }
 

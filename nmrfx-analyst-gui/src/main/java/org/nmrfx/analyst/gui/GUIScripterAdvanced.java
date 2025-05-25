@@ -136,6 +136,7 @@ public class GUIScripterAdvanced extends GUIScripter {
             sd.put("datasets", datasetList);
 
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+
             List<String> datasetNames = dataAttrs.stream().map(DatasetAttributes::getFileName).toList();
             for (String datasetName : datasetNames) {
                 Map<String, Object> dSet = new HashMap<>();
