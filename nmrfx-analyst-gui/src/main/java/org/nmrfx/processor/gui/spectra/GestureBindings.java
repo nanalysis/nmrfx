@@ -50,7 +50,8 @@ public class GestureBindings {
         if (border == ChartBorder.LEFT && chart.getNDim() < 2) {
             chart.scroll(dx, scrollDirectionFactor * dy);
         } else if (border == ChartBorder.RIGHT || border == ChartBorder.TOP) {
-            chart.updateProjectionScale(null, scrollDirectionFactor * dy);
+            ChartBorder chartBorder = event.isAltDown() ? null : border;
+            chart.updateProjectionScale(chartBorder, scrollDirectionFactor * dy);
             chart.refresh();
         } else if ((border == ChartBorder.LEFT || border == ChartBorder.BOTTOM) || (event.isAltDown() && border == ChartBorder.NONE)) {
             chart.zoom(scrollDirectionFactor * -dy / 50.0 + 1.0);
