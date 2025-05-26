@@ -65,6 +65,11 @@ import java.util.stream.IntStream;
 @PythonAPI({"dscript", "nustest", "simfid"})
 @PluginAPI("parametric")
 public class Dataset extends DatasetBase implements Comparable<Dataset> {
+    public enum ProjectionMode {
+        OFF,
+        VIEW,
+        FULL
+    }
 
     private static final Logger log = LoggerFactory.getLogger(Dataset.class);
     private static final long BIG_MAP_LIMIT = Integer.MAX_VALUE / 2;
@@ -75,7 +80,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     Map<String, double[]> buffers = new HashMap<>();
     Dataset[] projections = null;
     int[][] projectionLimits = null;
-    boolean projectionViewMode = false;
+    ProjectionMode projectionViewMode = ProjectionMode.OFF;
     private Object analyzerObject = null;
     boolean memoryMode = false;
     String script = "";
@@ -2644,6 +2649,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    public ProjectionMode getProjectionViewMode() {
+        return projectionViewMode;
+    }
+
+    public void projectionViewMode(ProjectionMode projectionMode) {
+        this.projectionViewMode = projectionMode;
+    }
+
     public void updateProjections(int[][] viewPt) throws IOException, DatasetException {
         if ((projections != null)) {
             for (int i = 0; i < projections.length; i++) {
@@ -2668,15 +2681,19 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    public void project(int iDim, int[][] viewPt, boolean viewMode) throws IOException, DatasetException {
+    public boolean isProjection() {
+        return projectionLimits != null;
+    }
+
+    public void project(int iDim, int[][] viewPt, ProjectionMode viewMode) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
         projectionViewMode = viewMode;
-        if (!viewMode || (viewPt != null)) {
+        if ((viewMode == ProjectionMode.FULL) || (viewPt != null)) {
             Dataset projDataset = projectND(iDim, viewPt, viewMode);
             projections[iDim] = projDataset;
-            if (viewMode) {
+            if (viewMode == ProjectionMode.VIEW) {
                 if ((projDataset.projectionLimits == null) || (projDataset.projectionLimits.length != viewPt.length)) {
                     projDataset.projectionLimits = new int[getNDim()][2];
                 }
@@ -2703,7 +2720,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return projFile;
     }
 
-    public Dataset projectND(int iDim, int[][] viewPt, boolean viewMode) throws IOException, DatasetException {
+    public Dataset projectND(int iDim, int[][] viewPt, ProjectionMode viewMode) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
         }
@@ -2718,7 +2735,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
 
         for (int i = 0; i < nDim; i++) {
-            if (viewMode && (viewPt != null)) {
+            if ((projectionViewMode == ProjectionMode.VIEW) && (viewPt != null)) {
                 mPoint[i] = viewPt[i][1] - viewPt[i][0] + 1;
                 startPoint[i] = viewPt[i][0];
                 if (mPoint[i] == 1) {

@@ -3986,12 +3986,12 @@ public class PolyChart extends Region {
             log.error("Can't update projection", e);
         }
     }
-    public void projectDataset(boolean viewMode) {
+    public void projectDataset(Dataset.ProjectionMode viewMode) {
         Dataset dataset = (Dataset) getDataset();
         if (dataset == null) {
             return;
         }
-        int[][] pt = viewMode ? getDatasetAttributes().getFirst().pt : null;
+        int[][] pt = viewMode == Dataset.ProjectionMode.VIEW ? getDatasetAttributes().getFirst().pt : null;
         if (dataset.getNDim() == 2) {
             try {
                 List<String> datasetNames = new ArrayList<>();
