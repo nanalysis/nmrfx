@@ -1656,7 +1656,7 @@ public class PolyChart extends Region {
                         datasetAttributes.projection(matchDim[0]);
                         alreadyMatchedDims.add(matchDim[0]);
                         if (datasetAttributes.isProjection()) {
-                            updateProjection(firstNDAttr.get(), datasetAttributes);
+                            updateProjection(firstNDAttr.get());
                         }
                     } else {
                         // If the projection is already set for the other axis of a homonuclear experiment, switch the axis
@@ -3974,12 +3974,11 @@ public class PolyChart extends Region {
         }
     }
 
-    void updateProjection(DatasetAttributes firstAttr, DatasetAttributes projAttributes)  {
-        boolean useView = true;
+    void updateProjection(DatasetAttributes firstAttr)  {
         if (firstAttr.getDataset() == null) {
             return;
         }
-        int[][] pt = useView ? firstAttr.pt : null;
+        int[][] pt = firstAttr.pt;
         try {
             firstAttr.getDataset().updateProjections(pt);
         } catch (IOException | DatasetException e) {

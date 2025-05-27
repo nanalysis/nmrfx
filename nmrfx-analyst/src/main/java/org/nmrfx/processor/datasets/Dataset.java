@@ -2657,25 +2657,29 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         this.projectionViewMode = projectionMode;
     }
 
+    private void updateProjection(Dataset projDataset, int[][] viewPt, int iDim) throws IOException, DatasetException {
+        boolean matches = true;
+        if (projDataset.projectionLimits != null) {
+            for (int j = 0; j < viewPt.length; j++) {
+                if ((viewPt[j][0] != projDataset.projectionLimits[j][0]) ||
+                        (viewPt[j][1] != projDataset.projectionLimits[j][1])) {
+                    matches = false;
+                }
+            }
+        } else {
+            matches = false;
+        }
+        if (!matches) {
+            project(iDim, viewPt, projectionViewMode);
+        }
+    }
+
     public void updateProjections(int[][] viewPt) throws IOException, DatasetException {
         if ((projections != null)) {
             for (int i = 0; i < projections.length; i++) {
                 Dataset projDataset = projections[i];
                 if (projDataset != null) {
-                    boolean matches = true;
-                    if (projDataset.projectionLimits != null) {
-                        for (int j = 0; j < viewPt.length; j++) {
-                            if ((viewPt[j][0] != projDataset.projectionLimits[j][0]) ||
-                                    (viewPt[j][1] != projDataset.projectionLimits[j][1])) {
-                                matches = false;
-                            }
-                        }
-                    } else {
-                        matches = false;
-                    }
-                    if (!matches) {
-                        project(i, viewPt, projectionViewMode);
-                    }
+                    updateProjection(projDataset, viewPt, i);
                 }
             }
         }
@@ -2716,10 +2720,44 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             projFileName = projFileName.substring(0, projFileName.length() - extension.length());
         }
         projFileName = projFileName + DatasetBase.DATASET_PROJECTION_TAG + dimLabel + extension;
-        File projFile = new File(projFileName);
-        return projFile;
+        return new File(projFileName);
     }
 
+    private void doProjection(Dataset projDataset, int[] mPoint, int[] startPoint, int projNDim,
+                              int[] projDims, int[] dims, boolean adjusted) throws IOException {
+        int[] projPoint = new int[projNDim];
+        MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
+        MultidimensionalCounter.Iterator iter = counter.iterator();
+        int[] point = new int[nDim];
+        while (iter.hasNext()) {
+            iter.next();
+            int[] index = iter.getCounts();
+            for (int i = 0; i < index.length; i++) {
+                point[i] = index[i] + startPoint[i];
+            }
+            double value = readPoint(point);
+            for (int k = 0; k < projNDim; k++) {
+                projPoint[k] = index[dims[k]];
+            }
+            double pValue = projDataset.readPoint(projPoint, projDims);
+            if (value > pValue) {
+                projDataset.writePoint(projPoint, value);
+            }
+        }
+
+        for (int i = 0; i < projNDim; i++) {
+            if (!adjusted) {
+                projDataset.setRefValue(i, getRefValue(dims[i]));
+                projDataset.setRefPt(i, getRefPt(dims[i]));
+            } else {
+                double zeroPPM = pointToPPM(dims[i], startPoint[dims[i]]);
+                projDataset.setRefPt(i, 0);
+                projDataset.setRefPt_r(i, 0);
+                projDataset.setRefValue(i, zeroPPM);
+                projDataset.setRefValue_r(i, zeroPPM);
+            }
+        }
+    }
     public Dataset projectND(int iDim, int[][] viewPt, ProjectionMode viewMode) throws IOException, DatasetException {
         if (projections == null) {
             projections = new Dataset[getNDim()];
@@ -2783,39 +2821,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 0; i < projNDim; i++) {
             copyReducedHeader(projDataset, dims[i], i);
         }
-        int[] projPoint = new int[projNDim];
-
-        MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
-        MultidimensionalCounter.Iterator iter = counter.iterator();
-        int[] point = new int[nDim];
-        while (iter.hasNext()) {
-            iter.next();
-            int[] index = iter.getCounts();
-            for (int i = 0; i < index.length; i++) {
-                point[i] = index[i] + startPoint[i];
-            }
-            double value = readPoint(point);
-            for (int k = 0; k < projNDim; k++) {
-                projPoint[k] = index[dims[k]];
-            }
-            double pValue = projDataset.readPoint(projPoint, projDims);
-            if (value > pValue) {
-                projDataset.writePoint(projPoint, value);
-            }
-        }
-
-        for (int i = 0; i < projNDim; i++) {
-            if (!adjusted) {
-                projDataset.setRefValue(i, getRefValue(dims[i]));
-                projDataset.setRefPt(i, getRefPt(dims[i]));
-            } else {
-                double zeroPPM = pointToPPM(dims[i], startPoint[dims[i]]);
-                projDataset.setRefPt(i, 0);
-                projDataset.setRefPt_r(i, 0);
-                projDataset.setRefValue(i, zeroPPM);
-                projDataset.setRefValue_r(i, zeroPPM);
-            }
-        }
+        doProjection(projDataset, mPoint, startPoint, projNDim, projDims, dims, adjusted);
 
         projDataset.writeHeader();
         return projDataset;

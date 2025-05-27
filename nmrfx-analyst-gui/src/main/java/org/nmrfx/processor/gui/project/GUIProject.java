@@ -279,12 +279,11 @@ public class GUIProject extends StructureProject {
         datasets.addAll(datasetMap.values());
     }
 
+    @Override
     public List<DatasetBase> getDatasets() {
         if (datasetMap.size() != datasets.size()) {
             refreshDatasetList();
         }
         return datasets;
     }
-
-
 }

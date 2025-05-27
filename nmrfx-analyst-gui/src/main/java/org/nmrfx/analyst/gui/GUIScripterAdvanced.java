@@ -35,6 +35,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     private static final String STRIPS = "strips";
     private static final String RUNABOUT = "runabout";
     private static final String INSET = "inset";
+    private static final String PROJECTION = "projection";
 
     public Map<String, String> strips(FXMLController controller) {
         StripController stripController = (StripController) controller.getTool(StripController.class);
@@ -145,7 +146,7 @@ public class GUIScripterAdvanced extends GUIScripter {
                 dSet.put(CONFIG, configOnFx(chart, datasetName));
                 dSet.put("dims", getDimsOnFx(chart, datasetName));
                 Dataset.ProjectionMode projectionMode = dataAttr.getDataset().getProjectionViewMode();
-                dSet.put("projection", projectionMode.name());
+                dSet.put(PROJECTION, projectionMode.name());
                 datasetList.add(dSet);
             });
             List<Map<String, Object>> peakLists = new ArrayList<>();
@@ -288,9 +289,7 @@ public class GUIScripterAdvanced extends GUIScripter {
 
             Optional<Dataset.ProjectionMode> viewModeOpt = chart.getDatasetAttributes().stream()
                     .map(dataAttr -> dataAttr.getDataset().getProjectionViewMode()).filter(pMode -> pMode != Dataset.ProjectionMode.OFF).findFirst();
-            viewModeOpt.ifPresent(projectionMode -> {
-                chart.projectDataset(projectionMode) ;
-            });
+            viewModeOpt.ifPresent(chart::projectDataset);
         }
     }
 
@@ -339,8 +338,8 @@ public class GUIScripterAdvanced extends GUIScripter {
                 }
                 setDimsOnFx(chart, name, dims);
             }
-            if (datasetMap.containsKey("projection")) {
-                Object viewModeObj = datasetMap.get("projection");
+            if (datasetMap.containsKey(PROJECTION)) {
+                Object viewModeObj = datasetMap.get(PROJECTION);
                 if (viewModeObj != null) {
                     setProjectionOnFx(chart, name, viewModeObj.toString());
                 }
