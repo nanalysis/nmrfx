@@ -910,13 +910,6 @@ public class PDBFile {
         } else {
             molName = molecule.getName();
         }
-<<<<<<< HEAD
-        if (coordSetName == null) {
-            // XXX
-            coordSetName = molecule.coordSets.values().iterator().next().getName();
-        }
-=======
->>>>>>> master
         int structureNumber = 0;
         String string;
         Compound compound = null;
