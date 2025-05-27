@@ -6,6 +6,7 @@ import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -34,6 +35,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     private static final String STRIPS = "strips";
     private static final String RUNABOUT = "runabout";
     private static final String INSET = "inset";
+    private static final String PROJECTION = "projection";
 
     public Map<String, String> strips(FXMLController controller) {
         StripController stripController = (StripController) controller.getTool(StripController.class);
@@ -90,7 +92,7 @@ public class GUIScripterAdvanced extends GUIScripter {
         runAboutGUIOpt.ifPresent(runAboutGUI -> {
             String arrangement = Objects.requireNonNullElse(runAboutData.getOrDefault(ARRANGEMENT, "HC"), "HC").toString();
             String refListName = Objects.requireNonNullElse(runAboutData.getOrDefault(REFLIST, ""), "").toString();
-            Object unifyObject =  Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, false), false);
+            Object unifyObject = Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, false), false);
             Boolean unifyLimits = Boolean.FALSE;
             if (unifyObject instanceof Boolean unifyBoolean) {
                 unifyLimits = unifyBoolean;
@@ -136,17 +138,21 @@ public class GUIScripterAdvanced extends GUIScripter {
             sd.put("datasets", datasetList);
 
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-            List<String> datasetNames = dataAttrs.stream().map(DatasetAttributes::getFileName).toList();
-            for (String datasetName : datasetNames) {
+
+            dataAttrs.stream().filter(dataAttr -> !dataAttr.getDataset().isProjection()).forEach(dataAttr -> {
+                String datasetName = dataAttr.getFileName();
                 Map<String, Object> dSet = new HashMap<>();
                 dSet.put("name", datasetName);
                 dSet.put(CONFIG, configOnFx(chart, datasetName));
                 dSet.put("dims", getDimsOnFx(chart, datasetName));
+                Dataset.ProjectionMode projectionMode = dataAttr.getDataset().getProjectionViewMode();
+                dSet.put(PROJECTION, projectionMode.name());
                 datasetList.add(dSet);
-            }
+            });
             List<Map<String, Object>> peakLists = new ArrayList<>();
             sd.put(PEAKLISTS, peakLists);
             List<String> peakListNames = peakListsOnFx(chart);
+
             for (String peakListName : peakListNames) {
                 Map<String, Object> pSet = new HashMap<>();
                 pSet.put("name", peakListName);
@@ -193,7 +199,7 @@ public class GUIScripterAdvanced extends GUIScripter {
         }
         List<Map<String, Object>> spectraList = new ArrayList<>();
         if (data.containsKey(SPECTRA)) {
-             spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
+            spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
         }
         if (data.containsKey("grid")) {
             int nGridSpectra = countGridSpectra(spectraList);
@@ -240,6 +246,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     private int countGridSpectra(List<Map<String, Object>> spectraList) {
         return spectraList.size() - (int) spectraList.stream().filter(map -> map.containsKey(INSET)).count();
     }
+
     private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList) {
         int iWin = 0;
         PolyChart lastGridChart = null;
@@ -279,6 +286,10 @@ public class GUIScripterAdvanced extends GUIScripter {
             }
             processChart(chart, spectraMap);
             chart.refresh();
+
+            Optional<Dataset.ProjectionMode> viewModeOpt = chart.getDatasetAttributes().stream()
+                    .map(dataAttr -> dataAttr.getDataset().getProjectionViewMode()).filter(pMode -> pMode != Dataset.ProjectionMode.OFF).findFirst();
+            viewModeOpt.ifPresent(chart::projectDataset);
         }
     }
 
@@ -326,6 +337,12 @@ public class GUIScripterAdvanced extends GUIScripter {
                     dims[i] = dimList.get(i);
                 }
                 setDimsOnFx(chart, name, dims);
+            }
+            if (datasetMap.containsKey(PROJECTION)) {
+                Object viewModeObj = datasetMap.get(PROJECTION);
+                if (viewModeObj != null) {
+                    setProjectionOnFx(chart, name, viewModeObj.toString());
+                }
             }
         }
     }
