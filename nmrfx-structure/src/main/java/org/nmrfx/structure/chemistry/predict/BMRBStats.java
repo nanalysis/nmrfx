@@ -73,11 +73,18 @@ public class BMRBStats {
                         if (fields.length == 7) {
                             String compName = fields[0];
                             String atomName = fields[1];
-                            double avgValue = Double.valueOf(fields[5]);
-                            double sdevValue = Double.valueOf(fields[6]);
+                            double avgValue = Double.parseDouble(fields[5]);
+                            double sdevValue = Double.parseDouble(fields[6]);
                             PPMv ppmV = new PPMv(avgValue);
                             ppmV.setError(sdevValue);
                             if (atomName.charAt(0) == 'M') {
+                                if (compName.equals("ILE") && atomName.equals("MD")) {
+                                    atomName = "MD1";
+                                } else if (compName.equals("ILE") && atomName.equals("MG")) {
+                                    atomName = "MG2";
+                                } else if (compName.equals("THR") && atomName.equals("MG")) {
+                                    atomName = "MG2";
+                                }
                                 atomName = "H" + atomName.substring(1);
                                 for (int i = 1; i <= 3; i++) {
                                     setValue(compName, atomName + i, ppmV);
@@ -100,11 +107,7 @@ public class BMRBStats {
     }
 
     static void setValue(String compName, String atomName, PPMv ppmV) {
-        Map<String, PPMv> atomMap = resMap.get(compName);
-        if (atomMap == null) {
-            atomMap = new HashMap<>();
-            resMap.put(compName, atomMap);
-        }
+        Map<String, PPMv> atomMap = resMap.computeIfAbsent(compName, k -> new HashMap<>());
         atomMap.put(atomName, ppmV);
     }
 

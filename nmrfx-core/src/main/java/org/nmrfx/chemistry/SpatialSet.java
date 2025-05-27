@@ -535,11 +535,7 @@ public class SpatialSet {
         }
         String aname = atom.name;
         if (eName.length() == 1) {
-            if (eName.equals("H")) {
-                if (aname.length() <= 3) {
-                    aname = ' ' + aname;
-                }
-            } else {
+            if (aname.length() <= 3) {
                 aname = ' ' + aname;
             }
         }

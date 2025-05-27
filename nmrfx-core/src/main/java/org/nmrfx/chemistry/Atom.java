@@ -1888,10 +1888,10 @@ public class Atom implements IAtom, Comparable<Atom> {
                 if (entity1 instanceof Residue) {
                     Residue residue1 = (Residue) entity1;
                     Polymer polymer = residue1.polymer;
-                    Residue residue2 = (Residue) entity2;
+                    Compound compound2 = (Compound) entity2;
 
                     AtomSpecifier atomSp1 = new AtomSpecifier(residue1.getNumber(), residue1.getName(), atom1.getName());
-                    AtomSpecifier atomSp2 = new AtomSpecifier(residue2.getNumber(), residue2.getName(), atom2.getName());
+                    AtomSpecifier atomSp2 = new AtomSpecifier(compound2.getNumber(), compound2.getName(), atom2.getName());
                     BondSpecifier bondSp = new BondSpecifier(atomSp1, atomSp2, order);
                     polymer.addedBonds.add(bondSp);
                 }
@@ -1907,10 +1907,6 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public String getElementName() {
         return AtomProperty.getElementName(aNum);
-    }
-
-    public byte getElementNumber() {
-        return getElementNumber(name);
     }
 
     public static byte getElementNumber(String elemName) {

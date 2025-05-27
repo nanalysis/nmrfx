@@ -22,6 +22,7 @@ public class RNAStats {
     final float sdev;
     final float min;
     final float max;
+    Float predValue = null;
 
     public RNAStats(int nValues, float mean, float sdev, float min, float max) {
         this.nValues = nValues;
@@ -86,6 +87,14 @@ public class RNAStats {
         sBuilder.append(String.format("-%.2f", max));
 
         return sBuilder.toString();
+    }
+
+    public void setPredValue(double value) {
+        predValue = (float) value;
+    }
+
+    public Float getPredValue() {
+        return predValue;
     }
 
     public double getMean() {

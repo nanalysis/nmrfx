@@ -181,6 +181,7 @@ public class NMRStarReader {
             }
             if (ccSaveframe != null) {
                 compound.setNumber(seqNumber);
+                compound.setResNum(Integer.parseInt(seqNumber));
                 updateFromSTAR3ChemComp(ccSaveframe, compound);
             } else {
                 log.warn("No save frame: {}", ccSaveFrameName);
@@ -459,7 +460,7 @@ public class NMRStarReader {
                 Entity entity = molecule.getEntity(name);
                 if (entity == null) {
                     Compound compound = new Compound("1", name, name, entityAssemblyName);
-                    compound.setIDNum(1);
+                    compound.setIDNum(entityID);
                     compound.assemblyID = entityAssemblyID;
                     compound.setPDBChain(pdbLabel);
                     entities.put(entityAssemblyIDString + "." + entityIDString, compound);
@@ -958,21 +959,12 @@ public class NMRStarReader {
     void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
         Loop loop = saveframe.getLoop("_Spectral_transition");
         if (loop != null) {
-            List<Integer> idColumn = loop.getColumnAsIntegerList("ID", null);
-            List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
-
-            for (int i = 0, n = idColumn.size(); i < n; i++) {
-                int idNum = idColumn.get(i);
-                int peakIdNum = peakIdColumn.get(i);
-                Peak peak = peakList.getPeakByID(peakIdNum);
-                peak.setIdNum(idNum);
-            }
             loop = saveframe.getLoop("_Spectral_transition_general_char");
 
             if (loop != null) {
                 Map<Integer, Double> intMap = new HashMap<>();
                 Map<Integer, Double> volMap = new HashMap<>();
-                idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                List<Integer> idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
                 List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
                 List<String> methodColumn = loop.getColumnAsList("Measurement_method");
 
@@ -993,7 +985,7 @@ public class NMRStarReader {
                 loop = saveframe.getLoop("_Spectral_transition_char");
                 if (loop != null) {
                     idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
-                    peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                    List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
                     List<Double> shiftColumn = loop.getColumnAsDoubleList("Chem_shift_val", null);
                     List<Double> lwColumn = loop.getColumnAsDoubleList("Line_width_val", null);
                     List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
@@ -1535,6 +1527,7 @@ public class NMRStarReader {
         if (loop == null) {
             throw new ParseException("No \"_RDC\" loop");
         }
+        int iStructure = 0;
         List<String>[] entityAssemblyIDColumns = new ArrayList[2];
         List<String>[] entityIDColumns = new ArrayList[2];
         List<String>[] compIdxIDColumns = new ArrayList[2];
@@ -1571,7 +1564,7 @@ public class NMRStarReader {
                 } else {
                     err = errColumn.get(i);
                 }
-                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), err);
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), iStructure, valColumn.get(i), err);
                 rdcSet.add(aCon);
 
             }

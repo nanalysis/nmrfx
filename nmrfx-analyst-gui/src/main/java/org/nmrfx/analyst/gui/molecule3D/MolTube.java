@@ -100,6 +100,9 @@ public class MolTube extends Group implements MolItem {
     }
 
     public Group makeTube(String molName, int iStructure) {
+        if (atomSpheres.size() < 8) {
+            return null;
+        }
         Tube tube = new Tube();
         tube.nChords = nChords;
         tube.bSides = bSides;

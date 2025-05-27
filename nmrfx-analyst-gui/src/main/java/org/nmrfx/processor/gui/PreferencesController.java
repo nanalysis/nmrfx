@@ -55,6 +55,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static Integer nProcesses = null;
     private static BooleanProperty useImmediateModeProp = null;
     private static BooleanProperty useNVJMouseModeProp = null;
+    private static BooleanProperty autoAddPeaksProp = null;
     private static IntegerProperty tickFontSizeProp = null;
     private static IntegerProperty labelFontSizeProp = null;
     private static IntegerProperty peakFontSizeProp = null;
@@ -147,6 +148,16 @@ public class PreferencesController implements Initializable, StageBasedControlle
                     setBoolean("NVJ_SCROLL_MODE", (Boolean) c);
                 },
                 getUseNvjMouseMode(), "Spectra", "UseNvJMouseMode", "Use original NvJ scrolling modes");
+
+        BooleanOperationItem autoAddPeaksItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    autoAddPeaksProp.setValue((Boolean) c);
+                    setBoolean("AUTOADD_PEAKS_MODE", (Boolean) c);
+                },
+                getAutoAddPeakMode(), "Spectra", "Auto Add Peaks", "Add peak list when adding dataset");
+
+
+
         BooleanOperationItem fitPeakShapeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
                     fitPeakShapeProp.setValue((Boolean) c);
@@ -240,6 +251,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
+                autoAddPeaksItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem,
                 projectSaveItem, projectSaveIntervalItem,
                 autoProcessDataItem, useFIDParApodizationItem, useFIDParPhasesItem, doAutoPhaseItem, doAutoPhase1Item,
@@ -531,6 +543,11 @@ public class PreferencesController implements Initializable, StageBasedControlle
     public static Boolean getUseNvjMouseMode() {
         useNVJMouseModeProp = getBoolean(useNVJMouseModeProp, "NVJ_SCROLL_MODE", false);
         return useNVJMouseModeProp.getValue();
+    }
+
+    public static Boolean getAutoAddPeakMode() {
+        autoAddPeaksProp = getBoolean(autoAddPeaksProp, "AUTOADD_PEAKS_MODE", false);
+        return autoAddPeaksProp.getValue();
     }
 
     public static Boolean getFitPeakShape() {

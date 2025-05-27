@@ -97,6 +97,17 @@ types:
       - name: N
         pattern: i.N
         bonds:
+  - name: CBCANH
+    dims:
+      - name: H
+        pattern: i.H
+        bonds: N
+      - name: CACB
+        pattern: "i,i-1.CA,CB-"
+        bonds:
+      - name: N
+        pattern: i.N
+        bonds:
   - name: HNCA
     dims:
       - name: H
@@ -131,7 +142,7 @@ types:
         pattern: i.N
         bonds:
   - name: CBCACONNH
-    dims:
+    dims: &cbcaconhDims
       - name: H
         pattern: i.H
         bonds: N
@@ -141,6 +152,8 @@ types:
       - name: N
         pattern: i.N
         bonds:
+  - name: CBCACONH
+    dims: *cbcaconhDims
   - name: HBHACONNH
     dims:
       - name: H

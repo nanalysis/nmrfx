@@ -392,6 +392,16 @@ public class GUIScripter {
         }
     }
 
+    public void setProjectionOnFx(PolyChart chart, String datasetName, String viewModeString) {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        for (DatasetAttributes dataAttr : dataAttrs) {
+            if ((datasetName == null) || dataAttr.getFileName().equals(datasetName)) {
+                Dataset.ProjectionMode viewMode = Dataset.ProjectionMode.valueOf(viewModeString);
+                dataAttr.getDataset().projectionViewMode(viewMode);
+                break;
+            }
+        }
+    }
     public Map<String, Object> pconfig(List<String> peakListNames) throws InterruptedException, ExecutionException {
         final String peakListName;
         if ((peakListNames != null) && !peakListNames.isEmpty()) {
@@ -511,6 +521,7 @@ public class GUIScripter {
             List<CanvasAnnotation> annoTypes = (List<CanvasAnnotation>) yaml.load(stream);
             for (CanvasAnnotation annoType : annoTypes) {
                 chart.addAnnotation(annoType);
+                annoType.setChart(chart);
             }
         } catch (IOException e) {
             log.error("Error loading annotations", e);
@@ -608,6 +619,16 @@ public class GUIScripter {
             controller1.draw();
         });
     }
+    public void insetPosition(PolyChart chart, Double x, Double y, Double w, Double h) {
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            controller1.setChartDisable(true);
+            var insetChartOpt = chart.getInsetChart();
+            insetChartOpt.ifPresent(insetChart -> insetChart.setFractionalPosition(x, y, w, h));
+            controller1.setChartDisable(false);
+            controller1.draw();
+        });
+    }
 
 
     public int nCharts() throws InterruptedException, ExecutionException {
@@ -617,18 +638,18 @@ public class GUIScripter {
         });
     }
 
-    public List<String> datasets() throws InterruptedException, ExecutionException {
+    public List<String> datasetNames() throws InterruptedException, ExecutionException {
         return Fx.runOnFxThreadAndWait(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-            return dataAttrs.stream().map(DatasetAttributes::getFileName).toList();
+            return dataAttrs.stream().map(dataAttr -> dataAttr.getDataset().getName()).toList();
         });
     }
 
-    public void datasets(String datasetName) {
+    public void datasetNames(String datasetName) {
         List<String> datasetNames = new ArrayList<>();
         datasetNames.add(datasetName);
-        datasets(datasetNames);
+        datasetNames(datasetNames);
     }
 
     public void addDataset(Dataset dataset) {
@@ -645,8 +666,11 @@ public class GUIScripter {
         });
     }
 
-    public void datasets(List<String> datasetNames) {
+    public void datasetNames(List<String> datasetNames) {
         Fx.runOnFxThread(() -> getChart().updateDatasetsByNames(datasetNames));
+    }
+    public void datasets(List<Dataset> datasets) {
+        Fx.runOnFxThread(() -> getChart().updateDatasets(datasets));
     }
 
     public void gridDatasets(List<String> datasetNames) {

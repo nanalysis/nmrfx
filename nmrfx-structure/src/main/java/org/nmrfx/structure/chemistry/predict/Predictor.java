@@ -19,11 +19,10 @@ import org.nmrfx.structure.chemistry.miner.PathIterator;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tribuo.Model;
+import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -31,6 +30,8 @@ import java.util.*;
  */
 public class Predictor {
     private static final Logger log = LoggerFactory.getLogger(Predictor.class);
+    static Map<String, Model<Regressor>> proteinModels = new HashMap<>();
+    static Map<String, Model<Regressor>> rnaModels = new HashMap<>();
 
     ProteinPredictor proteinPredictor = null;
 
@@ -158,6 +159,11 @@ public class Predictor {
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
+    public enum PredictionMolType {
+        RNA,
+        PROTEIN
+    }
+
     public enum PredictionModes {
         OFF,
         RNA_ATTRIBUTES,
@@ -166,7 +172,39 @@ public class Predictor {
         THREED,
         SHELL
     }
-    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {}
+
+    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {
+    }
+
+    public static Optional<Model<Regressor>> loadTribuoModel(PredictionMolType type, String name) {
+        String resourceName = "data/predict/" + type.toString().toLowerCase() + "/tribuomodels/model_" + name + ".proto";
+        Optional<Model<Regressor>> result = Optional.empty();
+
+        try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (inputStream != null) {
+                result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
+            } else {
+                log.warn("No prediction model {}", resourceName);
+            }
+        } catch (IOException e) {
+            result = Optional.empty();
+        }
+
+        return result;
+    }
+
+    public static Optional<Model<Regressor>> getTribuoModel(PredictionMolType type, String atomType) {
+        Optional<Model<Regressor>> modelOpt;
+        Map<String, Model<Regressor>> models = type == PredictionMolType.PROTEIN ? proteinModels : rnaModels;
+        if (!models.containsKey(atomType)) {
+            modelOpt = loadTribuoModel(type, atomType);
+            models.put(atomType, modelOpt.orElse(null));
+        } else {
+            modelOpt = Optional.ofNullable(models.get(atomType));
+        }
+        return modelOpt;
+    }
+
 
     void clearRefPPMs(int iRef) {
         Molecule mol = Molecule.getActive();
@@ -312,6 +350,7 @@ public class Predictor {
             }
         }
     }
+
     boolean checkCoordinates(Molecule molecule) {
         if (molecule == null) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
@@ -386,7 +425,7 @@ public class Predictor {
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
-            if  (molecule.getDotBracket().isEmpty()) {
+            if (molecule.getDotBracket().isEmpty()) {
                 GUIUtils.warn("RNA Prediction", "Please set secondary structure (dot-bracket)");
                 return;
             }
@@ -431,7 +470,12 @@ public class Predictor {
         List<Atom> atoms = ligand.getAtoms();
         for (Atom atom : atoms) {
             double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), 0, ringRatio);
-            PPMv ppmV = atom.getRefPPM(iRef);
+            PPMv ppmV;
+            if (iRef < 0) {
+                ppmV = atom.getRefPPM(-iRef - 1);
+            } else {
+                ppmV = atom.getPPM(iRef);
+            }
             if (ppmV != null) {
                 double basePPM = ppmV.getValue();
                 double ppm = basePPM + ringPPM;
@@ -555,7 +599,7 @@ public class Predictor {
             Atom hoseAtom = null;
             double roundScale = 1.0;
             if (atom.getAtomicNumber() == 1) {
-                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().get(0) : null;
+                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().getFirst() : null;
                 if ((connectedAtom == null) || (connectedAtom.getAtomicNumber() != aNum)) {
                     continue;
                 }
@@ -591,8 +635,8 @@ public class Predictor {
                             shift = hoseStat.dStat.getElement(0);
                             error = defaultError * shellMult;
                         } else {
-                             shift = hoseStat.dStat.getPercentile(50);
-                             error = hoseStat.dStat.getStandardDeviation() * shellMult;
+                            shift = hoseStat.dStat.getPercentile(50);
+                            error = hoseStat.dStat.getStandardDeviation() * shellMult;
                         }
                         if (Double.isNaN(error)) {
                             error = defaultError;
@@ -607,13 +651,13 @@ public class Predictor {
                         error = Math.round(error * roundScale) / roundScale;
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, shift);
-                            atom.setRefError(-iRef -1, error);
+                            atom.setRefError(-iRef - 1, error);
                         } else {
                             atom.setPPM(iRef, shift);
                             atom.setRefError(iRef, error);
                         }
                     } else {
-                        log.warn("no hose prediction for {} {}",  hoseAtom.getFullName(), hoseCode);
+                        log.warn("no hose prediction for {} {}", hoseAtom.getFullName(), hoseCode);
                     }
                 }
             }
