@@ -5,6 +5,8 @@ import org.jgrapht.alg.interfaces.MatchingAlgorithm;
 import org.jgrapht.alg.matching.MaximumWeightBipartiteMatching;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
@@ -12,9 +14,13 @@ import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt32;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.*;
 
 public class SSPredictor {
+    private static final Logger log = LoggerFactory.getLogger(SSPredictor.class);
+
     static final Random random = new Random();
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
     double[][] predictions;
@@ -59,12 +65,20 @@ public class SSPredictor {
     }
 
     public boolean hasValidModelFile() {
-        boolean ok = false;
         if (modelFilePath != null) {
             File file = new File(modelFilePath);
-            ok = file.exists();
+            PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:saved_model.pb");
+            try (DirectoryStream<Path> paths = Files.newDirectoryStream(file.toPath())) {
+                for (Path path : paths) {
+                    if (matcher.matches(path.getFileName())) {
+                        return file.exists();
+                    }
+                }
+            } catch (IOException e) {
+                log.error("Error finding model file", e);
+            }
         }
-        return ok;
+        return false;
     }
 
     public static void load() throws IllegalArgumentException {
@@ -72,7 +86,11 @@ public class SSPredictor {
             throw new IllegalArgumentException("No model file location set");
         }
         if (graphModel == null) {
-            graphModel = SavedModelBundle.load(modelFilePath, "serve");
+            try {
+                graphModel = SavedModelBundle.load(modelFilePath, "serve");
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Unable to load model. File may be corrupt.");
+            }
         }
     }
 
@@ -84,7 +102,6 @@ public class SSPredictor {
         this.rnaSequence = rnaSequence;
         if (graphModel == null) {
             load();
-
         }
         String rnaTokens = "AUGC";
         int nCols = 512;
@@ -103,36 +120,44 @@ public class SSPredictor {
         try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
             int seqLen = rnaSequence.length();
             predictions = new double[seqLen][seqLen];
-            for (int r = 0; r < seqLen; r++) {
-                for (int c = r + delta; c < seqLen; c++) {
-                    int index = getIndex(r, c, nCols, delta);
-                    double prediction = tensor0.getFloat(0, index);
-                    char rChar = rnaSequence.charAt(r);
-                    char cChar = rnaSequence.charAt(c);
-                    String bp = rChar + String.valueOf(cChar);
-                    if (!validBPs.contains(bp)) {
-                        prediction = 0.0;
-                    }
-                    predictions[r][c] = prediction;
+            setPredictions(rnaSequence, seqLen, nCols, tensor0, threshold);
+        }
+    }
+
+    private void setPredictions(String rnaSequence, int seqLen, int nCols, TFloat32 tensor0, double threshold) {
+        for (int r = 0; r < seqLen; r++) {
+            for (int c = r + delta; c < seqLen; c++) {
+                int index = getIndex(r, c, nCols, delta);
+                double prediction = tensor0.getFloat(0, index);
+                char rChar = rnaSequence.charAt(r);
+                char cChar = rnaSequence.charAt(c);
+                String bp = rChar + String.valueOf(cChar);
+                if (!validBPs.contains(bp)) {
+                    prediction = 0.0;
+                }
+                predictions[r][c] = prediction;
+            }
+        }
+        filterPredictions(seqLen, threshold);
+        for (int r = 0; r < seqLen; r++) {
+            for (int c = r + delta; c < seqLen; c++) {
+                if (predictions[r][c] > threshold) {
+                    BPKey bpKey = BPKey.getBPKey(r, c);
+                    BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                    allBasePairs.put(bpKey, basePairProbability);
                 }
             }
-            for (int r = 1; r < seqLen - 1; r++) {
-                for (int c = r + delta; c < seqLen - 1; c++) {
-                    double v0 = predictions[r - 1][c + 1];
-                    double v1 = predictions[r][c];
-                    double v2 = predictions[r + 1][c - 1];
-                    if ((v1 > threshold) && (v0 < threshold) && (v2 < threshold)) {
-                        predictions[r][c] = 0.0;
-                    }
-                }
-            }
-            for (int r = 0; r < seqLen; r++) {
-                for (int c = r + delta; c < seqLen; c++) {
-                    if (predictions[r][c] > threshold) {
-                        BPKey bpKey = BPKey.getBPKey(r, c);
-                        BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
-                        allBasePairs.put(bpKey, basePairProbability);
-                    }
+        }
+    }
+
+    private void filterPredictions(int seqLen, double threshold) {
+        for (int r = 1; r < seqLen - 1; r++) {
+            for (int c = r + delta; c < seqLen - 1; c++) {
+                double v0 = predictions[r - 1][c + 1];
+                double v1 = predictions[r][c];
+                double v2 = predictions[r + 1][c - 1];
+                if ((v1 > threshold) && (v0 < threshold) && (v2 < threshold)) {
+                    predictions[r][c] = 0.0;
                 }
             }
         }
@@ -141,18 +166,18 @@ public class SSPredictor {
     record Extent(List<BasePairProbability> basePairProbabilities) {
 
         boolean overlaps(Extent extent) {
-            int b1 = extent.basePairProbabilities.get(0).r;
-            int b2 = extent.basePairProbabilities.reversed().get(0).r;
-            int b3 = extent.basePairProbabilities.reversed().get(0).c;
-            int b4 = extent.basePairProbabilities.get(0).c;
+            int b1 = extent.basePairProbabilities.getFirst().r;
+            int b2 = extent.basePairProbabilities.reversed().getFirst().r;
+            int b3 = extent.basePairProbabilities.reversed().getFirst().c;
+            int b4 = extent.basePairProbabilities.getFirst().c;
             return overlaps(b1, b2, b3, b4);
         }
 
         boolean overlaps(int b1, int b2, int b3, int b4) {
-            int a1 = basePairProbabilities.get(0).r;
-            int a2 = basePairProbabilities.reversed().get(0).r;
-            int a3 = basePairProbabilities.reversed().get(0).c;
-            int a4 = basePairProbabilities.get(0).c;
+            int a1 = basePairProbabilities.getFirst().r;
+            int a2 = basePairProbabilities.reversed().getFirst().r;
+            int a3 = basePairProbabilities.reversed().getFirst().c;
+            int a4 = basePairProbabilities.getFirst().c;
 
             boolean bIna = (b1 > a2) && (b4 < a3);
             boolean aInb = (a1 > b2) && (a4 < b3);
@@ -228,14 +253,17 @@ public class SSPredictor {
                 int i2 = basePair2.r;
                 int j2 = basePair2.c;
                 boolean cross = (i1 < i2) && (i2 < j1) && (j1 < j2);
-                if (cross) {
-                    crossings.compute(basePair1, (basePair, value) -> (value == null) ? 1 : value + 1);
-                    crossings.compute(basePair2, (basePair, value) -> (value == null) ? 1 : value + 1);
-                }
-
+                addCrossing(basePair1, basePair2, cross, crossings);
             }
         }
         return crossings;
+    }
+
+    private static void addCrossing(BasePairProbability basePair1, BasePairProbability basePair2, boolean cross, Map<BasePairProbability, Integer> crossings) {
+        if (cross) {
+            crossings.compute(basePair1, (basePair, value) -> (value == null) ? 1 : value + 1);
+            crossings.compute(basePair2, (basePair, value) -> (value == null) ? 1 : value + 1);
+        }
     }
 
     boolean crosses(Collection<BasePairProbability> basePairs, BasePairProbability basePair1) {
