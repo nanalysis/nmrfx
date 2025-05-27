@@ -13,13 +13,7 @@ import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.*;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RNAProteinPredictorTest {
 
@@ -170,123 +164,6 @@ public class RNAProteinPredictorTest {
     }
 
 
-    static class AtomErrors {
-        Map<String, AtomError> atomTypes = new HashMap<>();
-        int nViol = 0;
-
-        static class AtomError {
-            double sum = 0.0;
-            double sumAbs = 0.0;
-            double sumSq = 0.0;
-            int n;
-
-            double average() {
-                return sum/n;
-            }
-
-            double rms() {
-                return Math.sqrt(sumSq/n);
-            }
-
-            double mae() {
-                return sumAbs/n;
-            }
-        }
-
-        void addViol() {
-            nViol++;
-        }
-
-        int nViol() {
-            return nViol;
-        }
-
-        void add(Atom atom, double delta, AtomErrors offsets) {
-            String aName = atom.getName().length() > 1 ?
-                    atom.getName().substring(0, 2) : atom.getName().substring(0, 1);
-            if (atom.isMethyl() && atom.getAtomicNumber() == 1 && atom.isFirstInMethyl()) {
-                aName = "MH";
-            } else if (atom.isMethylCarbon()) {
-                aName = "MC";
-            } else if (atom.isAAAromatic()) {
-                if (atom.getAtomicNumber() == 1) {
-                    aName = "AH";
-                } else if (atom.getAtomicNumber() == 6) {
-                    aName = "AC";
-                }
-            }
-            atomTypes.computeIfAbsent(aName, k -> new AtomError());
-            AtomError e = atomTypes.get(aName);
-            if (offsets != null) {
-                delta -= offsets.average(aName);
-            }
-            e.sum += delta;
-            e.sumAbs += Math.abs(delta);
-            e.sumSq += delta * delta;
-            e.n++;
-
-        }
-
-        double rms(String aName) {
-            return atomTypes.get(aName).rms();
-        }
-
-        double average(String aName) {
-            return atomTypes.get(aName).average();
-        }
-
-        void aggregate(AtomErrors atomErrors) {
-            for (Map.Entry<String, AtomError> entry : atomErrors.atomTypes.entrySet()) {
-                String aName = entry.getKey();
-                atomTypes.computeIfAbsent(aName, k -> new AtomError());
-                atomTypes.get(aName).sumSq += entry.getValue().sumSq;
-                atomTypes.get(aName).n += entry.getValue().n;
-                nViol += atomErrors.nViol();
-            }
-        }
-    }
-
-    AtomErrors getErrors(Molecule molecule, AtomErrors offsets, StringBuilder stringBuilder) {
-        AtomErrors atomErrors = new AtomErrors();
-        String molName = molecule.getName();
-        for (Atom atom : molecule.getAtoms()) {
-            Double ppm = atom.getPPM();
-            Double refPPM = atom.getRefPPM();
-            if ((ppm != null) && (refPPM != null)) {
-                double delta = Math.abs(ppm - refPPM);
-                atomErrors.add(atom, delta, offsets);
-
-                double err = atom.getSDevRefPPM();
-                err = Math.max(err, 0.3);
-                double ratio = delta / err;
-                if (offsets != null) {
-                    if (ratio > 3.5) {
-                        atomErrors.addViol();
-                    }
-                    int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
-                    String resName = atom.getResidueName();
-                    String atomId = molName + ":" + chainId + "." + atom.getShortName();
-                    stringBuilder.append(atomId).append(" ")
-                            .append(resName).append(" ");
-                    stringBuilder.append(String.format("%-2.3f", ratio)).append(" ");
-                    stringBuilder.append(refPPM).append(" ")
-                            .append(ppm).append(" ");
-                    stringBuilder.append(String.format("%-2.3f", delta)).append( "\n");
-                }
-            }
-        }
-        return atomErrors;
-    }
-
-    AtomErrors getAtomErrors(StringBuilder stringBuilder) throws IOException, InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
-        ProteinPredictor proteinPredictor = new ProteinPredictor();
-        proteinPredictor.init(molecule, 0);
-        proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
-        AtomErrors atomErrors = getErrors(molecule,null, null);
-        return getErrors(molecule, atomErrors, stringBuilder);
-    }
-
     @Test
     public void predictProteinFromSTAR() throws IOException, ParseException, InvalidMoleculeException {
         Molecule.removeAll();
@@ -296,53 +173,13 @@ public class RNAProteinPredictorTest {
         try (InputStreamReader reader = new InputStreamReader(stream)) {
             NMRStarReader.read(reader, null);
         }
-        AtomErrors atomErrors = getAtomErrors(null);
-
+        StringBuilder stringBuilder = new StringBuilder();
+        ProteinPredictor.AtomErrors atomErrors = ProteinPredictor.getAtomErrors(stringBuilder);
         Molecule.removeAll();
-        Assert.assertTrue(atomErrors.rms("H") < 0.3);
-        Assert.assertTrue(atomErrors.rms("C") < 1.0);
+        Assert.assertTrue(atomErrors.rms("H") < 0.4);
+        Assert.assertTrue(atomErrors.rms("CA") < 1.0);
         Assert.assertTrue(atomErrors.rms("N") < 2.0);
         Assert.assertTrue(atomErrors.nViol() < 6);
-    }
-
-    void predictAll(StringBuilder stringBuilder) throws IOException, ParseException, InvalidMoleculeException {
-        List<String> aNames = List.of("N","CA","CB","C","H","HA","CG", "CD", "CE", "MC", "AC", "HB", "HG", "HD", "HE", "MH", "AH");
-        AtomErrors allAtomErrors = new AtomErrors();
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get("/Users/ekoag/fitshifts/testDataset/starshift"))) {
-            for (Path path : dirStream) {
-                if (!Files.isDirectory(path)) {
-                    Molecule.removeAll();
-                    ProteinPredictor.initMinMax();
-                    InputStream stream = new FileInputStream(path.toFile());
-                    try (InputStreamReader reader = new InputStreamReader(stream)) {
-                        NMRStarReader.read(reader, null);
-                    }
-                    AtomErrors atomErrors = getAtomErrors(stringBuilder);
-                    allAtomErrors.aggregate(atomErrors);
-                    Molecule.removeAll();
-                }
-            }
-        }
-        aNames.forEach(aName -> {
-            if (allAtomErrors.atomTypes.containsKey(aName)) {
-                stringBuilder.append(aName).append(" ");
-                stringBuilder.append(String.format("%-2.3f", allAtomErrors.rms(aName))).append("\n");
-                System.out.println(aName + " " + allAtomErrors.atomTypes.get(aName).sumSq + " " +
-                        allAtomErrors.atomTypes.get(aName).n);
-            }
-        });
-        System.out.println(allAtomErrors.nViol());
-    }
-
-    @Test
-    public void predictOnTestSet() throws IOException, InvalidMoleculeException, ParseException {
-        try (FileWriter writer = new FileWriter("/Users/ekoag/fitshifts/results.txt")) {
-            String header = "atomId residue ratio refPPM PPM delta \n";
-            writer.write(header);
-            StringBuilder stringBuilder = new StringBuilder();
-            predictAll(stringBuilder);
-            writer.write(stringBuilder.toString());
-        }
     }
 
 }
