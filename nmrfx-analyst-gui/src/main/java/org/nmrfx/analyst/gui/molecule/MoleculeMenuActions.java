@@ -82,7 +82,10 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem smileItem = new MenuItem("Input SMILE...");
         smileItem.setOnAction(e -> getSMILEMolecule());
 
-        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem);
+        MenuItem writeItem = new MenuItem("Write PDB");
+        writeItem.setOnAction(e -> writePDB());
+
+        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem, writeItem);
 
     }
 
@@ -213,6 +216,23 @@ public class MoleculeMenuActions extends MenuActions {
                 readMolecule(usePath.toFile(), type);
             }
         }
+    }
+
+    public void writePDB()  {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            Molecule molecule = Molecule.getActive();
+            if (molecule != null) {
+                try {
+                    molecule.writeXYZToPDB(file.toString(), -1);
+                } catch (IOException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
+
     }
 
     public void readMolecule() {
