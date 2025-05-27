@@ -187,7 +187,7 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     protected final void initialize(AtomParser atomParse) {
         name = atomParse.atomName;
-        if (!atomParse.elemName.equals("")) {
+        if (!atomParse.elemName.isEmpty()) {
             aNum = getElementNumber(atomParse.elemName);
         } else {
             int len = name.length();
@@ -224,11 +224,11 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     void setAtomTypeFromNumber() {
-        /**
-         * setAtomTypeFromNumber sets a starting atomType for an initialized
-         * atom. The type set may not be the most appropriate to use later on in
-         * calculating repulsion energies but allows for all atoms to contribute
-         * to repulsive interactions.
+        /*
+          setAtomTypeFromNumber sets a starting atomType for an initialized
+          atom. The type set may not be the most appropriate to use later on in
+          calculating repulsion energies but allows for all atoms to contribute
+          to repulsive interactions.
          */
         switch (aNum) {
             case 1:
@@ -346,8 +346,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             compound.removeAtom(this);
         }
         if (record) {
-            if (entity instanceof Residue) {
-                Residue residue = (Residue) entity;
+            if (entity instanceof Residue residue) {
                 Polymer polymer = residue.polymer;
 
                 AtomSpecifier atomSp = new AtomSpecifier(residue.getNumber(), residue.getName(), getName());
@@ -567,8 +566,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             Polymer polymer = ((Residue) entity).polymer;
             String id = String.valueOf(polymer.getCoordSet().getID());
             return id + ":" + ((Residue) entity).number + "." + name;
-        } else if (entity instanceof Compound) {
-            Compound compound = (Compound) entity;
+        } else if (entity instanceof Compound compound) {
             String id = String.valueOf(compound.getIDNum());
             String seqCode = compound.getNumber();
             return id + ":" + seqCode + "." + name;
@@ -1119,6 +1117,25 @@ public class Atom implements IAtom, Comparable<Atom> {
 
         if (nPoints == 0) {
             return (null);
+        }
+        pt1 = pt1.scalarMultiply(1.0 / nPoints);
+        return new Point3(pt1);
+    }
+
+    public Point3 avgAcrossStructures(List<Integer> structureNums) {
+        Vector3D pt;
+        Vector3D pt1 = new Vector3D(0.0, 0.0, 0.0);
+        int nPoints = 0;
+        for (int structureNum : structureNums) {
+            pt = this.getPoint(structureNum);
+
+            if (pt != null) {
+                nPoints++;
+                pt1 = pt1.add(pt);
+            }
+        }
+        if (nPoints == 0) {
+            return null;
         }
         pt1 = pt1.scalarMultiply(1.0 / nPoints);
         return new Point3(pt1);
@@ -1960,8 +1977,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public boolean isBackbone() {
-        if (getTopEntity() instanceof Polymer) {
-            Polymer polymer = (Polymer) getTopEntity();
+        if (getTopEntity() instanceof Polymer polymer) {
             boolean isProtein = polymer.isPeptide();
             boolean isRNA = polymer.isRNA();
             if (isRNA) {
@@ -1979,11 +1995,10 @@ public class Atom implements IAtom, Comparable<Atom> {
     }
 
     public boolean isLinker() {
-        if (getTopEntity() instanceof Polymer) {
-            Polymer polymer = (Polymer) getTopEntity();
+        if (getTopEntity() instanceof Polymer polymer) {
             boolean isProtein = polymer.isPeptide();
             boolean isRNA = polymer.isRNA();
-            String fullName = (String) name;
+            String fullName = name;
             Character nameBase = fullName.charAt(0);
             return nameBase.equals('X');
         } else {

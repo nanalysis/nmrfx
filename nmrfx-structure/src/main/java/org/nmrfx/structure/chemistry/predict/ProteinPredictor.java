@@ -2,7 +2,9 @@ package org.nmrfx.structure.chemistry.predict;
 
 import com.google.common.util.concurrent.AtomicDouble;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBAtomParser;
+import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 import org.tribuo.Example;
@@ -12,11 +14,15 @@ import org.tribuo.impl.ArrayExample;
 import org.tribuo.regression.Regressor;
 
 import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class ProteinPredictor {
 
-    public static final Map<String, Double> RANDOM_SCALES = new HashMap<>();
+    protected static final Map<String, Double> RANDOM_SCALES = new HashMap<>();
     // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
 
     static {
@@ -46,6 +52,87 @@ public class ProteinPredictor {
     double[][] values = null;
 
     String reportAtom = null;
+
+    static AtomErrors getErrors(Molecule molecule, AtomErrors offsets, StringBuilder stringBuilder) {
+        AtomErrors atomErrors = new AtomErrors();
+        String molName = molecule.getName();
+        for (Atom atom : molecule.getAtoms()) {
+            Double ppm = atom.getPPM();
+            Double refPPM = atom.getRefPPM();
+            if ((ppm != null) && (refPPM != null)) {
+                double delta = Math.abs(ppm - refPPM);
+
+                double err = atom.getSDevRefPPM();
+                double ratio = delta / err;
+                atomErrors.add(atom, delta, (ratio > 3.5), offsets);
+                if (offsets != null) {
+                    if (ratio > 3.5) {
+                        atomErrors.addViol();
+                    }
+                    int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
+                    String resName = atom.getResidueName();
+                    String atomId = molName + ":" + chainId + "." + atom.getShortName();
+                    stringBuilder.append(atomId).append(" ")
+                            .append(resName).append(" ");
+                    stringBuilder.append(String.format("%-2.3f", ratio)).append(" ");
+                    stringBuilder.append(String.format("%-2.3f", err)).append(" ");
+                    stringBuilder.append(refPPM).append(" ")
+                            .append(ppm).append(" ");
+                    stringBuilder.append(String.format("%-2.3f", delta)).append("\n");
+                }
+            }
+        }
+        return atomErrors;
+    }
+
+    static AtomErrors getAtomErrors(StringBuilder stringBuilder) throws IOException, InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        ProteinPredictor proteinPredictor = new ProteinPredictor();
+        proteinPredictor.init(molecule, 0);
+        proteinPredictor.predict(molecule.getPolymers().getFirst(), -1, 0);
+        AtomErrors atomErrors = getErrors(molecule, null, null);
+        return getErrors(molecule, atomErrors, stringBuilder);
+    }
+
+    private static StringBuilder predictAll(String starShiftDirPath) throws IOException, ParseException, InvalidMoleculeException {
+        StringBuilder stringBuilder = new StringBuilder();
+        List<String> aNames = List.of("N", "CA", "CB", "C", "H", "HA", "CG", "CD", "CE", "MC", "AC", "HB", "HG", "HD", "HE", "MH", "AH");
+        AtomErrors allAtomErrors = new AtomErrors();
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(starShiftDirPath))) {
+            for (Path path : dirStream) {
+                if (!Files.isDirectory(path)) {
+                    MoleculeBase.removeAll();
+                    initMinMax();
+                    InputStream stream = new FileInputStream(path.toFile());
+                    try (InputStreamReader reader = new InputStreamReader(stream)) {
+                        NMRStarReader.read(reader, null);
+                    }
+                    if (Molecule.getActive() != null) {
+                        AtomErrors atomErrors = getAtomErrors(stringBuilder);
+                        allAtomErrors.aggregate(atomErrors);
+                    }
+                    Molecule.removeAll();
+                }
+            }
+        }
+        aNames.forEach(aName -> {
+            if (allAtomErrors.atomTypes.containsKey(aName)) {
+                stringBuilder.append(aName).append(" ");
+                stringBuilder.append(String.format("%-2.3f", allAtomErrors.rms(aName))).append(" ");
+                stringBuilder.append(String.format("%d", allAtomErrors.nViol(aName))).append("\n");
+            }
+        });
+        return stringBuilder;
+    }
+
+    public static void predictTestSet(String resultsFilePath, String starShiftDirPath) throws IOException, InvalidMoleculeException, ParseException {
+        try (FileWriter writer = new FileWriter(resultsFilePath)) {
+            String header = "atomId residue ratio err refPPM PPM delta \n";
+            writer.write(header);
+            StringBuilder stringBuilder = predictAll(starShiftDirPath);
+            writer.write(stringBuilder.toString());
+        }
+    }
 
     public void init(Molecule mol, int iStructure) throws InvalidMoleculeException, IOException {
         propertyGenerator = new PropertyGenerator();
@@ -590,5 +677,95 @@ public class ProteinPredictor {
         }
 
         return result;
+    }
+
+    static class AtomErrors {
+        Map<String, AtomError> atomTypes = new HashMap<>();
+        int nViol = 0;
+
+        static class AtomError {
+            double sum = 0.0;
+            double sumAbs = 0.0;
+            double sumSq = 0.0;
+            int n = 0;
+            int nViol = 0;
+
+            double average() {
+                return sum / n;
+            }
+
+            double rms() {
+                return Math.sqrt(sumSq / n);
+            }
+
+            double mae() {
+                return sumAbs / n;
+            }
+
+            int nviol() {
+                return nViol;
+            }
+
+        }
+
+        void addViol() {
+            nViol++;
+        }
+
+        int nViol() {
+            return nViol;
+        }
+
+        void add(Atom atom, double delta, boolean violated, AtomErrors offsets) {
+            String aName = atom.getName().length() > 1 ?
+                    atom.getName().substring(0, 2) : atom.getName().substring(0, 1);
+            if (atom.isMethyl() && atom.getAtomicNumber() == 1 && atom.isFirstInMethyl()) {
+                aName = "MH";
+            } else if (atom.isMethylCarbon()) {
+                aName = "MC";
+            } else if (atom.isAAAromatic()) {
+                if (atom.getAtomicNumber() == 1) {
+                    aName = "AH";
+                } else if (atom.getAtomicNumber() == 6) {
+                    aName = "AC";
+                }
+            }
+            atomTypes.computeIfAbsent(aName, k -> new AtomError());
+            AtomError e = atomTypes.get(aName);
+            if (offsets != null) {
+                delta -= offsets.average(aName);
+            }
+            e.sum += delta;
+            e.sumAbs += Math.abs(delta);
+            e.sumSq += delta * delta;
+            e.n++;
+            if (violated) {
+                e.nViol++;
+            }
+
+
+        }
+
+        double rms(String aName) {
+            return atomTypes.get(aName).rms();
+        }
+
+        int nViol(String aName) {
+            return atomTypes.get(aName).nviol();
+        }
+
+        double average(String aName) {
+            return atomTypes.get(aName).average();
+        }
+
+        void aggregate(AtomErrors atomErrors) {
+            for (Map.Entry<String, AtomError> entry : atomErrors.atomTypes.entrySet()) {
+                String aName = entry.getKey();
+                atomTypes.computeIfAbsent(aName, k -> new AtomError());
+                atomTypes.get(aName).sumSq += entry.getValue().sumSq;
+                atomTypes.get(aName).n += entry.getValue().n;
+                nViol += atomErrors.nViol();
+            }
+        }
     }
 }
