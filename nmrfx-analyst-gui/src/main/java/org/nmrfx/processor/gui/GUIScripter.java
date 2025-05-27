@@ -392,6 +392,16 @@ public class GUIScripter {
         }
     }
 
+    public void setProjectionOnFx(PolyChart chart, String datasetName, String viewModeString) {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        for (DatasetAttributes dataAttr : dataAttrs) {
+            if ((datasetName == null) || dataAttr.getFileName().equals(datasetName)) {
+                Dataset.ProjectionMode viewMode = Dataset.ProjectionMode.valueOf(viewModeString);
+                dataAttr.getDataset().projectionViewMode(viewMode);
+                break;
+            }
+        }
+    }
     public Map<String, Object> pconfig(List<String> peakListNames) throws InterruptedException, ExecutionException {
         final String peakListName;
         if ((peakListNames != null) && !peakListNames.isEmpty()) {
