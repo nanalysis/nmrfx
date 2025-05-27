@@ -331,20 +331,53 @@ public class RNAStructureSetup {
         double lowerIntra = atomAtomLowUp.lower() - 1.0;
         String atomNameI = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName1();
         String atomNameJ = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName2();
-        addDistanceConstraint(atomNameI, atomNameJ, lowerIntra, atomAtomLowUp.lower(), false);
+        Atom atomI = polyI.molecule.findAtom(atomNameI);
+        Atom atomJ = polyI.molecule.findAtom(atomNameJ);
+        if ((atomI != null) && (atomJ != null)) {
+            addDistanceConstraint(atomNameI, atomNameJ, lowerIntra, atomAtomLowUp.lower(), false);
+        }
     }
 
     public static void addStack(AtomAtomLowUp atomAtomLowUp, Polymer polyI, Polymer polyJ, String resNumI, String resNumJ) {
         double lowerInter = atomAtomLowUp.upper() - 1.0;
         String atomNameI = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName1();
         String atomNameJ = polyJ.getName() + ':' + resNumJ + '.' + atomAtomLowUp.aName2();
-        addDistanceConstraint(atomNameI, atomNameJ, lowerInter, atomAtomLowUp.upper(), false);
+        Atom atomI = polyI.molecule.findAtom(atomNameI);
+        Atom atomJ = polyI.molecule.findAtom(atomNameJ);
+        if ((atomI != null) && (atomJ != null)) {
+            addDistanceConstraint(atomNameI, atomNameJ, lowerInter, atomAtomLowUp.upper(), false);
+        }
     }
 
     public static void addStackPair(AtomAtomLowUp atomAtomLowUp, Polymer polyI, Polymer polyJ, String resNumI, String resNumJ) {
         String atomNameI = polyI.getName() + ':' + resNumI + '.' + atomAtomLowUp.aName1();
         String atomNameJ = polyJ.getName() + ':' + resNumJ + '.' + atomAtomLowUp.aName2();
-        addDistanceConstraint(atomNameI, atomNameJ, atomAtomLowUp.lower(), atomAtomLowUp.upper(), false);
+        Atom atomI = polyI.molecule.findAtom(atomNameI);
+        Atom atomJ = polyI.molecule.findAtom(atomNameJ);
+        if ((atomI != null) && (atomJ != null)) {
+            addDistanceConstraint(atomNameI, atomNameJ, atomAtomLowUp.lower(), atomAtomLowUp.upper(), false);
+        }
+    }
+
+    public static String dnaToRNA(String resName) {
+        if (resName.startsWith("D") && resName.length() == 2) {
+            resName = resName.substring(1);
+        }
+        if (resName.equals("T")) {
+            resName = "U";
+        }
+        return resName;
+    }
+    public static List<AtomAtomLowUp> stackTo(String resName) {
+        resName = dnaToRNA(resName);
+        return stackTo.getOrDefault(resName, Collections.emptyList());
+    }
+
+    public static List<AtomAtomLowUp> stackPairs(String resName1, String resName2) {
+        resName1 = dnaToRNA(resName1);
+        resName2 = dnaToRNA(resName2);
+        String resPair = resName1 + resName2;
+        return stackPairs.getOrDefault(resPair, Collections.emptyList());
     }
 
     public static void addStackPair(Residue resI, Residue resJ) {
@@ -357,18 +390,18 @@ public class RNAStructureSetup {
         if (polyI != polyJ) {
             return;
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackTo.get(resNameI)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackTo(resNameI)) {
             addStack(atomAtomLowUp, polyI, resNumI);
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackTo.get(resNameJ)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackTo(resNameJ)) {
             addStack(atomAtomLowUp, polyI, polyJ, resNumI, resNumJ);
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackPairs.get(resNameI + resNameJ)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackPairs(resNameI , resNameJ)) {
             addStackPair(atomAtomLowUp, polyI, polyJ, resNumI, resNumJ);
         }
     }
 
-    public static void addHelix(List<Residue> helixResidues, Set<Residue> usedResidues) throws InvalidMoleculeException {
+    public static void addHelix(List<Residue> helixResidues, Set<Residue> usedResidues, double suiteMul) throws InvalidMoleculeException {
         int nRes = helixResidues.size() / 2;
         for (int i = 0; i < nRes; i++) {
             Residue resI = helixResidues.get(i * 2);
@@ -378,11 +411,11 @@ public class RNAStructureSetup {
             Polymer polymerI = resI.getPolymer();
             Polymer polymerJ = resJ.getPolymer();
             if (!usedResidues.contains(resI)) {
-                addSuiteBoundary(polymerI, resINum, "1a", 0.5);
+                addSuiteBoundary(polymerI, resINum, "1a", suiteMul);
                 usedResidues.add(resI);
             }
             if (!usedResidues.contains(resJ)) {
-                addSuiteBoundary(polymerJ, resJNum, "1a", 0.5);
+                addSuiteBoundary(polymerJ, resJNum, "1a", suiteMul);
                 usedResidues.add(resJ);
             }
             addBasePair(resI, resJ, 1, false);
@@ -435,14 +468,14 @@ public class RNAStructureSetup {
         }
     }
 
-    private static void addSuiteBoundaries(List<Residue> loopResidues, RNALoops rnaLoops, Set<Residue> usedResidues) {
+    private static void addSuiteBoundaries(List<Residue> loopResidues, RNALoops rnaLoops, Set<Residue> usedResidues, double suiteMul) {
         String[] suites = rnaLoops.getSuites();
         for (int i = 0; i < suites.length; i++) {
             if (!suites[i].equals("..")) {
                 Residue residue = loopResidues.get(i);
                 try {
                     if (!usedResidues.contains(residue)) {
-                        addSuiteBoundary(residue.getPolymer(), residue.getNumber(), suites[i], 0.5);
+                        addSuiteBoundary(residue.getPolymer(), residue.getNumber(), suites[i], suiteMul);
                         usedResidues.add(residue);
                     }
                 } catch (InvalidMoleculeException exception) {
@@ -468,7 +501,7 @@ public class RNAStructureSetup {
         return loopResidues;
     }
 
-    public static void addHelicesRestraints(SSGen ssGen) throws InvalidMoleculeException {
+    public static void addHelicesRestraints(SSGen ssGen, double suiteMul) throws InvalidMoleculeException {
         Set<Residue> usedResidues = new HashSet<>();
         for (var ss : ssGen.structures()) {
             if (ss instanceof Loop loop) {
@@ -478,7 +511,7 @@ public class RNAStructureSetup {
                     String loopResidueNames = getResidueNames(loopResidues);
                     var rnaLoopsOptional = RNALoops.getRNALoop(loopResidueNames);
                     rnaLoopsOptional.ifPresent(rnaLoops -> {
-                        addSuiteBoundaries(loopResidues, rnaLoops, usedResidues);
+                        addSuiteBoundaries(loopResidues, rnaLoops, usedResidues, suiteMul);
                         addBasePairs(loopResidues, rnaLoops);
                     });
                 }
@@ -487,7 +520,7 @@ public class RNAStructureSetup {
         for (var ss : ssGen.structures()) {
             if (ss.getName().equals("Helix")) {
                 List<Residue> residues = ss.getResidues();
-                addHelix(residues, usedResidues);
+                addHelix(residues, usedResidues, suiteMul);
                 addHelixPP(residues);
             }
         }
@@ -720,7 +753,7 @@ public class RNAStructureSetup {
         if (ss instanceof RNAHelix rnaHelix) {
             int index = getHelixPos(rnaHelix, residue, false);
             SecondaryStructure ssNext2 = null;
-            if ((index == 1) && (nextRes != null)) {
+            if ((index == 1) && (nextRes != null) && (nextRes.getNext() != null)) {
                 ssNext2 = nextRes.getNext().getSecondaryStructure();
             }
             subType = getHelixSubType(ss.getResidues(), residue, ssNext, ssPrev, ssNext2);

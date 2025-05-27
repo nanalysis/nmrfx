@@ -36,6 +36,7 @@ import org.nmrfx.star.STAR3Base;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author brucejohnson
@@ -232,11 +233,14 @@ public class NMRStarWriter {
         chan.write("\nstop_\n\n");
     }
 
-    public static void writeComponentsSTAR3(Writer chan, Polymer polymer, Set<String> cmpdSet) throws IOException, ParseException {
+    public static void writeComponentsSTAR3(Writer chan, Polymer polymer, Set<String> cmpdSet, boolean onlyNonStandard) throws IOException, ParseException {
         Iterator<Residue> residueIterator = polymer.iterator();
         int i = 1;
         while (residueIterator.hasNext()) {
             Residue residue = residueIterator.next();
+            if (onlyNonStandard && residue.isStandard()) {
+                continue;
+            }
             if (!residue.libraryMode()) {
                 String mode;
                 if (i == 1) {
@@ -246,6 +250,7 @@ public class NMRStarWriter {
                 } else {
                     mode = "";
                 }
+                mode = "";
                 if (!cmpdSet.contains(residue.label + mode)) {
                     writeCompoundToSTAR3(chan, residue, i, mode);
                     cmpdSet.add(residue.label + mode);
@@ -492,15 +497,17 @@ public class NMRStarWriter {
         chan.write("    #  Biological polymers and ligands #\n");
         chan.write("    ####################################\n");
         chan.write("\n\n");
-        while (entityIterator.hasNext()) {
-            Entity entity = entityIterator.next();
+        var entities = molecule.entities.values().stream().sorted(Comparator.comparingInt(a -> a.entityID)) .toList();
+        for (var entity : entities) {
             if (entity instanceof Polymer polymer) {
                 writeEntityHeaderSTAR3(chan, entity, entityID, false);
                 writeEntityCommonNamesSTAR3(chan, entity, entityID);
                 writeEntitySeqSTAR3(chan, polymer, entityID);
                 chan.write(STAR3Base.SAVE + "\n\n");
-                if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR") || true) {
-                    writeComponentsSTAR3(chan, polymer, cmpdSet);
+                if (!polymer.getNomenclature().equals("IUPAC") && !polymer.getNomenclature().equals("XPLOR")) {
+                    writeComponentsSTAR3(chan, polymer, cmpdSet, false);
+                } else {
+                    writeComponentsSTAR3(chan, polymer, cmpdSet, true);
                 }
             } else {
                 writeCompoundHeaderSTAR3(chan, (Compound) entity, entityID);
@@ -542,11 +549,18 @@ public class NMRStarWriter {
         }
         chan.write("\n");
         STAR3.writeLoopStrings(chan, entityAssemblyLoopStrings);
-        int compID = 1;
+        AtomicInteger compID = new AtomicInteger(1);
+        List<IOException> ioExceptions = new ArrayList<>();
         for (CoordSet coordSet : molecule.coordSets.values()) {
-            for (Entity entity : coordSet.entities.values()) {
-                chan.write(toSTAR3String(entity, coordSet.getName(), assemblyID, compID) + "\n");
-                compID++;
+            coordSet.entities.values().stream().sorted(Comparator.comparing(Entity::getIDNum)).forEach( entity -> {
+                try {
+                    chan.write(toSTAR3String(entity, coordSet.getName(), assemblyID, compID.getAndIncrement()) + "\n");
+                } catch (IOException e) {
+                    ioExceptions.add(e);
+                }
+            });
+            if (!ioExceptions.isEmpty()) {
+                throw ioExceptions.getFirst();
             }
         }
         chan.write("stop_\n");

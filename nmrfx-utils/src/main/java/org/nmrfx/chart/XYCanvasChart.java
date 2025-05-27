@@ -254,11 +254,11 @@ public class XYCanvasChart {
     public double[] getMinBorders() {
         // fixme use preferences for tick & label sizes
         xAxis.setTickFontSize(10);
-        xAxis.setLabelFontSize(12);
+        xAxis.setLabelFontSize(14);
         double[] borders = new double[4];
 
         yAxis.setTickFontSize(10);
-        yAxis.setLabelFontSize(12);
+        yAxis.setLabelFontSize(14);
         borders[0] = yAxis.getBorderSize();
         borders[2] = xAxis.getBorderSize();
         borders[1] = borders[0] / 4;
@@ -292,11 +292,11 @@ public class XYCanvasChart {
         gC.save();
         try {
             // fixme
-            xAxis.setTickFontSize(10);
-            xAxis.setLabelFontSize(12);
+            xAxis.setTickFontSize(12);
+            xAxis.setLabelFontSize(14);
 
-            yAxis.setTickFontSize(10);
-            yAxis.setLabelFontSize(12);
+            yAxis.setTickFontSize(12);
+            yAxis.setLabelFontSize(14);
             double[] borders = getUseBorders();
             leftBorder = borders[0];
             rightBorder = borders[1];

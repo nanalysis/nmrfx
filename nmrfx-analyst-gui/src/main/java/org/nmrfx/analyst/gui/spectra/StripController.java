@@ -26,6 +26,7 @@ import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
@@ -33,10 +34,8 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
@@ -55,6 +54,7 @@ import java.util.function.Consumer;
  * @author brucejohnson
  */
 public class StripController implements ControllerTool {
+   static Font font = Font.font(12.0);
 
     static final int X = 0;
     static final int Z = 1;
@@ -538,9 +538,19 @@ public class StripController implements ControllerTool {
         Peak peak;
         double[] positions;
 
+        AnnoText annoText;
+
         public Cell(Peak peak, double[] positions) {
             this.peak = peak;
             this.positions = positions;
+            double x = 100.0;
+            String text = peak.getPeakDim(0).getLabel();
+            if (text.isEmpty()) {
+                text = String.valueOf(peak.getIdNum());
+            }
+            double textWidth = GUIUtils.getTextWidth(text, font);
+            double delta = textWidth + 5.0;
+            annoText = new AnnoText(x, -8, delta, text, font.getSize(), CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
         }
 
         void updateCell() {
@@ -569,6 +579,8 @@ public class StripController implements ControllerTool {
                 for (int i = 1; i < positions.length; i++) {
                     chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
                 }
+                chart.clearAnnoType(AnnoText.class);
+                chart.addAnnotation(annoText);
             }
             chart.useImmediateMode(true);
         }

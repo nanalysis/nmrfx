@@ -31,4 +31,12 @@ public class Point3 extends Vector3D implements Serializable {
     public Point3(final Vector3D vec3D) {
         super(vec3D.getX(), vec3D.getY(), vec3D.getZ());
     }
+
+    public Point3 add(Point3 p2) {
+        return new Point3(getX()+p2.getX(), getY()+p2.getY(), getZ() + p2.getZ());
+    }
+
+    public Point3 subtract(Point3 p2) {
+        return new Point3(getX() - p2.getX(), getY() - p2.getY(), getZ() - p2.getZ());
+    }
 }

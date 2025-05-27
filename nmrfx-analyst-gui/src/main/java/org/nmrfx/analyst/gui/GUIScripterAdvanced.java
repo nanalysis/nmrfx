@@ -6,10 +6,8 @@ import org.nmrfx.analyst.gui.tools.RunAboutGUI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.gui.CanvasAnnotation;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.GUIScripter;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.structure.seqassign.RunAbout;
@@ -36,6 +34,8 @@ public class GUIScripterAdvanced extends GUIScripter {
     private static final String PEAKLISTS = "peaklists";
     private static final String STRIPS = "strips";
     private static final String RUNABOUT = "runabout";
+    private static final String INSET = "inset";
+    private static final String PROJECTION = "projection";
 
     public Map<String, String> strips(FXMLController controller) {
         StripController stripController = (StripController) controller.getTool(StripController.class);
@@ -92,7 +92,7 @@ public class GUIScripterAdvanced extends GUIScripter {
         runAboutGUIOpt.ifPresent(runAboutGUI -> {
             String arrangement = Objects.requireNonNullElse(runAboutData.getOrDefault(ARRANGEMENT, "HC"), "HC").toString();
             String refListName = Objects.requireNonNullElse(runAboutData.getOrDefault(REFLIST, ""), "").toString();
-            Object unifyObject =  Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, false), false);
+            Object unifyObject = Objects.requireNonNullElse(runAboutData.getOrDefault(UNIFYLIMITS, false), false);
             Boolean unifyLimits = Boolean.FALSE;
             if (unifyObject instanceof Boolean unifyBoolean) {
                 unifyLimits = unifyBoolean;
@@ -104,28 +104,30 @@ public class GUIScripterAdvanced extends GUIScripter {
             PeakList refList = PeakList.get(refListName);
             runAboutGUI.getRunAbout().setRefList(refList);
             runAboutGUI.unifyLimits(unifyLimits);
-            runAboutGUI.setToleranceMap(tolMap);
-            runAboutGUI.setWidthMap(widthMap);
             runAboutGUI.genWin(arrangement);
         });
     }
 
     public String genYAMLOnFx(FXMLController controller) {
         Stage stage = controller.getStage();
-        Map<String, Object> winMap = new HashMap<>();
+        Map<String, Object> winMap = new LinkedHashMap<>();
         winMap.put(GEOMETRY, geometryOnFx(controller));
         winMap.put("title", stage.getTitle());
         winMap.put("grid", gridOnFx(controller));
         winMap.put(SCONFIG, controller.getPublicPropertiesValues());
         List<Object> spectra = new ArrayList<>();
         winMap.put(SPECTRA, spectra);
-        int nCharts = controller.getCharts().size();
-        for (int iChart = 0; iChart < nCharts; iChart++) {
-            PolyChart chart = controller.getCharts().get(iChart);
+        for (PolyChart chart : controller.getAllCharts()) {
             Map<String, Object> sd = new HashMap<>();
             spectra.add(sd);
-            GridPaneCanvas.GridPosition gridValue = controller.getGridPaneCanvas().getGridLocation(chart);
-            sd.put("grid", List.of(gridValue.rows(), gridValue.columns(), gridValue.rowSpan(), gridValue.columnSpan()));
+            var insetOpt = chart.getInsetChart();
+            if (insetOpt.isPresent()) {
+                InsetChart insetChart = insetOpt.get();
+                sd.put(INSET, insetChart.getPosition());
+            } else {
+                GridPaneCanvas.GridPosition gridValue = controller.getGridPaneCanvas().getGridLocation(chart);
+                sd.put("grid", List.of(gridValue.rows(), gridValue.columns(), gridValue.rowSpan(), gridValue.columnSpan()));
+            }
             sd.put("lim", limitOnFx(chart));
             sd.put(CCONFIG, chart.getChartProperties().getPublicPropertiesValues());
             List<CanvasAnnotation> annoTypes = chart.getCanvasAnnotations();
@@ -136,17 +138,21 @@ public class GUIScripterAdvanced extends GUIScripter {
             sd.put("datasets", datasetList);
 
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
-            List<String> datasetNames = dataAttrs.stream().map(DatasetAttributes::getFileName).toList();
-            for (String datasetName : datasetNames) {
+
+            dataAttrs.stream().filter(dataAttr -> !dataAttr.getDataset().isProjection()).forEach(dataAttr -> {
+                String datasetName = dataAttr.getFileName();
                 Map<String, Object> dSet = new HashMap<>();
                 dSet.put("name", datasetName);
                 dSet.put(CONFIG, configOnFx(chart, datasetName));
                 dSet.put("dims", getDimsOnFx(chart, datasetName));
+                Dataset.ProjectionMode projectionMode = dataAttr.getDataset().getProjectionViewMode();
+                dSet.put(PROJECTION, projectionMode.name());
                 datasetList.add(dSet);
-            }
+            });
             List<Map<String, Object>> peakLists = new ArrayList<>();
             sd.put(PEAKLISTS, peakLists);
             List<String> peakListNames = peakListsOnFx(chart);
+
             for (String peakListName : peakListNames) {
                 Map<String, Object> pSet = new HashMap<>();
                 pSet.put("name", peakListName);
@@ -193,11 +199,12 @@ public class GUIScripterAdvanced extends GUIScripter {
         }
         List<Map<String, Object>> spectraList = new ArrayList<>();
         if (data.containsKey(SPECTRA)) {
-             spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
+            spectraList = (List<Map<String, Object>>) data.get(SPECTRA);
         }
         if (data.containsKey("grid")) {
+            int nGridSpectra = countGridSpectra(spectraList);
             var grid = (List<Integer>) data.get("grid");
-            gridOnFx(controller, grid.get(0), grid.get(1), spectraList.size());
+            gridOnFx(controller, grid.get(0), grid.get(1), nGridSpectra);
         }
         if (data.containsKey(SCONFIG)) {
             var map = (Map<String, Object>) data.get(SCONFIG);
@@ -236,31 +243,53 @@ public class GUIScripterAdvanced extends GUIScripter {
         return controller;
     }
 
+    private int countGridSpectra(List<Map<String, Object>> spectraList) {
+        return spectraList.size() - (int) spectraList.stream().filter(map -> map.containsKey(INSET)).count();
+    }
+
     private void processSpectraData(FXMLController controller, List<Map<String, Object>> spectraList) {
         int iWin = 0;
+        PolyChart lastGridChart = null;
         for (var spectraMap : spectraList) {
             int iRow;
             int iCol;
             int rowSpan = 1;
             int columnSpan = 1;
-            if (spectraMap.containsKey("grid")) {
-                var grid = (List<Integer>) spectraMap.get("grid");
-                iRow = grid.get(0);
-                iCol = grid.get(1);
-                if (grid.size() > 3) {
-                    rowSpan = grid.get(2);
-                    columnSpan = grid.get(3);
-                }
+            PolyChart chart;
+            if (spectraMap.containsKey(INSET)) {
+                var inset = (List<Double>) spectraMap.get(INSET);
+                double fX = inset.get(0);
+                double fY = inset.get(1);
+                double fWidth = inset.get(2);
+                double fHeight = inset.get(3);
+                InsetChart insetChart = controller.addInsetChartTo(lastGridChart);
+                insetChart.setFractionalPosition(fX, fY, fWidth, fHeight);
+                chart = insetChart.chart();
             } else {
-                iRow = 0;
-                iCol = 0;
+                chart = controller.getCharts().get(iWin++);
+                if (spectraMap.containsKey("grid")) {
+                    var grid = (List<Integer>) spectraMap.get("grid");
+                    iRow = grid.get(0);
+                    iCol = grid.get(1);
+                    if (grid.size() > 3) {
+                        rowSpan = grid.get(2);
+                        columnSpan = grid.get(3);
+                    }
+                    lastGridChart = chart;
+                } else {
+                    iRow = 0;
+                    iCol = 0;
+                    lastGridChart = chart;
+                }
+                grid(chart, iRow, iCol, rowSpan, columnSpan);
+                controller.setActiveChart(chart);
             }
-            PolyChart chart = controller.getCharts().get(iWin);
-            grid(chart, iRow, iCol, rowSpan, columnSpan);
-            controller.setActiveChart(chart);
             processChart(chart, spectraMap);
             chart.refresh();
-            iWin++;
+
+            Optional<Dataset.ProjectionMode> viewModeOpt = chart.getDatasetAttributes().stream()
+                    .map(dataAttr -> dataAttr.getDataset().getProjectionViewMode()).filter(pMode -> pMode != Dataset.ProjectionMode.OFF).findFirst();
+            viewModeOpt.ifPresent(chart::projectDataset);
         }
     }
 
@@ -308,6 +337,12 @@ public class GUIScripterAdvanced extends GUIScripter {
                     dims[i] = dimList.get(i);
                 }
                 setDimsOnFx(chart, name, dims);
+            }
+            if (datasetMap.containsKey(PROJECTION)) {
+                Object viewModeObj = datasetMap.get(PROJECTION);
+                if (viewModeObj != null) {
+                    setProjectionOnFx(chart, name, viewModeObj.toString());
+                }
             }
         }
     }

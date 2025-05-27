@@ -268,6 +268,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
             showSelectedSS();
         });
 
+        try {
+            molViewer.drawMol();
+        } catch (Exception ex) {
+            log.warn(ex.getMessage(), ex);
+        }
     }
 
     private void selectedResidue(MouseEvent event) {
@@ -1074,7 +1079,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     @FXML
     private void ssTo3D() {
-        structureCalculator.setMode(RNA);
+        structureCalculator.setMode(NUCLEIC_ACID);
         calcStructure();
     }
 

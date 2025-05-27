@@ -58,7 +58,7 @@ public class SSGen {
     }
 
     public List<SecondaryStructure> analyze() {
-        residues = RNAAnalysis.getRNAResidues(molecule);
+        residues = RNAAnalysis.getNAResidues(molecule);
         pairTo();
         secondaryStructGen();
         return structures;

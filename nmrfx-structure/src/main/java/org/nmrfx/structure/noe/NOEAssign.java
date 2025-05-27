@@ -473,7 +473,7 @@ public class NOEAssign {
         SpatialSet[] spSets = new SpatialSet[nCriteria];
         for (int i = 0; i < nCriteria; i++) {
             if (matchCriteria[i] != null) {
-                matchCriteria[i].setPPM(noe.peak);
+                matchCriteria[i].setPPM(noe.peak());
                 if (i == 0) {
                     spSets[i] = noe.getSpg1().getSpatialSet();
                 } else if (i == 1) {

@@ -78,7 +78,7 @@ def genResidueList(resString):
     return set(residues)
             
 def rnaDotBracket(mol, fileName='stdout'):
-   rnaResidues = [residue for polymer in mol.getPolymers() if polymer.isRNA() for residue in polymer.getResidues()]
+   rnaResidues = [residue for polymer in mol.getPolymers() if (polymer.isRNA() or polymer.isDNA()) for residue in polymer.getResidues()]
    vienna = RNAAnalysis.getViennaSequence(mol)
    dotBracketDict = {}
    for rnaResidue,dotBracket in zip(rnaResidues, vienna):
@@ -117,7 +117,7 @@ def rnaSuite(mol, includeResidues, fileName='stdout'):
         fOut = open(fileName,'w')
     rnaDotBracketDict = None
     for polymer in mol.getPolymers():
-        if polymer.isRNA():
+        if polymer.isRNA() or polymer.isDNA():
             if rnaDotBracketDict == None:
                 vienna, rnaDotBracketDict = rnaDotBracket(mol)
                 rnaPairDict = getRNAPairs(mol)

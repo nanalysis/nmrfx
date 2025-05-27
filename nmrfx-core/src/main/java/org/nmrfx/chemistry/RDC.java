@@ -100,10 +100,10 @@ public class RDC {
     Double error;
     double maxRDC;
 
-    public RDC(Atom atom1, Atom atom2) {
+    public RDC(Atom atom1, Atom atom2, int iStructure) {
         this.atom1 = atom1;
         this.atom2 = atom2;
-        updateVector();
+        updateVector(iStructure);
     }
 
     public RDC(Atom atom1, Atom atom2, Vector3D vector) {
@@ -113,8 +113,8 @@ public class RDC {
         maxRDC = calcMaxRDC(vector, atom1, atom2, CALC_MAX_RDC, false);
     }
 
-    public void updateVector() {
-        vector = atom2.getPoint().subtract(atom1.getPoint());
+    public void updateVector(int iStructure) {
+        vector = atom2.getPoint(iStructure).subtract(atom1.getPoint(iStructure));
         maxRDC = calcMaxRDC(vector, atom1, atom2, CALC_MAX_RDC, false);
     }
     public Double getRDC() {

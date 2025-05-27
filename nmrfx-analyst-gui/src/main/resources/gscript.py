@@ -79,6 +79,18 @@ class NMRFxWindowScripting:
     def getGrid(self):
         return self.cmd.grid()
 
+    def insetpos(self, x=None, y=None, w=None,h=None, chart=None):
+        if chart == None:
+            chart = self.cmd.getChart()
+        elif isinstance(chart, basestring):
+            self.cmd.active(chart)
+            chart = self.cmd.getChart()
+        elif isinstance(chart, int):
+            self.cmd.active(chart)
+            chart = self.cmd.getChart()
+        self.cmd.insetPosition(chart, x, y, w, h)
+        return self
+
     def stages(self):
         return self.cmd.stages()
 
@@ -102,7 +114,7 @@ class NMRFxWindowScripting:
                     datasetNames.append(dataset)
                 else:
                     datasetNames.append(dataset.getName())
-            self.cmd.datasets(datasetNames)
+            self.cmd.datasetNames(datasetNames)
 
     def openFID(self, fidName):
         self.cmd.openFID(fidName)
