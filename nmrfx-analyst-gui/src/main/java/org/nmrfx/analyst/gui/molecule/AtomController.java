@@ -43,6 +43,7 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.tools.LACSPlotGui;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.NMRStarReader;
@@ -122,6 +123,8 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     MolFilter molFilter = new MolFilter("*.C*,H*,N*");
 
+    LACSPlotGui lacsPlotGui = null;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initMenuBar();
@@ -183,6 +186,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         writePPMItem.setOnAction(e -> writePPM());
         fileMenu.getItems().add(writePPMItem);
 
+        MenuItem writeRefPPMItem = new MenuItem("Write Ref PPM...");
+        writeRefPPMItem.setOnAction(e -> writeRefPPM());
+        fileMenu.getItems().add(writeRefPPMItem);
+
         MenuItem readPPMItem = new MenuItem("Read PPM...");
         readPPMItem.setOnAction(e -> readPPM(false));
         fileMenu.getItems().add(readPPMItem);
@@ -233,14 +240,18 @@ public class AtomController implements Initializable, StageBasedController, Free
         readRefPPMItem.setOnAction(e -> readPPM(true));
         refMenu.getItems().add(readRefPPMItem);
 
+        MenuItem lacsPlotItem = new MenuItem("LACS Plot...");
+        lacsPlotItem.setOnAction(e -> showLACSPlot());
+        refMenu.getItems().add(lacsPlotItem);
+
         MenuButton predictMenu = new MenuButton("Predict");
         menuBar.getItems().add(predictMenu);
         MenuItem preditorMenuItem = new MenuItem("Predictor");
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        ppmSetChoice = new ChoiceBox();
-        refSetChoice = new ChoiceBox();
+        ppmSetChoice = new ChoiceBox<>();
+        refSetChoice = new ChoiceBox<>();
         for (int iSet = 0; iSet < 5; iSet++) {
             ppmSetChoice.getItems().add(iSet);
             refSetChoice.getItems().add(iSet);
@@ -253,6 +264,12 @@ public class AtomController implements Initializable, StageBasedController, Free
         refSetChoice.setOnAction(e -> atomTableView.refresh());
     }
 
+    private void showLACSPlot() {
+        if (lacsPlotGui == null) {
+            lacsPlotGui = new LACSPlotGui();
+        }
+        lacsPlotGui.showMCplot();
+    }
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         Fx.runOnFxThread(atomTableView::refresh);
@@ -311,12 +328,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             super.updateItem(item, empty);
             if (item != null) {
                 setText(String.valueOf(item));
-            } else {
             }
         }
     }
 
-    ;
 
     class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
 
@@ -349,25 +364,25 @@ public class AtomController implements Initializable, StageBasedController, Free
         atomTableView.setEditable(true);
 
         TableColumn<Atom, String> atomNameCol = new TableColumn<>("Atom");
-        atomNameCol.setCellValueFactory(new PropertyValueFactory("Name"));
+        atomNameCol.setCellValueFactory(new PropertyValueFactory<>("Name"));
         atomNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
         atomNameCol.setEditable(false);
 
         TableColumn<Atom, String> entityNameColumn = new TableColumn<>("Entity");
-        entityNameColumn.setCellValueFactory(new PropertyValueFactory("PolymerName"));
+        entityNameColumn.setCellValueFactory(new PropertyValueFactory<>("PolymerName"));
         entityNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         entityNameColumn.setEditable(false);
 
         TableColumn<Atom, Integer> residueNumberColumn = new TableColumn<>("Seq");
-        residueNumberColumn.setCellValueFactory(new PropertyValueFactory("ResidueNumber"));
+        residueNumberColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueNumber"));
         residueNumberColumn.setEditable(false);
 
         TableColumn<Atom, Integer> indexColumn = new TableColumn<>("Index");
-        indexColumn.setCellValueFactory(new PropertyValueFactory("Index"));
+        indexColumn.setCellValueFactory(new PropertyValueFactory<>("Index"));
         indexColumn.setEditable(false);
 
         TableColumn<Atom, String> residueNameColumn = new TableColumn<>("Res");
-        residueNameColumn.setCellValueFactory(new PropertyValueFactory("ResidueName"));
+        residueNameColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueName"));
         residueNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         residueNameColumn.setEditable(false);
 
@@ -483,6 +498,13 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     void writePPM() {
+        writePPM(0, false);
+    }
+
+    void writeRefPPM() {
+        writePPM(0, true);
+    }
+    void writePPM(int ppmSet, boolean refMode) {
         try {
             FileChooser fileChooser = new FileChooser();
             File file = fileChooser.showSaveDialog(null);
@@ -492,7 +514,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                 if (molecule != null) {
 
                     try (FileWriter writer = new FileWriter(listFileName)) {
-                        PPMFiles.writePPM(molecule, writer, 0, false);
+                        PPMFiles.writePPM(molecule, writer, ppmSet, refMode);
                     }
                 }
             }

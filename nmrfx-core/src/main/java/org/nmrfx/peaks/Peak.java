@@ -437,6 +437,7 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.status = status;
         newPeak.comment = comment;
         newPeak.flag = flag.clone();
+        newPeak.idNum = idNum;
         newPeak.corner = new Corner(corner.getCornerChars());
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(newPeak.peakDims[i]);
@@ -863,7 +864,11 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getName() {
-        return peakList.getName() + "." + getIdNum();
+        if (peakList != null) {
+            return peakList.getName() + "." + getIdNum();
+        } else {
+            return "." + idNum;
+        }
     }
 
     public int getIdNum() {
@@ -1276,6 +1281,16 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    public boolean isFrozen() {
+        boolean frozen = true;
+        for (PeakDim peakDim : peakDims) {
+            if (!peakDim.isFrozen()) {
+                frozen = false;
+                break;
+            }
+        }
+        return frozen;
+    }
     public void tweak(DatasetBase dataset, int[] pdim, int[] planes) throws IOException {
         RegionData regionData = Peak.analyzePeakRegion(this, dataset, planes, pdim);
         double[] maxPoint = regionData.getMaxDPoint();
@@ -1436,7 +1451,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return 0;
     }
 
-    public boolean inRegion(double[][] limits, double[][] foldLimits, int[] dim) {
+    public boolean inRegion(double[][] limits, double[][] foldLimits, double[] foldAmount, int[] dim) {
         int nSearchDim = limits.length;
         boolean ok = true;
         for (int j = 0; j < nSearchDim; j++) {
@@ -1445,8 +1460,7 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             double ctr = peakDims[dim[j]].getChemShiftValue();
             if ((foldLimits != null) && (foldLimits[j] != null)) {
-                double fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
-                ctr = peakList.foldPPM(ctr, fDelta, foldLimits[j][0], foldLimits[j][1]);
+                ctr = peakList.foldPPM(ctr, foldAmount[j], foldLimits[j][0], foldLimits[j][1]);
             }
 
             if ((ctr < limits[j][0]) || (ctr > limits[j][1])) {

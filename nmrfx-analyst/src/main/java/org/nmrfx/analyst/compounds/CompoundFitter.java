@@ -130,13 +130,9 @@ public class CompoundFitter implements MultivariateFunction {
     }
 
     double[] getNewRange(Region region, final double ppm1, final double ppm2) {
-        double regionWidthHz = region.getWidthHz(Math.abs(ppm1 - ppm2));
-        double centerPPM = (ppm1 + ppm2) / 2.0;
-        double center = vecPPMToPoint(centerPPM);
-        double deltaPoints = regionWidthHz * vecHzToPoint;
-        double start = center - deltaPoints / 2.0;
-        double end = start + deltaPoints;
-        return new double[]{start, end};
+        int startPt = region.getStart();
+        int endPt = region.getEnd();
+        return new double[]{startPt, endPt};
     }
 
     /**
@@ -346,7 +342,7 @@ public class CompoundFitter implements MultivariateFunction {
      */
     public void genMaps() {
         int nPoints = 0;
-        int padding = 50;
+        int padding = 0;
         boolean[] mask = zeroRegions(vData, padding);
         for (int i = 0; i < maskData.length; i++) {
             if ((maskData[i] > 1.0e-8) && mask[i]) {
@@ -489,6 +485,7 @@ public class CompoundFitter implements MultivariateFunction {
         RealVector delta = Y.subtract(B);
         int n = delta.getDimension();
         double viol = 0.0;
+
         if (valueMode == VALUE_AB_ABS_NEGPEN) {
             for (int i = 0; i < n; i++) {
                 double value = delta.getEntry(i);
@@ -991,33 +988,21 @@ public class CompoundFitter implements MultivariateFunction {
 
     private FitResult optimizeRegion(Region region, int minShift, int startShift, int maxShift) {
         double[] values = region.getInterpolated(0);
-        int nValues = values.length;
-        double ppm1 = region.getPPM1();
-        double ppm2 = region.getPPM2();
-        double regionWidthHz = region.getWidthHz(Math.abs(ppm1 - ppm2));
-        int vecRegionSize = (int) Math.round(regionWidthHz * vecHzToPoint);
-
-        if (nValues != vecRegionSize) {
-            values = Interpolator.getInterpolated(values, vecRegionSize);
-        }
 
         int start = region.getStart();
         double minDev = Double.MAX_VALUE;
         FitResult bestFit = null;
         for (int shift = minShift; shift <= maxShift; shift++) {
-            int aShift = shift + startShift;
-            double[] x = new double[vecRegionSize];
+            double[] x = new double[values.length];
+            int vecStart = start + shift;
 
-            ppm1 = region.pointToPPM((double) start + aShift);
-            ppm2 = region.pointToPPM(start + aShift + nValues - 1.0);
-            int vecStart = vecPPMToIntPoint((ppm1 + ppm2) / 2) - vecRegionSize / 2;
-            System.arraycopy(vData, vecStart, x, 0, vecRegionSize);
+            System.arraycopy(vData, vecStart, x, 0, values.length);
 
             FitResult fitResult = scaleByAbsDev(x, values, true);
             double avgAbsDev = fitResult.getDev();
             if (avgAbsDev < minDev) {
                 minDev = avgAbsDev;
-                minShift = aShift;
+                minShift = shift;
                 bestFit = fitResult;
                 bestFit.setShift(minShift);
             }

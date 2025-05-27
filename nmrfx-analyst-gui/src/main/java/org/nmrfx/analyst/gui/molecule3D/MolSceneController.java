@@ -3,9 +3,6 @@ package org.nmrfx.analyst.gui.molecule3D;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.collections.MapChangeListener;
-import javafx.collections.WeakMapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -21,12 +18,15 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
+import org.nmrfx.analyst.models.ModelFetcher;
+import org.nmrfx.analyst.peaks.PeakGenerator;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
@@ -37,6 +37,7 @@ import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
+import org.nmrfx.processor.tools.RNAMatcher;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -54,7 +55,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode.*;
@@ -74,6 +78,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
     @FXML
     BorderPane ssBorderPane;
     @FXML
+    CheckBox ssDisplayCheckBox;
+    @FXML
+    CheckBox mapDisplayCheckBox;
+    @FXML
     BorderPane molBorderPane;
     @FXML
     BorderPane ligandBorderPane;
@@ -83,6 +91,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
     TextField dotBracketField;
     @FXML
     Pane dotBracketPane;
+    @FXML
+    ChoiceBox<SecondaryStructureEntry> ssChoiceBox;
     @FXML
     MenuButton removeMenuButton;
     @FXML
@@ -116,12 +126,33 @@ public class MolSceneController implements Initializable, StageBasedController, 
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
+    public Label rnaSecStructureScoreLabel;
 
     SimpleIntegerProperty activeStructureProp = new SimpleIntegerProperty(-1);
     private StructureCalculator structureCalculator = new StructureCalculator(this);
     SSPredictor ssPredictor = null;
 
+    List<String> fileSecondaryStructures = new ArrayList<>();
+
     List<MolViewer.RenderType> currentDrawingModes = new ArrayList<>();
+
+    Map<String, Double> rnaStructureScores = new HashMap<>();
+
+    enum SSOrigin {
+        PRED,
+        FILE,
+        BOTH
+    }
+
+    record SecondaryStructureEntry(String dotBracket, SSOrigin type, int pIindex, int fIndex) {
+        public String toString() {
+            return switch (type) {
+                case PRED -> type + ":" + pIindex;
+                case FILE -> type + ":" + fIndex;
+                case BOTH -> SSOrigin.PRED + ":" + pIindex + " " + SSOrigin.FILE + ":" + fIndex;
+            };
+        }
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -144,7 +175,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molBorderPane.heightProperty().addListener(ss -> molViewer.layoutChildren());
         molViewer.addSelectionListener(this);
         addStructureSelectionTools();
-
+        ssViewer.getDrawMapProp().bindBidirectional(mapDisplayCheckBox.selectedProperty());
+        ssViewer.getDrawSSProp().bindBidirectional(ssDisplayCheckBox.selectedProperty());
+        mapDisplayCheckBox.setSelected(false);
+        ssDisplayCheckBox.setSelected(true);
+        ssDisplayCheckBox.setOnAction(e -> ssViewer.resizeWindow());
+        mapDisplayCheckBox.setOnAction(e -> ssViewer.resizeWindow());
 
 
         // kluge to prevent tabpane from getting focus.  This allows key presses to go through to molviewer
@@ -156,9 +192,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ligandBorderPane.setCenter(ligandCanvasPane);
         ligandCanvasPane.widthProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
         ligandCanvasPane.heightProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
+        peakListMenuButton.showingProperty().addListener((a, b, c) -> {
+            if (c) {
+                updatePeakListMenu();
+            }
+        });
 
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(probabilitiesCheckBox);
@@ -211,7 +250,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             atomCheckItems.add(menuItem);
             riboseMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a, b, c) -> updateAtoms());
+                    (a, b, c) -> updateAtoms());
         }
         Menu peakClassMenu = new Menu("Peak Intensities");
         modeMenuButton.getItems().add(peakClassMenu);
@@ -222,9 +261,18 @@ public class MolSceneController implements Initializable, StageBasedController, 
             peakClassCheckItems.add(menuItem);
             peakClassMenu.getItems().add(menuItem);
             menuItem.selectedProperty().addListener(
-                    (ChangeListener<Boolean>) (a, b, c) -> updatePeaks());
+                    (a, b, c) -> updatePeaks());
         }
+        ssChoiceBox.setDisable(true);
+        ssChoiceBox.setOnAction(e -> {
+            showSelectedSS();
+        });
 
+        try {
+            molViewer.drawMol();
+        } catch (Exception ex) {
+            log.warn(ex.getMessage(), ex);
+        }
     }
 
     private void selectedResidue(MouseEvent event) {
@@ -292,7 +340,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
         TextField textField = GUIUtils.getIntegerTextField(activeStructureProp);
         textField.setPrefWidth(40);
-        lowerToolBar.getItems().addAll( dataButtons);
+        lowerToolBar.getItems().addAll(dataButtons);
         lowerToolBar.getItems().add(textField);
     }
 
@@ -300,10 +348,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         activeStructureProp.set(-1);
         refresh();
     }
+
     void firstStructure(ActionEvent event) {
         activeStructureProp.set(getActiveStructures().get(0));
         refresh();
     }
+
     void previousStructure(ActionEvent event) {
         List<Integer> activeStructures = getActiveStructures();
         int index = Math.max(0, activeStructures.indexOf(activeStructureProp.get()) - 1);
@@ -325,12 +375,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     void lastStructure(ActionEvent event) {
         List<Integer> activeStructures = getActiveStructures();
-        int n =  activeStructures.size();
+        int n = activeStructures.size();
         activeStructureProp.set(activeStructures.get(n - 1));
         refresh();
     }
 
-    void refresh()  {
+    void refresh() {
         molViewer.clearAll();
         itemIndex = 0;
         List<MolViewer.RenderType> modes = new ArrayList<>();
@@ -377,6 +427,30 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     @FXML
+    void loadFromFile() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                List<String> lines = Files.readAllLines(file.toPath());
+                storeSecondaryStructures(lines);
+                updateSSChoiceBox();
+            } catch (IOException e) {
+                GUIUtils.warn("Error reading Secondary Structure File", e.getMessage());
+            }
+        }
+    }
+
+    void storeSecondaryStructures(List<String> lines) {
+        fileSecondaryStructures.clear();
+        for (String line : lines) {
+            if (!line.isBlank()) {
+                fileSecondaryStructures.add(line.trim());
+            }
+        }
+    }
+
+    @FXML
     void ssFrom3D() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
@@ -411,6 +485,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssViewer.clear();
         dotBracketField.clear();
     }
+
     @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
@@ -690,7 +765,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     public void drawCyls() {
-        molViewer.addCyls(getStructures(), 0.1, 0.1, "lines",  getIndex());
+        molViewer.addCyls(getStructures(), 0.1, 0.1, "lines", getIndex());
     }
 
     public void drawSticks() {
@@ -700,9 +775,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void drawSpheres() {
         molViewer.addSpheres(getStructures(), 0.8, "spheres", getIndex());
     }
+
     public List<Integer> getActiveStructures() {
         return molViewer.getCurrentMolecule().getActiveStructureList();
     }
+
     public List<Integer> getStructures() {
         List<Integer> structures = getActiveStructures();
         if (activeStructureProp.get() == -1) {
@@ -716,16 +793,19 @@ public class MolSceneController implements Initializable, StageBasedController, 
         List<Integer> structures = getStructures();
         return structures.isEmpty() ? 0 : structures.get(0);
     }
+
     public void drawCartoon() throws InvalidMoleculeException {
         if (!molViewer.getCurrentMolecule().getPolymers().isEmpty()) {
-            molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
+            molViewer.addTube(getStructures(), 1.0, "tube", getIndex());
+            molViewer.addNucleicAcidBases(getStructures(), 0.3, "bases", getIndex());
         }
         selectLigand();
         drawSticks();
     }
 
     public void drawTubes() throws InvalidMoleculeException {
-        molViewer.addTube(getStructures(), 0.7, "tube", getIndex());
+        molViewer.addTube(getStructures(), 1.0, "tube", getIndex());
+        molViewer.addNucleicAcidBases(getStructures(), 0.3, "bases", getIndex());
     }
 
     public void drawOrientationSpheresX() throws InvalidMoleculeException {
@@ -758,6 +838,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molViewer.deleteItems("delete", "tree");
         molViewer.drawAtomTree();
     }
+
     /**
      * Draws the original axes.
      *
@@ -910,6 +991,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 peakClasses.add(menuItem.getText());
             }
         }
+        double exponent = PeakGenerator.EXPONENT;
 
         if (peakList != null) {
             List<String> constraintPairs = new ArrayList<>();
@@ -929,13 +1011,14 @@ public class MolSceneController implements Initializable, StageBasedController, 
                         String name2 = peak.getPeakDim(1).getLabel();
                         if (!name1.equals("") && !name2.equals("")) {
                             double intensity = peak.getIntensity();
-                            double normIntensity = 100.0 * intensity / max;
+                            double normIntensity = intensity / peakList.getScale();
+                            double distance = Math.exp(-1.0/exponent*Math.log(normIntensity));
                             String intMode;
-                            if (normIntensity > 10.0) {
+                            if (distance < 2.8) {
                                 intMode = "s";
-                            } else if (normIntensity > 1.5) {
+                            } else if (distance < 3.8) {
                                 intMode = "m";
-                            } else if (normIntensity > 1.0) {
+                            } else if (distance < 5.0) {
                                 intMode = "w";
                             } else {
                                 intMode = "vw";
@@ -975,11 +1058,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
         structureCalculator.setMode(INIT);
         calcStructure();
     }
+
     @FXML
     private void refineCFFStructureAction() {
         structureCalculator.setMode(CFF);
         calcStructure();
     }
+
     @FXML
     private void calcStructureAction() {
         structureCalculator.setMode(ANNEAL);
@@ -994,12 +1079,33 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     @FXML
     private void ssTo3D() {
-        structureCalculator.setMode(RNA);
+        structureCalculator.setMode(NUCLEIC_ACID);
         calcStructure();
     }
+
     @FXML
     private void to3DAction() {
         to3D();
+    }
+
+
+    boolean fetchSSModel() {
+        try {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            File outDirectory = directoryChooser.showDialog(null);
+            if (outDirectory != null) {
+                String modelName = "rna_bp_v1";
+                ModelFetcher.fetch(outDirectory.toPath(), modelName);
+                Path path = outDirectory.toPath().resolve(modelName);
+                PreferencesController.setRNAModelDirectory(path.toString());
+                ssPredictor.setModelFile(path.toString());
+                return true;
+            }
+        } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
+        return false;
     }
 
     @FXML
@@ -1007,8 +1113,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             ssPredictor = new SSPredictor();
-            String rnModelDir = PreferencesController.getRNAModelDirectory();
-            if (rnModelDir.isEmpty()) {
+            String rnaModelDir = PreferencesController.getRNAModelDirectory();
+            if (rnaModelDir.isEmpty()) {
                 DirectoryChooser directoryChooser = new DirectoryChooser();
                 File file = directoryChooser.showDialog(null);
                 if (file == null) {
@@ -1018,15 +1124,21 @@ public class MolSceneController implements Initializable, StageBasedController, 
                     ssPredictor.setModelFile(file.toString());
                 }
             } else {
-                ssPredictor.setModelFile(rnModelDir);
+                ssPredictor.setModelFile(rnaModelDir);
             }
             if (!ssPredictor.hasValidModelFile()) {
-                return;
+                if (GUIUtils.affirm("No model in directory\nFetch one from NMRFx.org?")) {
+                    if (!fetchSSModel()) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
             }
             StringBuilder seqBuilder = new StringBuilder();
             for (Polymer polymer : molecule.getPolymers()) {
                 if (polymer.isRNA()) {
-                    for (Residue residue: polymer.getResidues()) {
+                    for (Residue residue : polymer.getResidues()) {
                         seqBuilder.append(residue.getName());
                     }
                 }
@@ -1035,23 +1147,73 @@ public class MolSceneController implements Initializable, StageBasedController, 
             try {
                 ssPredictor.predict(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
-                List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(0.30);
-                String dotBracket = ssPredictor.getDotBracket(basePairs);
-                molecule.setDotBracket(dotBracket);
-                layoutSS();
+                ssPredictor.bipartiteMatch(0.7, 0.05, 20);
+                updateSSChoiceBox();
+                showSS(ssChoiceBox.getItems().get(0));
 
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
             }
-
         }
     }
-    private void get2D(double pLimit) throws InvalidMoleculeException {
+
+    void updateSSChoiceBox() {
+        ssChoiceBox.getItems().clear();
+        Set<String> commonEntries = new HashSet<>();
+        if (ssPredictor != null) {
+            int n = ssPredictor.getNExtents();
+            for (int i = 0; i < n; i++) {
+                SSPredictor.BasePairsMatching basePairsMatching = ssPredictor.getExtentBasePairs(i);
+                String dotBracket = ssPredictor.getDotBracket(basePairsMatching.basePairsSet());
+                int fileIndex = fileSecondaryStructures.indexOf(dotBracket);
+                SSOrigin origin = fileIndex != -1 ? SSOrigin.BOTH : SSOrigin.PRED;
+                SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, origin, i, fileIndex);
+                ssChoiceBox.getItems().add(secondaryStructureEntry);
+                if (fileIndex != -1) {
+                    commonEntries.add(dotBracket);
+                }
+            }
+        }
+        int i = 0;
+        for (String dotBracket : fileSecondaryStructures) {
+            if (!commonEntries.contains(dotBracket)) {
+                SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, SSOrigin.FILE, -1, i);
+                ssChoiceBox.getItems().add(secondaryStructureEntry);
+            }
+            i++;
+        }
+        ssChoiceBox.setValue(ssChoiceBox.getItems().get(0));
+        ssChoiceBox.setDisable(false);
+    }
+
+    void showSelectedSS() {
+        SecondaryStructureEntry secondaryStructureEntry = ssChoiceBox.getValue();
+        if (secondaryStructureEntry != null) {
+            try {
+                showSS(secondaryStructureEntry);
+                showRNAPeakScore(secondaryStructureEntry.dotBracket);
+            } catch (InvalidMoleculeException e) {
+            }
+        }
+    }
+
+    void showRNAPeakScore(String dotBracket) {
+        if (rnaStructureScores.containsKey(dotBracket)) {
+            rnaSecStructureScoreLabel.setText(String.format("Peak Match Score: %.2f", rnaStructureScores.get(dotBracket)));
+        }
+    }
+
+    void showSS(SecondaryStructureEntry secondaryStructureEntry) throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
-        if (molecule != null && ssPredictor != null) {
-            List<SSPredictor.BasePairProbability> basePairs = ssPredictor.getBasePairs(pLimit);
-            String dotBracket = ssPredictor.getDotBracket(basePairs);
+        if (molecule != null) {
+            String dotBracket = "";
+            if ((ssPredictor != null) && (secondaryStructureEntry.type == SSOrigin.PRED || secondaryStructureEntry.type == SSOrigin.BOTH)) {
+                Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex).basePairsSet();
+                dotBracket = ssPredictor.getDotBracket(basePairsExt);
+            } else {
+                dotBracket = secondaryStructureEntry.dotBracket;
+            }
             molecule.setDotBracket(dotBracket);
             layoutSS();
         }
@@ -1067,6 +1229,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssViewer.zoom(0.95);
 
     }
+
     @FXML
     private void activateBondAction() {
         Molecule molecule = Molecule.getActive();
@@ -1091,12 +1254,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
     public void addStrongDistanceConstraint() {
         addDistanceConstraint(3.0);
     }
+
     public void addMediumDistanceConstraint() {
         addDistanceConstraint(4.0);
     }
+
     public void addWeakDistanceConstraint() {
         addDistanceConstraint(5.0);
     }
+
     public void addDistanceConstraint(double upper) {
         Molecule molecule = Molecule.getActive();
         if ((molecule != null) && (molecule.globalSelected.size() == 2)) {
@@ -1120,7 +1286,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
             Atom startAtom = molecule.globalSelected.get(0).getAtom();
             AngleTreeGenerator angleGen = new AngleTreeGenerator();
             List<List<Atom>> aTree = angleGen.genTree(molecule, startAtom, null);
-            AngleTreeGenerator.dumpAtomTree(aTree);
         }
     }
 
@@ -1170,9 +1335,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         statusBar.setText("");
         statusCircle.setFill(Color.GREEN);
     }
-    public void moleculeChanged(MoleculeEvent e){
+
+    public void moleculeChanged(MoleculeEvent e) {
         Fx.runOnFxThread(ssViewer::drawSS);
     }
+
     @Override
     public void updateProgress(double f) {
     }
@@ -1184,6 +1351,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             updateView();
         });
     }
+
     void updateView() {
         removeAll();
         try {
@@ -1194,6 +1362,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
 
     }
+
     void setProcessingOff() {
 
     }
@@ -1201,4 +1370,30 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void setProcessingOn() {
 
     }
+
+    public void scoreSecStructures(ActionEvent event) {
+        RNAMatcher rnaMatcher = new RNAMatcher();
+        Molecule molecule = Molecule.getActive();
+        String currentDotBracket = molecule.getDotBracket();
+        rnaStructureScores.clear();
+        ssChoiceBox.getItems().forEach(ss -> {
+            molecule.setDotBracket(ss.dotBracket);
+            System.out.println(ss.dotBracket);
+            rnaMatcher.predict();
+            rnaMatcher.genPeaks();
+            double score = rnaMatcher.score();
+            rnaStructureScores.put(ss.dotBracket, score);
+        });
+        molecule.setDotBracket(currentDotBracket);
+        showRNAPeakScore(currentDotBracket);
+    }
+
+    public void selectSecStructure() {
+        Molecule molecule = Molecule.getActive();
+        molecule.setDotBracket(ssChoiceBox.getValue().dotBracket);
+        RNAMatcher rnaMatcher = new RNAMatcher();
+        rnaMatcher.predict();
+        rnaMatcher.genPeaks();
+    }
+
 }

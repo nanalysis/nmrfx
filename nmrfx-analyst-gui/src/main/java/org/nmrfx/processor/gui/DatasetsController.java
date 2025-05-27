@@ -40,21 +40,27 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.ColumnMath;
@@ -63,6 +69,8 @@ import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
@@ -84,6 +92,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
     TableColumn dim1Column;
     Button valueButton;
     Button saveParButton;
+    Button saveDatasetButton;
     Button closeButton;
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
@@ -120,6 +129,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
         buttons.add(saveParButton);
         saveParButton.setOnAction(e -> savePars());
         saveParButton.setDisable(true);
+
+        saveDatasetButton = new Button("Save Dataset");
+        buttons.add(saveDatasetButton);
+        saveDatasetButton.setOnAction(e -> saveDataset());
+        saveDatasetButton.setDisable(true);
 
         closeButton = new Button("Close");
         buttons.add(closeButton);
@@ -271,7 +285,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
                     final ColorPicker cp = new ColorPicker();
                     cp.setValue(item);
                     setGraphic(cp);
-                    cp.setOnAction((javafx.event.ActionEvent t) -> {
+                    cp.setOnAction((ActionEvent t) -> {
                         getTableView().edit(getTableRow().getIndex(), column);
                         commitEdit(cp.getValue());
                     });
@@ -314,7 +328,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
                     final ColorPicker cp = new ColorPicker();
                     cp.setValue(item);
                     setGraphic(cp);
-                    cp.setOnAction((javafx.event.ActionEvent t) -> {
+                    cp.setOnAction((ActionEvent t) -> {
                         getTableView().edit(getTableRow().getIndex(), column);
                         commitEdit(cp.getValue());
                     });
@@ -395,6 +409,27 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
         refCol.setPrefWidth(75);
 
+        TableColumn<DatasetBase, Nuclei> nucleusCol = new TableColumn<>("nucleus");
+        Nuclei[] nuclei = Arrays.stream(Nuclei.getNuclei()).sorted(Comparator.comparing(Nuclei::getNumberAsInt)).toArray(Nuclei[]::new);
+        nucleusCol.setCellFactory(ComboBoxTableCell.forTableColumn(nuclei));
+        nucleusCol.setCellValueFactory(p -> {
+            DatasetBase dataset = p.getValue();
+            int iDim = getDimNum();
+            Nuclei nuc = null;
+            if (dataset.getNDim() > iDim) {
+                nuc = dataset.getNucleus(iDim);
+            }
+            return new SimpleObjectProperty<>(nuc);
+        });
+        nucleusCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<DatasetBase, Nuclei> t) -> {
+                    int iDim = getDimNum();
+                    Nuclei nuc = t.getNewValue();
+                    t.getRowValue().setNucleus(iDim, nuc);
+                });
+
+        nucleusCol.setPrefWidth(75);
+
         var positiveColumn = new TableColumn("Positive");
         var negativeColumn = new TableColumn("Negative");
         dim1Column = new TableColumn("Dim1");
@@ -409,7 +444,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         dim1Column.setPrefWidth(400);
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol);
-        dim1Column.getColumns().setAll(labelCol, sizeCol, sfCol, swCol, refCol);
+        dim1Column.getColumns().setAll(labelCol, sizeCol, sfCol, swCol, refCol, nucleusCol);
         ContextMenu menu = new ContextMenu();
         int maxDim = 6;
         for (int i = 0; i < maxDim; i++) {
@@ -455,6 +490,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = AnalystApp.getFXMLControllerManager().newController();
+            chart = controller.getActiveChart();
         }
         boolean appendFile = false;
         for (DatasetBase dataset : datasets) {
@@ -657,7 +693,22 @@ public class DatasetsController implements Initializable, StageBasedController, 
         for (DatasetBase dataset : datasets) {
             dataset.writeParFile();
         }
+    }
 
+    void saveDataset() {
+        Dataset dataset = (Dataset) tableView.getSelectionModel().getSelectedItems().getFirst();
+        if (dataset != null) {
+            FileChooser fileChooser = new FileChooser();
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                try {
+                    dataset.copyDataset(file.toString(), file.getName());
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
     }
 
     void doValues(DoubleUnaryOperator function) {
@@ -672,7 +723,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Close selected datasets");
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && response.get().getText().equals("OK")) {
-            ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
+            List<DatasetBase> datasets = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
             for (DatasetBase dataset : datasets) {
                 dataset.close();
             }

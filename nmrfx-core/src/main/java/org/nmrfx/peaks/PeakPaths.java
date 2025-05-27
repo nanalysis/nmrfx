@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 
 public class PeakPaths implements PeakListener {
 
-    private static final String[] PRESSURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
+    private static final String[] PRESSURE_NAMES = {"a", "b", "c"};
     private static final String[] TITRATION_NAMES = {"K", "D"};
 
     boolean fit0 = false;
@@ -39,12 +39,14 @@ public class PeakPaths implements PeakListener {
     String details = "";
     final PeakList firstList;
     final double[][] indVars;
-    int[] peakDims = {0, 1};
+    int nDim = 2;
+    int[] peakDims;
     final double[] weights;
     final double[] tols;
     final double dTol;
     PATHMODE pathMode;
     String[] parNames;
+    String[] dimNames;
     List<String> datasetNames;
     Comparator<Peak> peakComparator = Comparator.comparingInt(Peak::getIdNum);
     Map<Peak, PeakPath> paths = new TreeMap<>(peakComparator);
@@ -136,6 +138,7 @@ public class PeakPaths implements PeakListener {
         this.pathMode = pathMode;
         this.peakLists = new ArrayList<>();
         this.datasetNames = new ArrayList<>();
+        this.nDim = weights.length;
         for (PeakList peakList : peakLists) {
             peakList.registerPeakChangeListener(this);
             this.peakLists.add(peakList);
@@ -143,22 +146,36 @@ public class PeakPaths implements PeakListener {
         }
         firstList = peakLists.get(0);
         if (tols == null) {
-            tols = new double[weights.length];
-            int i = 0;
-            for (int peakDim : peakDims) {
-                DoubleSummaryStatistics dStat = firstList.widthStatsPPM(peakDim);
+            tols = new double[nDim];
+            for (int i=0;i<nDim;i++) {
+                DoubleSummaryStatistics dStat = firstList.widthStatsPPM(i);
                 tols[i] = dStat.getAverage() / weights[i];
-                i++;
             }
         }
         double tolSum = 0.0;
-        for (int i = 0; i < peakDims.length; i++) {
+        peakDims = new int[nDim];
+        dimNames = new String[nDim];
+        if (pathMode == PATHMODE.TITRATION) {
+            parNames = pathMode.names();
+        } else {
+            parNames = new String[nDim * pathMode.names.length];
+
+        }
+        PeakList firstList = peakLists.get(0);
+        int k = 0;
+        for (int i = 0; i < nDim; i++) {
             tolSum += tols[i] * tols[i];
+            peakDims[i] = i;
+            dimNames[i] = firstList.getSpectralDim(i).getDimName();
+            if (pathMode == PATHMODE.PRESSURE) {
+                for (int j=0;j<pathMode.names.length;j++) {
+                    parNames[k++] = dimNames[i] + "_" + pathMode.names[j];
+                }
+            }
         }
         dTol = Math.sqrt(tolSum);
 
         this.tols = tols;
-        parNames = pathMode.names();
 
         this.indVars = new double[2][];
         this.indVars[0] = concentrations;
@@ -190,6 +207,9 @@ public class PeakPaths implements PeakListener {
                 }
             }
             String peakPathName = file.getName();
+            if (!peakPathName.endsWith("Paths")) {
+                peakPathName = peakPathName + "Paths";
+            }
             peakPath = loadPathData(pathMode, datasetNames, x0List, x1List, peakPathName);
         }
         return peakPath;
@@ -234,9 +254,14 @@ public class PeakPaths implements PeakListener {
                 x1[i] = 100.0;
             }
         }
-        double[] weights = {1.0, 1.0};
-        if (peakLists.get(0).getSpectralDim(1).getNucleus().contains("N")) {
-            weights[1] = 5.0;
+        int nDim = peakLists.get(0).getNDim();
+        double[] weights = new double[nDim];
+        for (int i=0;i<nDim;i++) {
+            if (peakLists.get(0).getSpectralDim(i).getNucleus().contains("N")) {
+                weights[i] = 5.0;
+            } else {
+                weights[i] = 1.0;
+            }
         }
 
         if (peakPathName.contains(".")) {
@@ -638,6 +663,10 @@ public class PeakPaths implements PeakListener {
 
     public int[] getPeakDims() {
         return peakDims;
+    }
+
+    public int getNDim() {
+        return nDim;
     }
 
 }

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
@@ -460,7 +461,7 @@ public class DatasetBase {
         }
     }
 
-    public static double foldPPM(double ppm, double[] foldLimits) {
+    public static double foldPPM(double ppm, double[] foldLimits, double foldAmount) {
         double min = foldLimits[0];
         double max = foldLimits[1];
         if (min > max) {
@@ -469,13 +470,12 @@ public class DatasetBase {
             max = hold;
         }
         if ((ppm < min) || (ppm > max)) {
-            double fDelta = max - min;
             if (min != max) {
                 while (ppm > max) {
-                    ppm -= fDelta;
+                    ppm -= foldAmount;
                 }
                 while (ppm < min) {
-                    ppm += fDelta;
+                    ppm += foldAmount;
                 }
             }
         }
@@ -525,6 +525,13 @@ public class DatasetBase {
      * @return String object, null if data stored in Vec
      */
     public String getCanonicalFile() {
+        if ((canonicalName == null) && (file != null)) {
+            try {
+                canonicalName = file.getCanonicalPath();
+            } catch (IOException e) {
+                canonicalName = null;
+            }
+        }
         return canonicalName;
     }
 
@@ -2171,6 +2178,10 @@ public class DatasetBase {
         updateDatasetRegionsListListeners();
     }
 
+    public Optional<DatasetRegion> getLinkedRegion(DatasetRegion linkedRegion) {
+        return regions.stream().filter(region -> region.linkRegion == linkedRegion).findFirst();
+    }
+
     public DatasetRegion addRegion(double min, double max) {
         // don't use Stream.toList as that will give an imutableList
         List<DatasetRegion> sortedRegions = regions.stream().sorted().collect(Collectors.toList());
@@ -2194,6 +2205,51 @@ public class DatasetBase {
         }
         updateDatasetRegionsListListeners();
         return newRegion;
+    }
+
+    public void copyRegionsTo(DatasetBase newDataset) {
+        newDataset.clearRegions();
+        for (DatasetRegion region : getReadOnlyRegions()) {
+            DatasetRegion newRegion = new DatasetRegion(region);
+            newDataset.addRegion(newRegion);
+        }
+    }
+
+
+    public void writeDataToTextFile(File file) throws IOException {
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            int nDim = getNDim();
+            int[] pt = new int[nDim];
+            int n = getSizeTotal(0);
+            int m = 1;
+            String outString;
+            if (nDim == 1) {
+                outString = String.format("%s,Int%n", getLabel(0));
+            } else {
+                m = getSizeTotal(1);
+                outString = String.format("%s,%s,Int%n", getLabel(1), getLabel(0));
+            }
+            fileWriter.write(outString);
+
+            double ppm1 = 0.0;
+            for (int row = 0; row < m; row++) {
+                if (nDim > 1) {
+                    pt[1] = row;
+                    ppm1 = pointToPPM(1, row);
+                }
+                for (int col = 0; col < n; col++) {
+                    double ppm0 = pointToPPM(0, col);
+                    pt[0] = col;
+                    double value = readPoint(pt);
+                    if (nDim == 1) {
+                        outString = String.format("%.5f,%.6f%n", ppm0, value);
+                    } else {
+                        outString = String.format("%.5f,%.5f,%.6f%n", ppm1, ppm0, value);
+                    }
+                    fileWriter.write(outString);
+                }
+            }
+        }
     }
 
     /**

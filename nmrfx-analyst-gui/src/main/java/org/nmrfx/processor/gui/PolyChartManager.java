@@ -24,6 +24,7 @@ public class PolyChartManager {
 
     private final ObservableList<PolyChart> allCharts = FXCollections.observableArrayList();
     private final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
+    private final SimpleObjectProperty<PolyChart> selectedChart = new SimpleObjectProperty<>(null);
     private final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
     private final SimpleObjectProperty<DatasetBase> currentDataset = new SimpleObjectProperty<>(null);
     private final PolyChartSynchronizer synchronizer = new PolyChartSynchronizer();
@@ -93,9 +94,23 @@ public class PolyChartManager {
         currentDataset.set(chart.getDataset());
         chart.getFXMLController().setActiveChart(chart);
     }
-
     public PolyChart getActiveChart() {
         return activeChart.get();
+    }
+    public void setSelectedChart(PolyChart chart) {
+        selectedChart.set(chart);
+        if (chart != null) {
+            chart.getDrawingLayers().getTopPane().setMouseTransparent(false);
+            chart.selectHighlight(true);
+        } else {
+            allCharts.forEach(c -> {
+                c.selectHighlight(false);
+                c.getDrawingLayers().getTopPane().setMouseTransparent(true);
+            });
+        }
+    }
+    public Optional<PolyChart> getSelectedChart() {
+        return Optional.ofNullable(selectedChart.get());
     }
 
     @Nullable
@@ -105,6 +120,9 @@ public class PolyChartManager {
 
     public SimpleObjectProperty<PolyChart> activeChartProperty() {
         return activeChart;
+    }
+    public SimpleObjectProperty<PolyChart> selectedChartProperty() {
+        return selectedChart;
     }
 
     public SimpleBooleanProperty multipleChartsProperty() {

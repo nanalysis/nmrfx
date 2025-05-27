@@ -54,15 +54,17 @@ public class AngleTreeGenerator {
     }
 
     public static void genMeasuredTree(Entity entity, Atom startAtom) {
-        if (startAtom == null) {
-            startAtom = entity.atoms.get(0);
-        }
-        Molecule molecule = (Molecule) startAtom.entity.molecule;
-
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-        List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
-        aTreeGen.measureAtomTree(entity, atomTree, true, false);
-        molecule.setRingClosures(aTreeGen.getRingClosures());
+        if (startAtom == null) {
+            startAtom = AngleTreeGenerator.findStartAtom(entity);
+        }
+        if (startAtom != null) {
+            Molecule molecule = (Molecule) startAtom.entity.molecule;
+
+            List<List<Atom>> atomTree = aTreeGen.genTree(entity, startAtom, null);
+            aTreeGen.measureAtomTree(entity, atomTree, true, false);
+            molecule.setRingClosures(aTreeGen.getRingClosures());
+        }
     }
 
     static class BondSort implements Comparable<BondSort> {
@@ -82,7 +84,7 @@ public class AngleTreeGenerator {
 
     }
 
-    public boolean checkStartAtom(Atom startAtom) {
+    public static boolean checkStartAtom(Atom startAtom) {
         boolean ok = startAtom.bonds.size() == 1;
         if (ok) {
             Atom partner = startAtom.getConnected().get(0);
@@ -91,11 +93,10 @@ public class AngleTreeGenerator {
         return ok;
     }
 
-    public Atom findStartAtom(ITree itree) {
+    public static Atom findStartAtom(ITree itree) {
         List<Atom> atoms = itree.getAtomArray();
         Atom startAtom = null;
-        if (itree instanceof Entity && itree instanceof Polymer) {
-            Polymer polymer = (Polymer) itree;
+        if (itree instanceof Polymer polymer) {
             startAtom = polymer.getFirstResidue().getFirstBackBoneAtom();
         } else {
             for (Atom atom : atoms) {
@@ -110,7 +111,6 @@ public class AngleTreeGenerator {
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom)
             throws IllegalArgumentException {
-
         List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             atom.parent = null;
@@ -160,7 +160,7 @@ public class AngleTreeGenerator {
 
                 if (!bond.isRingClosure() && (iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin, iNodeEnd);
-                } else if (bond.isRingClosure()) {
+                } else if (bond.isRingClosure() && closeBond(bond, false)) {
                     closureBonds.add(bond);
                 }
             }
@@ -266,8 +266,7 @@ public class AngleTreeGenerator {
                 firstAtom = false;
             }
         }
-        if (itree instanceof Molecule) {
-            Molecule mol = (Molecule) itree;
+        if (itree instanceof Molecule mol) {
             mol.setTreeList(atomPathList);
             mol.setAtomTree(atomTree);
         }
@@ -284,6 +283,21 @@ public class AngleTreeGenerator {
 
     public Map<Atom, Map<Atom, Double>> getRingClosures() {
         return ringClosures;
+    }
+
+    private boolean closeBond(Bond bond, boolean freezeRings) {
+        Atom a2 = bond.getBeginAtom();
+        Atom a3 = bond.getEndAtom();
+        boolean closable = true;
+
+        if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) { // wrong if connecting two rings
+            closable = false;
+        } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
+            if (freezeRings) {
+                closable = false;
+            }
+        }
+        return closable;
     }
 
     public void measureAtomTree(ITree itree, List<List<Atom>> atomTree, boolean changeBonds, boolean freezeRings) {
@@ -308,7 +322,7 @@ public class AngleTreeGenerator {
                     Point3 p1 = a1 != null ? a1.getPoint() : null;
                     Point3 p2 = a2 != null ? a2.getPoint() : null;
                     if ((p1 != null) && (p0 == null)) {
-                        Vector3D ps0 =  p1.subtract(new Point3(1.0,1.0, 0.0));
+                        Vector3D ps0 = p1.subtract(new Point3(1.0, 1.0, 0.0));
                         p0 = new Point3(ps0);
                     }
                     double lastAngle = 0.0;
@@ -353,10 +367,10 @@ public class AngleTreeGenerator {
                         }
                         oBond.ifPresent(b -> {
                             if (!bondMap.containsKey(a2)) {
-                                bondMap.put(a2, new ArrayList<Bond>());
+                                bondMap.put(a2, new ArrayList<>());
                             }
                             if (!bondMap.containsKey(a3)) {
-                                bondMap.put(a3, new ArrayList<Bond>());
+                                bondMap.put(a3, new ArrayList<>());
                             }
                             bondMap.get(a2).add(b);
                             bondMap.get(a3).add(b);
@@ -445,9 +459,11 @@ public class AngleTreeGenerator {
 
             ringClosures = new HashMap<>();
             for (Bond bond : closureBonds) {
-                bond.begin.addBond(bond);
-                bond.end.addBond(bond);
-                addRingClosureSet(ringClosures, bond.begin, bond.end);
+                if (closeBond(bond, freezeRings)) {
+                    bond.begin.addBond(bond);
+                    bond.end.addBond(bond);
+                    addRingClosureSet(ringClosures, bond.begin, bond.end);
+                }
             }
             if (itree instanceof Molecule) {
                 mol = (Molecule) itree;

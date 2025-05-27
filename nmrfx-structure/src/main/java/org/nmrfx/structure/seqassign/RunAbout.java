@@ -1,17 +1,18 @@
 package org.nmrfx.structure.seqassign;
 
+import javafx.beans.property.SimpleDoubleProperty;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.io.NMRStarWriter;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
+import org.nmrfx.peaks.io.PeakPatternReader;
+import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.Saveframe;
-import org.nmrfx.star.SaveframeWriter;
+import org.nmrfx.star.*;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -24,16 +25,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RunAbout implements SaveframeWriter {
     static final List<String> peakListTags = List.of("ID", "Spectral_peak_list_ID");
     static final private Map<Integer, RunAbout> runaboutMap = new HashMap<>();
+    public final static Map<Nuclei, Double> defaultTolearnces = Map.of(Nuclei.H1, 0.05, Nuclei.C13, 0.6, Nuclei.N15, 0.2);
+
+    PeakListTypes peakListTypes = null;
     int id = 1;
     SpinSystems spinSystems = new SpinSystems(this);
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
     PeakList refList;
     List<PeakList> peakLists = new ArrayList<>();
     Map<String, List<String>> dimLabels;
-    Map<String, String> peakListTypes = new HashMap<>();
+    Map<String, String> peakListTypeMap = new HashMap<>();
     Map<String, DatasetBase> datasetMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
+
 
     EnumMap<SpinSystem.AtomEnum, Integer>[] countMap = new EnumMap[2];
 
@@ -47,7 +52,19 @@ public class RunAbout implements SaveframeWriter {
         runaboutMap.put(id, this);
     }
 
-    public static final RunAbout getRunAbout(int id) {
+    public void close() {
+        spinSystems.clearAll();
+        peakListMap.clear();
+        peakLists.clear();
+        peakListTypeMap.clear();
+        datasetMap.clear();
+        aTypeMap.clear();
+        typeInfoMap.clear();
+        residueSpinSystemsMap.clear();
+        runaboutMap.clear();
+    }
+
+    public static RunAbout getRunAbout(int id) {
         return runaboutMap.get(id);
     }
 
@@ -83,7 +100,11 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public int getTypeCount(String typeName) {
-        return typeInfoMap.get(typeName).nTotal;
+        int nTotal = 0;
+        if (typeInfoMap.containsKey(typeName)) {
+            nTotal = typeInfoMap.get(typeName).nTotal;
+        }
+        return nTotal;
     }
 
     public int getExpected(int k, SpinSystem.AtomEnum atomEnum) {
@@ -249,13 +270,13 @@ public class RunAbout implements SaveframeWriter {
         peakLists.clear();
         peakListMap.clear();
         datasetMap.clear();
-        peakListTypes.clear();
+        peakListTypeMap.clear();
         peakLists.addAll(lists);
 
         for (var peakList : peakLists) {
             String typeName = peakList.getExperimentType();
             peakListMap.put(typeName, peakList);
-            peakListTypes.put(peakList.getName(), typeName);
+            peakListTypeMap.put(peakList.getName(), typeName);
             datasetMap.put(typeName, DatasetBase.getDataset(peakList.getDatasetName()));
             List<String> patElems = getPatterns(peakList);
             setAtomCount(typeName, patElems);
@@ -334,8 +355,7 @@ public class RunAbout implements SaveframeWriter {
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
         List<SpectralDim> sDims = new ArrayList<>();
-        for (int i = 0; i < iDims.length; i++) {
-            int iDim = iDims[i];
+        for (int iDim : iDims) {
             String dataDimName = dataset.getLabel(iDim);
             SpectralDim sDim = peakList.getSpectralDim(dataDimName);
             sDims.add(sDim);
@@ -363,7 +383,6 @@ public class RunAbout implements SaveframeWriter {
     }
 
     public void assemble() {
-        System.out.println("assemble " + peakListMap.keySet());
         getSpinSystems().assembleWithClustering(refList, peakLists);
     }
 
@@ -386,6 +405,57 @@ public class RunAbout implements SaveframeWriter {
         }
     }
 
+    public void setDefaultTolerances() {
+        setDefaultTolerances(peakLists);
+    }
+
+    public Set<PeakList> guessPeakLists() throws IOException {
+        if (peakListTypes == null) {
+            peakListTypes = PeakPatternReader.loadYaml();
+        }
+        Set<PeakList> foundLists = new HashSet<>();
+        String[] typeNames = {"CBCACONNH", "CBCACONH", "HNCOCACB", "HNCACB", "CBCANH", "HNCOCA", "HNCACO", "HNCA", "HNCO"};
+        for (String typeName : typeNames) {
+            peakListTypes.getType(typeName).ifPresent(peakListType -> {
+                for (var peakList : PeakList.peakLists()) {
+                    if (!foundLists.contains(peakList) && peakList.getName().toLowerCase().contains(peakListType.getName().toLowerCase())) {
+                        peakListType.setPeakList(peakList);
+                        foundLists.add(peakList);
+                    }
+                }
+            });
+        }
+        return foundLists;
+    }
+
+    public void setDefaultTolerances(Collection<PeakList> peakLists) {
+        for (var peakList : peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String nucName = peakList.getSpectralDim(i).getNucleus();
+                Nuclei nuclei = Nuclei.findNuclei(nucName);
+                Double tol = defaultTolearnces.get(nuclei);
+                if (tol != null) {
+                    peakList.getSpectralDim(i).setIdTol(tol);
+                }
+            }
+        }
+    }
+
+    public void setTolerances(Map<Nuclei, SimpleDoubleProperty> tolerances) {
+        for (var peakList : peakLists) {
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String nucName = peakList.getSpectralDim(i).getNucleus();
+                Nuclei nuclei = Nuclei.findNuclei(nucName);
+                Double tol = tolerances.get(nuclei).get();
+                if (tol != null) {
+                    peakList.getSpectralDim(i).setIdTol(tol);
+                }
+            }
+        }
+    }
+
     public void calcCombinations() {
         for (PeakList peakList : peakLists) {
             for (Peak peak : peakList.peaks()) {
@@ -402,7 +472,6 @@ public class RunAbout implements SaveframeWriter {
         getSpinSystems().compare();
         getSpinSystems().checkConfirmed();
         getSpinSystems().updateFragments();
-        getSpinSystems().dump();
     }
 
     public static String getHDimName(PeakList peakList) {
@@ -567,7 +636,7 @@ public class RunAbout implements SaveframeWriter {
         writeToSTAR(chan);
     }
 
-    void writeToSTAR(Writer chan) throws ParseException, IOException {
+    void writeToSTAR(Writer chan) throws IOException {
         String category = "_Runabout";
         String categoryName = "runabout";
         StringBuilder sBuilder = new StringBuilder();
@@ -582,7 +651,7 @@ public class RunAbout implements SaveframeWriter {
         spinSystems.writeSpinSystemPeaks(sBuilder);
 
         chan.write(sBuilder.toString());
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 
     void writePeakLists(StringBuilder sBuilder) {

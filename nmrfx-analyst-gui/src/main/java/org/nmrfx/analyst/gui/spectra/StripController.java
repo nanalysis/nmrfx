@@ -21,13 +21,12 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
@@ -35,10 +34,9 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -56,6 +54,7 @@ import java.util.function.Consumer;
  * @author brucejohnson
  */
 public class StripController implements ControllerTool {
+   static Font font = Font.font(12.0);
 
     static final int X = 0;
     static final int Z = 1;
@@ -178,8 +177,6 @@ public class StripController implements ControllerTool {
 
         toolBar.getItems().addAll(nSlider, nField);
 
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-
         limitListener = (observable, oldValue, newValue) -> updateView(false);
 
         Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
@@ -196,7 +193,7 @@ public class StripController implements ControllerTool {
         itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        ProjectBase.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
+        GUIProject.getActive().addDatasetListSubscription(this::updateDatasetNames);
 
         Label offsetLabel = new Label("Offset:");
         offsetBox = new ChoiceBox<>();
@@ -215,7 +212,7 @@ public class StripController implements ControllerTool {
                 new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -541,13 +538,19 @@ public class StripController implements ControllerTool {
         Peak peak;
         double[] positions;
 
-        public Cell(Dataset dataset, Peak peak) {
-
-        }
+        AnnoText annoText;
 
         public Cell(Peak peak, double[] positions) {
             this.peak = peak;
             this.positions = positions;
+            double x = 100.0;
+            String text = peak.getPeakDim(0).getLabel();
+            if (text.isEmpty()) {
+                text = String.valueOf(peak.getIdNum());
+            }
+            double textWidth = GUIUtils.getTextWidth(text, font);
+            double delta = textWidth + 5.0;
+            annoText = new AnnoText(x, -8, delta, text, font.getSize(), CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
         }
 
         void updateCell() {
@@ -576,6 +579,8 @@ public class StripController implements ControllerTool {
                 for (int i = 1; i < positions.length; i++) {
                     chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
                 }
+                chart.clearAnnoType(AnnoText.class);
+                chart.addAnnotation(annoText);
             }
             chart.useImmediateMode(true);
         }

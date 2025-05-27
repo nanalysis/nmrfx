@@ -237,6 +237,12 @@ public class KeyBindings {
                 chart.getFXMLController().exportGraphics();
                 keyMonitor.clear();
             }
+            case "si" -> {
+                chart.getFXMLController().addInsetChartTo(chart);
+                chart.getFXMLController().refresh();
+                keyMonitor.clear();
+            }
+
             case "sn" -> {
                 Stage stage = new Stage(StageStyle.DECORATED);
                 AnalystApp.getFXMLControllerManager().newController(stage);
@@ -258,6 +264,14 @@ public class KeyBindings {
             }
             case "vc" -> {
                 chart.center();
+                keyMonitor.clear();
+            }
+            case "vd" -> {
+                chart.copyChartLimits();
+                keyMonitor.clear();
+            }
+            case "vv" -> {
+                chart.pasteChartLimits();
                 keyMonitor.clear();
             }
             case "ve" -> {

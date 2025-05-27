@@ -61,12 +61,12 @@ public class Noe extends DistanceConstraint {
     private final SpatialSetGroup spg2;
 
     AtomDistancePair[] atomPairs = null;
-    public final Peak peak;
+    private Peak peak;
     private double intensity = 0.0;
     private double volume = 0.0;
     private double scale;
     private double atomScale = 1.0;
-    private double ppmError = 0.0;
+    private double ppmError = 1.0;
     private short active = 1;
     private boolean symmetrical = false;
     private double contribution = 1.0;
@@ -83,10 +83,9 @@ public class Noe extends DistanceConstraint {
         super();
         spg1 = new SpatialSetGroup(sp1);
         spg2 = new SpatialSetGroup(sp2);
-        if (spg1.compare(spg2) >= 0) {
+        if (spg1.compare(spg2) > 0) {
             swapped = true;
         }
-
         peak = p;
         scale = newScale;
         activeFlags = EnumSet.noneOf(Flags.class);
@@ -187,13 +186,16 @@ public class Noe extends DistanceConstraint {
             return spg2;
         }
     }
+    public SpatialSetGroup getSPGSwapped(int setNum) {
+        if (setNum == 0) {
+            return swapped ? spg2 : spg1;
+        } else {
+            return swapped ? spg1 : spg2;
+        }
+    }
 
     public static int getSize(NoeSet noeSet) {
         return noeSet.getSize();
-    }
-
-    public static void resetConstraints(NoeSet noeSet) {
-        noeSet.clear();
     }
 
     public String getPeakListName() {
@@ -268,6 +270,10 @@ public class Noe extends DistanceConstraint {
         return protons;
     }
 
+    public boolean isSwapped() {
+        return swapped;
+    }
+
     public boolean isActive() {
         return activeFlags.isEmpty() || ((activeFlags.size() == 1) && getActivityFlags().equals("f"));
     }
@@ -309,15 +315,8 @@ public class Noe extends DistanceConstraint {
     }
 
     @Override
-    public String toSTARString() {
-        if (peak != NoeSet.lastPeakWritten) {
-            NoeSet.id++;
-            NoeSet.lastPeakWritten = peak;
-            NoeSet.memberId = 1;
-        } else {
-            NoeSet.memberId++;
-        }
-        String logic = ".";
+    public String toSTARString(int id, int memberId) {
+         String logic = ".";
         if (nPossible > 1) {
             logic = "OR";
         }
@@ -326,10 +325,10 @@ public class Noe extends DistanceConstraint {
         char sep = ' ';
 
         //        Gen_dist_constraint.ID
-        result.append(NoeSet.id);
+        result.append(id);
         result.append(sep);
         //_Gen_dist_constraint.Member_ID
-        result.append(NoeSet.memberId);
+        result.append(memberId);
         result.append(sep);
         //_Gen_dist_constraint.Member_logic_code
         result.append(logic);
@@ -447,6 +446,15 @@ public class Noe extends DistanceConstraint {
 
     public void setSymmetrical(boolean symmetrical) {
         this.symmetrical = symmetrical;
+    }
+
+    public Peak peak() {
+        return peak;
+    }
+
+    public Noe peak(Peak peak) {
+        this.peak = peak;
+        return this;
     }
 
     public record NoeMatch(SpatialSet sp1, SpatialSet sp2, GenTypes type, double error) {
@@ -609,6 +617,7 @@ public class Noe extends DistanceConstraint {
         filterSwapped = swapped;
     }
 
+    @Override
     public Peak getPeak() {
         return peak;
     }

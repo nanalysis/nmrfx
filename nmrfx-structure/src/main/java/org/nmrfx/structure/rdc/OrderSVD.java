@@ -1025,6 +1025,7 @@ public class OrderSVD {
         ArrayList<String> atom2 = new ArrayList<>();
         ArrayList<String> rdc = new ArrayList<>();
         ArrayList<String> err = new ArrayList<>();
+        int iStructure = 0;
         if (type.equals("xplor")) {
             try (PythonInterpreter interpreter = new PythonInterpreter()) {
                 interpreter.exec("import refine");
@@ -1050,7 +1051,7 @@ public class OrderSVD {
                     rdc.add(fields[6]);
                     err.add(fields[7]);
                 }
-                updateRDCSet(molecule, atom1, atom2, rdc, err, rdcSetName);
+                updateRDCSet(molecule, atom1, atom2, iStructure, rdc, err, rdcSetName);
             }
         }
     }
@@ -1064,7 +1065,7 @@ public class OrderSVD {
      * @param err        List of XPLOR or CYANA RDCConstraint error values.
      * @param rdcSetName String of the name of the RDCConstraint set.
      */
-    public static void updateRDCSet(MoleculeBase molecule, List<String> atom1, List<String> atom2, List<String> rdc, List<String> err, String rdcSetName) {
+    public static void updateRDCSet(MoleculeBase molecule, List<String> atom1, List<String> atom2, int iStructure, List<String> rdc, List<String> err, String rdcSetName) {
         RDCConstraintSet rdcSet = molecule.getMolecularConstraints().getRDCSet(rdcSetName);
         String[][] setAtoms = new String[2][rdcSet.getSize()];
         for (int i = 0; i < rdcSet.getSize(); i++) {
@@ -1082,7 +1083,7 @@ public class OrderSVD {
             }
             if (newAtom1Ind >= 0) {
                 SpatialSet[] spSets1 = rdcSet.get(newAtom1Ind).getSpSets();
-                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets1[0].getAtom(), spSets1[1].getAtom(), Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets1[0].getAtom(), spSets1[1].getAtom(), iStructure, Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
                 rdcSet.remove(newAtom1Ind);
                 rdcSet.add(newAtom1Ind, aCon);
             } else {
@@ -1091,7 +1092,7 @@ public class OrderSVD {
                 if (a1 != null & a2 != null) {
                     SpatialSet spSet1 = a1.getSpatialSet();
                     SpatialSet spSet2 = a2.getSpatialSet();
-                    RDCConstraint rdcObj = new RDCConstraint(rdcSet, spSet1.getAtom(), spSet2.getAtom(), Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
+                    RDCConstraint rdcObj = new RDCConstraint(rdcSet, spSet1.getAtom(), spSet2.getAtom(), iStructure,  Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
                     rdcSet.add(rdcObj);
                 }
             }

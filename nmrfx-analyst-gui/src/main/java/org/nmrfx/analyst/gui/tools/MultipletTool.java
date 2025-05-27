@@ -34,6 +34,7 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.undo.PeakListUndo;
 import org.nmrfx.processor.gui.undo.PeakUndo;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,21 +225,46 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     }
 
-    void initIntegralType(ToolBar toolBar) {
-        Label integralLabel = new Label("N: ");
-        integralField = new TextField();
-        integralField.setPrefWidth(70);
+    public MenuButton makeNormalizeMenu() {
+        MenuButton integralMenu = new MenuButton("N");
+        int[] norms = {1, 2, 3, 4, 5, 6, 9, 100};
 
+        for (var norm : norms) {
+            MenuItem menuItem = new MenuItem(String.valueOf(norm));
+            integralMenu.getItems().add(menuItem);
+            menuItem.setOnAction(e -> setPeakN(norm));
+        }
+        return integralMenu;
+    }
+
+    void setPeakNToValue() {
+        String normString = GUIUtils.input("Integral Norm Value");
+        double norm;
+        try {
+            norm = Double.parseDouble(normString);
+        } catch (NumberFormatException ignored) {
+            return;
+        }
+        setPeakN(norm);
+    }
+
+    void setPeakN(double value) {
+        activeMultiplet.ifPresent(m -> {
+            double volume = m.getVolume();
+            PeakList peakList = m.getOrigin().getPeakList();
+            peakList.scale = volume / value;
+            refresh();
+        });
+    }
+
+    void initIntegralType(ToolBar toolBar) {
+        integralField = new TextField();
+        integralField.setPrefWidth(50);
         integralField.setOnKeyReleased(k -> {
             if (k.getCode() == KeyCode.ENTER) {
                 try {
                     double value = Double.parseDouble(integralField.getText().trim());
-                    activeMultiplet.ifPresent(m -> {
-                        double volume = m.getVolume();
-                        PeakList peakList = m.getOrigin().getPeakList();
-                        peakList.scale = volume / value;
-                        refresh();
-                    });
+                    setPeakN(value);
                 } catch (NumberFormatException nfE) {
                     log.warn("Unable to parse integral field.", nfE);
                 }
@@ -246,12 +272,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             }
         });
 
+        MenuButton normButton = makeNormalizeMenu();
         peakTypeChoice = new ChoiceBox<>();
         typeToolBar.getChildren().addAll(peakTypeChoice);
         peakTypeChoice.getItems().addAll(Peak.getPeakTypes());
         peakTypeChoice.valueProperty().addListener(e -> setPeakType());
-        peakTypeChoice.setPrefWidth(120);
-        toolBar.getItems().addAll(integralLabel, integralField);
+        peakTypeChoice.setPrefWidth(100);
+        toolBar.getItems().addAll(normButton, integralField);
         toolBar.getItems().addAll(peakTypeChoice);
     }
 
@@ -382,7 +409,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 if (peakList != null) {
                     List<String> peakListNames = new ArrayList<>();
                     peakListNames.add(peakList.getName());
-                    chart.updatePeakLists(peakListNames);
+                    chart.updatePeakListsByName(peakListNames);
                     attrs = chart.getPeakListAttributes();
                     peakListOpt = Optional.of(attrs.get(0).getPeakList());
                 }
@@ -517,7 +544,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             try {
                 activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
                 updateMultipletField(false);
-                if (undo !=  null) {
+                if (undo != null) {
                     redo = getPeakListUndo();
                 }
                 chart.refresh();
@@ -529,6 +556,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             }
         }
     }
+
     PeakListUndo getPeakListUndo() {
         PeakListUndo undo = null;
         if (getPeakList().isPresent()) {
@@ -567,6 +595,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
 
     public void addRegion(DatasetRegion region) {
         Analyzer analyzer = getAnalyzer();
+        if (chart.getPeakListAttributes().isEmpty()) {
+            return;
+        }
         if (analyzer != null) {
             double ppm0;
             double ppm1;

@@ -1,9 +1,10 @@
 package org.nmrfx.analyst.gui.molecule;
 
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -11,16 +12,25 @@ import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
 import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.constraints.NoeSet;
 import org.nmrfx.chemistry.io.*;
+import org.nmrfx.peaks.ResonanceFactory;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.OpenChemLibConverter;
 import org.nmrfx.utils.GUIUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
@@ -50,6 +60,9 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
         readPDBxyzItem.setOnAction(e -> readMolecule("pdbx"));
         molFileMenu.getItems().add(readPDBxyzItem);
+        MenuItem readPDBLigandItem = new MenuItem("Read PDB Ligand...");
+        readPDBLigandItem.setOnAction(e -> readMolecule("pdbLigand"));
+        molFileMenu.getItems().add(readPDBLigandItem);
         MenuItem readMMCIFItem = new MenuItem("Read mmCIF...");
         readMMCIFItem.setOnAction(e -> readMolecule("mmcif"));
         molFileMenu.getItems().add(readMMCIFItem);
@@ -69,7 +82,10 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem smileItem = new MenuItem("Input SMILE...");
         smileItem.setOnAction(e -> getSMILEMolecule());
 
-        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem);
+        MenuItem writeItem = new MenuItem("Write PDB");
+        writeItem.setOnAction(e -> writePDB());
+
+        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem, writeItem);
 
     }
 
@@ -77,6 +93,9 @@ public class MoleculeMenuActions extends MenuActions {
     protected void advanced() {
         MenuItem seqGUIMenuItem = new MenuItem("Sequence Editor...");
         seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(app));
+
+        MenuItem renumberItem = new MenuItem("Renumber residues...");
+        renumberItem.setOnAction(e -> renumberSequence());
 
         MenuItem atomsMenuItem = new MenuItem("Atom Table...");
         atomsMenuItem.setOnAction(this::showAtoms);
@@ -101,7 +120,7 @@ public class MoleculeMenuActions extends MenuActions {
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, molConstraintsMenu, rnaPeakGenMenuItem);
+                sequenceMenuItem, molMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
     }
 
     void clearExisting() {
@@ -169,6 +188,57 @@ public class MoleculeMenuActions extends MenuActions {
         }
     }
 
+    public static String getType(Path usePath) {
+        File file = usePath.toFile();
+        String type = null;
+        String fileName = file.getName();
+        int dotPos = fileName.lastIndexOf(".");
+        if (dotPos != -1) {
+            type = fileName.substring(dotPos + 1);
+        }
+        return type;
+
+    }
+
+    public static void readMoleculeInDirectory(Path dir) throws IOException {
+        List<Path> moleculePaths = new ArrayList<>();
+        try (DirectoryStream<Path> paths = Files.newDirectoryStream(dir, "*.{smiles,mol,pdb,mol2,sdf}")) {
+            for (Path entry : paths) {
+                moleculePaths.add(entry);
+            }
+        }
+        for (Path usePath : moleculePaths) {
+            if (usePath != null) {
+                String type = getType(usePath);
+                if (type == null) {
+                    return;
+                }
+                readMolecule(usePath.toFile(), type);
+            }
+        }
+    }
+
+    public void writePDB()  {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            Molecule molecule = Molecule.getActive();
+            if (molecule != null) {
+                try {
+                    molecule.writeXYZToPDB(file.toString(), -1);
+                } catch (IOException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
+
+    }
+
+    public void readMolecule() {
+        readMolecule("");
+    }
+
     public void readMolecule(String type) {
         if (!type.equals("pdb xyz") && !checkForExisting()) {
             return;
@@ -176,6 +246,19 @@ public class MoleculeMenuActions extends MenuActions {
 
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
+        if (type.isEmpty()) {
+            type = getType(file.toPath());
+        }
+        if (type != null) {
+            Molecule molecule = readMolecule(file, type);
+            if (molecule != null) {
+                showMols();
+                resetAtomController();
+            }
+        }
+    }
+
+    public static Molecule readMolecule(File file, String type) {
         Molecule molecule = null;
         if (file != null) {
             try {
@@ -186,7 +269,8 @@ public class MoleculeMenuActions extends MenuActions {
                     }
                     case "pdbx" -> {
                         PDBFile pdbReader = new PDBFile();
-                        molecule = (Molecule) pdbReader.read(file.toString(), false);
+                        molecule = Molecule.getActive();
+                        molecule = (Molecule) pdbReader.read(molecule, file.toString(), false);
                     }
                     case "pdb xyz" -> {
                         PDBFile pdb = new PDBFile();
@@ -194,7 +278,21 @@ public class MoleculeMenuActions extends MenuActions {
                         pdb.readCoordinates(molecule, file.getPath(), -1, false, true);
                         molecule.updateAtomArray();
                     }
-                    case "sdf", "mol" -> molecule = (Molecule) SDFile.read(file.toString(), null);
+                    case "pdbLigand" -> {
+                        PDBFile pdb = new PDBFile();
+                        molecule = Molecule.getActive();
+                        PDBFile.readResidue(file.toString(), null, molecule,null);
+                        molecule.updateAtomArray();
+                    }
+                    case "sdf", "mol" -> {
+                        molecule = (Molecule) MoleculeFactory.getActive();
+                        if (molecule == null) {
+                            molecule = (Molecule) SDFile.read(file.toString(), null);
+                        } else {
+                            SDFile.read(file.toString(), null, molecule, null, null);
+                        }
+
+                    }
                     case "mol2" -> molecule = (Molecule) Mol2File.read(file.toString(), null);
                     case "seq" -> {
                         Sequence seq = new Sequence();
@@ -205,13 +303,13 @@ public class MoleculeMenuActions extends MenuActions {
                         List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
                         if (!molecules.isEmpty()) {
                             molecule = molecules.get(0);
+                            ProjectBase.getActive().putMolecule(molecule);
                         }
                     }
                     default -> {
                     }
                 }
                 MoleculeFactory.setActive(molecule);
-                showMols();
             } catch (Exception ex) {
                 var mol = MoleculeFactory.getActive();
                 if ((mol != null) && (mol != molecule)) {
@@ -222,8 +320,8 @@ public class MoleculeMenuActions extends MenuActions {
                 dialog.setTitle("Error reading molecule file");
                 dialog.showAndWait();
             }
-            resetAtomController();
         }
+        return molecule;
     }
 
     @FXML
@@ -256,6 +354,7 @@ public class MoleculeMenuActions extends MenuActions {
                 try {
                     Molecule molecule = OpenChemLibConverter.parseSmiles("mol", smileString);
                     molecule.setActive();
+                    ProjectBase.getActive().putMolecule(molecule);
                 } catch (IllegalArgumentException iaE) {
                     GUIUtils.warn("SMILES Parser", iaE.getMessage());
                     return;
@@ -278,5 +377,89 @@ public class MoleculeMenuActions extends MenuActions {
         noeTableController.getStage().show();
         noeTableController.getStage().toFront();
         noeTableController.updateNoeSetMenu();
+    }
+
+    private void renumberSequence() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            GUIUtils.warn("Renumbering ", "No molecule present");
+            return;
+        }
+        var result = renumberingDialog();
+        if (result.isPresent()) {
+            Renumbering renumbering = result.get();
+            List<Polymer> polymers = renumbering.polymer == null ? molecule.getPolymers() : List.of(renumbering.polymer);
+            for (Polymer polymer : polymers) {
+                if (renumbering.updateResidues) {
+                    polymer.addResidueOffset(renumbering.offset);
+                    if (atomController != null) {
+                        atomController.refreshAtomTable();
+                    }
+                }
+                if (renumbering.updatePeaks()) {
+                    ResonanceFactory resonanceFactory = ProjectBase.activeResonanceFactory();
+                    resonanceFactory.renumber(renumbering.offset(), polymer.getName());
+                }
+            }
+        }
+    }
+
+    public record Renumbering(Polymer polymer, int offset, boolean updateResidues, boolean updatePeaks) {
+
+    }
+    public static Optional<Renumbering> renumberingDialog() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            GUIUtils.warn("Renumbering ", "No molecule present");
+            return Optional.empty();
+        }
+
+        Dialog<Renumbering> dialog = new Dialog<>();
+        dialog.setTitle("Renumbering");
+        dialog.setHeaderText("Enter offset information:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 100;
+        ComboBox<Polymer> polymerComboBox = new ComboBox<>();
+        polymerComboBox.getItems().addAll(molecule.getPolymers());
+        polymerComboBox.getItems().add(null);
+        polymerComboBox.setValue(molecule.getPolymers().getFirst());
+        polymerComboBox.setMinWidth(comboBoxWidth);
+        polymerComboBox.setMaxWidth(comboBoxWidth);
+
+        CheckBox residueCheckBox = new CheckBox("");
+        CheckBox peakCheckBox = new CheckBox("");
+
+
+        SimpleIntegerProperty offsetProp = new SimpleIntegerProperty(0);
+        TextField offsetField = GUIUtils.getIntegerTextField(offsetProp);
+
+
+        grid.add(new Label("Polymer"), 0, 0);
+        grid.add(polymerComboBox, 2, 0);
+
+        grid.add(new Label("Update Residues"), 0, 1);
+        grid.add(residueCheckBox, 1, 1);
+
+        grid.add(new Label("Update Peaks"), 0, 2);
+        grid.add(peakCheckBox, 1, 2);
+
+        grid.add(new Label("Offset number"), 0, 3);
+        grid.add(offsetField, 2, 3);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                // The value set in the formatter may not have been set yet so commit the value before retrieving
+                polymerComboBox.commitValue();
+                offsetField.commitValue();
+                return new Renumbering(polymerComboBox.getValue(), offsetProp.get(), residueCheckBox.isSelected(), peakCheckBox.isSelected());
+            }
+            return null;
+        });
+
+        return  dialog.showAndWait();
     }
 }

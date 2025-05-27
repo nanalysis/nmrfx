@@ -102,7 +102,7 @@ public class MolViewer extends Pane {
         Group rootGroup = new Group();
 
         subScene = new SubScene(rootGroup, width, height, true, SceneAntialiasing.BALANCED);
-        subScene.setFill(Color.BLACK);
+        subScene.setFill(Color.WHITE);
         subScene.getRoot().requestFocus();
         this.getChildren().add(subScene);
         molGroup = new Xform();
@@ -135,11 +135,6 @@ public class MolViewer extends Pane {
         ListChangeListener listener = c -> molGroupChanged();
         molGroup.getChildren().addListener(listener);
         twoDPane.setMouseTransparent(true);
-        try {
-            drawMol();
-        } catch (InvalidMoleculeException | MissingCoordinatesException ex) {
-            log.warn(ex.getMessage(), ex);
-        }
         return subScene;
     }
 
@@ -729,6 +724,46 @@ public class MolViewer extends Pane {
                 allTubes.add(tube);
             }
             molGroup.getChildren().addAll(allTubes);
+        }
+
+    }
+
+    private Optional<MolCylinder> getNucleicAcidBaseCyl(Atom pAtom, Atom endAtom, int iStructure, double radius, String tag) {
+        MolCylinder cyl = null;
+        if ((pAtom != null) && (endAtom != null)) {
+                Point3 pPoint = pAtom.getPoint(iStructure);
+                Point3 ePoint = endAtom.getPoint(iStructure);
+                if ((pPoint != null) && (ePoint != null)) {
+                     cyl = new MolCylinder(pPoint.toArray(),
+                            ePoint.toArray(), radius, Color.BLUE, tag);
+                }
+            }
+        return Optional.ofNullable(cyl);
+    }
+    public void addNucleicAcidBases(List<Integer> structures, double radius, String tag, int index) throws InvalidMoleculeException {
+        Molecule mol = getCurrentMolecule();
+        if (mol == null) {
+            return;
+        }
+        Map<String, String> endAtomMap = Map.of("G", "N1", "C", "N3", "A", "N1", "U", "N3", "T", "N3");
+        for (Polymer polymer : mol.getPolymers()) {
+            mol.updateAtomArray();
+            for (int iStructure : structures) {
+                if (polymer.isRNA() || polymer.isDNA()) {
+                    for (Residue residue : polymer.getResidues()) {
+                        Atom pAtom = residue.getAtom("P");
+                        String residueName = residue.getName();
+                        if (residueName.length() == 2) {
+                            residueName = residueName.substring(1);
+                        }
+                        String endAtomName = endAtomMap.get(residueName);
+                        if (endAtomName != null) {
+                            Atom endAtom = residue.getAtom(endAtomName);
+                            getNucleicAcidBaseCyl(pAtom, endAtom, iStructure, radius, tag).ifPresent( molCyl-> molGroup.getChildren().add(molCyl));
+                        }
+                    }
+                }
+            }
         }
 
     }

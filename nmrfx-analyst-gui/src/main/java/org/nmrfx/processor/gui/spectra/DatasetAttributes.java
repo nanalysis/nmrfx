@@ -99,7 +99,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         // Some properties were not exposed before refactoring.
         // It's not clear whether this was by design or by error.
         // I've opted to keep the smallest set of properties possible exposed, so I've only kept the original list.
-        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg);
+        return Set.of(nlvls, clm, posColor, negColor, posWidth, negWidth, lvl, pos, neg, offset);
     }
 
     public ColorProperty posColorProperty() {
@@ -328,7 +328,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         drawRealProperty().set(value);
     }
 
-    public DatasetBase getDataset() {
+    public Dataset getDataset() {
         return theFile;
     }
 
@@ -631,7 +631,9 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         dataset.readVectorFromDatasetFile(DatasetUtils.generateRawIndices(ptC, dataset.getComplex(0)), dimC, specVec);
     }
 
-    public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {
+    public record PointRange(int iDim, int[] dims, int[][] pts) {}
+
+    public PointRange getPointRange(int iDim, double ppmx, double ppmy, boolean full) {
         int[][] ptC = new int[pt.length][2];
         int[] dimC = new int[pt.length];
         for (int i = 0; i < pt.length; i++) {
@@ -644,6 +646,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             int offset = theFile.ppmToPoint(jDim, ppmy);
             ptC[1][0] = offset;
             ptC[1][1] = offset;
+            if (full) {
+                ptC[0][0] = 0;
+                ptC[0][1] = theFile.getSizeReal(dim[0]) - 1;
+            }
         }
         if (iDim != 0) {
             int jDim = dimC[0];
@@ -653,6 +659,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             }
             ptC[0][0] = offset;
             ptC[0][1] = offset;
+            if (full) {
+                ptC[1][0] = 0;
+                ptC[1][1] = theFile.getSizeReal(dim[1]) - 1;
+            }
         }
         if (iDim == 2) {
             ptC[2][0] = 0;
@@ -662,12 +672,23 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             ptC[3][1] = theFile.getSizeReal(dim[3]) - 1;
         }
         rearrangeDim(dimC, ptC);
+        return new PointRange(iDim, dimC, ptC);
+    }
+
+    public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {
+        PointRange pointRange = getPointRange(iDim, ppmx, ppmy, false);
+        return  getSlice(specVec, pointRange);
+    }
+
+    public boolean getSlice(Vec specVec,  PointRange pointRange) throws IOException {
+        int[][] ptC = pointRange.pts();
+        int[] dimC = pointRange.dims();
+        int iDim = pointRange.iDim();
         int size = ptC[0][1] - ptC[0][0] + 1;
         if ((iDim == 0) && theFile.getComplex(0)) {
             ptC[0][0] *= 2;
             ptC[0][1] *= 2;
         }
-
         specVec.resize(size, theFile.getComplex_r(dimC[0]));
         theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
         return true;
@@ -1606,7 +1627,6 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         }
         return ppms;
     }
-
     public double[] getOffsetsAsArray() {
         List<DatasetRegion> regions = theFile.getReadOnlyRegions();
         double[] offsets = null;
@@ -1621,9 +1641,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
         return offsets;
     }
 
-    public void moveRegion(IntegralHit iHit, PolyChartAxes axes, double[] newValue) {
-        int handle = iHit.handle;
-        DatasetRegion r = iHit.getDatasetRegion();
+    public void moveRegion(DatasetRegion r, int handle, PolyChartAxes axes, double[] newValue) {
         double newX = axes.getX().getValueForDisplay(newValue[0]).doubleValue();
         double newY = axes.getY().getValueForDisplay(newValue[1]).doubleValue();
         switch (handle) {

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.10-SNAPSHOT</version>
+        <version>11.4.26-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <javafx.version>17.0.2</javafx.version>
+        <javafx.version>21.0.5</javafx.version>
     </properties>
 
     <dependencyManagement>
@@ -46,6 +46,18 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
                 <version>3.6</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-simple</artifactId>
+                <version>1.6</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-sampling</artifactId>
+                <version>1.6</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -357,15 +369,40 @@
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
         <dependency>
-            <groupId>org.ojalgo</groupId>
-            <artifactId>ojalgo</artifactId>
-            <version>47.2.0</version>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-core</artifactId>
+            <version>4.3.2</version>
         </dependency>
         <dependency>
-            <groupId>com.actelion.research</groupId>
-            <artifactId>openchemlib</artifactId>
-            <version>2023.3.3</version>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-slm</artifactId>
+            <version>4.3.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-sgd</artifactId>
+            <version>4.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-data</artifactId>
+            <version>4.3.2</version>
+        </dependency>
+            <dependency>
+                <groupId>org.ojalgo</groupId>
+                <artifactId>ojalgo</artifactId>
+                <version>47.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.actelion.research</groupId>
+                <artifactId>openchemlib</artifactId>
+                <version>2023.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenetics</groupId>
+                <artifactId>jenetics</artifactId>
+                <version>7.2.0</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
@@ -375,6 +412,11 @@
                 <groupId>berlin.yuna</groupId>
                 <artifactId>type-map</artifactId>
                 <version>2.1.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jgrapht</groupId>
+                <artifactId>jgrapht-core</artifactId>
+                <version>1.5.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

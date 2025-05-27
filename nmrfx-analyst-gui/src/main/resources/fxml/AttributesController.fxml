@@ -15,6 +15,8 @@
                 <children>
                     <Label text="Apply to:"/>
                     <ChoiceBox fx:id="itemChoiceState"/>
+                    <Button text="Store" fx:id="storeButton"/>
+                    <HBox HBox.hgrow="ALWAYS"/>
                 </children>
             </HBox>
         </VBox>
@@ -29,7 +31,7 @@
                                 <Label text="Aspect ratio:" minWidth="35"/>
                                 <HBox>
                                     <Slider fx:id="aspectSlider" prefWidth="150"/>
-                                    <Label fx:id="aspectRatioValue" minWidth="35" maxWidth="35"/>
+                                    <TextField fx:id="aspectRatioValue" minWidth="50" maxWidth="50"/>
                                 </HBox>
                             </children>
                         </VBox>
@@ -211,6 +213,7 @@
                     <TitledPane fx:id="integralsPane" text="Integrals">
                         <VBox>
                             <children>
+                                <CheckBox fx:id="integralValuesCheckBox" text="Show integral values"/>
                                 <CheckBox fx:id="integralCheckBox" text="Show integral profiles"/>
                                 <Label text="Integral display position:" minWidth="35"/>
                                 <HBox>
@@ -223,6 +226,12 @@
                                 </HBox>
                                 <Separator orientation="horizontal" minHeight="20"/>
                                 <CheckBox fx:id="regionCheckBox" text="Display integration regions"/>
+                                <HBox>
+                                    <Label text="Integral label font size"/>
+                                    <ComboBox fx:id="integralFontSizeComboBox" editable="false"/>
+                                </HBox>
+
+
                             </children>
                         </VBox>
                     </TitledPane>

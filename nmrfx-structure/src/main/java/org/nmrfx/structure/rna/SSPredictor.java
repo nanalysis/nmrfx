@@ -1,7 +1,11 @@
 package org.nmrfx.structure.rna;
 
+import org.jgrapht.Graph;
+import org.jgrapht.alg.interfaces.MatchingAlgorithm;
+import org.jgrapht.alg.matching.MaximumWeightBipartiteMatching;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import org.jgrapht.graph.SimpleWeightedGraph;
 import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
@@ -11,12 +15,44 @@ import java.io.File;
 import java.util.*;
 
 public class SSPredictor {
+    static final Random random = new Random();
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
     double[][] predictions;
+
+    double graphThreshold = 0.7;
+
+    ParitionedGraph paritionedGraph = null;
+    Set<BasePairProbability> extentBasePairs;
+    Map<BPKey, BasePairProbability> allBasePairs;
+
+    List<BasePairsMatching> extentBasePairsList = new ArrayList<>();
     String rnaSequence;
+    int delta = 4;
 
     static SavedModelBundle graphModel;
     static String modelFilePath = null;
+
+    public record BasePairsMatching(double value, Set<BasePairProbability> basePairsSet) {
+
+        boolean exists(List<BasePairsMatching> extentBasePairsList) {
+            for (BasePairsMatching basePairsMatching : extentBasePairsList) {
+                if (basePairsMatching.basePairsSet.equals(basePairsSet)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    record BPKey(int row, int col) {
+        static Map<Integer, Map<Integer, BPKey>> bpMap = new HashMap<>();
+
+        static BPKey getBPKey(int row, int col) {
+            Map<Integer, BPKey> colMap = bpMap.computeIfAbsent(row, key -> new HashMap<>());
+            return colMap.computeIfAbsent(col, key -> new BPKey(row, col));
+        }
+
+    }
 
     public static void setModelFile(String fileName) {
         modelFilePath = fileName;
@@ -36,8 +72,12 @@ public class SSPredictor {
             throw new IllegalArgumentException("No model file location set");
         }
         if (graphModel == null) {
-            graphModel = SavedModelBundle.load(modelFilePath);
+            graphModel = SavedModelBundle.load(modelFilePath, "serve");
         }
+    }
+
+    public int getIndex(int r, int c, int nCols, int d) {
+        return r * nCols - (r - 1) * (r - 1 + 1) / 2 + c - d - r * (d + 1);
     }
 
     public void predict(String rnaSequence) {
@@ -49,34 +89,23 @@ public class SSPredictor {
         String rnaTokens = "AUGC";
         int nCols = 512;
         int[] tokenized = new int[nCols];
-        int[] maskPositions = new int[nCols];
         for (int i = 0; i < rnaSequence.length(); i++) {
             tokenized[i] = rnaTokens.indexOf(rnaSequence.charAt(i)) + 2;
-            maskPositions[i] = i;
         }
         var inputTF = TInt32.vectorOf(tokenized);
-        var maskPositionsTensor = TInt32.vectorOf(maskPositions);
         var matrix1 = NdArrays.ofInts(Shape.of(1, nCols));
-        var matrix2 = NdArrays.ofInts(Shape.of(1, nCols));
-
 
         matrix1.set(inputTF, 0);
-        matrix2.set(maskPositionsTensor, 0);
+        double threshold = 0.4;
+        allBasePairs = new HashMap<>();
 
         var inputs = TInt32.tensorOf(matrix1);
-        var maskInput = TInt32.tensorOf(matrix2);
-        Map<String, Tensor> inputMap = new HashMap<>();
-        inputMap.put("input_1", inputs);
-        inputMap.put("input_2", maskInput);
-        TFloat32 tensor0;
-        try (org.tensorflow.Result output = graphModel.function("serving_default").call(inputMap)) {
-            tensor0 = ((TFloat32) output.get(0));
-
+        try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
             int seqLen = rnaSequence.length();
             predictions = new double[seqLen][seqLen];
             for (int r = 0; r < seqLen; r++) {
-                for (int c = r + 2; c < seqLen; c++) {
-                    int index = r * nCols - (r - 1) * (r - 1 + 1) / 2 + c - 2 - r * 3;
+                for (int c = r + delta; c < seqLen; c++) {
+                    int index = getIndex(r, c, nCols, delta);
                     double prediction = tensor0.getFloat(0, index);
                     char rChar = rnaSequence.charAt(r);
                     char cChar = rnaSequence.charAt(c);
@@ -87,108 +116,117 @@ public class SSPredictor {
                     predictions[r][c] = prediction;
                 }
             }
-        }
-
-    }
-
-    public List<BasePairProbability> getBasePairs(double pLimit) {
-        int n = predictions.length;
-        double[][] predicted = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            predicted[i] = Arrays.copyOf(predictions[i], n);
-        }
-        List<BasePairProbability> basePairs = getBasePairs(predicted, pLimit);
-        filterAllCrossings(basePairs);
-        return basePairs;
-    }
-
-    record RCMax(int row, int column, double prediction) {
-    }
-
-    RCMax findAnRCMax(double[][] predicted) {
-        int n = rnaSequence.length();
-        double max = 0.0;
-        int rMax = -1;
-        int cMax = -1;
-        for (int r = 0; r < n; r++) {
-            for (int c = r + 1; c < n; c++) {
-                double v = predicted[r][c];
-                if (v > max) {
-                    max = v;
-                    rMax = r;
-                    cMax = c;
+            for (int r = 1; r < seqLen - 1; r++) {
+                for (int c = r + delta; c < seqLen - 1; c++) {
+                    double v0 = predictions[r - 1][c + 1];
+                    double v1 = predictions[r][c];
+                    double v2 = predictions[r + 1][c - 1];
+                    if ((v1 > threshold) && (v0 < threshold) && (v2 < threshold)) {
+                        predictions[r][c] = 0.0;
+                    }
                 }
             }
-        }
-        return new RCMax(rMax, cMax, max);
-    }
-
-    void findRCMax(double[][] predicted) {
-        int n = rnaSequence.length();
-        for (int i = 0; i < n; i++) {
-            RCMax rcMax = findAnRCMax(predicted);
-            if (rcMax.row() != -1) {
-                int r = rcMax.row();
-                int c = rcMax.column;
-                for (int j = 0; j < n; j++) {
-                    predicted[r][j] = 0.0;
-                    predicted[j][r] = 0.0;
-                    predicted[c][j] = 0.0;
-                    predicted[j][c] = 0.0;
-                }
-                predicted[r][c] = -rcMax.prediction();
-            }
-        }
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (predicted[i][j] < 0.0) {
-                    predicted[i][j] *= -1.0;
+            for (int r = 0; r < seqLen; r++) {
+                for (int c = r + delta; c < seqLen; c++) {
+                    if (predictions[r][c] > threshold) {
+                        BPKey bpKey = BPKey.getBPKey(r, c);
+                        BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                        allBasePairs.put(bpKey, basePairProbability);
+                    }
                 }
             }
         }
     }
 
-    public record BasePairProbability(int i, int j, double probability) {
+    record Extent(List<BasePairProbability> basePairProbabilities) {
+
+        boolean overlaps(Extent extent) {
+            int b1 = extent.basePairProbabilities.get(0).r;
+            int b2 = extent.basePairProbabilities.reversed().get(0).r;
+            int b3 = extent.basePairProbabilities.reversed().get(0).c;
+            int b4 = extent.basePairProbabilities.get(0).c;
+            return overlaps(b1, b2, b3, b4);
+        }
+
+        boolean overlaps(int b1, int b2, int b3, int b4) {
+            int a1 = basePairProbabilities.get(0).r;
+            int a2 = basePairProbabilities.reversed().get(0).r;
+            int a3 = basePairProbabilities.reversed().get(0).c;
+            int a4 = basePairProbabilities.get(0).c;
+
+            boolean bIna = (b1 > a2) && (b4 < a3);
+            boolean aInb = (a1 > b2) && (a4 < b3);
+            boolean bAftera = b1 > a4;
+            boolean aAfterb = a1 > b4;
+            return !(bIna || aInb || bAftera || aAfterb);
+        }
+
     }
 
-    List<BasePairProbability> getBasePairs(double[][] predicted, double pLimit) {
-        findRCMax(predicted);
-        int n = rnaSequence.length();
-        List<BasePairProbability> bps = new ArrayList<>();
-        for (int r = 0; r < n; r++) {
-            for (int c = r + 2; c < n; c++) {
-                if (predicted[r][c] > pLimit) {
-                    BasePairProbability bp = new BasePairProbability(r, c, predicted[r][c]);
-                    bps.add(bp);
-                }
-            }
+    public int getNExtents() {
+        return extentBasePairsList.size();
+    }
+
+    public BasePairsMatching getExtentBasePairs(int i) {
+        BasePairsMatching basePairsMatching = extentBasePairsList.get(i);
+        extentBasePairs = basePairsMatching.basePairsSet;
+        return basePairsMatching;
+    }
+
+    public Set<BasePairProbability> getExtentBasePairs() {
+        return extentBasePairs;
+    }
+
+    public double[][] getPredictions() {
+        return predictions;
+    }
+
+    public record BasePairProbability(int r, int c, double probability) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            BasePairProbability that = (BasePairProbability) o;
+            return ((r == that.r) && (c == that.c)) || ((r == that.c) && (c == that.r));
         }
-        return bps;
+
+        BPKey bpKey() {
+            return BPKey.getBPKey(r, c);
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            if (r < c) {
+                result = r;
+                result = 31 * result + c;
+            } else {
+                result = c;
+                result = 31 * result + r;
+            }
+            return result;
+        }
     }
 
     public List<BasePairProbability> getAllBasePairs(double pLimit) {
-        double[][] predicted = predictions;
-        int n = rnaSequence.length();
         List<BasePairProbability> bps = new ArrayList<>();
-        for (int r = 0; r < n; r++) {
-            for (int c = r + 2; c < n; c++) {
-                if (predicted[r][c] > pLimit) {
-                    BasePairProbability bp = new BasePairProbability(r, c, predicted[r][c]);
-                    bps.add(bp);
-                }
+        for (BasePairProbability basePairProbability : allBasePairs.values()) {
+            if (basePairProbability.probability > pLimit) {
+                bps.add(basePairProbability);
             }
         }
         return bps;
     }
 
-    Map<BasePairProbability, Integer> findCrossings(List<BasePairProbability> basePairs) {
+    Map<BasePairProbability, Integer> findCrossings(Collection<BasePairProbability> basePairs) {
         Map<BasePairProbability, Integer> crossings = new HashMap<>();
         for (BasePairProbability basePair1 : basePairs) {
-            int i1 = basePair1.i;
-            int j1 = basePair1.j;
+            int i1 = basePair1.r;
+            int j1 = basePair1.c;
             for (BasePairProbability basePair2 : basePairs) {
-                int i2 = basePair2.i;
-                int j2 = basePair2.j;
+                int i2 = basePair2.r;
+                int j2 = basePair2.c;
                 boolean cross = (i1 < i2) && (i2 < j1) && (j1 < j2);
                 if (cross) {
                     crossings.compute(basePair1, (basePair, value) -> (value == null) ? 1 : value + 1);
@@ -200,7 +238,22 @@ public class SSPredictor {
         return crossings;
     }
 
-    boolean removeLargestCrossing(List<BasePairProbability> basePairs, Map<BasePairProbability, Integer> crossings) {
+    boolean crosses(Collection<BasePairProbability> basePairs, BasePairProbability basePair1) {
+        int i1 = basePair1.r;
+        int j1 = basePair1.c;
+        for (BasePairProbability basePair2 : basePairs) {
+            int i2 = basePair2.r;
+            int j2 = basePair2.c;
+            boolean cross1 = (i1 < i2) && (i2 < j1) && (j1 < j2);
+            boolean cross2 = (i2 < i1) && (i1 < j2) && (j2 < j1);
+            if (cross1 || cross2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean removeLargestCrossing(Collection<BasePairProbability> basePairs, Map<BasePairProbability, Integer> crossings) {
         BasePairProbability basePairMax = null;
         int max = 0;
         for (var crossing : crossings.entrySet()) {
@@ -218,7 +271,7 @@ public class SSPredictor {
         return removedOne;
     }
 
-    void filterAllCrossings(List<BasePairProbability> basePairs) {
+    void filterAllCrossings(Collection<BasePairProbability> basePairs) {
         boolean removedOne = true;
         while (removedOne) {
             var crossings = findCrossings(basePairs);
@@ -226,7 +279,7 @@ public class SSPredictor {
         }
     }
 
-    public String getDotBracket(List<BasePairProbability> basePairProbabilities) {
+    public String getDotBracket(Collection<BasePairProbability> basePairProbabilities) {
         int n = rnaSequence.length();
         List<String> dotBracketList = new ArrayList<>();
 
@@ -234,8 +287,8 @@ public class SSPredictor {
             dotBracketList.add(".");
         }
         for (BasePairProbability basePairProbability : basePairProbabilities) {
-            int i = basePairProbability.i;
-            int j = basePairProbability.j;
+            int i = basePairProbability.r;
+            int j = basePairProbability.c;
             dotBracketList.set(i, "(");
             dotBracketList.set(j, ")");
         }
@@ -244,6 +297,189 @@ public class SSPredictor {
             stringBuilder.append(dotBracketList.get(i));
         }
         return stringBuilder.toString();
+    }
+
+    record ParitionedGraph(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph,
+                           Set<Integer> partition1, Set<Integer> partition2) {
+    }
+
+    private void buildGraph(double threshold) {
+        SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph
+                = new SimpleWeightedGraph<>(DefaultWeightedEdge.class);
+        int n = predictions.length;
+        Set<Integer> partition1 = new HashSet<>();
+        Set<Integer> partition2 = new HashSet<>();
+        for (int i = 0; i < n; i++) {
+            simpleGraph.addVertex(i);
+            partition1.add(i);
+            simpleGraph.addVertex(i + n);
+            partition2.add(i + n);
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = i + delta; j < n; j++) {
+                if ((predictions[i][j] > threshold)) {
+                    DefaultWeightedEdge weightedEdge1 = new DefaultWeightedEdge();
+                    simpleGraph.addEdge(i, j + n, weightedEdge1);
+                }
+            }
+        }
+        paritionedGraph = new ParitionedGraph(simpleGraph, partition1, partition2);
+    }
+
+    private void setGraphWeights(Graph<Integer, DefaultWeightedEdge> graph, double threshold, double randomScale) {
+        int n = predictions.length;
+        for (var edge : graph.edgeSet()) {
+            int i = graph.getEdgeSource(edge);
+            int j = graph.getEdgeTarget(edge) - n;
+            double weight = 0.0;
+            if (i == j) {
+                weight = 1.0;
+            } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
+                double adjustment = randomScale * random.nextGaussian();
+                double prediction = predictions[i][j] + adjustment;
+                prediction = Math.min(prediction, 1.0);
+                weight = 100.0 + prediction;
+            }
+            graph.setEdgeWeight(i, j + n, weight);
+        }
+    }
+
+    List<BasePairProbability> getMatches(MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult) {
+        int n = predictions.length;
+        var simpleGraph = matchResult.getGraph();
+        List<BasePairProbability> matches = new ArrayList<>();
+        BasePairProbability[] matchUsed = new BasePairProbability[n];
+        matchResult.getEdges().stream()
+                .sorted((a, b) -> Double.compare(simpleGraph.getEdgeWeight(b), simpleGraph.getEdgeWeight(a)))
+                .forEach(edge -> {
+                    int r = simpleGraph.getEdgeSource(edge);
+                    int c = simpleGraph.getEdgeTarget(edge) - n;
+                    if (((r + 3) < c) && (matchUsed[r] == null) && (matchUsed[c] == null)) {
+                        BPKey bpKey = BPKey.getBPKey(r, c);
+                        BasePairProbability basePairProbability = allBasePairs.get(bpKey);
+                        matches.add(basePairProbability);
+                        matchUsed[r] = basePairProbability;
+                        matchUsed[c] = basePairProbability;
+                    }
+                });
+        return matches;
+
+    }
+
+    public double getGraphThreshold() {
+        return graphThreshold;
+    }
+
+    boolean hasNeighbor(BasePairProbability[] matches, BasePairProbability bp) {
+        int last = predictions.length - 1;
+        boolean available = (matches[bp.r] == null) && (matches[bp.c] == null);
+        boolean neighbored = ((bp.r > 0) && (matches[bp.r - 1] != null))
+                || ((bp.r < last) && (matches[bp.r + 1] != null))
+                || ((bp.c > 0) && (matches[bp.c - 1] != null))
+                || ((bp.c < last) && (matches[bp.c + 1] != null));
+        return available && neighbored;
+    }
+
+    private void addMissing(Set<BasePairProbability> basePairProbabilities) {
+        Map<BPKey, BasePairProbability> bps = new HashMap<>();
+        BasePairProbability[] matches = new BasePairProbability[predictions.length];
+        for (BasePairProbability basePairProbability : basePairProbabilities) {
+            bps.put(basePairProbability.bpKey(), basePairProbability);
+            matches[basePairProbability.r] = basePairProbability;
+            matches[basePairProbability.c] = basePairProbability;
+        }
+        List<BasePairProbability> extras = new ArrayList<>();
+        for (var entry : allBasePairs.entrySet()) {
+            BasePairProbability bp = entry.getValue();
+            if (!bps.containsKey(entry.getKey()) && hasNeighbor(matches, bp)) {
+                extras.add(entry.getValue());
+            }
+        }
+        for (BasePairProbability bp : extras) {
+            if (!crosses(basePairProbabilities, bp) &&  hasNeighbor(matches, bp)) {
+                basePairProbabilities.add(bp);
+                matches[bp.r] = bp;
+                matches[bp.c] = bp;
+            }
+        }
+    }
+
+    boolean checkForExisting(List<BasePairProbability> matches, int[][] matchTries) {
+        int nFound = extentBasePairsList.size();
+        int n = predictions.length;
+        boolean foundMatch = false;
+        for (int j = 0; j < nFound; j++) {
+            int[] matchTest = new int[n];
+            Arrays.fill(matchTest, -1);
+            for (BasePairProbability basePairProbability : matches) {
+                if (basePairProbability != null) {
+                    matchTest[basePairProbability.r] = basePairProbability.c;
+                    matchTest[basePairProbability.c] = basePairProbability.r;
+                }
+            }
+
+            boolean ok = true;
+            for (int i = 0; i < n; i++) {
+                if (matchTest[i] != matchTries[j][i]) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                foundMatch = true;
+                break;
+            }
+        }
+        return foundMatch;
+    }
+
+    void refineMatches(List<BasePairProbability> matches, int[][] matchTries) {
+        Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
+        int nFound = extentBasePairsList.size();
+        for (BasePairProbability basePairProbability : matches) {
+            if (basePairProbability != null) {
+                newExtentBasePairs.add(basePairProbability);
+                matchTries[nFound][basePairProbability.r] = basePairProbability.c;
+                matchTries[nFound][basePairProbability.c] = basePairProbability.r;
+            }
+        }
+
+        filterAllCrossings(newExtentBasePairs);
+        addMissing(newExtentBasePairs);
+        double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
+        BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
+        if (!basePairsMatching.exists(extentBasePairsList)) {
+            extentBasePairsList.add(basePairsMatching);
+        }
+
+    }
+
+    public void bipartiteMatch(double threshold, double randomScale, int nTries) {
+        int n = predictions.length;
+        if (paritionedGraph == null) {
+            buildGraph(threshold);
+        }
+        graphThreshold = threshold;
+        int[][] matchTries = new int[nTries][n];
+        for (int i = 0; i < nTries; i++) {
+            Arrays.fill(matchTries[i], -1);
+        }
+        extentBasePairsList.clear();
+        SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
+
+        for (int iTry = 0; iTry < nTries; iTry++) {
+            double randomValue = iTry == 0 ? 0.0 : randomScale;
+            setGraphWeights(simpleGraph, threshold, randomValue);
+            var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
+                    paritionedGraph.partition1, paritionedGraph.partition2);
+            MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
+            List<BasePairProbability> matches = getMatches(matchResult);
+            boolean foundMatch = checkForExisting(matches, matchTries);
+            if (!foundMatch) {
+                refineMatches(matches, matchTries);
+            }
+        }
+        extentBasePairsList.sort((a, b) -> Double.compare(b.value, a.value));
     }
 
 }

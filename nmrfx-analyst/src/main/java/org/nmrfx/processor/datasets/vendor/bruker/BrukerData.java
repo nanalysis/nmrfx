@@ -21,6 +21,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 import org.nmrfx.datasets.DatasetLayout;
 import org.nmrfx.datasets.Nuclei;
+import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.*;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
@@ -62,6 +63,9 @@ public class BrukerData implements NMRData {
     private static final String FID = "fid";
 
     private static final int MAXDIM = 10;
+
+    private static final String[] LIST_TYPES = {"vd", "vc", "vp", "fq2", "fq3", "diff"};
+
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
     private int dim = 0;                // from acqu[n]s files
@@ -81,7 +85,7 @@ public class BrukerData implements NMRData {
     private final int[] tdsize = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int[] arraysize = new int[MAXDIM];  // TD,1 TD,2 etc.
     private final int[] maxSize = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private double deltaPh02 = 0.0;
+    private boolean eaMode = false;
     private final Double[] refValue = new Double[MAXDIM];
     private final Double[] sweepWidth = new Double[MAXDIM];
     private final Double[] specFreq = new Double[MAXDIM];
@@ -120,9 +124,9 @@ public class BrukerData implements NMRData {
         }
         File fidFile = dirFile.toPath().resolve(FID).toFile();
         File serFile = dirFile.toPath().resolve(SER).toFile();
-        if (fidFile.exists()) {
+        if (fidFile.exists() && fidFile.isFile()) {
             dataFile = fidFile;
-        } else if (serFile.exists()) {
+        } else if (serFile.exists() && serFile.isFile()) {
             dataFile = serFile;
         } else {
             dataFile = null;
@@ -156,7 +160,7 @@ public class BrukerData implements NMRData {
         int lastSize = 0;
         int xdim;
         for (int i = 0; i < dim; i++) {
-            Integer thisBlockSize = getParInt("XWIN," + (i + 1));
+            Integer thisBlockSize = getParInt("XDIM," + (i + 1));
             if ((thisBlockSize == null) || (thisBlockSize == 0)) {
                 thisBlockSize = getParInt("SI," + (i + 1));
             }
@@ -443,6 +447,21 @@ public class BrukerData implements NMRData {
         }
         return result;
     }
+    public List<Integer> getIntListPar(String parName) {
+        List<Integer> result = new ArrayList<>();
+        if ((parMap != null) && (parMap.get(parName) != null)) {
+            String[] sValues = parMap.get(parName).split(" ");
+            for (String sValue : sValues) {
+                try {
+                    result.add(Integer.parseInt(sValue));
+                } catch (NumberFormatException nFE) {
+                    result = null;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
 
     @Override
     public int getNVectors() {  // number of vectors
@@ -694,7 +713,10 @@ public class BrukerData implements NMRData {
         }
         double calcBaseFreq;
         if (hDim != -1) {
-            Double baseFreq = getParDouble("BF1," + (hDim + 1));
+            Double baseFreq;
+            Double dpar;
+            baseFreq= getParDouble("BF1," + (hDim + 1));
+
             Double lockPPM = getParDouble("LOCKPPM,1");
             if (lockPPM == null) {
                 if (isAcqueous) {
@@ -825,15 +847,21 @@ public class BrukerData implements NMRData {
     }
 
     @Override
+    public boolean arePhasesSet(int dim) {
+        Double ph0 = getParDouble("PHC0," + (dim + 1));
+        Double ph1 = getParDouble("PHC1," + (dim + 1));
+        return (ph0 != null && Math.abs(ph0) > 1.0e-9) || (ph1 != null && Math.abs(ph1) > 1.0e-9);
+    }
+
+    @Override
     public double getPH0(int iDim) {
         double ph0 = 0.0;
         Double dpar;
         if ((dpar = getParDouble("PHC0," + (iDim + 1))) != null) {
-            ph0 = -dpar;
-            if (iDim == 0) {
-                ph0 += 90.0;
-            } else if (iDim == 1) {
-                ph0 += deltaPh02;
+            if (eaMode) {
+                ph0 = VecBase.phaseMin(dpar + 180.0);
+            } else {
+                ph0 = -dpar;
             }
         }
         return ph0;
@@ -964,8 +992,7 @@ public class BrukerData implements NMRData {
                 log.warn(ex.getMessage(), ex);
             }
         }
-        String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
-        for (String listType : listTypes) {
+        for (String listType : LIST_TYPES) {
             Path listPath = parDirFile.toPath().resolve(listType + "list");
             if (Files.exists(listPath)) {
                 List<String> lines = Files.readAllLines(listPath);
@@ -1084,9 +1111,8 @@ public class BrukerData implements NMRData {
         List<Double> result = new ArrayList<>();
         // kluge  find smallest dimension.  This is the most likely one to use an array of values
         if (parMap != null) {
-            String[] listTypes = {"vd", "vc", "vp", "fq2", "fq3"};
 
-            for (String listType : listTypes) {
+            for (String listType : LIST_TYPES) {
                 String parValue;
                 if ((parValue = parMap.get(listType)) != null) {
                     String[] sValues = parValue.split("\t");
@@ -1200,7 +1226,7 @@ public class BrukerData implements NMRData {
                     case 6 -> {
                         f1coef[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getCoefficients();
                         f1coefS[i - 1] = AcquisitionType.ECHO_ANTIECHO_R.getLabel();
-                        deltaPh02 = 90.0;
+                        eaMode = true;
                     }
                     case 1 -> {
                         complexDim[i - 1] = getValues(i - 1).isEmpty();
@@ -1420,9 +1446,9 @@ public class BrukerData implements NMRData {
         Path fidPath = file.toPath().resolve(FID);
         Path serPath = file.toPath().resolve(SER);
         Path filePath;
-        if (fidPath.toFile().exists()) {
+        if (fidPath.toFile().exists() && fidPath.toFile().isFile()) {
             filePath = fidPath;
-        } else if (serPath.toFile().exists()) {
+        } else if (serPath.toFile().exists() && serPath.toFile().isFile()) {
             filePath = serPath;
         } else {
             return;

@@ -151,6 +151,10 @@ public class Nuclei {
         return String.valueOf(num);
     }
 
+    public int getNumberAsInt() {
+        return num;
+    }
+
     /**
      * Return the frequency ratio. Scale with H=1.0;
      *
@@ -286,4 +290,6 @@ public class Nuclei {
 
         return foundNuc;
     }
+
+    public static Nuclei[] getNuclei(){return numberNameMap.values().toArray(new Nuclei[0]);}
 }

@@ -5,6 +5,7 @@
  */
 package org.nmrfx.project;
 
+import org.eclipse.jgit.util.FS;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -49,6 +50,8 @@ public class ProjectBase {
     private static final String PROJECT_DIR_NOT_SET = "Project directory not set";
     private static final Logger log = LoggerFactory.getLogger(ProjectBase.class);
 
+    protected static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
+
     private static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     private static final Pattern INDEX2_PATTERN = Pattern.compile("^.*_([0-9]+).*");
     private static final Map<String, SaveframeProcessor> saveframeProcessors = new HashMap<>();
@@ -61,12 +64,14 @@ public class ProjectBase {
     protected Map<String, MoleculeBase> molecules = new HashMap<>();
     protected MoleculeBase activeMol = null;
 
-    private ResonanceFactory resFactory;
+    protected ResonanceFactory resFactory;
 
     protected Map<String, DatasetBase> datasetMap = new HashMap<>();
     protected List<DatasetBase> datasets = new ArrayList<>();
     protected Map<String, PeakList> peakLists = new HashMap<>();
     protected List<SaveframeWriter> extraSaveframes = new ArrayList<>();
+
+    protected GitBase gitManager;
 
     protected ProjectBase(String name) {
         this.name = name;
@@ -139,6 +144,7 @@ public class ProjectBase {
     public ResonanceFactory resonanceFactory() {
         if (resFactory == null) {
             resFactory = new ResonanceFactory();
+            resFactory.init();
         }
         return resFactory;
     }
@@ -293,6 +299,10 @@ public class ProjectBase {
         return peakLists.values().stream().min(Comparator.comparingInt(PeakList::getId));
     }
 
+    public GitBase getGitManager() {
+        return gitManager;
+    }
+
     public void putPeakList(PeakList peakList) {
         peakLists.put(peakList.getName(), peakList);
     }
@@ -380,6 +390,7 @@ public class ProjectBase {
         }
         datasetMap.clear();
         datasets.clear();
+        refreshDatasetList();
     }
 
     public void setProjectDir(Path projectDir) {
@@ -582,6 +593,10 @@ public class ProjectBase {
         }
     }
 
+    public void saveMemoryFile(DatasetBase datasetBase) {
+
+    }
+
     public void saveDatasets() throws IOException {
         if (projectDir == null) {
             throw new IllegalArgumentException(PROJECT_DIR_NOT_SET);
@@ -597,6 +612,10 @@ public class ProjectBase {
                     datasetBase.writeVecMat(newFile);
                 }
                 continue;
+            } else {
+                if (datasetBase.getFileName().contains(DatasetBase.DATASET_PROJECTION_TAG)) {
+                    continue;
+                }
             }
             Path currentPath = datasetFile.toPath();
             Path fileNameAsPath = currentPath.getFileName();
@@ -620,8 +639,10 @@ public class ProjectBase {
             String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
             datasetBase.writeParFile(parFilePath);
             List<DatasetRegion> regions = datasetBase.getReadOnlyRegions();
-            File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
-            DatasetRegion.saveRegions(regionFile, regions);
+            if (!regions.isEmpty()) {
+                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
+                DatasetRegion.saveRegions(regionFile, regions);
+            }
         }
     }
 
@@ -663,6 +684,79 @@ public class ProjectBase {
             return result;
         }
 
+    }
+
+    protected void createProjectDirectory(Path projectDir) throws IOException {
+        FileSystem fileSystem = FileSystems.getDefault();
+        if (Files.exists(projectDir)) {
+            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
+        }
+        Files.createDirectory(projectDir);
+        for (String subDir : SUB_DIR_TYPES) {
+            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+            Files.createDirectory(subDirectory);
+        }
+        setProjectDir(projectDir);}
+
+    public void createProject(Path projectDir) throws IOException {
+        createProjectDirectory(projectDir);
+        checkUserHomePath();
+        gitManager = new GitBase(this);
+        setActive();
+    }
+
+    public void writeIgnore() {
+        Path path = Paths.get(projectDir.toString(), ".gitignore");
+        try (FileWriter writer = new FileWriter(path.toFile())) {
+            writer.write("*.nv\n*.ucsf\njffi*\n");
+        } catch (IOException ioE) {
+            log.warn("{}", ioE.getMessage(), ioE);
+        }
+
+    }
+
+    /***
+     * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
+     * home path in the preference of XDG_CONFIG_HOME, HOME, (HOMEDRIVE, HOMEPATH) and HOMESHARE. If XDG_CONGIG_HOME is set, then that
+     * path is used regardless of whether its writable. Otherwise the first environment variable that is set is checked
+     * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
+     * property.
+     */
+    public static void checkUserHomePath() {
+        if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
+            return;
+        }
+        boolean setUserHome;
+        String home = getEnvironmentVariable("HOME");
+        if (home != null) {
+            setUserHome = isFileWritable(new File(home));
+        } else {
+            String homeDrive = getEnvironmentVariable("HOMEDRIVE");
+            String homePath = getEnvironmentVariable("HOMEPATH");
+            if (homeDrive != null && homePath != null) {
+                setUserHome = isFileWritable(new File(homeDrive, homePath));
+            } else {
+                String homeShare = getEnvironmentVariable("HOMESHARE");
+                if (homeShare != null) {
+                    setUserHome = isFileWritable(new File(homeShare));
+                } else {
+                    setUserHome = true;
+                }
+            }
+        }
+        if (setUserHome) {
+            File userHome = new File(System.getProperty("user.home"));
+            FS.DETECTED.setUserHome(userHome);
+            log.info("Setting jgit config file path to: {}", userHome);
+        }
+    }
+
+    private static boolean isFileWritable(File file) {
+        return !file.exists() || (file.exists() && !file.canWrite());
+    }
+
+    public static String getEnvironmentVariable(String name) {
+        return System.getenv(name);
     }
 
     /**

@@ -39,7 +39,7 @@ public class AtomSpecifier {
         this.chainName = chainName;
         this.atomName = atomName;
         this.resNumStr = resNumStr;
-        this.resNum = Integer.parseInt(resNumStr);
+        this.resNum = resNumStr.isEmpty() ? 1 : Integer.parseInt(resNumStr);
         this.resName = resName;
     }
 

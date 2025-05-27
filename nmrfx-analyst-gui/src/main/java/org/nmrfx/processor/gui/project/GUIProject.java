@@ -10,11 +10,9 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
-import javafx.concurrent.Task;
 import javafx.util.Duration;
-import org.eclipse.jgit.util.FS;
+import javafx.util.Subscription;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.git.GitManager;
@@ -22,6 +20,8 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
@@ -30,17 +30,15 @@ import org.nmrfx.structure.project.StructureProject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.List;
 
 /**
  * @author Bruce Johnson
  */
 public class GUIProject extends StructureProject {
     private static final Logger log = LoggerFactory.getLogger(GUIProject.class);
-    private static final String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     GitManager gitManager;
 
     private final SimpleBooleanProperty projectChanged = new SimpleBooleanProperty(false);
@@ -49,6 +47,9 @@ public class GUIProject extends StructureProject {
     private static double projectSaveInterval;
 
     private static Timeline timeline = null;
+
+    Subscription peakListSubscriptions = Subscription.EMPTY;
+    Subscription datasetMapSubscriptions = Subscription.EMPTY;
 
     public GUIProject(String name) {
         super(name);
@@ -69,24 +70,16 @@ public class GUIProject extends StructureProject {
         newProject.compoundMap.putAll(project.compoundMap);
         newProject.molecules.putAll(project.molecules);
         newProject.activeMol = project.activeMol;
+        newProject.resFactory = project.resFactory;
         return newProject;
     }
-
+@Override
     public GitManager getGitManager() {
         return gitManager;
     }
 
     public void createProject(Path projectDir) throws IOException {
-        if (Files.exists(projectDir)) {
-            throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
-        }
-        FileSystem fileSystem = FileSystems.getDefault();
-        Files.createDirectory(projectDir);
-        for (String subDir : SUB_DIR_TYPES) {
-            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-            Files.createDirectory(subDirectory);
-        }
-        setProjectDir(projectDir);
+        createProjectDirectory(projectDir);
         PreferencesController.saveRecentProjects(projectDir.toString());
         checkUserHomePath();
         gitManager = new GitManager(this);
@@ -138,50 +131,6 @@ public class GUIProject extends StructureProject {
         }
     }
 
-    /***
-     * Checks if the user home path that will be used by git exists and will be writable. jgit checks for the user
-     * home path in the preference of XDG_CONFIG_HOME, HOME, (HOMEDRIVE, HOMEPATH) and HOMESHARE. If XDG_CONGIG_HOME is set, then that
-     * path is used regardless of whether its writable. Otherwise the first environment variable that is set is checked
-     * for existence and writability. If it fails the check, the userHome variable of jgit FS is set to the 'user.home'
-     * property.
-     */
-    public static void checkUserHomePath() {
-        if (getEnvironmentVariable("XDG_CONFIG_HOME") != null) {
-            return;
-        }
-        boolean setUserHome;
-        String home = getEnvironmentVariable("HOME");
-        if (home != null) {
-            setUserHome = isFileWritable(new File(home));
-        } else {
-            String homeDrive = getEnvironmentVariable("HOMEDRIVE");
-            String homePath = getEnvironmentVariable("HOMEPATH");
-            if (homeDrive != null && homePath != null) {
-                setUserHome = isFileWritable(new File(homeDrive, homePath));
-            } else {
-                String homeShare = getEnvironmentVariable("HOMESHARE");
-                if (homeShare != null) {
-                    setUserHome = isFileWritable(new File(homeShare));
-                } else {
-                    setUserHome = true;
-                }
-            }
-        }
-        if (setUserHome) {
-            File userHome = new File(System.getProperty("user.home"));
-            FS.DETECTED.setUserHome(userHome);
-            log.info("Setting jgit config file path to: {}", userHome);
-        }
-    }
-
-    private static boolean isFileWritable(File file) {
-        return !file.exists() || (file.exists() && !file.canWrite());
-    }
-
-    public static String getEnvironmentVariable(String name) {
-        return System.getenv(name);
-    }
-
     public static GUIProject getActive() {
         ProjectBase project = ProjectBase.getActive();
         if (project == null) {
@@ -190,20 +139,14 @@ public class GUIProject extends StructureProject {
         return (GUIProject) project;
     }
 
-    public void writeIgnore() {
-        Path path = Paths.get(projectDir.toString(), ".gitignore");
-        try (FileWriter writer = new FileWriter(path.toFile())) {
-            writer.write("*.nv\n*.ucsf\njffi*\n");
-        } catch (IOException ioE) {
-            log.warn("{}", ioE.getMessage(), ioE);
-        }
-
-    }
-
     public void close() {
         if (timeline != null) {
             timeline.stop();
         }
+        peakListSubscriptions.unsubscribe();
+        datasetMapSubscriptions.unsubscribe();
+        peakListSubscriptions = Subscription.EMPTY;
+        datasetMapSubscriptions = Subscription.EMPTY;
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
@@ -260,6 +203,7 @@ public class GUIProject extends StructureProject {
         gitManager.gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
         currentProject.setActive();
+        projectChanged(false);
     }
 
     @Override
@@ -299,32 +243,14 @@ public class GUIProject extends StructureProject {
         WindowIO.saveWindows(dir);
     }
 
-    @Override
-    public void addPeakListListener(Object mapChangeObject) {
-        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
-            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-            obsMap.addListener(mapChangeListener);
-        }
+    public void addPeakListSubscription(Runnable runnable) {
+        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+        peakListSubscriptions = peakListSubscriptions.and(obsMap.subscribe(runnable));
     }
 
-    public void removePeakListListener(Object mapChangeObject) {
-        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
-            ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-            obsMap.removeListener(mapChangeListener);
-        }
-    }
-
-    @Override
-    public void addDatasetListListener(Object mapChangeListener) {
+    public void addDatasetListSubscription(Runnable runnable) {
         ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
-        obsMap.addListener((MapChangeListener<String, DatasetBase>) mapChangeListener);
-    }
-
-    public void removeDatasetListListener(Object mapChangeObject) {
-        if (mapChangeObject instanceof MapChangeListener mapChangeListener) {
-            ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
-            obsMap.removeListener(mapChangeListener);
-        }
+        datasetMapSubscriptions = datasetMapSubscriptions.and(obsMap.subscribe(runnable));
     }
 
     public void checkSubDirs(Path projectDir) throws IOException {
@@ -337,4 +263,27 @@ public class GUIProject extends StructureProject {
         setProjectDir(projectDir);
     }
 
+    @Override
+    public void saveMemoryFile(DatasetBase datasetBase)  {
+        Dataset dataset = (Dataset) datasetBase;
+        try {
+            dataset.saveMemoryFile();
+        } catch (IOException | DatasetException e) {
+            log.error("Failed to save memory file", e);
+        }
+    }
+
+    @Override
+    public void refreshDatasetList() {
+        datasets.clear();
+        datasets.addAll(datasetMap.values());
+    }
+
+    @Override
+    public List<DatasetBase> getDatasets() {
+        if (datasetMap.size() != datasets.size()) {
+            refreshDatasetList();
+        }
+        return datasets;
+    }
 }

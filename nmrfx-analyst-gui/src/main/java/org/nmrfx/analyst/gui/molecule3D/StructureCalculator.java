@@ -10,7 +10,7 @@ import org.python.util.PythonInterpreter;
 import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode.*;
 
 public class StructureCalculator {
-    public enum StructureMode {INIT, RNA, REFINE, CFF, ANNEAL, FULL}
+    public enum StructureMode {INIT, NUCLEIC_ACID, REFINE, CFF, ANNEAL, FULL}
 
     MolSceneController controller;
     private final StructureCalculatorService structureCalculatorService = new StructureCalculatorService();
@@ -81,7 +81,7 @@ public class StructureCalculator {
         scriptB.append("refiner=refine()\n");
         scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
         scriptB.append("refiner.rootName = 'temp'\n");
-        if (mode == RNA) {
+        if (mode == NUCLEIC_ACID) {
             scriptB.append("refiner.loadFromYaml(data,0)\n");
             scriptB.append("refiner.init(save=False)\n");
         } else if (mode == INIT) {
@@ -103,7 +103,7 @@ public class StructureCalculator {
     }
 
     String genYaml(StructureMode mode) {
-        if (mode == RNA) {
+        if (mode == NUCLEIC_ACID) {
             return genRNAYaml();
         } else {
             return genAnnealYaml();
@@ -127,12 +127,12 @@ public class StructureCalculator {
         if (alreadyLinked()) {
             return "";
         }
-        boolean isRNA = false;
+        boolean isNucliecAcid = false;
         if (!molecule.getPolymers().isEmpty()) {
-            isRNA = molecule.getPolymers().get(0).isRNA();
+            isNucliecAcid = molecule.getPolymers().getFirst().isRNA() || molecule.getPolymers().getFirst().isDNA();
         }
         StringBuilder yamlBuilder = new StringBuilder();
-        if (isRNA && (mode == RNA)) {
+        if (isNucliecAcid && (mode == NUCLEIC_ACID)) {
             yamlBuilder.append("rna:\n");
             yamlBuilder.append("    ribose : Constrain\n");
             String dotBracket = molecule.getDotBracket();
@@ -170,6 +170,7 @@ public class StructureCalculator {
                     force :
                         tors : 0.1
                         irp : 0.0
+                        tors : 0.1
                     stage4.1 :
                         nStepVal : 5000
                         tempVal : [100.0]

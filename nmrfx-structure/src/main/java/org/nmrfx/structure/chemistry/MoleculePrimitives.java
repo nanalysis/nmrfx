@@ -24,22 +24,23 @@
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.AtomColors;
+import org.nmrfx.chemistry.Line3;
+import org.nmrfx.chemistry.Point3C;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Johnbruc
  */
 public class MoleculePrimitives {
 
-    public int nSpheres = 0;
-    public float[] sphereCoords = null;
-    public float[] sphereColors = null;
-    public float[] sphereValues = null;
-    public int nLines = 0;
-    public float[] lineCoords = null;
+    public List<Line3> lines = new ArrayList<>();
+    public List<Point3C> pointCs = new ArrayList<>();
     public float[] lineColors = null;
     public int nSelected = 0;
     public float[] selectionCoords = null;
+
     public int[] selectionLevels = null;
     public int nLabels = 0;
     public float[] labelCoords = null;
@@ -52,6 +53,7 @@ public class MoleculePrimitives {
     public MoleculePrimitives() {
     }
 
+    /*
     public void unCompXYZToArray(byte[] byteArray, int nBytes) {
         atoms = null;
 
@@ -313,4 +315,5 @@ public class MoleculePrimitives {
             sphereValues[j] = (byteArray[i++] / 128.0f) * maxValue;
         }
     }
+    */
 }

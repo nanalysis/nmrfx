@@ -5,6 +5,9 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -13,14 +16,13 @@ import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
-import org.python.util.PythonInterpreter;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tribuo.Model;
+import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -28,6 +30,8 @@ import java.util.*;
  */
 public class Predictor {
     private static final Logger log = LoggerFactory.getLogger(Predictor.class);
+    static Map<String, Model<Regressor>> proteinModels = new HashMap<>();
+    static Map<String, Model<Regressor>> rnaModels = new HashMap<>();
 
     ProteinPredictor proteinPredictor = null;
 
@@ -154,6 +158,53 @@ public class Predictor {
     private static double rMax = 4.6;
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
+
+    public enum PredictionMolType {
+        RNA,
+        PROTEIN
+    }
+
+    public enum PredictionModes {
+        OFF,
+        RNA_ATTRIBUTES,
+        THREED_DIST,
+        THREED_RC,
+        THREED,
+        SHELL
+    }
+
+    public record PredictionTypes(PredictionModes protein, PredictionModes rna, PredictionModes smallMol) {
+    }
+
+    public static Optional<Model<Regressor>> loadTribuoModel(PredictionMolType type, String name) {
+        String resourceName = "data/predict/" + type.toString().toLowerCase() + "/tribuomodels/model_" + name + ".proto";
+        Optional<Model<Regressor>> result = Optional.empty();
+
+        try (InputStream inputStream = ProteinPredictor.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (inputStream != null) {
+                result = Optional.of((Model<Regressor>) Model.deserializeFromStream(inputStream));
+            } else {
+                log.warn("No prediction model {}", resourceName);
+            }
+        } catch (IOException e) {
+            result = Optional.empty();
+        }
+
+        return result;
+    }
+
+    public static Optional<Model<Regressor>> getTribuoModel(PredictionMolType type, String atomType) {
+        Optional<Model<Regressor>> modelOpt;
+        Map<String, Model<Regressor>> models = type == PredictionMolType.PROTEIN ? proteinModels : rnaModels;
+        if (!models.containsKey(atomType)) {
+            modelOpt = loadTribuoModel(type, atomType);
+            models.put(atomType, modelOpt.orElse(null));
+        } else {
+            modelOpt = Optional.ofNullable(models.get(atomType));
+        }
+        return modelOpt;
+    }
+
 
     void clearRefPPMs(int iRef) {
         Molecule mol = Molecule.getActive();
@@ -300,11 +351,90 @@ public class Predictor {
         }
     }
 
+    boolean checkCoordinates(Molecule molecule) {
+        if (molecule == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
+            alert.showAndWait();
+            return false;
+        } else if (molecule.structures.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
+            alert.showAndWait();
+            return false;
+        } else {
+            return true;
+        }
+
+    }
+
+    boolean checkDotBracket(Molecule molecule) {
+        return !molecule.getDotBracket().isBlank();
+    }
+
+    public void predictAll(Molecule mol, PredictionTypes predictionTypes, int ppmSet) throws InvalidMoleculeException, IOException {
+        boolean hasPeptide = false;
+
+        for (Polymer polymer : mol.getPolymers()) {
+            if (polymer.isRNA()) {
+                switch (predictionTypes.rna) {
+                    case THREED_DIST:
+                        if (checkCoordinates(mol)) {
+                            predictRNAWithDistances(polymer, 0, ppmSet, false);
+                        }
+                        break;
+                    case THREED_RC:
+                        if (checkCoordinates(mol)) {
+                            predictRNAWithRingCurrent(polymer, 0, ppmSet);
+                        }
+                        break;
+                    case RNA_ATTRIBUTES:
+                        if (checkDotBracket(mol)) {
+                            predictRNAWithAttributes(ppmSet);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } else if (polymer.isPeptide()) {
+                hasPeptide = true;
+            }
+        }
+
+        if (hasPeptide) {
+            if (predictionTypes.protein == PredictionModes.THREED) {
+                if (checkCoordinates(mol)) {
+                    int iStructure = 0;
+                    predictProtein(mol, iStructure, ppmSet);
+                }
+            } else if (predictionTypes.protein == PredictionModes.SHELL) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    predictWithShells(polymer, ppmSet);
+                }
+            }
+        }
+        boolean hasPolymer = !mol.getPolymers().isEmpty();
+        for (Entity entity : mol.getLigands()) {
+            if (predictionTypes.smallMol == PredictionModes.SHELL) {
+                predictWithShells(entity, ppmSet);
+                if (hasPolymer) {
+                    predictLigandWithRingCurrent(entity, ppmSet);
+                }
+            }
+        }
+    }
+
     public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
-        if ((molecule != null) && !molecule.getDotBracket().equals("")) {
-            try (PythonInterpreter interp = new PythonInterpreter()) {
-                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
+        if (molecule != null) {
+            if (molecule.getDotBracket().isEmpty()) {
+                GUIUtils.warn("RNA Prediction", "Please set secondary structure (dot-bracket)");
+                return;
+            }
+            RNAAttributes rnaAttributes = new RNAAttributes();
+            try {
+                rnaAttributes.predictFromAttr(molecule, ppmSet);
+            } catch (IOException e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.showAndWait();
             }
         }
     }
@@ -464,7 +594,7 @@ public class Predictor {
             Atom hoseAtom = null;
             double roundScale = 1.0;
             if (atom.getAtomicNumber() == 1) {
-                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().get(0) : null;
+                Atom connectedAtom = atom.getConnected().size() == 1 ? atom.getConnected().getFirst() : null;
                 if ((connectedAtom == null) || (connectedAtom.getAtomicNumber() != aNum)) {
                     continue;
                 }
@@ -500,8 +630,8 @@ public class Predictor {
                             shift = hoseStat.dStat.getElement(0);
                             error = defaultError * shellMult;
                         } else {
-                             shift = hoseStat.dStat.getPercentile(50);
-                             error = hoseStat.dStat.getStandardDeviation() * shellMult;
+                            shift = hoseStat.dStat.getPercentile(50);
+                            error = hoseStat.dStat.getStandardDeviation() * shellMult;
                         }
                         if (Double.isNaN(error)) {
                             error = defaultError;
@@ -516,13 +646,13 @@ public class Predictor {
                         error = Math.round(error * roundScale) / roundScale;
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, shift);
-                            atom.setRefError(-iRef -1, error);
+                            atom.setRefError(-iRef - 1, error);
                         } else {
                             atom.setPPM(iRef, shift);
                             atom.setRefError(iRef, error);
                         }
                     } else {
-                        log.warn("no hose prediction for " + hoseAtom.getFullName() + " " + hoseCode);
+                        log.warn("no hose prediction for {} {}", hoseAtom.getFullName(), hoseCode);
                     }
                 }
             }
@@ -546,43 +676,45 @@ public class Predictor {
                 if (line == null) {
                     break;
                 } else {
-                    if (!line.equals("")) {
+                    if (!line.isEmpty()) {
                         String[] fields = line.split("\t");
                         if (fields.length > 0) {
-                            if (fields[0].equals("rmax")) {
-                                setRMax(Double.parseDouble(fields[1]));
-                                // For this line fields[2] is unused but its value is the atom type, e.g. H, C
-                                // it was previously used to help set the typeIndex
-                                setIntraScale(Double.parseDouble(fields[3]));
-                            } else if (fields[0].equals("coef")) {
-                                state = "coef";
-                                nCoef = Integer.parseInt(fields[2]) + 1;
-                                if (!coefMap.containsKey(fields[1])) {
-                                    coefMap.put(fields[1], coefMap.size());
+                            switch (fields[0]) {
+                                case "rmax" -> {
+                                    setRMax(Double.parseDouble(fields[1]));
+                                    // For this line fields[2] is unused but its value is the atom type, e.g. H, C
+                                    // it was previously used to help set the typeIndex
+                                    setIntraScale(Double.parseDouble(fields[3]));
                                 }
-                                typeIndex = coefMap.get(fields[1]);
-                                alphas[typeIndex] = new double[nCoef];
-                                coefAtoms = new String[nCoef];
-                                alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
-                                coefAtoms[nCoef - 1] = "intercept";
-                            } else if (fields[0].equals("baseshifts")) {
-                                state = "baseshifts";
-                            } else if (fields[0].equals("mae")) {
-                                state = "mae";
-                            } else {
-                                switch (state) {
-                                    case "coef" -> {
-                                        int index = Integer.parseInt(fields[0]);
-                                        coefAtoms[index] = fields[1];
-                                        alphas[typeIndex][index] = Double.parseDouble(fields[2]);
+                                case "coef" -> {
+                                    state = "coef";
+                                    nCoef = Integer.parseInt(fields[2]) + 1;
+                                    if (!coefMap.containsKey(fields[1])) {
+                                        coefMap.put(fields[1], coefMap.size());
                                     }
-                                    case "baseshifts" -> {
-                                        double shift = Double.parseDouble(fields[1]);
-                                        baseShiftMap.put(fields[0], shift);
-                                    }
-                                    case "mae" -> {
-                                        double value = Double.parseDouble(fields[1]);
-                                        maeMap.put(fields[0], value);
+                                    typeIndex = coefMap.get(fields[1]);
+                                    alphas[typeIndex] = new double[nCoef];
+                                    coefAtoms = new String[nCoef];
+                                    alphas[typeIndex][nCoef - 1] = Double.parseDouble(fields[3]);
+                                    coefAtoms[nCoef - 1] = "intercept";
+                                }
+                                case "baseshifts" -> state = "baseshifts";
+                                case "mae" -> state = "mae";
+                                default -> {
+                                    switch (state) {
+                                        case "coef" -> {
+                                            int index = Integer.parseInt(fields[0]);
+                                            coefAtoms[index] = fields[1];
+                                            alphas[typeIndex][index] = Double.parseDouble(fields[2]);
+                                        }
+                                        case "baseshifts" -> {
+                                            double shift = Double.parseDouble(fields[1]);
+                                            baseShiftMap.put(fields[0], shift);
+                                        }
+                                        case "mae" -> {
+                                            double value = Double.parseDouble(fields[1]);
+                                            maeMap.put(fields[0], value);
+                                        }
                                     }
                                 }
                             }
@@ -622,7 +754,7 @@ public class Predictor {
                 if (line == null) {
                     break;
                 } else {
-                    if (!line.equals("")) {
+                    if (!line.isEmpty()) {
                         String[] fields = line.split("\t");
                         String aName1 = fields[0];
                         for (int i = 1; i < fields.length; i++) {

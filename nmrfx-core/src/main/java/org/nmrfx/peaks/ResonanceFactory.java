@@ -22,6 +22,7 @@ import org.nmrfx.chemistry.AtomResonance;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -32,6 +33,7 @@ import java.util.*;
  * @author Bruce Johnson
  */
 public class ResonanceFactory implements FreezeListener {
+
     private static final String[] resonanceLoopStrings = {
             "_Resonance.ID",
             "_Resonance.Name",
@@ -63,6 +65,11 @@ public class ResonanceFactory implements FreezeListener {
             map.put(id, resonance);
         }
         return resonance;
+    }
+
+    public void reassignResonanceFactoryMap(AtomResonance resonance) {
+        //map.clear();
+        map.put(resonance.getID(), resonance);
     }
 
     public AtomResonance get(long id) {
@@ -202,7 +209,11 @@ public class ResonanceFactory implements FreezeListener {
         for (AtomResonance res : map.values()) {
             for (PeakDim peakDim : res.getPeakDims()) {
                 Double ppmAvg = res.getPPMAvg(condition);
-                Atom atom = MoleculeBase.getAtomByName(peakDim.getLabel());
+                String label = peakDim.getLabel();
+                Atom atom = MoleculeBase.getAtomByName(label);
+                if (atom == null) {
+                    atom = MoleculeBase.getAtomByName(label+"1");
+                }
                 if (atom != null) {
                     atom.setPPM(ppmAvg);
                     res.setAtomName(atom.getFullName());
@@ -214,6 +225,34 @@ public class ResonanceFactory implements FreezeListener {
         }
     }
 
+    public void renumber(int offset, String polymerName) {
+        for (AtomResonance res : map.values()) {
+            List<String> labels = new ArrayList<>();
+            boolean updated = false;
+            var oldLabels = res.getNames();
+            if (oldLabels != null) {
+                for (String label : oldLabels) {
+                    if (!label.isBlank()) {
+                        Optional<PeakLabeller.ChainResAtomSpecifier> optionalChainResAtomSpecifier = PeakLabeller.parse(label);
+                        if (optionalChainResAtomSpecifier.isPresent()) {
+                            PeakLabeller.ChainResAtomSpecifier cSpec = optionalChainResAtomSpecifier.get();
+                            if (polymerName.isEmpty() || (cSpec.chain() == null) || cSpec.chain().isEmpty() || cSpec.chain().equalsIgnoreCase(polymerName)) {
+                                label = cSpec.offset(offset).toString();
+                                updated = true;
+                            }
+                        }
+                    }
+                    labels.add(label);
+                }
+            }
+            if (updated) {
+                res.setName(labels);
+                for (PeakDim peakDim : res.getPeakDims()) {
+                    peakDim.peakDimUpdated();
+                }
+            }
+        }
+    }
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         for (PeakDim peakDim : peak.peakDims) {
@@ -243,7 +282,7 @@ public class ResonanceFactory implements FreezeListener {
     public void writeResonancesSTAR3(Writer chan)
             throws IOException {
 
-        chan.write("save_resonance_linker_list\n");
+        chan.write(STAR3Base.SAVE + "resonance_linker_list\n");
 
         chan.write("_Resonance_linker_list.Sf_category    ");
         chan.write("resonance_linker\n");
@@ -271,7 +310,7 @@ public class ResonanceFactory implements FreezeListener {
             chan.write(resonance.toSTARResonanceString() + "\n");
         }
         chan.write("stop_\n");
-        chan.write("save_\n");
+        chan.write(STAR3Base.SAVE + "\n");
 
     }
 

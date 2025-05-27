@@ -23,16 +23,11 @@ import org.nmrfx.chemistry.Residue.RES_POSITION;
 import org.nmrfx.chemistry.constraints.*;
 import org.nmrfx.chemistry.relax.*;
 import org.nmrfx.datasets.DatasetBase;
-import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.*;
 import org.nmrfx.peaks.io.PeakPathReader;
 import org.nmrfx.project.ProjectBase;
-import org.nmrfx.star.Loop;
-import org.nmrfx.star.ParseException;
-import org.nmrfx.star.STAR3;
-import org.nmrfx.star.Saveframe;
+import org.nmrfx.star.*;
 import org.nmrfx.utilities.NvUtil;
-import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,14 +173,15 @@ public class NMRStarReader {
             if ((seqNumber == null) || seqNumber.isBlank()) {
                 seqNumber = resName;
             }
-            String ccSaveFrameName = "save_chem_comp_" + resName;
+            String ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             if (ccSaveframe == null) {
-                ccSaveFrameName = "save_" + resName;
+                ccSaveFrameName = STAR3Base.SAVE + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
             if (ccSaveframe != null) {
                 compound.setNumber(seqNumber);
+                compound.setResNum(Integer.parseInt(seqNumber));
                 updateFromSTAR3ChemComp(ccSaveframe, compound);
             } else {
                 log.warn("No save frame: {}", ccSaveFrameName);
@@ -280,14 +276,14 @@ public class NMRStarReader {
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);
-            String ccSaveFrameName = "save_chem_comp_" + resName + "." + iRes;
+            String ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName + "." + iRes;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             if (ccSaveframe == null) {
-                ccSaveFrameName = "save_chem_comp_" + resName;
+                ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
             if (ccSaveframe == null) {
-                ccSaveFrameName = "save_" + resName;
+                ccSaveFrameName = STAR3Base.SAVE + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
             RES_POSITION resPos = RES_POSITION.MIDDLE;
@@ -433,7 +429,7 @@ public class NMRStarReader {
         }
         //int entityAssemblyID = Integer.parseInt(entityAssemblyIDString);
         // get entity saveframe
-        String saveFrameName = "save_" + entitySaveFrameLabel;
+        String saveFrameName = STAR3Base.SAVE + entitySaveFrameLabel;
         log.debug("process entity {}", saveFrameName);
         Saveframe saveframe = star3.getSaveFrames().get(saveFrameName);
         if (saveframe != null) {
@@ -449,7 +445,7 @@ public class NMRStarReader {
             if (type != null && type.equals("polymer")) {
                 Entity entity = molecule.getEntity(entityAssemblyName);
                 if (entity == null) {
-                    Polymer polymer = new Polymer(entitySaveFrameLabel, entityAssemblyName);
+                    Polymer polymer = new Polymer(entitySaveFrameLabel, entitySaveFrameLabel, entityAssemblyName);
                     polymer.setIDNum(entityID);
                     polymer.assemblyID = entityAssemblyID;
                     polymer.setPDBChain(pdbLabel);
@@ -460,10 +456,11 @@ public class NMRStarReader {
                     molecule.addCoordSet(asymLabel, entityAssemblyID, entity);
                 }
             } else {
+                name = saveframe.getValue("_Entity","Nonpolymer_comp_ID", name);
                 Entity entity = molecule.getEntity(name);
                 if (entity == null) {
-                    Compound compound = new Compound("1", entityAssemblyName, name);
-                    compound.setIDNum(1);
+                    Compound compound = new Compound("1", name, name, entityAssemblyName);
+                    compound.setIDNum(entityID);
                     compound.assemblyID = entityAssemblyID;
                     compound.setPDBChain(pdbLabel);
                     entities.put(entityAssemblyIDString + "." + entityIDString, compound);
@@ -962,21 +959,12 @@ public class NMRStarReader {
     void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
         Loop loop = saveframe.getLoop("_Spectral_transition");
         if (loop != null) {
-            List<Integer> idColumn = loop.getColumnAsIntegerList("ID", null);
-            List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
-
-            for (int i = 0, n = idColumn.size(); i < n; i++) {
-                int idNum = idColumn.get(i);
-                int peakIdNum = peakIdColumn.get(i);
-                Peak peak = peakList.getPeakByID(peakIdNum);
-                peak.setIdNum(idNum);
-            }
             loop = saveframe.getLoop("_Spectral_transition_general_char");
 
             if (loop != null) {
                 Map<Integer, Double> intMap = new HashMap<>();
                 Map<Integer, Double> volMap = new HashMap<>();
-                idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                List<Integer> idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
                 List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
                 List<String> methodColumn = loop.getColumnAsList("Measurement_method");
 
@@ -997,7 +985,7 @@ public class NMRStarReader {
                 loop = saveframe.getLoop("_Spectral_transition_char");
                 if (loop != null) {
                     idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
-                    peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                    List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
                     List<Double> shiftColumn = loop.getColumnAsDoubleList("Chem_shift_val", null);
                     List<Double> lwColumn = loop.getColumnAsDoubleList("Line_width_val", null);
                     List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
@@ -1029,8 +1017,6 @@ public class NMRStarReader {
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_Atom_chem_shift");
-        boolean invalidCompoundFlag = false;
-        boolean invalidResidueFlag = false;
         if (loop != null) {
             boolean refMode = false;
             if (ppmSet < 0) {
@@ -1079,13 +1065,11 @@ public class NMRStarReader {
                 Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
                     log.warn("invalid compound in assignments saveframe \"{}\"", mapID);
-                    invalidCompoundFlag = true;
                     continue;
                 }
                 String compID = compIDColumn.get(i);
             if (!compound.getName().equals(compID)) {
                 log.warn("sequence mismatch expected: " + compound.getName() + " got: " + compID);
-                invalidResidueFlag = true;
                 continue;
             }
                 Atom atom = compound.getAtomLoose(atomName);
@@ -1133,14 +1117,6 @@ public class NMRStarReader {
                     }
                 }
             }
-        }
-        if (invalidCompoundFlag) {
-            Fx.runOnFxThread(() ->
-                    GUIUtils.warn("invalid compound in assignments saveframe","invalid compound in assignments saveframe"));
-        }
-        if (invalidResidueFlag) {
-            Fx.runOnFxThread(() ->
-                    GUIUtils.warn("sequence does not match", "residue mismatch in sequence"));
         }
     }
 
@@ -1551,6 +1527,7 @@ public class NMRStarReader {
         if (loop == null) {
             throw new ParseException("No \"_RDC\" loop");
         }
+        int iStructure = 0;
         List<String>[] entityAssemblyIDColumns = new ArrayList[2];
         List<String>[] entityIDColumns = new ArrayList[2];
         List<String>[] compIdxIDColumns = new ArrayList[2];
@@ -1587,7 +1564,7 @@ public class NMRStarReader {
                 } else {
                     err = errColumn.get(i);
                 }
-                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), valColumn.get(i), err);
+                RDCConstraint aCon = new RDCConstraint(rdcSet, spSets[0].getAtom(), spSets[1].getAtom(), iStructure, valColumn.get(i), err);
                 rdcSet.add(aCon);
 
             }

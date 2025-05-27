@@ -126,6 +126,15 @@ public class GUIUtils {
         alert.showAndWait();
     }
 
+    public static Object choice(Collection choices, String message) {
+        ChoiceDialog choiceDialog = new ChoiceDialog(null, choices);
+        choiceDialog.setHeaderText(message);
+        choiceDialog.setContentText("Value:");
+        Optional result = choiceDialog.showAndWait();
+        return result.orElse(null);
+
+    }
+
     public static String input(String message) {
         return input(message, "");
     }
@@ -389,8 +398,11 @@ public class GUIUtils {
     }
 
     public static TextField getDoubleTextField(SimpleDoubleProperty prop) {
+        return getDoubleTextField(prop, 2);
+    }
+    public static TextField getDoubleTextField(SimpleDoubleProperty prop, int decimalPlaces) {
         TextField textField = new TextField();
-        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(decimalPlaces), 0.0, new FixedDecimalFilter());
         textFormatter.valueProperty().bindBidirectional((Property) prop);
         textField.setTextFormatter(textFormatter);
         return textField;

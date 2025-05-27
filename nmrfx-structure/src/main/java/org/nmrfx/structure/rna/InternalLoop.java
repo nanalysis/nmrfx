@@ -18,23 +18,21 @@
 package org.nmrfx.structure.rna;
 
 import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SecondaryStructure;
 
 import java.util.List;
 
 /**
  * @author bajlabuser
  */
-public class InternalLoop extends SecondaryStructure {
-
+public class InternalLoop extends Junction {
     public static int localCounter = 0;
-    public static String name = "InternalLoop";
+
+    public static final String name = "InternalLoop";
 
     public InternalLoop(List<Residue> residues) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
         secResidues = residues;
-
     }
 
     @Override

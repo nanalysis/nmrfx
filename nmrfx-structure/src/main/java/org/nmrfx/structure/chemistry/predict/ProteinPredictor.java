@@ -1,22 +1,22 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.InvalidMoleculeException;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
+import com.google.common.util.concurrent.AtomicDouble;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.PDBAtomParser;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import org.tribuo.Example;
+import org.tribuo.Feature;
+import org.tribuo.Prediction;
+import org.tribuo.impl.ArrayExample;
+import org.tribuo.regression.Regressor;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
 public class ProteinPredictor {
 
-    public final static Map<String, Double> RANDOM_SCALES = new HashMap<>();
+    public static final Map<String, Double> RANDOM_SCALES = new HashMap<>();
     // values from Journal of Biomolecular NMR (2018) 70:141–165 Potenci
 
     static {
@@ -34,8 +34,8 @@ public class ProteinPredictor {
 
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
-    Map<String, Double> rmsMap = new HashMap<>();
-    Map<String, double[]> minMaxMap = new HashMap<>();
+    static Map<String, Double> rmsMap = new HashMap<>();
+    static Map<String, double[]> minMaxMap = new HashMap<>();
     ArrayList<String> attrNames = new ArrayList<>();
     Map<String, Double> shiftMap = new HashMap<>();
     Map<String, Double> tempMap = new HashMap<>();
@@ -84,7 +84,7 @@ public class ProteinPredictor {
             }
         }
         int nCoef = lines.size();
-        int nTypes = lines.get(0).length - 1;
+        int nTypes = lines.getFirst().length - 1;
         values = new double[nTypes][nCoef];
         for (int j = 0; j < nCoef; j++) {
             attrNames.add(lines.get(j)[0].trim());
@@ -95,7 +95,7 @@ public class ProteinPredictor {
         initMinMax();
     }
 
-    class CorrComb {
+    static class CorrComb {
 
         int relPos;
         String centerAA;
@@ -115,8 +115,6 @@ public class ProteinPredictor {
 
     void loadPotenci() throws IOException {
         InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/potenci.txt");
-        List<String[]> lines = new ArrayList<>();
-        boolean firstLine = true;
         String mode = "";
         List<String> atomNames = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
@@ -138,9 +136,7 @@ public class ProteinPredictor {
                     case "SHIFT": {
                         if (fields[0].equals("aa")) {
                             atomNames.clear();
-                            for (int i = 1; i < fields.length; i++) {
-                                atomNames.add(fields[i]);
-                            }
+                            atomNames.addAll(Arrays.asList(fields).subList(1, fields.length));
                         } else {
                             String aaName = fields[0];
                             for (int i = 1; i < fields.length; i++) {
@@ -182,12 +178,12 @@ public class ProteinPredictor {
                         int relPos = Integer.parseInt(fields[1]);
                         String centerAA = fields[2];
                         String neighborType = fields[3];
-                        Double value1 = Double.parseDouble(fields[5]);
-                        Double value2 = Double.parseDouble(fields[6]);
+                        double value1 = Double.parseDouble(fields[5]);
+                        double value2 = Double.parseDouble(fields[6]);
 
                         CorrComb corrComb = new CorrComb(relPos, centerAA, neighborType, value1, value2);
                         if (!corrCombMap.containsKey(aName)) {
-                            corrCombMap.put(aName, new HashMap<String, CorrComb>());
+                            corrCombMap.put(aName, new HashMap<>());
                         }
                         Map<String, CorrComb> segMap = corrCombMap.get(aName);
                         segMap.put(segment, corrComb);
@@ -196,9 +192,7 @@ public class ProteinPredictor {
                     case "TEMPCORRS": {
                         if (fields[0].equals("aa")) {
                             atomNames.clear();
-                            for (int i = 1; i < fields.length; i++) {
-                                atomNames.add(fields[i]);
-                            }
+                            atomNames.addAll(Arrays.asList(fields).subList(1, fields.length));
                         } else {
                             String aaName = fields[0];
                             double[] values = new double[atomNames.size()];
@@ -232,6 +226,15 @@ public class ProteinPredictor {
         return true;
     }
 
+    public static boolean checkVars(Double... values) {
+        for (Double value : values) {
+            if ((value == null) || Double.isNaN(value) || Double.isInfinite(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void predict(int iRef, int structureNum) throws InvalidMoleculeException, IOException {
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
@@ -246,7 +249,7 @@ public class ProteinPredictor {
         }
     }
 
-    Optional<String> getAtomNameType(Atom atom) {
+    static Optional<String> getAtomNameType(Atom atom) {
         Optional<String> atomType = Optional.empty();
         String aName = atom.getName();
         int aLen = aName.length();
@@ -285,28 +288,52 @@ public class ProteinPredictor {
         return atomType;
     }
 
+    public static double[] getMinMax(String type) throws IOException {
+        if (minMaxMap.isEmpty()) {
+            initMinMax();
+        }
+        return minMaxMap.get(type);
+    }
+
     public void predict(Residue residue, int iRef, int structureNum) throws IOException {
         if (values == null) {
             loadCoefficients();
         }
+        Map<Atom, Double> refShifts = new HashMap<>();
+        BMRBStats.loadAllIfEmpty();
+        for (Atom atom : residue.getAtoms()) {
+            Double rShift = predictRandom(residue, atom.getName(), 298.0);
+            if (rShift == null) {
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(residue.getName(), atom.getName());
+                if (ppmVOpt.isPresent()) {
+                    rShift = ppmVOpt.get().getValue();
+                }
+            }
+            refShifts.put(atom, rShift);
+        }
+
         Map<String, Double> valueMap = propertyGenerator.getValues();
         Polymer polymer = residue.getPolymer();
+        ProteinPredictorGen p = new ProteinPredictorGen();
         if (propertyGenerator.getResidueProperties(polymer, residue, structureNum)) {
             for (Atom atom : residue.getAtoms()) {
                 Optional<String> atomTypeOpt = getAtomNameType(atom);
                 atomTypeOpt.ifPresent(atomType -> {
-                    propertyGenerator.getAtomProperties(atom, structureNum);
-                    String type = atomType;
-                    Integer jType = aaMap.get(type);
-                    if (jType != null) {
-                        double[] coefs = values[jType];
-                        double[] minMax = minMaxMap.get(type);
-                        ProteinPredictorResult predResult
-                                = ProteinPredictorGen.predict(valueMap,
-                                coefs, minMax, reportAtom != null);
-                        double value = predResult.ppm;
-                        value = Math.round(value * 100) / 100.0;
-                        double rms = getRMS(type);
+                    var props = propertyGenerator.getAtomProperties(atom, structureNum);
+                    Map<String, Double> valueMap2 = p.getValueMap(valueMap);
+
+                    if (refShifts.containsKey(atom)) {
+                        AtomicDouble finalValue = new AtomicDouble(refShifts.get(atom));
+                        Predictor.getTribuoModel(Predictor.PredictionMolType.PROTEIN, atomType).ifPresent(model -> {
+                            Example<Regressor> example = getExample(valueMap2);
+                            model.predict(example);
+                            Prediction<Regressor> prediction = model.predict(example);
+                            Regressor regressor = prediction.getOutput();
+                            double deltaShift = regressor.getValues()[0];
+                            finalValue.addAndGet(deltaShift);
+                        });
+                        double value = Math.round(finalValue.get() * 100) / 100.0;
+                        double rms = getRMS(atomType);
                         if (iRef < 0) {
                             atom.setRefPPM(-iRef - 1, value);
                             atom.setRefError(-iRef - 1, rms);
@@ -314,14 +341,9 @@ public class ProteinPredictor {
                             atom.setPPM(iRef, value);
                             atom.setPPMError(iRef, rms);
                         }
-
-                        if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
-                            dumpResult(predResult);
-                        }
                     }
                 });
             }
-
         }
     }
 
@@ -331,8 +353,18 @@ public class ProteinPredictor {
         }
     }
 
-    private void initMinMax() throws IOException {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/fitOutput.txt");
+    public Example<Regressor> getExample(Map<String, Double> attributes) {
+        List<Feature> features = new ArrayList<>();
+        for (var entry : attributes.entrySet()) {
+            Feature feature = new Feature(entry.getKey(), entry.getValue());
+            features.add(feature);
+        }
+        Regressor regressor = new Regressor("cs", Double.NaN);
+        return new ArrayExample<>(regressor, features);
+    }
+
+    public static void initMinMax() throws IOException {
+        InputStream iStream = ProteinPredictor.class.getResourceAsStream("/data/predict/protein/fitOutput.txt");
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
             while (true) {
                 String line = reader.readLine();
@@ -559,5 +591,4 @@ public class ProteinPredictor {
 
         return result;
     }
-
 }

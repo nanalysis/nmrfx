@@ -43,6 +43,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 import static org.nmrfx.datasets.Nuclei.*;
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.*;
 
 /**
  * @author brucejohnson
@@ -185,7 +186,7 @@ public class PeakPicker {
     }
 
     public boolean measurePeak(double threshold, int[] pt, double[] cpt,
-                               int[] dimOrder, int[] dataToPk, boolean fixedPick, Peak peak, int nPeakDim,
+                               int[] peakToData, int[] dataToPk, boolean fixedPick, Peak peak, int nPeakDim,
                                double sDevN, int sign, boolean measurePeak) throws IOException {
         double testValue = 0.0;
         int[] checkPoint = new int[nDataDim];
@@ -204,21 +205,21 @@ public class PeakPicker {
         int j;
         int iDir;
 
-        centerValue = sign * readPoint(pt, dimOrder);
+        centerValue = sign * readPoint(pt, peakToData);
         if (!measurePeak) {
             for (i = 0; i < nDataDim; i++) {
-                double bndHz = 15.0 * dataset.getSizeReal(dimOrder[i]) / dataset.getSw(dimOrder[i]);
-                peak.peakDims[i].setLineWidthValue((float) dataset.ptWidthToPPM(dimOrder[i], bndHz / 2.0));
-                peak.peakDims[i].setBoundsValue((float) dataset.ptWidthToPPM(dimOrder[i], bndHz));
+                double bndHz = 15.0 * dataset.getSizeReal(peakToData[i]) / dataset.getSw(peakToData[i]);
+                peak.peakDims[i].setLineWidthValue((float) dataset.ptWidthToPPM(peakToData[i], bndHz / 2.0));
+                peak.peakDims[i].setBoundsValue((float) dataset.ptWidthToPPM(peakToData[i], bndHz));
                 fPt = (float) cpt[i];
-                peak.peakDims[i].setChemShiftValueNoCheck((float) dataset.pointToPPM(dimOrder[i], fPt));
+                peak.peakDims[i].setChemShiftValueNoCheck((float) dataset.pointToPPM(peakToData[i], fPt));
             }
             peak.setIntensity((float) (sign * centerValue));
             return true;
         }
 
         for (i = 0; i < nDataDim; i++) {
-            maxWidth[i] = (int) ((200.0 * dataset.getSizeReal(dimOrder[i])) / dataset.getSw(dimOrder[i]));
+            maxWidth[i] = (int) ((200.0 * dataset.getSizeReal(peakToData[i])) / dataset.getSw(peakToData[i]));
 
             if (maxWidth[i] < 3) {
                 maxWidth[i] = 3;
@@ -237,7 +238,7 @@ public class PeakPicker {
         halfHeightValue = (centerValue / 2.0);
 
         for (i = 0; i < nPeakDim; i++) {
-            int dataDim = dimOrder[i];
+            int dataDim = peakToData[i];
             int peakDim = dataToPk[dataDim];
             peak.peakDims[peakDim].setLineWidthValue(0.0f);
             boolean[] widthOK = {true, true};
@@ -281,9 +282,9 @@ public class PeakPicker {
                     }
 
                     try {
-                        testValue = sign * readPoint(checkPoint, dimOrder);
+                        testValue = sign * readPoint(checkPoint, peakToData);
                     } catch (IOException e) {
-                        log.warn("{} {} {} {} {}", i, delta, fold[i], dimOrder[i], checkPoint[i]);
+                        log.warn("{} {} {} {} {}", i, delta, fold[i], peakToData[i], checkPoint[i]);
                         log.warn("{} {} {} {}", checkPoint[0], checkPoint[1], checkPoint[2], e.getMessage(), e);
                         log.warn("{} {} {}", pt[0], pt[1], pt[2]);
                     }
@@ -456,7 +457,7 @@ public class PeakPicker {
                     PeakListTools.groupPeakListAndFit(peakList, dataset, rows, null, fitPars);
                     dataset.addPeakList(peakList, -1.0);
                     if (i != (nTries - 1)) {
-                        peakPickPar.mode = "append";
+                        peakPickPar.mode = APPEND;
                         peakList = peakPick();
                     }
                 } catch (PeakFitException ex) {
@@ -533,9 +534,8 @@ public class PeakPicker {
     public PeakList peakPick()
             throws IOException, IllegalArgumentException {
         int[][] pt;
-        int[] pkToData = new int[peakPickPar.nPeakDim];
-        int[] dataToPk = new int[nDataDim];
-        int[] dimOrder = peakPickPar.dim;
+        int[] peakToData = peakPickPar.peakToData.clone();
+        int[] dataToPeak = new int[nDataDim];
         int[] lastPoint = new int[nDataDim];
         nPeaks = 0;
         int nMatch;
@@ -544,43 +544,47 @@ public class PeakPicker {
         pt = peakPickPar.pt;
         lastPeakPicked = null;
 
-        for (int i = 0; i < peakPickPar.nPeakDim; i++) {
-            pkToData[i] = dimOrder[i];
-        }
-        Arrays.fill(dataToPk, -1);
-        for (int i=0;i < pkToData.length;i++) {
-            dataToPk[pkToData[i]] =i;
+        Arrays.fill(dataToPeak, -1);
+        for (int i=0;i < peakPickPar.nPeakDim;i++) {
+            dataToPeak[peakToData[i]] = i;
         }
         PeakList peakList = PeakList.get(peakPickPar.listName);
         boolean listExists = (peakList != null);
-        String mode = peakPickPar.mode;
+        PeakPickParameters.PickMode mode = peakPickPar.mode;
         boolean alreadyPeaksInRegion = false;
         if (listExists) {
             alreadyPeaksInRegion = anyPeaksInRegion();
-            if (alreadyPeaksInRegion && mode.startsWith("replace")) {
+            if (alreadyPeaksInRegion && mode.isAppend()) {
                 removeExistingPeaks();
                 peakList.compress();
                 peakList.reNumber();
                 alreadyPeaksInRegion = false;
             }
         }
-        if (mode.equalsIgnoreCase("replaceif") && listExists) {
-            mode = "replace";
-        } else if (mode.equalsIgnoreCase("replaceif") && !listExists) {
-            mode = "new";
-        } else if (mode.equalsIgnoreCase("appendif") && !listExists) {
-            mode = "new";
-        } else if (mode.equalsIgnoreCase("appendif") && listExists) {
-            mode = "append";
-        } else if (mode.equalsIgnoreCase("appendregion") && !listExists) {
-            mode = "new";
-        } else if (mode.equalsIgnoreCase("appendregion") && alreadyPeaksInRegion) {
-            mode = "replace";
-        } else if (mode.equalsIgnoreCase("appendregion")) {
-            mode = "append";
+        if ((mode == REPLACEIF) && listExists) {
+            mode = REPLACE;
+        } else if ((mode == REPLACEIF) && !listExists) {
+            mode = NEW;
+        } else if ((mode == APPENDIF) && !listExists) {
+            mode = NEW;
+        } else if ((mode == APPENDIF) && listExists) {
+            mode = APPEND;
+        } else if ((mode == APPENDREGION) && !listExists) {
+            mode = NEW;
+        } else if ((mode == APPENDREGION) && alreadyPeaksInRegion) {
+            mode = REPLACE;
+        } else if (mode == APPENDREGION) {
+            mode = APPEND;
         }
-
-        if (mode.equalsIgnoreCase("new")) {
+        if (mode == REPLACE) {
+            if (!listExists) {
+                throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " doesn't exist");
+            }
+            PeakList.remove(peakPickPar.listName);
+            listExists = false;
+            mode = NEW;
+        }
+        if (mode == NEW) {
             if (listExists) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " already exists");
             }
@@ -591,11 +595,11 @@ public class PeakPicker {
             for (int i = 0; i < peakPickPar.nPeakDim; i++) {
                 SpectralDim sDim = peakList.getSpectralDim(i);
                 if (sDim == null) {
-                    throw new IllegalArgumentException("Error picking list" + peakPickPar.listName + ", invalid dimension " + pkToData[i]);
+                    throw new IllegalArgumentException("Error picking list" + peakPickPar.listName + ", invalid dimension " + peakToData[i]);
                 }
-                configureDim(sDim, pkToData[i]);
+                configureDim(sDim, peakToData[i]);
             }
-        } else if (mode.equalsIgnoreCase("append")) {
+        } else if (mode == APPEND) {
             if (peakList == null) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + "doesn't exist");
             }
@@ -603,35 +607,22 @@ public class PeakPicker {
             if (peakList.nDim != peakPickPar.nPeakDim) {
                 throw new IllegalArgumentException("Number of Peak List dimensions doesn't match pick parameters");
             }
-
-            nMatch = 0;
-
-            Arrays.fill(dataToPk, -1);
-            for (int i = 0; i < peakList.nDim; i++) {
-                for (int j = 0; j < dimOrder.length; j++) {
-                    if (peakList.getSpectralDim(i).getIndex() == dimOrder[j]) {
-                        pkToData[i] = dimOrder[j];
-                        dataToPk[dimOrder[j]] = i;
-                        nMatch++;
-                        break;
-                    }
+            int[] testDims = peakList.getDimsForDataset(dataset, false);
+            boolean dimMatch = true;
+            for (int i = 0;i<testDims.length;i++) {
+                if (testDims[i] != peakToData[i]) {
+                    dimMatch = false;
                 }
             }
+            if (!dimMatch) {
+                log.info("Dims did not match");
 
-            if (nMatch != peakList.nDim) {
-                throw new IllegalArgumentException("Dimensions not equal to those of peak list!");
-            }
-        } else if (mode.equalsIgnoreCase("replace")) {
-            if (!listExists) {
-                throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " doesn't exist");
-            }
-
-            PeakList.remove(peakPickPar.listName);
-            peakList = new PeakList(peakPickPar.listName, peakPickPar.nPeakDim);
-            peakList.fileName = dataset.getFileName();
-            for (int i = 0; i < peakPickPar.nPeakDim; i++) {
-                SpectralDim sDim = peakList.getSpectralDim(i);
-                configureDim(sDim, pkToData[i]);
+                peakToData = testDims;
+                Arrays.fill(dataToPeak, -1);
+                for (int i=0;i < peakPickPar.nPeakDim;i++) {
+                    dataToPeak[peakToData[i]] = i;
+                }
+                peakPickPar.swapDims(pt, peakPickPar.cpt, peakToData);
             }
         }
 
@@ -689,7 +680,7 @@ public class PeakPicker {
         int[] filtPkToData = null;
         if (filterMode) {
             filtPkToData = peakPickPar.filterList.getDimsForDataset(dataset, true);
-            cIter =  (new PeakDimCounter(dataset, peakPickPar.filterList.peaks(), dimOrder, filtPkToData, pt, peakPickPar.filterWidth)).iterator();
+            cIter =  (new PeakDimCounter(dataset, peakPickPar.filterList.peaks(), peakToData, filtPkToData, pt, peakPickPar.filterWidth)).iterator();
         } else {
             cIter = (new DimCounter(counterSizes)).iterator();
         }
@@ -701,7 +692,7 @@ public class PeakPicker {
                 }
                 checkPoint[i] = points[i];
             }
-            checkValue = readPoint(points, dimOrder);
+            checkValue = readPoint(points, peakToData);
             int sign = 1;
             if (nDataDim > 1) {
                 stats.addValue(checkValue);
@@ -742,11 +733,11 @@ public class PeakPicker {
                 sign = -1;
                 checkValue *= -1;
             }
-            if (checkForPeak(checkValue, checkPoint, dimOrder, findMax, peakPickPar.fixedPick,
+            if (checkForPeak(checkValue, checkPoint, peakToData, findMax, peakPickPar.fixedPick,
                     peakPickPar.regionWidth, peakPickPar.nPeakDim, sign)) {
                 boolean aboveNoise = true;
                 if (peakPickPar.useNoise && (peakPickPar.noiseLimit > 0.001)) {
-                    double noiseRatio = dataset.checkNoiseLevel(checkValue, checkPoint, dimOrder);
+                    double noiseRatio = dataset.checkNoiseLevel(checkValue, checkPoint, peakToData);
                     if (noiseRatio < peakPickPar.noiseLimit) {
                         aboveNoise = false;
                     }
@@ -764,7 +755,7 @@ public class PeakPicker {
                     }
                     if (!samePeak) {
                         Peak peak = new Peak(peakList, peakPickPar.nPeakDim);
-                        if (measurePeak(peakPickPar.level, checkPoint, peakPickPar.cpt, dimOrder, dataToPk,
+                        if (measurePeak(peakPickPar.level, checkPoint, peakPickPar.cpt, peakToData, dataToPeak,
                                 peakPickPar.fixedPick, peak,
                                 peakPickPar.nPeakDim, peakPickPar.sDevN, sign, measurePeak)) {
                             Peak pickedPeak = peakList.addPeak(peak);
@@ -801,7 +792,7 @@ public class PeakPicker {
             int[] dimMap = new int[nDataDim];
             for (int i = 0; i < nDataDim; i++) {
                 dimMap[i] = -1;
-                int j = peakPickPar.dim[i];
+                int j = peakPickPar.peakToData[i];
                 int[] pDims = peakList.getDimsForDataset(dataset);
                 for (int k = 0; k < pDims.length; k++) {
                     if (pDims[k] == j) {
@@ -815,7 +806,7 @@ public class PeakPicker {
             Optional<Peak> firstPeak = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, null, dimMap)).findFirst();
+                    .filter(peak -> peak.inRegion(limits, null, null, dimMap)).findFirst();
             foundAny = firstPeak.isPresent();
         }
         return foundAny;
@@ -831,7 +822,7 @@ public class PeakPicker {
         if ((peakList != null) && (peakList.peaks() != null)) {
             double[][] limits = new double[nDataDim][2];
             for (int i = 0; i < nDataDim; i++) {
-                int j = peakPickPar.dim[i];
+                int j = peakPickPar.peakToData[i];
                 limits[i][1] = peakPickPar.theFile.pointToPPM(j, peakPickPar.pt[i][0]);
                 limits[i][0] = peakPickPar.theFile.pointToPPM(j, peakPickPar.pt[i][1]);
             }
@@ -839,7 +830,7 @@ public class PeakPicker {
                     .stream()
                     .parallel()
                     .filter(p -> !p.isDeleted())
-                    .filter(p -> p.inRegion(limits, null, peakPickPar.dim)).toList();
+                    .filter(p -> p.inRegion(limits, null, null, peakPickPar.peakToData)).toList();
         }
         return peaks;
     }
@@ -848,11 +839,10 @@ public class PeakPicker {
         return lastPeakPicked;
     }
 
-    public static double calculateThreshold(Dataset dataset) {
-        boolean scaleToLargest = true;
+    public static double calculateThreshold(Dataset dataset, boolean scaleToLargest) {
         int nWin = 32;
-        double maxRatio = 20.0;
-        double sdRatio = 30.0;
+        double maxRatio = 50.0;
+        double sdRatio = 5.0;
         return calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
     }
 
@@ -885,7 +875,6 @@ public class PeakPicker {
             int nMax = maxs.size();
             double max = maxs.get(nMax - 3);
 
-            double min = maxs.get(0);
             threshold = max / maxRatio;
         }
         if (threshold < sdRatio * sDev) {

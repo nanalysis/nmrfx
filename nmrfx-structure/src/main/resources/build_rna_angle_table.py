@@ -69,9 +69,9 @@ def scanPDB(fileName, aNames, allMode, vienna=None):
     if vienna == None:
         vienna,dotBracketDict = measure.rnaDotBracket(mol)
     ssGen = SSGen(mol, vienna)
-    ssGen.secondaryStructGen()
+    ssGen.analyze()
     allShifts=[]
-    for ss in ssGen.structures:
+    for ss in ssGen.structures():
         start = 0
         residues = ss.getResidues()
         for residue in residues:

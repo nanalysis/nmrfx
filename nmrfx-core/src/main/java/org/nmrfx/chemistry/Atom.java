@@ -111,6 +111,8 @@ public class Atom implements IAtom, Comparable<Atom> {
     public float value = 0.0f;
     private boolean active = true;
     public ArrayList<AtomEquivalency> equivAtoms = null;
+
+    private Point3 flatPoint;
     public SpatialSet spatialSet;
     AtomResonance resonance = null;
     public int irpIndex = 0;
@@ -707,6 +709,13 @@ public class Atom implements IAtom, Comparable<Atom> {
         return list;
     }
 
+    public Point3 getFlatPoint(int i) {
+        return flatPoint == null  || i != 0 ? getPoint() : flatPoint;
+    }
+
+    public void setFlatPoint(Point3 pt) {
+        flatPoint = new Point3(pt);
+    }
     public void setPoint(int i, Point3 pt) {
         spatialSet.setPoint(i, pt);
     }
@@ -1862,10 +1871,10 @@ public class Atom implements IAtom, Comparable<Atom> {
                 if (entity1 instanceof Residue) {
                     Residue residue1 = (Residue) entity1;
                     Polymer polymer = residue1.polymer;
-                    Residue residue2 = (Residue) entity2;
+                    Compound compound2 = (Compound) entity2;
 
                     AtomSpecifier atomSp1 = new AtomSpecifier(residue1.getNumber(), residue1.getName(), atom1.getName());
-                    AtomSpecifier atomSp2 = new AtomSpecifier(residue2.getNumber(), residue2.getName(), atom2.getName());
+                    AtomSpecifier atomSp2 = new AtomSpecifier(compound2.getNumber(), compound2.getName(), atom2.getName());
                     BondSpecifier bondSp = new BondSpecifier(atomSp1, atomSp2, order);
                     polymer.addedBonds.add(bondSp);
                 }
@@ -1881,10 +1890,6 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public String getElementName() {
         return AtomProperty.getElementName(aNum);
-    }
-
-    public byte getElementNumber() {
-        return getElementNumber(name);
     }
 
     public static byte getElementNumber(String elemName) {
@@ -1980,13 +1985,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             boolean isRNA = polymer.isRNA();
             String fullName = (String) name;
             Character nameBase = fullName.charAt(0);
-            if (isRNA) {
-                return nameBase.equals('X');
-            } else if (isProtein) {
-                return nameBase.equals('X');
-            } else {
-                return false;
-            }
+            return nameBase.equals('X');
         } else {
             return false;
         }
@@ -2344,6 +2343,9 @@ public class Atom implements IAtom, Comparable<Atom> {
         return name.charAt(nameLen - 1) == 'p';
     }
 
+    public boolean isConnector() {
+        return type.equals("XX");
+    }
     @Override
     public Point2d getPoint2d() {
         return new Point2d(getPoint().getX(), getPoint().getY());

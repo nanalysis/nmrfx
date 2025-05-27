@@ -13,6 +13,7 @@
         <Accordion fx:id="toolAccordion">
             <panes>
                 <TitledPane fx:id="peakPickPane" text="PeakPicker"/>
+                <TitledPane fx:id="libraryPane" text="Chemical Library"/>
                 <TitledPane fx:id="annoPane" text="Annotations"/>
             </panes>
         </Accordion>

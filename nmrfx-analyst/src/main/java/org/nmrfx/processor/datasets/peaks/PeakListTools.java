@@ -32,6 +32,7 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.datasets.RegionData;
+import org.nmrfx.math.BipartiteMatcher;
 import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
@@ -853,6 +854,52 @@ public class PeakListTools {
             }
         }
     }
+    public static void clusterPeakLists(List<PeakList> peakLists, int iDim, double limit) {
+        List<Peak> peaks = new ArrayList<>();
+        for (PeakList peakList : peakLists) {
+            if (peakList.getSpectralDim(iDim).getNucleus().equalsIgnoreCase("1H")) {
+                peakList.compress();
+                peakList.reIndex();
+                peaks.addAll(peakList.peaks());
+            }
+        }
+        int n = peaks.size();
+
+        double[][] proximity = new double[n][n];
+        int iA = 0;
+        for (Peak peakA : peaks) {
+            double shiftA = peakA.getPeakDim(iDim).getChemShiftValue();
+            int iB = 0;
+            for (Peak peakB : peaks) {
+                double shiftB = peakB.getPeakDim(iDim).getChemShiftValue();
+                double dis = Math.abs(shiftA - shiftB);
+                proximity[iA][iB] = dis;
+                iB++;
+            }
+            iA++;
+        }
+
+        CompleteLinkage linkage = new CompleteLinkage(proximity);
+        HierarchicalClustering clusterer = new HierarchicalClustering(linkage);
+        int[] partition = clusterer.partition(limit);
+        int nClusters = 0;
+        for (int i = 0; i < n; i++) {
+            if (partition[i] > nClusters) {
+                nClusters = partition[i];
+            }
+        }
+        nClusters++;
+        Peak[] roots = new Peak[nClusters];
+        for (int i = 0; i < n; i++) {
+            int cluster = partition[i];
+            if (roots[cluster] == null) {
+                roots[cluster] = peaks.get(i);
+            } else {
+                PeakList.linkPeaks(roots[cluster], iDim, peaks.get(i), iDim);
+            }
+        }
+    }
+
 
     // FIXME should check to see that nucleus is same
     // FIXME should check to see that nucleus is same
@@ -1005,7 +1052,13 @@ public class PeakListTools {
             quantifyPeaks(peakList, dataset, f, mode);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = nDataDim - 1;
-            scanDim = 1;
+            int scanSize = dataset.getSizeReal(scanDim);
+            for (int j = 0; j < nDataDim; j++) {
+                if (dataset.getSizeReal(j) < scanSize) {
+                    scanDim = j;
+                    scanSize = dataset.getSizeReal(j);
+                }
+            }
             int nPlanes = dataset.getSizeTotal(scanDim);
             quantifyPeaks(peakList, dataset, f, mode, nPlanes);
         } else if (nDim > nDataDim) {
@@ -1510,6 +1563,10 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
         if (peaks.isEmpty()) {
             return peaksResult;
         }
+        boolean noIntensities = peakList.peaks().stream().filter(peak -> Math.abs(peak.getIntensity()) > 1.0e-12).findFirst().isEmpty();
+        if (noIntensities) {
+            quantifyPeaks(peakList, "center");
+        }
         boolean fitC = false;
         int nPeakDim = peakList.getNDim();
         int dataDim = theFile.getNDim();
@@ -1833,9 +1890,12 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
             int offset = p2[centerRef.dim][0];
             values[centerRef.index] += offset;
         }
+        Double noise = theFile.getNoiseLevel();
+
         if (fitPars.updatePeaks()) {
             int index = 1;
             int jPeak = 0;
+            double[][] measures = null;
             for (Peak peak : peaks) {
                 peak.setIntensity((float) values[index++]);
                 if ((delays != null) && (delays.length > 0)) {
@@ -1849,7 +1909,7 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                         }
                     }
                 } else if (nPlanes > 1) {
-                    double[][] measures = new double[2][nPlanes];
+                    measures = new double[2][nPlanes];
                     index--;
                     for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
                         measures[0][iPlane] = values[index++];
@@ -1857,18 +1917,35 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                     peak.setMeasures(measures);
                 }
                 double lineWidthAll = 1.0;
+                int nPoints = 1;
                 for (int pkDim = 0; pkDim < nPeakDim; pkDim++) {
                     int dDim = pdim[pkDim];
                     PeakDim peakDim = peak.getPeakDim(pkDim);
-                    double lineWidth = theFile.ptWidthToPPM(dDim, values[index]);
-                    double lineWidthHz = values[index++];
-                    peakDim.setLineWidthValue((float) lineWidth);
+                    double lineWidthPt = values[index++];
+                    nPoints *= lineWidthPt;
+                    double lineWidthPPM = theFile.ptWidthToPPM(dDim, lineWidthPt);
+                    double lineWidthHz = theFile.ptWidthToHz(dDim, lineWidthPt);
+                    peakDim.setLineWidthValue((float) lineWidthPPM);
                     lineWidthAll *= lineWidthHz;
-                    peakDim.setBoundsValue((float) (lineWidth * 1.5));
+                    peakDim.setBoundsValue((float) (lineWidthPPM * 1.5));
                     peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(dDim, values[index++]));
                     int nZZ = zzMode ? 3 : 0;
                     double shapeFactor = values[values.length - nZZ - nPeakDim + pkDim];
                     peakDim.setShapeFactorValue((float) shapeFactor);
+                }
+                if (nPlanes > 1) {
+                    double err;
+                    if ((noise != null) && (measures != null)) {
+                        if (nPeakDim == 2) {
+                            nPoints = (int) (((double) nPoints / 4.0) * Math.PI);  // area of an ellipse
+                        }
+                        err = nPoints < 2 ? noise.floatValue() : Math.sqrt(nPoints) * noise.floatValue();
+                        for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
+                            measures[1][iPlane] = err;
+                        }
+                        peak.setMeasures(measures);
+
+                    }
                 }
                 peak.setVolume1((float) (peak.getIntensity() * lineWidthAll));
                 jPeak++;

@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
+import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.NEW;
+
 @PythonAPI("dscript")
 public class PeakPickParameters {
 
@@ -34,7 +36,7 @@ public class PeakPickParameters {
     public PeakList filterList = null;
     public boolean filter = false;
     public double filterWidth;
-    public String mode = "new";
+    public PickMode mode = NEW;
     public String region = "box";
     public boolean useCrossHairs;
     public boolean refineLS = false;
@@ -43,7 +45,7 @@ public class PeakPickParameters {
     public int[][] pt = null;
     public int[][] ptMax;
     public double[] cpt;
-    public int[] dim;
+    public int[] peakToData;
     public Double level = null;
     public double regionWidth = 0;
     public int thickness = 0;
@@ -56,6 +58,18 @@ public class PeakPickParameters {
 
     public boolean useNoise = false;
 
+    public enum PickMode {
+        NEW,
+        APPEND,
+        APPENDIF,
+        APPENDREGION,
+        REPLACE,
+        REPLACEIF;
+
+        public boolean isAppend() {
+            return this == APPEND || this == APPENDIF || this == APPENDREGION;
+        }
+    }
     public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
         this.listName = listName;
@@ -63,7 +77,7 @@ public class PeakPickParameters {
     public PeakPickParameters() {
     }
 
-    public PeakPickParameters mode(String mode) {
+    public PeakPickParameters mode(PickMode mode) {
         this.mode = mode;
         return this;
     }
@@ -122,14 +136,14 @@ public class PeakPickParameters {
         cpt = new double[dataDim];
 
         ptMax = new int[dataDim][2];
-        dim = new int[dataDim];
+        peakToData = new int[dataDim];
 
         for (int i = 0; i < dataDim; i++) {
             pt[i][0] = 0;
             pt[i][1] = theFile.getSizeReal(i) - 1;
             ptMax[i][0] = 0;
             ptMax[i][1] = theFile.getSizeReal(i) - 1;
-            dim[i] = i;
+            peakToData[i] = i;
             cpt[i] = (pt[i][0] + pt[i][1]) / 2.0;
         }
     }
@@ -200,7 +214,7 @@ public class PeakPickParameters {
                     nDims++;
                 }
 
-                dimSizes[i] = new DimSizes(i, dimSize);
+                dimSizes[i] = new DimSizes(i, dimSize, theFile.getFreqDomain(i));
                 if (dimSize > maxSize) {
                     maxSize = dimSize;
                 }
@@ -209,15 +223,19 @@ public class PeakPickParameters {
             if (((theFile.getNFreqDims() == 0) || (theFile.getNFreqDims() == dataDim)) && (nDims != 0)) {
                 nPeakDim = nDims;
             }
-            int[][] holdPt = new int[dataDim][2];
+            int[][] holdPt = new int[dimSizes.length][2];
+            double[] holdCtr = new double[dimSizes.length];
             for (int i = 0; i < dimSizes.length; i++) {
                 holdPt[i][0] = pt[i][0];
                 holdPt[i][1] = pt[i][1];
+                holdCtr[i] = cpt[i];
+
             }
             for (int i = 0; i < dimSizes.length; i++) {
-                dim[i] = dimSizes[i].iDim;
+                peakToData[i] = dimSizes[i].iDim;
                 pt[i][0] = holdPt[dimSizes[i].iDim][0];
                 pt[i][1] = holdPt[dimSizes[i].iDim][1];
+                cpt[i] = holdCtr[dimSizes[i].iDim];
             }
         }
 
@@ -233,20 +251,45 @@ public class PeakPickParameters {
         }
     }
 
+    public  void swapDims(int[][] currentPt, double[] ctr, int[] newPeaktoData) {
+        int[][] holdPt = new int[currentPt.length][2];
+        double[] holdCtr = new double[currentPt.length];
+        int[] newDataToPeak = new int[currentPt.length];
+        for (int i = 0; i < currentPt.length; i++) {
+            holdPt[i][0] = currentPt[i][0];
+            holdPt[i][1] = currentPt[i][1];
+            holdCtr[i] = ctr[i];
+            newDataToPeak[newPeaktoData[i]] = i;
+        }
+        for (int i = 0; i < currentPt.length; i++) {
+            int newPeakDim = newDataToPeak[peakToData[i]];
+            currentPt[newPeakDim][0] = holdPt[i][0];
+            currentPt[newPeakDim][1] = holdPt[i][1];
+            ctr[newPeakDim] = holdCtr[i];
+        }
+    }
+
     private static class DimSizes implements Comparable {
 
         final int iDim;
         final int dimSize;
 
-        DimSizes(final int iDim, final int dimSize) {
+        final boolean freqDim;
+
+        DimSizes(final int iDim, final int dimSize, boolean freqDim) {
             this.iDim = iDim;
             this.dimSize = dimSize;
+            this.freqDim = freqDim;
         }
 
         @Override
         public int compareTo(Object o2) {
             DimSizes d2 = (DimSizes) o2;
-            return Integer.compare(d2.dimSize, dimSize);
+            if (d2.freqDim && !freqDim) {
+                return 1;
+            } else {
+                return Integer.compare(iDim, d2.iDim);
+            }
         }
     }
 }

@@ -38,16 +38,21 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.SegmentedButton;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.tools.SliderLayout;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -89,7 +94,7 @@ public class SpectrumStatusBar {
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     private final ToggleButton phaserButton = new ToggleButton("Phasing");
     private final CheckBox sliceStatusCheckBox = new CheckBox("Slices");
-
+    List<Control> extractControls = new ArrayList<>();
 
 
     private boolean arrayMode = false;
@@ -200,6 +205,97 @@ public class SpectrumStatusBar {
                     crossText[index][orientationIndex].setStyle("-fx-text-inner-color: black;");
                 }
             }
+        }
+    }
+
+    private void setExtractSpinner(Spinner<Integer> spinner, Dataset dataset, int iDim) {
+        Vec vec = dataset.getVec();
+        int[][] pt = vec.getPt();
+        int size = dataset.getSizeTotal(iDim);
+        SpinnerValueFactory.IntegerSpinnerValueFactory factory = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinner.getValueFactory();
+        factory.setMax(size -1);
+        factory.setValue(pt[iDim][0]);
+    }
+
+    public void extractionSliceTools() {
+        PolyChart chart = getController().getActiveChart();
+        for (Control control : extractControls) {
+            secondaryToolbar.getItems().remove(control);
+        }
+        extractControls.clear();
+        List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
+        if (datasetAttributes.isEmpty()) {
+            return;
+        }
+        Dataset dataset = datasetAttributes.getLast().getDataset();
+        if ((dataset != null) && (dataset.getVec()) != null) {
+            Vec vec = dataset.getVec();
+            int[][] pt = vec.getPt();
+            if (pt == null) {
+                return;
+            }
+            int nDim = pt.length;
+            var sourceOpt = dataset.getExtractSource();
+            String[] labels = {"X","Y","Z"};
+            if (sourceOpt.isPresent()) {
+                Spinner<Integer> sliceIndexSpinner = new Spinner<>(0,datasetAttributes.size() - 1, datasetAttributes.size() - 1);
+                sliceIndexSpinner.getValueFactory().valueProperty().addListener(e -> updateIndex(chart, sliceIndexSpinner));
+                sliceIndexSpinner.getEditor().setPrefWidth(45);
+                sliceIndexSpinner.setPrefWidth(65);
+
+                Label indexLabel = new Label("Dataset Index:");
+                secondaryToolbar.getItems().add(indexLabel);
+                secondaryToolbar.getItems().add(sliceIndexSpinner);
+                extractControls.add(indexLabel);
+                extractControls.add(sliceIndexSpinner);
+                for (int i = 1; i < nDim; i++) {
+                    int size = sourceOpt.get().getSizeTotal(i);
+                    Spinner<Integer> spinner = new Spinner(0, size - 1, pt[i][0]);
+                    spinner.setEditable(true);
+                    spinner.getEditor().setPrefWidth(45);
+                    spinner.setPrefWidth(65);
+                    int jDim = i;
+                    ChangeListener<Integer> extractSliceListener = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
+                        if (newValue != null && !newValue.equals(oldValue)) {
+                            updateExtractSlice(chart, sliceIndexSpinner, jDim, newValue);
+                        }
+                    };
+
+                    spinner.getValueFactory().valueProperty().addListener(extractSliceListener);
+                    Label dimLabel = new Label(labels[i]);
+                    secondaryToolbar.getItems().add(dimLabel);
+                    secondaryToolbar.getItems().add(spinner);
+                    extractControls.add(spinner);
+                    extractControls.add(dimLabel);
+                }
+            }
+        }
+    }
+
+    void updateIndex(PolyChart chart, Spinner<Integer> indexSpinner) {
+        List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
+        DatasetAttributes dataAttr = datasetAttributes.get(indexSpinner.getValue());
+        Dataset dataset = dataAttr.getDataset();
+        int iDim = 0;
+        for (Control control : extractControls) {
+            if (control instanceof Spinner spinner) {
+                if (iDim > 0) {
+                    setExtractSpinner((Spinner<Integer>) spinner, dataset, iDim);
+                }
+                iDim++;
+            }
+        }
+    }
+
+    void updateExtractSlice(PolyChart chart, Spinner<Integer> indexSpinner, int iDim, int slicePos) {
+        List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
+        DatasetAttributes dataAttr = datasetAttributes.get(indexSpinner.getValue());
+        Dataset dataset = dataAttr.getDataset();
+        try {
+            dataset.reloadVector(iDim, slicePos);
+            chart.refresh();
+        } catch (IOException e) {
+            log.error("Error with slice",e);
         }
     }
 
@@ -316,6 +412,32 @@ public class SpectrumStatusBar {
         specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem);
         addToToolMenu(specToolMenu);
     }
+
+    public void updateLayoutMenu(Menu menu) {
+        var names = SliderLayout.getLayoutNames();
+        menu.getItems().clear();
+        MenuItem loadLayoutsItem = new MenuItem("Open...");
+        menu.getItems().add(loadLayoutsItem);
+        loadLayoutsItem.setOnAction(e -> {SliderLayout.loadLayoutFromFile();
+            updateLayoutMenu(menu);
+        });
+        for (String name : names) {
+            MenuItem item = new MenuItem(name);
+            menu.getItems().add(item);
+            item.setOnAction(e -> loadLayout(name));
+        }
+    }
+
+    private void loadLayout(String name) {
+        SliderLayout sliderLayout = new SliderLayout();
+        try {
+            sliderLayout.apply(name, controller);
+        } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
+    }
+
 
     private StackPane makeIcon(int i, Orientation orientation, boolean boundMode) {
         StackPane stackPane = new StackPane();
@@ -717,6 +839,7 @@ public class SpectrumStatusBar {
 
         nodes.add(ToolBarUtils.makeFiller(10));
         secondaryToolbar.getItems().setAll(nodes);
+        extractionSliceTools();
     }
 
     public boolean isComplex() {
@@ -788,6 +911,7 @@ public class SpectrumStatusBar {
      */
     private void displayModeComboBoxSelectionChanged() {
         PolyChart chart = controller.getActiveChart();
+        boolean autoScale = true;
         OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
         if (maxNDim.isEmpty()) {
             log.warn("Unable to update display mode. No dimensions set.");
@@ -820,6 +944,7 @@ public class SpectrumStatusBar {
         } else if (selected == DisplayMode.CONTOURS) {
             chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
             chart.getDatasetAttributes().get(0).drawList.clear();
+            autoScale = !chart.getDatasetAttributes().get(0).getHasLevel();
             chart.updateProjections();
             chart.updateProjectionScale();
             int nDim = maxNDim.getAsInt();
@@ -827,7 +952,9 @@ public class SpectrumStatusBar {
         }
         chart.updateAxisType(true);
         chart.full();
-        chart.autoScale();
+        if (autoScale) {
+            chart.autoScale();
+        }
     }
 
     private boolean isStacked() {

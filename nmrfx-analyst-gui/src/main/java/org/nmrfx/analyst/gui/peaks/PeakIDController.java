@@ -3,10 +3,7 @@ package org.nmrfx.analyst.gui.peaks;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import org.controlsfx.control.tableview2.TableView2;
@@ -24,6 +21,7 @@ import org.nmrfx.structure.chemistry.IdPeak;
 import org.nmrfx.structure.chemistry.IdResult;
 import org.nmrfx.structure.chemistry.MatchCriteria;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -48,6 +46,8 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
 
     IdPeak idPeak;
 
+    ChoiceBox<Integer> ppmSetChoice;
+    ChoiceBox<Integer> refSetChoice;
     MatchCriteria[] matchCriteria;
 
     @Override
@@ -78,10 +78,21 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
 
     void initMenuBar() {
         peakNavigator = PeakNavigator.create(this).initialize(menuBar);
-        peakNavigator.setPeakList();
+        ppmSetChoice =  new ChoiceBox<>();
+        ppmSetChoice.setPrefWidth(40);
+        ppmSetChoice.getItems().addAll(-1, 0, 1, 2, 3, 4);
+        refSetChoice =  new ChoiceBox<>();
+        refSetChoice.setPrefWidth(40);
+        refSetChoice.getItems().addAll(-1, 0, 1, 2, 3, 4);
+        ppmSetChoice.setValue(0);
+        refSetChoice.setValue(-1);
         Button button = new Button("Assign");
         button.setOnAction(e -> assignPeaks());
-        menuBar.getItems().add(button);
+        Label useLabel = new Label("Use:");
+        Label ppmLabel = new Label("Assigned");
+        Label refLabel = new Label("Ref.");
+        menuBar.getItems().addAll(button, useLabel, ppmLabel, ppmSetChoice, refLabel, refSetChoice);
+        peakNavigator.setPeakList();
 
     }
 
@@ -95,7 +106,7 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
         Peak peak = peakNavigator.getPeak();
         if (peak != null) {
             PeakList peakList = peak.getPeakList();
-            for (int iDim = 0;iDim<peakList.getNDim();iDim++) {
+            for (int iDim = 0; iDim < peakList.getNDim(); iDim++) {
                 PeakDim peakDim = peak.getPeakDim(iDim);
                 List<String> labels = new ArrayList<>();
                 for (var idResult : items) {
@@ -107,12 +118,17 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
             }
         }
     }
+
     public void gotoPeak(Peak peak) {
         peakNavigator.setPeak(peak);
     }
+
     @Override
     public void refreshPeakView(Peak peak) {
+        tableView.getItems().clear();
         if ((peak != null) && (idPeak != null)) {
+            idPeak.setPPMSet(ppmSetChoice.getValue());
+            idPeak.setRefSet(refSetChoice.getValue());
             if (peak.getPeakList() != activePeakList) {
                 refreshPeakListView(peak.getPeakList());
             }
@@ -120,28 +136,34 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
             for (int i = 0; i < peak.getPeakList().getNDim(); i++) {
                 matchCriteria[i].setPPM(peak);
             }
-            List<SpatialSet>[] matchList = idPeak.scan(matchCriteria);
-            List<IdResult> results = idPeak.getIdResults(matchList, matchCriteria);
-            updateContributions(results);
-
-            tableView.getItems().clear();
-            tableView.getItems().addAll(results);
-            tableView.sort();
+            List<SpatialSet>[] matchList = null;
+            try {
+                matchList = idPeak.scan(matchCriteria);
+            } catch (IllegalArgumentException illegalArgumentException) {
+                GUIUtils.warn("Peak ID", "No atoms with chemical shifts match pattern");
+            }
+            if (matchList != null) {
+                List<IdResult> results = idPeak.getIdResults(matchList, matchCriteria);
+                updateContributions(results);
+                tableView.getItems().addAll(results);
+                tableView.sort();
+            }
             originalNavigator.setPeak(peak);
         }
     }
 
     void updateContributions(List<IdResult> idResults) {
         double sum = 0.0;
-        for (var result: idResults) {
+        for (var result : idResults) {
             sum += result.disExp();
         }
-        for (var result: idResults) {
+        for (var result : idResults) {
             double contrib = sum > 0.0 ? result.disExp() / sum : 0.0;
             result.setContrib(contrib);
         }
 
     }
+
     @Override
     public void refreshPeakView() {
 
@@ -152,6 +174,8 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
         if (peakList != null) {
             updateColumns(peakList.getNDim());
             idPeak = new IdPeak();
+            idPeak.setPPMSet(ppmSetChoice.getValue());
+            idPeak.setRefSet(refSetChoice.getValue());
             matchCriteria = idPeak.setup(peakList, Molecule.getActive());
             idPeak.clearAtomList();
             idPeak.getAtomsWithPPMs();
@@ -175,7 +199,6 @@ public class PeakIDController implements Initializable, StageBasedController, Pe
         tableView.getItems().clear();
         tableView.getColumns().clear();
         currentDims = nDim;
-
 
 
         for (int i = 0; i < nDim; i++) {

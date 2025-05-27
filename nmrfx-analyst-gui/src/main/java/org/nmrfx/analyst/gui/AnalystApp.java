@@ -311,7 +311,6 @@ public class AnalystApp extends Application {
         boolean projectChanged = ProjectBase.getActive().projectChanged();
         if (!projectChanged || GUIUtils.affirm("Project changed, really quit?")) {
             saveDatasets();
-            waitForCommit();
             Platform.exit();
             System.exit(0);
         }
@@ -360,15 +359,18 @@ public class AnalystApp extends Application {
     public void waitForCommit() {
         int nTries = 30;
         int iTry = 0;
-        while (GitManager.isCommitting() && (iTry < nTries)) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ex) {
-                break;
+        GUIProject guiProject = GUIProject.getActive();
+        if (guiProject != null) {
+            GitManager gitManager = guiProject.getGitManager();
+            while (gitManager.isCommitting() && (iTry < nTries)) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    break;
+                }
+                iTry++;
             }
-            iTry++;
         }
-
     }
 
     private void addAdvancedTools() {
@@ -384,6 +386,9 @@ public class AnalystApp extends Application {
         compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
 
         statusBar.addToToolMenu("Spectrum Tools", compareMenuItem);
+
+        Menu layoutMenu = new Menu("Layouts");
+        statusBar.addToToolMenu(layoutMenu);
 
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
@@ -402,20 +407,6 @@ public class AnalystApp extends Application {
 
         statusBar.addToToolMenu(peakToolMenu);
 
-
-        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
-        spectrumLibraryMenuItem.disableProperty().bind(getFXMLControllerManager().activeControllerProperty().isNull());
-        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
-
-        MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
-        spectrumFitLibraryMenuItem.disableProperty().bind(getFXMLControllerManager().activeControllerProperty().isNull());
-        spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
-
-        Menu libraryMenu = new Menu("Library");
-        libraryMenu.getItems().addAll(spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
-        statusBar.addToToolMenu(libraryMenu);
-
-
         MenuItem scannerToolItem = new MenuItem("Show Scanner");
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
@@ -430,6 +421,8 @@ public class AnalystApp extends Application {
         MenuItem stripsToolItem = new MenuItem("Show Strips Tool");
         proteinMenu.getItems().add(stripsToolItem);
         stripsToolItem.setOnAction(e -> controller.showStripsBar());
+
+        statusBar.updateLayoutMenu(layoutMenu);
 
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.STATUS_BAR_TOOLS, statusBar);
 
@@ -468,32 +461,6 @@ public class AnalystApp extends Application {
         }
     }
 
-    public void showSpectrumLibrary() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(SimMolController.class)) {
-            ToolBar navBar = new ToolBar();
-            controller.getBottomBox().getChildren().add(navBar);
-            SimMolController simMol = new SimMolController(controller, this::removeMolSim);
-            simMol.initialize(navBar);
-            controller.addTool(simMol);
-        }
-    }
-
-    public void showSpectrumFitter() {
-        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        if (!controller.containsTool(SimFitMolController.class)) {
-            VBox vBox = new VBox();
-            controller.getBottomBox().getChildren().add(vBox);
-            ToolBar navBar = new ToolBar();
-            ToolBar fitBar = new ToolBar();
-            vBox.getChildren().add(navBar);
-            vBox.getChildren().add(fitBar);
-            SimFitMolController simFit = new SimFitMolController(controller, this::removeMolFitter);
-            simFit.initialize(vBox, navBar, fitBar);
-            controller.addTool(simFit);
-        }
-    }
-
     public void showScannerTool() {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
         controller.showScannerMenus();
@@ -518,21 +485,21 @@ public class AnalystApp extends Application {
         peakSlider.removeListeners();
     }
 
-    public void removeMolSim(SimMolController simMolController) {
+    public void removeRunaboutTool(RunAboutGUI runaboutTool) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(SimMolController.class);
-        controller.removeBottomBoxNode(simMolController.getToolBar());
+        controller.removeTool(RunAboutGUI.class);
+        controller.removeBottomBoxNode(runaboutTool.getTabPane());
     }
 
-    public void removeMolFitter(SimFitMolController simMolController) {
+    public void removeStripsBar(StripController stripsController) {
         FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
-        controller.removeTool(SimFitMolController.class);
-        controller.removeBottomBoxNode(simMolController.getBox());
+        controller.removeTool(StripController.class);
+        controller.removeBottomBoxNode(stripsController.getBox());
     }
 
-    public void readMolecule(String type) {
+    public void readMolecule() {
         if (molMenuActions != null) {
-            molMenuActions.readMolecule(type);
+            molMenuActions.readMolecule();
         }
     }
 
@@ -577,6 +544,7 @@ public class AnalystApp extends Application {
     public DatasetBrowserController getOrCreateDatasetBrowserController() {
         if (datasetBrowserController == null) {
             datasetBrowserController = DatasetBrowserController.create();
+            datasetBrowserController.setPosition();
         }
         return datasetBrowserController;
     }
@@ -589,6 +557,9 @@ public class AnalystApp extends Application {
         List<FXMLController> controllers = new ArrayList<>(getFXMLControllerManager().getControllers());
         // Don't close the first controller that matches with the main stage, Note this first controller is not
         // necessarily the active controller
+        for (FXMLController controller : controllers) {
+            controller.removeRunaboutTool();
+        }
         for (int index = 1; index < controllers.size(); index++) {
             getFXMLControllerManager().closeController(controllers.get(index));
         }
@@ -602,6 +573,12 @@ public class AnalystApp extends Application {
                 stage.hide();
                 removeStage(stage);
             }
+        }
+        FXMLController controller = getFXMLControllerManager().getOrCreateActiveController();
+        controller.setNCharts(1);
+        PolyChart chart = PolyChartManager.getInstance().getActiveChart();
+        if (chart != null) {
+            chart.clearOnRegionAdded();
         }
     }
 

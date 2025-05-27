@@ -32,7 +32,7 @@ public class IdPeak {
     List<SpatialSet>[] protonList = new ArrayList[2];
     double keepThresh = 10000.0;
     double disThresh = 10.0;
-    boolean useRef = false;
+    int refSet = -1;
     int ppmSet = 0;
 
     public void clearAtomList() {
@@ -51,8 +51,8 @@ public class IdPeak {
         disThresh = value;
     }
 
-    public void setKeepThresh(boolean value) {
-        useRef = value;
+    public void setRefSet(int value) {
+        refSet = value;
     }
 
     public MatchCriteria[] setup(PeakList peakList, Molecule molecule) {
@@ -75,10 +75,10 @@ public class IdPeak {
                     if (Util.stringMatch(spatialSet.atom.name.toLowerCase(),
                             matchCriteria[j].getAtomPat(k))) {
                         atomPatMatch = true;
-                        PPMv ppmv = spatialSet.getPPM(ppmSet);
+                        PPMv ppmv = ppmSet >= 0 ? spatialSet.getPPM(ppmSet) : null;
                         double tol = matchCriteria[j].getTol();
-                        if ((ppmv == null) && useRef) {
-                            ppmv = spatialSet.getRefPPM();
+                        if ((ppmv == null) && (refSet >= 0)) {
+                            ppmv = spatialSet.getRefPPM(refSet);
                             if (ppmv != null) {
                                 tol = ppmv.getError() * 3;
                             }
@@ -121,10 +121,10 @@ public class IdPeak {
 
     boolean checkPPM(SpatialSet sSet, MatchCriteria mC, int iFold) {
         boolean value = false;
-        PPMv ppmv = sSet.getPPM(ppmSet);
+        PPMv ppmv = ppmSet >= 0 ? sSet.getPPM(ppmSet) : null;
         double tol = mC.getTol();
-        if ((ppmv == null) && useRef) {
-            ppmv = sSet.getRefPPM();
+        if ((ppmv == null) && (refSet >= 0)) {
+            ppmv = sSet.getRefPPM(refSet);
             if (ppmv != null) {
                 tol = ppmv.getError();
             }
@@ -251,9 +251,9 @@ public class IdPeak {
             Double ppm2 = null;
             int result;
             if (o1 instanceof SpatialSet a1) {
-                PPMv ppmv1 = a1.getPPM(ppmSet);
-                if ((ppmv1 == null) && useRef) {
-                    ppmv1 = a1.getRefPPM();
+                PPMv ppmv1 = ppmSet >= 0 ? a1.getPPM(ppmSet) : null;
+                if ((ppmv1 == null) && (refSet >= 0)) {
+                    ppmv1 = a1.getRefPPM(refSet);
                 }
                 if (ppmv1 != null) {
                     ppm1 = ppmv1.getValue();
@@ -262,9 +262,9 @@ public class IdPeak {
                 ppm1 = ppm;
             }
             if (o2 instanceof SpatialSet a2) {
-                PPMv ppmv2 = a2.getPPM(ppmSet);
-                if ((ppmv2 == null) && useRef) {
-                    ppmv2 = a2.getRefPPM();
+                PPMv ppmv2 = ppmSet >= 0 ? a2.getPPM(ppmSet) : null;
+                if ((ppmv2 == null) && (refSet >= 0)) {
+                    ppmv2 = a2.getRefPPM(refSet);
                 }
                 if (ppmv2 != null) {
                     ppm2 = ppmv2.getValue();
@@ -296,9 +296,9 @@ public class IdPeak {
                     }
                     SpatialSet spatialSet = atom.spatialSet;
                     if (spatialSet != null) {
-                        PPMv ppmv = spatialSet.getPPM(ppmSet);
-                        if ((ppmv == null) && useRef) {
-                            ppmv = spatialSet.getRefPPM();
+                        PPMv ppmv = ppmSet >= 0 ? spatialSet.getPPM(ppmSet) : null;
+                        if ((ppmv == null) && (refSet >= 0)) {
+                            ppmv = spatialSet.getRefPPM(refSet);
                         }
 
                         if (ppmv != null) {
@@ -346,9 +346,9 @@ public class IdPeak {
                         if (atomMatch) {
                             SpatialSet spatialSet = atom.spatialSet;
                             if (spatialSet != null) {
-                                PPMv ppmv = spatialSet.getPPM(ppmSet);
-                                if ((ppmv == null) && useRef) {
-                                    ppmv = spatialSet.getRefPPM();
+                                PPMv ppmv = ppmSet >= 0 ? spatialSet.getPPM(ppmSet) : null;
+                                if ((ppmv == null) && (refSet >= 0)) {
+                                    ppmv = spatialSet.getRefPPM(refSet);
                                 }
 
                                 if (ppmv != null) {
@@ -605,7 +605,6 @@ public class IdPeak {
         int nDim = spatialSets.length;
         SpatialSet proton1 = null;
         SpatialSet proton2 = null;
-        PPMv ppmv;
         double[] dp = new double[nDim];
         double dismin = 1.0e6;
         double dismax = -1.0e6;
@@ -631,14 +630,19 @@ public class IdPeak {
                 }
             }
 
-            ppmv = spatialSets[j].getPPM(ppmSet);
-            if ((ppmv == null) && useRef) {
-                ppmv = spatialSets[j].getRefPPM();
+            PPMv ppmv = ppmSet >= 0 ? spatialSets[j].getPPM(ppmSet) : null;
+            double tol = matchCriteria[j].getTol();
+            if ((ppmv == null) && (refSet >= 0)) {
+                ppmv = spatialSets[j].getRefPPM(refSet);
+                if (ppmv != null) {
+                    tol = ppmv.getError();
+                }
+
             }
 
             if (ppmv != null) {
                 double delta = getPPMDelta(ppmv.getValue(), matchCriteria[j]);
-                dp[j] = 100.0 * delta / matchCriteria[j].getTol();
+                dp[j] = 100.0 * delta / tol;
                 idResult.dp[j] = dp[j];
             } else {
                 idResult.dp[j] = 1.0e30;
