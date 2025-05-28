@@ -5,6 +5,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.tableview2.TableView2?>
 <BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0"
             styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -24,10 +25,10 @@
                 </HBox>
             </top>
             <center>
-                <TableView fx:id="atomTableView">
+                <TableView2 fx:id="atomTableView">
                     <columns>
                     </columns>
-                </TableView>
+                </TableView2>
             </center>
         </BorderPane>
     </center>

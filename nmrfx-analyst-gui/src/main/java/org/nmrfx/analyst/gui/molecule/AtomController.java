@@ -41,6 +41,7 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
+import org.controlsfx.control.tableview2.TableView2;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.LACSPlotGui;
@@ -250,10 +251,6 @@ public class AtomController implements Initializable, StageBasedController, Free
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        Button ppmPlotButton = new Button("Plot PPM");
-        menuBar.getItems().add(ppmPlotButton);
-        ppmPlotButton.setOnAction(e -> showPPMPlot(atoms));
-
         ChoiceBox<Integer> choiceBox = new ChoiceBox<>();
         choiceBox.getItems().addAll(1,2,3,4,5);
         choiceBox.setValue(0);
@@ -261,9 +258,18 @@ public class AtomController implements Initializable, StageBasedController, Free
         Button addPPMColButton = new Button("Add");
         addPPMColButton.setOnAction(e -> addPPMCol());
         menuBar.getItems().addAll(new Label("PPM Set"), choiceBox, addPPMColButton);
+
+        MenuButton ppmPlotButton = new MenuButton("Plot");
+        MenuItem deltasMenuItem = new MenuItem("Deltas");
+        MenuItem shiftsMenuItem = new MenuItem("Shifts");
+        ppmPlotButton.getItems().addAll(deltasMenuItem, shiftsMenuItem);
+        menuBar.getItems().add(ppmPlotButton);
+        ppmPlotButton.setOnAction(e -> showPPMPlot());
     }
 
     private void addPPMCol() {
+        TableColumn<Integer, Atom> ppmCol = new TableColumn<>();
+
     }
 
     private void showLACSPlot() {
@@ -430,9 +436,9 @@ public class AtomController implements Initializable, StageBasedController, Free
 
         TableColumn<Atom, Number> deltaCol = new TableColumn<>("Delta");
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
-            Iterator PPMSetsIterator = PPMSets.keySet().iterator();
-            int ppmSet = (int) PPMSetsIterator.next();
-            int refSet = (int) PPMSetsIterator.next();
+            Iterator<Integer> PPMSetsIterator = PPMSets.keySet().iterator();
+            int ppmSet = PPMSetsIterator.next();
+            int refSet = PPMSetsIterator.next();
             Atom atom = p.getValue();
             Double delta = atom.getDeltaPPM(ppmSet, refSet);
             ObservableValue<Number> ov;
@@ -628,7 +634,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         refreshAtomTable();
     }
 
-    private void showPPMPlot(ObservableList<Atom> atoms) {
+    private void showPPMPlot() {
         if (ppmPlotGUI == null) {
             ppmPlotGUI = new PPMPlotGUI();
         }
