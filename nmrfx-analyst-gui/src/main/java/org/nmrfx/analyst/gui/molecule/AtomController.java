@@ -73,7 +73,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author johnsonb
@@ -103,7 +102,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     @FXML
     private ToolBar atomNavigatorToolBar;
     @FXML
-    private TableView<Atom> atomTableView;
+    private TableView2<Atom> atomTableView;
     @FXML
     private TextField intensityField;
     @FXML
@@ -255,32 +254,16 @@ public class AtomController implements Initializable, StageBasedController, Free
         menuBar.getItems().add(ppmPlotButton);
         ppmPlotButton.setOnAction(e -> showPPMPlot(atoms));
 
-        ChoiceBox<Integer> ppmSet1 = getPPMSetChoiceBox();
-        CheckBox useRef1 = new CheckBox("Ref");
-        ChoiceBox<Integer> ppmSet2 = getPPMSetChoiceBox();
-        CheckBox useRef2 = new CheckBox("Ref");
+        ChoiceBox<Integer> choiceBox = new ChoiceBox<>();
+        choiceBox.getItems().addAll(1,2,3,4,5);
+        choiceBox.setValue(0);
 
-        menuBar.getItems().addAll(new Label("PPM Set 1"), ppmSet1, useRef1,
-                new Label("PPM Set 2"), ppmSet2, useRef2);
-        ppmSet1.setOnAction(e -> {
-            PPMSets.put(ppmSet1.getValue(), false);
-            atomTableView.refresh();
-        });
-        ppmSet2.setOnAction(e -> {
-            PPMSets.put(ppmSet1.getValue(), false);
-            atomTableView.refresh();
-        });
-        useRef1.setOnAction(e -> PPMSets.put(ppmSet1.getValue(), useRef1.isSelected()));
-        useRef2.setOnAction(e -> PPMSets.put(ppmSet1.getValue(), useRef2.isSelected()));
+        Button addPPMColButton = new Button("Add");
+        addPPMColButton.setOnAction(e -> addPPMCol());
+        menuBar.getItems().addAll(new Label("PPM Set"), choiceBox, addPPMColButton);
     }
 
-    private ChoiceBox<Integer> getPPMSetChoiceBox() {
-        ChoiceBox<Integer> choiceBox = new ChoiceBox<>();
-        for (int iSet = 0; iSet < 5; iSet++) {
-            choiceBox.getItems().add(iSet);
-        }
-        choiceBox.setValue(0);
-        return choiceBox;
+    private void addPPMCol() {
     }
 
     private void showLACSPlot() {
@@ -522,6 +505,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         }
     }
 
+    List<Integer> getPPMSets(boolean refMode) {
+        return PPMSets.keySet().stream().filter(key -> PPMSets.get(key).equals(refMode)).toList();
+    }
+
     void readPPM(boolean refMode) {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
@@ -529,8 +516,7 @@ public class AtomController implements Initializable, StageBasedController, Free
             Path path = file.toPath();
             Molecule molecule = Molecule.getActive();
             if (molecule != null) {
-                int iSet = refMode
-                        ? ppmSet2.getValue() : ppmSet1.getValue();
+                int iSet = getPPMSets(refMode).size() + 1;
                 if (file.getName().endsWith(".str")) {
                     if (refMode) {
                         iSet = -1 - iSet;
@@ -550,16 +536,16 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     void clearPPMs() {
-        int ppmSet = ppmSet1.getValue();
         Molecule mol = Molecule.getActive();
         if (mol != null) {
             List<Atom> molAtoms = mol.getAtoms();
             for (Atom atom : molAtoms) {
-                atom.setPPMValidity(ppmSet, false);
+                for (int ppmSet : getPPMSets(false)) {
+                    atom.setPPMValidity(ppmSet, false);
+                }
             }
         }
         atomTableView.refresh();
-
     }
 
     void getRandomPPM() {
@@ -596,14 +582,15 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     void clearRefPPMs() {
-        int refSet = ppmSet2.getValue();
         Molecule mol = Molecule.getActive();
         if (mol != null) {
             List<Atom> molAtoms = mol.getAtoms();
             for (Atom atom : molAtoms) {
-                PPMv ppmV = atom.getRefPPM(refSet);
-                if (ppmV != null) {
-                    ppmV.setValid(false, atom);
+                for (int refSet : getPPMSets(true)) {
+                    PPMv ppmV = atom.getRefPPM(refSet);
+                    if (ppmV != null) {
+                        ppmV.setValid(false, atom);
+                    }
                 }
             }
         }
