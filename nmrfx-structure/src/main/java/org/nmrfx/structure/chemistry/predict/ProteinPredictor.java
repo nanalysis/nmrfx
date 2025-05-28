@@ -1,6 +1,8 @@
 package org.nmrfx.structure.chemistry.predict;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import jnr.ffi.annotations.In;
+import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.NMRStarReader;
 import org.nmrfx.chemistry.io.PDBAtomParser;
@@ -60,25 +62,28 @@ public class ProteinPredictor {
             Double ppm = atom.getPPM();
             Double refPPM = atom.getRefPPM();
             if ((ppm != null) && (refPPM != null)) {
-                double delta = Math.abs(ppm - refPPM);
+                double delta = ppm - refPPM;
 
                 double err = atom.getSDevRefPPM();
-                double ratio = delta / err;
-                atomErrors.add(atom, delta, (ratio > 3.5), offsets);
+                double ratio = Math.abs(delta) / err;
                 if (offsets != null) {
-                    if (ratio > 3.5) {
-                        atomErrors.addViol();
+                    if (ratio > 3.0) {
+                        atomErrors.addViol(atom);
+                    } else {
+                        atomErrors.add(atom, delta, (ratio > 3.0), offsets);
+                        int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
+                        String resName = atom.getResidueName();
+                        String atomId = molName + ":" + chainId + "." + atom.getShortName();
+                        stringBuilder.append(atomId).append(" ")
+                                .append(resName).append(" ");
+                        stringBuilder.append(String.format("%-2.3f", ratio)).append(" ");
+                        stringBuilder.append(String.format("%-2.3f", err)).append(" ");
+                        stringBuilder.append(refPPM).append(" ")
+                                .append(ppm).append(" ");
+                        stringBuilder.append(String.format("%-2.3f", delta)).append("\n");
                     }
-                    int chainId = molecule.getPolymer(atom.getPolymerName()).getIDNum();
-                    String resName = atom.getResidueName();
-                    String atomId = molName + ":" + chainId + "." + atom.getShortName();
-                    stringBuilder.append(atomId).append(" ")
-                            .append(resName).append(" ");
-                    stringBuilder.append(String.format("%-2.3f", ratio)).append(" ");
-                    stringBuilder.append(String.format("%-2.3f", err)).append(" ");
-                    stringBuilder.append(refPPM).append(" ")
-                            .append(ppm).append(" ");
-                    stringBuilder.append(String.format("%-2.3f", delta)).append("\n");
+                } else {
+                    atomErrors.add(atom, delta, (ratio > 3.0), offsets);
                 }
             }
         }
@@ -119,12 +124,14 @@ public class ProteinPredictor {
             if (allAtomErrors.atomTypes.containsKey(aName)) {
                 stringBuilder.append(aName).append(" ");
                 stringBuilder.append(String.format("%-2.3f", allAtomErrors.rms(aName))).append(" ");
+                stringBuilder.append(String.format("%d", allAtomErrors.n(aName))).append(" ");
                 stringBuilder.append(String.format("%d", allAtomErrors.nViol(aName))).append("\n");
             }
         });
         return stringBuilder;
     }
 
+    @PythonAPI
     public static void predictTestSet(String resultsFilePath, String starShiftDirPath) throws IOException, InvalidMoleculeException, ParseException {
         try (FileWriter writer = new FileWriter(resultsFilePath)) {
             String header = "atomId residue ratio err refPPM PPM delta \n";
@@ -681,14 +688,13 @@ public class ProteinPredictor {
 
     static class AtomErrors {
         Map<String, AtomError> atomTypes = new HashMap<>();
-        int nViol = 0;
+        Map<String, Integer> atomViols = new HashMap<>();
 
         static class AtomError {
             double sum = 0.0;
             double sumAbs = 0.0;
             double sumSq = 0.0;
             int n = 0;
-            int nViol = 0;
 
             double average() {
                 return sum / n;
@@ -701,22 +707,16 @@ public class ProteinPredictor {
             double mae() {
                 return sumAbs / n;
             }
-
-            int nviol() {
-                return nViol;
-            }
-
         }
 
-        void addViol() {
+        void addViol(Atom atom) {
+            String aName = getName(atom);
+            Integer nViol = atomViols.computeIfAbsent(aName, k -> Integer.valueOf(0));
             nViol++;
+            atomViols.put(aName, nViol);
         }
 
-        int nViol() {
-            return nViol;
-        }
-
-        void add(Atom atom, double delta, boolean violated, AtomErrors offsets) {
+        String getName(Atom atom) {
             String aName = atom.getName().length() > 1 ?
                     atom.getName().substring(0, 2) : atom.getName().substring(0, 1);
             if (atom.isMethyl() && atom.getAtomicNumber() == 1 && atom.isFirstInMethyl()) {
@@ -730,8 +730,13 @@ public class ProteinPredictor {
                     aName = "AC";
                 }
             }
-            atomTypes.computeIfAbsent(aName, k -> new AtomError());
-            AtomError e = atomTypes.get(aName);
+            return aName;
+
+        }
+
+        void add(Atom atom, double delta, boolean violated, AtomErrors offsets) {
+            String aName = getName(atom);
+            AtomError e = atomTypes.computeIfAbsent(aName, k -> new AtomError());
             if (offsets != null) {
                 delta -= offsets.average(aName);
             }
@@ -739,19 +744,18 @@ public class ProteinPredictor {
             e.sumAbs += Math.abs(delta);
             e.sumSq += delta * delta;
             e.n++;
-            if (violated) {
-                e.nViol++;
-            }
-
-
         }
 
         double rms(String aName) {
             return atomTypes.get(aName).rms();
         }
 
+        int n(String aName) {
+            return atomTypes.get(aName).n;
+        }
+
         int nViol(String aName) {
-            return atomTypes.get(aName).nviol();
+            return atomViols.get(aName);
         }
 
         double average(String aName) {
@@ -764,8 +768,14 @@ public class ProteinPredictor {
                 atomTypes.computeIfAbsent(aName, k -> new AtomError());
                 atomTypes.get(aName).sumSq += entry.getValue().sumSq;
                 atomTypes.get(aName).n += entry.getValue().n;
-                nViol += atomErrors.nViol();
             }
+            for (Map.Entry<String, Integer> entry : atomErrors.atomViols.entrySet()) {
+                String aName = entry.getKey();
+                atomViols.computeIfAbsent(aName, k -> Integer.valueOf(0));
+                Integer nViols = atomViols.get(aName);
+                atomViols.put(aName, nViols + entry.getValue());
+            }
+
         }
     }
 }

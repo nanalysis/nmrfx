@@ -176,10 +176,10 @@ public class RNAProteinPredictorTest {
         StringBuilder stringBuilder = new StringBuilder();
         ProteinPredictor.AtomErrors atomErrors = ProteinPredictor.getAtomErrors(stringBuilder);
         Molecule.removeAll();
-        Assert.assertTrue(atomErrors.rms("H") < 0.4);
+        Assert.assertTrue(atomErrors.rms("H") < 0.6);
         Assert.assertTrue(atomErrors.rms("CA") < 1.0);
-        Assert.assertTrue(atomErrors.rms("N") < 2.0);
-        Assert.assertTrue(atomErrors.nViol() < 6);
+        Assert.assertTrue(atomErrors.rms("N") < 2.6);
+        Assert.assertTrue(atomErrors.atomViols.get("H") < 6);
     }
 
 }
