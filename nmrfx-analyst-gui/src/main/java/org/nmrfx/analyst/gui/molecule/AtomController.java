@@ -257,13 +257,13 @@ public class AtomController implements Initializable, StageBasedController, Free
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        ChoiceBox<Integer> choiceBox = new ChoiceBox<>();
-        choiceBox.getItems().addAll(1,2,3,4,5);
-        choiceBox.setValue(0);
+        ChoiceBox<Integer> ppmSetChoiceBox = new ChoiceBox<>();
+        ppmSetChoiceBox.getItems().addAll(1,2,3,4,5);
+        ppmSetChoiceBox.setValue(0);
 
         Button addPPMColButton = new Button("Add");
         addPPMColButton.setOnAction(e -> addPPMCol());
-        menuBar.getItems().addAll(new Label("PPM Set"), choiceBox, addPPMColButton);
+        menuBar.getItems().addAll(new Label("PPM Set"), ppmSetChoiceBox, addPPMColButton);
 
         MenuButton ppmPlotButton = new MenuButton("Plot");
         MenuItem deltasMenuItem = new MenuItem("Deltas");
@@ -274,8 +274,54 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     private void addPPMCol() {
-        TableColumn<Integer, Atom> ppmCol = new TableColumn<>();
+    }
 
+    private void addPPMCol(ppmSet set) {
+        DoubleStringConverter dsConverter4 = new DoubleStringConverter4();
+        TableColumn<Atom, Number> ppmCol = new TableColumn<>(set.name() + set.iSet);
+        int iSet = set.iSet;
+        boolean ref = set.name().equals("REF") ;
+
+        ppmCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
+            Atom atom = p.getValue();
+            PPMv ppmVal = ref ? atom.getRefPPM(iSet) : atom.getPPM(iSet);
+            ObservableValue<Number> ov;
+            if ((ppmVal != null) && ppmVal.isValid()) {
+                ov = new SimpleDoubleProperty(ppmVal.getValue());
+            } else {
+                ov = null;
+            }
+            return ov;
+        });
+
+        ppmCol.setOnEditCommit(
+                (CellEditEvent<Atom, Number> t) -> {
+                    Number value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setPPM(iSet, value.doubleValue());
+                    }
+                });
+        ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
+        ppmCol.setEditable(true);
+        atomTableView.getColumns().add(ppmCol);
+
+        if (ref) {
+            TableColumn<Atom, Number> sdevCol = new TableColumn<>("SDev");
+            sdevCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
+                Atom atom = p.getValue();
+                PPMv ppmVal = atom.getRefPPM(iSet);
+                ObservableValue<Number> ov;
+                if ((ppmVal != null) && ppmVal.isValid()) {
+                    ov = new SimpleDoubleProperty(ppmVal.getError());
+                } else {
+                    ov = null;
+                }
+                return ov;
+            });
+            sdevCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
+            sdevCol.setEditable(false);
+            atomTableView.getColumns().add(sdevCol);
+        }
     }
 
     private void showLACSPlot() {
@@ -391,53 +437,6 @@ public class AtomController implements Initializable, StageBasedController, Free
         residueNameColumn.setCellValueFactory(new PropertyValueFactory<>("ResidueName"));
         residueNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         residueNameColumn.setEditable(false);
-
-        for (ppmSet set : ppmSet.values()) {
-            TableColumn<Atom, Number> ppmCol = new TableColumn<>(set.name() + set.iSet);
-            int iSet = set.iSet;
-            boolean ref = set.name().equals("REF") ;
-
-            ppmCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
-                Atom atom = p.getValue();
-                PPMv ppmVal = ref ? atom.getRefPPM(iSet) : atom.getPPM(iSet);
-                ObservableValue<Number> ov;
-                if ((ppmVal != null) && ppmVal.isValid()) {
-                    ov = new SimpleDoubleProperty(ppmVal.getValue());
-                } else {
-                    ov = null;
-                }
-                return ov;
-            });
-
-            ppmCol.setOnEditCommit(
-                    (CellEditEvent<Atom, Number> t) -> {
-                        Number value = t.getNewValue();
-                        if (value != null) {
-                            t.getRowValue().setPPM(iSet, value.doubleValue());
-                        }
-                    });
-            ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
-            ppmCol.setEditable(true);
-            atomTableView.getColumns().add(ppmCol);
-
-            if (ref) {
-                TableColumn<Atom, Number> sdevCol = new TableColumn<>("SDev");
-                sdevCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
-                    Atom atom = p.getValue();
-                    PPMv ppmVal = atom.getRefPPM(iSet);
-                    ObservableValue<Number> ov;
-                    if ((ppmVal != null) && ppmVal.isValid()) {
-                        ov = new SimpleDoubleProperty(ppmVal.getError());
-                    } else {
-                        ov = null;
-                    }
-                    return ov;
-                });
-                sdevCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
-                sdevCol.setEditable(false);
-                atomTableView.getColumns().add(sdevCol);
-            }
-        }
 
         TableColumn<Atom, Number> deltaCol = new TableColumn<>("Delta");
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
