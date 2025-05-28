@@ -118,13 +118,19 @@ public class AtomController implements Initializable, StageBasedController, Free
     private TextField molFilterTextField;
     @FXML
     private ToolBar atomReferenceToolBar;
-    Map<Integer, Boolean> PPMSets = new HashMap<>();
+    List<ppmSet> PPMSets = new ArrayList<>();
     ObservableList<Atom> atoms = FXCollections.observableArrayList();
 
     MolFilter molFilter = new MolFilter("*.C*,H*,N*");
 
     LACSPlotGui lacsPlotGui = null;
     PPMPlotGUI ppmPlotGUI = null;
+
+    enum ppmSet {
+        REF,
+        ASSIGNED;
+        int iSet;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -386,10 +392,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         residueNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         residueNameColumn.setEditable(false);
 
-        for (Map.Entry<Integer, Boolean> entry : PPMSets.entrySet()) {
-            TableColumn<Atom, Number> ppmCol = new TableColumn<>("Set " + entry.getKey());
-            int iSet = entry.getKey();
-            boolean ref = entry.getValue();
+        for (ppmSet set : ppmSet.values()) {
+            TableColumn<Atom, Number> ppmCol = new TableColumn<>(set.name() + set.iSet);
+            int iSet = set.iSet;
+            boolean ref = set.name().equals("REF") ;
 
             ppmCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
                 Atom atom = p.getValue();
@@ -407,8 +413,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                     (CellEditEvent<Atom, Number> t) -> {
                         Number value = t.getNewValue();
                         if (value != null) {
-                            int ppmSet = entry.getKey();
-                            t.getRowValue().setPPM(ppmSet, value.doubleValue());
+                            t.getRowValue().setPPM(iSet, value.doubleValue());
                         }
                     });
             ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
@@ -436,9 +441,8 @@ public class AtomController implements Initializable, StageBasedController, Free
 
         TableColumn<Atom, Number> deltaCol = new TableColumn<>("Delta");
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
-            Iterator<Integer> PPMSetsIterator = PPMSets.keySet().iterator();
-            int ppmSet = PPMSetsIterator.next();
-            int refSet = PPMSetsIterator.next();
+            int ppmSet = PPMSets.getFirst().iSet;
+            int refSet = PPMSets.get(1).iSet;
             Atom atom = p.getValue();
             Double delta = atom.getDeltaPPM(ppmSet, refSet);
             ObservableValue<Number> ov;
@@ -511,8 +515,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         }
     }
 
-    List<Integer> getPPMSets(boolean refMode) {
-        return PPMSets.keySet().stream().filter(key -> PPMSets.get(key).equals(refMode)).toList();
+    List<ppmSet> getPPMSets(boolean refMode) {
+        return PPMSets.stream().filter(ppmSet -> ppmSet.name().equals("REF")).toList();
     }
 
     void readPPM(boolean refMode) {
@@ -546,8 +550,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         if (mol != null) {
             List<Atom> molAtoms = mol.getAtoms();
             for (Atom atom : molAtoms) {
-                for (int ppmSet : getPPMSets(false)) {
-                    atom.setPPMValidity(ppmSet, false);
+                for (ppmSet ppmSet : getPPMSets(false)) {
+                    atom.setPPMValidity(ppmSet.iSet, false);
                 }
             }
         }
@@ -592,8 +596,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         if (mol != null) {
             List<Atom> molAtoms = mol.getAtoms();
             for (Atom atom : molAtoms) {
-                for (int refSet : getPPMSets(true)) {
-                    PPMv ppmV = atom.getRefPPM(refSet);
+                for (ppmSet refSet : getPPMSets(true)) {
+                    PPMv ppmV = atom.getRefPPM(refSet.iSet);
                     if (ppmV != null) {
                         ppmV.setValid(false, atom);
                     }
