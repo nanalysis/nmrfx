@@ -21,6 +21,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakFitParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.PeakPicking;
@@ -172,9 +173,9 @@ public class SpectrumMenu extends ChartMenu {
         Menu projectMenu = new Menu("Projections");
 
         MenuItem projectMenuItem = new MenuItem("Project Full");
-        projectMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset(false));
+        projectMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset(Dataset.ProjectionMode.FULL));
         MenuItem projectViewMenuItem = new MenuItem("Project View");
-        projectViewMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset(true));
+        projectViewMenuItem.setOnAction((ActionEvent e) -> chart.projectDataset(Dataset.ProjectionMode.VIEW));
         MenuItem removeProjectionsItem = new MenuItem("Remove Projections");
         removeProjectionsItem.visibleProperty().bind(chart.getDisDimProperty().isEqualTo(PolyChart.DISDIM.TwoD));
         removeProjectionsItem.setOnAction((ActionEvent e) -> chart.removeProjections());

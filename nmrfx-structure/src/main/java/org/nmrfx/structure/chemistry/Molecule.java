@@ -320,6 +320,26 @@ public class Molecule extends MoleculeBase {
         return pt1;
     }
 
+    public static void avgStructures(List<Integer> structureNums) {
+        /*
+        adds new structure to molecule with averaged coordinates across structures in structureNums
+         */
+        Molecule mol = getActive();
+        if (structureNums.isEmpty()) {
+            structureNums = mol.getActiveStructureList();
+        }
+        int newStructureNum = mol.getActiveStructureList().getLast() + 1;
+        mol.structures.add(newStructureNum);
+        for (Atom atom : mol.getAtoms()) {
+            Point3 pt = atom.avgAcrossStructures(structureNums);
+            if (pt != null) {
+                atom.setPointValidity(newStructureNum, true);
+                atom.setPoint(newStructureNum, pt);
+            }
+        }
+        mol.setActiveStructures();
+    }
+
     public static double calcDistance(String aname0, String aname1) {
         int structureNum = 0;
         Atom[] atoms = new Atom[2];

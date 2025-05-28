@@ -211,11 +211,15 @@ public class HydrogenBond {
         Atom donorAtom = hydrogen.atom.getParent();
         double distance = getHADistance(hydrogen, acceptor, structureNum);
         double angle = getAngle(hydrogen, acceptor, structureNum);
+        return getHShift(distance, angle, donorAtom.getAtomicNumber(), power);
+    }
+
+    public static double getHShift(double distance, double angle, int atomicNumber, double power) {
         double shift = 0.0;
         double tolerance;
         double maxDistance;
         double minDistance;
-        if (donorAtom.getAtomicNumber() == 7) {
+        if (atomicNumber == 7) {
             tolerance = toleranceHN;
             maxDistance = toleranceHN;
             minDistance = 1.5;
@@ -236,7 +240,7 @@ public class HydrogenBond {
             double maxP = Math.pow(maxDistance, power);
             shift = 1.0 / disP - 1.0 / maxP;
             double cos = Math.abs(Math.cos(angle));
-            shift = shift * (1.0 + 1.0 * (cos * cos - 1.0));
+            shift = shift * (1.0 + (cos * cos - 1.0));
         }
         return shift;
     }

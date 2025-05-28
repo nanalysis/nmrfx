@@ -20,6 +20,8 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.utils.PeakListUpdater;
@@ -30,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.List;
 
 /**
  * @author Bruce Johnson
@@ -260,4 +263,27 @@ public class GUIProject extends StructureProject {
         setProjectDir(projectDir);
     }
 
+    @Override
+    public void saveMemoryFile(DatasetBase datasetBase)  {
+        Dataset dataset = (Dataset) datasetBase;
+        try {
+            dataset.saveMemoryFile();
+        } catch (IOException | DatasetException e) {
+            log.error("Failed to save memory file", e);
+        }
+    }
+
+    @Override
+    public void refreshDatasetList() {
+        datasets.clear();
+        datasets.addAll(datasetMap.values());
+    }
+
+    @Override
+    public List<DatasetBase> getDatasets() {
+        if (datasetMap.size() != datasets.size()) {
+            refreshDatasetList();
+        }
+        return datasets;
+    }
 }

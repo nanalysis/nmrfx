@@ -231,6 +231,9 @@ public class SpectrumStatusBar {
         if ((dataset != null) && (dataset.getVec()) != null) {
             Vec vec = dataset.getVec();
             int[][] pt = vec.getPt();
+            if (pt == null) {
+                return;
+            }
             int nDim = pt.length;
             var sourceOpt = dataset.getExtractSource();
             String[] labels = {"X","Y","Z"};

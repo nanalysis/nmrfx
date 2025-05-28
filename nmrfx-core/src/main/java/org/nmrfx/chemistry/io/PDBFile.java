@@ -210,7 +210,6 @@ public class PDBFile {
 
                 if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
-
                     if (!compoundState.lastRes.equals(atomParse.resNum)) {
                         boolean compoundMode = false;
                         if (string.startsWith("HETATM")  && newChain(compoundState, atomParse)) {

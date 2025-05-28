@@ -1655,6 +1655,9 @@ public class PolyChart extends Region {
                     if (!alreadyMatchedDims.contains(matchDim[0])) {
                         datasetAttributes.projection(matchDim[0]);
                         alreadyMatchedDims.add(matchDim[0]);
+                        if (datasetAttributes.isProjection()) {
+                            updateProjection(firstNDAttr.get());
+                        }
                     } else {
                         // If the projection is already set for the other axis of a homonuclear experiment, switch the axis
                         datasetAttributes.projection(matchDim[0] == 0 ? 1 : 0);
@@ -3971,19 +3974,30 @@ public class PolyChart extends Region {
         }
     }
 
-    public void projectDataset(boolean view) {
+    void updateProjection(DatasetAttributes firstAttr)  {
+        if (firstAttr.getDataset() == null) {
+            return;
+        }
+        int[][] pt = firstAttr.pt;
+        try {
+            firstAttr.getDataset().updateProjections(pt);
+        } catch (IOException | DatasetException e) {
+            log.error("Can't update projection", e);
+        }
+    }
+    public void projectDataset(Dataset.ProjectionMode viewMode) {
         Dataset dataset = (Dataset) getDataset();
         if (dataset == null) {
             return;
         }
-        int[][] pt = view ? getDatasetAttributes().getFirst().pt : null;
+        int[][] pt = viewMode == Dataset.ProjectionMode.VIEW ? getDatasetAttributes().getFirst().pt : null;
         if (dataset.getNDim() == 2) {
             try {
                 List<String> datasetNames = new ArrayList<>();
                 datasetNames.add(dataset.getName());
                 updateDatasetsByNames(datasetNames);
-                dataset.project(0, pt);
-                dataset.project(1, pt);
+                dataset.project(0, pt, viewMode);
+                dataset.project(1, pt, viewMode);
                 Dataset proj0 = dataset.getProjection(0);
                 Dataset proj1 = dataset.getProjection(1);
                 if (proj0 != null) {
@@ -4002,7 +4016,7 @@ public class PolyChart extends Region {
             }
         } else if (dataset.getNDim() == 3) {
             try {
-                Dataset projDataset = dataset.projectND(2, pt);
+                Dataset projDataset = dataset.projectND(2, pt, viewMode);
                 FXMLController newController = AnalystApp.getFXMLControllerManager().newController();
                 PolyChart newChart = newController.getActiveChart();
                 newChart.setDataset(projDataset, false, false);
@@ -4056,7 +4070,7 @@ public class PolyChart extends Region {
                     Vec sliceVec = new Vec(32, false);
                     double xPos = crossHairs.getPosition(iCross, Orientation.VERTICAL);
                     double yPos = crossHairs.getPosition(iCross, Orientation.HORIZONTAL);
-                    DatasetAttributes.PointRange pointRange = dataAttr.getPointRange(iOrient, xPos, yPos);
+                    DatasetAttributes.PointRange pointRange = dataAttr.getPointRange(iOrient, xPos, yPos, true);
                     String sliceName = String.format("%s_slice_%d_%.2f_%.2f_%d", dataAttr.getDataset().getName(), iOrient, xPos, yPos, sliceDatasets.size());
                     sliceVec.setName(sliceName);
                     try {
@@ -4075,6 +4089,11 @@ public class PolyChart extends Region {
                 sliceController.getStatusBar().setMode(SpectrumStatusBar.DataMode.DATASET_1D);
                 newChart.disDimProp.set(DISDIM.OneDX);
                 newChart.autoScale();
+                newChart.expand();
+                double min = getAxes().get(iOrient).getLowerBound();
+                double max = getAxes().get(iOrient).getUpperBound();
+                newChart.getAxes().getX().setMinMax(min, max);
+
                 double lvl = newChart.getDatasetAttributes().get(0).getLvl();
                 double offset = newChart.getDatasetAttributes().get(0).getOffset();
                 for (DatasetAttributes dataAttr : newChart.getDatasetAttributes()) {
@@ -4388,12 +4407,13 @@ public class PolyChart extends Region {
      */
     public void updateProjectionScale(ChartBorder chartBorder, double scaleDelta) {
         double scalingFactor = calculateScaleYFactor(scaleDelta);
-        if (chartBorder == ChartBorder.TOP) {
-            Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 0).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
-        } else if (chartBorder == ChartBorder.RIGHT) {
-            Optional<DatasetAttributes> projectionAttr = getDatasetAttributes().stream().filter(attr -> attr.projection() == 1).findFirst();
-            projectionAttr.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
+        if ((chartBorder == null) || (chartBorder == ChartBorder.TOP)) {
+            Optional<DatasetAttributes> projectionAttr0 = getDatasetAttributes().stream().filter(attr -> attr.projection() == 0).findFirst();
+            projectionAttr0.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
+        }
+        if ((chartBorder == null) || (chartBorder == ChartBorder.RIGHT)) {
+            Optional<DatasetAttributes> projectionAttr1 = getDatasetAttributes().stream().filter(attr -> attr.projection() == 1).findFirst();
+            projectionAttr1.ifPresent(datasetAttributes -> datasetAttributes.setLvl(Math.max(0, datasetAttributes.getLvl() * scalingFactor)));
         }
     }
 

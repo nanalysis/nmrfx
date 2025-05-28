@@ -633,7 +633,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     public record PointRange(int iDim, int[] dims, int[][] pts) {}
 
-    public PointRange getPointRange(int iDim, double ppmx, double ppmy) {
+    public PointRange getPointRange(int iDim, double ppmx, double ppmy, boolean full) {
         int[][] ptC = new int[pt.length][2];
         int[] dimC = new int[pt.length];
         for (int i = 0; i < pt.length; i++) {
@@ -646,6 +646,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             int offset = theFile.ppmToPoint(jDim, ppmy);
             ptC[1][0] = offset;
             ptC[1][1] = offset;
+            if (full) {
+                ptC[0][0] = 0;
+                ptC[0][1] = theFile.getSizeReal(dim[0]) - 1;
+            }
         }
         if (iDim != 0) {
             int jDim = dimC[0];
@@ -655,6 +659,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             }
             ptC[0][0] = offset;
             ptC[0][1] = offset;
+            if (full) {
+                ptC[1][0] = 0;
+                ptC[1][1] = theFile.getSizeReal(dim[1]) - 1;
+            }
         }
         if (iDim == 2) {
             ptC[2][0] = 0;
@@ -668,7 +676,7 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
     }
 
     public boolean getSlice(Vec specVec, int iDim, double ppmx, double ppmy) throws IOException {
-        PointRange pointRange = getPointRange(iDim, ppmx, ppmy);
+        PointRange pointRange = getPointRange(iDim, ppmx, ppmy, false);
         return  getSlice(specVec, pointRange);
     }
 
