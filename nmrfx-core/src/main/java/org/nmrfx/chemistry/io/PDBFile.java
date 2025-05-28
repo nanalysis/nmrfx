@@ -37,7 +37,7 @@ public class PDBFile {
     private static final Logger log = LoggerFactory.getLogger(PDBFile.class);
 
     private static final boolean ALLOW_SEQUENCE_DIFF = true;
-    private static final Map<String, String> reslibMap = new HashMap<>();
+    private static final Map<String, String> reslibMap = new HashMap<String, String>();
     private static boolean iupacMode = true;
     private static String localReslibDir = "";
 
@@ -81,7 +81,7 @@ public class PDBFile {
     }
 
     public static String getReslibDir(final String name) {
-        if ((name == null) || name.isEmpty()) {
+        if ((name == null) || name.equals("")) {
             return getReslibDir();
         } else {
             return reslibMap.get(name);
@@ -201,7 +201,7 @@ public class PDBFile {
 
                 if ((string == null) || string.startsWith("ENDMDL")) {
                     molecule.updateAtomArray();
-                    molecule.structures.add(structureNumber);
+                    molecule.structures.add(Integer.valueOf(structureNumber));
                     molecule.calcAllBonds();
                     molecule.getAtomTypes();
                     ProjectBase.getActive().putMolecule(molecule);
@@ -245,13 +245,14 @@ public class PDBFile {
     public MoleculeBase readSequence(String fileName, int structureNum)
             throws MoleculeIOException {
         String lastRes = "";
+        String lastLoc = "";
         File file = new File(fileName);
         int dotPos = file.getName().lastIndexOf('.');
         String molName = file.getName().substring(0, dotPos);
-        MoleculeBase moleculeBase;
+        MoleculeBase moleculeBase = null;
 
         String string;
-        String polymerName;
+        String polymerName = "";
         String lastChain = null;
         ArrayList<String> residueList = new ArrayList<>();
         residueList.add("-molecule " + molName);
@@ -273,16 +274,16 @@ public class PDBFile {
                         continue;
                     }
 
-                    String thisChain;
-                    if (atomParse.segment.trim().isEmpty()) {
+                    String thisChain = "";
+                    if (atomParse.segment.trim().equals("")) {
                         thisChain = atomParse.chainID.trim();
                     } else {
                         thisChain = atomParse.segment.trim();
                     }
-                    if (!thisChain.equals(lastChain)) {
+                    if ((lastChain == null) || !thisChain.equals(lastChain)) {
                         lastChain = thisChain;
 
-                        if (lastChain.trim().isEmpty()) {
+                        if (lastChain.trim().equals("")) {
                             polymerName = molName;
                         } else {
                             polymerName = lastChain;
@@ -293,6 +294,7 @@ public class PDBFile {
 
                     if (!lastRes.equals(atomParse.resNum)) {
                         lastRes = atomParse.resNum;
+                        lastLoc = atomParse.loc;
                         atomParse.resName = atomParse.resName.toLowerCase();
                         residueList.add(atomParse.resName + " " + atomParse.resNum);
                     }
@@ -321,7 +323,8 @@ public class PDBFile {
         v3.sub(v1);
         v4.sub(v1);
         vc.cross(v2, v3);
-        return v4.dot(vc);
+        double dot = v4.dot(vc);
+        return dot;
     }
 
     public int checkPDBType(String fileName) throws MoleculeIOException {
@@ -439,23 +442,30 @@ public class PDBFile {
 
             if (structureNumber < 0) {
                 readJustOne = false;
-                structureNumber = molecule.getActiveStructures().length > 0 ? molecule.getActiveStructureList().getLast() + 1 : 0;
+                structureNumber = 0;
             }
 
-            if (readJustOne) {
-                molecule.structures.add(structureNumber);
+            if (readJustOne && !molecule.structures.contains(Integer.valueOf(structureNumber))) {
+                molecule.structures.add(Integer.valueOf(structureNumber));
             }
 
-            String polymerName;
+            String polymerName = molName;
 
-            Iterator<CoordSet> e = molecule.coordSets.values().iterator();
+            Iterator e = molecule.coordSets.values().iterator();
 
             CoordSet coordSet;
 
             while (e.hasNext()) {
-                coordSet = e.next();
+                coordSet = (CoordSet) e.next();
 
-                for (Entity entity : coordSet.getEntities().values()) {
+                Iterator entIterator = coordSet.getEntities().values().iterator();
+
+                while (entIterator.hasNext()) {
+                    Entity entity = (Entity) entIterator.next();
+
+                    if (entity instanceof Polymer) {
+                        polymerName = entity.getName();
+                    }
                     for (Atom atom : entity.getAtoms()) {
                         atom.setPointValidity(structureNumber,
                                 false);
@@ -463,9 +473,9 @@ public class PDBFile {
                 }
             }
 
-            Polymer polymer;
-            Residue residue;
-            Point3 pt;
+            Polymer polymer = null;
+            Residue residue = null;
+            Point3 pt = null;
             String string;
             String coordSetName = "";
 
@@ -478,7 +488,7 @@ public class PDBFile {
                 boolean hetAtom = false;
                 if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string, swap);
-                    Entity compoundEntity = molecule.getEntity(atomParse.resName);
+                    Entity compoundEntity = (Entity) molecule.getEntity(atomParse.resName);
                     // fixme not propertly supporting insertCode
                     if (!atomParse.insertCode.equals(" ")) {
                         continue;
@@ -493,10 +503,10 @@ public class PDBFile {
                     if (compoundEntity == null) {
                         hetAtom = false;
                     }
-                    Atom atom;
+                    Atom atom = null;
                     String thisChain;
 
-                    if (atomParse.segment.isEmpty()) {
+                    if (atomParse.segment.equals("")) {
                         thisChain = atomParse.chainID;
                     } else {
                         thisChain = atomParse.segment.toLowerCase();
@@ -507,7 +517,7 @@ public class PDBFile {
 
                     if (!hetAtom) {
 
-                        if (lastChain.trim().isEmpty()) {
+                        if (lastChain.trim().equals("")) {
                             polymerName = molName;
                         } else {
                             polymerName = lastChain;
@@ -575,19 +585,22 @@ public class PDBFile {
                     atom.setBFactor((float) atomParse.bfactor);
 
                 } else if (string.startsWith("MODEL ")) {
-                    if (readJustOne) {
+                    if (!readJustOne) {
                         String modString = string.substring(6).trim();
-                        if (!modString.isEmpty()) {
+                        if (modString.length() > 0) {
                             structureNumber = Integer.parseInt(modString);
                         }
                     }
-                    if (!molecule.structures.contains(structureNumber)) {
-                        Integer intStructure = structureNumber;
+                    if (!molecule.structures.contains(Integer.valueOf(structureNumber))) {
+                        Integer intStructure = Integer.valueOf(structureNumber);
                         selSet.add(intStructure);
                         molecule.structures.add(intStructure);
                     }
 
-                    for (Entity entity : molecule.entities.values()) {
+                    Iterator iterator = molecule.entities.values().iterator();
+
+                    while (iterator.hasNext()) {
+                        Entity entity = (Entity) iterator.next();
                         for (Atom atom : entity.getAtoms()) {
                             atom.setPointValidity(structureNumber, false);
                         }
@@ -602,6 +615,8 @@ public class PDBFile {
                     }
 
                     structureNumber++;
+                } else if (string.startsWith("TER   ")) {
+                    continue;
                 }
             }
         } catch (FileNotFoundException ioe) {
@@ -623,10 +638,11 @@ public class PDBFile {
         File file = new File(fileName);
         String reslibDir = getLocalReslibDir();
         BufferedReader bf = null;
-        if (!reslibDir.isEmpty()) {
+        if (!reslibDir.equals("")) {
             try {
                 bf = new BufferedReader(new FileReader(reslibDir + '/' + file.getName()));
-            } catch (IOException ignored) {
+            } catch (IOException ioe) {
+                bf = null;
             }
         }
         return bf;
@@ -634,7 +650,7 @@ public class PDBFile {
 
     public boolean addResidue(String fileName, Residue residue, String coordSetName, boolean throwTclException) throws MoleculeIOException {
         StreamTokenizer tokenizer;
-        String newState;
+        String newState = null;
         String currentState = null;
         Atom atom = null;
         Atom parent = null;
@@ -644,7 +660,6 @@ public class PDBFile {
         try {
             if (fileName.startsWith("/reslib")) {
                 InputStream inputStream = this.getClass().getResourceAsStream(fileName);
-                assert inputStream != null;
                 bf = new BufferedReader(new InputStreamReader(inputStream));
             } else {
                 bf = new BufferedReader(new FileReader(fileName));
@@ -672,19 +687,24 @@ public class PDBFile {
         tokenizer.whitespaceChars(0000, 32);
         Atom angleAtom = null;
         String pseudoAtomName = null;
-        ArrayList<String> pseudoArray = new ArrayList<>();
+        ArrayList<String> pseudoArray = new ArrayList<String>();
         try {
             while (tokenizer.nextToken() != StreamTokenizer.TT_EOF) {
                 if (tokenizer.ttype == StreamTokenizer.TT_WORD) {
 
-                    newState = switch (tokenizer.sval) {
-                        case "ATOM" -> "ATOM";
-                        case "FAMILY" -> "FAMILY";
-                        case "ANGLE" -> "ANGLE";
-                        case "PSEUDO" -> "PSEUDO";
-                        case "CRAD" -> "CRAD";
-                        default -> null;
-                    };
+                    if (tokenizer.sval.equals("ATOM")) {
+                        newState = "ATOM";
+                    } else if (tokenizer.sval.equals("FAMILY")) {
+                        newState = "FAMILY";
+                    } else if (tokenizer.sval.equals("ANGLE")) {
+                        newState = "ANGLE";
+                    } else if (tokenizer.sval.equals("PSEUDO")) {
+                        newState = "PSEUDO";
+                    } else if (tokenizer.sval.equals("CRAD")) {
+                        newState = "CRAD";
+                    } else {
+                        newState = null;
+                    }
                 } else if (tokenizer.ttype == StreamTokenizer.TT_NUMBER) {
                     newState = null;
                 } else if (tokenizer.ttype == '-') {
@@ -699,6 +719,7 @@ public class PDBFile {
                     currentState = newState;
                     iArgs = 0;
 
+                    continue;
                 } else if (currentState.equals("ATOM")) {
                     if ((newState != null)) {
                         if (iArgs < 5) {
@@ -715,6 +736,7 @@ public class PDBFile {
                             currentState = newState;
                             iArgs = 0;
 
+                            continue;
                         }
                     } else {
                         if (iArgs == 0) {
@@ -724,31 +746,29 @@ public class PDBFile {
                             atom.name = tokenizer.sval;
                             residue.addAtom(atom);
                         } else if (iArgs == 1) {
-                            if (atom != null) {
-                                atom.setType(tokenizer.sval);
-                            }
+                            atom.setType(tokenizer.sval);
 
-                            if (atom != null && tokenizer.sval.charAt(0) == 'M'
+                            if (tokenizer.sval.substring(0, 1).equals("M")
                                     && atom.name.startsWith("H")) {
                                 atom.setAtomicNumber("H");
+                            } else if (tokenizer.sval.substring(0, 1).equals("A")
+                                    && atom.name.startsWith("C")) {
+                                atom.setAtomicNumber("C");
+                            } else {
+                                atom.setAtomicNumber(tokenizer.sval.substring(
+                                        0, 1));
                             }
 
                             tokenizer.parseNumbers();
                         } else if (iArgs == 2) {
                             // bondLength
-                            if (atom != null) {
-                                atom.bondLength = (float) tokenizer.nval;
-                            }
+                            atom.bondLength = (float) tokenizer.nval;
                         } else if (iArgs == 3) {
                             // valance angle
-                            if (atom != null) {
-                                atom.valanceAngle = (float) (tokenizer.nval * Math.PI / 180.0);
-                            }
+                            atom.valanceAngle = (float) (tokenizer.nval * Math.PI / 180.0);
                         } else if (iArgs == 4) {
                             // dihedral angle
-                            if (atom != null) {
-                                atom.dihedralAngle = (float) (tokenizer.nval * Math.PI / 180.0);
-                            }
+                            atom.dihedralAngle = (float) (tokenizer.nval * Math.PI / 180.0);
                         }
 
                         iArgs++;
@@ -761,6 +781,7 @@ public class PDBFile {
                             currentState = newState;
                             iArgs = 0;
 
+                            continue;
                         }
                     } else {
                         if (iArgs == 0) {
@@ -780,7 +801,7 @@ public class PDBFile {
                             continue;
                         }
 
-                        Bond bond;
+                        Bond bond = null;
 
                         if (iArgs == 1) {
                             refAtom = residue.getAtom(tokenizer.sval);
@@ -790,7 +811,7 @@ public class PDBFile {
                                 refAtom.parent = parent;
                                 refAtom.addBond(bond);
 
-                                if (parent.entity == residue) {
+                                if ((Residue) parent.entity == residue) {
                                     iArgs++;
 
                                     continue;
@@ -809,7 +830,7 @@ public class PDBFile {
 
                             continue;
                         } else {
-                            Atom daughterAtom;
+                            Atom daughterAtom = null;
                             boolean ringClosure = false;
                             if (tokenizer.sval.startsWith("r")) { // close ring
                                 daughterAtom = residue.getAtom(tokenizer.sval.substring(1));
@@ -831,9 +852,7 @@ public class PDBFile {
                             }
 
                             bond = new Bond(refAtom, daughterAtom);
-                            if (refAtom != null) {
-                                refAtom.addBond(bond);
-                            }
+                            refAtom.addBond(bond);
                             if (!ringClosure) {
                                 daughterAtom.parent = refAtom;
                             }
@@ -849,6 +868,7 @@ public class PDBFile {
                             currentState = newState;
                             iArgs = 0;
 
+                            continue;
                         }
                     } else {
                         if (iArgs == 0) {
@@ -873,6 +893,7 @@ public class PDBFile {
                             currentState = newState;
                             iArgs = 0;
                             residue.addPseudoAtoms(pseudoAtomName, pseudoArray);
+                            continue;
                         }
                     } else {
                         if (iArgs == 0) {
