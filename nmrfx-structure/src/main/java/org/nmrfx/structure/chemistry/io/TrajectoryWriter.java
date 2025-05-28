@@ -66,7 +66,7 @@ public class TrajectoryWriter {
 
         try {
             molecule.copyStructure(0, 2);
-            superMol.doSuper(1, 2, true);
+            superMol.doSuper(1, 2, true, null);
             molecule.centerStructure(2);
             String fileName = getFileName();
             molecule.writeXYZToPDB(fileName, 2);
