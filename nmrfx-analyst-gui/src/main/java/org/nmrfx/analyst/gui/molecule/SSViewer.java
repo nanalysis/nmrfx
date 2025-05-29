@@ -49,6 +49,7 @@ public class SSViewer extends Pane {
     Group drawingGroup;
     Group mapDrawingGroup;
     Group infoGroup;
+    HBox hBox;
     Pane pane;
     ScrollPane scrollPane;
     Pane mapPane;
@@ -159,7 +160,7 @@ public class SSViewer extends Pane {
     }
 
     public final void initScene() {
-        HBox hBox = new HBox();
+        hBox = new HBox();
         scrollPane = new ScrollPane();
         mapPane = new Pane();
         mapDrawingGroup = new Group();
@@ -205,7 +206,12 @@ public class SSViewer extends Pane {
     public void print() {
         PrinterJob job = PrinterJob.createPrinterJob();
         if (job != null && job.showPrintDialog(drawingGroup.getScene().getWindow())) {
-            Node node = pane;
+            Node node;
+            if (drawMapProp.get()) {
+                node = mapPane;
+            } else {
+                 node = pane;
+            }
             PageLayout pageLayout = job.getJobSettings().getPageLayout();
             double printableWidth = pageLayout.getPrintableWidth();
             double printableHeight = pageLayout.getPrintableHeight();
@@ -221,7 +227,7 @@ public class SSViewer extends Pane {
 
             // Apply scale transform
             Scale transform = new Scale(scaleXY, scaleXY);
-            pane.getTransforms().add(transform);
+            node.getTransforms().add(transform);
             try {
                 boolean success = job.printPage(pageLayout, node);
                 if (success) {
