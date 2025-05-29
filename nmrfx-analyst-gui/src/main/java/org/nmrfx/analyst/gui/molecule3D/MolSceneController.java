@@ -487,6 +487,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     @FXML
+    void printSS() {
+        ssViewer.print();
+    }
+
+    @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
