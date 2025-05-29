@@ -8,6 +8,7 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.print.PrinterJob;
 import javafx.scene.SubScene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -484,6 +485,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
         dotBracketPane.getChildren().clear();
         ssViewer.clear();
         dotBracketField.clear();
+    }
+
+    @FXML
+    void printSS() {
+        ssViewer.print();
     }
 
     @FXML
