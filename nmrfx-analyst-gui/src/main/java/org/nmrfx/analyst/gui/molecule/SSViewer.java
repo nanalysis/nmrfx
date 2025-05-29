@@ -41,7 +41,7 @@ public class SSViewer extends Pane {
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
     private static final int N_ATOMS = 7;
 
-    private static Color ACTIVE_COLORS[] = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
+    private static final Color[] ACTIVE_COLORS = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
 
     record AtomCoord(double x, double y) {
     }
@@ -547,7 +547,7 @@ public class SSViewer extends Pane {
                 infoGroup.getChildren().add(stack);
                 rect.setOnMousePressed(mE -> hideInfo());
             } else {
-                stack = (StackPane) infoGroup.getChildren().get(0);
+                stack = (StackPane) infoGroup.getChildren().getFirst();
                 textItem = (Text) stack.getChildren().get(1);
             }
             textItem.setText(result);
