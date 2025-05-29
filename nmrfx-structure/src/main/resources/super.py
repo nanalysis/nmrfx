@@ -11,6 +11,7 @@ from operator import itemgetter
 from itertools import groupby
 from java.io import FileWriter;
 from org.nmrfx.chemistry.io import MMcifWriter
+from java.io import File
 
 def median(values):
     values.sort()
@@ -25,19 +26,29 @@ def median(values):
         return (v1+v2)/2.0
 
 def loadPDBModels(files):
+    bundles = [] #keep track of each ensemble of structures 
     try:
         fileName = files[0]
-    except IndexError:
+        if os.path.isdir(fileName):
+            fileName = glob.glob(os.path.join(fileName,"*.pdb"))[0]
+    except IndexError as e:
 	errMsg = "\nCan't load final PDB models. Please inspect the 'final' and 'output' directories."
         errMsg += "\nNote: problem related to the retrieval of summary lines in temp*.txt."
         raise LookupError(errMsg)
     pdb = PDBFile()
     molecule = pdb.read(fileName)
+    molecule.setActive()
     iFile = 0
     for file in files:
-        pdb.readCoordinates(molecule, file,iFile,False, False)
-        iFile += 1
-    return molecule
+        if os.path.isdir(file):
+            pdb.readMultipleCoordinateFiles(File(file), False)
+        else:
+            pdb.readCoordinates(molecule, file,iFile,False, False)
+            iFile += 1
+        nStructures = list(molecule.getActiveStructureList())
+        bundles.append(nStructures)
+
+    return molecule, bundles
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="super options")
@@ -49,6 +60,7 @@ def parseArgs():
     parser.add_argument("-t", dest="type", default=None, help="Type (cif|pdb) for saved aligned models. No files saved if None (None)")
     parser.add_argument("-b", dest="baseName", default="sup_", help="Base name (prefix) for superimposed file names.")
     parser.add_argument("-n", dest="nCore", default=5, type=int, help="Number of core residue cycles. Default is 5.")
+    parser.add_argument("-e", dest="doAverage", action="store_true", help="compare averages of two ensembles")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     if (args.nCore < 0):
@@ -57,15 +69,13 @@ def parseArgs():
     if args.type is not None and args.type != 'cif' and args.type != 'pdb':
         print "Error: save models file type must be cif or pdb."
         sys.exit()
-    if len(args.fileNames) > 1:
-        runSuper(args)
+    runSuper(args)
 
-
-def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+def findRepresentative(mol, resNums='*',atomNames="*", nStructList=None):
     doSelections(mol, resNums,atomNames)
     sup = SuperMol(mol)
     mol.resetActiveStructures()
-    superResults = sup.doSuper(-1, -1, False)
+    superResults = sup.doSuper(-1, -1, False, nStructList)
     totalRMS = 0.0
     averageToI = {}
     nAvg = {}
@@ -81,7 +91,7 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
         averageToI[iFix] += rms
         nAvg[iFix] += 1
     minRMS = 1.0e6
-    active = mol.getActiveStructures()
+    active = mol.getActiveStructures() if not nStructList else nStructList 
     for i in active:
         averageToI[i] /= nAvg[i]
         if averageToI[i] < minRMS:
@@ -90,9 +100,9 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
     avgRMS = totalRMS/len(superResults)
     return (minIndex, minRMS, avgRMS)
 
-def findCore(mol, minIndex):
+def findCore(mol, minIndex, nStructList=None):
     sup = SuperMol(mol)
-    superResults = sup.doSuper(minIndex, -1, True)
+    superResults = sup.doSuper(minIndex, -1, True, nStructList)
     mol.calcRMSD()
     polymers = mol.getPolymers()
     resRMSs = []
@@ -164,11 +174,13 @@ def doSelections(mol, resSelects, atomSelect):
         mol.setAtomProperty(2,True)
 
 
-def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
-    target = target - 1
-    doSelections(mol, resSelect,atomSelect)
+def superImpose(mol, target, resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'", conformer=-1):
+    doSelections(mol, resSelect, atomSelect)
     sup = SuperMol(mol)
-    superResults = sup.doSuper(target, -1, True)
+    if isinstance(conformer,int):
+        superResults = sup.doSuper(target, conformer, True, None)
+    else:
+        superResults = sup.doSuper(target, -1, True, conformer)
     return [result.getRms() for result in superResults]
 
 def sortByStructNum(val):
@@ -244,44 +256,59 @@ def makeRMSDict(files, rmsVals):
         rmsDict[sNum] = rmsVals[i]
     return rmsDict
 
-def makeFormattedRMSFile(rmsDict, outFileName):
+def makeFormattedRMSFile(rmsDict, outFileName='calcRefCoreRMS.txt'):
     with open(outFileName, 'w') as formattedFile:
         formattedFile.write("{}\t{}\n".format("Structure", "RMS"))
         for key in sorted(rmsDict.keys()):
             formattedFile.write("{}\t{}\n".format(key, rmsDict[key]))
+    print "RMS comparisons to reference structure saved to file:", outFileName
+
+def doPrep(mol, resList, atoms, nStructList=None):
+    (minI, rms, avgRMS) = findRepresentative(mol, resList, atoms, nStructList)
+    print 'repModel', minI, 'rms', rms, 'avgrms', avgRMS
+
+    if nCore > 0:
+        for iCore in range(nCore):
+            coreRes = findCore(mol, minI, nStructList)
+            print 'coreResidues',coreRes
+            doSelections(mol, coreRes,atoms)
+    else:
+        coreRes = resList
+
+    return minI, coreRes
+
+def avgStructures(bundles, mol, resList='*', atoms="*"):
+    for nStructList in bundles:
+        minI, coreRes = doPrep(mol, resList, atoms, nStructList)
+        mol.avgStructures(nStructList) 
+
+    target, iStructure = list(mol.getActiveStructures())[-2:]
+    results = superImpose(mol, target, coreRes, atoms, iStructure) 
+    print 'rmsd ', results[0]
 
 def runSuper(args):
     files = args.fileNames
-    files.sort(key=sortByStructNum)
-    mol = loadPDBModels(files)
+    #files.sort(key=sortByStructNum)
+    mol, bundles = loadPDBModels(files)
     polymers = mol.getPolymers()
     # print files
     print args.resListE, args.atomListE, args.resListI, args.atomListI
     resList, atoms = makeResAtomLists(polymers, args.resListE, args.atomListE, args.resListI, args.atomListI)
-    if len(polymers) > 0:
-        (minI,rms,avgRMS) = findRepresentative(mol, resList, atoms)
-        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        if args.nCore > 0:
-            for iCore in range(args.nCore):
-                coreRes = findCore(mol, minI)
-                print 'coreResidues',coreRes
-                doSelections(mol, coreRes,atoms)
-        else:
-            coreRes = resList
-        (minI,rms,avgRMS) = findRepresentative(mol, coreRes, atoms)
-        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        superImpose(mol, minI, coreRes, atoms)
-        if args.refCompare:
-            calcRefComparisons = superImpose(mol, len(files), coreRes, atoms)
-            rmsDict = makeRMSDict(files, calcRefComparisons)
-            outFile = 'calcRefCoreRMS.txt'
-            makeFormattedRMSFile(rmsDict, outFile)
-            print "RMS comparisons to reference structure saved to file:", outFile
-    else:
-        (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
-        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-        coreRes = ['*']
-        superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
+    doAverage = args.doAverage 
+    global nCore
+    nCore = args.nCore
+    if len(polymers) == 0:
+        nCore = 0
+    if doAverage:
+        avgStructures(bundles, mol, resList, atoms)
+        return
+    minI, coreRes = doPrep(mol, resList, atoms)
+    (minI, rms, avgRMS) = findRepresentative(mol, coreRes, atoms, None)
+    print 'repModel',minI,'rms',rms,'avgrms',avgRMS
+    results = superImpose(mol, minI, coreRes, atoms, None)
+    if args.refCompare:
+        rmsDict = makeRMSDict(files, results)
+        makeFormattedRMSFile(rmsDict)
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
     if args.type is not None:
@@ -292,5 +319,5 @@ def runSuper(args):
 def runAllSuper(files, type, prefix):
     batchArgs = argparse.Namespace(atomListE='', atomListI="ca,c,n,o,p,o5',c5',c4',c3',o3'",
                                 fileNames=files, nCore=5, refCompare=False, resListE='',
-                                resListI='*', type=type, baseName=prefix)
+                                resListI='*', type=type, baseName=prefix, doAverage=False)
     runSuper(batchArgs)
