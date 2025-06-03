@@ -5,6 +5,8 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.event.Event;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.print.PageLayout;
+import javafx.print.PrinterJob;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
@@ -21,6 +23,7 @@ import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Scale;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -38,7 +41,7 @@ public class SSViewer extends Pane {
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
     private static final int N_ATOMS = 7;
 
-    private static Color ACTIVE_COLORS[] = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
+    private static final Color[] ACTIVE_COLORS = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
 
     record AtomCoord(double x, double y) {
     }
@@ -46,6 +49,7 @@ public class SSViewer extends Pane {
     Group drawingGroup;
     Group mapDrawingGroup;
     Group infoGroup;
+    HBox hBox;
     Pane pane;
     ScrollPane scrollPane;
     Pane mapPane;
@@ -131,6 +135,7 @@ public class SSViewer extends Pane {
     public SimpleBooleanProperty getDrawSSProp() {
         return drawSSProp;
     }
+
     public SimpleBooleanProperty getDrawProbabilitiesProp() {
         return drawProbabilitiesProp;
     }
@@ -155,7 +160,7 @@ public class SSViewer extends Pane {
     }
 
     public final void initScene() {
-        HBox hBox = new HBox();
+        hBox = new HBox();
         scrollPane = new ScrollPane();
         mapPane = new Pane();
         mapDrawingGroup = new Group();
@@ -195,6 +200,42 @@ public class SSViewer extends Pane {
         if (drawingGroup != null) {
             drawingGroup.getChildren().clear();
             infoGroup.getChildren().clear();
+        }
+    }
+
+    public void print() {
+        PrinterJob job = PrinterJob.createPrinterJob();
+        if (job != null && job.showPrintDialog(drawingGroup.getScene().getWindow())) {
+            Node node;
+            if (drawMapProp.get()) {
+                node = mapPane;
+            } else {
+                 node = pane;
+            }
+            PageLayout pageLayout = job.getJobSettings().getPageLayout();
+            double printableWidth = pageLayout.getPrintableWidth();
+            double printableHeight = pageLayout.getPrintableHeight();
+
+            // Get node's current bounds
+            double nodeWidth = node.getBoundsInParent().getWidth();
+            double nodeHeight = node.getBoundsInParent().getHeight();
+
+            // Calculate scale factor
+            double scaleX = printableWidth / nodeWidth;
+            double scaleY = printableHeight / nodeHeight;
+            double scaleXY = Math.min(scaleX, scaleY);  // keep aspect ratio
+
+            // Apply scale transform
+            Scale transform = new Scale(scaleXY, scaleXY);
+            node.getTransforms().add(transform);
+            try {
+                boolean success = job.printPage(pageLayout, node);
+                if (success) {
+                    job.endJob();
+                }
+            } finally {
+                node.getTransforms().remove(transform);  // Always clean up
+            }
         }
     }
 
@@ -512,7 +553,7 @@ public class SSViewer extends Pane {
                 infoGroup.getChildren().add(stack);
                 rect.setOnMousePressed(mE -> hideInfo());
             } else {
-                stack = (StackPane) infoGroup.getChildren().get(0);
+                stack = (StackPane) infoGroup.getChildren().getFirst();
                 textItem = (Text) stack.getChildren().get(1);
             }
             textItem.setText(result);

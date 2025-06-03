@@ -123,6 +123,8 @@
                                             <buttons>
                                                 <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0"
                                                         prefWidth="87.0" text="Draw"/>
+                                                <Button mnemonicParsing="false" onAction="#printSS" prefHeight="27.0"
+                                                        prefWidth="87.0" text="Print"/>
                                                 <MenuButton mnemonicParsing="false" text="Sec. Structure">
                                                     <items>
                                                         <MenuItem mnemonicParsing="false" onAction="#loadFromFile"

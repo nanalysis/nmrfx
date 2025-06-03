@@ -470,7 +470,12 @@ public class Predictor {
         List<Atom> atoms = ligand.getAtoms();
         for (Atom atom : atoms) {
             double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), 0, ringRatio);
-            PPMv ppmV = atom.getRefPPM(iRef);
+            PPMv ppmV;
+            if (iRef < 0) {
+                ppmV = atom.getRefPPM(-iRef - 1);
+            } else {
+                ppmV = atom.getPPM(iRef);
+            }
             if (ppmV != null) {
                 double basePPM = ppmV.getValue();
                 double ppm = basePPM + ringPPM;

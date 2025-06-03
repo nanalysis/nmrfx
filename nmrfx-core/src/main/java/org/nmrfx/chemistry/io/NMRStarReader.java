@@ -170,8 +170,9 @@ public class NMRStarReader {
         for (int i = 0; i < compIDColumn.size(); i++) {
             String resName = compIDColumn.get(i);
             String seqNumber = authSeqIDColumn.get(i);
-            if ((seqNumber == null) || seqNumber.isBlank()) {
-                seqNumber = resName;
+            String idStr = idColumn.get(i);
+            if ((seqNumber == null) || seqNumber.isBlank() || seqNumber.equals(".")) {
+                seqNumber = idStr;
             }
             String ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName;
             Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
@@ -443,9 +444,9 @@ public class NMRStarReader {
             String cappedString = saveframe.getValue("_Entity", "Capped", "");
             boolean capped = !cappedString.equalsIgnoreCase("no");
             if (type != null && type.equals("polymer")) {
-                Entity entity = molecule.getEntity(entityAssemblyName);
+                Entity entity = molecule.getEntity(entitySaveFrameLabel);
                 if (entity == null) {
-                    Polymer polymer = new Polymer(entitySaveFrameLabel, entitySaveFrameLabel, entityAssemblyName);
+                    Polymer polymer = new Polymer(entitySaveFrameLabel, entitySaveFrameLabel, entitySaveFrameLabel);
                     polymer.setIDNum(entityID);
                     polymer.assemblyID = entityAssemblyID;
                     polymer.setPDBChain(pdbLabel);
