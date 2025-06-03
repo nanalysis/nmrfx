@@ -17,8 +17,6 @@
  */
 package org.nmrfx.analyst.gui.spectra;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,7 +25,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -113,7 +111,7 @@ public class StripController implements ControllerTool {
         this.setupToolBar = new ToolBar();
         this.vBox.getChildren().addAll(toolBar, setupToolBar);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close");
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 
@@ -179,9 +177,9 @@ public class StripController implements ControllerTool {
 
         limitListener = (observable, oldValue, newValue) -> updateView(false);
 
-        Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
+        Button addButton = GUIUtils.addItemButton();
         addButton.setOnAction(e -> addItem());
-        Button removeButton = GlyphsDude.createIconButton(FontAwesomeIcon.REMOVE);
+        Button removeButton = GUIUtils.removeItemButton();
         removeButton.setOnAction(e -> removeItem());
 
         itemPeakListChoiceBox = new ChoiceBox<>();

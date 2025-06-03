@@ -232,7 +232,6 @@ public class WindowIO implements FileWatchListener {
         borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle("Favorites");
         ToolBar toolBar = new ToolBar();
         borderPane.setTop(toolBar);

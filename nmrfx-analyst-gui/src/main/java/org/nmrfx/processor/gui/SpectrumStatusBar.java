@@ -18,8 +18,6 @@
 
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
@@ -39,7 +37,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.kordamp.ikonli.material2.Material2MZ;
 import org.nmrfx.analyst.gui.tools.SliderLayout;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
@@ -48,6 +46,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,9 +83,7 @@ public class SpectrumStatusBar {
     private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
     private final SegmentedButton cursorButtons = new SegmentedButton();
-    private final ToggleButton tableButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.TABLE, "Table",
-            AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
-
+    private final ToggleButton tableButton = GUIUtils.toggleButton(Material2MZ.TABLE_VIEW,"Table", ContentDisplay.LEFT);
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
@@ -986,8 +983,7 @@ public class SpectrumStatusBar {
     }
 
     private static ToggleButton createCursorToggleButton(CanvasCursor cursor) {
-        ToggleButton button = GlyphsDude.createIconToggleButton(cursor.getIcon(), cursor.getLabel(),
-                AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.RIGHT);
+        ToggleButton button = GUIUtils.toggleButton(cursor.getIcon(), cursor.getLabel(), ContentDisplay.RIGHT);
         button.setUserData(cursor);
         button.setMinWidth(50);
         return button;

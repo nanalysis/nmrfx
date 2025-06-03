@@ -25,6 +25,10 @@ import javafx.scene.text.Text;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.IkonliIkonProvider;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +36,9 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.DoubleConsumer;
 import java.util.function.UnaryOperator;
+import static atlantafx.base.theme.Styles.TEXT_SMALL;
+import static org.kordamp.ikonli.material2.Material2AL.*;
+import static org.kordamp.ikonli.material2.Material2MZ.*;
 
 /**
  * @author brucejohnson
@@ -465,5 +472,88 @@ public class GUIUtils {
             return null;
         });
         return dialog.showAndWait();
+    }
+
+    public static Button addItemButton() {
+        return GUIUtils.iconButton(ADD, null);
+    }
+    public static Button removeItemButton() {
+        return GUIUtils.iconButton(REMOVE, null);
+    }
+
+    public static Button folderOpenButton() {
+        return GUIUtils.iconButton(FOLDER_OPEN, "Open...");
+    }
+    public static Button firstItemButton() {
+        return GUIUtils.iconButton(FIRST_PAGE, null);
+    }
+    public static Button previousItemButton() {
+        return GUIUtils.iconButton(NAVIGATE_BEFORE, null);
+    }
+    public static Button nextItemButton() {
+        return GUIUtils.iconButton(NAVIGATE_NEXT, null);
+    }
+    public static Button lastItemButton() {
+        return GUIUtils.iconButton(LAST_PAGE, null);
+    }
+
+    public static Button closeButton() {
+        return GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close");
+    }
+
+    public static Button closeButton(ContentDisplay contentDisplay) {
+        return GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close", contentDisplay);
+    }
+
+    public static Button iconButton(Ikon icon, String text) {
+        return iconButton(icon, text, ContentDisplay.TOP);
+    }
+
+    public static Button iconButton(Ikon icon, String text, ContentDisplay contentDisplay) {
+        final FontIcon fontIcon = new FontIcon();
+        Button button;
+        if (text == null) {
+            button = new Button();
+        } else {
+            button = new Button(text);
+
+        }
+        fontIcon.setIconSize(16);
+        button.setContentDisplay(contentDisplay);
+        button.setGraphic(fontIcon);
+        button.setGraphicTextGap(2);
+        button.getStyleClass().addAll("icon-label", TEXT_SMALL);
+        fontIcon.setIconCode(icon);
+        return button;
+    }
+
+
+    public static ToggleButton toggleButton(Ikon icon, String text) {
+        return toggleButton(icon, text, ContentDisplay.TOP);
+    }
+
+    public static ToggleButton toggleButton(Ikon icon, String text, ContentDisplay contentDisplay) {
+        final FontIcon fontIcon = new FontIcon();
+        ToggleButton button;
+        if (text == null) {
+            button = new ToggleButton();
+        } else {
+            button = new ToggleButton(text);
+
+        }
+        button.setContentDisplay(contentDisplay);
+        button.setGraphic(fontIcon);
+        button.setGraphicTextGap(4);
+        button.getStyleClass().addAll("icon-label", TEXT_SMALL);
+        fontIcon.setIconCode(icon);
+        return button;
+    }
+
+    public static Label createIcon(Ikon ikon) {
+        Label label = new Label();
+        final FontIcon fontIcon = new FontIcon();
+        label.setGraphic(fontIcon);
+        fontIcon.setIconCode(ikon);
+        return label;
     }
 }

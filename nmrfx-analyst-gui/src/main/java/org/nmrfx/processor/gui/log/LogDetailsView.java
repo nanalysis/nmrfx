@@ -1,7 +1,5 @@
 package org.nmrfx.processor.gui.log;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.event.ActionEvent;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -13,9 +11,12 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Text;
 import org.nmrfx.chemistry.utilities.NvUtil;
+import org.nmrfx.utils.GUIUtils;
 
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
+
+import static org.kordamp.ikonli.materialdesign2.MaterialDesignC.CONTENT_COPY;
 
 
 /**
@@ -27,7 +28,7 @@ public class LogDetailsView extends GridPane {
     private final TextField datetime = new TextField();
     private final TextField location = new TextField();
     private final TextArea message = new TextArea();
-    private final Button copyButton = GlyphsDude.createIconButton(FontAwesomeIcon.COPY);
+    private final Button copyButton = GUIUtils.iconButton(CONTENT_COPY, "Copy");
     private LogRecord logRecord;
 
     public LogDetailsView() {

@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui.peaks;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -73,7 +71,7 @@ public class PeakAssignTool implements ControllerTool {
                 nDim = dataset.getNDim();
             }
         }
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
         toolBar.getItems().add(pickButton);

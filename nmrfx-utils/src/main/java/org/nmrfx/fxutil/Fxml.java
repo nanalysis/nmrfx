@@ -45,7 +45,6 @@ public class Fxml {
         private Scene getOrCreateScene() {
             if (scene == null) {
                 this.scene = new Scene(node);
-                scene.getStylesheets().add(DEFAULT_CSS);
             }
             return scene;
         }

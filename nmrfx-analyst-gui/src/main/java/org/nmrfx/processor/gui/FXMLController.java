@@ -17,8 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -46,6 +44,8 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.kordamp.ikonli.material2.Material2MZ;
+import org.kordamp.ikonli.materialdesign2.*;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeMenuActions;
 import org.nmrfx.analyst.gui.molecule.MoleculeUtils;
@@ -128,8 +128,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     private final BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     private final UndoManager undoManager = new UndoManager();
-    private final Button haltButton = GlyphsDude.createIconButton(FontAwesomeIcon.STOP, "Halt", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
-    private final Button favoriteButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+    private final Button haltButton = GUIUtils.iconButton(MaterialDesignS.STOP, "Halt");
+    private final Button favoriteButton = GUIUtils.iconButton(MaterialDesignH.HEART, "Favorite");
     private final SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
     private final ToggleButton processorButton = new ToggleButton("Processor");
     private final NmrControlRightSidePane nmrControlRightSidePane = new NmrControlRightSidePane();
@@ -1838,7 +1838,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     private void initToolBar(ToolBar toolBar) {
         ArrayList<Node> buttons = new ArrayList<>();
         ButtonBase bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignF.FILE, "Datasets");
         bButton.setOnAction(this::showDatasetBrowser);
         buttons.add(bButton);
         favoriteButton.setOnAction(e -> saveAsFavorite());
@@ -1847,28 +1847,28 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         buttons.add(favoriteButton);
         buttons.add(new Separator(Orientation.VERTICAL));
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignR.REFRESH, "Refresh");
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
         buttons.add(haltButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignU.UNDO, "Undo");
         bButton.setOnAction(e -> undo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.undoable.not());
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignR.REDO, "Redo");
         bButton.setOnAction(e -> redo());
         buttons.add(bButton);
         bButton.disableProperty().bind(undoManager.redoable.not());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(Material2MZ.ZOOM_OUT_MAP, "Full");
         bButton.setOnMouseClicked(this::doFull);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignE.EXPAND_ALL, "Expand");
         bButton.setOnMouseClicked(this::doExpand);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "In", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(Material2MZ.ZOOM_IN, "In");
         bButton.setOnMouseClicked(e -> doZoom(e, 1.2));
         bButton.setOnScroll((ScrollEvent event) -> {
             double y = event.getDeltaY();
@@ -1880,7 +1880,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "Out", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(Material2MZ.ZOOM_OUT, "Out");
         bButton.setOnMouseClicked(e -> doZoom(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double y = event.getDeltaY();
@@ -1894,10 +1894,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignA.ARROW_UP_DOWN, "Auto");
         bButton.setOnMouseClicked(e -> doScale(e, 0.0));
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignA.ARROW_UP, "Higher");
         bButton.setOnMouseClicked(e -> doScale(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double y = event.getDeltaY();
@@ -1910,7 +1910,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             }
         });
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        bButton = GUIUtils.iconButton(MaterialDesignA.ARROW_DOWN, "Lower");
         bButton.setOnMouseClicked(e -> doScale(e, 1.2));
 
         bButton.setOnScroll((ScrollEvent event) -> {

@@ -49,7 +49,6 @@ public class PeakAtomPicker {
         borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle("Peak Assigner");
         stage.setAlwaysOnTop(true);
 

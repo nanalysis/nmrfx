@@ -17,6 +17,8 @@
  */
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import org.nmrfx.processor.gui.log.Log;
 
@@ -37,7 +39,6 @@ public class NMRAnalystApp {
         if (!Log.isConfigFileSet() && sourceLogbackConfig.exists()) {
             Log.setConfigFile("nmrfx-analyst-gui/src/main/config/logback.xml");
         }
-
         Application.launch(AnalystApp.class, args);
     }
 

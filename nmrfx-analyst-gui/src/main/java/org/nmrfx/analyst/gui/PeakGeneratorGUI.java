@@ -62,7 +62,6 @@ public class PeakGeneratorGUI {
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle("Peak Generator");
         ToolBar toolBar = new ToolBar();
         ToolBar toolBar2 = new ToolBar();

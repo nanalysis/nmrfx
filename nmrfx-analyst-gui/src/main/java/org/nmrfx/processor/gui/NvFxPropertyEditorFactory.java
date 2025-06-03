@@ -23,8 +23,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -39,6 +37,7 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 import org.controlsfx.property.editor.DefaultPropertyEditorFactory;
 import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
+import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -268,7 +267,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     public static final PropertyEditor<?> createFileEditor(Item property, final boolean directoryMode) {
         CustomTextField textField = new CustomTextField();
-        Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
+        Button button = GUIUtils.folderOpenButton();
         textField.setRight(button);
         AbstractPropertyEditor<String, CustomTextField> editor = new AbstractPropertyEditor<String, CustomTextField>(property, textField) {
             @Override
