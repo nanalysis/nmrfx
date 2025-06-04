@@ -629,7 +629,7 @@ public class PeakPicker {
         if (peakList == null) {
             throw new IllegalArgumentException("nv_dataset peakPick: invalid mode");
         }
-        pickRegion(peakList, pt, dataToPk, pkToData, dimOrder);
+        pickRegion(peakList, pt, dataToPeak, peakToData);
         if ((peakPickPar != null) && peakPickPar.convolutionPickPar.state()) {
             convolutionPick(peakList);
         }
@@ -658,10 +658,10 @@ public class PeakPicker {
         ConvolutionFitter convolutionFitter = new ConvolutionFitter(n, widthPt, shapeFactor);
         peakList.clear();
         convolutionFitter.squash(convolutionPickPar.squash());
-        convolutionFitter.lr(dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
+        convolutionFitter.iterativeConvolutions(dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
     }
 
-    void pickRegion(PeakList peakList, int[][] pt, int[] dataToPk, int[] peakToData, int[] dimOrder) throws IOException {
+    void pickRegion(PeakList peakList, int[][] pt, int[] dataToPeak, int[] peakToData) throws IOException {
         int[] lastPoint = new int[nDataDim];
         double checkValue;
         Double noiseLevel = dataset.getNoiseLevel();

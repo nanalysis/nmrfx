@@ -1,6 +1,10 @@
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.Peak;
@@ -17,7 +21,6 @@ import java.util.Random;
 
 public class ConvolutionFitter {
     static Random rand = new Random();
-    int SQUASH_AT = 10;
     final double[][] psf;
     double psfMax;
     int psfTotalSize;
@@ -43,10 +46,6 @@ public class ConvolutionFitter {
     public ConvolutionFitter(int[] n, double[] widths, double shapeFactor) {
         psf = makePSF(n, widths, shapeFactor);
         this.widths = widths.clone();
-    }
-
-    public void setSquash(int squash) {
-        SQUASH_AT = squash;
     }
 
     double[][] makePSF(int[] n, double[] width, double shapeFactor) {
@@ -76,10 +75,6 @@ public class ConvolutionFitter {
         return yValues;
     }
 
-    // used from Python for testing
-    public void signalVector(int n) {
-        signal = new double[n];
-    }
 
     // used from Python for testing
     public void addSignal(double[] vec, double amplitude, double center, double width, double shapeFactor) {
@@ -126,10 +121,10 @@ public class ConvolutionFitter {
         double[] vArray = new double[psfTotalSize];
         MatrixND matrixND = new MatrixND();
         int i = 0;
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            for (int j=0;j<counts.length;j++) {
+            for (int j = 0; j < counts.length; j++) {
                 counts[j] += start[j];
             }
             vArray[i] = matrixND.getValue(counts);
@@ -137,70 +132,20 @@ public class ConvolutionFitter {
         }
         return vArray;
     }
+
     public void putValueArray(int[] start, double[] vArray) {
         var iterator = counter.iterator();
         MatrixND matrixND = new MatrixND();
         int i = 0;
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            for (int j=0;j<counts.length;j++) {
+            for (int j = 0; j < counts.length; j++) {
                 counts[j] += start[j];
             }
             matrixND.setValue(vArray[i], counts);
             i++;
         }
-    }
-
-    public void convolve(double[] values, boolean[] skip) {
-        int psfSize = psf[0].length;
-        int nh = psfSize / 2;
-        int size = values.length;
-        int end = size - psfSize;
-        if ((sim == null) || (sim.length != size)) {
-            sim = new double[size];
-        }
-        Arrays.fill(sim, 0.0);
-        for (int i = nh; i < end; i++) {
-            double scale = values[i];
-            for (int k = 0; k < psfSize; k++) {
-                int index = i - nh + k;
-                if (!skip[index]) {
-                    sim[index] += scale * psf[0][k];
-                }
-            }
-        }
-    }
-
-    public double lrIteration(double[] values) {
-        int psfSize = psf[0].length;
-        int nh = psfSize / 2;
-        int size = values.length;
-        int end = size - nh;
-        double sumDelta = 0.0;
-        int nDelta = 0;
-        convolve(values, skip);
-
-        for (int j = nh; j < end; j++) {
-            double sum = 0.0;
-            for (int k = 0; k < psfSize; k++) {
-                int index = j - nh + k;
-                if ((signal[index] > threshold) && (sim[index] > 1.0e-6)) {
-                    sum += signal[index] / sim[index] * psf[0][k];
-                }
-            }
-            if (!skip[j]) {
-                double oldValue = values[j];
-                values[j] = values[j] * sum;
-                double delta = values[j] - oldValue;
-                // System.out.println(j + " " + delta + " " + sum + " " + nSum + " " + psfSize + " " + oldValue + " " + threshold);
-                sumDelta += delta * delta;
-                nDelta++;
-            } else {
-                values[j] = 0.0;
-            }
-        }
-        return nDelta > 0 ? Math.sqrt(sumDelta / nDelta) : 0.0;
     }
 
     boolean isHigherThanNeighbor(double[] values, int i, int searchWidth) {
@@ -209,6 +154,7 @@ public class ConvolutionFitter {
             int k = i + j;
             if ((j != 0) && (values[i] < values[k])) {
                 higher = false;
+                break;
             }
         }
         return higher;
@@ -246,7 +192,6 @@ public class ConvolutionFitter {
             int center1 = cPeak1.position;
             int center0 = Math.max(0, center1 - half);
             int center2 = Math.min(values.length - 1, center1 + half);
-
             if (i > 0) {
                 CPeak cPeak0 = cPeakList.get(i - 1);
                 if ((cPeak0.position + half) > center0) {
@@ -262,7 +207,7 @@ public class ConvolutionFitter {
             double sumHeight = 0.0;
             for (int k = center0; k <= center2; k++) {
                 int j = center1 - k;
-                int ipsf = psf[0].length - psf[0].length / 2 + j;
+                int ipsf = (psf[0].length - 1) / 2 + j;
                 if ((ipsf > 0) && (ipsf < psf[0].length)) {
                     sumHeight += values[k] * psf[0][ipsf] / psfMax;
                 }
@@ -281,12 +226,66 @@ public class ConvolutionFitter {
         }
     }
 
-    public double[] lr(double[] signal, double threshold, int iterations) {
-        this.signal = signal;
-        return lr(threshold, iterations);
+
+    public static double[] convolve(double[] a, double[] b) {
+        int n = a.length + b.length - 1;
+        int fftLen = nextPowerOfTwo(n);
+
+        double[] aPadded = Arrays.copyOf(a, fftLen);
+        double[] bPadded = Arrays.copyOf(b, fftLen);
+
+        FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
+
+        Complex[] signalArray = fft.transform(aPadded, TransformType.FORWARD);
+        Complex[] shapeArray = fft.transform(bPadded, TransformType.FORWARD);
+
+        Complex[] productArray = new Complex[fftLen];
+        for (int i = 0; i < fftLen; i++) {
+            productArray[i] = signalArray[i].multiply(shapeArray[i]);
+        }
+
+        Complex[] cComplex = fft.transform(productArray, TransformType.INVERSE);
+
+        double[] result = new double[a.length];
+        int offset = (b.length - 1) / 2;
+        for (int i = offset; i < a.length; i++) {
+            result[i - offset] = cComplex[i].getReal();
+        }
+
+        return result;
     }
 
-    public double[] lr(double threshold, int iterations) {
+    public double[] convolutionTest(double[] observed) {
+        return convolve(observed, psf[0]);
+    }
+
+    public static double[] iterativeConvolution(double[] observed, double[] estimate, double[] psf, int iterations) {
+        int len = observed.length;
+
+        for (int iter = 0; iter < iterations; iter++) {
+            double[] convEstimate = convolve(estimate, psf);
+            double[] ratio = new double[len];
+
+            for (int i = 0; i < len; i++) {
+                double v = (convEstimate[i] == 0.0) ? 1e-10 : convEstimate[i];
+                ratio[i] = observed[i] / v;
+            }
+
+            for (int i = 0; i < len; i++) {
+                estimate[i] *= ratio[i];
+            }
+        }
+
+        return estimate;
+    }
+
+    private static int nextPowerOfTwo(int n) {
+        int pow = 1;
+        while (pow < n) pow *= 2;
+        return pow;
+    }
+
+    public double[] iterativeConvolutions(double threshold, int iterations, boolean doSquash) {
         if (skip == null) {
             skip = new boolean[signal.length];
         }
@@ -302,32 +301,25 @@ public class ConvolutionFitter {
                 values[i] = 0.0;
             }
         }
-        for (int i = 0; i < iterations; i++) {
-            double rms = lrIteration(values);
-            if ((i > SQUASH_AT) && (rms < 1.0e-6)) {
-                break;
-            }
+
+        double[] estimates = iterativeConvolution(signal, values, psf[0], iterations);
+
+        findPeaks(estimates, skip);
+        if (doSquash) {
+            squashPeaks(estimates, skip);
         }
-        findPeaks(values, skip);
-        convolve(values, skip);
-        squashPeaks(values, skip);
-        return values;
+        sim = convolve(estimates, psf[0]);
+        return estimates;
     }
 
-    public double[] lr(Vec vec, double threshold, int iterations) {
-        signal = new double[vec.getSize()];
-        for (int i = 0; i < signal.length; i++) {
-            signal[i] = vec.getReal(i);
-        }
-        double[] result = lr(threshold, iterations);
-        convolve(result, skip);
-        for (int i = 0; i < signal.length; i++) {
-            vec.setReal(i, sim[i]);
-        }
-        return result;
+    public double[] iterativeConvolutions(double[] data, double threshold, int iterations, boolean doSquash) {
+        signal = new double[data.length];
+        skip = new boolean[data.length];
+        System.arraycopy(data, 0, signal, 0, signal.length);
+        return iterativeConvolutions(threshold, iterations, doSquash);
     }
 
-    public void lr(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
+    public void iterativeConvolutions(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
         Vec vec = dataset.readVector(0, 0);
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {
@@ -335,7 +327,7 @@ public class ConvolutionFitter {
             double[] x = new double[peakList.getNDim() * 2];
             int nDim = peakList.getNDim();
             DatasetRegion region = new DatasetRegion(x);
-            for (int iDim=0;iDim<nDim;iDim++) {
+            for (int iDim = 0; iDim < nDim; iDim++) {
                 double ppm1 = dataset.pointToPPM(iDim, 0);
                 double ppm2 = dataset.pointToPPM(iDim, dataset.getSizeReal(iDim) - 1.0);
                 region.setRegionStart(iDim, ppm1);
@@ -348,7 +340,7 @@ public class ConvolutionFitter {
         int[] dim = new int[nDim];
         int[] sizes = new int[nDim];
         for (DatasetRegion region : regions) {
-            for (int iDim=0;iDim<nDim;iDim++) {
+            for (int iDim = 0; iDim < nDim; iDim++) {
                 int pt1 = dataset.ppmToPoint(0, region.getRegionStart(0));
                 int pt2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
                 if (pt1 > pt2) {
@@ -364,18 +356,23 @@ public class ConvolutionFitter {
             MatrixND matrixND = new MatrixND(sizes);
             dataset.readMatrixND(pt, dim, matrixND);
 
-            int psfSize = psf[0].length;
-            signal = new double[sizes[0] + 2 * psfSize];
+            signal = new double[sizes[0]];
             skip = new boolean[signal.length];
             for (int i = 0; i < sizes[0]; i++) {
-                signal[i + psfSize] = matrixND.getValue(i);
+                signal[i] = matrixND.getValue(i);
             }
 
-            start = pt[0][0] - psfSize;
-            double[] result = lr(threshold, iterations);
+            start = pt[0][0];
+            double[] result = iterativeConvolutions(threshold, iterations, true);
+            Vec vec2 = new Vec(32);
+            vec.copy(vec2);
+            for (int i = 0; i < sim.length; i++) {
+                vec2.set(i, sim[i]);
+            }
+            vec2.setName("simdata");
+            Dataset _ = new Dataset(vec2);
 
             for (int i = 0; i < result.length; i++) {
-          //      System.out.printf("%4d %2b %10.5f %105f %10.5f %10.5f\n", i, skip[i],signal[i],  result[i] * psfMax, sim[i], vec.getReal(i + pt[0][0] - psfSize));
                 if (!skip[i]) {
                     double x1 = vec.pointToPPM(start + i - widths[0] / 2.0);
                     double x2 = vec.pointToPPM(start + i + widths[0] / 2.0);
