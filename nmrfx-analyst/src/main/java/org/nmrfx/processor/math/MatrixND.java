@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.math;
 
+import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
@@ -111,6 +112,18 @@ public class MatrixND implements MatrixType {
                 data[k++] = data2D[i][j];
             }
         }
+    }
+
+    public MatrixND(double[] data) {
+        this(data.length);
+        int n = data.length;
+        for (int i = 0; i < n; i++) {
+            this.data[i] = data[i];
+        }
+    }
+
+    public void fill(double value) {
+        Arrays.fill(data, value);
     }
 
     public void setDwellTime(int i, double dwellTime) {
@@ -277,6 +290,21 @@ public class MatrixND implements MatrixType {
 
     public double getPh1(int i) {
         return phases1[i];
+    }
+
+    void times(MatrixND matrixND) {
+        for (int i=0;i<data.length;i++) {
+            data[i] *= matrixND.data[i];
+        }
+    }
+    void timesComplex(MatrixND matrixND) {
+        for (int i=0;i<data.length;i += 2) {
+            var c1 = new Complex(data[i], data[i+1]);
+            var c2 = new Complex(matrixND.data[i], matrixND.data[i+1]);
+            var c12 = c1.multiply(c2);
+            data[i] = c12.getReal();
+            data[i+1] = c12.getImaginary();
+        }
     }
 
     private static int[] calcStrides(int[] shape) {
@@ -758,6 +786,30 @@ public class MatrixND implements MatrixType {
     public void doHIFT(double fpMul) {
         for (int i = nDim - 1; i >= 0; i--) {
             doHIFT(i, fpMul);
+        }
+    }
+
+    public void toComplex() {
+        for (int i=0;i<nDim;i++) {
+            toComplex(i);
+        }
+    }
+    public void toComplex(int axis) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis]];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorR(axis, riVec, counts);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void scale(double scale) {
+        for (int i=0;i<data.length;i++) {
+            data[i] *= scale;
         }
     }
 
@@ -1392,6 +1444,10 @@ public class MatrixND implements MatrixType {
         manipulateRIVecs(axis, cValue, RIVecOperations::fourierTransform);
     }
 
+    public void doFourierTransformWithoutShift(int axis, double cValue) {
+        manipulateRIVecs(axis, cValue, RIVecOperations::fourierTransformWithoutShift);
+    }
+
     public void doFourierTransform(double[] cValues) {
         for (int axis = 0; axis < nDim; axis++) {
             double cValue = cValues[axis];
@@ -1399,13 +1455,29 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public void doFourierTransformWithoutShift(double[] cValues) {
+        for (int axis = 0; axis < nDim; axis++) {
+            double cValue = cValues[axis];
+            doFourierTransformWithoutShift(axis, cValue);
+        }
+    }
+
     public void doInverseFourierTransform(int axis) {
         manipulateRIVecs(axis, RIVecOperations::inverseFourierTransform);
+    }
+    public void doInverseFourierTransformWithoutShift(int axis) {
+        manipulateRIVecs(axis, RIVecOperations::inverseFourierTransformWithoutShift);
     }
 
     public void doInverseFourierTransform() {
         for (int axis = 0; axis < nDim; axis++) {
             doInverseFourierTransform(axis);
+        }
+    }
+
+    public void doInverseFourierTransformWithoutShift() {
+        for (int axis = 0; axis < nDim; axis++) {
+            doInverseFourierTransformWithoutShift(axis);
         }
     }
 
@@ -1456,14 +1528,34 @@ class RIVecOperations {
     }
 
     static void fourierTransform(double[][] riVec, double cValue) {
+        fourierTransform(riVec, cValue, true);
+    }
+
+    static void fourierTransformWithoutShift(double[][] riVec, double cValue) {
+        fourierTransform(riVec, cValue, false);
+    }
+
+    static void fourierTransform(double[][] riVec, double cValue, boolean doShift) {
         riVec[0][0] *= cValue;
         riVec[1][0] *= cValue;
         FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.FORWARD);
-        fftShift(riVec);
+        if (doShift) {
+            fftShift(riVec);
+        }
     }
 
     static void inverseFourierTransform(double[][] riVec) {
-        fftShift(riVec);
+        inverseFourierTransform(riVec, true);
+    }
+
+    static void inverseFourierTransformWithoutShift(double[][] riVec) {
+        inverseFourierTransform(riVec, false);
+    }
+
+    static void inverseFourierTransform(double[][] riVec, boolean doShift) {
+        if (doShift) {
+            fftShift(riVec);
+        }
         FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.INVERSE);
     }
 
