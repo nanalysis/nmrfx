@@ -38,10 +38,13 @@ import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static java.util.Spliterator.ORDERED;
 
 public class MatrixND implements MatrixType {
 
@@ -120,6 +123,13 @@ public class MatrixND implements MatrixType {
         for (int i = 0; i < n; i++) {
             this.data[i] = data[i];
         }
+    }
+
+    public Stream<int[]> stream() {
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(getSizes());
+        Iterator iterator = mCounter.iterator();
+        Spliterator<Integer> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
+        return StreamSupport.stream(spliterator, false).map(index -> mCounter.getCounts(index));
     }
 
     public void fill(double value) {

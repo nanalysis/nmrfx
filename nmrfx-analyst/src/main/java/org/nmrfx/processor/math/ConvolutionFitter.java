@@ -1,5 +1,6 @@
 package org.nmrfx.processor.math;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.nmrfx.datasets.DatasetRegion;
@@ -277,19 +278,14 @@ public class ConvolutionFitter {
             offsets[i] = (b.getSize(i) - 1) / 2;
         }
         MatrixND result = new MatrixND(a.getSizes());
-
-        MultidimensionalCounter mCounter = new MultidimensionalCounter(a.getSizes());
-        var iterator = mCounter.iterator();
         int[] indices = new int[nDim];
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
+        result.stream().forEach(counts -> {
             for (int i = 0; i < nDim; i++) {
                 indices[i] = 2 * (counts[i] + offsets[i]);
             }
             double value = aPadded2.getValue(indices);
             result.setValue(value, counts);
-        }
+        });
         return result;
     }
 
@@ -396,15 +392,10 @@ public class ConvolutionFitter {
     public static MatrixND iterativeConvolution(MatrixND observed, MatrixND estimate, MatrixND psf, int iterations) {
         for (int iter = 0; iter < iterations; iter++) {
             MatrixND convEstimate = convolve(estimate, psf);
-            double maxChange = 0.0;
-            double maxValue = 0.0;
-            double maxDelta = 0.0;
 
-            MultidimensionalCounter mCounter = new MultidimensionalCounter(observed.getSizes());
-            var iterator = mCounter.iterator();
-            while (iterator.hasNext()) {
-                iterator.next();
-                int[] counts = iterator.getCounts();
+            AtomicDouble maxValue2 = new AtomicDouble(0.0);
+            AtomicDouble maxDelta = new AtomicDouble(0.0);
+            observed.stream().forEach(counts -> {
                 double oldValue = estimate.getValue(counts);
                 double obsValue = observed.getValue(counts);
                 double v = convEstimate.getValue(counts);
@@ -413,14 +404,12 @@ public class ConvolutionFitter {
                 }
                 double ratio = obsValue / v;
                 double newValue = oldValue * ratio;
-
-                maxValue = Math.max(obsValue, maxValue);
+                maxValue2.set(Math.max(Math.abs(obsValue), maxValue2.get()));
                 double delta = Math.abs(newValue - oldValue);
-                maxDelta = Math.max(delta, maxDelta);
+                maxDelta.set(Math.max(delta, maxDelta.get()));
                 estimate.setValue(newValue, counts);
-            }
-
-            maxChange = maxDelta / maxValue;
+            });
+            double maxChange = maxDelta.get() / maxValue2.get();
         }
 
         return estimate;
