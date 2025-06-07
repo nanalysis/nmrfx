@@ -277,11 +277,8 @@ public class ConvolutionFitter {
             offsets[i] = (b.getSize(i) - 1) / 2;
         }
         MatrixND result = new MatrixND(a.getSizes());
-        int[] counterSizes = new int[nDim];
-        for (int i = 0; i < counterSizes.length; i++) {
-            counterSizes[i] = a.getSize(i) - offsets[i];
-        }
-        MultidimensionalCounter mCounter = new MultidimensionalCounter(counterSizes);
+
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(a.getSizes());
         var iterator = mCounter.iterator();
         int[] indices = new int[nDim];
         while (iterator.hasNext()) {
@@ -362,7 +359,7 @@ public class ConvolutionFitter {
         }
 
         // Extract real part
-        double[][] result = new double[outRows][outCols];
+        double[][] result = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 result[i][j] = resultComplex[i + offsets[0]][2 * (j + offsets[1])];
@@ -397,20 +394,33 @@ public class ConvolutionFitter {
     }
 
     public static MatrixND iterativeConvolution(MatrixND observed, MatrixND estimate, MatrixND psf, int iterations) {
-        int len = observed.getSize(0);
-
         for (int iter = 0; iter < iterations; iter++) {
             MatrixND convEstimate = convolve(estimate, psf);
-            double[] ratio = new double[len];
+            double maxChange = 0.0;
+            double maxValue = 0.0;
+            double maxDelta = 0.0;
 
-            for (int i = 0; i < len; i++) {
-                double v = (convEstimate.getValue(i) == 0.0) ? 1e-10 : convEstimate.getValue(i);
-                ratio[i] = observed.getValue(i) / v;
+            MultidimensionalCounter mCounter = new MultidimensionalCounter(observed.getSizes());
+            var iterator = mCounter.iterator();
+            while (iterator.hasNext()) {
+                iterator.next();
+                int[] counts = iterator.getCounts();
+                double oldValue = estimate.getValue(counts);
+                double obsValue = observed.getValue(counts);
+                double v = convEstimate.getValue(counts);
+                if (Double.isNaN(v) || (Math.abs(v) < 1.0e-9)) {
+                    v = 1.0e-9;
+                }
+                double ratio = obsValue / v;
+                double newValue = oldValue * ratio;
+
+                maxValue = Math.max(obsValue, maxValue);
+                double delta = Math.abs(newValue - oldValue);
+                maxDelta = Math.max(delta, maxDelta);
+                estimate.setValue(newValue, counts);
             }
 
-            for (int i = 0; i < len; i++) {
-                estimate.setValue(estimate.getValue(i) * ratio[i], i);
-            }
+            maxChange = maxDelta / maxValue;
         }
 
         return estimate;

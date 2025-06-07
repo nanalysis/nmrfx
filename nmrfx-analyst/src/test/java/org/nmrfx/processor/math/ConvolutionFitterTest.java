@@ -25,15 +25,14 @@ public class ConvolutionFitterTest {
         return new ConvolutionFitter(psfSize, widths, shapeFactor);
     }
 
-    private void dumpPSF(ConvolutionFitter convolutionFitter) {
-        MatrixND psfMatrix = convolutionFitter.psfMatrix;
-        MultidimensionalCounter mCounter = new MultidimensionalCounter(psfMatrix.getSizes());
+    private void dumpPSF(MatrixND matrixND) {
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(matrixND.getSizes());
         var iterator = mCounter.iterator();
         double sum = 0.0;
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            double value = psfMatrix.getValue(counts);
+            double value = matrixND.getValue(counts);
             sum += value;
             if (value > 0.001) {
                 for (int i = 0; i < counts.length; i++) {
@@ -96,6 +95,17 @@ public class ConvolutionFitterTest {
         }
         Assert.assertEquals(convolutionFitter.psfMax, max, 1.0e-6);
         Assert.assertEquals(1.0, sum, 1.0e-6);
+    }
+    @Test
+    public void testConvolve2D1() {
+        ConvolutionFitter convolutionFitter = getConvolutionFitter2D();
+        MatrixND signal = genSignal2D(convolutionFitter);
+       // dumpPSF(signal);
+        MatrixND matrixND = new MatrixND(signal);
+        MatrixND initMatrix = new MatrixND(signal);
+        MatrixND psfMatrix =convolutionFitter.psfMatrix;
+        MatrixND result = ConvolutionFitter.iterativeConvolution(matrixND, initMatrix, psfMatrix, 100);
+        Assert.assertEquals(1.0, result.getValue(40, 40), 0.2);
     }
 
     @Test
