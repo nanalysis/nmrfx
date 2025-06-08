@@ -627,12 +627,12 @@ public class PreferencesController implements Initializable, StageBasedControlle
     }
 
     public static Double getConvolutionPickSquash() {
-        convolutionPickSquashProp = getDouble(convolutionPickSquashProp, "PEAK_PICK_CONVOLUTION_SQUASH", 0.625);
+        convolutionPickSquashProp = getDouble(convolutionPickSquashProp, "PEAK_PICK_CONVOLUTION_SQUASH", 0.725);
         return convolutionPickSquashProp.getValue();
     }
 
     public static Double getConvolutionPickScale() {
-        convolutionPickScaleProp = getDouble(convolutionPickScaleProp, "PEAK_PICK_CONVOLUTION_SCALE", 1.25);
+        convolutionPickScaleProp = getDouble(convolutionPickScaleProp, "PEAK_PICK_CONVOLUTION_SCALE", 1.4);
         return convolutionPickScaleProp.getValue();
     }
     public static Double getConvolutionPickDirectWidth() {

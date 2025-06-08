@@ -12,11 +12,8 @@ import org.nmrfx.processor.datasets.peaks.LineShapes;
 
 import org.jtransforms.fft.DoubleFFT_2D;
 
-import java.util.Arrays;
+import java.util.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 public class ConvolutionFitter {
     static Random rand = new Random();
@@ -30,8 +27,6 @@ public class ConvolutionFitter {
     BooleanMatrixND skip;
     double squash = 0.625;
     double threshold = 0.0;
-    int start = 0;
-
     MultidimensionalCounter counter;
     MultidimensionalCounter neighborCounter;
 
@@ -259,8 +254,10 @@ public class ConvolutionFitter {
         for (int i = 0; i < cPeakList.size(); i++) {
             CPeak cPeak1 = cPeakList.get(i);
             int[] center1 = cPeak1.position;
+            if (skipMatrix.getValue(center1)) {
+                continue;
+            }
             double sumHeight = accumulateNeighbors(values, skipMatrix, center1, halfWidths);
-            System.out.println("accum " + i + " " + sumHeight);
   /*          int center0 = Math.max(0, center1 - half);
             int center2 = Math.min(values.getSize(0) - 1, center1 + half);
             if (i > 0) {
@@ -346,8 +343,11 @@ public class ConvolutionFitter {
         int rows = a.getSize(0);
         int cols = a.getSize(1);
         double[][] x = new double[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            x[i] = a.getVector(0, i);
+        int k = 0;
+        for (int j = 0; j < rows; j++) {
+            for (int i = 0; i < cols; i++) {
+                x[j][i] = a.getValueAtIndex(k++);
+            }
         }
         return x;
     }
@@ -475,15 +475,7 @@ public class ConvolutionFitter {
     }
 
     public MatrixND iterativeConvolutions(double threshold, int iterations, boolean doSquash) {
-        if (skip == null) {
-            skip = new BooleanMatrixND(signalMatrix.getSizes());
-        }
         this.threshold = threshold;
-        DescriptiveStatistics summaryStatistics = new DescriptiveStatistics();
-        for (int i = 0; i < signalMatrix.getSize(0); i++) {
-            summaryStatistics.addValue(signalMatrix.getValue(i));
-        }
-        double mean = summaryStatistics.getMean();
         MatrixND valueMatrix = new MatrixND(signalMatrix.getSizes());
         skip = new BooleanMatrixND(signalMatrix.getSizes());
         valueMatrix.stream().forEach(counts -> {
@@ -499,18 +491,8 @@ public class ConvolutionFitter {
         MatrixND estimates = iterativeConvolution(signalMatrix, valueMatrix, psfMatrix, iterations);
 
         findPeaks(estimates, skip);
-        for (int i = 0; i < estimates.getSize(0); i++) {
-            if (estimates.getValue(i) > 0.001) {
-                System.out.println(i + " " + estimates.getValue(i));
-            }
-        }
         if (doSquash) {
             squashPeaks(estimates, skip);
-        }
-        for (int i = 0; i < estimates.getSize(0); i++) {
-            if (estimates.getValue(i) > 0.001) {
-                System.out.println(i + " sq " + estimates.getValue(i));
-            }
         }
         sim = convolve(estimates, psfMatrix);
         return estimates;
@@ -526,30 +508,32 @@ public class ConvolutionFitter {
         return iterativeConvolutions(threshold, iterations, doSquash);
     }
 
+    private List<DatasetRegion> getRegion(Dataset dataset, int nPeakDim) {
+        List<DatasetRegion> regions = new ArrayList<>();
+        double[] x = new double[nPeakDim * 2];
+        DatasetRegion region = new DatasetRegion(x);
+        for (int iDim = 0; iDim < nPeakDim; iDim++) {
+            double ppm1 = dataset.pointToPPM(iDim, 0);
+            double ppm2 = dataset.pointToPPM(iDim, dataset.getSizeReal(iDim) - 1.0);
+            region.setRegionStart(iDim, ppm1);
+            region.setRegionEnd(iDim, ppm2);
+        }
+        regions.add(region);
+        return regions;
+    }
     public void iterativeConvolutions(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
-        var vec = dataset.readVector(0, 0);
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {
-            regions = new ArrayList<>();
-            double[] x = new double[peakList.getNDim() * 2];
-            int nDim = peakList.getNDim();
-            DatasetRegion region = new DatasetRegion(x);
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                double ppm1 = dataset.pointToPPM(iDim, 0);
-                double ppm2 = dataset.pointToPPM(iDim, dataset.getSizeReal(iDim) - 1.0);
-                region.setRegionStart(iDim, ppm1);
-                region.setRegionEnd(iDim, ppm2);
-            }
-            regions.add(region);
+            regions = getRegion(dataset, peakList.getNDim());
         }
-        int nDim = dataset.getNDim();
-        int[][] pt = new int[nDim][2];
-        int[] dim = new int[nDim];
-        int[] sizes = new int[nDim];
         for (DatasetRegion region : regions) {
+            int nDim = dataset.getNDim();
+            int[][] pt = new int[nDim][2];
+            int[] dim = new int[nDim];
+            int[] sizes = new int[nDim];
             for (int iDim = 0; iDim < nDim; iDim++) {
-                int pt1 = dataset.ppmToPoint(0, region.getRegionStart(0));
-                int pt2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
+                int pt1 = dataset.ppmToPoint(iDim, region.getRegionStart(iDim));
+                int pt2 = dataset.ppmToPoint(iDim, region.getRegionEnd(iDim));
                 if (pt1 > pt2) {
                     int hold = pt1;
                     pt1 = pt2;
@@ -565,37 +549,32 @@ public class ConvolutionFitter {
 
             skip = new BooleanMatrixND(sizes);
 
-            start = pt[0][0];
             MatrixND result = iterativeConvolutions(threshold, iterations, true);
-            Vec vec2 = new Vec(32);
-            vec.copy(vec2);
-            for (int i = 0; i < sim.getSize(0); i++) {
-                vec2.set(i, sim.getValue(i));
+            result.stream().filter(indices -> !skip.getValue(indices)).forEach(indices -> {
+                buildPeak(dataset, peakList, result, indices, pt);
+            });
+        }
+    }
+
+    void buildPeak(Dataset dataset, PeakList peakList, MatrixND matrixND, int[] indices, int[][] pt) {
+        if (Double.isFinite(matrixND.getValue(indices))) {
+            Peak peak = peakList.getNewPeak();
+            double dxProduct = 1.0;
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                PeakDim peakDim = peak.getPeakDim(i);
+                double x1 = dataset.pointToPPM(i, pt[i][0] + indices[i] - widths[i] / 2.0);
+                double x2 = dataset.pointToPPM(i, pt[i][0] + indices[i] + widths[i] / 2.0);
+                double dx = Math.abs(x2 - x1);
+                double shift = dataset.pointToPPM(i, (double) pt[i][0] + indices[i]);
+                peakDim.setChemShiftValue((float) shift);
+                peakDim.setLineWidthValue((float) dx);
+                peakDim.setBoundsValue((float) (dx * 2.0));
+                dxProduct *= dx;
             }
-            vec2.setName("simdata");
-            Dataset _ = new Dataset(vec2);
-
-
-            for (int i = 0; i < result.getSize(0); i++) {
-                if (!skip.getValue(i)) {
-                    double x1 = vec.pointToPPM(start + i - widths[0] / 2.0);
-                    double x2 = vec.pointToPPM(start + i + widths[0] / 2.0);
-                    double dx = Math.abs(x2 - x1);
-                    double intensity = result.getValue(i) * psfMax;
-                    double volume = intensity * dx * (Math.PI / 2.0) / 1.05;
-                    if (Double.isFinite(result.getValue(i))) {
-                        Peak peak = peakList.getNewPeak();
-                        PeakDim peakDim = peak.getPeakDim(0);
-                        double shift = vec.pointToPPM((double) start + i);
-                        peakDim.setChemShiftValue((float) shift);
-                        peakDim.setLineWidthValue((float) dx);
-                        peakDim.setBoundsValue((float) (dx * 2.0));
-                        peak.setIntensity((float) intensity);
-                        peak.setVolume1((float) volume);
-                    }
-
-                }
-            }
+            double intensity = matrixND.getValue(indices) * psfMax;
+            peak.setIntensity((float) intensity);
+            double volume = intensity * dxProduct * (Math.PI / 2.0) / 1.05;
+            peak.setVolume1((float) volume);
         }
     }
 }

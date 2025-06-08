@@ -653,7 +653,7 @@ public class PeakPicker {
             widthPt[iDim] = (int) dataset.hzWidthToPoints(iDim, widthHz);
             n[iDim] = (int) Math.round(widthPt[iDim] * 4 + 1);
             shapeFactor = peakList.shapeFactorDStats(iDim).getPercentile(50);
-            System.out.println("wid " + widthHz + " " + widthPt + " " + n + " " + shapeFactor);
+            System.out.println("wid " + widthHz + " " + widthPt[iDim] + " " + n[iDim] + " " + shapeFactor);
         }
         ConvolutionFitter convolutionFitter = new ConvolutionFitter(n, widthPt, shapeFactor);
         peakList.clear();
