@@ -3,6 +3,7 @@ package org.nmrfx.processor.math;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.jtransforms.fft.DoubleFFT_3D;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
@@ -297,9 +298,20 @@ public class ConvolutionFitter {
 
     public static MatrixND convolve(MatrixND a, MatrixND b) {
         int nDim = a.getNDim();
-        if (nDim == 2) {
+        if (nDim == 1) {
+            return convolve1D(a, b);
+        } else if (nDim == 2) {
             return convolve2D(a, b);
+        } else if (nDim == 3) {
+            return convolve3D(a, b);
+        } else {
+            return null;
         }
+    }
+
+    public static MatrixND convolve1D(MatrixND a, MatrixND b) {
+        int nDim = a.getNDim();
+
         int[] newSizes2 = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             int n = a.getSize(i) + b.getSize(i) - 1;
@@ -347,6 +359,22 @@ public class ConvolutionFitter {
         for (int j = 0; j < rows; j++) {
             for (int i = 0; i < cols; i++) {
                 x[j][i] = a.getValueAtIndex(k++);
+            }
+        }
+        return x;
+    }
+
+    public static double[][][] to3D(MatrixND a) {
+        int planes = a.getSize(0);
+        int rows = a.getSize(1);
+        int cols = a.getSize(2);
+        double[][][] x = new double[planes][rows][cols];
+        int kk = 0;
+        for (int k = 0; k < planes; k++) {
+            for (int j = 0; j < rows; j++) {
+                for (int i = 0; i < cols; i++) {
+                    x[k][j][i] = a.getValueAtIndex(kk++);
+                }
             }
         }
         return x;
@@ -418,6 +446,81 @@ public class ConvolutionFitter {
         return new MatrixND(result);
     }
 
+    public static MatrixND convolve3D(MatrixND a, MatrixND b) {
+        int planes = a.getSize(0);
+        int rows = a.getSize(1);
+        int cols = a.getSize(2);
+        int kPlanes = b.getSize(0);
+        int kRows = b.getSize(1);
+        int kCols = b.getSize(2);
+
+        // Output size for linear convolution
+        int outPlanes = planes + kPlanes - 1;
+        int outRows = rows + kRows - 1;
+        int outCols = cols + kCols - 1;
+
+        double[][][] input = to3D(a);
+        double[][][] kernel = to3D(b);
+
+        // Pad input and kernel to same size
+        double[][][] inputPadded = new double[outPlanes][outRows][outCols];
+        double[][][] kernelPadded = new double[outPlanes][outRows][outCols];
+
+        for (int plane = 0; plane < planes; plane++)
+            for (int row = 0; row < rows; row++)
+                System.arraycopy(input[plane][row], 0, inputPadded[plane][row], 0, cols);
+        for (int plane = 0; plane < kPlanes; plane++)
+            for (int row = 0; row < kRows; row++)
+                System.arraycopy(kernel[plane][row], 0, kernelPadded[plane][row], 0, kCols);
+
+        // Convert to complex arrays: real + imaginary interleaved
+        double[][][] inputComplex = realToComplex(inputPadded);
+        double[][][] kernelComplex = realToComplex(kernelPadded);
+
+        DoubleFFT_3D fft = new DoubleFFT_3D(outPlanes, outRows, outCols);
+        fft.complexForward(inputComplex);
+        fft.complexForward(kernelComplex);
+
+        // Point-wise complex multiplication
+        double[][][] resultComplex = new double[outPlanes][outRows][2 * outCols];
+        for (int plane = 0; plane < outPlanes; plane++) {
+            for (int row = 0; row < outRows; row++) {
+                for (int col = 0; col < outCols; col++) {
+                    int re = 2 * col;
+                    int im = 2 * col + 1;
+
+                    double aRe = inputComplex[plane][row][re];
+                    double aIm = inputComplex[plane][row][im];
+                    double bRe = kernelComplex[plane][row][re];
+                    double bIm = kernelComplex[plane][row][im];
+
+                    // (a + bi)(c + di) = (ac - bd) + (ad + bc)i
+                    resultComplex[plane][row][re] = aRe * bRe - aIm * bIm;
+                    resultComplex[plane][row][im] = aRe * bIm + aIm * bRe;
+                }
+            }
+        }
+
+        // Inverse FFT
+        fft.complexInverse(resultComplex, true);
+        int[] offsets = new int[3];
+        for (int i = 0; i < 3; i++) {
+            offsets[i] = (b.getSize(i) - 1) / 2;
+        }
+
+        // Extract real part
+        double[][][] result = new double[planes][rows][cols];
+        for (int plane = 0; plane < planes; plane++) {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    result[plane][row][col] = resultComplex[plane + offsets[0]][row + offsets[1]][2 * (col + offsets[2])];
+                }
+            }
+        }
+
+        return new MatrixND(result);
+    }
+
     private static double[][] realToComplex(double[][] real) {
         int rows = real.length;
         int cols = real[0].length;
@@ -426,6 +529,22 @@ public class ConvolutionFitter {
             for (int j = 0; j < cols; j++) {
                 complex[i][2 * j] = real[i][j]; // real part
                 complex[i][2 * j + 1] = 0.0;    // imaginary part
+            }
+        }
+        return complex;
+    }
+
+    private static double[][][] realToComplex(double[][][] real) {
+        int planes = real.length;
+        int rows = real[0].length;
+        int cols = real[0][0].length;
+        double[][][] complex = new double[planes][rows][2 * cols];
+        for (int k = 0; k < planes; k++) {
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
+                    complex[k][i][2 * j] = real[k][i][j]; // real part
+                    complex[k][i][2 * j + 1] = 0.0;    // imaginary part
+                }
             }
         }
         return complex;
@@ -521,6 +640,7 @@ public class ConvolutionFitter {
         regions.add(region);
         return regions;
     }
+
     public void iterativeConvolutions(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {

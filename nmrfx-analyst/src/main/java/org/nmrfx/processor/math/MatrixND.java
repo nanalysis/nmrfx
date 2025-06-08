@@ -117,6 +117,21 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public MatrixND(double[][][] data3D) {
+        this(data3D.length, data3D[0].length, data3D[0][0].length);
+        int planes = data3D.length;
+        int rows = data3D[0].length;
+        int cols = data3D[0][0].length;
+        int h = 0;
+        for (int i = 0; i < planes; i++) {
+            for (int j = 0; j < rows; j++) {
+                for (int k = 0; k < cols; k++) {
+                    data[h++] = data3D[i][j][k];
+                }
+            }
+        }
+    }
+
     public MatrixND(double[] data) {
         this(data.length);
         int n = data.length;
@@ -303,17 +318,18 @@ public class MatrixND implements MatrixType {
     }
 
     void times(MatrixND matrixND) {
-        for (int i=0;i<data.length;i++) {
+        for (int i = 0; i < data.length; i++) {
             data[i] *= matrixND.data[i];
         }
     }
+
     void timesComplex(MatrixND matrixND) {
-        for (int i=0;i<data.length;i += 2) {
-            var c1 = new Complex(data[i], data[i+1]);
-            var c2 = new Complex(matrixND.data[i], matrixND.data[i+1]);
+        for (int i = 0; i < data.length; i += 2) {
+            var c1 = new Complex(data[i], data[i + 1]);
+            var c2 = new Complex(matrixND.data[i], matrixND.data[i + 1]);
             var c12 = c1.multiply(c2);
             data[i] = c12.getReal();
-            data[i+1] = c12.getImaginary();
+            data[i + 1] = c12.getImaginary();
         }
     }
 
@@ -800,10 +816,11 @@ public class MatrixND implements MatrixType {
     }
 
     public void toComplex() {
-        for (int i=0;i<nDim;i++) {
+        for (int i = 0; i < nDim; i++) {
             toComplex(i);
         }
     }
+
     public void toComplex(int axis) {
         int[] subSizes = getSubSizes(axis);
         double[][] riVec = new double[2][sizes[axis]];
@@ -818,7 +835,7 @@ public class MatrixND implements MatrixType {
     }
 
     public void scale(double scale) {
-        for (int i=0;i<data.length;i++) {
+        for (int i = 0; i < data.length; i++) {
             data[i] *= scale;
         }
     }
@@ -1475,6 +1492,7 @@ public class MatrixND implements MatrixType {
     public void doInverseFourierTransform(int axis) {
         manipulateRIVecs(axis, RIVecOperations::inverseFourierTransform);
     }
+
     public void doInverseFourierTransformWithoutShift(int axis) {
         manipulateRIVecs(axis, RIVecOperations::inverseFourierTransformWithoutShift);
     }
