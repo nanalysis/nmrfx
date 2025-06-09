@@ -913,6 +913,37 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public void pad(int[] padSizes) {
+        int[] newSizes = new int[nDim];
+        for (int i=0;i<nDim;i++) {
+            newSizes[i] = sizes[i] + 2 * padSizes[i];
+        }
+
+        MatrixND paddedMatrix = new MatrixND(newSizes);
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+
+        int[] newPos = new int[nDim];
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            for (int i=0;i<nDim;i++) {
+                newPos[i] = counts[i] + padSizes[i];
+            }
+            paddedMatrix.setValue(getValue(counts), newPos);
+
+        }
+        data = paddedMatrix.data;
+        sizes = paddedMatrix.sizes;
+        strides = paddedMatrix.strides;
+        nElems = paddedMatrix.nElems;
+        if (pt != null) {
+            for (int i = 0; i < nDim; i++) {
+                pt[i][1] = sizes[i] - 1;
+            }
+        }
+    }
+
     boolean checkShapes(MatrixND matrixND) {
         boolean value = true;
         if (matrixND.nDim != nDim) {
