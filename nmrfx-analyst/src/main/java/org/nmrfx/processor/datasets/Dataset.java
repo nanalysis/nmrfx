@@ -746,6 +746,25 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         return noiseLevel == null ? null : noiseLevel / scale;
     }
 
+    public RegionData analyzeRegion(DatasetRegion datasetRegion) throws IOException {
+        int nRegionDim = datasetRegion.getNDims();
+        int[][] pt = new int[nRegionDim][2];
+        int[] cpt = new int[pt.length];
+        double[] regionWidth = new double[pt.length];
+        int[] dim = new int[pt.length];
+        for (int i = 0; i < nRegionDim; i++) {
+            double ppm2 = datasetRegion.getRegionStart(i);
+            double ppm1 = datasetRegion.getRegionEnd(i);
+            pt[i][0] = ppmToPoint(i, ppm1);
+            pt[i][1] = ppmToPoint(i, ppm2);
+            regionWidth[i] = pt[i][1] - pt[i][0];
+            dim[i] = i;
+        }
+
+        RegionData rData = analyzeRegion(pt, cpt, regionWidth, dim);
+        return rData;
+    }
+
     /**
      * Calculate basic descriptive statistics on the specified region of the
      * dataset.
