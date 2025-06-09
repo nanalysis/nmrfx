@@ -1,10 +1,10 @@
 package org.nmrfx.processor.math;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.jtransforms.fft.DoubleFFT_3D;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.datasets.RegionData;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
@@ -32,6 +32,7 @@ public class ConvolutionFitter {
     MultidimensionalCounter neighborCounter;
 
     List<CPeak> cPeakList;
+    List<CPeakD> allPeaks;
 
     public ConvolutionFitter(int n0, int width, double shapeFactor) {
         int[] n = {n0};
@@ -169,11 +170,19 @@ public class ConvolutionFitter {
             iterator.next();
             int[] counts = iterator.getCounts();
             boolean isCenter = true;
+            boolean ok = true;
             for (int i = 0; i < indices.length; i++) {
-                indices2[i] = indices[i] + counts[i] - 1;
+                indices2[i] = indices[i] + counts[i] - halfWidths[i];
+                if ((indices2[i] < 0) || (indices2[i] >= values.getSize(i))) {
+                    ok = false;
+                    break;
+                }
                 if (counts[i] != halfWidths[i]) {
                     isCenter = false;
                 }
+            }
+            if (!ok) {
+                continue;
             }
             double value2 = values.getValue(indices2);
             if (!isCenter && (value2 > value)) {
@@ -184,35 +193,91 @@ public class ConvolutionFitter {
         return higher;
     }
 
-    double accumulateNeighbors(MatrixND values, BooleanMatrixND skipMatrix, int[] indices, int[] halfWidths) {
+    CPeakD accumulateNeighbors(MatrixND values, BooleanMatrixND skipMatrix, int[] indices, int[] halfWidths) {
         int nDim = values.getNDim();
         int[] indices2 = new int[nDim];
         int[] ipsf = new int[nDim];
         var iterator = neighborCounter.iterator();
         double sumHeight = 0.0;
+        double[] sumPositions = new double[nDim];
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
             boolean isCenter = true;
+            boolean ok = true;
             for (int i = 0; i < indices.length; i++) {
-                indices2[i] = indices[i] + counts[i] - 1;
+                indices2[i] = indices[i] + counts[i] - halfWidths[i];
+                if ((indices2[i] < 0) || (indices2[i] >= values.getSize(i))) {
+                    ok = false;
+                    break;
+                }
                 ipsf[i] = (psfMatrix.getSize(i) - 1) / 2 - (halfWidths[i] - counts[i]);
                 if (counts[i] != halfWidths[i]) {
                     isCenter = false;
                 }
             }
+            if (!ok) {
+                continue;
+            }
             double value2 = values.getValue(indices2);
             double psfValue = psfMatrix.getValue(ipsf);
-            sumHeight += value2 * psfValue / psfMax;
+            double height = value2 * psfValue / psfMax;
+            sumHeight += height;
+            for (int i = 0; i < sumPositions.length; i++) {
+                sumPositions[i] += indices2[i] * height;
+            }
             if (!isCenter) {
                 skipMatrix.setValue(true, indices2);
             }
         }
-        return sumHeight;
+        for (int i = 0; i < sumPositions.length; i++) {
+            sumPositions[i] /= sumHeight;
+        }
+
+        return new CPeakD(sumPositions, sumHeight);
     }
 
     record CPeak(int[] position, double height) {
+        double distance(CPeak cPeak) {
+            double sum = 0.0;
+            for (int i = 0; i < position.length; i++) {
+                double d = position[i] - cPeak.position[i];
+                sum += d * d;
+            }
+            return Math.sqrt(sum);
+        }
+    }
 
+    record CPeakD(double[] position, double height) {
+        double distance(CPeakD cPeak, double[] widths) {
+            double sum = 0.0;
+            for (int i = 0; i < position.length; i++) {
+                double d = (position[i] - cPeak.position[i]) / widths[i] ;
+                sum += d * d;
+            }
+            return Math.sqrt(sum);
+        }
+
+        CPeakD merge(CPeakD cPeakD) {
+            double[] wAvgPosigion = new double[position.length];
+            double sum = height + cPeakD.height;
+            for (int i = 0; i < position.length; i++) {
+                wAvgPosigion[i] = (height * position[i] + cPeakD.height * cPeakD.position[i]) / sum;
+            }
+            return new CPeakD(wAvgPosigion, sum);
+        }
+
+    }
+
+    boolean inCore(int[] counts) {
+        boolean ok = true;
+        for (int i=0;i<counts.length;i++) {
+            if (counts[i] > signalMatrix.getSize(i) - psfDim[i]) {
+                ok = false;
+                break;
+            }
+        }
+        return ok;
     }
 
     void findPeaks(MatrixND values, BooleanMatrixND skipMat) {
@@ -225,7 +290,6 @@ public class ConvolutionFitter {
 
         neighborCounter = new MultidimensionalCounter(neighborDims);
 
-        cPeakList = new ArrayList<>();
 
         values.stream().forEach(counts -> {
             double value = values.getValue(counts);
@@ -241,7 +305,7 @@ public class ConvolutionFitter {
         });
     }
 
-    public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix) {
+    public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix, int[][] pt) {
         int[] neighborDims = new int[values.getNDim()];
         int[] halfWidths = new int[neighborDims.length];
         for (int i = 0; i < neighborDims.length; i++) {
@@ -249,49 +313,27 @@ public class ConvolutionFitter {
             neighborDims[i] = 2 * halfWidths[i] + 1;
         }
 
-
         List<CPeak> newPeaks = new ArrayList<>();
 
-        for (int i = 0; i < cPeakList.size(); i++) {
-            CPeak cPeak1 = cPeakList.get(i);
+
+        for (CPeak cPeak1 : cPeakList) {
             int[] center1 = cPeak1.position;
             if (skipMatrix.getValue(center1)) {
                 continue;
             }
-            double sumHeight = accumulateNeighbors(values, skipMatrix, center1, halfWidths);
-  /*          int center0 = Math.max(0, center1 - half);
-            int center2 = Math.min(values.getSize(0) - 1, center1 + half);
-            if (i > 0) {
-                CPeak cPeak0 = cPeakList.get(i - 1);
-                if ((cPeak0.position + half) > center0) {
-                    center0 = (cPeak0.position + center1) / 2;
-                }
+            CPeakD cPeakD = accumulateNeighbors(values, skipMatrix, center1, halfWidths);
+            int[] newPosition = new int[cPeak1.position.length];
+            for (int j = 0; j < newPosition.length; j++) {
+                cPeakD.position[j] = cPeakD.position[j] + pt[j][0];
             }
-            if (i < cPeakList.size() - 1) {
-                CPeak cPeak2 = cPeakList.get(i + 1);
-                if ((cPeak2.position - half) < center2) {
-                    center2 = (cPeak2.position + center1) / 2;
-                }
-            }
-            double sumHeight = 0.0;
-            for (int k = center0; k <= center2; k++) {
-                int j = center1 - k;
-                int ipsf = (psfMatrix.getSize(0) - 1) / 2 + j;
-                if ((ipsf > 0) && (ipsf < psfMatrix.getSize(0))) {
-                    sumHeight += values.getValue(k) * psfMatrix.getValue(ipsf) / psfMax;
-                }
-                values.setValue(0.0, k);
-                skip[k] = true;
-            }*/
-            newPeaks.add(new CPeak(cPeak1.position, sumHeight));
-            values.setValue(sumHeight, center1);
-            skipMatrix.setValue(false, center1);
+            allPeaks.add(cPeakD);
+            newPeaks.add(new CPeak(center1, cPeakD.height));
         }
         values.fill(0.0);
         skipMatrix.set(true);
         for (CPeak cPeak : newPeaks) {
             values.setValue(cPeak.height, cPeak.position);
-            skipMatrix.setValue(false, cPeak.position());
+            skipMatrix.setValue(false, cPeak.position);
         }
     }
 
@@ -593,7 +635,7 @@ public class ConvolutionFitter {
         return pow;
     }
 
-    public MatrixND iterativeConvolutions(double threshold, int iterations, boolean doSquash) {
+    public MatrixND iterativeConvolutions(double threshold, int iterations, int[][] pt, boolean doSquash) {
         this.threshold = threshold;
         MatrixND valueMatrix = new MatrixND(signalMatrix.getSizes());
         skip = new BooleanMatrixND(signalMatrix.getSizes());
@@ -611,20 +653,23 @@ public class ConvolutionFitter {
 
         findPeaks(estimates, skip);
         if (doSquash) {
-            squashPeaks(estimates, skip);
+            squashPeaks(estimates, skip, pt);
         }
         sim = convolve(estimates, psfMatrix);
         return estimates;
     }
 
     public MatrixND iterativeConvolutions(MatrixND data, double threshold, int iterations, boolean doSquash) {
+        cPeakList = new ArrayList<>();
+        allPeaks = new ArrayList<>();
         int[] sizes = {data.getSize(0)};
         signalMatrix = new MatrixND(sizes);
         skip = new BooleanMatrixND(sizes);
         for (int i = 0; i < data.getSize(0); i++) {
             signalMatrix.setValue(data.getValue(i), i);
         }
-        return iterativeConvolutions(threshold, iterations, doSquash);
+        int[][] pt = new int[signalMatrix.getNDim()][2];
+        return iterativeConvolutions(threshold, iterations, pt, doSquash);
     }
 
     private List<DatasetRegion> getRegion(Dataset dataset, int nPeakDim) {
@@ -641,12 +686,63 @@ public class ConvolutionFitter {
         return regions;
     }
 
+    private List<DatasetRegion> getBlockRegions(Dataset dataset, int nPeakDim, double threshold) throws IOException {
+        List<DatasetRegion> regions = new ArrayList<>();
+        int[] nWins = new int[nPeakDim];
+        int[] winSizes = new int[nPeakDim];
+        for (int iDim = 0; iDim < nPeakDim; iDim++) {
+            int size = dataset.getSizeReal(iDim);
+            int psfSize = psfDim[iDim];
+            winSizes[iDim] = (psfSize - 1) * 8;
+            nWins[iDim] = (int) Math.ceil((double) size / winSizes[iDim]);
+        }
+        MultidimensionalCounter winCounter = new MultidimensionalCounter(nWins);
+        var iterator = winCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            double[] x = new double[nPeakDim * 2];
+            int[] counts = iterator.getCounts();
+            boolean ok = true;
+            for (int iDim = 0; iDim < nPeakDim; iDim++) {
+                int start = counts[iDim] * winSizes[iDim];
+                int end = start + winSizes[iDim] - 1;
+                if (end >= dataset.getSizeReal(iDim)) {
+                    end = dataset.getSizeReal(iDim) - 1;
+                }
+                int size = end - start + 1;
+                if (size > 0) {
+                    double ppm1 = dataset.pointToPPM(iDim, start);
+                    double ppm2 = dataset.pointToPPM(iDim, end);
+                    x[iDim * 2] = ppm1;
+                    x[iDim * 2 + 1] = ppm2;
+                } else {
+                    ok = false;
+                }
+
+            }
+            if (ok) {
+
+                DatasetRegion datasetRegion = new DatasetRegion(x);
+                RegionData rData = dataset.analyzeRegion(datasetRegion);
+                if (rData.getMax() > threshold) {
+                    regions.add(datasetRegion);
+                }
+            }
+        }
+        return regions;
+    }
+
     public void iterativeConvolutions(Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {
-            regions = getRegion(dataset, peakList.getNDim());
+            regions = getBlockRegions(dataset, peakList.getNDim(), threshold);
         }
+        System.out.println("nregions " + regions.size());
+
+        allPeaks = new ArrayList<>();
+
         for (DatasetRegion region : regions) {
+            cPeakList = new ArrayList<>();
             int nDim = dataset.getNDim();
             int[][] pt = new int[nDim][2];
             int[] dim = new int[nDim];
@@ -663,35 +759,64 @@ public class ConvolutionFitter {
                 pt[iDim][1] = pt2;
                 sizes[iDim] = pt2 - pt1 + 1;
                 dim[iDim] = iDim;
+                System.out.println(iDim + " " + pt1 + " " + pt2 + " " + sizes[iDim]);
             }
             signalMatrix = new MatrixND(sizes);
             dataset.readMatrixND(pt, dim, signalMatrix);
 
             skip = new BooleanMatrixND(sizes);
 
-            MatrixND result = iterativeConvolutions(threshold, iterations, true);
-            result.stream().filter(indices -> !skip.getValue(indices)).forEach(indices -> {
-                buildPeak(dataset, peakList, result, indices, pt);
-            });
+            MatrixND result = iterativeConvolutions(threshold, iterations, pt, true);
+
+
+        }
+        peakDistances();
+        allPeaks.stream().filter(cp -> cp != null).forEach(cPeakD -> {
+            buildPeak(dataset, peakList, cPeakD);
+        });
+    }
+
+    void peakDistances() {
+        System.out.println("peak dist");
+        double limit = squash;
+        int nPeaks = allPeaks.size();
+        for (int i = 0; i < nPeaks; i++) {
+            CPeakD cPeak1 = allPeaks.get(i);
+            if (cPeak1 == null) {
+                continue;
+            }
+            for (int j = i + 1; j < nPeaks; j++) {
+                CPeakD cPeak2 = allPeaks.get(j);
+                if (cPeak2 != null) {
+                    double distance = cPeak1.distance(cPeak2, widths);
+                    if (distance < limit) {
+                        allPeaks.set(j, null);
+                        cPeak1 = cPeak1.merge(cPeak2);
+                        allPeaks.set(i, cPeak1);
+                        System.out.println(i + " " + j + " " + distance);
+                    }
+                }
+            }
         }
     }
 
-    void buildPeak(Dataset dataset, PeakList peakList, MatrixND matrixND, int[] indices, int[][] pt) {
-        if (Double.isFinite(matrixND.getValue(indices))) {
+
+    void buildPeak(Dataset dataset, PeakList peakList, CPeakD cPeakD) {
+        if (Double.isFinite(cPeakD.height)) {
             Peak peak = peakList.getNewPeak();
             double dxProduct = 1.0;
-            for (int i = 0; i < matrixND.getNDim(); i++) {
+            for (int i = 0; i < cPeakD.position.length; i++) {
                 PeakDim peakDim = peak.getPeakDim(i);
-                double x1 = dataset.pointToPPM(i, pt[i][0] + indices[i] - widths[i] / 2.0);
-                double x2 = dataset.pointToPPM(i, pt[i][0] + indices[i] + widths[i] / 2.0);
+                double x1 = dataset.pointToPPM(i, cPeakD.position[i] - widths[i] / 2.0);
+                double x2 = dataset.pointToPPM(i, cPeakD.position[i] + widths[i] / 2.0);
                 double dx = Math.abs(x2 - x1);
-                double shift = dataset.pointToPPM(i, (double) pt[i][0] + indices[i]);
+                double shift = dataset.pointToPPM(i, cPeakD.position[i]);
                 peakDim.setChemShiftValue((float) shift);
                 peakDim.setLineWidthValue((float) dx);
                 peakDim.setBoundsValue((float) (dx * 2.0));
                 dxProduct *= dx;
             }
-            double intensity = matrixND.getValue(indices) * psfMax;
+            double intensity = cPeakD.height * psfMax;
             peak.setIntensity((float) intensity);
             double volume = intensity * dxProduct * (Math.PI / 2.0) / 1.05;
             peak.setVolume1((float) volume);
