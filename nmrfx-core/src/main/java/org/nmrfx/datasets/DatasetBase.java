@@ -641,6 +641,17 @@ public class DatasetBase {
      * @return position in points
      */
     public int ppmToPoint(int iDim, double ppm) {
+        return ppmToPoint(iDim, ppm, true);
+    }
+
+    /**
+     * Convert dataset position in PPM to rounded position in points
+     *
+     * @param iDim dataset dimension index
+     * @param ppm  position in PPM
+     * @return position in points
+     */
+        public int ppmToPoint(int iDim, double ppm, boolean checkLimits) {
         int pt = 0;
 
         if (iDim < refUnits.length) {
@@ -651,12 +662,14 @@ public class DatasetBase {
                 pt = (int) (ppm - 0.5);
             }
 
-            if (pt < 0) {
-                pt = 0;
-            }
+            if (checkLimits) {
+                if (pt < 0) {
+                    pt = 0;
+                }
 
-            if (pt > (size(iDim) - 1)) {
-                pt = size(iDim) - 1;
+                if (pt > (size(iDim) - 1)) {
+                    pt = size(iDim) - 1;
+                }
             }
         }
 

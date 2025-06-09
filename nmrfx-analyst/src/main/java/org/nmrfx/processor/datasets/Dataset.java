@@ -1340,7 +1340,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws java.io.IOException if an I/O error occurs
      */
     public synchronized double readMatrixND(int[][] pt,
-                                            int[] dim, MatrixND matrix) throws IOException {
+                                            int[] dim, MatrixND matrix, boolean allowEdges) throws IOException {
         double maxValue = Double.NEGATIVE_INFINITY;
         double minValue = Double.MAX_VALUE;
         int[] point = new int[nDim];
@@ -1360,10 +1360,14 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         while (iter.hasNext()) {
             iter.next();
             int[] index = iter.getCounts();
+            boolean ok = true;
             for (int i = 0; i < index.length; i++) {
                 point[dim[i]] = index[i] + pt[i][0];
+                if ((point[dim[i]] < 0) || (point[dim[i]] >= size(i))) {
+                    ok = false;
+                }
             }
-            double value = readPointRaw(point);
+            double value = ok ? readPointRaw(point) : 0.0;
             matrix.setValue(value, index);
             if (value > maxValue) {
                 maxValue = value;

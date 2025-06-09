@@ -1134,7 +1134,7 @@ public class Processor {
             try {
                 matrix = new MatrixND(writePt, dim, matrixSizes);
                 matrix.setVSizes(vSizes);
-                dataset.readMatrixND(pt, dim, matrix);
+                dataset.readMatrixND(pt, dim, matrix, false);
             } catch (IOException ex) {
                 log.warn(ex.getMessage(), ex);
             }
