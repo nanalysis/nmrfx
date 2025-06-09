@@ -56,7 +56,8 @@ public class ConvolutionFitterTest {
     @Test
     public void testConvolve() {
         ConvolutionFitter convolutionFitter = getConvolutionFitter();
-        MatrixND convolved = genSignal(convolutionFitter, 40);
+        int iSig = 40;
+        MatrixND convolved = genSignal(convolutionFitter, iSig);
         double max = 0;
         double sum = 0.0;
         int imax = 0;
@@ -69,6 +70,7 @@ public class ConvolutionFitterTest {
         }
         Assert.assertEquals(convolutionFitter.psfMax, max, 1.0e-6);
         Assert.assertEquals(1.0, sum, 1.0e-6);
+        Assert.assertEquals(iSig, imax);
     }
 
     @Test

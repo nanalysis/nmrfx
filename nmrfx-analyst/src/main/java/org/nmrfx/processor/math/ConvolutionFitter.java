@@ -693,7 +693,9 @@ public class ConvolutionFitter {
         for (int iDim = 0; iDim < nPeakDim; iDim++) {
             int size = dataset.getSizeReal(iDim);
             int psfSize = psfDim[iDim];
-            winSizes[iDim] = (psfSize - 1) * 8;
+            int winSize = (psfSize - 1) * 8 - (psfSize -1);
+            winSize = nextPowerOfTwo(winSize) - psfSize + 1;
+            winSizes[iDim] = winSize;
             nWins[iDim] = (int) Math.ceil((double) size / winSizes[iDim]);
         }
         MultidimensionalCounter winCounter = new MultidimensionalCounter(nWins);
@@ -704,12 +706,11 @@ public class ConvolutionFitter {
             int[] counts = iterator.getCounts();
             boolean ok = true;
             for (int iDim = 0; iDim < nPeakDim; iDim++) {
-                int start = counts[iDim] * winSizes[iDim];
-                int end = start + winSizes[iDim] - 1;
-                if (end >= dataset.getSizeReal(iDim)) {
-                    end = dataset.getSizeReal(iDim) - 1;
-                }
+                int extra = (psfDim[iDim] - 1) / 2;
+                int start = counts[iDim] * winSizes[iDim] - extra;
+                int end = start + winSizes[iDim] - 1 + 2 * extra;
                 int size = end - start + 1;
+                System.out.println(extra + " " + start + " " + end + " " + size);
                 if (size > 0) {
                     double ppm1 = dataset.pointToPPM(iDim, start);
                     double ppm2 = dataset.pointToPPM(iDim, end);
@@ -721,7 +722,6 @@ public class ConvolutionFitter {
 
             }
             if (ok) {
-
                 DatasetRegion datasetRegion = new DatasetRegion(x);
                 RegionData rData = dataset.analyzeRegion(datasetRegion);
                 if (rData.getMax() > threshold) {
@@ -748,8 +748,8 @@ public class ConvolutionFitter {
             int[] dim = new int[nDim];
             int[] sizes = new int[nDim];
             for (int iDim = 0; iDim < nDim; iDim++) {
-                int pt1 = dataset.ppmToPoint(iDim, region.getRegionStart(iDim));
-                int pt2 = dataset.ppmToPoint(iDim, region.getRegionEnd(iDim));
+                int pt1 = (int) Math.round(dataset.ppmToDPoint(iDim, region.getRegionStart(iDim)));
+                int pt2 = (int) Math.round(dataset.ppmToDPoint(iDim, region.getRegionEnd(iDim)));
                 if (pt1 > pt2) {
                     int hold = pt1;
                     pt1 = pt2;
@@ -762,7 +762,7 @@ public class ConvolutionFitter {
                 System.out.println(iDim + " " + pt1 + " " + pt2 + " " + sizes[iDim]);
             }
             signalMatrix = new MatrixND(sizes);
-            dataset.readMatrixND(pt, dim, signalMatrix);
+            dataset.readMatrixND(pt, dim, signalMatrix, true);
 
             skip = new BooleanMatrixND(sizes);
 
@@ -772,7 +772,7 @@ public class ConvolutionFitter {
         }
         peakDistances();
         allPeaks.stream().filter(cp -> cp != null).forEach(cPeakD -> {
-            buildPeak(dataset, peakList, cPeakD);
+            buildPeak(dataset, peakList, cPeakD, threshold);
         });
     }
 
@@ -801,8 +801,12 @@ public class ConvolutionFitter {
     }
 
 
-    void buildPeak(Dataset dataset, PeakList peakList, CPeakD cPeakD) {
+    void buildPeak(Dataset dataset, PeakList peakList, CPeakD cPeakD, double threshold) {
         if (Double.isFinite(cPeakD.height)) {
+            double intensity = cPeakD.height * psfMax;
+            if (Math.abs(intensity) < threshold) {
+                return;
+            }
             Peak peak = peakList.getNewPeak();
             double dxProduct = 1.0;
             for (int i = 0; i < cPeakD.position.length; i++) {
@@ -816,7 +820,6 @@ public class ConvolutionFitter {
                 peakDim.setBoundsValue((float) (dx * 2.0));
                 dxProduct *= dx;
             }
-            double intensity = cPeakD.height * psfMax;
             peak.setIntensity((float) intensity);
             double volume = intensity * dxProduct * (Math.PI / 2.0) / 1.05;
             peak.setVolume1((float) volume);
