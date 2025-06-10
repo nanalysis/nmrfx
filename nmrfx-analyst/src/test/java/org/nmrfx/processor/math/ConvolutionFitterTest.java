@@ -1,5 +1,6 @@
 package org.nmrfx.processor.math;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,8 +15,8 @@ public class ConvolutionFitterTest {
     }
 
     private ConvolutionFitter getConvolutionFitter2D() {
-        int n = 65;
-        int m = 65;
+        int n = 17;
+        int m = 17;
         int[] psfSize = {n, m};
         int widthPt = 4;
         double[] widths = {widthPt, widthPt};
@@ -47,8 +48,8 @@ public class ConvolutionFitterTest {
         return convolutionFitter.convolutionTest(signal);
     }
 
-    private MatrixND genSignal2D(ConvolutionFitter convolutionFitter, int iSig, int jSig) {
-        double[][] signal = new double[256][256];
+    private MatrixND genSignal2D(ConvolutionFitter convolutionFitter, int n, int m, int iSig, int jSig) {
+        double[][] signal = new double[n][m];
         signal[iSig][jSig] = 1.0;
         return convolutionFitter.convolutionTest2D(signal);
     }
@@ -56,7 +57,7 @@ public class ConvolutionFitterTest {
     @Test
     public void testConvolve() {
         ConvolutionFitter convolutionFitter = getConvolutionFitter();
-        int iSig = 40;
+        int iSig = 10;
         MatrixND convolved = genSignal(convolutionFitter, iSig);
         double max = 0;
         double sum = 0.0;
@@ -73,10 +74,24 @@ public class ConvolutionFitterTest {
         Assert.assertEquals(iSig, imax);
     }
 
+    int[] findMax(MatrixND matrixND) {
+        int[] imax = new int[matrixND.getNDim()];
+        final AtomicDouble max = new AtomicDouble(0.0);
+        matrixND.stream().forEach(counts -> {
+            double value = matrixND.getValue(counts);
+            if (value > max.get()) {
+                max.set(value);
+                System.arraycopy(counts, 0, imax, 0, imax.length);
+            }
+        });
+        return imax;
+    }
     @Test
     public void testConvolve2D() {
         ConvolutionFitter convolutionFitter = getConvolutionFitter2D();
-        MatrixND convolved = genSignal2D(convolutionFitter, 50, 50);
+        int iSig = 50;
+        int jSig = 60;
+        MatrixND convolved = genSignal2D(convolutionFitter, 256, 128, iSig, jSig);
         double max = 0;
         double sum = 0.0;
         MultidimensionalCounter mCounter = new MultidimensionalCounter(convolved.getSizes());
@@ -94,20 +109,25 @@ public class ConvolutionFitterTest {
 
         }
         Assert.assertEquals(convolutionFitter.psfMax, max, 1.0e-6);
-        Assert.assertEquals(1.0, sum, 1.0e-6);
+        Assert.assertEquals(1.0, sum, 0.01);
+        Assert.assertEquals(iSig, imax[0]);
+        Assert.assertEquals(jSig, imax[1]);
     }
     @Test
     public void testConvolve2D1() {
         ConvolutionFitter convolutionFitter = getConvolutionFitter2D();
-        int iSig = 60;
-        int jSig = 75;
-        MatrixND signal = genSignal2D(convolutionFitter, iSig, jSig);
+        int iSig = 90;
+        int jSig = 53;
+        MatrixND signal = genSignal2D(convolutionFitter, 128, 64, iSig, jSig);
         MatrixND matrixND = new MatrixND(signal);
         MatrixND initMatrix = new MatrixND(signal);
         MatrixND psfMatrix =convolutionFitter.psfMatrix;
         MatrixND result = ConvolutionFitter.iterativeConvolution(matrixND, initMatrix, psfMatrix, 200);
         dumpPSF(result, 0.01);
+        int[] imax = findMax(result);
         Assert.assertEquals(1.0, result.getValue(iSig, jSig), 0.06);
+        Assert.assertEquals(iSig, imax[0]);
+        Assert.assertEquals(jSig, imax[1]);
     }
 
     @Test

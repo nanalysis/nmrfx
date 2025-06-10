@@ -15,6 +15,7 @@ import org.jtransforms.fft.DoubleFFT_2D;
 
 import java.util.*;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConvolutionFitter {
     static Random rand = new Random();
@@ -208,8 +209,8 @@ public class ConvolutionFitter {
             for (int i = 0; i < indices.length; i++) {
                 indices2[i] = indices[i] + counts[i] - halfWidths[i];
                 if ((indices2[i] < 0) || (indices2[i] >= values.getSize(i))) {
-                    ok = false;
-                    break;
+                   ok = false;
+                   break;
                 }
                 ipsf[i] = (psfMatrix.getSize(i) - 1) / 2 - (halfWidths[i] - counts[i]);
                 if (counts[i] != halfWidths[i]) {
@@ -252,7 +253,7 @@ public class ConvolutionFitter {
         double distance(CPeakD cPeak, double[] widths) {
             double sum = 0.0;
             for (int i = 0; i < position.length; i++) {
-                double d = (position[i] - cPeak.position[i]) / widths[i] ;
+                double d = (position[i] - cPeak.position[i]) / widths[i];
                 sum += d * d;
             }
             return Math.sqrt(sum);
@@ -271,7 +272,7 @@ public class ConvolutionFitter {
 
     boolean inCore(int[] counts) {
         boolean ok = true;
-        for (int i=0;i<counts.length;i++) {
+        for (int i = 0; i < counts.length; i++) {
             if (counts[i] > signalMatrix.getSize(i) - psfDim[i]) {
                 ok = false;
                 break;
@@ -354,16 +355,25 @@ public class ConvolutionFitter {
     public static MatrixND convolve1D(MatrixND a, MatrixND b) {
         int nDim = a.getNDim();
 
+
         int[] newSizes2 = new int[nDim];
+        int[] padding = new int[nDim];
+        boolean pad = false;
         for (int i = 0; i < nDim; i++) {
             int n = a.getSize(i) + b.getSize(i) - 1;
             int fftLen = nextPowerOfTwo(n);
-            newSizes2[i] = 2 * fftLen;
+            newSizes2[i] = i == 0 ? 2 * fftLen : fftLen;
+            if (pad) {
+                padding[i] = (b.getSize(i) - 1) / 2;
+            }
         }
 
         MatrixND aPadded2 = new MatrixND(a);
         MatrixND bPadded2 = new MatrixND(b);
 
+        if (pad) {
+            aPadded2.pad(padding);
+        }
 
         aPadded2.zeroFill(newSizes2);
         aPadded2.toComplex(0);
@@ -385,7 +395,11 @@ public class ConvolutionFitter {
         int[] indices = new int[nDim];
         result.stream().forEach(counts -> {
             for (int i = 0; i < nDim; i++) {
-                indices[i] = 2 * (counts[i] + offsets[i]);
+                if (i == 0) {
+                    indices[i] = 2 * (counts[i] + padding[i] + offsets[i]);
+                } else {
+                    indices[i] = (counts[i] + padding[i] + offsets[i]);
+                }
             }
             double value = aPadded2.getValue(indices);
             result.setValue(value, counts);
@@ -431,6 +445,9 @@ public class ConvolutionFitter {
         // Output size for linear convolution
         int outRows = rows + kRows - 1;
         int outCols = cols + kCols - 1;
+
+        outRows = rows + (kRows - 1) / 2;
+        outCols = cols + (kCols -1) / 2;
 
         double[][] input = to2D(a);
         double[][] kernel = to2D(b);
@@ -480,8 +497,16 @@ public class ConvolutionFitter {
         // Extract real part
         double[][] result = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
+            int ii = i + offsets[0];
+            if (ii >= resultComplex.length) {
+                continue;
+            }
             for (int j = 0; j < cols; j++) {
-                result[i][j] = resultComplex[i + offsets[0]][2 * (j + offsets[1])];
+                int jj = 2 * (j + offsets[1]);
+                if (jj >= resultComplex[0].length) {
+                    continue;
+                }
+                result[i][j] = resultComplex[ii][jj];
             }
         }
 
@@ -606,15 +631,14 @@ public class ConvolutionFitter {
     public static MatrixND iterativeConvolution(MatrixND observed, MatrixND estimate, MatrixND psf, int iterations) {
         for (int iter = 0; iter < iterations; iter++) {
             MatrixND convEstimate = convolve(estimate, psf);
-
             AtomicDouble maxValue2 = new AtomicDouble(0.0);
             AtomicDouble maxDelta = new AtomicDouble(0.0);
             observed.stream().forEach(counts -> {
                 double oldValue = estimate.getValue(counts);
                 double obsValue = observed.getValue(counts);
                 double v = convEstimate.getValue(counts);
-                if (Double.isNaN(v) || (Math.abs(v) < 1.0e-9)) {
-                    v = 1.0e-9;
+                if (Double.isNaN(v) || (Math.abs(v) < 1.0e-6)) {
+                    v = 1.0e-6;
                 }
                 double ratio = obsValue / v;
                 double newValue = oldValue * ratio;
@@ -643,9 +667,9 @@ public class ConvolutionFitter {
             if (signalMatrix.getValue(counts) > threshold) {
                 valueMatrix.setValue(signalMatrix.getValue(counts), counts);
             } else {
+                valueMatrix.setValue(threshold, counts);
                 skip.setValue(true, counts);
             }
-
         });
 
 
@@ -693,7 +717,7 @@ public class ConvolutionFitter {
         for (int iDim = 0; iDim < nPeakDim; iDim++) {
             int size = dataset.getSizeReal(iDim);
             int psfSize = psfDim[iDim];
-            int winSize = (psfSize - 1) * 8 - (psfSize -1);
+            int winSize = (psfSize - 1) * 8 - (psfSize - 1);
             winSize = nextPowerOfTwo(winSize) - psfSize + 1;
             winSizes[iDim] = winSize;
             nWins[iDim] = (int) Math.ceil((double) size / winSizes[iDim]);
@@ -708,9 +732,8 @@ public class ConvolutionFitter {
             for (int iDim = 0; iDim < nPeakDim; iDim++) {
                 int extra = (psfDim[iDim] - 1) / 2;
                 int start = counts[iDim] * winSizes[iDim] - extra;
-                int end = start + winSizes[iDim] - 1 + 2 * extra;
+                int end = start + winSizes[iDim] - 1 +  extra;
                 int size = end - start + 1;
-                System.out.println(extra + " " + start + " " + end + " " + size);
                 if (size > 0) {
                     double ppm1 = dataset.pointToPPM(iDim, start);
                     double ppm2 = dataset.pointToPPM(iDim, end);
@@ -737,7 +760,6 @@ public class ConvolutionFitter {
         if (regions.isEmpty()) {
             regions = getBlockRegions(dataset, peakList.getNDim(), threshold);
         }
-        System.out.println("nregions " + regions.size());
 
         allPeaks = new ArrayList<>();
 
@@ -759,7 +781,6 @@ public class ConvolutionFitter {
                 pt[iDim][1] = pt2;
                 sizes[iDim] = pt2 - pt1 + 1;
                 dim[iDim] = iDim;
-                System.out.println(iDim + " " + pt1 + " " + pt2 + " " + sizes[iDim]);
             }
             signalMatrix = new MatrixND(sizes);
             dataset.readMatrixND(pt, dim, signalMatrix, true);
@@ -767,8 +788,6 @@ public class ConvolutionFitter {
             skip = new BooleanMatrixND(sizes);
 
             MatrixND result = iterativeConvolutions(threshold, iterations, pt, true);
-
-
         }
         peakDistances();
         allPeaks.stream().filter(cp -> cp != null).forEach(cPeakD -> {
@@ -777,7 +796,6 @@ public class ConvolutionFitter {
     }
 
     void peakDistances() {
-        System.out.println("peak dist");
         double limit = squash;
         int nPeaks = allPeaks.size();
         for (int i = 0; i < nPeaks; i++) {
@@ -793,7 +811,6 @@ public class ConvolutionFitter {
                         allPeaks.set(j, null);
                         cPeak1 = cPeak1.merge(cPeak2);
                         allPeaks.set(i, cPeak1);
-                        System.out.println(i + " " + j + " " + distance);
                     }
                 }
             }
@@ -823,6 +840,8 @@ public class ConvolutionFitter {
             peak.setIntensity((float) intensity);
             double volume = intensity * dxProduct * (Math.PI / 2.0) / 1.05;
             peak.setVolume1((float) volume);
+        } else {
+            System.out.println("nan peak");
         }
     }
 }
