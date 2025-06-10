@@ -443,18 +443,13 @@ public class ConvolutionFitter {
         int kCols = b.getSize(1);
 
         // Output size for linear convolution
-        int outRows = rows + kRows - 1;
-        int outCols = cols + kCols - 1;
-
-        outRows = rows + (kRows - 1) / 2;
-        outCols = cols + (kCols -1) / 2;
 
         double[][] input = to2D(a);
         double[][] kernel = to2D(b);
 
         // Pad input and kernel to same size
-        double[][] inputPadded = new double[outRows][outCols];
-        double[][] kernelPadded = new double[outRows][outCols];
+        double[][] inputPadded = new double[rows][cols];
+        double[][] kernelPadded = new double[rows][cols];
 
         for (int i = 0; i < rows; i++)
             System.arraycopy(input[i], 0, inputPadded[i], 0, cols);
@@ -465,14 +460,14 @@ public class ConvolutionFitter {
         double[][] inputComplex = realToComplex(inputPadded);
         double[][] kernelComplex = realToComplex(kernelPadded);
 
-        DoubleFFT_2D fft = new DoubleFFT_2D(outRows, outCols);
+        DoubleFFT_2D fft = new DoubleFFT_2D(rows, cols);
         fft.complexForward(inputComplex);
         fft.complexForward(kernelComplex);
 
         // Point-wise complex multiplication
-        double[][] resultComplex = new double[outRows][2 * outCols];
-        for (int i = 0; i < outRows; i++) {
-            for (int j = 0; j < outCols; j++) {
+        double[][] resultComplex = new double[rows][2 * cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 int re = 2 * j;
                 int im = 2 * j + 1;
 
@@ -628,12 +623,27 @@ public class ConvolutionFitter {
         return convolve(matrixND, psfMatrix);
     }
 
+    static boolean inRegion(int[] counts, int[] limits) {
+        boolean ok = true;
+        for (int i=0;i<counts.length;i++) {
+            if (counts[i] >= limits[i] ) {
+                ok = false;
+                break;
+            }
+        }
+        return ok;
+    }
+
     public static MatrixND iterativeConvolution(MatrixND observed, MatrixND estimate, MatrixND psf, int iterations) {
+        int[] limits = new int[observed.getNDim()];
+        for (int i=0;i<limits.length;i++) {
+            limits[i] = observed.getSize(i) - (psf.getSize(i) -1 ) / 2;
+        }
         for (int iter = 0; iter < iterations; iter++) {
             MatrixND convEstimate = convolve(estimate, psf);
             AtomicDouble maxValue2 = new AtomicDouble(0.0);
             AtomicDouble maxDelta = new AtomicDouble(0.0);
-            observed.stream().forEach(counts -> {
+            observed.stream().filter(counts -> inRegion(counts, limits)).forEach(counts -> {
                 double oldValue = estimate.getValue(counts);
                 double obsValue = observed.getValue(counts);
                 double v = convEstimate.getValue(counts);
@@ -667,7 +677,7 @@ public class ConvolutionFitter {
             if (signalMatrix.getValue(counts) > threshold) {
                 valueMatrix.setValue(signalMatrix.getValue(counts), counts);
             } else {
-                valueMatrix.setValue(threshold, counts);
+               // valueMatrix.setValue(threshold, counts);
                 skip.setValue(true, counts);
             }
         });
@@ -732,7 +742,7 @@ public class ConvolutionFitter {
             for (int iDim = 0; iDim < nPeakDim; iDim++) {
                 int extra = (psfDim[iDim] - 1) / 2;
                 int start = counts[iDim] * winSizes[iDim] - extra;
-                int end = start + winSizes[iDim] - 1 +  extra;
+                int end = start + winSizes[iDim] - 1 +  2 * extra;
                 int size = end - start + 1;
                 if (size > 0) {
                     double ppm1 = dataset.pointToPPM(iDim, start);
