@@ -781,6 +781,10 @@ public class Atom implements IAtom, Comparable<Atom> {
         return ppmV;
     }
 
+    public PPMv getPPMByMode(int i, boolean mode) {
+        return mode ? getRefPPM(i) : getPPM(i);
+    }
+
     public Double getSDevRefPPM() {
         PPMv ppmV = getRefPPM(0);
         if ((ppmV != null) && ppmV.isValid()) {
@@ -810,7 +814,7 @@ public class Atom implements IAtom, Comparable<Atom> {
         Double delta;
         if ((ppmV != null) && ppmV.isValid() && (refV != null)
                 && refV.isValid()) {
-            delta = (ppmV.getValue() - refV.getValue()) / refV.getError();
+            delta = ppmV.getValue() - refV.getValue();
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;

@@ -272,19 +272,31 @@ public class AtomController implements Initializable, StageBasedController, Free
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        ChoiceBox<Integer> ppmSetChoiceBox = new ChoiceBox<>();
-        ppmSetChoiceBox.getItems().addAll(0,1,2,3,4,5);
-        ppmSetChoiceBox.setValue(0);
+        MenuButton addPPMColButton = new MenuButton("Add");
+        String[] iSets = new String[]{"0", "1", "2", "3", "4", "5"};
+        Menu ppmMenuItem = new Menu("PPM");
+        for (String i : iSets) {
+            MenuItem set = new MenuItem(i);
+            ppmMenuItem.getItems().add(set);
+            set.setOnAction(e -> makePPMCol(Integer.parseInt(set.getText()), false));
+        }
 
-        CheckBox refCheckBox = new CheckBox("Ref");
+        Menu refMenuItem = new Menu("Ref");
+        for (String i : iSets) {
+            MenuItem set = new MenuItem(i);
+            refMenuItem.getItems().add(set);
+            set.setOnAction(e -> makePPMCol(Integer.parseInt(set.getText()), true));
+        }
+        addPPMColButton.getItems().addAll(ppmMenuItem, refMenuItem);
+        menuBar.getItems().addAll(addPPMColButton);
 
-        Button addPPMColButton = new Button("Add");
-        addPPMColButton.setOnAction(e -> makePPMCol(ppmSetChoiceBox.getValue(),
-                refCheckBox.isSelected()));
-        menuBar.getItems().addAll(new Label("PPM Set"), ppmSetChoiceBox,
-                refCheckBox, addPPMColButton);
+        for (String i : iSets) {
+            int iSet = Integer.parseInt(i);
+            boolean hasPPM = !atoms.stream().filter(atom -> atom.getPPM(iSet) != null).toList().isEmpty();
+            if (hasPPM) { makePPMCol(iSet, false);}
+        }
 
-        SplitMenuButton ppmPlotButton = new SplitMenuButton();
+        MenuButton ppmPlotButton = new MenuButton();
         ppmPlotButton.setText("Plot");
         MenuItem deltasMenuItem = new MenuItem("Deltas");
         deltasMenuItem.setOnAction(e -> plotDeltas());
@@ -542,7 +554,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     List<PPMSet> getPPMSets(boolean refMode) {
-        return PPMSets.stream().filter(ppmSet -> ppmSet.ref.name().equals("REF")).toList();
+        return PPMSets.stream().filter(ppmSet -> ppmSet.refSet).toList();
     }
 
     void readPPM(boolean refMode) {
