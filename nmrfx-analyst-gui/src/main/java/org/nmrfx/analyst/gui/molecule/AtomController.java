@@ -273,28 +273,13 @@ public class AtomController implements Initializable, StageBasedController, Free
         predictMenu.getItems().addAll(preditorMenuItem);
 
         MenuButton addPPMColButton = new MenuButton("Add");
-        String[] iSets = new String[]{"0", "1", "2", "3", "4", "5"};
         Menu ppmMenuItem = new Menu("PPM");
-        for (String i : iSets) {
-            MenuItem set = new MenuItem(i);
-            ppmMenuItem.getItems().add(set);
-            set.setOnAction(e -> makePPMCol(Integer.parseInt(set.getText()), false));
-        }
+        ppmMenuItem.getItems().addAll(makePPMMenuItems(false));
 
         Menu refMenuItem = new Menu("Ref");
-        for (String i : iSets) {
-            MenuItem set = new MenuItem(i);
-            refMenuItem.getItems().add(set);
-            set.setOnAction(e -> makePPMCol(Integer.parseInt(set.getText()), true));
-        }
+        refMenuItem.getItems().addAll(makePPMMenuItems(true));
         addPPMColButton.getItems().addAll(ppmMenuItem, refMenuItem);
         menuBar.getItems().addAll(addPPMColButton);
-
-        for (String i : iSets) {
-            int iSet = Integer.parseInt(i);
-            boolean hasPPM = !atoms.stream().filter(atom -> atom.getPPM(iSet) != null).toList().isEmpty();
-            if (hasPPM) { makePPMCol(iSet, false);}
-        }
 
         MenuButton ppmPlotButton = new MenuButton();
         ppmPlotButton.setText("Plot");
@@ -304,6 +289,17 @@ public class AtomController implements Initializable, StageBasedController, Free
         shiftsMenuItem.setOnAction(e -> plotShifts());
         ppmPlotButton.getItems().addAll(deltasMenuItem, shiftsMenuItem);
         menuBar.getItems().add(ppmPlotButton);
+    }
+
+    private List<MenuItem> makePPMMenuItems(boolean refMode) {
+        String[] iSets = new String[]{"0", "1", "2", "3", "4", "5"};
+        List<MenuItem> menuItems = new ArrayList<>();
+        for (String i : iSets) {
+            MenuItem menuItem = new MenuItem(i);
+            menuItems.add(menuItem);
+            menuItem.setOnAction(e -> makePPMCol(Integer.parseInt(menuItem.getText()), refMode));
+        }
+        return menuItems;
     }
 
     private void makePPMCol(int iSet, boolean ref) {
