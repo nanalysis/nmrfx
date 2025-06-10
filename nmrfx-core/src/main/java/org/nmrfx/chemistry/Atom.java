@@ -804,6 +804,20 @@ public class Atom implements IAtom, Comparable<Atom> {
         return delta;
     }
 
+    public Double getDeltaPPM2(int set1, int set2, boolean ref1, boolean ref2) {
+        PPMv ppmV = ref1 ? getRefPPM(set1) : getPPM(set1);
+        PPMv refV = ref2 ? getRefPPM(set2) : getPPM(set2);
+        Double delta;
+        if ((ppmV != null) && ppmV.isValid() && (refV != null)
+                && refV.isValid()) {
+            delta = (ppmV.getValue() - refV.getValue()) / refV.getError();
+            delta = Math.round(delta * 100.0) / 100.0;
+        } else {
+            delta = null;
+        }
+        return delta;
+    }
+
     public void setPPM(double value) {
         spatialSet.setPPM(0, value, false);
     }
