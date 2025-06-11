@@ -7,83 +7,14 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.LineShapes;
 
 import java.util.*;
 import java.io.IOException;
 
 public class ConvolutionFitter {
-    double psfMax;
-    int[] psfDim;
-    int psfTotalSize;
-    double[] widths;
-    MatrixND psfMatrix;
-    double squash = 0.625;
-    double shapeFactor;
-    MultidimensionalCounter counter;
 
     List<CPeak> cPeakList;
     List<CPeakD> allPeaks;
-
-    public ConvolutionFitter(int n0, int width, double shapeFactor) {
-        int[] n = {n0};
-        widths = new double[1];
-        widths[0] = width;
-        this.shapeFactor = shapeFactor;
-        makePSF(n, widths, shapeFactor);
-    }
-
-    public ConvolutionFitter(int[] n, double[] widths, double shapeFactor) {
-        makePSF(n, widths, shapeFactor);
-        this.shapeFactor = shapeFactor;
-        this.widths = widths.clone();
-    }
-
-    void makePSF(int[] n, double[] width, double shapeFactor) {
-        int nDim = n.length;
-        psfDim = n.clone();
-        double[][] yValues = new double[nDim][];
-        int totalSize = 1;
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            yValues[iDim] = new double[n[iDim]];
-            totalSize *= n[iDim];
-            for (int i = 0; i < n[iDim]; i++) {
-                double x = -(n[iDim] - 1) / 2.0 + i;
-                yValues[iDim][i] = LineShapes.G_LORENTZIAN.calculate(x, 1.0, 0.0, width[iDim], shapeFactor);
-            }
-        }
-        psfTotalSize = totalSize;
-        counter = new MultidimensionalCounter(n);
-        psfMatrix = makePSFMatrix(yValues);
-    }
-
-    public void squash(double value) {
-        this.squash = value;
-    }
-
-    public MatrixND makePSFMatrix(double[][] psfValues) {
-        var iterator = counter.iterator();
-        MatrixND matrixND = new MatrixND(psfDim);
-        double max = 0.0;
-        double sum = 0.0;
-        while (iterator.hasNext()) {
-            iterator.next();
-            int[] counts = iterator.getCounts();
-            double value = 1.0;
-            for (int j = 0; j < counts.length; j++) {
-                value *= psfValues[j][counts[j]];
-            }
-            matrixND.setValue(value, counts);
-            sum += value;
-            max = Math.max(value, max);
-        }
-        if (sum != 0.0) {
-            matrixND.scale(1.0 / sum);
-            max /= sum;
-        }
-        psfMax = max;
-        return matrixND;
-    }
 
     public record CPeak(int[] position, double height) {
     }
@@ -130,7 +61,7 @@ public class ConvolutionFitter {
         return regions;
     }
 
-    private List<DatasetRegion> getBlockRegions(Dataset dataset, int nPeakDim, double threshold) throws IOException {
+    private List<DatasetRegion> getBlockRegions(Dataset dataset, int nPeakDim, double threshold, int[] psfDim) throws IOException {
         List<DatasetRegion> regions = new ArrayList<>();
         int[] nWins = new int[nPeakDim];
         int[] winSizes = new int[nPeakDim];
@@ -181,7 +112,7 @@ public class ConvolutionFitter {
     public void iterativeConvolutions(IterativeConvolutions iterativeConvolutions, Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
         var regions = dataset.getReadOnlyRegions();
         if (regions.isEmpty()) {
-            regions = getBlockRegions(dataset, peakList.getNDim(), threshold);
+            regions = getBlockRegions(dataset, peakList.getNDim(), threshold, iterativeConvolutions.psfDim);
         }
 
         allPeaks = new ArrayList<>();
@@ -212,12 +143,12 @@ public class ConvolutionFitter {
             var unused = iterativeConvolutions.iterativeConvolutions(signalMatrix, skip, threshold, iterations, pt, true, peaks);
             allPeaks.addAll(peaks);
         }
-        peakDistances();
-        allPeaks.stream().filter(Objects::nonNull).forEach(cPeakD -> buildPeak(dataset, peakList, cPeakD, threshold));
+        peakDistances(iterativeConvolutions.squash, iterativeConvolutions.widths);
+        allPeaks.stream().filter(Objects::nonNull).forEach(cPeakD -> buildPeak(dataset, peakList, cPeakD,
+                threshold, iterativeConvolutions.psfMax, iterativeConvolutions.widths));
     }
 
-    void peakDistances() {
-        double limit = squash;
+    void peakDistances(double squash, double[] widths) {
         int nPeaks = allPeaks.size();
         for (int i = 0; i < nPeaks; i++) {
             CPeakD cPeak1 = allPeaks.get(i);
@@ -228,7 +159,7 @@ public class ConvolutionFitter {
                 CPeakD cPeak2 = allPeaks.get(j);
                 if (cPeak2 != null) {
                     double distance = cPeak1.distance(cPeak2, widths);
-                    if (distance < limit) {
+                    if (distance < squash) {
                         allPeaks.set(j, null);
                         cPeak1 = cPeak1.merge(cPeak2);
                         allPeaks.set(i, cPeak1);
@@ -239,9 +170,9 @@ public class ConvolutionFitter {
     }
 
 
-    void buildPeak(Dataset dataset, PeakList peakList, CPeakD cPeakD, double threshold) {
+    void buildPeak(Dataset dataset, PeakList peakList, CPeakD cPeakD, double threshold, double max, double[] widths) {
         if (Double.isFinite(cPeakD.height)) {
-            double intensity = cPeakD.height * psfMax;
+            double intensity = cPeakD.height * max;
             if (Math.abs(intensity) < threshold) {
                 return;
             }

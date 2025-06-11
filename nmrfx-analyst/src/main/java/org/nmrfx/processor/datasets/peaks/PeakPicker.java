@@ -656,10 +656,10 @@ public class PeakPicker {
             shapeFactor = peakList.shapeFactorDStats(iDim).getPercentile(50);
             System.out.println("wid " + widthHz + " " + widthPt[iDim] + " " + n[iDim] + " " + shapeFactor);
         }
-        ConvolutionFitter convolutionFitter = new ConvolutionFitter(n, widthPt, shapeFactor);
+        ConvolutionFitter convolutionFitter = new ConvolutionFitter();
         IterativeConvolutions iterativeConvolutions = new IterativeConvolutions(n, widthPt, shapeFactor);
         peakList.clear();
-        convolutionFitter.squash(convolutionPickPar.squash());
+        iterativeConvolutions.squash(convolutionPickPar.squash());
         convolutionFitter.iterativeConvolutions(iterativeConvolutions, dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
     }
 

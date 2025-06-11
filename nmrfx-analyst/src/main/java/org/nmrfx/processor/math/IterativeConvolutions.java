@@ -15,9 +15,9 @@ public class IterativeConvolutions {
     double psfMax;
     int[] psfDim;
     int psfTotalSize;
-    double[] widths;
+    final double[] widths;
     MatrixND psfMatrix;
-    double squash = 0.625;
+    public double squash = 0.625;
     double threshold = 0.0;
     MultidimensionalCounter counter;
     MultidimensionalCounter neighborCounter;
@@ -38,16 +38,13 @@ public class IterativeConvolutions {
         int nDim = n.length;
         psfDim = n.clone();
         double[][] yValues = new double[nDim][];
-        double max = 0.0;
         int totalSize = 1;
-        double sum = 0.0;
         for (int iDim = 0; iDim < nDim; iDim++) {
             yValues[iDim] = new double[n[iDim]];
             totalSize *= n[iDim];
             for (int i = 0; i < n[iDim]; i++) {
                 double x = -(n[iDim] - 1) / 2.0 + i;
                 yValues[iDim][i] = LineShapes.G_LORENTZIAN.calculate(x, 1.0, 0.0, width[iDim], shapeFactor);
-                sum += yValues[iDim][i];
             }
         }
         psfTotalSize = totalSize;
@@ -577,4 +574,7 @@ public class IterativeConvolutions {
         }
     }
 
+    public void squash(double squash) {
+        this.squash = squash;
+    }
 }
