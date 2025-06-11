@@ -34,6 +34,7 @@ import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
 import org.nmrfx.processor.math.ConvolutionFitter;
+import org.nmrfx.processor.math.IterativeConvolutions;
 import org.nmrfx.processor.math.Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -656,9 +657,10 @@ public class PeakPicker {
             System.out.println("wid " + widthHz + " " + widthPt[iDim] + " " + n[iDim] + " " + shapeFactor);
         }
         ConvolutionFitter convolutionFitter = new ConvolutionFitter(n, widthPt, shapeFactor);
+        IterativeConvolutions iterativeConvolutions = new IterativeConvolutions(n, widthPt, shapeFactor);
         peakList.clear();
         convolutionFitter.squash(convolutionPickPar.squash());
-        convolutionFitter.iterativeConvolutions(dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
+        convolutionFitter.iterativeConvolutions(iterativeConvolutions, dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
     }
 
     void pickRegion(PeakList peakList, int[][] pt, int[] dataToPeak, int[] peakToData) throws IOException {

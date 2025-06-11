@@ -7,21 +7,21 @@ import org.junit.Test;
 
 public class ConvolutionFitterTest {
 
-    private ConvolutionFitter getConvolutionFitter() {
+    private IterativeConvolutions getConvolutionFitter() {
         int n = 17;
         int widthPt = 4;
         double shapeFactor = 0.0;
-        return new ConvolutionFitter(n, widthPt, shapeFactor);
+        return new IterativeConvolutions(n, widthPt, shapeFactor);
     }
 
-    private ConvolutionFitter getConvolutionFitter2D() {
+    private IterativeConvolutions getConvolutionFitter2D() {
         int n = 17;
         int m = 17;
         int[] psfSize = {n, m};
         int widthPt = 4;
         double[] widths = {widthPt, widthPt};
         double shapeFactor = 0.0;
-        return new ConvolutionFitter(psfSize, widths, shapeFactor);
+        return new IterativeConvolutions(psfSize, widths, shapeFactor);
     }
 
     private void dumpPSF(MatrixND matrixND, double limit) {
@@ -42,13 +42,13 @@ public class ConvolutionFitterTest {
         }
         System.out.println("sum " + sum);
     }
-    private MatrixND genSignal(ConvolutionFitter convolutionFitter, int iSig) {
+    private MatrixND genSignal(IterativeConvolutions convolutionFitter, int iSig) {
         double[] signal = new double[256];
         signal[iSig] = 1.0;
         return convolutionFitter.convolutionTest(signal);
     }
 
-    private MatrixND genSignal2D(ConvolutionFitter convolutionFitter, int n, int m, int iSig, int jSig) {
+    private MatrixND genSignal2D(IterativeConvolutions convolutionFitter, int n, int m, int iSig, int jSig) {
         double[][] signal = new double[n][m];
         signal[iSig][jSig] = 1.0;
         return convolutionFitter.convolutionTest2D(signal);
@@ -56,7 +56,7 @@ public class ConvolutionFitterTest {
 
     @Test
     public void testConvolve() {
-        ConvolutionFitter convolutionFitter = getConvolutionFitter();
+        IterativeConvolutions convolutionFitter = getConvolutionFitter();
         int iSig = 10;
         MatrixND convolved = genSignal(convolutionFitter, iSig);
         double max = 0;
@@ -88,7 +88,7 @@ public class ConvolutionFitterTest {
     }
     @Test
     public void testConvolve2D() {
-        ConvolutionFitter convolutionFitter = getConvolutionFitter2D();
+        IterativeConvolutions convolutionFitter = getConvolutionFitter2D();
         int iSig = 50;
         int jSig = 60;
         MatrixND convolved = genSignal2D(convolutionFitter, 256, 128, iSig, jSig);
@@ -115,14 +115,14 @@ public class ConvolutionFitterTest {
     }
     @Test
     public void testConvolve2D1() {
-        ConvolutionFitter convolutionFitter = getConvolutionFitter2D();
+        IterativeConvolutions convolutionFitter = getConvolutionFitter2D();
         int iSig = 90;
         int jSig = 53;
         MatrixND signal = genSignal2D(convolutionFitter, 128, 64, iSig, jSig);
         MatrixND matrixND = new MatrixND(signal);
         MatrixND initMatrix = new MatrixND(signal);
         MatrixND psfMatrix =convolutionFitter.psfMatrix;
-        MatrixND result = ConvolutionFitter.iterativeConvolution(matrixND, initMatrix, psfMatrix, 200);
+        MatrixND result = IterativeConvolutions.iterativeConvolution(matrixND, initMatrix, psfMatrix, 200);
         dumpPSF(result, 0.01);
         int[] imax = findMax(result);
         Assert.assertEquals(1.0, result.getValue(iSig, jSig), 0.06);
@@ -132,19 +132,19 @@ public class ConvolutionFitterTest {
 
     @Test
     public void testConvolve2() {
-        ConvolutionFitter convolutionFitter = getConvolutionFitter();
+        IterativeConvolutions convolutionFitter = getConvolutionFitter();
         int iSig = 40;
         MatrixND signal = genSignal(convolutionFitter, iSig);
         MatrixND matrixND = new MatrixND(signal);
         MatrixND initMatrix = new MatrixND(signal);
         MatrixND psfMatrix =convolutionFitter.psfMatrix;
-        MatrixND result = ConvolutionFitter.iterativeConvolution(matrixND, initMatrix, psfMatrix, 100);
+        MatrixND result = IterativeConvolutions.iterativeConvolution(matrixND, initMatrix, psfMatrix, 100);
         Assert.assertEquals(1.0, result.getValue(iSig), 0.5);
     }
 
     @Test
     public void testConvolve3() {
-        ConvolutionFitter convolutionFitter = getConvolutionFitter();
+        IterativeConvolutions convolutionFitter = getConvolutionFitter();
         int iSig = 40;
         MatrixND signal = genSignal(convolutionFitter, iSig);
         MatrixND result = convolutionFitter.iterativeConvolutions(signal, 1.0e-6, 50, true);
