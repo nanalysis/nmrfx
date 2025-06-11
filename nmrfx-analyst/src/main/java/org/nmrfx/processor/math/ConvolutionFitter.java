@@ -10,11 +10,10 @@ import org.nmrfx.processor.datasets.Dataset;
 
 import java.util.*;
 import java.io.IOException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
 
 public class ConvolutionFitter {
-
-    List<CPeak> cPeakList;
-    List<CPeakD> allPeaks;
 
     public record CPeak(int[] position, double height) {
     }
@@ -61,12 +60,12 @@ public class ConvolutionFitter {
         return regions;
     }
 
-    private List<DatasetRegion> getBlockRegions(Dataset dataset, int nPeakDim, double threshold, int[] psfDim) throws IOException {
+    private List<DatasetRegion> getBlockRegions(Dataset dataset, int[][] pt, int nPeakDim, double threshold, int[] psfDim) throws IOException {
         List<DatasetRegion> regions = new ArrayList<>();
         int[] nWins = new int[nPeakDim];
         int[] winSizes = new int[nPeakDim];
         for (int iDim = 0; iDim < nPeakDim; iDim++) {
-            int size = dataset.getSizeReal(iDim);
+            int size = pt[iDim][1] - pt[iDim][0] + 1;
             int psfSize = psfDim[iDim];
             int winSize = (psfSize - 1) * 16 - (psfSize - 1);
             winSize = nextPowerOfTwo(winSize) - psfSize + 1;
@@ -85,8 +84,9 @@ public class ConvolutionFitter {
             boolean ok = true;
             for (int iDim = 0; iDim < nPeakDim; iDim++) {
                 int extra = (psfDim[iDim] - 1) / 2;
-                int start = counts[iDim] * winSizes[iDim] - extra;
+                int start = counts[iDim] * winSizes[iDim] - extra + pt[iDim][0];
                 int end = start + winSizes[iDim] - 1 + 2 * extra;
+                end = Math.min(end, pt[iDim][1] + extra);
                 int size = end - start + 1;
                 if (size > 0) {
                     double ppm1 = dataset.pointToPPM(iDim, start);
@@ -109,16 +109,8 @@ public class ConvolutionFitter {
         return regions;
     }
 
-    public void iterativeConvolutions(IterativeConvolutions iterativeConvolutions, Dataset dataset, PeakList peakList, double threshold, int iterations) throws IOException {
-        var regions = dataset.getReadOnlyRegions();
-        if (regions.isEmpty()) {
-            regions = getBlockRegions(dataset, peakList.getNDim(), threshold, iterativeConvolutions.psfDim);
-        }
-
-        allPeaks = new ArrayList<>();
-
-        for (DatasetRegion region : regions) {
-            cPeakList = new ArrayList<>();
+    private void doConvolutions(Dataset dataset, List<DatasetRegion> regions, IterativeConvolutions iterativeConvolutions, List<CPeakD> allPeaks) {
+        regions.parallelStream().forEach(region -> {
             int nDim = dataset.getNDim();
             int[][] pt = new int[nDim][2];
             int[] dim = new int[nDim];
@@ -137,18 +129,49 @@ public class ConvolutionFitter {
                 dim[iDim] = iDim;
             }
             MatrixND signalMatrix = new MatrixND(sizes);
-            dataset.readMatrixND(pt, dim, signalMatrix, true);
-            BooleanMatrixND skip = new BooleanMatrixND(sizes);
-            List<CPeakD> peaks = new ArrayList<>();
-            var unused = iterativeConvolutions.iterativeConvolutions(signalMatrix, skip, threshold, iterations, pt, true, peaks);
-            allPeaks.addAll(peaks);
-        }
-        peakDistances(iterativeConvolutions.squash, iterativeConvolutions.widths);
-        allPeaks.stream().filter(Objects::nonNull).forEach(cPeakD -> buildPeak(dataset, peakList, cPeakD,
-                threshold, iterativeConvolutions.psfMax, iterativeConvolutions.widths));
+            try {
+                dataset.readMatrixND(pt, dim, signalMatrix, true);
+                BooleanMatrixND skip = new BooleanMatrixND(sizes);
+                List<CPeakD> peaks = new ArrayList<>();
+                var unused = iterativeConvolutions.iterativeConvolutions(signalMatrix, skip, pt, true, peaks);
+                allPeaks.addAll(peaks);
+            } catch (IOException ioE) {
+            }
+        });
+
     }
 
-    void peakDistances(double squash, double[] widths) {
+    public void iterativeConvolutions(IterativeConvolutions iterativeConvolutions, Dataset dataset, int[][] pt,
+                                      PeakList peakList, Consumer<PeakList> consumer) throws IOException {
+        List<DatasetRegion> currentRegions = dataset.getReadOnlyRegions();
+        List<DatasetRegion> regions = new ArrayList<>();
+        if (currentRegions.isEmpty()) {
+            regions.addAll(getBlockRegions(dataset, pt, peakList.getNDim(), iterativeConvolutions.threshold, iterativeConvolutions.psfDim));
+        } else {
+            regions.addAll(currentRegions);
+        }
+
+        List<CPeakD> allPeaks = new ArrayList<>();
+
+        try (ForkJoinPool customThreadPool = new ForkJoinPool(4)) {
+            customThreadPool.submit(() -> {
+                doConvolutions(dataset, regions, iterativeConvolutions, allPeaks);
+            }).join();
+        }
+        processPeaks(iterativeConvolutions, dataset, peakList, allPeaks);
+        if (consumer != null) {
+            consumer.accept(peakList);
+        }
+    }
+
+
+    void processPeaks(IterativeConvolutions iterativeConvolutions, Dataset dataset, PeakList peakList, List<CPeakD> allPeaks) {
+        peakDistances(allPeaks, iterativeConvolutions.squash, iterativeConvolutions.widths);
+        allPeaks.stream().filter(Objects::nonNull).forEach(cPeakD -> buildPeak(dataset, peakList, cPeakD,
+                iterativeConvolutions.threshold, iterativeConvolutions.psfMax, iterativeConvolutions.widths));
+    }
+
+    void peakDistances(List<CPeakD> allPeaks, double squash, double[] widths) {
         int nPeaks = allPeaks.size();
         for (int i = 0; i < nPeaks; i++) {
             CPeakD cPeak1 = allPeaks.get(i);

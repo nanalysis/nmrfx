@@ -122,7 +122,8 @@ public class ConvolutionFitterTest {
         MatrixND matrixND = new MatrixND(signal);
         MatrixND initMatrix = new MatrixND(signal);
         MatrixND psfMatrix =convolutionFitter.psfMatrix;
-        MatrixND result = IterativeConvolutions.iterativeConvolution(matrixND, initMatrix, psfMatrix, 200);
+        convolutionFitter.iterations(200);
+        MatrixND result = convolutionFitter.iterativeConvolution(matrixND, initMatrix, psfMatrix);
         dumpPSF(result, 0.01);
         int[] imax = findMax(result);
         Assert.assertEquals(1.0, result.getValue(iSig, jSig), 0.06);
@@ -138,7 +139,8 @@ public class ConvolutionFitterTest {
         MatrixND matrixND = new MatrixND(signal);
         MatrixND initMatrix = new MatrixND(signal);
         MatrixND psfMatrix =convolutionFitter.psfMatrix;
-        MatrixND result = IterativeConvolutions.iterativeConvolution(matrixND, initMatrix, psfMatrix, 100);
+        convolutionFitter.iterations(100);
+        MatrixND result = convolutionFitter.iterativeConvolution(matrixND, initMatrix, psfMatrix);
         Assert.assertEquals(1.0, result.getValue(iSig), 0.5);
     }
 
@@ -147,7 +149,9 @@ public class ConvolutionFitterTest {
         IterativeConvolutions convolutionFitter = getConvolutionFitter();
         int iSig = 40;
         MatrixND signal = genSignal(convolutionFitter, iSig);
-        MatrixND result = convolutionFitter.iterativeConvolutions(signal, 1.0e-6, 50, true);
+        convolutionFitter.threshold(1.0e-6);
+        convolutionFitter.iterations(50);
+        MatrixND result = convolutionFitter.iterativeConvolutions(signal, true);
         Assert.assertEquals(1.0, result.getValue(iSig), 0.01);
     }
 

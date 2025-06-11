@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static org.nmrfx.datasets.Nuclei.*;
 import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.*;
@@ -532,7 +533,28 @@ public class PeakPicker {
         }
     }
 
-    public PeakList peakPick()
+    private PeakList newPeakList(int[] peakToData, String listName) {
+        if (listName == null) {
+            listName = peakPickPar.listName;
+        }
+        PeakList peakList = new PeakList(listName, peakPickPar.nPeakDim);
+        peakList.fileName = dataset.getFileName();
+
+        for (int i = 0; i < peakPickPar.nPeakDim; i++) {
+            SpectralDim sDim = peakList.getSpectralDim(i);
+            if (sDim == null) {
+                throw new IllegalArgumentException("Error picking list" + peakPickPar.listName + ", invalid dimension " + peakToData[i]);
+            }
+            configureDim(sDim, peakToData[i]);
+        }
+        return peakList;
+    }
+
+    public PeakList peakPick() throws IOException {
+        return peakPick(null);
+    }
+
+    public PeakList peakPick(Consumer<PeakList> consumer)
             throws IOException, IllegalArgumentException {
         int[][] pt;
         int[] peakToData = peakPickPar.peakToData.clone();
@@ -546,7 +568,7 @@ public class PeakPicker {
         lastPeakPicked = null;
 
         Arrays.fill(dataToPeak, -1);
-        for (int i=0;i < peakPickPar.nPeakDim;i++) {
+        for (int i = 0; i < peakPickPar.nPeakDim; i++) {
             dataToPeak[peakToData[i]] = i;
         }
         PeakList peakList = PeakList.get(peakPickPar.listName);
@@ -590,16 +612,8 @@ public class PeakPicker {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + " already exists");
             }
 
-            peakList = new PeakList(peakPickPar.listName, peakPickPar.nPeakDim);
-            peakList.fileName = dataset.getFileName();
+            peakList = newPeakList(peakToData, null);
 
-            for (int i = 0; i < peakPickPar.nPeakDim; i++) {
-                SpectralDim sDim = peakList.getSpectralDim(i);
-                if (sDim == null) {
-                    throw new IllegalArgumentException("Error picking list" + peakPickPar.listName + ", invalid dimension " + peakToData[i]);
-                }
-                configureDim(sDim, peakToData[i]);
-            }
         } else if (mode == APPEND) {
             if (peakList == null) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + "doesn't exist");
@@ -610,7 +624,7 @@ public class PeakPicker {
             }
             int[] testDims = peakList.getDimsForDataset(dataset, false);
             boolean dimMatch = true;
-            for (int i = 0;i<testDims.length;i++) {
+            for (int i = 0; i < testDims.length; i++) {
                 if (testDims[i] != peakToData[i]) {
                     dimMatch = false;
                 }
@@ -620,7 +634,7 @@ public class PeakPicker {
 
                 peakToData = testDims;
                 Arrays.fill(dataToPeak, -1);
-                for (int i=0;i < peakPickPar.nPeakDim;i++) {
+                for (int i = 0; i < peakPickPar.nPeakDim; i++) {
                     dataToPeak[peakToData[i]] = i;
                 }
                 peakPickPar.swapDims(pt, peakPickPar.cpt, peakToData);
@@ -630,14 +644,20 @@ public class PeakPicker {
         if (peakList == null) {
             throw new IllegalArgumentException("nv_dataset peakPick: invalid mode");
         }
-        pickRegion(peakList, pt, dataToPeak, peakToData);
         if ((peakPickPar != null) && peakPickPar.convolutionPickPar.state()) {
-            convolutionPick(peakList);
+            PeakList testPeakList = newPeakList(peakToData, "testPeakList");
+            pickRegion(testPeakList, pt, dataToPeak, peakToData);
+            convolutionPick(testPeakList, peakList, pt, consumer);
+        } else  {
+            pickRegion(peakList, pt, dataToPeak, peakToData);
+            if (consumer != null) {
+                consumer.accept(peakList);
+            }
         }
         return peakList;
     }
 
-    void convolutionPick(PeakList peakList) throws IOException {
+    void convolutionPick(PeakList testPeakList, PeakList peakList, int[][] pt, Consumer<PeakList> consumer) throws IOException {
         ConvolutionPickPar convolutionPickPar = peakPickPar.convolutionPickPar;
         int nDim = peakList.getNDim();
         int[] n = new int[nDim];
@@ -648,19 +668,24 @@ public class PeakPicker {
             if (false) {
                 widthHz = convolutionPickPar.directWidth();
             } else {
-                widthHz = peakList.widthDStats(iDim).getPercentile(50);
+                widthHz = testPeakList.widthDStats(iDim).getPercentile(50);
             }
             widthHz *= convolutionPickPar.scale();
             widthPt[iDim] = (int) dataset.hzWidthToPoints(iDim, widthHz);
             n[iDim] = (int) Math.round(widthPt[iDim] * 4 + 1);
-            shapeFactor = peakList.shapeFactorDStats(iDim).getPercentile(50);
+            shapeFactor = testPeakList.shapeFactorDStats(iDim).getPercentile(30);
             System.out.println("wid " + widthHz + " " + widthPt[iDim] + " " + n[iDim] + " " + shapeFactor);
         }
         ConvolutionFitter convolutionFitter = new ConvolutionFitter();
+
         IterativeConvolutions iterativeConvolutions = new IterativeConvolutions(n, widthPt, shapeFactor);
-        peakList.clear();
+        iterativeConvolutions.threshold(peakPickPar.level);
+        iterativeConvolutions.iterations(convolutionPickPar.iterations());
         iterativeConvolutions.squash(convolutionPickPar.squash());
-        convolutionFitter.iterativeConvolutions(iterativeConvolutions, dataset, peakList, peakPickPar.level,convolutionPickPar.iterations() );
+
+        testPeakList.clear();
+        testPeakList.remove();
+        convolutionFitter.iterativeConvolutions(iterativeConvolutions, dataset, pt, peakList, consumer);
     }
 
     void pickRegion(PeakList peakList, int[][] pt, int[] dataToPeak, int[] peakToData) throws IOException {
@@ -682,7 +707,7 @@ public class PeakPicker {
         int[] filtPkToData = null;
         if (filterMode) {
             filtPkToData = peakPickPar.filterList.getDimsForDataset(dataset, true);
-            cIter =  (new PeakDimCounter(dataset, peakPickPar.filterList.peaks(), peakToData, filtPkToData, pt, peakPickPar.filterWidth)).iterator();
+            cIter = (new PeakDimCounter(dataset, peakPickPar.filterList.peaks(), peakToData, filtPkToData, pt, peakPickPar.filterWidth)).iterator();
         } else {
             cIter = (new DimCounter(counterSizes)).iterator();
         }

@@ -5,11 +5,13 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -172,26 +174,31 @@ public class PeakPicking {
             if (peakPickPar.refineLS) {
                 peakList = picker.refinePickWithLSCat();
             } else {
-                peakList = picker.peakPick();
+                FinishPicking finishPicking = new FinishPicking(chart);
+                peakList = picker.peakPick(finishPicking::finishPick);
             }
-            if (peakList != null) {
-                chart.setupPeakListAttributes(peakList);
-                if (peakPickPar.saveFile) {
-                    String canonFileName = peakPickPar.theFile.getCanonicalFile();
-                    int lastDot = canonFileName.lastIndexOf(".");
-                    String listFileName = lastDot < 0 ? canonFileName + ".xpk2"
-                            : canonFileName.substring(0, lastDot) + ".xpk2";
-                    try (final FileWriter writer = new FileWriter(listFileName)) {
-                        PeakWriter peakWriter = new PeakWriter();
-                        peakWriter.writePeaksXPK2(writer, peakList);
-                    }
-                }
-            }
-        } catch (IOException | InvalidPeakException | IllegalArgumentException ioE) {
+        } catch (IOException | IllegalArgumentException ioE) {
             ExceptionDialog dialog = new ExceptionDialog(ioE);
             dialog.showAndWait();
         }
         return peakList;
+    }
+
+    static class FinishPicking {
+        PolyChart chart;
+
+        FinishPicking(PolyChart chart) {
+            this.chart = chart;
+        }
+
+        public void finishPick(PeakList peakList) {
+            if (peakList != null) {
+                Fx.runOnFxThread(() -> {
+                    chart.setupPeakListAttributes(peakList);
+                    chart.refresh();
+                });
+            }
+        }
     }
 
     public static PeakList pickAtPosition(PolyChart chart, DatasetAttributes dataAttr, double x, double y, boolean fixed, boolean saveFile) {
