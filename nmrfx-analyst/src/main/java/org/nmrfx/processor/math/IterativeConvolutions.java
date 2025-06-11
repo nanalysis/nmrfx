@@ -33,10 +33,10 @@ public class IterativeConvolutions {
     public void iterations(int value) {
         this.iterations = value;
     }
+
     public void threshold(double value) {
         this.threshold = value;
     }
-
 
 
     public IterativeConvolutions(int[] n, double[] widths, double shapeFactor) {
@@ -100,6 +100,8 @@ public class IterativeConvolutions {
             return convolve2D(a, b);
         } else if (nDim == 3) {
             return convolve3D(a, b);
+        } else if (nDim == 4) {
+            return convolve4D(a, b);
         } else {
             return null;
         }
@@ -183,6 +185,25 @@ public class IterativeConvolutions {
             for (int row = 0; row < rows; row++) {
                 for (int col = 0; col < cols; col++) {
                     x[plane][row][col] = a.getValueAtIndex(k++);
+                }
+            }
+        }
+        return x;
+    }
+
+    public static double[][][][] to4D(MatrixND a) {
+        int cubes = a.getSize(0);
+        int planes = a.getSize(1);
+        int rows = a.getSize(2);
+        int cols = a.getSize(3);
+        double[][][][] x = new double[cubes][planes][rows][cols];
+        int k = 0;
+        for (int cube = 0; cube < cubes; cube++) {
+            for (int plane = 0; plane < planes; plane++) {
+                for (int row = 0; row < rows; row++) {
+                    for (int col = 0; col < cols; col++) {
+                        x[cube][plane][row][col] = a.getValueAtIndex(k++);
+                    }
                 }
             }
         }
@@ -345,12 +366,112 @@ public class IterativeConvolutions {
         return new MatrixND(result);
     }
 
+    public static MatrixND convolve4D(MatrixND a, MatrixND b) {
+        int cubes = a.getSize(0);
+        int planes = a.getSize(1);
+        int rows = a.getSize(2);
+        int cols = a.getSize(3);
+        int kCubes = b.getSize(0);
+        int kPlanes = b.getSize(1);
+        int kRows = b.getSize(2);
+        int kCols = b.getSize(3);
+
+        // Output size for linear convolution
+        double[][][][] input = to4D(a);
+        double[][][][] kernel = to4D(b);
+
+        // Pad input and kernel to same size
+        double[][][][] inputPadded = new double[cubes][planes][rows][cols];
+        double[][][][] kernelPadded = new double[cubes][planes][rows][cols];
+
+        for (int cube = 0; cube < cubes; cube++)
+            for (int plane = 0; plane < planes; plane++)
+                for (int row = 0; row < rows; row++)
+                    System.arraycopy(input[cube][plane][row], 0, inputPadded[cube][plane][row], 0, cols);
+        for (int cube = 0; cube < kCubes; cube++)
+            for (int plane = 0; plane < kPlanes; plane++)
+                for (int row = 0; row < kRows; row++)
+                    System.arraycopy(kernel[cube][plane][row], 0, kernelPadded[cube][plane][row], 0, kCols);
+
+        // Convert to complex arrays: real + imaginary interleaved
+        double[][][][] inputComplex = realToComplex(inputPadded);
+        double[][][][] kernelComplex = realToComplex(kernelPadded);
+
+        FFT4D fft = new FFT4D(cubes, planes, rows, cols);
+        fft.complexForwardOpt(inputComplex);
+        fft.complexForwardOpt(kernelComplex);
+
+        // Point-wise complex multiplication
+        double[][][][] resultComplex = new double[cubes][planes][rows][2 * cols];
+        for (int cube = 0; cube < cubes; cube++) {
+            for (int plane = 0; plane < planes; plane++) {
+                for (int row = 0; row < rows; row++) {
+                    for (int col = 0; col < cols; col++) {
+                        int re = 2 * col;
+                        int im = 2 * col + 1;
+
+                        double aRe = inputComplex[cube][plane][row][re];
+                        double aIm = inputComplex[cube][plane][row][im];
+                        double bRe = kernelComplex[cube][plane][row][re];
+                        double bIm = kernelComplex[cube][plane][row][im];
+
+                        // (a + bi)(c + di) = (ac - bd) + (ad + bc)i
+                        resultComplex[cube][plane][row][re] = aRe * bRe - aIm * bIm;
+                        resultComplex[cube][plane][row][im] = aRe * bIm + aIm * bRe;
+                    }
+                }
+            }
+        }
+
+        // Inverse FFT
+        fft.complexInverse(resultComplex);
+        int[] offsets = new int[4];
+        for (int i = 0; i < 4; i++) {
+            offsets[i] = (b.getSize(i) - 1) / 2;
+        }
+
+        // Extract real part
+        double[][][][] result = new double[cubes][planes][rows][cols];
+        for (int cube = 0; cube < cubes; cube++) {
+            int icube = cube + offsets[0];
+            if (icube >= resultComplex.length) {
+                continue;
+            }
+            for (int plane = 0; plane < planes; plane++) {
+                int iplane = plane + offsets[1];
+                if (iplane >= resultComplex[0].length) {
+                    continue;
+                }
+                for (int row = 0; row < rows; row++) {
+                    int irow = row + offsets[2];
+                    if (irow >= resultComplex[0][0].length) {
+                        continue;
+                    }
+
+                    for (int col = 0; col < cols; col++) {
+                        int icol = 2 * (col + offsets[3]);
+                        if (icol >= resultComplex[0][0][0].length) {
+                            continue;
+                        }
+                        result[cube][plane][row][col] = resultComplex[icube][iplane][irow][icol];
+                    }
+                }
+            }
+        }
+
+        return new MatrixND(result);
+    }
+
     public MatrixND convolutionTest(double[] observed) {
         MatrixND matrixND = new MatrixND(observed);
         return convolve(matrixND, psfMatrix);
     }
 
     public MatrixND convolutionTest2D(double[][] observed) {
+        MatrixND matrixND = new MatrixND(observed);
+        return convolve(matrixND, psfMatrix);
+    }
+    public MatrixND convolutionTest4D(double[][][][] observed) {
         MatrixND matrixND = new MatrixND(observed);
         return convolve(matrixND, psfMatrix);
     }
@@ -384,6 +505,25 @@ public class IterativeConvolutions {
         return complex;
     }
 
+    private static double[][][][] realToComplex(double[][][][] real) {
+        int cubes = real.length;
+        int planes = real[0].length;
+        int rows = real[0][0].length;
+        int cols = real[0][0][0].length;
+        double[][][][] complex = new double[cubes][planes][rows][2 * cols];
+        for (int cube = 0; cube < cubes; cube++) {
+            for (int k = 0; k < planes; k++) {
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        complex[cube][k][i][2 * j] = real[cube][k][i][j]; // real part
+                        complex[cube][k][i][2 * j + 1] = 0.0;    // imaginary part
+                    }
+                }
+            }
+        }
+        return complex;
+    }
+
     static boolean inRegion(int[] counts, int[] limits) {
         boolean ok = true;
         for (int i = 0; i < counts.length; i++) {
@@ -395,7 +535,7 @@ public class IterativeConvolutions {
         return ok;
     }
 
-    public  MatrixND iterativeConvolution(MatrixND observed, MatrixND estimate, MatrixND psf) {
+    public MatrixND iterativeConvolution(MatrixND observed, MatrixND estimate, MatrixND psf) {
         int[] limits = new int[observed.getNDim()];
         for (int i = 0; i < limits.length; i++) {
             limits[i] = observed.getSize(i) - (psf.getSize(i) - 1) / 2;
@@ -425,8 +565,8 @@ public class IterativeConvolutions {
     }
 
 
-    public  MatrixND iterativeConvolutions(MatrixND signalMatrix, BooleanMatrixND skip,
-                                           int[][] pt, boolean doSquash, List<ConvolutionFitter.CPeakD> allPeaks) {
+    public MatrixND iterativeConvolutions(MatrixND signalMatrix, BooleanMatrixND skip,
+                                          int[][] pt, boolean doSquash, List<ConvolutionFitter.CPeakD> allPeaks) {
         MatrixND valueMatrix = new MatrixND(signalMatrix.getSizes());
         valueMatrix.stream().forEach(counts -> {
             if (signalMatrix.getValue(counts) > threshold) {
@@ -561,7 +701,7 @@ public class IterativeConvolutions {
         return new ConvolutionFitter.CPeakD(sumPositions, sumHeight);
     }
 
-    public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix, int[][] pt, List<ConvolutionFitter.CPeak> cPeakList, List<ConvolutionFitter.CPeakD> allPeaks ) {
+    public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix, int[][] pt, List<ConvolutionFitter.CPeak> cPeakList, List<ConvolutionFitter.CPeakD> allPeaks) {
         int[] neighborDims = new int[values.getNDim()];
         int[] halfWidths = new int[neighborDims.length];
         for (int i = 0; i < neighborDims.length; i++) {

@@ -23,6 +23,17 @@ public class ConvolutionFitterTest {
         double shapeFactor = 0.0;
         return new IterativeConvolutions(psfSize, widths, shapeFactor);
     }
+    private IterativeConvolutions getConvolutionFitter4D() {
+        int h = 17;
+        int i = 17;
+        int j = 15;
+        int k = 9;
+        int[] psfSize = {h, i, j, k};
+        int widthPt = 4;
+        double[] widths = {widthPt, widthPt, widthPt,widthPt};
+        double shapeFactor = 0.0;
+        return new IterativeConvolutions(psfSize, widths, shapeFactor);
+    }
 
     private void dumpPSF(MatrixND matrixND, double limit) {
         MultidimensionalCounter mCounter = new MultidimensionalCounter(matrixND.getSizes());
@@ -52,6 +63,12 @@ public class ConvolutionFitterTest {
         double[][] signal = new double[n][m];
         signal[iSig][jSig] = 1.0;
         return convolutionFitter.convolutionTest2D(signal);
+    }
+
+    private MatrixND genSignal4D(IterativeConvolutions convolutionFitter, int h, int i, int j, int k, int hSig, int iSig, int jSig, int kSig) {
+        double[][][][] signal = new double[h][i][j][k];
+        signal[hSig][iSig][jSig][kSig] = 1.0;
+        return convolutionFitter.convolutionTest4D(signal);
     }
 
     @Test
@@ -153,6 +170,37 @@ public class ConvolutionFitterTest {
         convolutionFitter.iterations(50);
         MatrixND result = convolutionFitter.iterativeConvolutions(signal, true);
         Assert.assertEquals(1.0, result.getValue(iSig), 0.01);
+    }
+    @Test
+    public void testConvolve4D() {
+        IterativeConvolutions convolutionFitter = getConvolutionFitter4D();
+        int hSig = 43;
+        int iSig = 50;
+        int jSig = 17;
+        int kSig = 21;
+        MatrixND convolved = genSignal4D(convolutionFitter, 128, 64, 32, 32, hSig, iSig, jSig, kSig);
+        double max = 0;
+        double sum = 0.0;
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(convolved.getSizes());
+        var iterator = mCounter.iterator();
+        int[] imax = new int[convolved.getNDim()];
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            double value = convolved.getValue(counts);
+            if (value > max) {
+                max = value;
+                System.arraycopy(counts, 0, imax, 0, imax.length);
+            }
+            sum += value;
+
+        }
+        Assert.assertEquals(convolutionFitter.psfMax, max, 1.0e-6);
+        Assert.assertEquals(1.0, sum, 0.06);
+        Assert.assertEquals(hSig, imax[0]);
+        Assert.assertEquals(iSig, imax[1]);
+        Assert.assertEquals(jSig, imax[2]);
+        Assert.assertEquals(kSig, imax[3]);
     }
 
 }

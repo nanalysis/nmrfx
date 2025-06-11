@@ -132,6 +132,24 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    public MatrixND(double[][][][] data4D) {
+        this(data4D.length, data4D[0].length, data4D[0][0].length, data4D[0][0][0].length);
+        int cubes = data4D.length;
+        int planes = data4D[0].length;
+        int rows = data4D[0][0].length;
+        int cols = data4D[0][0][0].length;
+        int g = 0;
+        for (int h = 0; h < cubes; h++) {
+            for (int i = 0; i < planes; i++) {
+                for (int j = 0; j < rows; j++) {
+                    for (int k = 0; k < cols; k++) {
+                        data[g++] = data4D[h][i][j][k];
+                    }
+                }
+            }
+        }
+    }
+
     public MatrixND(double[] data) {
         this(data.length);
         int n = data.length;
@@ -915,7 +933,7 @@ public class MatrixND implements MatrixType {
 
     public void pad(int[] padSizes) {
         int[] newSizes = new int[nDim];
-        for (int i=0;i<nDim;i++) {
+        for (int i = 0; i < nDim; i++) {
             newSizes[i] = sizes[i] + 2 * padSizes[i];
         }
 
@@ -927,7 +945,7 @@ public class MatrixND implements MatrixType {
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
-            for (int i=0;i<nDim;i++) {
+            for (int i = 0; i < nDim; i++) {
                 newPos[i] = counts[i] + padSizes[i];
             }
             paddedMatrix.setValue(getValue(counts), newPos);
