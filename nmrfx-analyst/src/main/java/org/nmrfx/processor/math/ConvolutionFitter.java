@@ -727,8 +727,11 @@ public class ConvolutionFitter {
         for (int iDim = 0; iDim < nPeakDim; iDim++) {
             int size = dataset.getSizeReal(iDim);
             int psfSize = psfDim[iDim];
-            int winSize = (psfSize - 1) * 8 - (psfSize - 1);
+            int winSize = (psfSize - 1) * 16 - (psfSize - 1);
             winSize = nextPowerOfTwo(winSize) - psfSize + 1;
+            if (winSize > 256) {
+                winSize = 256;
+            }
             winSizes[iDim] = winSize;
             nWins[iDim] = (int) Math.ceil((double) size / winSizes[iDim]);
         }
