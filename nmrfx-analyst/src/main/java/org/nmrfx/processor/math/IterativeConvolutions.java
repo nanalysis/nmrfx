@@ -165,9 +165,9 @@ public class IterativeConvolutions {
         int cols = a.getSize(1);
         double[][] x = new double[rows][cols];
         int k = 0;
-        for (int j = 0; j < rows; j++) {
-            for (int i = 0; i < cols; i++) {
-                x[j][i] = a.getValueAtIndex(k++);
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                x[row][col] = a.getValueAtIndex(k++);
             }
         }
         return x;
@@ -178,11 +178,11 @@ public class IterativeConvolutions {
         int rows = a.getSize(1);
         int cols = a.getSize(2);
         double[][][] x = new double[planes][rows][cols];
-        int kk = 0;
-        for (int k = 0; k < planes; k++) {
-            for (int j = 0; j < rows; j++) {
-                for (int i = 0; i < cols; i++) {
-                    x[k][j][i] = a.getValueAtIndex(kk++);
+        int k = 0;
+        for (int plane = 0; plane < planes; plane++) {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    x[plane][row][col] = a.getValueAtIndex(k++);
                 }
             }
         }
@@ -270,16 +270,12 @@ public class IterativeConvolutions {
         int kCols = b.getSize(2);
 
         // Output size for linear convolution
-        int outPlanes = planes + kPlanes - 1;
-        int outRows = rows + kRows - 1;
-        int outCols = cols + kCols - 1;
-
         double[][][] input = to3D(a);
         double[][][] kernel = to3D(b);
 
         // Pad input and kernel to same size
-        double[][][] inputPadded = new double[outPlanes][outRows][outCols];
-        double[][][] kernelPadded = new double[outPlanes][outRows][outCols];
+        double[][][] inputPadded = new double[planes][rows][cols];
+        double[][][] kernelPadded = new double[planes][rows][cols];
 
         for (int plane = 0; plane < planes; plane++)
             for (int row = 0; row < rows; row++)
@@ -292,15 +288,15 @@ public class IterativeConvolutions {
         double[][][] inputComplex = realToComplex(inputPadded);
         double[][][] kernelComplex = realToComplex(kernelPadded);
 
-        DoubleFFT_3D fft = new DoubleFFT_3D(outPlanes, outRows, outCols);
+        DoubleFFT_3D fft = new DoubleFFT_3D(planes, rows, cols);
         fft.complexForward(inputComplex);
         fft.complexForward(kernelComplex);
 
         // Point-wise complex multiplication
-        double[][][] resultComplex = new double[outPlanes][outRows][2 * outCols];
-        for (int plane = 0; plane < outPlanes; plane++) {
-            for (int row = 0; row < outRows; row++) {
-                for (int col = 0; col < outCols; col++) {
+        double[][][] resultComplex = new double[planes][rows][2 * cols];
+        for (int plane = 0; plane < planes; plane++) {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
                     int re = 2 * col;
                     int im = 2 * col + 1;
 
@@ -326,9 +322,22 @@ public class IterativeConvolutions {
         // Extract real part
         double[][][] result = new double[planes][rows][cols];
         for (int plane = 0; plane < planes; plane++) {
+            int iplane = plane + offsets[0];
+            if (iplane >= resultComplex.length) {
+                continue;
+            }
             for (int row = 0; row < rows; row++) {
+                int irow = row + offsets[1];
+                if (irow >= resultComplex[0].length) {
+                    continue;
+                }
+
                 for (int col = 0; col < cols; col++) {
-                    result[plane][row][col] = resultComplex[plane + offsets[0]][row + offsets[1]][2 * (col + offsets[2])];
+                    int icol = 2 * (col + offsets[2]);
+                    if (icol >= resultComplex[0][0].length) {
+                        continue;
+                    }
+                    result[plane][row][col] = resultComplex[iplane][irow][icol];
                 }
             }
         }
