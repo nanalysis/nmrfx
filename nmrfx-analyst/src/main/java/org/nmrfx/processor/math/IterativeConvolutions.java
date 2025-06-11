@@ -5,6 +5,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.jtransforms.fft.DoubleFFT_2D;
 import org.jtransforms.fft.DoubleFFT_3D;
 import org.nmrfx.processor.datasets.peaks.LineShapes;
+import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ public class IterativeConvolutions {
         widths = new double[1];
         widths[0] = width;
         makePSF(n, widths, shapeFactor);
+        ConcurrencyUtils.setNumberOfThreads(1);
     }
 
     public void iterations(int value) {
