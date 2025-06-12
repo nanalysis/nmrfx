@@ -64,14 +64,18 @@ public class ConvolutionFitter {
         List<DatasetRegion> regions = new ArrayList<>();
         int[] nWins = new int[nPeakDim];
         int[] winSizes = new int[nPeakDim];
+        int[] winSizeLimits = {1024, 512, 256, 128};
         for (int iDim = 0; iDim < nPeakDim; iDim++) {
             int size = pt[iDim][1] - pt[iDim][0] + 1;
             int psfSize = psfDim[iDim];
-            int winSize = (psfSize - 1) * 16 - (psfSize - 1);
-            winSize = nextPowerOfTwo(winSize) - psfSize + 1;
-            if (winSize > 256) {
-                winSize = 256;
+            int winSize = (psfSize - 1) * 16;
+            winSize = Math.min(winSize, size);
+            winSize = nextPowerOfTwo(winSize);
+            if (winSize > winSizeLimits[nPeakDim]) {
+                winSize = winSizeLimits[nPeakDim];
             }
+            winSize = winSize - psfSize + 1;
+
             winSizes[iDim] = winSize;
             nWins[iDim] = (int) Math.ceil((double) size / winSizes[iDim]);
         }
@@ -151,16 +155,22 @@ public class ConvolutionFitter {
             regions.addAll(currentRegions);
         }
 
-        List<CPeakD> allPeaks = new ArrayList<>();
+        if (!regions.isEmpty()) {
+            DatasetRegion datasetRegion = regions.getFirst();
+            long size = datasetRegion.nPoints(dataset);
+            int nThreads = Math.max(1, Math.min(8, (int) (1.e9 / size)));
 
-        try (ForkJoinPool customThreadPool = new ForkJoinPool(4)) {
-            customThreadPool.submit(() -> {
-                doConvolutions(dataset, regions, iterativeConvolutions, allPeaks);
-            }).join();
-        }
-        processPeaks(iterativeConvolutions, dataset, peakList, allPeaks);
-        if (consumer != null) {
-            consumer.accept(peakList);
+
+            List<CPeakD> allPeaks = new ArrayList<>();
+            try (ForkJoinPool customThreadPool = new ForkJoinPool(nThreads)) {
+                customThreadPool.submit(() -> {
+                    doConvolutions(dataset, regions, iterativeConvolutions, allPeaks);
+                }).join();
+            }
+            processPeaks(iterativeConvolutions, dataset, peakList, allPeaks);
+            if (consumer != null) {
+                consumer.accept(peakList);
+            }
         }
     }
 

@@ -622,7 +622,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
     }
 
     public static Integer getConvolutionPickIterations() {
-        convolutionPickIterationsProp = getInteger(convolutionPickIterationsProp, "PEAK_PICK_CONVOLUTION_ITERATIONS", 100);
+        convolutionPickIterationsProp = getInteger(convolutionPickIterationsProp, "PEAK_PICK_CONVOLUTION_ITERATIONS", 25);
         return convolutionPickIterationsProp.getValue();
     }
 

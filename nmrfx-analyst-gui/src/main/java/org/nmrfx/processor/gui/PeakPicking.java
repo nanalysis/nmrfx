@@ -5,7 +5,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -116,7 +115,7 @@ public class PeakPicking {
         }
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
-        peakPickPar.convolve(PreferencesController.getConvolutionPickPar());
+        peakPickPar.convolvePar(PreferencesController.getConvolutionPickPar());
         int nFreqDim = datasetBase.getNFreqDims();
         if (nFreqDim == 0) {
             nFreqDim = datasetBase.getNDim();
@@ -174,8 +173,13 @@ public class PeakPicking {
             if (peakPickPar.refineLS) {
                 peakList = picker.refinePickWithLSCat();
             } else {
-                FinishPicking finishPicking = new FinishPicking(chart);
-                peakList = picker.peakPick(finishPicking::finishPick);
+                if (peakPickPar.convolvePar().state() && peakPickPar.convolve) {
+                    FinishPicking finishPicking = new FinishPicking(chart);
+                    peakList = picker.peakPick(finishPicking::finishPick);
+                } else {
+                    peakList = picker.peakPick(null);
+                    chart.setupPeakListAttributes(peakList);
+                }
             }
         } catch (IOException | IllegalArgumentException ioE) {
             ExceptionDialog dialog = new ExceptionDialog(ioE);

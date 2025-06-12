@@ -1502,6 +1502,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // any peak lists created just for alignmnent should be deleted
         PeakPickParameters peakPickParameters = new PeakPickParameters();
         peakPickParameters.listName = "refList";
+        peakPickParameters.convolve(false);
         PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, null, peakPickParameters);
         if (refList == null) {
             return;

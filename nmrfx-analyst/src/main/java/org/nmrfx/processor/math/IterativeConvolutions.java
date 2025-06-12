@@ -703,30 +703,46 @@ public class IterativeConvolutions {
         return new ConvolutionFitter.CPeakD(sumPositions, sumHeight);
     }
 
+    boolean inCore(int[] position, int[][] limits) {
+        boolean ok = true;
+        for (int i=0;i<position.length;i++) {
+            int pos = position[i];
+            if (pos < limits[i][0] || pos >= limits[i][1]) {
+                ok = false;
+                break;
+            }
+        }
+        return ok;
+    }
+
     public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix, int[][] pt, List<ConvolutionFitter.CPeak> cPeakList, List<ConvolutionFitter.CPeakD> allPeaks) {
         int[] neighborDims = new int[values.getNDim()];
         int[] halfWidths = new int[neighborDims.length];
+        int[][] limits = new int[neighborDims.length][2];
         for (int i = 0; i < neighborDims.length; i++) {
             halfWidths[i] = (int) Math.ceil(widths[i] * squash) / 2;
             neighborDims[i] = 2 * halfWidths[i] + 1;
+            int extra = (psfDim[i] -1) / 2;
+            limits[i][0] = extra;
+            limits[i][1] = values.getSize(i) -extra;
         }
 
         List<ConvolutionFitter.CPeak> newPeaks = new ArrayList<>();
 
 
-        for (ConvolutionFitter.CPeak cPeak1 : cPeakList) {
-            int[] center1 = cPeak1.position();
-            if (skipMatrix.getValue(center1)) {
-                continue;
-            }
-            ConvolutionFitter.CPeakD cPeakD = accumulateNeighbors(values, skipMatrix, center1, halfWidths);
-            int[] newPosition = new int[cPeak1.position().length];
-            for (int j = 0; j < newPosition.length; j++) {
-                cPeakD.position()[j] = cPeakD.position()[j] + pt[j][0];
-            }
-            allPeaks.add(cPeakD);
-            newPeaks.add(new ConvolutionFitter.CPeak(center1, cPeakD.height()));
-        }
+        cPeakList.stream().filter(cPeak -> inCore(cPeak.position(), limits))
+                .filter(cPeak -> !skipMatrix.getValue(cPeak.position()))
+                .forEach(cPeak1 -> {
+                    int[] center1 = cPeak1.position();
+                    ConvolutionFitter.CPeakD cPeakD = accumulateNeighbors(values, skipMatrix, center1, halfWidths);
+                    int[] newPosition = new int[cPeak1.position().length];
+                    for (int j = 0; j < newPosition.length; j++) {
+                        cPeakD.position()[j] = cPeakD.position()[j] + pt[j][0];
+                    }
+                    allPeaks.add(cPeakD);
+                    newPeaks.add(new ConvolutionFitter.CPeak(center1, cPeakD.height()));
+                });
+
         values.fill(0.0);
         skipMatrix.set(true);
         for (ConvolutionFitter.CPeak cPeak : newPeaks) {

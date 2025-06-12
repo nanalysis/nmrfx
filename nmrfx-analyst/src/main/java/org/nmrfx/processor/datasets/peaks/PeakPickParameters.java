@@ -54,6 +54,7 @@ public class PeakPickParameters {
     public int nPeakDim = 0;
     public int posNeg = 1;
     public double noiseLimit = 0.0;
+    public boolean convolve = true;
     ConvolutionPickPar convolutionPickPar = null;
 
     public boolean useNoise = false;
@@ -82,6 +83,7 @@ public class PeakPickParameters {
         return this;
     }
 
+
     public PeakPickParameters region(String region) {
         this.region = region;
         return this;
@@ -107,10 +109,21 @@ public class PeakPickParameters {
         return this;
     }
 
-    public PeakPickParameters convolve(ConvolutionPickPar par) {
+
+    public ConvolutionPickPar convolvePar() {
+        return convolutionPickPar;
+    }
+
+    public PeakPickParameters convolvePar(ConvolutionPickPar par) {
         this.convolutionPickPar = par;
         return this;
     }
+
+    public PeakPickParameters convolve(boolean state) {
+        this.convolve = state;
+        return this;
+    }
+
 
     public PeakPickParameters pos(boolean value) {
         if (value) {

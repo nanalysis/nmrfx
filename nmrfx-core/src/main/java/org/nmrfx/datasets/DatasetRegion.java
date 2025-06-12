@@ -86,6 +86,7 @@ public class DatasetRegion implements Comparator, Comparable {
     public DatasetRegion getLinkRegion() {
         return linkRegion;
     }
+
     public double[] getX() {
         return linkRegion == null ? xPriv : linkRegion.xPriv;
     }
@@ -419,6 +420,7 @@ public class DatasetRegion implements Comparator, Comparable {
     public String getDatasetName() {
         return dataset != null ? dataset.getName() : "";
     }
+
     @Override
     public int compareTo(Object o2) {
         return compare(this, o2);
@@ -536,6 +538,7 @@ public class DatasetRegion implements Comparator, Comparable {
             measure(dataset);
         }
     }
+
     public void measure(DatasetBase dataset) throws IOException {
         this.dataset = dataset;
         int[] pt = new int[dataset.getNDim()];
@@ -589,11 +592,37 @@ public class DatasetRegion implements Comparator, Comparable {
     public void setIndex(int i) {
         index = i;
     }
+
     public int getGroup() {
         return group;
     }
 
     public void setGroup(int i) {
         group = i;
+    }
+
+    public int[][] toPoints(DatasetBase dataset) {
+        int[][] pt = new int[getNDims()][2];
+        for (int iDim = 0; iDim < getNDims(); iDim++) {
+            int pt1 = (int) Math.round(dataset.ppmToDPoint(iDim, getRegionStart(iDim)));
+            int pt2 = (int) Math.round(dataset.ppmToDPoint(iDim, getRegionEnd(iDim)));
+            if (pt1 > pt2) {
+                int hold = pt1;
+                pt1 = pt2;
+                pt2 = hold;
+            }
+            pt[iDim][0] = pt1;
+            pt[iDim][1] = pt2;
+        }
+        return pt;
+    }
+
+    public long nPoints(DatasetBase dataset) {
+        int[][] pt = toPoints(dataset);
+        long size = 1;
+        for (int i = 0; i < pt.length; i++) {
+            size *= pt[i][1] - pt[i][0] + 1;
+        }
+        return size;
     }
 }

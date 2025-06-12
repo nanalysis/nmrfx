@@ -147,7 +147,7 @@ public class Analyzer {
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode(PeakPickParameters.PickMode.REPLACEIF);
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
-        peakPickPar.convolve(convolutionPickPar);
+        peakPickPar.convolvePar(convolutionPickPar);
         PeakPicker picker = new PeakPicker(peakPickPar);
         peakList = null;
         try {
@@ -196,7 +196,7 @@ public class Analyzer {
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         peakPickPar.limit(0, ppm1, ppm2);
-        peakPickPar.convolve(convolutionPickPar);
+        peakPickPar.convolvePar(convolutionPickPar);
         PeakPicker picker = new PeakPicker(peakPickPar);
         peakList = null;
         try {
@@ -252,7 +252,7 @@ public class Analyzer {
         }
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode(PeakPickParameters.PickMode.APPENDIF);
         peakPickPar.region("point").fixed(true);
-        peakPickPar.convolve(convolutionPickPar);
+        peakPickPar.convolvePar(convolutionPickPar);
         for (double ppm : ppms) {
             peakPickPar.limit(0, ppm, ppm);
             PeakPicker picker = new PeakPicker(peakPickPar);

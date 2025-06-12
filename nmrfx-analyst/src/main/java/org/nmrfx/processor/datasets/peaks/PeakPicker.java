@@ -644,12 +644,13 @@ public class PeakPicker {
         if (peakList == null) {
             throw new IllegalArgumentException("nv_dataset peakPick: invalid mode");
         }
-        if ((peakPickPar != null) && peakPickPar.convolutionPickPar.state()) {
+        if ((peakPickPar != null) && (peakPickPar.convolutionPickPar != null) && peakPickPar.convolutionPickPar.state() && peakPickPar.convolve) {
             PeakList testPeakList = newPeakList(peakToData, "testPeakList");
             pickRegion(testPeakList, pt, dataToPeak, peakToData);
             convolutionPick(testPeakList, peakList, pt, consumer);
         } else  {
             pickRegion(peakList, pt, dataToPeak, peakToData);
+
             if (consumer != null) {
                 consumer.accept(peakList);
             }

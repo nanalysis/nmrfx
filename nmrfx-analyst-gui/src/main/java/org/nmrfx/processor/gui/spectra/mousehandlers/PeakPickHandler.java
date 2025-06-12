@@ -62,6 +62,7 @@ public class PeakPickHandler extends MouseHandler {
                     double threshold = yAxis.getValueForDisplay(y).doubleValue();
                     PeakList peakList = pick1DRegion(chart, xLim0, xLim1, threshold, false);
                     completed = peakList != null;
+                    System.out.println("pick again " + completed);
                 } else {
                     double xLim0 = xAxis.getValueForDisplay(mouseBindings.dragStart[0]).doubleValue();
                     double xLim1 = xAxis.getValueForDisplay(x).doubleValue();
@@ -71,7 +72,7 @@ public class PeakPickHandler extends MouseHandler {
                     PeakPickParameters peakPickParameters = new PeakPickParameters();
                     peakPickParameters.level(chart.getDatasetAttributes().get(0).getLvl());
                     peakPickParameters.mode = PeakPickParameters.PickMode.APPENDIF;
-
+                    peakPickParameters.convolve(true);
                     PeakList peaklist = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
                             region, peakPickParameters);
                     completed = peaklist != null;
@@ -147,6 +148,7 @@ public class PeakPickHandler extends MouseHandler {
         peakPickParameters.level(threshold);
         peakPickParameters.listName = listName;
         peakPickParameters.mode = PeakPickParameters.PickMode.APPENDREGION;
+        peakPickParameters.convolve(!tempMode);
 
         PeakList peakList = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
                 region, peakPickParameters);

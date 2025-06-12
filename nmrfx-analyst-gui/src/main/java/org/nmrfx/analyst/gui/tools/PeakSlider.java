@@ -1442,6 +1442,7 @@ public class PeakSlider implements ControllerTool {
             PeakPickParameters peakPickParameters = new PeakPickParameters();
             peakPickParameters.level(chart.getDatasetAttributes().get(0).getLvl());
             peakPickParameters.mode = PeakPickParameters.PickMode.APPENDIF;
+            peakPickParameters.convolve(false);
             PeakList peaklist = PeakPicking.peakPickActive(chart, chart.getDatasetAttributes().get(0),
                     null, peakPickParameters);
             String listName = peaklist.getName().toLowerCase();
