@@ -43,7 +43,6 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
-import org.controlsfx.control.tableview2.TableView2;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.LACSPlotGui;
@@ -105,7 +104,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     @FXML
     private ToolBar atomNavigatorToolBar;
     @FXML
-    private TableView2<Atom> atomTableView;
+    private TableView<Atom> atomTableView;
     @FXML
     private TextField intensityField;
     @FXML
@@ -131,19 +130,16 @@ public class AtomController implements Initializable, StageBasedController, Free
     static class PPMSet {
         enum mode {
             REF,
-            ASSIGNED;
+            PPM;
         }
         mode ref;
         int iSet;
         boolean refSet;
-        ObservableValue<Boolean> isSelected = new SimpleBooleanProperty();
+        BooleanProperty isSelected = new SimpleBooleanProperty();
         PPMSet(int iSet, boolean refMode) {
-            this.ref = refMode ? mode.REF : mode.ASSIGNED;
+            this.ref = refMode ? mode.REF : mode.PPM;
             this.iSet = iSet;
             this.refSet = refMode;
-        }
-        void setSelected(BooleanProperty isSelected) {
-            this.isSelected = isSelected;
         }
     }
 
@@ -165,6 +161,21 @@ public class AtomController implements Initializable, StageBasedController, Free
         PeakList.registerFreezeListener(this);
         ProjectBase.addPropertyChangeListener(this::propertyChange);
         updateView();
+        autoAddPPMCols(false);
+    }
+
+    private void autoAddPPMCols(boolean ref) {
+        Arrays.asList(0,1,2,3,4,5)
+                .forEach(i -> {
+                    if (atoms.stream().anyMatch(atom -> atom.getPPM(i) != null)) {
+                        makePPMCol(i, ref);
+                    }
+                });
+    }
+
+    private void addAllPPMCols() {
+        autoAddPPMCols(false);
+        autoAddPPMCols(true);
     }
 
     @Override
@@ -273,13 +284,17 @@ public class AtomController implements Initializable, StageBasedController, Free
         predictMenu.getItems().addAll(preditorMenuItem);
 
         MenuButton addPPMColButton = new MenuButton("Add");
+        Menu allMenuItem = new Menu("All");
+        allMenuItem.setOnAction(e -> addAllPPMCols());
         Menu ppmMenuItem = new Menu("PPM");
         ppmMenuItem.getItems().addAll(makePPMMenuItems(false));
 
         Menu refMenuItem = new Menu("Ref");
         refMenuItem.getItems().addAll(makePPMMenuItems(true));
-        addPPMColButton.getItems().addAll(ppmMenuItem, refMenuItem);
-        menuBar.getItems().addAll(addPPMColButton);
+        addPPMColButton.getItems().addAll(allMenuItem, ppmMenuItem, refMenuItem);
+
+        Button removeButton = new Button("Remove");
+        removeButton.setOnAction(e -> removePPMCol());
 
         MenuButton ppmPlotButton = new MenuButton();
         ppmPlotButton.setText("Plot");
@@ -288,7 +303,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         MenuItem shiftsMenuItem = new MenuItem("Shifts");
         shiftsMenuItem.setOnAction(e -> plotShifts());
         ppmPlotButton.getItems().addAll(deltasMenuItem, shiftsMenuItem);
-        menuBar.getItems().add(ppmPlotButton);
+        menuBar.getItems().addAll(addPPMColButton, removeButton, ppmPlotButton);
     }
 
     private List<MenuItem> makePPMMenuItems(boolean refMode) {
@@ -336,8 +351,20 @@ public class AtomController implements Initializable, StageBasedController, Free
         ppmCol.setEditable(true);
         CheckBox columnCheckBox = new CheckBox();
         ppmCol.setGraphic(columnCheckBox);
-        columnCheckBox.selectedProperty().addListener(e -> set.setSelected(columnCheckBox.selectedProperty()));
+        set.isSelected.bind(columnCheckBox.selectedProperty());
         atomTableView.getColumns().add(ppmCol);
+    }
+
+    private void removePPMCol() {
+        List<TableColumn<Atom, ?>> cols = atomTableView.getColumns().stream()
+                .filter(col -> {
+                    if (col.getGraphic() instanceof CheckBox checkBox) {
+                        return checkBox.isSelected();
+                    }
+                    return false;
+                })
+                .toList();
+        atomTableView.getColumns().removeAll(cols);
     }
 
     private TableColumn<Atom, Number> makeSDevCol(PPMSet ppmSet) {

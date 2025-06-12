@@ -10,6 +10,7 @@ import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.utils.GUIUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class PPMPlotGUI {
@@ -69,6 +70,7 @@ public class PPMPlotGUI {
 
         AtomController.PPMSet set1 = ppmSets.getFirst();
         AtomController.PPMSet set2 = ppmSets.getLast();
+        HashMap<Double, Double> deltas = new HashMap<>();
 
         atomController.atoms.stream()
                 .filter(atom -> atom.getPPMByMode(set1.iSet, set1.refSet) != null &&
@@ -76,9 +78,10 @@ public class PPMPlotGUI {
                 .forEach( atom -> {
                             double y = atom.getDeltaPPM2(set1.iSet, set2.iSet, set1.refSet, set2.refSet);
                             double x = atom.getResidueNumber();
-                            XYValue xyValue = new XYValue(x, y);
-                            dataseries.add(xyValue);
+                            if (atom.getAtomicNumber() == 15) { y = y/5.0;}
+                            deltas.put(x, deltas.getOrDefault(x, 0.0) + Math.pow(y,2.0));
                         });
+        deltas.forEach((key, value) -> dataseries.add(new XYValue(key, Math.sqrt(value))));
 
         dataseries.setFill(Color.DARKORANGE);
         data.add(dataseries);
