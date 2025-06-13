@@ -647,7 +647,7 @@ public class PeakPicker {
         if ((peakPickPar != null) && (peakPickPar.convolutionPickPar != null) && peakPickPar.convolutionPickPar.state() && peakPickPar.convolve) {
             PeakList testPeakList = newPeakList(peakToData, "testPeakList");
             pickRegion(testPeakList, pt, dataToPeak, peakToData);
-            convolutionPick(testPeakList, peakList, pt, consumer);
+            convolutionPick(testPeakList, peakList, peakPickPar, peakToData, pt, consumer);
         } else  {
             pickRegion(peakList, pt, dataToPeak, peakToData);
 
@@ -658,7 +658,8 @@ public class PeakPicker {
         return peakList;
     }
 
-    void convolutionPick(PeakList testPeakList, PeakList peakList, int[][] pt, Consumer<PeakList> consumer) throws IOException {
+    void convolutionPick(PeakList testPeakList, PeakList peakList, PeakPickParameters peakPickParameters,
+                         int[] peakToData, int[][] pt, Consumer<PeakList> consumer) throws IOException {
         ConvolutionPickPar convolutionPickPar = peakPickPar.convolutionPickPar;
         int nDim = peakList.getNDim();
         int[] n = new int[nDim];
@@ -677,7 +678,7 @@ public class PeakPicker {
             shapeFactor = testPeakList.shapeFactorDStats(iDim).getPercentile(30);
             System.out.println("wid " + widthHz + " " + widthPt[iDim] + " " + n[iDim] + " " + shapeFactor);
         }
-        ConvolutionFitter convolutionFitter = new ConvolutionFitter();
+        ConvolutionFitter convolutionFitter = new ConvolutionFitter(peakPickParameters, peakToData);
 
         IterativeConvolutions iterativeConvolutions = new IterativeConvolutions(n, widthPt, shapeFactor);
         iterativeConvolutions.threshold(peakPickPar.level);

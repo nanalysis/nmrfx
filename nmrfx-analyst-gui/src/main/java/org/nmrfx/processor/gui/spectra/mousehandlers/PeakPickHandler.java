@@ -9,6 +9,7 @@ import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 import java.util.List;
@@ -70,6 +71,7 @@ public class PeakPickHandler extends MouseHandler {
                     double yLim1 = yAxis.getValueForDisplay(y).doubleValue();
                     double[][] region = {{xLim0, xLim1}, {yLim0, yLim1}};
                     PeakPickParameters peakPickParameters = new PeakPickParameters();
+                    peakPickParameters.convolvePar(PreferencesController.getConvolutionPickPar());
                     peakPickParameters.level(chart.getDatasetAttributes().get(0).getLvl());
                     peakPickParameters.mode = PeakPickParameters.PickMode.APPENDIF;
                     peakPickParameters.convolve(true);

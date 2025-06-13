@@ -7,6 +7,7 @@ import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 
 import java.util.*;
 import java.io.IOException;
@@ -14,6 +15,14 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 
 public class ConvolutionFitter {
+
+    PeakPickParameters peakPickPar;
+    int[] peakToData;
+
+    public ConvolutionFitter(PeakPickParameters peakPickParameters, int[] peakToData) {
+        this.peakPickPar = peakPickParameters;
+        this.peakToData = peakToData;
+    }
 
     public record CPeak(int[] position, double height) {
     }
@@ -35,6 +44,14 @@ public class ConvolutionFitter {
                 averagePosition[i] = (height * position[i] + cPeakD.height * cPeakD.position[i]) / sum;
             }
             return new CPeakD(averagePosition, sum);
+        }
+
+        int[] pointPosition() {
+            int[] iPosition = new int[position.length];
+            for (int i = 0; i < position.length; i++) {
+                iPosition[i] = (int) position[i];
+            }
+            return iPosition;
         }
 
     }
@@ -203,10 +220,23 @@ public class ConvolutionFitter {
     }
 
 
+    boolean checkHeight(Dataset dataset, CPeakD cPeakD, double intensity, double threshold) {
+        boolean aboveNoise = true;
+        if (peakPickPar.useNoise && (peakPickPar.noiseLimit > 0.001)) {
+            double noiseRatio = dataset.checkNoiseLevel(intensity, cPeakD.pointPosition(), peakToData);
+            if (noiseRatio < peakPickPar.noiseLimit) {
+                aboveNoise = false;
+            }
+        } else {
+            aboveNoise = Math.abs(intensity) > threshold;
+        }
+        return aboveNoise;
+    }
+
     void buildPeak(Dataset dataset, PeakList peakList, CPeakD cPeakD, double threshold, double max, double[] widths) {
         if (Double.isFinite(cPeakD.height)) {
             double intensity = cPeakD.height * max;
-            if (Math.abs(intensity) < threshold) {
+            if (!checkHeight(dataset, cPeakD, intensity, threshold)) {
                 return;
             }
             Peak peak = peakList.getNewPeak();

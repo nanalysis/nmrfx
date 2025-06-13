@@ -115,7 +115,6 @@ public class PeakPicking {
         }
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
-        peakPickPar.convolvePar(PreferencesController.getConvolutionPickPar());
         int nFreqDim = datasetBase.getNFreqDims();
         if (nFreqDim == 0) {
             nFreqDim = datasetBase.getNDim();

@@ -382,6 +382,20 @@ public class GUIUtils {
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
     }
 
+    public record SliderText(Slider slider, TextField textField, HBox hBox) {}
+
+    public static SliderText sliderWithText(double min, double max, double value, String pattern) {
+        HBox hBox = new HBox();
+        Slider slider = new Slider(min, max, value);
+        slider.setShowTickLabels(true);
+        TextField textField = new TextField();
+        textField.setPrefWidth(50);
+        hBox.getChildren().addAll(slider, textField);
+        bindSliderField(slider, textField,pattern);
+        slider.setValue(value);
+        return new SliderText(slider, textField, hBox);
+    }
+
     private static void resetRange(TextFormatter<Number> formatter, Slider slider, double range) {
         double formatterValue = formatter.getValue().doubleValue();
         double sliderValue = slider.getValue();

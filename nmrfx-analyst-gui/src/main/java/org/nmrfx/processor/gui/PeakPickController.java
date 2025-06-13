@@ -6,6 +6,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.ConvolutionPickPar;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.utils.GUIUtils;
@@ -29,6 +30,11 @@ public class PeakPickController {
     CheckBox filterCheckBox = null;
     ChoiceBox<PeakList> filterListChoiceBox;
     Slider filterWidthSlider;
+    Slider convolveIterSlider;
+    Slider convolveFactorSlider;
+    Slider convolveSquashSlider;
+
+    CheckBox convolveCheckBox = null;
 
     public void setup(FXMLController fxmlController, TitledPane annoPane) {
         this.fxmlController = fxmlController;
@@ -94,13 +100,52 @@ public class PeakPickController {
         TextField noiseField = new TextField();
         noiseField.setPrefWidth(40);
         GUIUtils.bindSliderField(noiseRatioSlider, noiseField,"0.#");
+        noiseRatioSlider.setValue(10.0);
         noiseRatioSlider.setShowTickLabels(true);
         noiseRatioLabel.setPrefWidth(labelWidth);
         noiseBox.getChildren().addAll(noiseRatioLabel, noiseCheckBox, noiseRatioSlider, noiseField);
         noiseBox.setAlignment(Pos.CENTER_LEFT);
         noiseBox.setSpacing(10);
 
+        TitledPane convolvePane = new TitledPane();
+        convolvePane.setText("Convolution Picking");
+        GridPane convolveBox = new GridPane();
+        convolvePane.setContent(convolveBox);
+        Label convolveLabel = new Label("Active");
+        convolveLabel.setPrefWidth(labelWidth);
+        convolvePane.setExpanded(false);
+
+
+        convolveCheckBox = new CheckBox();
+        convolveCheckBox.setPrefWidth(100);
+
+        convolveBox.add(convolveLabel, 0, 0);
+        convolveBox.add(convolveCheckBox, 1, 0);
+
+        GUIUtils.SliderText sliderText = GUIUtils.sliderWithText(1,100, 25, "##");
+        convolveBox.add(new Label("Iterations"),0, 1);
+        convolveBox.add(sliderText.hBox(), 1, 1, 2, 1);
+        convolveIterSlider = sliderText.slider();
+
+
+        GUIUtils.SliderText convolveSquashSliderText = GUIUtils.sliderWithText(0.1,2.0, 0.75, "#.##");
+        convolveBox.add(new Label("Squash"),0, 2);
+        convolveBox.add(convolveSquashSliderText.hBox(), 1, 2, 2, 1);
+        convolveSquashSlider = convolveSquashSliderText.slider();
+
+        GUIUtils.SliderText convolveFactorSliderText = GUIUtils.sliderWithText(0.1,2.0, 1.6, "#.##");
+        convolveBox.add(new Label("Factor"),0, 3);
+        convolveBox.add(convolveFactorSliderText.hBox(), 1, 3, 2, 1);
+        convolveFactorSlider = convolveFactorSliderText.slider();
+
+
+        TitledPane filterPane = new TitledPane();
+        filterPane.setText("Filter");
+        filterPane.setExpanded(false);
+
         GridPane filterBox = new GridPane();
+        filterPane.setContent(filterBox);
+
         Label filterLabel = new Label("Filter List");
         filterLabel.setPrefWidth(labelWidth);
         filterCheckBox = new CheckBox();
@@ -128,7 +173,8 @@ public class PeakPickController {
         filterBox.setVgap(10);
         filterListChoiceBox.setOnShowing(e -> updateFilterChoices());
 
-        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox, filterBox);
+        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox,
+                convolvePane, filterPane);
     }
 
     void updateFilterChoices() {
@@ -153,6 +199,15 @@ public class PeakPickController {
             peakPickParameters.thickness = Integer.parseInt(thicknessStr);
             peakPickParameters.useAll = false;
         }
+
+        peakPickParameters.convolvePar(PreferencesController.getConvolutionPickPar());
+        ConvolutionPickPar convolutionPickPar =peakPickParameters.convolvePar();
+
+        peakPickParameters.convolve(convolveCheckBox.isSelected());
+        convolutionPickPar.iterations((int) convolveIterSlider.getValue())
+                .squash(convolveSquashSlider.getValue())
+                .state(convolveCheckBox.isSelected());
+
         peakPickParameters.filterList = filterListChoiceBox.getValue();
         peakPickParameters.filter = filterCheckBox.isSelected();
         peakPickParameters.filterWidth = filterWidthSlider.getValue();

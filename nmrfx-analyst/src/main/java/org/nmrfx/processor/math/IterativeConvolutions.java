@@ -22,7 +22,6 @@ public class IterativeConvolutions {
     double threshold;
     int iterations;
     MultidimensionalCounter counter;
-    MultidimensionalCounter neighborCounter;
 
     public IterativeConvolutions(int n0, int width, double shapeFactor) {
         int[] n = {n0};
@@ -582,9 +581,18 @@ public class IterativeConvolutions {
         MatrixND estimates = iterativeConvolution(signalMatrix, valueMatrix, psfMatrix);
 
         List<ConvolutionFitter.CPeak> cPeakList = new ArrayList<>();
-        findPeaks(estimates, skip, cPeakList);
+        int[] neighborDims = new int[widths.length];
+        int[] halfWidths = new int[neighborDims.length];
+        for (int i = 0; i < neighborDims.length; i++) {
+            halfWidths[i] = (int) Math.ceil(widths[i] * squash) / 2;
+            neighborDims[i] = 2 * halfWidths[i] + 1;
+        }
+
+        MultidimensionalCounter neighborCounter = new MultidimensionalCounter(neighborDims);
+
+        findPeaks(estimates, skip, cPeakList, neighborCounter);
         if (doSquash) {
-            squashPeaks(estimates, skip, pt, cPeakList, allPeaks);
+            squashPeaks(estimates, skip, pt, neighborCounter, cPeakList, allPeaks);
         }
         return estimates;
     }
@@ -601,7 +609,7 @@ public class IterativeConvolutions {
         return iterativeConvolutions(signalMatrix, skip, pt, doSquash, allPeaks);
     }
 
-    boolean isHigherThanNeighbor(MatrixND values, int[] indices, int[] halfWidths) {
+    boolean isHigherThanNeighbor(MatrixND values, int[] indices, int[] halfWidths, MultidimensionalCounter neighborCounter) {
         boolean higher = true;
         int nDim = values.getNDim();
         double value = values.getValue(indices);
@@ -634,7 +642,7 @@ public class IterativeConvolutions {
         return higher;
     }
 
-    void findPeaks(MatrixND values, BooleanMatrixND skipMat, List<ConvolutionFitter.CPeak> cPeakList) {
+    void findPeaks(MatrixND values, BooleanMatrixND skipMat, List<ConvolutionFitter.CPeak> cPeakList, MultidimensionalCounter neighborCounter) {
         int[] neighborDims = new int[values.getNDim()];
         int[] halfWidths = new int[neighborDims.length];
         for (int i = 0; i < neighborDims.length; i++) {
@@ -642,15 +650,13 @@ public class IterativeConvolutions {
             neighborDims[i] = 2 * halfWidths[i] + 1;
         }
 
-        neighborCounter = new MultidimensionalCounter(neighborDims);
-
 
         values.stream().forEach(counts -> {
             double value = values.getValue(counts);
             if (Math.abs(value) < threshold) {
                 skipMat.setValue(true, counts);
             } else {
-                boolean highest = isHigherThanNeighbor(values, counts, halfWidths);
+                boolean highest = isHigherThanNeighbor(values, counts, halfWidths, neighborCounter);
                 if (highest) {
                     ConvolutionFitter.CPeak cPeak = new ConvolutionFitter.CPeak(counts, value);
                     cPeakList.add(cPeak);
@@ -659,7 +665,8 @@ public class IterativeConvolutions {
         });
     }
 
-    ConvolutionFitter.CPeakD accumulateNeighbors(MatrixND values, BooleanMatrixND skipMatrix, int[] indices, int[] halfWidths) {
+    ConvolutionFitter.CPeakD accumulateNeighbors(MatrixND values, BooleanMatrixND skipMatrix,
+                                                 int[] indices, int[] halfWidths, MultidimensionalCounter neighborCounter) {
         int nDim = values.getNDim();
         int[] indices2 = new int[nDim];
         int[] ipsf = new int[nDim];
@@ -715,7 +722,8 @@ public class IterativeConvolutions {
         return ok;
     }
 
-    public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix, int[][] pt, List<ConvolutionFitter.CPeak> cPeakList, List<ConvolutionFitter.CPeakD> allPeaks) {
+    public void squashPeaks(MatrixND values, BooleanMatrixND skipMatrix, int[][] pt, MultidimensionalCounter neighborCounter, List<ConvolutionFitter.CPeak> cPeakList,
+                            List<ConvolutionFitter.CPeakD> allPeaks) {
         int[] neighborDims = new int[values.getNDim()];
         int[] halfWidths = new int[neighborDims.length];
         int[][] limits = new int[neighborDims.length][2];
@@ -734,7 +742,8 @@ public class IterativeConvolutions {
                 .filter(cPeak -> !skipMatrix.getValue(cPeak.position()))
                 .forEach(cPeak1 -> {
                     int[] center1 = cPeak1.position();
-                    ConvolutionFitter.CPeakD cPeakD = accumulateNeighbors(values, skipMatrix, center1, halfWidths);
+
+                    ConvolutionFitter.CPeakD cPeakD = accumulateNeighbors(values, skipMatrix, center1, halfWidths,neighborCounter);
                     int[] newPosition = new int[cPeak1.position().length];
                     for (int j = 0; j < newPosition.length; j++) {
                         cPeakD.position()[j] = cPeakD.position()[j] + pt[j][0];
