@@ -79,6 +79,9 @@ public class PeakPicking {
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, double[][] region, PeakPickParameters peakPickPar) {
         DatasetBase datasetBase = dataAttr.getDataset();
         peakPickPar.theFile = (Dataset) datasetBase;
+        if (peakPickPar.convolvePar() == null) {
+            peakPickPar.convolvePar(PreferencesController.getConvolutionPickPar());
+        }
         int nDim = peakPickPar.theFile.getNDim();
         if (peakPickPar.listName == null) {
             peakPickPar.listName = getListName(chart, dataAttr);
