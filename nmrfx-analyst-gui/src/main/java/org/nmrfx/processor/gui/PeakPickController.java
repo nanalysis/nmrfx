@@ -46,7 +46,7 @@ public class PeakPickController {
         vBox.getChildren().add(toolBar);
         Button peakPickButton = new Button("Pick");
         Label listName = new Label("List Name");
-        double labelWidth = 100.0;
+        double labelWidth = 75.0;
         listName.setPrefWidth(labelWidth);
         autoNameCheckBox = new CheckBox("AutoName");
         nameField = new TextField();
@@ -79,12 +79,11 @@ public class PeakPickController {
         regionBox.setAlignment(Pos.CENTER_LEFT);
         regionBox.setSpacing(10);
 
-        HBox modeBox = new HBox();
         Label modeLabel = new Label("Mode");
-        modeLabel.setPrefWidth(labelWidth);
-        modeBox.getChildren().addAll(modeLabel, modeChoiceBox);
-        modeBox.setAlignment(Pos.CENTER_LEFT);
-        modeBox.setSpacing(10);
+        modeLabel.setPrefWidth(labelWidth / 2);
+        regionBox.getChildren().addAll(modeLabel, modeChoiceBox);
+        regionBox.setAlignment(Pos.CENTER_LEFT);
+        regionBox.setSpacing(10);
 
         HBox thicknessBox = new HBox();
         Label thicknessLabel = new Label("Thickness");
@@ -93,19 +92,6 @@ public class PeakPickController {
         thicknessBox.setAlignment(Pos.CENTER_LEFT);
         thicknessBox.setSpacing(10);
 
-        HBox noiseBox = new HBox();
-        Label noiseRatioLabel = new Label("Local Noise");
-        noiseCheckBox = new CheckBox();
-        noiseRatioSlider = new Slider(0, 40, 10.0);
-        TextField noiseField = new TextField();
-        noiseField.setPrefWidth(40);
-        GUIUtils.bindSliderField(noiseRatioSlider, noiseField,"0.#");
-        noiseRatioSlider.setValue(10.0);
-        noiseRatioSlider.setShowTickLabels(true);
-        noiseRatioLabel.setPrefWidth(labelWidth);
-        noiseBox.getChildren().addAll(noiseRatioLabel, noiseCheckBox, noiseRatioSlider, noiseField);
-        noiseBox.setAlignment(Pos.CENTER_LEFT);
-        noiseBox.setSpacing(10);
 
         TitledPane convolvePane = new TitledPane();
         convolvePane.setText("Convolution Picking");
@@ -146,6 +132,25 @@ public class PeakPickController {
         GridPane filterBox = new GridPane();
         filterPane.setContent(filterBox);
 
+        HBox noiseBox = new HBox();
+        Label noiseRatioLabel = new Label("Local Noise");
+        noiseCheckBox = new CheckBox();
+        noiseRatioSlider = new Slider(0, 40, 10.0);
+        TextField noiseField = new TextField();
+        noiseField.setPrefWidth(40);
+        GUIUtils.bindSliderField(noiseRatioSlider, noiseField,"0.#");
+        noiseRatioSlider.setValue(10.0);
+        noiseRatioSlider.setShowTickLabels(true);
+        noiseRatioLabel.setPrefWidth(labelWidth);
+        noiseBox.getChildren().addAll(noiseRatioLabel, noiseCheckBox, noiseRatioSlider, noiseField);
+        noiseBox.setAlignment(Pos.CENTER_LEFT);
+        noiseBox.setSpacing(10);
+
+        int row = 0;
+        filterBox.add(noiseBox, 0, row++, 4, 1);
+
+
+
         Label filterLabel = new Label("Filter List");
         filterLabel.setPrefWidth(labelWidth);
         filterCheckBox = new CheckBox();
@@ -161,19 +166,20 @@ public class PeakPickController {
 
         filterWidthSlider.setValue(1.0);
 
-        filterBox.add(filterLabel, 0, 0);
-        filterBox.add(filterCheckBox, 1, 0);
-        filterBox.add(filterListChoiceBox, 2, 0);
-        filterBox.add(filterWidthLabel, 0, 1);
-        filterBox.add(filterWidthSlider, 1, 1, 2, 1);
-        filterBox.add(filterWidthText, 3,1);
+        filterBox.add(filterLabel, 0, row);
+        filterBox.add(filterCheckBox, 1, row);
+        filterBox.add(filterListChoiceBox, 2, row);
+        row++;
+        filterBox.add(filterWidthLabel, 0, row);
+        filterBox.add(filterWidthSlider, 1, row, 2, 1);
+        filterBox.add(filterWidthText, 3,row);
 
         filterBox.setAlignment(Pos.CENTER_LEFT);
         filterBox.setHgap(10);
         filterBox.setVgap(10);
         filterListChoiceBox.setOnShowing(e -> updateFilterChoices());
 
-        vBox.getChildren().addAll(nameBox, regionBox, modeBox, thicknessBox, noiseBox,
+        vBox.getChildren().addAll(nameBox, regionBox, thicknessBox,
                 convolvePane, filterPane);
     }
 
