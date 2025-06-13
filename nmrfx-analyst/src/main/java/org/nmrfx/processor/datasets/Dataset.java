@@ -1363,11 +1363,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             boolean ok = true;
             for (int i = 0; i < index.length; i++) {
                 point[dim[i]] = index[i] + pt[i][0];
-                if ((point[dim[i]] < 0) || (point[dim[i]] >= size(i))) {
-                    ok = false;
+            }
+            if (allowEdges) {
+                for (int i = 0; i < point.length; i++) {
+                    if ((point[i] < 0) || (point[i] >= getSizeTotal(i))) {
+                        ok = false;
+                    }
                 }
             }
             double value = ok ? readPointRaw(point) : 0.0;
+
             matrix.setValue(value, index);
             if (value > maxValue) {
                 maxValue = value;
