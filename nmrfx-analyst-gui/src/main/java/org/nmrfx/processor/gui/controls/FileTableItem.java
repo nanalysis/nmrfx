@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.controls;
 import javafx.beans.property.*;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.utils.TableItem;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Optional;
 /**
  * @author Bruce Johnson
  */
-public class FileTableItem {
+public class FileTableItem  implements TableItem {
 
     private final SimpleStringProperty fileName;
     private final SimpleStringProperty datasetName;
@@ -247,6 +248,7 @@ public class FileTableItem {
         return extra == null ? 0.0 : extra;
     }
 
+    @Override
     public Double getDouble(String eName) {
         eName = eName.toLowerCase();
         Double value = 0.0;

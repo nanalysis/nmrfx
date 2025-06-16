@@ -36,13 +36,13 @@ import org.nmrfx.analyst.gui.tools.fittools.DiffusionFitGUI;
 import org.nmrfx.analyst.gui.tools.fittools.FitGUI;
 import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
-import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.optimization.FitEquation;
 import org.nmrfx.processor.optimization.FitExp;
 import org.nmrfx.processor.optimization.FitReactionAB;
 import org.nmrfx.processor.optimization.Gaussian;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableItem;
 
 import java.io.File;
 import java.util.*;
@@ -53,7 +53,7 @@ import java.util.*;
 public class TablePlotGUI {
 
     Stage stage = null;
-    TableView<FileTableItem> tableView;
+    TableView<TableItem> tableView;
     XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 500, 500);
@@ -78,15 +78,17 @@ public class TablePlotGUI {
     }
 
     ExtraMode extraMode;
+    boolean fitMode;
     /**
      * Creates a TablePlotGUI instance
      *
      * @param tableView the TableView object that will be used to get data to
      *                  plot
      */
-    public TablePlotGUI(TableView<FileTableItem> tableView, ExtraMode extraMode) {
-        this.tableView = tableView;
+    public TablePlotGUI(TableView<? extends TableItem> tableView, ExtraMode extraMode, boolean fitMode) {
+        this.tableView = (TableView<TableItem>) tableView;
         this.extraMode = extraMode;
+        this.fitMode = fitMode;
     }
 
     public record ParItem(String columnName, int group, String parName, double value, double error) {
@@ -135,42 +137,40 @@ public class TablePlotGUI {
             MenuItem exportSVGMenuItem = new MenuItem("Export SVG...");
             fileMenu.getItems().add(exportSVGMenuItem);
             exportSVGMenuItem.setOnAction(e -> exportSVGAction());
-            CheckBox showFitCheckBox = new CheckBox("Fitting");
-            showFitCheckBox.setSelected(false);
-            showFitCheckBox.setOnAction(e -> toggleFitPane(showFitCheckBox));
-
-            ToolBar toolBar2 = new ToolBar();
-
-            Button button = new Button("Fit");
-            button.setOnAction(e -> analyze());
-            equationChoice.getItems().addAll("ExpAB", "ExpABC", "GaussianAB", "GaussianABC", "A<->B");
-            equationChoice.setValue("ExpABC");
-            toolBar2.getItems().addAll(equationChoice, button, fitSimCheckBox);
             toolBar.getItems().addAll(fileMenu, typelabel, chartTypeChoice,
                     xlabel, xArrayChoice, ylabel, yArrayChoice);
-            ToolBarUtils.addFiller(toolBar, 10, 200);
-            toolBar.getItems().add(showFitCheckBox);
+            if (fitMode) {
+                CheckBox showFitCheckBox = new CheckBox("Fitting");
+                showFitCheckBox.setSelected(false);
+                showFitCheckBox.setOnAction(e -> toggleFitPane(showFitCheckBox));
 
+                ToolBar toolBar2 = new ToolBar();
+                Button button = new Button("Fit");
+                button.setOnAction(e -> analyze());
+                equationChoice.getItems().addAll("ExpAB", "ExpABC", "GaussianAB", "GaussianABC", "A<->B");
+                equationChoice.setValue("ExpABC");
+                toolBar2.getItems().addAll(equationChoice, button, fitSimCheckBox);
+                ToolBarUtils.addFiller(toolBar, 10, 200);
+                toolBar.getItems().add(showFitCheckBox);
 
-
-            fitVBox = new VBox();
-            fitVBox.setMinWidth(200);
-            fitVBox.getChildren().addAll(toolBar2, extraBox, parTable);
-
+                fitVBox = new VBox();
+                fitVBox.setMinWidth(200);
+                fitVBox.getChildren().addAll(toolBar2, extraBox, parTable);
+                setupTable();
+                if (extraMode == ExtraMode.DIFFUSION) {
+                    fitGUI = new DiffusionFitGUI();
+                    fitGUI.setupGridPane(extraBox);
+                    equationChoice.setValue("GaussianAB");
+                    showFitCheckBox.setSelected(true);
+                    toggleFitPane(showFitCheckBox);
+                }
+            }
             chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
             borderPane.setTop(toolBar);
             borderPane.setCenter(chartPane);
             borderPane.setRight(null);
             stage.setScene(stageScene);
-            setupTable();
-            if (extraMode == ExtraMode.DIFFUSION) {
-                fitGUI = new DiffusionFitGUI();
-                fitGUI.setupGridPane(extraBox);
-                equationChoice.setValue("GaussianAB");
-                showFitCheckBox.setSelected(true);
-                toggleFitPane(showFitCheckBox);
-            }
         }
         updateAxisChoices();
         if (extraMode == ExtraMode.DIFFUSION) {
@@ -214,10 +214,10 @@ public class TablePlotGUI {
         parTable.getColumns().addAll(parNameColumn, valueColumn, errorColumn);
     }
 
-    private Map<Integer, List<FileTableItem>> getGroups() {
-        var groups = new HashMap<Integer, List<FileTableItem>>();
-        List<FileTableItem> items = tableView.getItems();
-        for (FileTableItem item : items) {
+    private Map<Integer, List<TableItem>> getGroups() {
+        var groups = new HashMap<Integer, List<TableItem>>();
+        List<TableItem> items = tableView.getItems();
+        for (TableItem item : items) {
             if (item.getActive()) {
                 if (!groups.containsKey(item.getGroup())) {
                     groups.put(item.getGroup(), new ArrayList<>());
@@ -239,7 +239,7 @@ public class TablePlotGUI {
     }
 
 
-    int nActive(List<FileTableItem> items) {
+    int nActive(List<TableItem> items) {
        return (int) items.stream().filter(item -> item.getActive()).count();
     }
     void updatePlotWithFitLines() {
@@ -290,7 +290,7 @@ public class TablePlotGUI {
                         int nItems = nActive(items);
                         double[] ddata = new double[nItems];
                         int i = 0;
-                        for (FileTableItem item : items) {
+                        for (TableItem item : items) {
                             if (item.getActive()) {
                                 double y = item.getDouble(nameMap.get(yElem));
                                 ddata[i++] = y;
@@ -336,7 +336,7 @@ public class TablePlotGUI {
                             var items = groupEntry.getValue();
                             DataSeries series = new DataSeries();
                             series.clear();
-                            for (FileTableItem item : items) {
+                            for (TableItem item : items) {
                                 if (item.getActive()) {
                                     double x = item.getDouble(nameMap.get(xElem));
                                     double y = item.getDouble(nameMap.get(yElem));
@@ -365,7 +365,7 @@ public class TablePlotGUI {
                             DataSeries series = new DataSeries();
                             series.setName(yElem);
                             series.clear();
-                            for (FileTableItem item : tableView.getItems()) {
+                            for (TableItem item : tableView.getItems()) {
                                 double x = item.getDouble(nameMap.get(xElem));
                                 double y = item.getDouble(nameMap.get(yElem));
                                 series.add(new XYValue(x, y));
@@ -507,14 +507,14 @@ public class TablePlotGUI {
     }
 
     private List<ParItem> fit(String xElem, List<String> yElems, FitEquation fitEquation, int nY, int iGroup) {
-        List<FileTableItem> items = tableView.getItems();
+        List<TableItem> items = tableView.getItems();
         int nItems = nActive(items);
         double[][] xValues = new double[1][nItems];
         double[][] yValues = new double[nY][nItems];
         double[][] errValues = new double[nY][nItems];
         int i = 0;
         double maxX = 0.0;
-        for (FileTableItem item : items) {
+        for (TableItem item : items) {
             if (item.getActive()) {
                 double x = item.getDouble(nameMap.get(xElem));
                 xValues[0][i] = x;

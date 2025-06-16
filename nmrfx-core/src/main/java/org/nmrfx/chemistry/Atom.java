@@ -23,6 +23,7 @@ import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.chemistry.relax.*;
+import org.nmrfx.utils.TableItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import javax.vecmath.Point2d;
 import java.util.*;
 
 @PluginAPI({"residuegen", "ring"})
-public class Atom implements IAtom, Comparable<Atom> {
+public class Atom implements IAtom, Comparable<Atom>, TableItem {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);
     private static final String POINT_NULL_MSG_PREFIX = "Point null: ";
@@ -2434,5 +2435,16 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public static int compareByIndex(Atom a1, Atom a2) {
         return Integer.compare(a1.iAtom, a2.iAtom);
+    }
+
+    @Override
+    public Double getDouble(String elemName) {
+        boolean ref = elemName.startsWith("REF");
+        int i = Integer.parseInt(elemName.substring(elemName.length() - 1));
+        PPMv ppmv = getPPMByMode(i, ref);
+        if (ppmv != null) {
+            return ppmv.getValue();
+        }
+        return null;
     }
 }

@@ -54,6 +54,7 @@ public class MoleculeBase implements Serializable, ITree {
     public AtomicBoolean atomUpdated = new AtomicBoolean(false);
     Updater atomUpdater = null;
     MoleculeListener atomChangeListener;
+    List<String> activePPMSets = new ArrayList<>();
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -1742,4 +1743,13 @@ public class MoleculeBase implements Serializable, ITree {
     public Map<String, OrderParSet> orderParSetMap() {
         return orderParSetMap;
     }
+
+    public void setPPMSetActive(String refMode, int i) {
+        String ppmSet = refMode + i;
+        if (!activePPMSets.contains(ppmSet)) {
+            activePPMSets.add(ppmSet);
+        }
+    }
+
+    public List<String> getActivePPMSets() {return activePPMSets;}
 }

@@ -802,13 +802,13 @@ public class ScannerTool implements ControllerTool {
 
     void showPlotGUI() {
         if (plotGUI == null) {
-            plotGUI = new TablePlotGUI(tableView, null);
+            plotGUI = new TablePlotGUI(tableView, null, true);
         }
         plotGUI.showPlotStage();
     }
     void showDiffusionGUI() {
         if (diffusionGUI == null) {
-            diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION);
+            diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION, true);
         }
         diffusionGUI.showPlotStage();
     }

@@ -320,6 +320,7 @@ public class SpatialSet {
         }
         refPPMV.setValid(true, atom);
         refPPMVs.set(structureNum, refPPMV);
+        getAtom().getEntity().molecule.setPPMSetActive("REF", structureNum);
         atom.changed();
     }
 
@@ -436,6 +437,7 @@ public class SpatialSet {
                 spSet.atom.changed();
             }
         });
+        getAtom().getEntity().molecule.setPPMSetActive("PPM", ppmSet);
     }
 
     public void setPPMValidity(int ppmSet, boolean validity) {
