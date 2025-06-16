@@ -52,6 +52,7 @@ public class PPMPlotGUI {
         chartPane.updateChart();
         activeChart.getXAxis().setLabel("Residue Number");
         activeChart.getYAxis().setLabel("Delta (PPM)");
+        activeChart.getYAxis().setAutoRanging(true);
         List<AtomController.PPMSet> ppmSets = getSelectedPPMSets();
         if (ppmSets.isEmpty()) {
             GUIUtils.warn("select columns to plot", "select columns to plot");
@@ -60,7 +61,6 @@ public class PPMPlotGUI {
 
         List<DataSeries> dataseries = getDeltas(ppmSets);
         activeChart.setData(dataseries);
-        activeChart.getYAxis().setAutoRanging(true);
         showPPMPlot();
     }
 
@@ -78,10 +78,11 @@ public class PPMPlotGUI {
                 .forEach( atom -> {
                             double y = atom.getDeltaPPM2(set1.iSet, set2.iSet, set1.refSet, set2.refSet);
                             double x = atom.getResidueNumber();
-                            if (atom.getAtomicNumber() == 15) { y = y/5.0;}
                             deltas.put(x, deltas.getOrDefault(x, 0.0) + Math.pow(y,2.0));
                         });
-        deltas.forEach((key, value) -> dataseries.add(new XYValue(key, Math.sqrt(value))));
+        deltas.forEach((key, value) ->
+            dataseries.add(new XYValue(key, Math.sqrt(value)))
+        );
 
         dataseries.setFill(Color.DARKORANGE);
         data.add(dataseries);

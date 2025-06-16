@@ -136,6 +136,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         int iSet;
         boolean refSet;
         BooleanProperty isSelected = new SimpleBooleanProperty();
+        BooleanProperty isDisplayed = new SimpleBooleanProperty();
         PPMSet(int iSet, boolean refMode) {
             this.ref = refMode ? mode.REF : mode.PPM;
             this.iSet = iSet;
@@ -161,14 +162,16 @@ public class AtomController implements Initializable, StageBasedController, Free
         PeakList.registerFreezeListener(this);
         ProjectBase.addPropertyChangeListener(this::propertyChange);
         updateView();
-        autoAddPPMCols(false);
+        addAllPPMCols();
     }
 
     private void autoAddPPMCols(boolean ref) {
-        Arrays.asList(0,1,2,3,4,5)
+        Arrays.asList(0, 1, 2, 3, 4, 5)
                 .forEach(i -> {
-                    if (atoms.stream().anyMatch(atom -> atom.getPPM(i) != null)) {
-                        makePPMCol(i, ref);
+                    if (atoms.stream().anyMatch(atom -> atom.getPPMByMode(i, ref) != null)) {
+                        PPMSets.forEach(set -> {
+                            if (!set.isDisplayed.getValue()) {makePPMCol(i, ref);}
+                        });
                     }
                 });
     }
@@ -320,7 +323,6 @@ public class AtomController implements Initializable, StageBasedController, Free
     private void makePPMCol(int iSet, boolean ref) {
         PPMSet set = new PPMSet(iSet, ref);
         makePPMCol(set);
-        PPMSets.add(set);
     }
 
     private void makePPMCol(PPMSet set) {
@@ -352,7 +354,9 @@ public class AtomController implements Initializable, StageBasedController, Free
         CheckBox columnCheckBox = new CheckBox();
         ppmCol.setGraphic(columnCheckBox);
         set.isSelected.bind(columnCheckBox.selectedProperty());
+        set.isDisplayed.setValue(true);
         atomTableView.getColumns().add(ppmCol);
+        PPMSets.add(set);
     }
 
     private void removePPMCol() {
@@ -649,6 +653,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                 }
             }
         }
+        makePPMCol(0, true);
         atomTableView.refresh();
     }
 
