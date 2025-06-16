@@ -53,15 +53,15 @@ import java.util.*;
 public class TablePlotGUI {
 
     Stage stage = null;
-    TableView<TableItem> tableView;
-    XYCanvasChart activeChart;
+    protected TableView<TableItem> tableView;
+    protected XYCanvasChart activeChart;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 500, 500);
     XYChartPane chartPane;
-    ChoiceBox<String> chartTypeChoice = new ChoiceBox<>();
-    ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
-    CheckComboBox<String> yArrayChoice = new CheckComboBox<>();
-    Map<String, String> nameMap = new HashMap<>();
+    protected ChoiceBox<String> chartTypeChoice = new ChoiceBox<>();
+    protected ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
+    protected CheckComboBox<String> yArrayChoice = new CheckComboBox<>();
+    protected Map<String, String> nameMap = new HashMap<>();
     List<DataSeries> fitLineSeries = new ArrayList<>();
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
     TableView<ParItem> parTable = new TableView<>();
@@ -79,6 +79,8 @@ public class TablePlotGUI {
 
     ExtraMode extraMode;
     boolean fitMode;
+    protected List<String> skipColumns = Arrays.asList("path", "sequence", "ndim");
+
     /**
      * Creates a TablePlotGUI instance
      *
@@ -240,7 +242,7 @@ public class TablePlotGUI {
 
 
     int nActive(List<TableItem> items) {
-       return (int) items.stream().filter(item -> item.getActive()).count();
+       return (int) items.stream().filter(TableItem::getActive).count();
     }
     void updatePlotWithFitLines() {
         updateScatterPlot();
@@ -321,7 +323,7 @@ public class TablePlotGUI {
             if ((xElem != null) && !yElems.isEmpty()) {
                 if (yElems.size() == 1) {
                     xAxis.setLabel(xElem);
-                    String yElem = yElems.get(0);
+                    String yElem = yElems.getFirst();
                     if (yElem != null) {
                         yAxis.setLabel(yElem);
                         xAxis.setZeroIncluded(true);
@@ -390,7 +392,7 @@ public class TablePlotGUI {
         var columns = tableView.getColumns();
         for (var column : columns) {
             String text = column.getText();
-            if (text.equals("path") || text.equals("sequence") || text.equals("ndim")) {
+            if (skipColumns.stream().anyMatch(text::equals)) {
                 continue;
             }
             String name = text;
@@ -430,7 +432,7 @@ public class TablePlotGUI {
                 xArrayChoice.setValue(currentX);
             } else {
                 if (!xArrayChoice.getItems().isEmpty()) {
-                    xArrayChoice.setValue(xArrayChoice.getItems().get(0));
+                    xArrayChoice.setValue(xArrayChoice.getItems().getFirst());
                 }
             }
             for (var item : currentChecks) {
