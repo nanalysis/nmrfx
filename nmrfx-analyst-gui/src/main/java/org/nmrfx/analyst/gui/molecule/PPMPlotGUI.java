@@ -1,72 +1,69 @@
 package org.nmrfx.analyst.gui.molecule;
 
 import javafx.scene.control.TableView;
-import javafx.scene.paint.Color;
 import org.nmrfx.analyst.gui.TablePlotGUI;
 import org.nmrfx.chart.*;
 import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.PPMv;
+import org.nmrfx.utils.TableItem;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class PPMPlotGUI extends TablePlotGUI {
-    AtomController atomController = null;
 
-    public PPMPlotGUI(TableView<Atom> atomTableView, AtomController atomController) {
+    public PPMPlotGUI(TableView<Atom> atomTableView) {
         super(atomTableView, null, false);
-        this.atomController = atomController;
-        chartTypeChoice.getItems().clear();
-        chartTypeChoice.getItems().addAll("Scatter Plot", "Bar Chart");
+        setChartTypeChoice(Arrays.asList("ScatterPlot", "BarChart"));
         skipColumns = Arrays.asList("Index", "Entity", "Res", "Atom");
     }
 
-/*    private void updateBarChart() {
-        if (tableView != null) {
-            Axis xAxis = activeChart.getXAxis();
-            Axis yAxis = activeChart.getYAxis();
-            String xElem = xArrayChoice.getValue();
-            List<String> yElems = yArrayChoice.getCheckModel().getCheckedItems();
-
-            List<DataSeries> data = new ArrayList<>();
-            DataSeries dataseries = new DataSeries();
-            HashMap<Double, Double> deltas = new HashMap<>();
-
-
-
-            atomController.atoms.stream()
-                    .filter(atom -> atom.getPPMByMode(set1.iSet, set1.refMode) != null &&
-                            atom.getPPMByMode(set2.iSet, set2.refMode) != null)
-                    .forEach( atom -> {
-                        double y = atom.getDeltaPPM2(set1.iSet, set2.iSet, set1.refMode, set2.refMode);
-                        double x = atom.getResidueNumber();
-                        deltas.put(x, deltas.getOrDefault(x, 0.0) + Math.pow(y,2.0));
-                    });
+    @Override
+    protected DataSeries getBarChartData(List<TableItem> items) {
+        Map<String, String> nameMap = getNameMap();
+        String xElem = getXElem();
+        String yElem = getYElem().getFirst();
+        DataSeries series = new DataSeries();
+        series.clear();
+        HashMap<Integer, Double> deltas = new HashMap<>();
+        String atomType = ((Atom) items.getFirst()).getName();
+        boolean singleAtomType = items.stream()
+                .allMatch(item -> ((Atom) item).getName().equals(atomType));
+        items.forEach(item -> {
+            if (item instanceof Atom atom) {
+                Double ppm1 = item.getDouble(nameMap.get(xElem));
+                Double ppm2 = item.getDouble(nameMap.get(yElem));
+                if (ppm1 != null && ppm2 != null) {
+                    double delta = ppm1 - ppm2;
+                    int resNum = atom.getResidueNumber();
+                    if (!singleAtomType) {
+                        deltas.put(resNum, deltas.getOrDefault(resNum, 0.0) + Math.pow(delta, 2.0));
+                    } else {
+                        series.add(new XYValue(resNum, delta));
+                    }
+                }
+            }
+        });
+        if (!singleAtomType) {
             deltas.forEach((key, value) ->
-                    dataseries.add(new XYValue(key, Math.sqrt(value)))
-            );
-
-            data.add(dataseries);
+                    series.add(new XYValue(key, Math.sqrt(value))));
         }
-    }*/
-
-    private DataSeries plotShifts(List<AtomController.PPMSet> ppmSets) {
-        AtomController.PPMSet set1 = ppmSets.getFirst();
-        AtomController.PPMSet set2 = ppmSets.getLast();
-        DataSeries dataseries = new DataSeries();
-        atomController.atoms.stream()
-                .filter(atom -> atom.getPPMByMode(set1.iSet, set1.refMode) != null &&
-                                atom.getPPMByMode(set2.iSet, set2.refMode) != null)
-                .forEach(atom -> {
-                    PPMv x = atom.getPPMByMode(set1.iSet, set1.refMode);
-                    PPMv y = atom.getPPMByMode(set2.iSet, set2.refMode);
-                    XYValue xyValue1 = new XYValue(x.getValue(), y.getValue());
-                    dataseries.add(xyValue1);
-                });
-        dataseries.drawSymbol(true);
-        dataseries.setFill(Color.DARKORANGE);
-        return dataseries;
+        return series;
     }
+
+    @Override
+    protected DataSeries getScatterPlotData(List<TableItem> items, String yElem) {
+        Map<String, String> nameMap = getNameMap();
+        String xElem = getXElem();
+        DataSeries series = new DataSeries();
+        series.clear();
+        items.forEach(item -> {
+            Double ppm1 = item.getDouble(nameMap.get(xElem));
+            Double ppm2 = item.getDouble(nameMap.get(yElem));
+            if (ppm1 != null && ppm2 != null) {
+                series.add(new XYValue(ppm1, ppm2));
+            }
+        });
+        return series;
+    }
+
+
 }

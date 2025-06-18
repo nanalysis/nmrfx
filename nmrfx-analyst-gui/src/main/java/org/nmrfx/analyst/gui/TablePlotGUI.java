@@ -58,10 +58,10 @@ public class TablePlotGUI {
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 500, 500);
     XYChartPane chartPane;
-    protected ChoiceBox<String> chartTypeChoice = new ChoiceBox<>();
-    protected ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
-    protected CheckComboBox<String> yArrayChoice = new CheckComboBox<>();
-    protected Map<String, String> nameMap = new HashMap<>();
+    ChoiceBox<String> chartTypeChoice = new ChoiceBox<>();
+    ChoiceBox<String> xArrayChoice = new ChoiceBox<>();
+    CheckComboBox<String> yArrayChoice = new CheckComboBox<>();
+    Map<String, String> nameMap = new HashMap<>();
     List<DataSeries> fitLineSeries = new ArrayList<>();
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
     TableView<ParItem> parTable = new TableView<>();
@@ -79,6 +79,7 @@ public class TablePlotGUI {
 
     ExtraMode extraMode;
     boolean fitMode;
+    List<String> chartTypes = Arrays.asList("ScatterPlot", "BoxPlot");
     protected List<String> skipColumns = Arrays.asList("path", "sequence", "ndim");
 
     /**
@@ -110,8 +111,8 @@ public class TablePlotGUI {
             Label xlabel = new Label("  X Var:  ");
             Label ylabel = new Label("  Y Var:  ");
             chartTypeChoice.setMinWidth(100);
-            chartTypeChoice.getItems().addAll("ScatterPlot", "BoxPlot");
-            chartTypeChoice.setValue("ScatterPlot");
+            chartTypeChoice.getItems().addAll(chartTypes);
+            chartTypeChoice.setValue(chartTypes.getFirst());
             xArrayChoice.getItems().clear();
             yArrayChoice.getItems().clear();
             xArrayChoice.setMinWidth(100);
@@ -216,7 +217,7 @@ public class TablePlotGUI {
         parTable.getColumns().addAll(parNameColumn, valueColumn, errorColumn);
     }
 
-    private Map<Integer, List<TableItem>> getGroups() {
+    protected Map<Integer, List<TableItem>> getGroups() {
         var groups = new HashMap<Integer, List<TableItem>>();
         List<TableItem> items = tableView.getItems();
         for (TableItem item : items) {
@@ -232,10 +233,10 @@ public class TablePlotGUI {
     }
 
     private void updateChartType() {
-        if (chartTypeChoice.getValue().equals("ScatterPlot")) {
-            activeChart = chartPane.getXYChart();
-        } else {
-            activeChart = chartPane.getBoxChart();
+        switch (chartTypeChoice.getValue()) {
+            case "ScatterPlot" -> activeChart = chartPane.getXYChart();
+            case "BoxPlot" -> activeChart = chartPane.getBoxChart();
+            case "BarChart" -> activeChart = chartPane.getBarChart();
         }
         chartPane.updateChart();
     }
@@ -255,8 +256,8 @@ public class TablePlotGUI {
         switch (chartTypeChoice.getValue()) {
             case "ScatterPlot" -> updateScatterPlot();
             case "BoxPlot" -> updateBoxPlot();
-            default -> {
-            }
+            case "BarChart" -> updateBarChart();
+            default -> {}
         }
 
     }
@@ -312,6 +313,20 @@ public class TablePlotGUI {
         }
     }
 
+    protected DataSeries getScatterPlotData(List<TableItem> items, String yElem) {
+        DataSeries series = new DataSeries();
+        series.clear();
+        String xElem = getXElem();
+        for (TableItem item : items) {
+            if (item.getActive()) {
+                double x = item.getDouble(nameMap.get(xElem));
+                double y = item.getDouble(nameMap.get(yElem));
+                series.add(new XYValue(x, y));
+            }
+        }
+        return series;
+    }
+
     private void updateScatterPlot() {
         if (tableView != null) {
             Axis xAxis = activeChart.getXAxis();
@@ -336,15 +351,7 @@ public class TablePlotGUI {
                         for (var groupEntry : groups.entrySet()) {
                             int groupNum = groupEntry.getKey();
                             var items = groupEntry.getValue();
-                            DataSeries series = new DataSeries();
-                            series.clear();
-                            for (TableItem item : items) {
-                                if (item.getActive()) {
-                                    double x = item.getDouble(nameMap.get(xElem));
-                                    double y = item.getDouble(nameMap.get(yElem));
-                                    series.add(new XYValue(x, y));
-                                }
-                            }
+                            DataSeries series = getScatterPlotData(items, yElem);
                             series.setFill(ScanTable.getGroupColor(groupNum));
                             series.setStroke(ScanTable.getGroupColor(groupNum));
                             activeChart.getData().add(series);
@@ -364,14 +371,8 @@ public class TablePlotGUI {
 
                     for (var yElem : yElems) {
                         if (yElem != null) {
-                            DataSeries series = new DataSeries();
+                            DataSeries series = getScatterPlotData(tableView.getItems(), yElem);
                             series.setName(yElem);
-                            series.clear();
-                            for (TableItem item : tableView.getItems()) {
-                                double x = item.getDouble(nameMap.get(xElem));
-                                double y = item.getDouble(nameMap.get(yElem));
-                                series.add(new XYValue(x, y));
-                            }
                             series.setFill(ScanTable.getGroupColor(groupNum));
                             series.setStroke(ScanTable.getGroupColor(groupNum));
                             groupNum++;
@@ -570,5 +571,57 @@ public class TablePlotGUI {
             series.setName(yElems.get(iSeries) + ":Fit");
         }
         return results;
+    }
+
+    protected void setChartTypeChoice(List<String> chartTypes) {
+        this.chartTypes = chartTypes;
+    }
+
+    protected Map<String, String> getNameMap() {
+        return nameMap;
+    }
+
+    protected String getXElem() {
+        return xArrayChoice.getValue();
+    }
+
+    protected List<String> getYElem() {
+        return yArrayChoice.getCheckModel().getCheckedItems();
+    }
+
+    protected DataSeries getBarChartData(List<TableItem> items) {
+        return null;
+    }
+
+    private void updateBarChart() {
+        if (tableView != null) {
+            Axis xAxis = activeChart.getXAxis();
+            Axis yAxis = activeChart.getYAxis();
+            String xElem = xArrayChoice.getValue();
+            List<String> yElems = yArrayChoice.getCheckModel().getCheckedItems();
+            activeChart.setShowLegend(false);
+
+            if ((xElem != null) && !yElems.isEmpty()) {
+                if (yElems.size() == 1) {
+                    xAxis.setLabel(xElem);
+                    String yElem = yElems.getFirst();
+                    if (yElem != null) {
+                        yAxis.setLabel(yElem);
+                        xAxis.setZeroIncluded(true);
+                        yAxis.setZeroIncluded(true);
+                        xAxis.setAutoRanging(true);
+                        yAxis.setAutoRanging(true);
+                        activeChart.getData().clear();
+                        //Prepare XYChart.Series objects by setting data
+                        var groups = getGroups();
+                        for (var groupEntry : groups.entrySet()) {
+                            DataSeries series = getBarChartData(groupEntry.getValue());
+                            activeChart.getData().add(series);
+                            activeChart.autoScale(true);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -711,7 +711,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     private void showPPMPlotGUI() {
         if (ppmPlotGUI == null) {
-            ppmPlotGUI = new PPMPlotGUI(atomTableView, null);
+            ppmPlotGUI = new PPMPlotGUI(atomTableView);
         }
         ppmPlotGUI.showPlotStage();
     }
