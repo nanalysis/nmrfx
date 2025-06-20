@@ -92,7 +92,7 @@ public class StripController implements ControllerTool {
     double xWidth = 0.2;
     StripsTable stripsTable;
     ObservableList<Peak> sortedPeaks;
-
+    int currentStart = 0;
     public StripController(FXMLController controller, Consumer<StripController> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
@@ -471,7 +471,8 @@ public class StripController implements ControllerTool {
         }
         int posMax = nPeaks - nView;
         posSlider.setMax(Math.max(0, posMax));
-        posSlider.setValue(0);
+        currentStart = Math.min(currentStart, Math.max(0, posMax));
+        posSlider.setValue(currentStart);
 
         if (nPeaks < 10) {
             posSlider.setMajorTickUnit(1);
@@ -550,7 +551,7 @@ public class StripController implements ControllerTool {
             }
             double textWidth = GUIUtils.getTextWidth(text, font);
             double delta = textWidth + 5.0;
-            annoText = new AnnoText(x, -8, delta, text, font.getSize(), CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+            annoText = new AnnoText(x, -4, delta, text, font.getSize(), CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
         }
 
         void updateCell() {
@@ -564,6 +565,8 @@ public class StripController implements ControllerTool {
                     controller.addDataset(chart, item.dataset, false, false);
                     chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
                 }
+                var chartProps = chart.getChartProperties();
+                chartProps.setTopBorderSize(Math.max(20, chartProps.getTopBorderSize()));
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 int[] dims = getDims(dataAttr.getDataset());
@@ -588,8 +591,8 @@ public class StripController implements ControllerTool {
 
     public void setCenter(int index) {
         int nActive = (int) nSlider.getValue();
-        int start = index - nActive / 2;
-        posSlider.setValue(start);
+        currentStart = index - nActive / 2;
+        posSlider.setValue(currentStart);
     }
 
     private void fieldChanged(TextField field) {
