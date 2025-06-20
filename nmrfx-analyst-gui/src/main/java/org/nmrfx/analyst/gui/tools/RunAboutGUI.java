@@ -292,7 +292,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
 
         public void setActive(boolean value) {
-            log.info("set value {}", value);
             activeProperty().set(value);
         }
 
