@@ -54,7 +54,7 @@ public class MoleculeBase implements Serializable, ITree {
     public AtomicBoolean atomUpdated = new AtomicBoolean(false);
     Updater atomUpdater = null;
     MoleculeListener atomChangeListener;
-    List<String> activePPMSets = new ArrayList<>();
+    Set<String> activePPMSets = new HashSet<>();
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -1751,5 +1751,5 @@ public class MoleculeBase implements Serializable, ITree {
         }
     }
 
-    public List<String> getActivePPMSets() {return activePPMSets;}
+    public Set<String> getActivePPMSets() {return activePPMSets;}
 }

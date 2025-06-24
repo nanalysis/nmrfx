@@ -2424,6 +2424,9 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
 
     @Override
     public Double getDouble(String elemName) {
+        if (elemName.startsWith("Seq")) {
+            return (double) getResidueNumber();
+        }
         boolean ref = elemName.startsWith("REF");
         int i = Integer.parseInt(elemName.substring(elemName.length() - 1));
         PPMv ppmv = getPPMByMode(i, ref);
