@@ -551,7 +551,7 @@ public class TablePlotGUI {
             double scale = Math.pow(10, nSig);
             errValue = Math.round(errValue * scale) / scale;
             double value = Math.round(values[j] * scale) / scale;
-            ParItem parItem = new ParItem(yElems.get(0), 0, parNames[j], value, errValue);
+            ParItem parItem = new ParItem(yElems.getFirst(), 0, parNames[j], value, errValue);
             results.add(parItem);
         }
         double[] first = {0.0};

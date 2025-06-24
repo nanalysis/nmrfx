@@ -795,13 +795,12 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         }
     }
 
-    public Double getDeltaPPM(int ppmSet, int refSet) {
-        PPMv ppmV = getPPM(ppmSet);
-        PPMv refV = getRefPPM(refSet);
+    public Double getDeltaPPM(int iSet1, int iSet2, boolean ref1, boolean ref2) {
+        PPMv ppm1 = getPPMByMode(iSet1, ref1);
+        PPMv ppm2 = getPPMByMode(iSet2, ref2);
         Double delta;
-        if ((ppmV != null) && ppmV.isValid() && (refV != null)
-                && refV.isValid()) {
-            delta = (ppmV.getValue() - refV.getValue()) / refV.getError();
+        if ((ppm1 != null) && ppm1.isValid() && (ppm2 != null) && ppm2.isValid()) {
+            delta = (ppm1.getValue() - ppm2.getValue()) / ppm2.getError();
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;
@@ -1607,7 +1606,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
 
         // name
         String name = bound.getName();
-        if (name.equals("")) {
+        if (name.isEmpty()) {
             name = ".";
         }
         sBuilder.append(String.format("%6s", name));
@@ -2108,7 +2107,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
             MoleculeBase.findEquivalentAtoms(entity);
         }
 
-        if ((aNum == targetANum) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+        if ((aNum == targetANum) && (equivAtoms != null) && (!equivAtoms.isEmpty())) {
             int nAtoms = 0;
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
@@ -2134,7 +2133,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
             MoleculeBase.findEquivalentAtoms(entity);
         }
         int shells = 2;
-        if (((targetANum == -1) || (aNum == targetANum)) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+        if (((targetANum == -1) || (aNum == targetANum)) && (equivAtoms != null) && (!equivAtoms.isEmpty())) {
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
                 if (!aEquiv.getAtoms().isEmpty()) {
@@ -2272,7 +2271,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         if ((equivAtoms == null) || (equivAtoms.isEmpty())) {
             aType = 1;
         } else if (equivAtoms.size() == 1) {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
+            AtomEquivalency aEquiv = equivAtoms.getFirst();
 
             if (aEquiv.getAtoms().size() == 3) {
                 aType = 1;
@@ -2282,7 +2281,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
                 aType = 3;
             }
         } else {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
+            AtomEquivalency aEquiv = equivAtoms.getFirst();
 
             if (aEquiv.getAtoms().size() == 3) {
                 aType = 2;
@@ -2340,7 +2339,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
                 MoleculeBase.findEquivalentAtoms(entity);
             }
             if (equivAtoms != null) {
-                AtomEquivalency aEquiv = equivAtoms.get(0);
+                AtomEquivalency aEquiv = equivAtoms.getFirst();
                 if (aEquiv.getAtoms().size() == 2) {
                     pseudoName = 'Q' + name.substring(1, name.length() - 1);
                 }
