@@ -241,7 +241,6 @@ public class TablePlotGUI {
         chartPane.updateChart();
     }
 
-
     int nActive(List<TableItem> items) {
        return (int) items.stream().filter(TableItem::getActive).count();
     }
@@ -311,6 +310,14 @@ public class TablePlotGUI {
                 });
             }
         }
+    }
+
+    protected void setYAxisLabel(String label) {
+        activeChart.getYAxis().setLabel(label);
+    }
+
+    protected void setXAxisLabel(String label) {
+        activeChart.getXAxis().setLabel(label);
     }
 
     protected DataSeries getScatterPlotData(List<TableItem> items, String yElem) {
@@ -603,10 +610,8 @@ public class TablePlotGUI {
 
             if ((xElem != null) && !yElems.isEmpty()) {
                 if (yElems.size() == 1) {
-                    xAxis.setLabel(xElem);
                     String yElem = yElems.getFirst();
                     if (yElem != null) {
-                        yAxis.setLabel(yElem);
                         xAxis.setZeroIncluded(true);
                         yAxis.setZeroIncluded(true);
                         xAxis.setAutoRanging(true);

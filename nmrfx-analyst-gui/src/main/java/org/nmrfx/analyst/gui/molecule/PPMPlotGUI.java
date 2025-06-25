@@ -28,17 +28,15 @@ public class PPMPlotGUI extends TablePlotGUI {
         boolean singleAtomType = items.stream()
                 .allMatch(item -> ((Atom) item).getName().equals(atomType));
         items.forEach(item -> {
-            if (item instanceof Atom atom) {
-                Double ppm1 = item.getDouble(nameMap.get(xElem));
-                Double ppm2 = item.getDouble(nameMap.get(yElem));
-                if (ppm1 != null && ppm2 != null) {
-                    double delta = ppm1 - ppm2;
-                    int resNum = atom.getResidueNumber();
-                    if (!singleAtomType) {
-                        deltas.put(resNum, deltas.getOrDefault(resNum, 0.0) + Math.pow(delta, 2.0));
-                    } else {
-                        series.add(new XYValue(resNum, delta));
-                    }
+            Double ppm1 = item.getDouble(nameMap.get(xElem));
+            Double ppm2 = item.getDouble(nameMap.get(yElem));
+            if (ppm1 != null && ppm2 != null) {
+                double delta = ppm1 - ppm2;
+                int resNum = ((Atom) item).getResidueNumber();
+                if (!singleAtomType) {
+                    deltas.put(resNum, deltas.getOrDefault(resNum, 0.0) + Math.pow(delta, 2.0));
+                } else {
+                    series.add(new XYValue(resNum, delta));
                 }
             }
         });
@@ -46,6 +44,8 @@ public class PPMPlotGUI extends TablePlotGUI {
             deltas.forEach((key, value) ->
                     series.add(new XYValue(key, Math.sqrt(value))));
         }
+        setYAxisLabel("Delta (ppm)");
+        setXAxisLabel("Residue Number");
         return series;
     }
 
@@ -62,6 +62,7 @@ public class PPMPlotGUI extends TablePlotGUI {
                 series.add(new XYValue(ppm1, ppm2));
             }
         });
+        setYAxisLabel("PPM");
         return series;
     }
 

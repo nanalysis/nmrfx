@@ -190,7 +190,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     public void refreshAtomTable() {
         addAllPPMCols();
-        updateColumnMenus();
+        updateColumnContextMenu();
         atomTableView.refresh();
     }
 
@@ -296,12 +296,14 @@ public class AtomController implements Initializable, StageBasedController, Free
         return menuItems;
     }
 
-    private void updateColumnMenus() {
+    private void updateColumnContextMenu() {
         atomTableView.getColumns().forEach(column -> {
             if (column.getContextMenu() != null) {
                 MenuItem menu = column.getContextMenu().getItems().get(1);
+                Set<String> existingSets = ((Menu) menu).getItems().stream().map(MenuItem::getText)
+                        .collect(Collectors.toSet());
                 getPPMSets(null).forEach(set -> {
-                    if (!set.equals(column.getText())) {
+                    if (!set.equals(column.getText()) && !existingSets.contains(set)) {
                         MenuItem menuItem = new MenuItem(set);
                         menuItem.setOnAction(e -> makeDeltaCol(column, set));
                         ((Menu) menu).getItems().add(menuItem);
@@ -316,7 +318,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         text.setMouseTransparent(true);
         column.setGraphic(text);
         ContextMenu menu = new ContextMenu();
-        Menu sDevColMenu = new Menu("Std Dev");
+        MenuItem sDevColMenu = new MenuItem("Std Dev");
         sDevColMenu.setOnAction(e -> makeSDevCol(column));
         Menu deltaColMenu = new Menu("Delta");
         MenuItem clearMenuItem = new MenuItem("Clear PPM");
