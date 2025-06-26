@@ -596,7 +596,7 @@ public class TablePlotGUI {
         return yArrayChoice.getCheckModel().getCheckedItems();
     }
 
-    protected DataSeries getBarChartData(List<TableItem> items) {
+    protected DataSeries getBarChartData(List<TableItem> items, String yElem) {
         return null;
     }
 
@@ -620,7 +620,26 @@ public class TablePlotGUI {
                         //Prepare XYChart.Series objects by setting data
                         var groups = getGroups();
                         for (var groupEntry : groups.entrySet()) {
-                            DataSeries series = getBarChartData(groupEntry.getValue());
+                            DataSeries series = getBarChartData(groupEntry.getValue(), yElem);
+                            activeChart.getData().add(series);
+                            activeChart.autoScale(true);
+                        }
+                    }
+                } else {
+                    xAxis.setZeroIncluded(true);
+                    yAxis.setZeroIncluded(true);
+                    xAxis.setAutoRanging(true);
+                    yAxis.setAutoRanging(true);
+                    activeChart.getData().clear();
+                    int groupNum = 0;
+
+                    for (var yElem : yElems) {
+                        if (yElem != null) {
+                            DataSeries series = getBarChartData(tableView.getItems(), yElem);
+                            series.setName(yElem);
+                            series.setFill(ScanTable.getGroupColor(groupNum));
+                            series.setStroke(ScanTable.getGroupColor(groupNum));
+                            groupNum++;
                             activeChart.getData().add(series);
                             activeChart.autoScale(true);
                         }

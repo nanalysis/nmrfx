@@ -80,10 +80,8 @@ import java.util.stream.Collectors;
  * @author johnsonb
  */
 public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener, PropertyChangeListener {
-    private static final Logger log = LoggerFactory.getLogger(AtomController.class);
-
     static final Map<String, String> filterMap = new HashMap<>();
-    PredictorSceneController predictorController = null;
+    private static final Logger log = LoggerFactory.getLogger(AtomController.class);
 
     static {
         filterMap.put("Backbone", "*.H,N,HN,C,CA,CB");
@@ -98,6 +96,11 @@ public class AtomController implements Initializable, StageBasedController, Free
         filterMap.put("HC", "*.H*,C*");
     }
 
+    PredictorSceneController predictorController = null;
+    ObservableList<Atom> atoms = FXCollections.observableArrayList();
+    MolFilter molFilter = new MolFilter("*.C*,H*,N*");
+    LACSPlotGui lacsPlotGui = null;
+    PPMPlotGUI ppmPlotGUI = null;
     private Stage stage;
     @FXML
     private ToolBar menuBar;
@@ -119,12 +122,16 @@ public class AtomController implements Initializable, StageBasedController, Free
     private TextField molFilterTextField;
     @FXML
     private ToolBar atomReferenceToolBar;
-    ObservableList<Atom> atoms = FXCollections.observableArrayList();
 
-    MolFilter molFilter = new MolFilter("*.C*,H*,N*");
+    public static AtomController create() {
+        AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
+                .withNewStage("Atom Attributes")
+                .getController();
+        controller.stage.show();
 
-    LACSPlotGui lacsPlotGui = null;
-    PPMPlotGUI ppmPlotGUI = null;
+        AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
+        return controller;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -144,14 +151,15 @@ public class AtomController implements Initializable, StageBasedController, Free
         PeakList.registerFreezeListener(this);
         ProjectBase.addPropertyChangeListener(this);
         updateView();
-        addAllPPMCols();
+        updateDisplayedColumns();
     }
 
-    private void addAllPPMCols() {
-        if (Molecule.getActive() != null ) {
+    private void updateDisplayedColumns() {
+        if (Molecule.getActive() != null) {
             Set<String> activePPMSets = Molecule.getActive().getActivePPMSets();
             Set<String> displayedSets = atomTableView.getColumns().stream()
                     .map(TableColumnBase::getText).collect(Collectors.toSet());
+
             activePPMSets.forEach(setName -> {
                 if (!displayedSets.contains(setName)) {
                     boolean ref = getPPMSetRef(setName);
@@ -159,26 +167,22 @@ public class AtomController implements Initializable, StageBasedController, Free
                     makePPMCol(iSet, ref);
                 }
             });
-        }
-    }
 
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
+            Set<TableColumn<Atom, ?>> removeCols = atomTableView.getColumns().stream()
+                    .filter(col ->
+                        col.hasProperties() && !activePPMSets.contains((String) col.getProperties().get("SET")))
+                    .collect(Collectors.toSet());
+            atomTableView.getColumns().removeAll(removeCols);
+        }
     }
 
     public Stage getStage() {
         return stage;
     }
 
-    public static AtomController create() {
-        AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
-                .withNewStage("Atom Attributes")
-                .getController();
-        controller.stage.show();
-
-        AnalystApp.addMoleculeListener(controller::moleculeMapChanged);
-        return controller;
+    @Override
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     private void moleculeMapChanged(MapChangeListener.Change<? extends String, ? extends MoleculeBase> change) {
@@ -189,7 +193,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     public void refreshAtomTable() {
-        addAllPPMCols();
+        updateDisplayedColumns();
         updateColumnContextMenu();
         atomTableView.refresh();
     }
@@ -271,7 +275,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
         MenuButton showPPMColButton = new MenuButton("Show");
         Menu allMenuItem = new Menu("All");
-        allMenuItem.setOnAction(e -> addAllPPMCols());
+        allMenuItem.setOnAction(e -> updateDisplayedColumns());
         Menu ppmMenuItem = new Menu("PPM");
         ppmMenuItem.getItems().addAll(makePPMMenuItems(false));
 
@@ -322,16 +326,15 @@ public class AtomController implements Initializable, StageBasedController, Free
         sDevColMenu.setOnAction(e -> makeSDevCol(column));
         Menu deltaColMenu = new Menu("Delta");
         MenuItem clearMenuItem = new MenuItem("Clear PPM");
-        clearMenuItem.setOnAction(e -> clearColumnPPMs(column));
+        clearMenuItem.setOnAction(e -> clearPPMColumns(column));
         menu.getItems().addAll(sDevColMenu, deltaColMenu, clearMenuItem);
         column.setContextMenu(menu);
     }
 
     private void makePPMCol(int iSet, boolean ref) {
-        String columnName = ref ? "REF" + iSet : "PPM" + iSet;
+        String columnName = getSetName(iSet, ref);
         TableColumn<Atom, Number> ppmCol = new TableColumn<>(columnName);
-        ppmCol.getProperties().put("ISET", iSet);
-        ppmCol.getProperties().put("REF", ref);
+        ppmCol.getProperties().put("SET", columnName);
         ppmCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
             Atom atom = p.getValue();
             PPMv ppmVal = atom.getPPMByMode(iSet, ref);
@@ -361,10 +364,11 @@ public class AtomController implements Initializable, StageBasedController, Free
         TableColumn<Atom, Number> sdevCol = new TableColumn<>("SDev");
         sdevCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
             Atom atom = p.getValue();
-            String set1 = column.getText();
-            int iSet1 = Integer.parseInt(set1.substring(set1.length() - 1));
-            boolean ref1 = set1.startsWith("REF");
-            PPMv ppmVal = atom.getPPMByMode(iSet1, ref1);
+            String set = column.getText();
+            int iSet = Integer.parseInt(set.substring(set.length() - 1));
+            boolean ref = set.startsWith("REF");
+            sdevCol.getProperties().put("SET", set);
+            PPMv ppmVal = atom.getPPMByMode(iSet, ref);
             ObservableValue<Number> ov;
             if ((ppmVal != null) && ppmVal.isValid()) {
                 ov = new SimpleDoubleProperty(ppmVal.getError());
@@ -384,6 +388,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         }
         lacsPlotGui.showMCplot();
     }
+
     @Override
     public void freezeHappened(Peak peak, boolean state) {
         Fx.runOnFxThread(atomTableView::refresh);
@@ -398,66 +403,6 @@ public class AtomController implements Initializable, StageBasedController, Free
                 AtomUpdater atomUpdater = new AtomUpdater(activeMol);
                 activeMol.registerUpdater(atomUpdater);
                 activeMol.registerAtomChangeListener(this);
-            }
-        }
-    }
-
-    static class DoubleStringConverter4 extends DoubleStringConverter {
-
-        @Override
-        public String toString(Double v) {
-            if (v == null) {
-                return "";
-            } else {
-                return String.format("%.3f", v);
-            }
-
-        }
-
-    }
-
-    static class FloatStringConverter2 extends FloatStringConverter {
-
-        @Override
-        public Float fromString(String s) {
-            Float v;
-            try {
-                v = Float.parseFloat(s);
-            } catch (NumberFormatException nfE) {
-                v = null;
-            }
-            return v;
-        }
-
-    }
-
-    static class TextFieldTableCellDouble extends TextFieldTableCell<Atom, Double> {
-
-        public TextFieldTableCellDouble(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Double item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            }
-        }
-    }
-
-
-    static class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
-
-        public TextFieldTableCellNumber(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Number item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
             }
         }
     }
@@ -497,19 +442,24 @@ public class AtomController implements Initializable, StageBasedController, Free
         return Integer.parseInt(set.substring(set.length() - 1));
     }
 
-    private boolean getPPMSetRef(String set) {return set.startsWith("REF");}
+    private boolean getPPMSetRef(String set) {
+        return set.startsWith("REF");
+    }
 
-    private void makeDeltaCol(TableColumn<Atom, ?> column, String ppmSet) {
+    private void makeDeltaCol(TableColumn<Atom, ?> column, String set2) {
         DoubleStringConverter dsConverter4 = new DoubleStringConverter4();
-        TableColumn<Atom, Number> deltaCol = new TableColumn<>("Delta");
+        TableColumn<Atom, Number> deltaCol = new TableColumn<>();
+        String set1 = column.getText();
+        int iSet1 = getPPMSetNum(set1);
+        boolean ref1 = getPPMSetRef(set1);
+        int iSet2 = getPPMSetNum(set2);
+        boolean ref2 = getPPMSetRef(set2);
+        String columnName = set1  + "-" + set2;
+        deltaCol.getProperties().put("SET", set1);
+        deltaCol.setText(columnName);
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
-            String set1 = column.getText();
-            int iSet1 = getPPMSetNum(set1);
-            boolean ref1 = getPPMSetRef(set1);
-            int iSet2 = getPPMSetNum(ppmSet);
-            boolean ref2 = getPPMSetRef(ppmSet);
             Atom atom = p.getValue();
-            Double delta = atom.getDeltaPPM(iSet1, iSet2, ref1, ref2) ;
+            Double delta = atom.getDeltaPPM(iSet1, iSet2, ref1, ref2);
             ObservableValue<Number> ov;
             if (delta != null) {
                 ov = new SimpleDoubleProperty(delta);
@@ -557,6 +507,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     void writeRefPPM() {
         writePPM(0, true);
     }
+
     void writePPM(int ppmSet, boolean refMode) {
         try {
             FileChooser fileChooser = new FileChooser();
@@ -579,7 +530,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     Set<String> getPPMSets(Boolean refMode) {
         Set<String> activePPMSets = Molecule.getActive().getActivePPMSets();
-        if (refMode == null ) {
+        if (refMode == null) {
             return activePPMSets;
         }
         return activePPMSets.stream()
@@ -612,9 +563,14 @@ public class AtomController implements Initializable, StageBasedController, Free
         }
     }
 
-    void clearColumnPPMs(TableColumn<Atom, ?> column) {
-        int iSet = (int) column.getProperties().get("ISET");
-        boolean ref = (boolean) column.getProperties().get("REF");
+    private String getSetName(int iSet, boolean ref) {
+        return ref ? "REF" + iSet : "PPM" + iSet;
+    }
+
+    void clearPPMColumns(TableColumn<Atom, ?> column) {
+        String set = (String) column.getProperties().get("SET");
+        int iSet = getPPMSetNum(set);
+        boolean ref = getPPMSetRef(set);
         if (Molecule.getActive() != null) {
             Molecule.getActive().getAtoms().forEach(atom -> {
                 if (ref) {
@@ -626,8 +582,9 @@ public class AtomController implements Initializable, StageBasedController, Free
                     atom.setPPMValidity(iSet, false);
                 }
             });
+            Molecule.getActive().getActivePPMSets().remove(getSetName(iSet, ref));
         }
-        atomTableView.getColumns().remove(column);
+        refreshAtomTable();
     }
 
     void clearPPMs() {
@@ -718,8 +675,9 @@ public class AtomController implements Initializable, StageBasedController, Free
             System.out.println("Couldn't make predictor controller");
         }
     }
+
     @Override
-    public void moleculeChanged(MoleculeEvent e){
+    public void moleculeChanged(MoleculeEvent e) {
         refreshAtomTable();
     }
 
@@ -728,6 +686,65 @@ public class AtomController implements Initializable, StageBasedController, Free
             ppmPlotGUI = new PPMPlotGUI(atomTableView);
         }
         ppmPlotGUI.showPlotStage();
+    }
+
+    static class DoubleStringConverter4 extends DoubleStringConverter {
+
+        @Override
+        public String toString(Double v) {
+            if (v == null) {
+                return "";
+            } else {
+                return String.format("%.3f", v);
+            }
+
+        }
+
+    }
+
+    static class FloatStringConverter2 extends FloatStringConverter {
+
+        @Override
+        public Float fromString(String s) {
+            Float v;
+            try {
+                v = Float.parseFloat(s);
+            } catch (NumberFormatException nfE) {
+                v = null;
+            }
+            return v;
+        }
+
+    }
+
+    static class TextFieldTableCellDouble extends TextFieldTableCell<Atom, Double> {
+
+        public TextFieldTableCellDouble(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Double item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            }
+        }
+    }
+
+    static class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
+
+        public TextFieldTableCellNumber(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Number item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            }
+        }
     }
 
 

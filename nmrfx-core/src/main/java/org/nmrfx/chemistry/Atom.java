@@ -2427,6 +2427,14 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         if (elemName.startsWith("Seq")) {
             return (double) getResidueNumber();
         }
+        if (elemName.contains("-")) {
+            String[] sets = elemName.split("-");
+            boolean ref1 = sets[0].startsWith("REF");
+            boolean ref2 = sets[1].startsWith("REF");
+            int iSet1 = Integer.parseInt(sets[0].substring(sets[0].length() - 1));
+            int iSet2 = Integer.parseInt(sets[1].substring(sets[1].length() - 1));
+            return getDeltaPPM(iSet1, iSet2, ref1, ref2);
+        }
         boolean ref = elemName.startsWith("REF");
         int i = Integer.parseInt(elemName.substring(elemName.length() - 1));
         PPMv ppmv = getPPMByMode(i, ref);

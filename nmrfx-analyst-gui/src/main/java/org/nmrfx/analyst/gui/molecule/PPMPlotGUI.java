@@ -16,8 +16,25 @@ public class PPMPlotGUI extends TablePlotGUI {
         skipColumns = Arrays.asList("Index", "Entity", "Res", "Atom");
     }
 
-    @Override
-    protected DataSeries getBarChartData(List<TableItem> items) {
+@Override
+    protected DataSeries getBarChartData(List<TableItem> items, String yElem) {
+        Map<String, String> nameMap = getNameMap();
+        DataSeries series = new DataSeries();
+        series.clear();
+        String xElem = getXElem();
+        HashMap<Double, List<Double>> values = new HashMap<>();
+        items.forEach(item -> {
+            Double xValue = item.getDouble(nameMap.get(xElem));
+            Double yValue = item.getDouble(nameMap.get(yElem));
+            if (xValue != null && yValue != null) {
+                values.putIfAbsent(xValue, new ArrayList<>());
+                values.get(xValue).add(yValue);
+            }
+        });
+        return series;
+    }
+
+    protected DataSeries getEuclideanDistanceData(List<TableItem> items) {
         Map<String, String> nameMap = getNameMap();
         String xElem = getXElem();
         String yElem = getYElem().getFirst();
@@ -44,7 +61,7 @@ public class PPMPlotGUI extends TablePlotGUI {
             deltas.forEach((key, value) ->
                     series.add(new XYValue(key, Math.sqrt(value))));
         }
-        setYAxisLabel("Delta (ppm)");
+        setYAxisLabel("PPM");
         setXAxisLabel("Residue Number");
         return series;
     }
@@ -62,7 +79,7 @@ public class PPMPlotGUI extends TablePlotGUI {
                 series.add(new XYValue(ppm1, ppm2));
             }
         });
-        setYAxisLabel("PPM");
+        setYAxisLabel(yElem);
         return series;
     }
 
