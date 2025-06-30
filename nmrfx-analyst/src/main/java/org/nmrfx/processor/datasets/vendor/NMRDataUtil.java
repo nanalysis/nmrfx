@@ -542,7 +542,7 @@ public final class NMRDataUtil {
                         + ")";
             } else {
                 String fPointStr = fPointVal.isEmpty() ? "" : ", c=" + fPointVal;
-                String sbString = "SB("
+                apodizationString = "SB("
                         + "offset=" + String.format("%.2f", 0.5)
                         + ", power=" + String.format("%d", 2)
                         + fPointStr
