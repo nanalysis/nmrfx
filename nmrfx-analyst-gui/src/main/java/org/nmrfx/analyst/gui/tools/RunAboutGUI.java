@@ -292,7 +292,6 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
 
         public void setActive(boolean value) {
-            log.info("set value {}", value);
             activeProperty().set(value);
         }
 
@@ -2345,6 +2344,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         if (runAbout.isActive()) {
             currentArrangement = arrangeName;
             RunAboutArrangement arrangement = runAboutArrangements.getArrangements().get(arrangeName);
+            if (arrangement == null) {
+                return;
+            }
             List<String> rows = arrangement.getRows();
             List<RunAboutDim> cols = arrangement.getColumnArrangement();
             int nCharts = rows.size() * cols.size();
