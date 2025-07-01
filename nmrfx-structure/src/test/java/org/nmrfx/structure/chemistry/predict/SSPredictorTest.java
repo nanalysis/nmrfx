@@ -62,7 +62,7 @@ public class SSPredictorTest {
                     System.exit(0);
                 }
 
-                List<Integer> matches = new ArrayList<>();
+                int max = 0;
                 for (int i = 0; i < n ; i++) {
                     int count = 0;
                     StringBuilder pStringBuilder = new StringBuilder();
@@ -78,10 +78,11 @@ public class SSPredictorTest {
                     }
                     System.out.println(pStringBuilder);
                     System.out.println(basepairSet.size() + " " + count);
-                    matches.add(count);
+                    if (count > max) {
+                        max = count;
+                    }
 
                 }
-                Integer max = Collections.max(matches);
                 float score = (float) max / basepairSet.size();
                 scores.add(score);
             }
