@@ -818,11 +818,14 @@ public class PolyChart extends Region {
     }
 
     private List<DatasetAttributes> getUpdateList() {
-        final List<DatasetAttributes> updateThese;
+        List<DatasetAttributes> updateThese;
 
         Optional<ScanTable> scanTableOpt = getFXMLController().getScannerTable();
         if (scanTableOpt.isPresent()) {
             updateThese = scanTableOpt.get().getSelectedDatasetAttributesList();
+            if (updateThese.isEmpty()) {
+                updateThese = datasetAttributesList;
+            }
         } else {
             updateThese = datasetAttributesList;
         }
@@ -2392,10 +2395,12 @@ public class PolyChart extends Region {
             textY = yPos + borders.getTop() - 2;
         }
         for (DatasetAttributes datasetAttributes : draw2DList) {
-            gC.setFill(datasetAttributes.getPosColor());
-            String title = datasetAttributes.getDataset().getTitle();
-            gC.fillText(title, textX, textY);
-            textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
+            if (datasetAttributes.getPos() || datasetAttributes.getNeg()) {
+                gC.setFill(datasetAttributes.getPosColor());
+                String title = datasetAttributes.getDataset().getTitle();
+                gC.fillText(title, textX, textY);
+                textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
+            }
         }
     }
 
