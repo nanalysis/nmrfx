@@ -433,6 +433,7 @@ public class ScanTable {
             initTable();
             fileListItems.clear();
             loadScanFiles(nmrFiles);
+            checkColumnsForMultiple();
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         } finally {
@@ -1064,6 +1065,7 @@ public class ScanTable {
         tableView.getColumns().add(datasetColumn);
 
         TableColumn<FileTableItem, String> fileColumn = new TableColumn<>(PATH_COLUMN_NAME);
+        tableView.getColumns().add(fileColumn);
         TableColumn<FileTableItem, String> seqColumn = new TableColumn<>(SEQUENCE_COLUMN_NAME);
         TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>(NDIM_COLUMN_NAME);
         TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>(ETIME_COLUMN_NAME);
