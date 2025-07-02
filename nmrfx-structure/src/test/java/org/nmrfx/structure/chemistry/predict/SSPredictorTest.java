@@ -40,57 +40,43 @@ public class SSPredictorTest {
                 String[] bps = items[1].split(",");
                 ssPredictor.predict(seq);
                 ssPredictor.bipartiteMatch(0.7, 0.05, 20);
-                int n = ssPredictor.getNExtents();
+
                 System.out.println("seq " + seq);
 
                 Set<SSPredictor.BasePairProbability> basepairSet = new HashSet<>();
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int i = 0; i < bps.length - 1; i += 2) {
+                for (int i = 0; i < bps.length - 2; i += 2) {
                     int bp1 = Integer.parseInt(bps[i]);
                     int bp2 = Integer.parseInt(bps[i+1]);
                     SSPredictor.BasePairProbability bpp = new SSPredictor.BasePairProbability(bp1, bp2, 0.0);
-                    if (basepairSet.stream().filter(set -> set.equals(bpp))
-                            .collect(Collectors.toSet()).isEmpty()) {
-                        basepairSet.add(bpp);
-                        stringBuilder.append(bpp.r()).append(", ").append(bpp.c()).append(", ");
-                    }
+                    basepairSet.add(bpp);
                 }
-                System.out.println(stringBuilder);
 
+                int n = ssPredictor.getNExtents();
                 if (n < 1) {
-                    System.out.println("no basepairs");
+                    System.out.println("no nExtents");
                     System.exit(0);
                 }
 
-                int max = 0;
+                int min = 10000;
+                int nPairs = basepairSet.size();
                 for (int i = 0; i < n ; i++) {
-                    int count = 0;
-                    StringBuilder pStringBuilder = new StringBuilder();
                     Set<SSPredictor.BasePairProbability> pbpps = ssPredictor.getExtentBasePairs(i).basePairsSet();
-                    for (SSPredictor.BasePairProbability bpp : pbpps) {
-                        pStringBuilder.append(bpp.r()).append(", ").append(bpp.c()).append(", ");
-                        for (SSPredictor.BasePairProbability bp : basepairSet) {
-                            if (bpp.equals(bp)) {
-                                count += 1;
-                                break;
-                            }
-                        }
+                    basepairSet.removeAll(pbpps);
+                    int nIncorrect = basepairSet.size();
+                    if (nIncorrect < min) {
+                        min = nIncorrect;
                     }
-                    System.out.println(pStringBuilder);
-                    System.out.println(basepairSet.size() + " " + count);
-                    if (count > max) {
-                        max = count;
-                    }
-
                 }
-                float score = (float) max / basepairSet.size();
+                float score = (float) (nPairs- min) / nPairs;
                 scores.add(score);
+                System.out.println(score);
             }
             float sum = 0;
             for (float score : scores) {
                 sum += score;
             }
             System.out.println(sum/scores.size());
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
