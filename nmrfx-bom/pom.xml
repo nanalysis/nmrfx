@@ -396,7 +396,7 @@
             <dependency>
                 <groupId>com.actelion.research</groupId>
                 <artifactId>openchemlib</artifactId>
-                <version>2023.3.3</version>
+                <version>2025.7.0</version>
             </dependency>
             <dependency>
                 <groupId>io.jenetics</groupId>
