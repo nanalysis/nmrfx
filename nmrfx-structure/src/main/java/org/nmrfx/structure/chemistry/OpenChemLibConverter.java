@@ -8,6 +8,8 @@ import com.actelion.research.chem.MolfileCreator;
 import com.actelion.research.chem.MolfileParser;
 import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
+import com.actelion.research.chem.forcefield.mmff.ForceFieldMMFF94;
+import com.actelion.research.gui.editor.FXEditorDialog;
 import org.nmrfx.chemistry.*;
 import org.openmolecules.chem.conf.gen.ConformerGenerator;
 import org.slf4j.Logger;
@@ -246,6 +248,25 @@ public class OpenChemLibConverter {
         molecule.updateBondArray();
     }
 
+    public static void minimize(StereoMolecule sMol) {
+        ForceFieldMMFF94.initialize(ForceFieldMMFF94.MMFF94SPLUS);
+        ForceFieldMMFF94 ff = new ForceFieldMMFF94(sMol, ForceFieldMMFF94.MMFF94SPLUS);
+        ff.minimise();
+        double energy = ff.getTotalEnergy();
+        System.out.println(energy);
+    }
+    public static void minimize(Molecule molecule) {
+        for (var ligand : molecule.getLigands()) {
+            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand, -1);
+            List<Point3> points = getCoords(sMol);
+            minimize(sMol);
+            OpenChemLibConverter.convertFromStereoMolecule(sMol, ligand, points);
+        }
+        molecule.inactivateAtoms();
+        molecule.updateAtomArray();
+        molecule.updateBondArray();
+    }
+
     public static void writeToMolfile(AtomContainer atomContainer, File file) throws IOException {
         StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(atomContainer, 1);
         MolfileCreator molfileCreator = new MolfileCreator(sMol);
@@ -276,4 +297,12 @@ public class OpenChemLibConverter {
         molecule.addEntity(compound);
         OpenChemLibConverter.convertFromStereoMolecule(mol3D, compound, points);
     }
+
+    public static FXEditorDialog editor() {
+        Molecule molecule = Molecule.getActive();
+        StereoMolecule stereoMolecule = convertToStereoMolecule(molecule.getLigands().getFirst(), -1);
+        FXEditorDialog fxEditorDialog = new FXEditorDialog(null, stereoMolecule);
+        return fxEditorDialog;
+    }
+
 }
