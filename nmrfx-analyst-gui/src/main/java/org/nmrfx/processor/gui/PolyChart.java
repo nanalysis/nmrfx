@@ -1347,7 +1347,10 @@ public class PolyChart extends Region {
     protected void setPivotToMax() {
         if (is1D()) {
             getFirstVec().ifPresent(vec -> {
-                int maxIndex = vec.maxIndex().getIndex();
+                double[][] limits = axes.getLimits();
+                int first = vec.refToPt(limits[0][0]);
+                int last = vec.refToPt(limits[0][1]);
+                int maxIndex = vec.maxIndex(last, first).getIndex();
                 double ppm = vec.pointToPPM(maxIndex);
                 setPivot(ppm);
             });
