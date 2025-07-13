@@ -3953,6 +3953,10 @@ public class PolyChart extends Region {
         }
     }
 
+    public Double getPivotPosition() {
+        return pivotPosition == null ? null : pivotPosition[0];
+    }
+
     public double getPivotFraction() {
         return phaseFraction;
     }

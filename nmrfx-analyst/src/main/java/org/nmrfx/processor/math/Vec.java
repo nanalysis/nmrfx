@@ -1763,6 +1763,30 @@ public class Vec extends VecBase {
      * order mode is used)
      */
     public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
+        return autoPhase(doFirst, winSize, ratio, mode, ph1Limit, negativePenalty, false, null, null);
+    }
+
+    /**
+     * Automatically calculate phase values for this vector using an one of two
+     * algorithms. One based on flattening baseline regions adjacent to peaks
+     * and one based on entropy minimization
+     *
+     * @param doFirst  Set to true to include first order phase correction
+     * @param winSize  Window size used for analyzing for baseline region
+     * @param ratio    Ratio Intensity to noise ratio used for indentifying
+     *                 baseline reginos
+     * @param mode     Set to 0 for flattening mode and 1 for entropy mode
+     * @param ph1Limit Set limit on first order phase. Can prevent unreasonable
+     *                 results
+     * @param useRegion Autophase using siganl in specified region
+     * @param ppmStart Starting point for region.  Find region if null;
+     * @param ppmEnd Ending point for region. Find region if null;
+     * @return an array of 1 or two phase values (depending on whether first
+     * order mode is used)
+     */
+    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode,
+                              double ph1Limit, double negativePenalty, boolean useRegion, Double ppmStart, Double ppmEnd) {
+
         int pivot = 0;
         double p1PenaltyWeight = 1.0;
         if (winSize < 1) {
@@ -1772,11 +1796,11 @@ public class Vec extends VecBase {
             ratio = 25.0;
         }
         double[] phaseResult;
-        if (!doFirst) {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+        if (!doFirst || useRegion) {
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty, useRegion, ppmStart, ppmEnd);
             phaseResult = tbPoints.autoPhaseZero();
         } else {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty, useRegion, ppmStart, ppmEnd);
             tbPoints.setP1PenaltyWeight(p1PenaltyWeight);
             phaseResult = tbPoints.autoPhase(ph1Limit);
         }
@@ -1790,7 +1814,7 @@ public class Vec extends VecBase {
 
     public double testAutoPhase(int winSize, double ratio, int mode,
                                 double negativePenalty, double phase0, double phase1) {
-        TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+        TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty, false,  null, null);
         return tbPoints.testFit(phase0, phase1);
     }
 

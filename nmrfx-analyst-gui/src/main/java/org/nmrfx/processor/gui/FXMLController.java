@@ -476,6 +476,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         isFID = true;
         // Only create a new processor controller, if the active chart does not have one already created.
         PolyChart chart = getActiveChart();
+        chart.setPivot(null);
         ProcessorController processorController = chart.getProcessorController(true);
         if (processorController != null) {
             processorButton.setSelected(true);

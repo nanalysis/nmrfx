@@ -433,7 +433,7 @@ public class Phaser {
                 List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(processingSection);
                 if (listItems != null) {
                     for (ProcessingOperationInterface processingOperation : listItems) {
-                        if (processingOperation.getName().equals("AUTOPHASE")) {
+                        if (processingOperation.getName().equals("AUTOPHASE") && !processingOperation.isDisabled()) {
                             double aph0 = AutoPhase.lastPh0.get();
                             double aph1 = AutoPhase.lastPh1.get();
                             ph0 -= aph0;

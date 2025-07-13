@@ -40,7 +40,7 @@ import java.util.Optional;
 public class ReferenceMenuTextField extends MenuTextField {
 
     ProcessorController processorController;
-    String[] mainMenuLabels = {"default", "H2O", "H2O PPM", "0.0"};
+    String[] mainMenuLabels = {"default", "H2O", "H2O PPM", "0.0", "AUTOZERO"};
     String[] nucleusMenuLabels = {"C", "D", "H", "N", "P"};
     String[] crosshairMenuItems = {"0.0", "H2O", "DSS", "Acetone", "DMSO", "Input..."};
 
