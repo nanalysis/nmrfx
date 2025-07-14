@@ -2854,7 +2854,7 @@ def WRITE(index=-1, dimag=True, disabled=False, vector=None, process=None):
         process.addOperation(op)
     return op
 
-def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=90.0, negativePenalty=1.0, disabled=False, vector=None, process=None):
+def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=90.0, negativePenalty=1.0, useRegion=False, start=0.07, end=-0.07, disabled=False, vector=None, process=None):
     '''Auto Phase shift.
     Parameters
     ---------
@@ -2886,6 +2886,16 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
         max : 100.0
         amax : 200.0
         How much to weight to use in penalizing negative values in entropy mode (actual value is multiplied by 1.0e-5).
+    useRegion : bool
+        Autophase using signal in specified region.
+    start : real
+        min : -1.0
+        max : 1.0 
+        Start point of region to autophase
+    end : real
+        min : -1.0 
+        max : 1.0 
+        End point of region to autophase
 '''
     if disabled:
         return None
@@ -2897,7 +2907,7 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
     elif mode == 'leastneg':
         imode = 2
 
-    op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit, negativePenalty)
+    op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit, negativePenalty, useRegion, start, end)
 
     if (vector != None):
         op.eval(vector)

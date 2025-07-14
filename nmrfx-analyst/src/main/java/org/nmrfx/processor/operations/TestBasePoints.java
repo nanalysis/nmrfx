@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,6 +57,9 @@ public class TestBasePoints implements MultivariateFunction {
     Vec vector = null;
     int start = 0;
     int end = 0;
+    Double ppmStart;
+    Double ppmEnd;
+    boolean useRegion;
     boolean[] hasSignal = null;
     double p1Penalty = 0.0;
     double p1PenaltyWeight = 0.02;
@@ -66,10 +70,16 @@ public class TestBasePoints implements MultivariateFunction {
     ArrayList<RegionPositions> bList = new ArrayList<>();
     ArrayList<BRegionData> b2List = new ArrayList<>();
 
-    public TestBasePoints(Vec vector, int winSize, double ratio, int mode, double negativePenalty) {
+    public TestBasePoints(Vec vector, int winSize, double ratio, int mode, double negativePenalty, boolean useRegion, Double ppmStart, Double ppmEnd) {
         this.winSize = winSize;
         this.mode = mode;
         this.negativePenalty = negativePenalty;
+        this.ppmStart = ppmStart;
+        this.ppmEnd = ppmEnd;
+        this.useRegion = useRegion;
+        if (useRegion) {
+            this.mode = 0;
+        }
         addVector(vector, false, ratio);
     }
 
@@ -190,7 +200,25 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     void useRegions(Vec vector, boolean maxMode) {
-        boolean[] signalRegion = vector.getSignalRegion();
+        boolean[] signalRegion;
+        if (useRegion && ((ppmStart != null) && (ppmEnd != null))) {
+            int pt0 = vector.refToPt(ppmStart);
+            int pt1 = vector.refToPt(ppmEnd);
+            if (pt0 > pt1) {
+                int hold = pt0;
+                pt0 = pt1;
+                pt1 = hold;
+            }
+            pt0 = Math.max(0, pt0);
+            pt1 = Math.min(pt1, vector.getSize() - 1);
+            signalRegion = new boolean[vector.getSize()];
+            Arrays.fill(signalRegion, true);
+            for (int i = pt0; i <= pt1; i++) {
+                signalRegion[i] = false;
+            }
+        } else {
+            signalRegion = vector.getSignalRegion();
+        }
         ArrayList<Integer> bListTemp = new ArrayList<>();
         int startBase = 0;
         start = 0;
@@ -260,7 +288,7 @@ public class TestBasePoints implements MultivariateFunction {
         vector.copy(dVec);
         (new Cwtd(winSize)).eval(dVec);
         dVec.abs();
-        if (vector.getSignalRegion() != null) {
+        if ((useRegion && (ppmStart != null) && (ppmEnd != null)) || (vector.getSignalRegion() != null)) {
             useRegions(vector, maxMode);
             return;
         }

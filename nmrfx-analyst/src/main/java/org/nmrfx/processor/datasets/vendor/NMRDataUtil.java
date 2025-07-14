@@ -459,6 +459,25 @@ public final class NMRDataUtil {
         return phases;
     }
 
+    public static double autoRef(NMRData nmrData, double ref) {
+        int n = nmrData.getNPoints();
+        Vec vec = new Vec(n, true);
+        nmrData.resetRef(0);
+        double curRef = nmrData.getRef(0);
+        nmrData.readVector(0, vec);
+        double lb = nmrData.getTN(0).contains("H") ? 2.0 : 10.0;
+        Expd expD = new Expd(lb, 1.0, false);
+        expD.eval(vec);
+        vec.fft(false, false, true);
+        int pt0 = vec.refToPt(ref + 0.1);
+        int pt1 = vec.refToPt(ref - 0.1);
+        int maxPt = vec.maxIndex(pt0, pt1).getIndex();
+        double refPos = vec.pointToPPM(maxPt);
+        double deltaRef = refPos - ref;
+        return curRef - deltaRef;
+    }
+
+
     public static double[] autoPhase(NMRData nmrData, double[] phases, boolean doAutoPhase1) {
         int n = nmrData.getNPoints();
         Vec vec = new Vec(n, true);
