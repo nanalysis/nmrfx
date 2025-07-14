@@ -28,6 +28,7 @@ import org.nmrfx.processor.gui.KeyMonitor;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+import org.nmrfx.processor.gui.spectra.mousehandlers.CrossHairMouseHandler;
 
 import java.util.HashMap;
 import java.util.List;
@@ -185,8 +186,14 @@ public class KeyBindings {
             }
             case "c" -> {
             }
-            case "c1" -> keyMonitor.clear();
-            case "c3" -> keyMonitor.clear();
+            case "c1" -> {
+                CrossHairMouseHandler.setMiddleButtonMode(false);
+                keyMonitor.clear();
+            }
+            case "c3" -> {
+                CrossHairMouseHandler.setMiddleButtonMode(true);
+                keyMonitor.clear();
+            }
             case "cc" -> {
                 chart.getFXMLController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
                 keyMonitor.clear();
