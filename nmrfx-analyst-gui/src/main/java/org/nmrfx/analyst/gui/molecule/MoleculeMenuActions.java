@@ -11,6 +11,8 @@ import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
+import org.nmrfx.chemistry.AtomContainer;
+import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -82,10 +84,17 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem smileItem = new MenuItem("Input SMILE...");
         smileItem.setOnAction(e -> getSMILEMolecule());
 
-        MenuItem writeItem = new MenuItem("Write PDB");
-        writeItem.setOnAction(e -> writePDB());
+        Menu saveMenuItem = new Menu("Save");
 
-        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem, writeItem);
+        MenuItem writePDBItem = new MenuItem("Write PDB");
+        writePDBItem.setOnAction(e -> writePDB());
+
+        MenuItem writeMolItem = new MenuItem("Write Molfile");
+        writeMolItem.setOnAction(e -> writeMol());
+
+        saveMenuItem.getItems().addAll(writePDBItem, writeMolItem);
+
+        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem, saveMenuItem);
 
     }
 
@@ -226,6 +235,35 @@ public class MoleculeMenuActions extends MenuActions {
             if (molecule != null) {
                 try {
                     molecule.writeXYZToPDB(file.toString(), -1);
+                } catch (IOException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
+
+    }
+
+    public void writeMol() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            Molecule molecule = Molecule.getActive();
+            if (molecule != null) {
+                try {
+                    AtomContainer atomContainer = null;
+                    if (molecule.entities.size() > 0) {
+                        if (!molecule.getLigands().isEmpty()) {
+                            atomContainer = molecule.getLigands().getFirst();
+                        } else if (!molecule.getPolymers().isEmpty()) {
+                            atomContainer = molecule.getPolymers().getFirst();
+                        }
+                    }
+                    if (atomContainer == null) {
+                        GUIUtils.warn("Molfile writer", "No ligand, compound or polymer");
+                        return;
+                    }
+                    OpenChemLibConverter.writeToMolfile(atomContainer, file);
                 } catch (IOException e) {
                     ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                     exceptionDialog.showAndWait();

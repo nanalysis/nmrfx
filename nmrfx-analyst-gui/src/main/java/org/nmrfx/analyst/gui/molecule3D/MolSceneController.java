@@ -1092,6 +1092,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private void to3DAction() {
         to3D();
     }
+    @FXML
+    private void minimizeAction() {
+        minimizeCompound();
+    }
 
 
     boolean fetchSSModel() {
@@ -1304,6 +1308,19 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 drawSticks();
             } catch (InvalidMoleculeException imE) {
 
+            }
+        }
+    }
+
+    private void minimizeCompound() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            OpenChemLibConverter.minimize(molecule);
+            removeAll();
+            try {
+                selectAll();
+                drawSticks();
+            } catch (InvalidMoleculeException imE) {
             }
         }
     }
