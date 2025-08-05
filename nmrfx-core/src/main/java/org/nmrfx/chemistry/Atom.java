@@ -2443,4 +2443,9 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         }
         return null;
     }
+
+    @Override
+    public int getGroup(){
+        return getAtomicNumber();
+    }
 }

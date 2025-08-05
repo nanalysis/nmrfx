@@ -12,7 +12,7 @@ public class PPMPlotGUI extends TablePlotGUI {
 
     public PPMPlotGUI(TableView<Atom> atomTableView) {
         super(atomTableView, null, false);
-        setChartTypeChoice(Arrays.asList("ScatterPlot", "BarChart"));
+        setChartTypeChoice(Arrays.asList("ScatterPlot", "BarChart", "BarChart-Euclidean"));
         skipColumns = Arrays.asList("Index", "Entity", "Res", "Atom");
     }
 
@@ -22,47 +22,47 @@ public class PPMPlotGUI extends TablePlotGUI {
         DataSeries series = new DataSeries();
         series.clear();
         String xElem = getXElem();
-        HashMap<Double, List<Double>> values = new HashMap<>();
+        String firstAtomType = ((Atom) items.getFirst()).getName();
+        if (!items.stream().allMatch(item ->
+                Objects.equals(((Atom) item).getName(), firstAtomType))) {
+            return getEuclideanDistance(items);
+        }
         items.forEach(item -> {
             Double xValue = item.getDouble(nameMap.get(xElem));
             Double yValue = item.getDouble(nameMap.get(yElem));
             if (xValue != null && yValue != null) {
-                values.putIfAbsent(xValue, new ArrayList<>());
-                values.get(xValue).add(yValue);
+                int resNum = ((Atom) item).getResidueNumber();
+                double ppm = xElem.equals("Seq") ? yValue : xValue;
+                if (item.getGroup() != 1.0) {
+                    ppm /= 10.0;
+                }
+                series.add(new XYValue(resNum, ppm));
             }
         });
         return series;
     }
 
-    protected DataSeries getEuclideanDistanceData(List<TableItem> items) {
+    protected DataSeries getEuclideanDistance(List<TableItem> items) {
         Map<String, String> nameMap = getNameMap();
         String xElem = getXElem();
         String yElem = getYElem().getFirst();
         DataSeries series = new DataSeries();
         series.clear();
-        HashMap<Integer, Double> deltas = new HashMap<>();
-        String atomType = ((Atom) items.getFirst()).getName();
-        boolean singleAtomType = items.stream()
-                .allMatch(item -> ((Atom) item).getName().equals(atomType));
+        HashMap<Integer, Double> values = new HashMap<>();
+
         items.forEach(item -> {
-            Double ppm1 = item.getDouble(nameMap.get(xElem));
-            Double ppm2 = item.getDouble(nameMap.get(yElem));
-            if (ppm1 != null && ppm2 != null) {
-                double delta = ppm1 - ppm2;
-                int resNum = ((Atom) item).getResidueNumber();
-                if (!singleAtomType) {
-                    deltas.put(resNum, deltas.getOrDefault(resNum, 0.0) + Math.pow(delta, 2.0));
-                } else {
-                    series.add(new XYValue(resNum, delta));
-                }
+            int resNum = ((Atom) item).getResidueNumber();
+            Double xValue = item.getDouble(nameMap.get(xElem));
+            Double yValue = item.getDouble(nameMap.get(yElem));
+            if (xValue != null && yValue != null) {
+                double ppm = xElem.equals("Seq") ? yValue : xValue;
+                if (item.getGroup() != 1.0) {
+                    ppm /= 10.0;}
+                values.put(resNum, values.getOrDefault(resNum, 0.0) + Math.pow(ppm, 2.0));
             }
         });
-        if (!singleAtomType) {
-            deltas.forEach((key, value) ->
-                    series.add(new XYValue(key, Math.sqrt(value))));
-        }
-        setYAxisLabel("PPM");
-        setXAxisLabel("Residue Number");
+        values.forEach((key, value) ->
+                series.add(new XYValue(key, Math.sqrt(value))));
         return series;
     }
 
