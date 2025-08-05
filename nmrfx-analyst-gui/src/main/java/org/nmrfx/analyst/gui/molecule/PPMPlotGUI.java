@@ -31,12 +31,10 @@ public class PPMPlotGUI extends TablePlotGUI {
             Double xValue = item.getDouble(nameMap.get(xElem));
             Double yValue = item.getDouble(nameMap.get(yElem));
             if (xValue != null && yValue != null) {
-                int resNum = ((Atom) item).getResidueNumber();
-                double ppm = xElem.equals("Seq") ? yValue : xValue;
                 if (item.getGroup() != 1.0) {
-                    ppm /= 10.0;
+                    yValue /= 10.0;
                 }
-                series.add(new XYValue(resNum, ppm));
+                series.add(new XYValue(xValue, yValue));
             }
         });
         return series;
@@ -51,14 +49,12 @@ public class PPMPlotGUI extends TablePlotGUI {
         HashMap<Integer, Double> values = new HashMap<>();
 
         items.forEach(item -> {
-            int resNum = ((Atom) item).getResidueNumber();
-            Double xValue = item.getDouble(nameMap.get(xElem));
+            int xValue = item.getDouble(nameMap.get(xElem)).intValue();
             Double yValue = item.getDouble(nameMap.get(yElem));
-            if (xValue != null && yValue != null) {
-                double ppm = xElem.equals("Seq") ? yValue : xValue;
+            if (yValue != null) {
                 if (item.getGroup() != 1.0) {
-                    ppm /= 10.0;}
-                values.put(resNum, values.getOrDefault(resNum, 0.0) + Math.pow(ppm, 2.0));
+                    yValue /= 10.0;}
+                values.put(xValue, values.getOrDefault(xValue, 0.0) + Math.pow(yValue, 2.0));
             }
         });
         values.forEach((key, value) ->

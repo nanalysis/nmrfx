@@ -273,31 +273,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         preditorMenuItem.setOnAction(e -> showPredictor());
         predictMenu.getItems().addAll(preditorMenuItem);
 
-        MenuButton showPPMColButton = new MenuButton("Show");
-        Menu allMenuItem = new Menu("All");
-        allMenuItem.setOnAction(e -> updateDisplayedColumns());
-        Menu ppmMenuItem = new Menu("PPM");
-        ppmMenuItem.getItems().addAll(makePPMMenuItems(false));
-
-        Menu refMenuItem = new Menu("Ref");
-        refMenuItem.getItems().addAll(makePPMMenuItems(true));
-        showPPMColButton.getItems().addAll(allMenuItem, ppmMenuItem, refMenuItem);
-
         Button ppmPlotButton = new Button();
         ppmPlotButton.setText("Plot");
         ppmPlotButton.setOnAction(e -> showPPMPlotGUI());
-        menuBar.getItems().addAll(showPPMColButton, ppmPlotButton);
-    }
-
-    private List<MenuItem> makePPMMenuItems(boolean refMode) {
-        String[] iSets = new String[]{"0", "1", "2", "3", "4", "5"};
-        List<MenuItem> menuItems = new ArrayList<>();
-        for (String i : iSets) {
-            MenuItem menuItem = new MenuItem(i);
-            menuItems.add(menuItem);
-            menuItem.setOnAction(e -> makePPMCol(Integer.parseInt(menuItem.getText()), refMode));
-        }
-        return menuItems;
+        menuBar.getItems().addAll( ppmPlotButton);
     }
 
     private void updateColumnContextMenu() {
@@ -361,6 +340,11 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     private void makeSDevCol(TableColumn<Atom, ?> column) {
+        if (atomTableView.getColumns().stream()
+                .anyMatch(col ->
+                        col.getText().equals("SDev") && col.getProperties().get("SET").equals(column.getText()))) {
+            return;
+        }
         TableColumn<Atom, Number> sdevCol = new TableColumn<>("SDev");
         sdevCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
             Atom atom = p.getValue();
@@ -447,14 +431,19 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     private void makeDeltaCol(TableColumn<Atom, ?> column, String set2) {
-        DoubleStringConverter dsConverter4 = new DoubleStringConverter4();
-        TableColumn<Atom, Number> deltaCol = new TableColumn<>();
         String set1 = column.getText();
         int iSet1 = getPPMSetNum(set1);
         boolean ref1 = getPPMSetRef(set1);
         int iSet2 = getPPMSetNum(set2);
         boolean ref2 = getPPMSetRef(set2);
         String columnName = set1  + "-" + set2;
+        if (atomTableView.getColumns().stream()
+                .anyMatch(col ->
+                        col.getText().equals(columnName) && col.getProperties().get("SET").equals(column.getText()))) {
+            return;
+        }
+        DoubleStringConverter dsConverter4 = new DoubleStringConverter4();
+        TableColumn<Atom, Number> deltaCol = new TableColumn<>();
         deltaCol.getProperties().put("SET", set1);
         deltaCol.setText(columnName);
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {

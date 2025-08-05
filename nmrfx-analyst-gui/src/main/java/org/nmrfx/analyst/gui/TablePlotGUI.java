@@ -614,6 +614,8 @@ public class TablePlotGUI {
                 if (yElems.size() == 1) {
                     String yElem = yElems.getFirst();
                     if (yElem != null) {
+                        xAxis.setLabel(xElem);
+                        yAxis.setLabel(yElem);
                         xAxis.setZeroIncluded(true);
                         yAxis.setZeroIncluded(true);
                         xAxis.setAutoRanging(true);
