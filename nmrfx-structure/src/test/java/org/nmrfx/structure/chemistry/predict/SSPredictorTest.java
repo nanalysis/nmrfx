@@ -9,6 +9,9 @@ import java.util.*;
 public class SSPredictorTest {
 
     double[] evaluate(Set<SSPredictor.BasePairProbability> referenceSet, Set<SSPredictor.BasePairProbability> predictedSet) {
+        if (predictedSet.isEmpty()) {
+            return new double[]{0.0, 0.0, 0.0};
+        }
         Set<SSPredictor.BasePairProbability> refCopy = new HashSet<>(referenceSet);
         Set<SSPredictor.BasePairProbability> predCopy = new HashSet<>(predictedSet);
 
@@ -31,17 +34,22 @@ public class SSPredictorTest {
 
     @Test
     public void predictSS() {
-        String testFile = "/Users/ekoag/ssPredictorTest/mfold_validate_basepairs.txt";
+        String testFile = "/Users/ekoag/ssPredictorTest/bpRNA_TS0.txt";
         List<double[]> scores = new ArrayList<>();
-        String modelFile = "/Users/ekoag/model_143/fine_tune_model.export";
+        //String modelFile = "/Users/ekoag/rna_ss_models/model_163/fine_tune_model.export";
+        String modelFile = "/Users/ekoag/nmrfx/rna_bp_v1/";
         SSPredictor.setModelFile(modelFile);
         try (BufferedReader reader = new BufferedReader(new FileReader(testFile))) {
             String line;
+            StringBuilder sb = new StringBuilder();
             while((line = reader.readLine()) != null) {
                 SSPredictor ssPredictor = new SSPredictor();
                 String[] items = line.split(";");
                 String seq = items[0];
-                String[] bps = items[1].split(",");
+                String[] bps = {};
+                if (!items[1].isEmpty()) {
+                    bps = items[1].split(",");
+                }
                 System.out.println(seq);
                 ssPredictor.predict(seq);
                 ssPredictor.bipartiteMatch(0.7, 0.05, 20);
@@ -57,7 +65,7 @@ public class SSPredictorTest {
                 int n = ssPredictor.getNExtents();
                 assert n > 0;
 
-                double max_f1 = 0.0;
+                double max_f1 = -1.0;
                 double[] max_result = null;
                 for (int i = 0; i < n ; i++) {
                     Set<SSPredictor.BasePairProbability> predictedSet = ssPredictor.getExtentBasePairs(i).basePairsSet();
@@ -71,8 +79,15 @@ public class SSPredictorTest {
                 }
                 if (max_result != null) {
                     scores.add(max_result);
+                    Arrays.stream(max_result).forEach(result -> sb.append(result).append(" "));
+                    sb.append("\n");
                 }
             }
+            String filePath = "/Users/ekoag/ssPredictorTest/model_embedded.txt";
+            try (FileWriter fileWriter = new FileWriter(filePath)) {
+                fileWriter.write(sb.toString());
+            }
+
             double ppv_sum = 0.0;
             double recall_sum = 0.0;
             double f1_sum = 0.0;
@@ -81,7 +96,10 @@ public class SSPredictorTest {
                 recall_sum += result[1];
                 f1_sum += result[2];
             }
-            System.out.println("PPV: " + ppv_sum/scores.size() + " Recall: " + recall_sum /scores.size() + "  F1: " + f1_sum/scores.size());
+            double precision = ppv_sum/scores.size();
+            double recall = recall_sum /scores.size();
+            double f1 = f1_sum/scores.size();
+            System.out.println("PPV: " + precision + " Recall: " +recall + "  F1: " + f1);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
