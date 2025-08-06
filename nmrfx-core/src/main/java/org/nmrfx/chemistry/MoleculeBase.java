@@ -3,7 +3,9 @@ package org.nmrfx.chemistry;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.relax.OrderPar;
 import org.nmrfx.chemistry.relax.OrderParSet;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.relax.RelaxationSet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
@@ -1752,10 +1754,30 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public Map<String, RelaxationSet> relaxationSetMap() {
+        if (relaxationSetMap.isEmpty()) {
+            updateRelaxationMap();
+        }
         return relaxationSetMap;
     }
 
+    public void updateRelaxationMap() {
+        var molRelaxData = RelaxationData.getRelaxationData(getAtomArray());
+        for (var entry : molRelaxData.entrySet()) {
+            relaxationSetMap.put(entry.getKey().name(), entry.getKey());
+        }
+    }
+    
     public Map<String, OrderParSet> orderParSetMap() {
+        if (orderParSetMap.isEmpty()) {
+            updateOrderParMap();
+        }
         return orderParSetMap;
+    }
+
+    public void updateOrderParMap() {
+        var orderParData = OrderPar.getOrderParameters(getAtomArray());
+        for (var entry : orderParData.entrySet()) {
+            orderParSetMap.put(entry.getKey().name(), entry.getKey());
+        }
     }
 }
