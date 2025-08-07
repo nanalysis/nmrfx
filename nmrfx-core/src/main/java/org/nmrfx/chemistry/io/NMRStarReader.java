@@ -668,6 +668,15 @@ public class NMRStarReader {
             if (peakCouplingLoop != null) {
                 processPeakCoupling(peakCouplingLoop, peakList);
             }
+
+            Loop peakListMeasuresLoop = saveframe.getLoop("_Spectral_measure");
+            Loop peakMeasureLoop = saveframe.getLoop("_Peak_measure");
+
+            if ((peakListMeasuresLoop != null) && (peakMeasureLoop != null)) {
+                processPeakListMeasures(peakListMeasuresLoop, peakList);
+                processPeakMeasures(peakMeasureLoop, peakList);
+            }
+
             processTransitions(saveframe, peakList);
         }
     }
@@ -993,6 +1002,73 @@ public class NMRStarReader {
         }
     }
 
+    private static void processPeakListMeasures(Loop loop, PeakList peakList) throws ParseException {
+        List<String> measureIdColumn = loop.getColumnAsList("ID");
+        List<Double> valueColumn = loop.getColumnAsDoubleList("value", 0.0);
+        int nMeasures = measureIdColumn.size();
+        double[] values = new double[nMeasures];
+        for (int i = 0;i<measureIdColumn.size();i++) {
+            values[i] = valueColumn.get(i);
+        }
+        Measures measures = new Measures(values);
+        peakList.setMeasures(measures);
+    }
+
+    private static void processPeakMeasures(Loop loop, PeakList peakList) throws ParseException {
+        if (loop != null) {
+            List<String> measureIdColumn = loop.getColumnAsList("ID");
+            List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
+            List<String> spectralMeasureID = loop.getColumnAsList("Spectral_measure_ID");
+            List<String> intensityColumn = loop.getColumnAsList("Intensity_val");
+            List<String> errorColumn = loop.getColumnAsList("Intensity_val_err");
+            Optional<Measures> peakListMeasures = peakList.getMeasures();
+            if (peakListMeasures.isEmpty()) {
+                return;
+            }
+            int nMeasures = peakListMeasures.get().getValues().length;
+            for (Peak peak : peakList.peaks()) {
+                double[][] values = new double[2][nMeasures];
+                peak.setMeasures(values);
+            }
+            for (int i = 0, n = measureIdColumn.size(); i < n; i++) {
+                String value;
+                int idNum;
+                if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
+                    idNum = NvUtil.toInt(value);
+                } else {
+                    //Invalid peak id value
+                    continue;
+                }
+                int meaasureID;
+                if ((value = NvUtil.getColumnValue(spectralMeasureID, i)) != null) {
+                    meaasureID = NvUtil.toInt(value);
+                } else {
+                    //Invalid peak id value
+                    continue;
+                }
+                Peak peak = peakList.getPeakByID(idNum);
+                final double mValue;
+                final double eValue;
+
+                if (((value = NvUtil.getColumnValue(intensityColumn, i)) != null) && !value.equals(".")) {
+                    mValue = NvUtil.toDouble(value);
+                } else {
+                    mValue = 0.0;
+                }
+                if (((value = NvUtil.getColumnValue(errorColumn, i)) != null) && !value.equals(".")) {
+                    eValue = NvUtil.toDouble(value);
+                } else {
+                    eValue = 0.0;
+                }
+
+                Optional<double[][]> peakMeasures = peak.getMeasures();
+                peakMeasures.ifPresent(values -> {
+                    values[0][meaasureID] = mValue;
+                    values[1][meaasureID] = eValue;
+                });
+            }
+        }
+    }
     void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
         Loop loop = saveframe.getLoop("_Spectral_transition");
         if (loop != null) {
