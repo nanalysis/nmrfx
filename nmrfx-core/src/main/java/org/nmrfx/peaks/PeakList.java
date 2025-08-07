@@ -1310,6 +1310,13 @@ public class PeakList {
     }
 
     /**
+     * @return
+     */
+    public Optional<Measures> getMeasures() {
+        return measures;
+    }
+
+    /**
      * @param measure
      */
     public void setMeasures(Measures measure) {
