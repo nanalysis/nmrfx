@@ -76,6 +76,7 @@ public class NMRStarReader {
         }
         return star3;
     }
+
     public static STAR3 read(Reader reader, File starFile) throws ParseException {
         BufferedReader bfR = new BufferedReader(reader);
         STAR3 star = new STAR3(bfR, "star3");
@@ -457,7 +458,7 @@ public class NMRStarReader {
                     molecule.addCoordSet(asymLabel, entityAssemblyID, entity);
                 }
             } else {
-                name = saveframe.getValue("_Entity","Nonpolymer_comp_ID", name);
+                name = saveframe.getValue("_Entity", "Nonpolymer_comp_ID", name);
                 Entity entity = molecule.getEntity(name);
                 if (entity == null) {
                     Compound compound = new Compound("1", name, name, entityAssemblyName);
@@ -634,6 +635,44 @@ public class NMRStarReader {
 
     public void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
         ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+
+        Optional<PeakList> peakListOpt = makePeakList(saveframe);
+        if (peakListOpt.isEmpty()) {
+            return;
+        }
+        PeakList peakList = peakListOpt.get();
+        int nDim = peakList.getNDim();
+
+        Loop peakLoop = saveframe.getLoop("_Peak");
+        if (peakLoop != null) {
+            processPeakLoop(peakLoop, peakList, nDim);
+
+            Loop peakGeneralCharLoop = saveframe.getLoop("_Peak_general_char");
+            processPeakGeneralChar(peakGeneralCharLoop, peakList);
+
+            Loop peakCharLoop = saveframe.getLoop("_Peak_char");
+            if (peakCharLoop == null) {
+                throw new ParseException("No \"_Peak_char\" loop");
+            } else {
+                processPeakCharLoop(peakCharLoop, peakList);
+            }
+
+            Loop peakChemShiftLoop = saveframe.getLoop("_Assigned_peak_chem_shift");
+            if (peakChemShiftLoop != null) {
+                processAssignedPeakChemShift(peakChemShiftLoop, peakList, resFactory);
+            } else {
+                log.info("No \"Assigned Peak Chem Shift\" loop");
+            }
+
+            Loop peakCouplingLoop = saveframe.getLoop("_Peak_coupling");
+            if (peakCouplingLoop != null) {
+                processPeakCoupling(peakCouplingLoop, peakList);
+            }
+            processTransitions(saveframe, peakList);
+        }
+    }
+
+    private static Optional<PeakList> makePeakList(Saveframe saveframe) throws ParseException {
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String id = saveframe.getValue("_Spectral_peak_list", "ID");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
@@ -649,13 +688,13 @@ public class NMRStarReader {
         if (dataFormat.equals("text")) {
             log.warn("Peak list is in text format, skipping list");
             log.warn(details);
-            return;
+            return Optional.empty();
         }
         if (nDimString.equals("?")) {
-            return;
+            return Optional.empty();
         }
         if (nDimString.equals(".")) {
-            return;
+            return Optional.empty();
         }
         int nDim = NvUtil.toInt(nDimString);
 
@@ -675,7 +714,11 @@ public class NMRStarReader {
         if (scaleStr.length() > 0) {
             peakList.setScale(NvUtil.toDouble(scaleStr));
         }
+        processPeakListSpectralDim(saveframe, nSpectralDim, peakList);
+        return Optional.of(peakList);
+    }
 
+    private static void processPeakListSpectralDim(Saveframe saveframe, int nSpectralDim, PeakList peakList) throws ParseException {
         for (int i = 0; i < nSpectralDim; i++) {
             SpectralDim sDim = peakList.getSpectralDim(i);
 
@@ -741,219 +784,212 @@ public class NMRStarReader {
                 sDim.setPrecision(NvUtil.toInt(value));
             }
         }
+    }
 
-        Loop loop = saveframe.getLoop("_Peak");
-        if (loop != null) {
-            List<String> idColumn = loop.getColumnAsList("ID");
-            List<String> detailColumn = loop.getColumnAsListIfExists("Details");
-            List<String> fomColumn = loop.getColumnAsListIfExists("Figure_of_merit");
-            List<String> typeColumn = loop.getColumnAsListIfExists("Type");
-            List<String> statusColumn = loop.getColumnAsListIfExists("Status");
-            List<String> colorColumn = loop.getColumnAsListIfExists("Color");
-            List<String> flagColumn = loop.getColumnAsListIfExists("Flag");
-            List<String> cornerColumn = loop.getColumnAsListIfExists("Label_corner");
-
-            for (int i = 0, n = idColumn.size(); i < n; i++) {
-                int idNum = Integer.parseInt(idColumn.get(i));
-                Peak peak = new Peak(peakList, nDim);
-                peak.setIdNum(idNum);
-                String value;
-                if ((value = NvUtil.getColumnValue(fomColumn, i)) != null) {
-                    float fom = NvUtil.toFloat(value);
-                    peak.setFigureOfMerit(fom);
-                }
-                if ((value = NvUtil.getColumnValue(detailColumn, i)) != null) {
-                    peak.setComment(value);
-                }
-                if ((value = NvUtil.getColumnValue(typeColumn, i)) != null) {
-                    int type = Peak.getType(value);
-                    peak.setType(type);
-                }
-                if ((value = NvUtil.getColumnValue(statusColumn, i)) != null) {
-                    int status = NvUtil.toInt(value);
-                    peak.setStatus(status);
-                }
-                if ((value = NvUtil.getColumnValue(colorColumn, i)) != null) {
-                    value = value.equals(".") ? null : value;
-                    peak.setColor(value);
-                }
-                if ((value = NvUtil.getColumnValue(flagColumn, i)) != null) {
-                    for (int iFlag = 0; iFlag < Peak.NFLAGS; iFlag++) {
-                        if (value.length() > iFlag) {
-                            peak.setFlag(iFlag, (value.charAt(iFlag) == '1'));
-                        } else {
-                            peak.setFlag(iFlag, false);
+    private static void processPeakCharLoop(Loop loop, PeakList peakList) throws ParseException {
+        List<String> peakIdColumn = loop.getColumnAsList("Peak_ID");
+        List<String> sdimColumn = loop.getColumnAsList("Spectral_dim_ID");
+        String[] peakCharStrings = Peak.getSTAR3CharStrings();
+        for (String peakCharString : peakCharStrings) {
+            String tag = peakCharString.substring(peakCharString.indexOf(".") + 1);
+            if (tag.equals("Sf_ID") || tag.equals("Entry_ID") || tag.equals("Spectral_peak_list_ID")) {
+                continue;
+            }
+            if (tag.equals("Resonance_ID") || tag.equals("Resonance_count")) {
+                continue;
+            }
+            List<String> column = loop.getColumnAsListIfExists(tag);
+            if (column != null) {
+                for (int i = 0, n = column.size(); i < n; i++) {
+                    int idNum = Integer.parseInt(peakIdColumn.get(i));
+                    int sDim = Integer.parseInt(sdimColumn.get(i)) - 1;
+                    String value = column.get(i);
+                    if (!value.equals(".") && !value.equals("?")) {
+                        Peak peak = peakList.getPeakByID(idNum);
+                        PeakDim peakDim = peak.getPeakDim(sDim);
+                        if (peakDim != null) {
+                            peakDim.setAttribute(tag, value);
                         }
                     }
                 }
-                if ((value = NvUtil.getColumnValue(cornerColumn, i)) != null) {
-                    peak.setCorner(value);
-                }
-                peakList.addPeakWithoutResonance(peak);
             }
+        }
+    }
 
-            loop = saveframe.getLoop("_Peak_general_char");
-            if (loop != null) {
-                List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
-                List<String> methodColumn = loop.getColumnAsList("Measurement_method");
-                List<String> intensityColumn = loop.getColumnAsList("Intensity_val");
-                List<String> errorColumn = loop.getColumnAsList("Intensity_val_err");
-                for (int i = 0, n = peakidColumn.size(); i < n; i++) {
-                    String value;
-                    int idNum;
-                    if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
-                        idNum = NvUtil.toInt(value);
+    private static void processPeakLoop(Loop loop, PeakList peakList, int nDim) throws ParseException {
+        List<String> idColumn = loop.getColumnAsList("ID");
+        List<String> detailColumn = loop.getColumnAsListIfExists("Details");
+        List<String> fomColumn = loop.getColumnAsListIfExists("Figure_of_merit");
+        List<String> typeColumn = loop.getColumnAsListIfExists("Type");
+        List<String> statusColumn = loop.getColumnAsListIfExists("Status");
+        List<String> colorColumn = loop.getColumnAsListIfExists("Color");
+        List<String> flagColumn = loop.getColumnAsListIfExists("Flag");
+        List<String> cornerColumn = loop.getColumnAsListIfExists("Label_corner");
+
+        for (int i = 0, n = idColumn.size(); i < n; i++) {
+            int idNum = Integer.parseInt(idColumn.get(i));
+            Peak peak = new Peak(peakList, nDim);
+            peak.setIdNum(idNum);
+            String value;
+            if ((value = NvUtil.getColumnValue(fomColumn, i)) != null) {
+                float fom = NvUtil.toFloat(value);
+                peak.setFigureOfMerit(fom);
+            }
+            if ((value = NvUtil.getColumnValue(detailColumn, i)) != null) {
+                peak.setComment(value);
+            }
+            if ((value = NvUtil.getColumnValue(typeColumn, i)) != null) {
+                int type = Peak.getType(value);
+                peak.setType(type);
+            }
+            if ((value = NvUtil.getColumnValue(statusColumn, i)) != null) {
+                int status = NvUtil.toInt(value);
+                peak.setStatus(status);
+            }
+            if ((value = NvUtil.getColumnValue(colorColumn, i)) != null) {
+                value = value.equals(".") ? null : value;
+                peak.setColor(value);
+            }
+            if ((value = NvUtil.getColumnValue(flagColumn, i)) != null) {
+                for (int iFlag = 0; iFlag < Peak.NFLAGS; iFlag++) {
+                    if (value.length() > iFlag) {
+                        peak.setFlag(iFlag, (value.charAt(iFlag) == '1'));
                     } else {
-                        //Invalid peak id value
-                        continue;
+                        peak.setFlag(iFlag, false);
                     }
-                    Peak peak = peakList.getPeakByID(idNum);
-                    String method = "height";
-                    if ((value = NvUtil.getColumnValue(methodColumn, i)) != null) {
-                        method = value;
+                }
+            }
+            if ((value = NvUtil.getColumnValue(cornerColumn, i)) != null) {
+                peak.setCorner(value);
+            }
+            peakList.addPeakWithoutResonance(peak);
+        }
+    }
+
+    private static void processPeakCoupling(Loop loop, PeakList peakList) throws ParseException {
+        List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+        List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
+        List<Double> couplingColumn = loop.getColumnAsDoubleList("Coupling_val", null);
+        List<Double> strongCouplingColumn = loop.getColumnAsDoubleList("Strong_coupling_effect_val", null);
+        List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
+        List<String> couplingTypeColumn = loop.getColumnAsList("Type");
+        int from = 0;
+        int to;
+        for (int i = 0; i < peakIdColumn.size(); i++) {
+            int currentID = peakIdColumn.get(from);
+            int currentDim = sdimColumn.get(i) - 1;
+            if ((i == (peakIdColumn.size() - 1))
+                    || (peakIdColumn.get(i + 1) != currentID)
+                    || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                Peak peak = peakList.getPeakByID(currentID);
+                to = i + 1;
+                Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
+                CouplingPattern couplingPattern = new CouplingPattern(multiplet,
+                        couplingColumn.subList(from, to),
+                        couplingTypeColumn.subList(from, to),
+                        strongCouplingColumn.subList(from, to),
+                        intensityColumn.get(from)
+                );
+                multiplet.setCoupling(couplingPattern);
+                from = to;
+            }
+        }
+    }
+
+    private void processAssignedPeakChemShift(Loop loop, PeakList peakList, ResonanceFactory resFactory) throws ParseException {
+        List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
+        List<String> spectralDimColumn = loop.getColumnAsList("Spectral_dim_ID");
+        List<String> valColumn = loop.getColumnAsList("Val");
+        List<String> resonanceColumn = loop.getColumnAsList("Resonance_ID");
+        for (int i = 0, n = peakidColumn.size(); i < n; i++) {
+            String value;
+            int idNum;
+            if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
+                idNum = NvUtil.toInt(value);
+            } else {
+                //Invalid peak id value
+                continue;
+            }
+            int sDim;
+            long resonanceID = -1;
+            if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
+                sDim = NvUtil.toInt(value) - 1;
+            } else {
+                throw new ParseException("Invalid spectral dim value at row \"" + i + "\"");
+            }
+            if ((value = NvUtil.getColumnValue(valColumn, i)) != null) {
+                NvUtil.toFloat(value);  // fixme shouldn't we use this
+            }
+            if ((value = NvUtil.getColumnValue(resonanceColumn, i)) != null) {
+                resonanceID = NvUtil.toLong(value);
+            }
+            Peak peak = peakList.getPeakByID(idNum);
+            PeakDim peakDim = peak.getPeakDim(sDim);
+            if (resonanceID != -1L) {
+                AtomResonance resonance = resFactory.build(resonanceID);
+                resonance.add(peakDim);
+            } else {
+                peakDimsWithoutResonance.add(peakDim);
+            }
+        }
+    }
+
+    private static void processPeakGeneralChar(Loop loop, PeakList peakList) throws ParseException {
+        if (loop != null) {
+            List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
+            List<String> methodColumn = loop.getColumnAsList("Measurement_method");
+            List<String> intensityColumn = loop.getColumnAsList("Intensity_val");
+            List<String> errorColumn = loop.getColumnAsList("Intensity_val_err");
+            for (int i = 0, n = peakidColumn.size(); i < n; i++) {
+                String value;
+                int idNum;
+                if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
+                    idNum = NvUtil.toInt(value);
+                } else {
+                    //Invalid peak id value
+                    continue;
+                }
+                Peak peak = peakList.getPeakByID(idNum);
+                String method = "height";
+                if ((value = NvUtil.getColumnValue(methodColumn, i)) != null) {
+                    method = value;
+                }
+                if ((value = NvUtil.getColumnValue(intensityColumn, i)) != null) {
+                    float iValue = NvUtil.toFloat(value);
+                    switch (method) {
+                        case "height":
+                            peak.setIntensity(iValue);
+                            break;
+                        case "volume":
+                            // FIXME should set volume/evolume
+                            peak.setVolume1(iValue);
+                            break;
+                        default:
+                            // FIXME throw error if don't know type, or add new type dynamically?
+                            peak.setIntensity(iValue);
+                            break;
                     }
-                    if ((value = NvUtil.getColumnValue(intensityColumn, i)) != null) {
+                }
+                if ((value = NvUtil.getColumnValue(errorColumn, i)) != null) {
+                    if (!value.equals(".")) {
                         float iValue = NvUtil.toFloat(value);
                         switch (method) {
                             case "height":
-                                peak.setIntensity(iValue);
+                                peak.setIntensityErr(iValue);
                                 break;
                             case "volume":
                                 // FIXME should set volume/evolume
-                                peak.setVolume1(iValue);
+                                peak.setVolume1Err(iValue);
                                 break;
                             default:
                                 // FIXME throw error if don't know type, or add new type dynamically?
-                                peak.setIntensity(iValue);
+                                peak.setIntensityErr(iValue);
                                 break;
                         }
                     }
-                    if ((value = NvUtil.getColumnValue(errorColumn, i)) != null) {
-                        if (!value.equals(".")) {
-                            float iValue = NvUtil.toFloat(value);
-                            switch (method) {
-                                case "height":
-                                    peak.setIntensityErr(iValue);
-                                    break;
-                                case "volume":
-                                    // FIXME should set volume/evolume
-                                    peak.setVolume1Err(iValue);
-                                    break;
-                                default:
-                                    // FIXME throw error if don't know type, or add new type dynamically?
-                                    peak.setIntensityErr(iValue);
-                                    break;
-                            }
-                        }
-                    }
-                    // FIXME set error value
                 }
+                // FIXME set error value
             }
-
-            loop = saveframe.getLoop("_Peak_char");
-            if (loop == null) {
-                throw new ParseException("No \"_Peak_char\" loop");
-            } else {
-                List<String> peakIdColumn = loop.getColumnAsList("Peak_ID");
-                List<String> sdimColumn = loop.getColumnAsList("Spectral_dim_ID");
-                String[] peakCharStrings = Peak.getSTAR3CharStrings();
-                for (String peakCharString : peakCharStrings) {
-                    String tag = peakCharString.substring(peakCharString.indexOf(".") + 1);
-                    if (tag.equals("Sf_ID") || tag.equals("Entry_ID") || tag.equals("Spectral_peak_list_ID")) {
-                        continue;
-                    }
-                    if (tag.equals("Resonance_ID") || tag.equals("Resonance_count")) {
-                        continue;
-                    }
-                    List<String> column = loop.getColumnAsListIfExists(tag);
-                    if (column != null) {
-                        for (int i = 0, n = column.size(); i < n; i++) {
-                            int idNum = Integer.parseInt(peakIdColumn.get(i));
-                            int sDim = Integer.parseInt(sdimColumn.get(i)) - 1;
-                            String value = column.get(i);
-                            if (!value.equals(".") && !value.equals("?")) {
-                                Peak peak = peakList.getPeakByID(idNum);
-                                PeakDim peakDim = peak.getPeakDim(sDim);
-                                if (peakDim != null) {
-                                    peakDim.setAttribute(tag, value);
-                                }
-                            }
-                        }
-                    }
-                }
-                loop = saveframe.getLoop("_Assigned_peak_chem_shift");
-
-                if (loop != null) {
-                    List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
-                    List<String> spectralDimColumn = loop.getColumnAsList("Spectral_dim_ID");
-                    List<String> valColumn = loop.getColumnAsList("Val");
-                    List<String> resonanceColumn = loop.getColumnAsList("Resonance_ID");
-                    for (int i = 0, n = peakidColumn.size(); i < n; i++) {
-                        String value;
-                        int idNum;
-                        if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
-                            idNum = NvUtil.toInt(value);
-                        } else {
-                            //Invalid peak id value
-                            continue;
-                        }
-                        int sDim;
-                        long resonanceID = -1;
-                        if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
-                            sDim = NvUtil.toInt(value) - 1;
-                        } else {
-                            throw new ParseException("Invalid spectral dim value at row \"" + i + "\"");
-                        }
-                        if ((value = NvUtil.getColumnValue(valColumn, i)) != null) {
-                            NvUtil.toFloat(value);  // fixme shouldn't we use this
-                        }
-                        if ((value = NvUtil.getColumnValue(resonanceColumn, i)) != null) {
-                            resonanceID = NvUtil.toLong(value);
-                        }
-                        Peak peak = peakList.getPeakByID(idNum);
-                        PeakDim peakDim = peak.getPeakDim(sDim);
-                        if (resonanceID != -1L) {
-                            AtomResonance resonance = resFactory.build(resonanceID);
-                            resonance.add(peakDim);
-                        } else {
-                            peakDimsWithoutResonance.add(peakDim);
-                        }
-                    }
-                } else {
-                    log.info("No \"Assigned Peak Chem Shift\" loop");
-                }
-            }
-            loop = saveframe.getLoop("_Peak_coupling");
-            if (loop != null) {
-                List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
-                List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
-                List<Double> couplingColumn = loop.getColumnAsDoubleList("Coupling_val", null);
-                List<Double> strongCouplingColumn = loop.getColumnAsDoubleList("Strong_coupling_effect_val", null);
-                List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
-                List<String> couplingTypeColumn = loop.getColumnAsList("Type");
-                int from = 0;
-                int to;
-                for (int i = 0; i < peakIdColumn.size(); i++) {
-                    int currentID = peakIdColumn.get(from);
-                    int currentDim = sdimColumn.get(i) - 1;
-                    if ((i == (peakIdColumn.size() - 1))
-                            || (peakIdColumn.get(i + 1) != currentID)
-                            || (sdimColumn.get(i + 1) - 1 != currentDim)) {
-                        Peak peak = peakList.getPeakByID(currentID);
-                        to = i + 1;
-                        Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
-                        CouplingPattern couplingPattern = new CouplingPattern(multiplet,
-                                couplingColumn.subList(from, to),
-                                couplingTypeColumn.subList(from, to),
-                                strongCouplingColumn.subList(from, to),
-                                intensityColumn.get(from)
-                        );
-                        multiplet.setCoupling(couplingPattern);
-                        from = to;
-                    }
-                }
-            }
-            processTransitions(saveframe, peakList);
         }
     }
 
@@ -1069,10 +1105,10 @@ public class NMRStarReader {
                     continue;
                 }
                 String compID = compIDColumn.get(i);
-            if (!compound.getName().equals(compID)) {
-                log.warn("sequence mismatch expected: " + compound.getName() + " got: " + compID);
-                continue;
-            }
+                if (!compound.getName().equals(compID)) {
+                    log.warn("sequence mismatch expected: " + compound.getName() + " got: " + compID);
+                    continue;
+                }
                 Atom atom = compound.getAtomLoose(atomName);
                 if (atom == null) {
                     if (atomName.startsWith("H")) {
@@ -1369,7 +1405,7 @@ public class NMRStarReader {
                 RelaxationData relaxData = new RelaxationData(relaxationSet, resSource, value, error);
                 atom.addRelaxationData(relaxationSet, relaxData);
             } else {
-                RelaxationRex relaxData = new RelaxationRex(relaxationSet, resSource,  value, error, RexValue, RexError);
+                RelaxationRex relaxData = new RelaxationRex(relaxationSet, resSource, value, error, RexValue, RexError);
                 atom.addRelaxationData(relaxationSet, relaxData);
             }
         }
