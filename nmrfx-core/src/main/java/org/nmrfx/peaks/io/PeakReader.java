@@ -96,7 +96,7 @@ public class PeakReader {
             case "sparky_save" -> readSparkySaveFile(fileName, pMap);
             case "sparky_assign" -> readSparkyAssignmentFile(fileName);
             case "nmrpipe" -> readNMRPipePeaks(fileName);
-            case "xeasy" -> readXEASYPeaks(fileName);
+            case "xeasy" -> readXEASYPeaks(fileName, dataset);
             case "ccpn" -> readCCPNPeaks(fileName, dataset);
             default -> throw new IllegalArgumentException("Invalid file type " + fileName);
         };
@@ -718,14 +718,19 @@ public class PeakReader {
     }
 
 
-    public PeakList readXEASYPeaks(String fileName) throws IOException {
-        XEASYPeakReader xeasyPeakReader = new XEASYPeakReader();
+    public PeakList readXEASYPeaks(String fileName, DatasetBase dataset) throws IOException {
+        XEASYPeakReader xeasyPeakReader = new XEASYPeakReader(dataset);
         return xeasyPeakReader.readPeaks(fileName);
     }
 
     class XEASYPeakReader {
         String fileTail;
         PeakList peakList;
+        DatasetBase dataset;
+
+        XEASYPeakReader(DatasetBase dataset) {
+            this.dataset = dataset;
+        }
 
         PeakList readPeaks(String fileName) throws IOException {
             Path path = Paths.get(fileName);
@@ -766,13 +771,16 @@ public class PeakReader {
                 String[] fields = line.split(" +", -1);
                 int nDim = Integer.parseInt(fields[fields.length - 1]);
                 peakList = new PeakList(fileTail, nDim);
-            } else if (line.startsWith("INAME")) {
+                if (dataset != null) {
+                    setPeakListDims(peakList, dataset);
+                }
+            } else if (line.startsWith("INAME") && (dataset == null)) {
                 String[] fields = line.split(" +", -1);
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 String dimName = fields[2];
                 var sDim = peakList.getSpectralDim(iDim);
                 sDim.setDimName(dimName);
-            } else if (line.startsWith("SPECTRUM")) {
+            } else if (line.startsWith("SPECTRUM") && (dataset == null)) {
                 String[] fields = line.split(" +", -1);
                 var datasetOpt = findDataset(peakList);
                 datasetOpt.ifPresent(dataset -> {

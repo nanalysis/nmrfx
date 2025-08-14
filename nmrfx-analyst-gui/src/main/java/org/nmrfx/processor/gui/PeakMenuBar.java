@@ -597,7 +597,7 @@ public class PeakMenuBar {
                 String type = peakReader.getType(file.toPath());
 
                 DatasetBase dataset = null;
-                if (type.equalsIgnoreCase("ccpn")) {
+                if (type.equalsIgnoreCase("ccpn") || type.equalsIgnoreCase("xeasy")) {
                     dataset = (DatasetBase) GUIUtils.choice(DatasetBase.datasets(), "Choose Dataset");
                 }
 
