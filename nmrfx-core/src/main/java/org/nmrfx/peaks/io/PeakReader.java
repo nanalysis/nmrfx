@@ -61,7 +61,7 @@ public class PeakReader {
     public void linkResonances() {
         for (var entry : resMap.entrySet()) {
             List<PeakDim> peakDims = entry.getValue();
-            PeakDim firstPeakDim = peakDims.get(0);
+            PeakDim firstPeakDim = peakDims.getFirst();
             if (peakDims.size() > 1) {
 
                 for (PeakDim peakDim : peakDims) {
@@ -266,9 +266,6 @@ public class PeakReader {
                 if (getID) {
                     dataIndex += 1;
                 }
-                //   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U
-                // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
-                // volume  intensity       status  comment flags
                 if (dataIndex != null) {
                     String value = null;
                     try {
@@ -432,10 +429,10 @@ public class PeakReader {
                     }
                 }
                 if (listMap.containsKey(DATASET)) {
-                    peakList.setDatasetName(listMap.get(DATASET).get(0));
+                    peakList.setDatasetName(listMap.get(DATASET).getFirst());
                 }
                 if (listMap.containsKey(CONDITION)) {
-                    peakList.setSampleConditionLabel(listMap.get(CONDITION).get(0));
+                    peakList.setSampleConditionLabel(listMap.get(CONDITION).getFirst());
                 }
             } else {
                 List<String> labels = getLabels(listFields);
@@ -658,19 +655,19 @@ public class PeakReader {
                 sf = 600.0;
                 sw = 5000.0;
 
-                peakList.getSpectralDim(i).setDimName("1H" + "_" + atomDim.merge("H", 1, (a, b) -> a + b));
+                peakList.getSpectralDim(i).setDimName("1H" + "_" + atomDim.merge("H", 1, Integer::sum));
                 peakList.getSpectralDim(i).setNucleus("1H");
             } else if (atomName.startsWith("N")) {
                 sf = 600.0 * Nuclei.N15.getFreqRatio();
                 sw = 2000.0;
                 widthHz = 30.0f;
-                peakList.getSpectralDim(i).setDimName("15N" + "_" + atomDim.merge("N", 1, (a, b) -> a + b));
+                peakList.getSpectralDim(i).setDimName("15N" + "_" + atomDim.merge("N", 1, Integer::sum));
                 peakList.getSpectralDim(i).setNucleus("15N");
             } else if (atomName.startsWith("C")) {
                 widthHz = 30.0f;
                 sf = 600.0 * Nuclei.C13.getFreqRatio();
                 sw = 4000.0;
-                peakList.getSpectralDim(i).setDimName("13C" + "_" + atomDim.merge("C", 1, (a, b) -> a + b));
+                peakList.getSpectralDim(i).setDimName("13C" + "_" + atomDim.merge("C", 1, Integer::sum));
                 peakList.getSpectralDim(i).setNucleus("13C");
             }
             peakList.getSpectralDim(i).setSf(sf);
@@ -788,7 +785,6 @@ public class PeakReader {
 
         void processXEASYLine(String[] data) {
             int nDim = peakList.getNDim();
-            int iPeak = Integer.parseInt(data[0]);
             Peak peak = peakList.getNewPeak();
             float intensity = Float.parseFloat(data[nDim + 3]);
             peak.setIntensity(intensity);
