@@ -594,8 +594,14 @@ public class PeakMenuBar {
             String listFileName = file.getPath();
             try {
                 PeakReader peakReader = new PeakReader();
+                String type = peakReader.getType(file.toPath());
 
-                PeakList newPeakList = peakReader.readPeakList(listFileName);
+                DatasetBase dataset = null;
+                if (type.equalsIgnoreCase("ccpn")) {
+                    dataset = (DatasetBase) GUIUtils.choice(DatasetBase.datasets(), "Choose Dataset");
+                }
+
+                PeakList newPeakList = peakReader.readPeakList(listFileName, dataset);
                 if (newPeakList != null) {
                     setPeakList(newPeakList);
                     int lastDot = listFileName.lastIndexOf('.');

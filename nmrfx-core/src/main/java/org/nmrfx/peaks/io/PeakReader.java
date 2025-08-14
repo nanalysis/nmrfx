@@ -75,13 +75,21 @@ public class PeakReader {
     }
 
     public PeakList readPeakList(String fileName) throws IOException {
-        return readPeakList(fileName, null);
+        return readPeakList(fileName, null, null);
     }
 
-    public PeakList readPeakList(String fileName, Map<String, Object> pMap) throws IOException {
-        Path path = Paths.get(fileName);
+    public PeakList readPeakList(String fileName, DatasetBase dataset) throws IOException {
+        return readPeakList(fileName, dataset, null);
+    }
+
+    public String getType(Path path) throws IOException {
         PeakFileDetector detector = new PeakFileDetector();
-        String type = detector.probeContentType(path);
+        return detector.probeContentType(path);
+    }
+
+    public PeakList readPeakList(String fileName, DatasetBase dataset, Map<String, Object> pMap) throws IOException {
+        Path path = Paths.get(fileName);
+        String type = getType(path);
         return switch (type) {
             case "xpk2" -> readXPK2Peaks(fileName);
             case "xpk" -> readXPKPeaks(fileName);
@@ -89,6 +97,7 @@ public class PeakReader {
             case "sparky_assign" -> readSparkyAssignmentFile(fileName);
             case "nmrpipe" -> readNMRPipePeaks(fileName);
             case "xeasy" -> readXEASYPeaks(fileName);
+            case "ccpn" -> readCCPNPeaks(fileName, dataset);
             default -> throw new IllegalArgumentException("Invalid file type " + fileName);
         };
     }
@@ -671,6 +680,47 @@ public class PeakReader {
         peakDim.setBoundsHz(widthHz * 3.0f);
     }
 
+    String stripExtension(String s) {
+        int dot = s.lastIndexOf(".");
+        if (dot != -1) {
+            s = s.substring(0, dot);
+        }
+        return s;
+    }
+
+    Optional<DatasetBase> findDataset(PeakList peakList) {
+        String listName = peakList.getName();
+        return DatasetBase.datasets().stream().filter(d -> listName.contains(stripExtension(d.getName()))).filter(d -> d.getNDim() == peakList.getNDim()).findFirst();
+    }
+
+    void setPeakListDims(PeakList peakList, DatasetBase dataset) {
+        peakList.setDatasetName(dataset.getName());
+        for (int i=0;i<dataset.getNDim();i++) {
+            setPeakListDims(peakList, dataset, i);
+        }
+    }
+
+    void setPeakListDims(PeakList peakList, DatasetBase dataset, String dimLabel) {
+        int iDim = dataset.getDim(dimLabel);
+        SpectralDim spectralDim = peakList.getSpectralDim(dimLabel);
+        if ((iDim >= 0) && (spectralDim != null)) {
+            spectralDim.setSf(dataset.getSf(iDim));
+            spectralDim.setSw(dataset.getSw(iDim));
+            spectralDim.setNucleus(dataset.getNucleus(iDim).getNumberName());
+        }
+    }
+
+    void setPeakListDims(PeakList peakList, DatasetBase dataset, int iDim) {
+        SpectralDim spectralDim = peakList.getSpectralDim(iDim);
+        if ((iDim >= 0) && (spectralDim != null)) {
+            spectralDim.setDimName(dataset.getLabel(iDim));
+            spectralDim.setSf(dataset.getSf(iDim));
+            spectralDim.setSw(dataset.getSw(iDim));
+            spectralDim.setNucleus(dataset.getNucleus(iDim).getNumberName());
+        }
+    }
+
+
     public PeakList readXEASYPeaks(String fileName) throws IOException {
         XEASYPeakReader xeasyPeakReader = new XEASYPeakReader();
         return xeasyPeakReader.readPeaks(fileName);
@@ -733,28 +783,6 @@ public class PeakReader {
                         setPeakListDims(peakList, dataset, fields[iDim]);
                     }
                 });
-            }
-        }
-
-        String stripExtension(String s) {
-            int dot = s.lastIndexOf(".");
-            if (dot != -1) {
-                s = s.substring(0, dot);
-            }
-            return s;
-        }
-        Optional<DatasetBase> findDataset(PeakList peakList) {
-            String listName = peakList.getName();
-            return DatasetBase.datasets().stream().filter(d -> listName.contains(stripExtension(d.getName()))).filter(d -> d.getNDim() == peakList.getNDim()).findFirst();
-        }
-
-        void setPeakListDims(PeakList peakList, DatasetBase dataset, String dimLabel) {
-            int iDim = dataset.getDim(dimLabel);
-            SpectralDim spectralDim = peakList.getSpectralDim(dimLabel);
-            if ((iDim >= 0) && (spectralDim != null)) {
-                spectralDim.setSf(dataset.getSf(iDim));
-                spectralDim.setSw(dataset.getSw(iDim));
-                spectralDim.setNucleus(dataset.getNucleus(iDim).getNumberName());
             }
         }
 
@@ -876,6 +904,14 @@ public class PeakReader {
         }
         return result;
     }
+    private String getPipeStrValue(Map<String, Integer> dataMap, String[] data, String varName) {
+        Integer index = dataMap.get(varName);
+        String result = "";
+        if (index != null) {
+             result = data[index];
+        }
+        return result;
+    }
 
     private void setSfSw(PeakList peakList, Map<String, Integer> dataMap, String[] data, List<double[]> ppmStarts) {
 
@@ -939,4 +975,93 @@ public class PeakReader {
         }
     }
 
+    PeakList readCCPNPeaks(String fileName, DatasetBase dataset) throws IOException {
+        Path path = Paths.get(fileName);
+        boolean gotHeader = false;
+        PeakList peakList = null;
+        Map<String, Integer> dataMap = new HashMap<>();
+        String fileTail = path.getFileName().toString();
+        fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
+        String listName = fileTail;
+
+        try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
+            while (true) {
+                String line = fileReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                if (!gotHeader) {
+                    peakList =  processCCPNHeader(listName, line, dataMap);
+                    if (dataset != null) {
+                        setPeakListDims(peakList, dataset);
+                    }
+                    gotHeader = true;
+                } else {
+                    String[] data = line.split(",");
+                    if (peakList != null) {
+                        processCCPNLine(peakList, dataMap, data);
+                    }
+                }
+            }
+        }
+        return peakList;
+    }
+
+    public PeakList processCCPNHeader(String listName, String line, Map<String, Integer> dataMap) {
+        String[] fields = line.split(",");
+        int i = 0;
+        int nDim = 0;
+        for (String field : fields) {
+            field = field.strip().toUpperCase();
+            dataMap.put(field, i++);
+            int len = field.length();
+
+            if ((len > 4) && field.substring(len - 3, len-1).equalsIgnoreCase(" F") ) {
+                String digit = field.substring(len-1);
+                int iDim = Integer.parseInt(digit);
+                nDim = Math.max(nDim, iDim);
+            }
+        }
+        return new PeakList(listName, nDim);
+    }
+
+    public void processCCPNLine(PeakList peakList, Map<String, Integer> dataMap, String[]
+            data) {
+        Peak peak = peakList.getNewPeak();
+        Double intensity = getPipeValue(dataMap, data, "HEIGHT");
+        if (intensity != null) {
+            peak.setIntensity(intensity.floatValue());
+        }
+        Double volume = getPipeValue(dataMap, data, "VOLUME");
+        if (volume != null) {
+            peak.setVolume1(volume.floatValue());
+        }
+        int nDim = peakList.getNDim();
+
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            PeakDim peakDim = peak.getPeakDim(iDim);
+            String axis = "F" + (iDim+1);
+            Double shift = getPipeValue(dataMap, data, "POSITION " + axis);
+            if (shift != null) {
+                peakDim.setChemShiftValue(shift.floatValue());
+            }
+
+            Double wHz = getPipeValue(dataMap, data, "LINE WIDTH " + axis + " (HZ)");
+            if (wHz != null) {
+                peakDim.setLineWidthHz(wHz.floatValue());
+                peakDim.setBoundsHz((float) (wHz * 2.0));
+            }
+            String label = getPipeStrValue(dataMap, data, "ASSIGN " + axis);
+            if (label != null) {
+                if (label.equalsIgnoreCase("None")) {
+                    label = "";
+                }
+                peakDim.setLabel(label);
+            }
+        }
+    }
 }
