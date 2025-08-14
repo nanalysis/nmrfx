@@ -35,6 +35,13 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_general_char.Intensity_val",
             "_Peak_general_char.Intensity_val_err",
             "_Peak_general_char.Measurement_method",};
+    private static final String[] peakMeasuresCharStrings = {
+            "_Peak_measure.ID",
+            "_Peak_measure.Peak_ID",
+            "_Peak_measure.Spectral_measure_ID",
+            "_Peak_measure.Intensity_val",
+            "_Peak_measure.Intensity_val_err"
+           };
     private static final String[] peakCharStrings = {
             "_Peak_char.Peak_ID",
             "_Peak_char.Peak_contribution_ID",
@@ -307,6 +314,9 @@ public class Peak implements Comparable, PeakOrMulti {
         return Peak.peakGeneralCharStrings;
     }
 
+    public static String[] getSTAR3MeasureCharStrings() {
+        return Peak.peakMeasuresCharStrings;
+    }
     public static String[] getSTAR3CharStrings() {
         return Peak.peakCharStrings;
     }
@@ -763,6 +773,24 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString().trim());
     }
 
+    public String toMeasureSTARString(int peakIndex) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        String formatString = "%.5f";
+
+        if (measures.isPresent()) {
+            double[][] values = measures.get();
+            int id = peakIndex * values[0].length;
+            for (int i = 0; i < values[0].length; i++) {
+                result.append(String.format("%-4d ",id++));
+                result.append(String.format("%4d %3d ", getIdNum(), i));
+                result.append(String.format(formatString, values[0][i])).append(sep);
+                result.append(String.format(formatString, values[1][i]));
+                result.append("\n");
+            }
+        }
+        return result.toString();
+    }
     public String toMeasureString(int index) {
         StringBuilder result = new StringBuilder();
         String sep = "\t";
