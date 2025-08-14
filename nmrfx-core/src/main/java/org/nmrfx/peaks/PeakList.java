@@ -53,7 +53,7 @@ public class PeakList {
     boolean slideable = false;
     boolean requireSliderCondition = false;
     protected List<SearchDim> searchDims = new ArrayList<>();
-    Optional<Measures> measures = Optional.empty();
+    Measures measures = null;
     Map<String, String> properties = new HashMap<>();
     List<PeakListener> peakChangeListeners = new ArrayList<>();
     List<PeakListener> peakListChangeListeners = new ArrayList<>();
@@ -1306,14 +1306,21 @@ public class PeakList {
      * @return
      */
     public boolean hasMeasures() {
-        return measures.isPresent();
+        return measures != null;
+    }
+
+    /**
+     * @return
+     */
+    public Optional<Measures> getMeasures() {
+        return Optional.ofNullable(measures);
     }
 
     /**
      * @param measure
      */
-    public void setMeasures(Measures measure) {
-        measures = Optional.of(measure);
+    public void setMeasures(Measures measures) {
+        this.measures = measures;
     }
 
     /**
@@ -1322,7 +1329,7 @@ public class PeakList {
     public double[] getMeasureValues() {
         double[] values = null;
         if (hasMeasures()) {
-            values = measures.get().getValues();
+            values = measures.getValues();
         }
         return values;
     }
