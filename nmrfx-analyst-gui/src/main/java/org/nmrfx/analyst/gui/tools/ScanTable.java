@@ -497,6 +497,11 @@ public class ScanTable {
 
             int rowNum = 1;
             for (FileTableItem fileTableItem : fileTableItems) {
+                fileTableItem.setDatasetName(null);
+                fileTableItem.setDatasetAttributes(null);
+            }
+            activeDatasetAttributes.clear();
+            for (FileTableItem fileTableItem : fileTableItems) {
                 File fidFile = new File(scanDir, fileTableItem.getFileName());
                 String fidFilePath = fidFile.getAbsolutePath();
                 File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
