@@ -24,7 +24,6 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.beans.Observable;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -32,13 +31,14 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.chart.*;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
@@ -49,7 +49,6 @@ import org.nmrfx.structure.tools.MCSAnalysis.Hit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -65,7 +64,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
 
     @FXML
     SplitPane splitPane;
-    TableView<LigandScannerInfo> ligandTableView;
+    ScannerTool scannerTool;
     XYChartPane chartPane;
     @FXML
     private ToolBar menuBar;
@@ -84,9 +83,8 @@ public class LigandScannerController implements Initializable, StageBasedControl
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ligandTableView = new TableView();
         chartPane = new XYChartPane();
-        splitPane.getItems().addAll(chartPane, ligandTableView);
+        splitPane.getItems().addAll(chartPane);
         activeChart = chartPane.getChart();
 
         initMenuBar();
@@ -114,19 +112,22 @@ public class LigandScannerController implements Initializable, StageBasedControl
         return stage;
     }
 
-    public static LigandScannerController create() {
+    public static LigandScannerController create(ScannerTool scannerTool) {
         LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
                 .withNewStage("Ligand Scanner")
                 .getController();
+        controller.initScanner(scannerTool);
         controller.stage.show();
         return controller;
+    }
+
+    void initScanner(ScannerTool scannerTool) {
+        this.scannerTool = scannerTool;
     }
 
     void initMenuBar() {
         MenuButton fileMenu = new MenuButton("File");
         MenuItem readScannerTableItem = new MenuItem("Read Table...");
-        readScannerTableItem.setOnAction(e -> readTable());
-        fileMenu.getItems().add(readScannerTableItem);
         menuBar.getItems().add(fileMenu);
         Button setupButton = new Button("Setup");
         setupButton.setOnAction(e -> setupBucket());
@@ -148,61 +149,52 @@ public class LigandScannerController implements Initializable, StageBasedControl
         TableColumn<LigandScannerInfo, String> datasetColumn = new TableColumn<>("Dataset");
         TableColumn<LigandScannerInfo, Integer> indexColumn = new TableColumn<>("Index");
         TableColumn<LigandScannerInfo, Integer> nPeaksColumn = new TableColumn<>("nPks");
-        TableColumn<LigandScannerInfo, String> groupColumn = new TableColumn<>("Group");
-        TableColumn<LigandScannerInfo, String> sampleColumn = new TableColumn<>("Sample");
-        TableColumn<LigandScannerInfo, Double> concColumn = new TableColumn<>("Conc");
         TableColumn<LigandScannerInfo, Double> minShiftColumn = new TableColumn<>("MinShift");
         TableColumn<LigandScannerInfo, Double> pcaDistColumn = new TableColumn<>("PCADist");
 
         datasetColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getDataset().getName()));
         indexColumn.setCellValueFactory(new PropertyValueFactory<>("Index"));
         nPeaksColumn.setCellValueFactory(new PropertyValueFactory<>("NPeaks"));
-        groupColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getGroup()));
-        sampleColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getSample())));
-        concColumn.setCellValueFactory(new PropertyValueFactory<>("Conc"));
         pcaDistColumn.setCellValueFactory(new PropertyValueFactory<>("PCADist"));
         minShiftColumn.setCellValueFactory(new PropertyValueFactory<>("MinShift"));
-        ligandTableView.getColumns().addAll(datasetColumn, indexColumn, nPeaksColumn,
-                groupColumn, sampleColumn, concColumn, minShiftColumn,
-                pcaDistColumn);
         xArrayChoice.getItems().add("Conc");
         xArrayChoice.getItems().add("MinShift");
         xArrayChoice.getItems().add("PCADist");
         yArrayChoice.getItems().add("Conc");
         yArrayChoice.getItems().add("MinShift");
         yArrayChoice.getItems().add("PCADist");
+    }
+
+    public void addPCA() {
         for (int i = 0; i < 5; i++) {
             final int pcaIndex = i;
-            TableColumn<LigandScannerInfo, Number> pcaColumn = new TableColumn<>("PCA " + (pcaIndex + 1));
-            ligandTableView.getColumns().add(pcaColumn);
-            pcaColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getPCAValue(pcaIndex)));
-            xArrayChoice.getItems().add(pcaColumn.getText());
-            yArrayChoice.getItems().add(pcaColumn.getText());
+            String columnName = "PCA" + (pcaIndex + 1);
+            scannerTool.getScanTable().addTableColumn(columnName, "D");
+            xArrayChoice.getItems().add(columnName);
+            yArrayChoice.getItems().add(columnName);
         }
-
+        String columnName = "PCADelta";
+        scannerTool.getScanTable().addTableColumn(columnName, "D");
+        xArrayChoice.getItems().add(columnName);
+        yArrayChoice.getItems().add(columnName);
     }
 
     public void refresh() {
-        ligandTableView.refresh();
+        scannerTool.getScanTable().refresh();
     }
 
-    public void readTable() {
-        FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
-            try {
-                matrixAnalyzer.readScannerFile(file.toString());
-            } catch (IOException ex) {
-                log.warn(ex.getMessage(), ex);
-            }
-            ligandTableView.getItems().setAll(matrixAnalyzer.getScannerRows());
-            refresh();
-        }
-    }
 
     public void setupBucket() {
-        List<String> chartDimNames = chart.getDimNames();
-        int nDim = chartDimNames.size();
+        Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();
+        int nDatasets = chart.getDatasetAttributes().size();
+        int nDataDim = dataset.getNDim();
+        int nDim = 0;
+        if (nDatasets == 1) {
+            nDim = nDataDim - 1;
+        } else {
+            nDim = nDataDim;
+        }
+        List<String> chartDimNames = chart.getDimNames().subList(0, nDim);
         dimNames = new String[nDim];
         mcsTols = new double[nDim];
         mcsAlphas = new double[nDim];
@@ -230,7 +222,9 @@ public class LigandScannerController implements Initializable, StageBasedControl
                 mcsAlphas[i] = 5.0;
             }
         }
-        matrixAnalyzer.setup(dimNames, ppms, deltas);
+        var datasets = scannerTool.getScanTable().getItems().stream().map(item -> item.getDatasetAttributes().getDataset()).distinct().toList();
+        matrixAnalyzer.setup(datasets.getFirst(), dimNames, ppms, deltas);
+        matrixAnalyzer.setDatasets(datasets);
     }
 
     public void doPCA() {
@@ -241,6 +235,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
             return;
         }
         double threshold = chart.getDatasetAttributes().get(0).getLvl();
+        threshold = 0.002;
         try {
             matrixAnalyzer.bucket(threshold);
         } catch (IOException ex) {
@@ -248,27 +243,28 @@ public class LigandScannerController implements Initializable, StageBasedControl
             eDialog.showAndWait();
             return;
         }
+        addPCA();
         double[][] pcaValues = matrixAnalyzer.doPCA(nPCA);
-        List<LigandScannerInfo> scannerRows = matrixAnalyzer.getScannerRows();
+        List<FileTableItem> scannerRows = scannerTool.getScanTable().getItems();
         double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, 2);
         int iRow = 0;
-        double[] pcaCol = new double[pcaValues.length];
-        for (LigandScannerInfo scannerRow : scannerRows) {
-            for (int j = 0; j < pcaCol.length; j++) {
-                pcaCol[j] = pcaValues[j][iRow];
+        for (FileTableItem scannerRow : scannerRows) {
+            for (int j = 0; j < pcaValues.length; j++) {
+                double pca = pcaValues[j][iRow];
+                scannerRow.setExtra("PCA"+(j+1), pca);
             }
-            scannerRow.setPCValues(pcaCol);
-            scannerRow.setPCADist(pcaDists[iRow]);
+            scannerRow.setExtra("PCADelta",pcaDists[iRow]);
             iRow++;
         }
         refresh();
     }
 
     void doMCS() {
-        List<LigandScannerInfo> scannerRows = matrixAnalyzer.getScannerRows();
+        List<FileTableItem> scannerRows = scannerTool.getScanTable().getItems();
         if (!scannerRows.isEmpty()) {
-            for (LigandScannerInfo scannerRow : scannerRows) {
-                PeakList peakList = scannerRow.getPeakList();
+            for (FileTableItem scannerRow : scannerRows) {
+                Dataset dataset = scannerRow.getDatasetAttributes().getDataset();
+                PeakList peakList = PeakList.getPeakListForDataset(dataset.getName());
                 if (peakList == null) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setContentText("No peakList");
@@ -276,10 +272,20 @@ public class LigandScannerController implements Initializable, StageBasedControl
                     return;
                 }
             }
-            LigandScannerInfo refInfo = scannerRows.get(refIndex);
-            PeakList refPeakList = refInfo.getPeakList();
-            for (LigandScannerInfo scannerRow : scannerRows) {
-                PeakList peakList = scannerRow.getPeakList();
+            String columnName = "MCS";
+            scannerTool.getScanTable().addTableColumn(columnName, "D");
+            xArrayChoice.getItems().add(columnName);
+            yArrayChoice.getItems().add(columnName);
+
+            FileTableItem refInfo = scannerRows.get(refIndex);
+            Dataset refDataset = refInfo.getDatasetAttributes().getDataset();
+            PeakList refPeakList = PeakList.getPeakListForDataset(refDataset.getName());
+            for (FileTableItem scannerRow : scannerRows) {
+                Dataset dataset = scannerRow.getDatasetAttributes().getDataset();
+                PeakList peakList = PeakList.getPeakListForDataset(dataset.getName());
+                if (peakList == null) {
+                    break;
+                }
                 double score = 0.0;
                 if (peakList != refPeakList) {
                     MCSAnalysis mcsAnalysis = new MCSAnalysis(peakList, mcsTols, mcsAlphas, dimNames, refPeakList);
@@ -287,7 +293,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
                     score = mcsAnalysis.score(hits, mcsTol);
                     System.out.println(hits.size() + " " + score);
                 }
-                scannerRow.setMinShift(score);
+                scannerRow.setExtra("MCS", score);
             }
         }
         refresh();
@@ -317,9 +323,6 @@ public class LigandScannerController implements Initializable, StageBasedControl
                         break;
                     case "PCADist":
                         values[i] = info.getPCADist();
-                        break;
-                    case "Conc":
-                        values[i] = info.getConc();
                         break;
                     case "PCA":
                         values[i] = info.getPCAValue(pcaIndex);

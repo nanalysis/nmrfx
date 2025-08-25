@@ -30,6 +30,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
+import org.nmrfx.analyst.gui.peaks.LigandScannerController;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
@@ -85,6 +86,7 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
     TRACTGUI tractGUI = null;
+    LigandScannerController ligandScannerController = null;
     TablePlotGUI plotGUI = null;
     TablePlotGUI diffusionGUI = null;
     MinerController miner;
@@ -244,7 +246,9 @@ public class ScannerTool implements ControllerTool {
         diffusionMenuItem.setOnAction(e -> showDiffusionGUI());
         MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
         tractMenuItem.setOnAction(e -> showTRACTGUI());
-        menu.getItems().addAll(plotMenuItem, diffusionMenuItem, tractMenuItem);
+        MenuItem analysisMenuItem = new MenuItem("Show Analysis Tool");
+        analysisMenuItem.setOnAction(e -> showAnalysisTool());
+        menu.getItems().addAll(plotMenuItem, diffusionMenuItem, tractMenuItem, analysisMenuItem);
         return menu;
     }
 
@@ -821,4 +825,10 @@ public class ScannerTool implements ControllerTool {
         tractGUI.showMCplot();
     }
 
+    void showAnalysisTool() {
+        if (ligandScannerController == null) {
+            ligandScannerController = LigandScannerController.create(this);
+        }
+        ligandScannerController.getStage().show();
+    }
 }

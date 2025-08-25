@@ -54,10 +54,6 @@ public class PeakMenuActions extends MenuActions {
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().linkPeakDims());
 
-        MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
-        ligandScannerMenuItem.disableProperty().bind(AnalystApp.getFXMLControllerManager().activeControllerProperty().isNull());
-        ligandScannerMenuItem.setOnAction(e -> showLigandScanner());
-
         Menu assignCascade = new Menu("Assign Tools");
 
         assignOnPick = new CheckMenuItem("Assign on Pick");
@@ -73,7 +69,6 @@ public class PeakMenuActions extends MenuActions {
         assignCascade.getItems().addAll(assignOnPick,
                 atomBrowserMenuItem);
         menu.getItems().addAll(peakGeneratorMenuItem, linkPeakDimsMenuItem,
-                ligandScannerMenuItem,
                 zzMenuItem,
                 assignCascade);
 
@@ -105,16 +100,6 @@ public class PeakMenuActions extends MenuActions {
     private void showPeakListsTable() {
         PeakListsTableController pltc = PeakListsTableController.getPeakListsTableController();
         pltc.show();
-    }
-
-    @FXML
-    private void showLigandScanner() {
-        if (scannerController == null) {
-            scannerController = LigandScannerController.create();
-        }
-        scannerController.getStage().show();
-        scannerController.getStage().toFront();
-
     }
 
     public void showAtomBrowser() {

@@ -16,19 +16,13 @@ public class LigandScannerInfo {
     private final Dataset dataset;
     private PeakList peakList = null;
     private final int index;
-    private final String group;
-    private final String sample;
-    private final double conc;
     private double minShift;
     double pcaDist;
     double[] pcaValues = null;
 
-    public LigandScannerInfo(Dataset dataset, int index, String group, String sample, double conc) {
+    public LigandScannerInfo(Dataset dataset, int index) {
         this.dataset = dataset;
         this.index = index;
-        this.group = group;
-        this.sample = sample;
-        this.conc = conc;
     }
 
     public void setPCADist(double value) {
@@ -59,27 +53,6 @@ public class LigandScannerInfo {
      */
     public int getIndex() {
         return index;
-    }
-
-    /**
-     * @return the group
-     */
-    public String getGroup() {
-        return group;
-    }
-
-    /**
-     * @return the sample
-     */
-    public String getSample() {
-        return sample;
-    }
-
-    /**
-     * @return the conc
-     */
-    public double getConc() {
-        return conc;
     }
 
     /**
