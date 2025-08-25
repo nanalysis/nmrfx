@@ -23,26 +23,18 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import javafx.beans.Observable;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
-import org.nmrfx.chart.*;
-import org.nmrfx.fxutil.Fxml;
-import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
-import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
 import org.nmrfx.structure.tools.MCSAnalysis;
 import org.nmrfx.structure.tools.MCSAnalysis.Hit;
@@ -50,24 +42,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * @author Bruce Johnson
  */
-public class LigandScannerController implements Initializable, StageBasedController {
-    private static final Logger log = LoggerFactory.getLogger(LigandScannerController.class);
+public class MatrixAnalysisTool {
+    private static final Logger log = LoggerFactory.getLogger(MatrixAnalysisTool.class);
 
     private Stage stage;
 
     @FXML
-    SplitPane splitPane;
     ScannerTool scannerTool;
-    XYChartPane chartPane;
     @FXML
-    private ToolBar menuBar;
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     MatrixAnalyzer matrixAnalyzer = new MatrixAnalyzer();
     String[] dimNames = null;
@@ -76,93 +63,10 @@ public class LigandScannerController implements Initializable, StageBasedControl
     double mcsTol = 0.0;
     int refIndex = 0;
     PolyChart chart = PolyChartManager.getInstance().getActiveChart();
-    XYCanvasChart activeChart = null;
-    ChoiceBox<String> xArrayChoice;
-    ChoiceBox<String> yArrayChoice;
     int nPCA = 5;
 
-    @Override
-    public void initialize(URL url, ResourceBundle rb) {
-        chartPane = new XYChartPane();
-        splitPane.getItems().addAll(chartPane);
-        activeChart = chartPane.getChart();
-
-        initMenuBar();
-        initTable();
-        try {
-            xArrayChoice.valueProperty().addListener((Observable x) -> {
-                updatePlot();
-            });
-            yArrayChoice.valueProperty().addListener((Observable y) -> {
-                updatePlot();
-            });
-        } catch (NullPointerException npEmc1) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Error: Fit must first be performed.");
-            alert.showAndWait();
-        }
-    }
-
-    @Override
-    public void setStage(Stage stage) {
-        this.stage = stage;
-    }
-
-    public Stage getStage() {
-        return stage;
-    }
-
-    public static LigandScannerController create(ScannerTool scannerTool) {
-        LigandScannerController controller = Fxml.load(LigandScannerController.class, "LigandScannerScene.fxml")
-                .withNewStage("Ligand Scanner")
-                .getController();
-        controller.initScanner(scannerTool);
-        controller.stage.show();
-        return controller;
-    }
-
-    void initScanner(ScannerTool scannerTool) {
+    public MatrixAnalysisTool(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
-    }
-
-    void initMenuBar() {
-        MenuButton fileMenu = new MenuButton("File");
-        MenuItem readScannerTableItem = new MenuItem("Read Table...");
-        menuBar.getItems().add(fileMenu);
-        Button setupButton = new Button("Setup");
-        setupButton.setOnAction(e -> setupBucket());
-        menuBar.getItems().add(setupButton);
-        Button pcaButton = new Button("PCA");
-        pcaButton.setOnAction(e -> doPCA());
-        menuBar.getItems().add(pcaButton);
-        Button mcsButton = new Button("MCS");
-        mcsButton.setOnAction(e -> doMCS());
-
-        menuBar.getItems().add(mcsButton);
-        xArrayChoice = new ChoiceBox<>();
-        yArrayChoice = new ChoiceBox<>();
-        menuBar.getItems().addAll(xArrayChoice, yArrayChoice);
-
-    }
-
-    private void initTable() {
-        TableColumn<LigandScannerInfo, String> datasetColumn = new TableColumn<>("Dataset");
-        TableColumn<LigandScannerInfo, Integer> indexColumn = new TableColumn<>("Index");
-        TableColumn<LigandScannerInfo, Integer> nPeaksColumn = new TableColumn<>("nPks");
-        TableColumn<LigandScannerInfo, Double> minShiftColumn = new TableColumn<>("MinShift");
-        TableColumn<LigandScannerInfo, Double> pcaDistColumn = new TableColumn<>("PCADist");
-
-        datasetColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getDataset().getName()));
-        indexColumn.setCellValueFactory(new PropertyValueFactory<>("Index"));
-        nPeaksColumn.setCellValueFactory(new PropertyValueFactory<>("NPeaks"));
-        pcaDistColumn.setCellValueFactory(new PropertyValueFactory<>("PCADist"));
-        minShiftColumn.setCellValueFactory(new PropertyValueFactory<>("MinShift"));
-        xArrayChoice.getItems().add("Conc");
-        xArrayChoice.getItems().add("MinShift");
-        xArrayChoice.getItems().add("PCADist");
-        yArrayChoice.getItems().add("Conc");
-        yArrayChoice.getItems().add("MinShift");
-        yArrayChoice.getItems().add("PCADist");
     }
 
     public void addPCA() {
@@ -170,13 +74,9 @@ public class LigandScannerController implements Initializable, StageBasedControl
             final int pcaIndex = i;
             String columnName = "PCA" + (pcaIndex + 1);
             scannerTool.getScanTable().addTableColumn(columnName, "D");
-            xArrayChoice.getItems().add(columnName);
-            yArrayChoice.getItems().add(columnName);
         }
         String columnName = "PCADelta";
         scannerTool.getScanTable().addTableColumn(columnName, "D");
-        xArrayChoice.getItems().add(columnName);
-        yArrayChoice.getItems().add(columnName);
     }
 
     public void refresh() {
@@ -259,7 +159,7 @@ public class LigandScannerController implements Initializable, StageBasedControl
         refresh();
     }
 
-    void doMCS() {
+    public void doMCS() {
         List<FileTableItem> scannerRows = scannerTool.getScanTable().getItems();
         if (!scannerRows.isEmpty()) {
             for (FileTableItem scannerRow : scannerRows) {
@@ -274,8 +174,6 @@ public class LigandScannerController implements Initializable, StageBasedControl
             }
             String columnName = "MCS";
             scannerTool.getScanTable().addTableColumn(columnName, "D");
-            xArrayChoice.getItems().add(columnName);
-            yArrayChoice.getItems().add(columnName);
 
             FileTableItem refInfo = scannerRows.get(refIndex);
             Dataset refDataset = refInfo.getDatasetAttributes().getDataset();
@@ -298,70 +196,4 @@ public class LigandScannerController implements Initializable, StageBasedControl
         }
         refresh();
     }
-
-    public ObservableList<FileTableItem> getItems() {
-        return fileListItems;
-    }
-
-
-    double[] getTableValues(String columnName) {
-        double[] values = null;
-        List<LigandScannerInfo> scannerRows = matrixAnalyzer.getScannerRows();
-        int nItems = scannerRows.size();
-        if (nItems != 0) {
-            values = new double[nItems];
-            int i = 0;
-            int pcaIndex = 0;
-            if (columnName.startsWith("PCA ")) {
-                pcaIndex = Integer.parseInt(columnName.substring(4)) - 1;
-                columnName = "PCA";
-            }
-            for (LigandScannerInfo info : scannerRows) {
-                switch (columnName) {
-                    case "MinShift":
-                        values[i] = info.getMinShift();
-                        break;
-                    case "PCADist":
-                        values[i] = info.getPCADist();
-                        break;
-                    case "PCA":
-                        values[i] = info.getPCAValue(pcaIndex);
-                        break;
-                }
-                i++;
-            }
-        }
-        return values;
-    }
-
-    void updatePlot() {
-        Axis xAxis = activeChart.getXAxis();
-        Axis yAxis = activeChart.getYAxis();
-        String xElem = xArrayChoice.getValue();
-        String yElem = yArrayChoice.getValue();
-        if ((xElem != null) && (yElem != null)) {
-            xAxis.setLabel(xElem);
-            yAxis.setLabel(yElem);
-            xAxis.setZeroIncluded(false);
-            yAxis.setZeroIncluded(false);
-            xAxis.setAutoRanging(true);
-            yAxis.setAutoRanging(true);
-            DataSeries series = new DataSeries();
-            activeChart.getData().clear();
-            //Prepare XYChart.Series objects by setting data
-            series.clear();
-            double[] xValues = getTableValues(xElem);
-            double[] yValues = getTableValues(yElem);
-            if ((xValues != null) && (yValues != null)) {
-                for (int i = 0; i < xValues.length; i++) {
-                    series.add(new XYValue(xValues[i], yValues[i]));
-                }
-            }
-            System.out.println("plot");
-            activeChart.getData().add(series);
-            activeChart.autoScale(true);
-        }
-
-    }
-
 }

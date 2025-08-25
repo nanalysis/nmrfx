@@ -30,7 +30,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
-import org.nmrfx.analyst.gui.peaks.LigandScannerController;
+import org.nmrfx.analyst.gui.peaks.MatrixAnalysisTool;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
@@ -86,7 +86,7 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
     TRACTGUI tractGUI = null;
-    LigandScannerController ligandScannerController = null;
+    MatrixAnalysisTool matrixAnalysisTool = null;
     TablePlotGUI plotGUI = null;
     TablePlotGUI diffusionGUI = null;
     MinerController miner;
@@ -113,6 +113,7 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
         scannerBar.getItems().add(makeScoreMenu());
+        scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         Button reloadButton = new Button("Reload");
@@ -238,6 +239,21 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
+    MenuButton makeMatrixAnalysisMenu () {
+        MenuButton matrixMenu = new MenuButton("Matrix Analysis");
+        MenuItem setupButton = new MenuItem("Setup");
+        setupButton.setOnAction(e -> setupBucket());
+        matrixMenu.getItems().add(setupButton);
+        MenuItem pcaButton = new MenuItem("PCA");
+        pcaButton.setOnAction(e -> doPCA());
+        matrixMenu.getItems().add(pcaButton);
+        MenuItem mcsButton = new MenuItem("MCS");
+        mcsButton.setOnAction(e -> doMCS());
+        matrixMenu.getItems().add(mcsButton);
+
+        return matrixMenu;
+    }
+
     private MenuButton makeToolMenu() {
         MenuButton menu = new MenuButton("Tools");
         MenuItem plotMenuItem = new MenuItem("Show Plot Tool");
@@ -246,9 +262,7 @@ public class ScannerTool implements ControllerTool {
         diffusionMenuItem.setOnAction(e -> showDiffusionGUI());
         MenuItem tractMenuItem = new MenuItem("Show TRACT Tool");
         tractMenuItem.setOnAction(e -> showTRACTGUI());
-        MenuItem analysisMenuItem = new MenuItem("Show Analysis Tool");
-        analysisMenuItem.setOnAction(e -> showAnalysisTool());
-        menu.getItems().addAll(plotMenuItem, diffusionMenuItem, tractMenuItem, analysisMenuItem);
+        menu.getItems().addAll(plotMenuItem, diffusionMenuItem, tractMenuItem);
         return menu;
     }
 
@@ -825,10 +839,23 @@ public class ScannerTool implements ControllerTool {
         tractGUI.showMCplot();
     }
 
-    void showAnalysisTool() {
-        if (ligandScannerController == null) {
-            ligandScannerController = LigandScannerController.create(this);
+    void setupBucket() {
+        matrixAnalysisTool = new MatrixAnalysisTool(this);
+        matrixAnalysisTool.setupBucket();
+    }
+
+    void doPCA() {
+        if (matrixAnalysisTool == null) {
+            setupBucket();
         }
-        ligandScannerController.getStage().show();
+        matrixAnalysisTool.doPCA();
+    }
+
+    void doMCS() {
+        if (matrixAnalysisTool == null) {
+            setupBucket();
+        }
+        matrixAnalysisTool.doMCS();
+
     }
 }

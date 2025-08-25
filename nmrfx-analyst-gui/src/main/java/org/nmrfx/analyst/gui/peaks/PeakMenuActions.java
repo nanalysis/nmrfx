@@ -1,6 +1,5 @@
 package org.nmrfx.analyst.gui.peaks;
 
-import javafx.fxml.FXML;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.CheckMenuItem;
@@ -22,7 +21,7 @@ import java.util.List;
 public class PeakMenuActions extends MenuActions {
     private static PeakTableController peakTableController;
     private static PeakGeneratorGUI peakGeneratorGUI;
-    private LigandScannerController scannerController;
+    private MatrixAnalysisTool scannerController;
     private AtomBrowser atomBrowser;
     private CheckMenuItem assignOnPick;
     private PeakAtomPicker peakAtomPicker;
