@@ -1372,6 +1372,11 @@ public class ScanTable {
         return colorMenu;
     }
 
+    public int getSelectedIndex() {
+        int index = tableView.getSelectionModel().getSelectedIndex();
+        return index == -1 ? 0 : index;
+    }
+
     private void unifyColors(boolean posColorMode) {
         if (!getItems().isEmpty()) {
             var selectedItem = tableView.getSelectionModel().getSelectedItem();

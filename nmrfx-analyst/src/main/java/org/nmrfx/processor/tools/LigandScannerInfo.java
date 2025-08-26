@@ -16,29 +16,10 @@ public class LigandScannerInfo {
     private final Dataset dataset;
     private PeakList peakList = null;
     private final int index;
-    private double minShift;
-    double pcaDist;
-    double[] pcaValues = null;
 
     public LigandScannerInfo(Dataset dataset, int index) {
         this.dataset = dataset;
         this.index = index;
-    }
-
-    public void setPCADist(double value) {
-        pcaDist = value;
-    }
-
-    public double getPCADist() {
-        return pcaDist;
-    }
-
-    public void setPCValues(double[] values) {
-        pcaValues = values.clone();
-    }
-
-    public double getPCAValue(int index) {
-        return pcaValues == null ? 0.0 : pcaValues[index];
     }
 
     /**
@@ -69,31 +50,4 @@ public class LigandScannerInfo {
         }
         return peakList;
     }
-
-    /**
-     * @return the nPeaks
-     */
-    public int getNPeaks() {
-        int nPeaks = 0;
-        PeakList peakList = getPeakList();
-        if (peakList != null) {
-            nPeaks = peakList.size();
-        }
-        return nPeaks;
-    }
-
-    /**
-     * @return the minShift
-     */
-    public double getMinShift() {
-        return minShift;
-    }
-
-    /**
-     * @param minShift the minShift to set
-     */
-    public void setMinShift(double minShift) {
-        this.minShift = minShift;
-    }
-
 }

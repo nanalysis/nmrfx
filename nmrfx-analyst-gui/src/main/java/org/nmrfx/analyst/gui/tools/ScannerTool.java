@@ -841,20 +841,25 @@ public class ScannerTool implements ControllerTool {
 
     void setupBucket() {
         matrixAnalysisTool = new MatrixAnalysisTool(this);
-        matrixAnalysisTool.setupBucket();
+        matrixAnalysisTool.setupBucket(scanTable.getItems());
     }
 
     void doPCA() {
         if (matrixAnalysisTool == null) {
-            setupBucket();
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
         }
-        matrixAnalysisTool.doPCA();
+        matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
+        List<FileTableItem> items = scanTable.getItems();
+        matrixAnalysisTool.setupBucket(items);
+        matrixAnalysisTool.doPCA(items);
     }
 
     void doMCS() {
         if (matrixAnalysisTool == null) {
-            setupBucket();
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
         }
+        scanTable.getSelectedAttributes();
+        matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
         matrixAnalysisTool.doMCS();
 
     }

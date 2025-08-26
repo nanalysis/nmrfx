@@ -30,11 +30,14 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
 import org.nmrfx.structure.tools.MCSAnalysis;
 import org.nmrfx.structure.tools.MCSAnalysis.Hit;
@@ -42,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -69,6 +73,10 @@ public class MatrixAnalysisTool {
         this.scannerTool = scannerTool;
     }
 
+    public void setRefIndex(int value) {
+        refIndex = value;
+    }
+
     public void addPCA() {
         for (int i = 0; i < 5; i++) {
             final int pcaIndex = i;
@@ -83,8 +91,7 @@ public class MatrixAnalysisTool {
         scannerTool.getScanTable().refresh();
     }
 
-
-    public void setupBucket() {
+    public int setupDims() {
         Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();
         int nDatasets = chart.getDatasetAttributes().size();
         int nDataDim = dataset.getNDim();
@@ -96,24 +103,17 @@ public class MatrixAnalysisTool {
         }
         List<String> chartDimNames = chart.getDimNames().subList(0, nDim);
         dimNames = new String[nDim];
-        mcsTols = new double[nDim];
-        mcsAlphas = new double[nDim];
-        double[][] ppms = new double[nDim][2];
-        int[] deltas = new int[nDim];
-        if (!chart.getCrossHairs().hasRegion()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("No crosshair region");
-            alert.showAndWait();
-            return;
-        }
-
         for (int i = 0; i < nDim; i++) {
             dimNames[i] = chartDimNames.get(i);
-            deltas[i] = 10;
-            Double[] positions0 = chart.getCrossHairs().getPositions(0);
-            Double[] positions1 = chart.getCrossHairs().getPositions(1);
-            ppms[i][0] = positions0[i];
-            ppms[i][1] = positions1[i];
+        }
+        return nDim;
+    }
+
+    public void setupMCS() {
+        int nDim = dimNames.length;
+        mcsTols = new double[nDim];
+        mcsAlphas = new double[nDim];
+        for (int i = 0; i < nDim; i++) {
             // fixm need to set based on nucleus and/or in gui
             mcsTols[i] = 1.0;
             mcsAlphas[i] = 1.0;
@@ -122,30 +122,78 @@ public class MatrixAnalysisTool {
                 mcsAlphas[i] = 5.0;
             }
         }
-        var datasets = scannerTool.getScanTable().getItems().stream().map(item -> item.getDatasetAttributes().getDataset()).distinct().toList();
-        matrixAnalyzer.setup(datasets.getFirst(), dimNames, ppms, deltas);
-        matrixAnalyzer.setDatasets(datasets);
     }
 
-    public void doPCA() {
+    public void setupBucket(List<FileTableItem> fileTableItems) {
+        int nDim = setupDims();
+        double[][] ppms = new double[nDim][2];
+        int[] deltas = new int[nDim];
+        if (chart.getCrossHairs().hasRegion()) {
+            for (int i = 0; i < nDim; i++) {
+                deltas[i] = 10;
+                Double[] positions0 = chart.getCrossHairs().getPositions(0);
+                Double[] positions1 = chart.getCrossHairs().getPositions(1);
+                ppms[i][0] = positions0[i];
+                ppms[i][1] = positions1[i];
+            }
+        } else {
+            for (int i = 0; i < nDim; i++) {
+                deltas[i] = 10;
+                double[][] bounds = chart.getWorld();
+                ppms[i][0] = bounds[i][0];
+                ppms[i][1] = bounds[i][1];
+            }
+        }
+        matrixAnalyzer.setup(fileTableItems.getFirst().getDatasetAttributes().getDataset(), dimNames, ppms, deltas);
+        setupPCA(fileTableItems);
+    }
+
+    private void setupPCA(List<FileTableItem> fileTableItems) {
+        List<LigandScannerInfo> ligandScannerInfos = new ArrayList<>();
+        for (FileTableItem item : fileTableItems) {
+            Dataset dataset = item.getDatasetAttributes().getDataset();
+            Integer row = item.getRow();
+            if (row == null) {
+                row = 0;
+            } else {
+                row = row -1;
+            }
+            LigandScannerInfo scannerInfo = new LigandScannerInfo(dataset, row);
+            ligandScannerInfos.add(scannerInfo);
+        }
+        matrixAnalyzer.setScannerRows(ligandScannerInfos);
+    }
+
+    public void doPCA(List<FileTableItem> scannerRows) {
         if (chart.getDatasetAttributes().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("No dataset in active window");
             alert.showAndWait();
             return;
         }
-        double threshold = chart.getDatasetAttributes().get(0).getLvl();
-        threshold = 0.002;
+        double threshold;
+        if (chart.is1D()) {
+            boolean scaleToLargest = true;
+            int nWin = 32;
+            double maxRatio = 20.0;
+            double sdRatio = 30.0;
+            Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();;
+            threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+            Analyzer analyzer = new Analyzer(chart.getDatasetAttributes().getFirst().getDataset());
+            analyzer.calculateThreshold();
+        } else {
+             threshold = chart.getDatasetAttributes().get(0).getLvl();
+        }
+
         try {
-            matrixAnalyzer.bucket(threshold);
+            matrixAnalyzer.bucket2(threshold);
         } catch (IOException ex) {
             ExceptionDialog eDialog = new ExceptionDialog(ex);
             eDialog.showAndWait();
             return;
         }
         addPCA();
-        double[][] pcaValues = matrixAnalyzer.doPCA(nPCA);
-        List<FileTableItem> scannerRows = scannerTool.getScanTable().getItems();
+        double[][] pcaValues = matrixAnalyzer.doPCA2(nPCA);
         double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, 2);
         int iRow = 0;
         for (FileTableItem scannerRow : scannerRows) {
@@ -160,6 +208,8 @@ public class MatrixAnalysisTool {
     }
 
     public void doMCS() {
+        setupDims();
+        setupMCS();
         List<FileTableItem> scannerRows = scannerTool.getScanTable().getItems();
         if (!scannerRows.isEmpty()) {
             for (FileTableItem scannerRow : scannerRows) {
