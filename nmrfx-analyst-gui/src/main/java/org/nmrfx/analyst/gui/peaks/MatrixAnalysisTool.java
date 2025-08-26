@@ -23,11 +23,8 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.analyst.peaks.Analyzer;
@@ -54,12 +51,9 @@ import java.util.List;
 public class MatrixAnalysisTool {
     private static final Logger log = LoggerFactory.getLogger(MatrixAnalysisTool.class);
 
-    private Stage stage;
-
     @FXML
     ScannerTool scannerTool;
     @FXML
-    ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     MatrixAnalyzer matrixAnalyzer = new MatrixAnalyzer();
     String[] dimNames = null;
     double[] mcsTols = null;
@@ -79,8 +73,7 @@ public class MatrixAnalysisTool {
 
     public void addPCA() {
         for (int i = 0; i < 5; i++) {
-            final int pcaIndex = i;
-            String columnName = "PCA" + (pcaIndex + 1);
+            String columnName = "PCA" + (i + 1);
             scannerTool.getScanTable().addTableColumn(columnName, "D");
         }
         String columnName = "PCADelta";
@@ -95,7 +88,7 @@ public class MatrixAnalysisTool {
         Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();
         int nDatasets = chart.getDatasetAttributes().size();
         int nDataDim = dataset.getNDim();
-        int nDim = 0;
+        int nDim;
         if (nDatasets == 1) {
             nDim = nDataDim - 1;
         } else {
@@ -177,12 +170,12 @@ public class MatrixAnalysisTool {
             int nWin = 32;
             double maxRatio = 20.0;
             double sdRatio = 30.0;
-            Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();;
+            Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();
             threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
             Analyzer analyzer = new Analyzer(chart.getDatasetAttributes().getFirst().getDataset());
             analyzer.calculateThreshold();
         } else {
-             threshold = chart.getDatasetAttributes().get(0).getLvl();
+             threshold = chart.getDatasetAttributes().getFirst().getLvl();
         }
 
         try {
@@ -239,7 +232,6 @@ public class MatrixAnalysisTool {
                     MCSAnalysis mcsAnalysis = new MCSAnalysis(peakList, mcsTols, mcsAlphas, dimNames, refPeakList);
                     List<Hit> hits = mcsAnalysis.calc();
                     score = mcsAnalysis.score(hits, mcsTol);
-                    System.out.println(hits.size() + " " + score);
                 }
                 scannerRow.setExtra("MCS", score);
             }

@@ -42,10 +42,8 @@ public class LigandScannerInfo {
     public PeakList getPeakList() {
         if ((peakList == null) && (dataset != null)) {
             peakList = PeakList.getPeakListForDataset(dataset.getName());
-            if (peakList != null) {
-                if (peakList.getNDim() < dataset.getNDim()) {
-                    peakList = null;
-                }
+            if (peakList != null && peakList.getNDim() < dataset.getNDim()) {
+                peakList = null;
             }
         }
         return peakList;

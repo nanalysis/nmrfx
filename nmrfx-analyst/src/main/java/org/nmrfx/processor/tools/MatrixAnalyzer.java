@@ -25,10 +25,7 @@ public class MatrixAnalyzer {
     int[] deltas;
     SimpleMatrix dataMatrix;
     double[][] pcValues = null;
-
-    public MatrixAnalyzer() {
-
-    }
+    List<int[]> indices = new ArrayList<>();
 
     public void setScannerRows(List<LigandScannerInfo> scannerRows) {
         this.scannerRows = scannerRows;
@@ -41,29 +38,6 @@ public class MatrixAnalyzer {
         this.deltas = deltas;
         getLimits(dataset);
 
-    }
-
-    int getNIncr(Dataset dataset) {
-        int nIncr = 1;
-        int nDim = dataset.getNDim();
-        if (nDim > dimNames.length + 1) {
-            throw new IllegalArgumentException("dataset has too many dimensions");
-        }
-        if (nDim > dimNames.length) {
-            for (int i = 0; i < nDim; i++) {
-                boolean match = false;
-                for (String dimName : dimNames) {
-                    if (dataset.getLabel(i).equals(dimName)) {
-                        match = true;
-                        break;
-                    }
-                }
-                if (!match) {
-                    nIncr = dataset.getSizeTotal(i);
-                }
-            }
-        }
-        return nIncr;
     }
 
     private void getLimits(Dataset dataset) {
@@ -101,12 +75,12 @@ public class MatrixAnalyzer {
         MultidimensionalCounter.Iterator iter = counter.iterator();
         int[][] bpt = new int[nDim][2];
         List<double[]> columnData = new ArrayList<>();
-        List<int[]> indices = new ArrayList<>();
+        indices.clear();
         int nSamples = scannerRows.size();
 
 
         while (iter.hasNext()) {
-            int kk = iter.next();
+            iter.next();
             int[] elems = iter.getCounts();
             for (int k = 0; k < elems.length; k++) {
                 bpt[k][0] = pt[k][0] + deltas[k] * elems[k];
@@ -118,8 +92,7 @@ public class MatrixAnalyzer {
             int iRow = 0;
             for (LigandScannerInfo scannerInfo : scannerRows) {
                 Dataset dataset = scannerInfo.getDataset();
-                int nIncr = getNIncr(dataset);
-                if (nIncr > 1) {
+                if (nDim > dimNames.length) {
                     bpt[nDim - 1][0] = scannerInfo.getIndex();
                     bpt[nDim - 1][1] = scannerInfo.getIndex();
                 }
@@ -166,6 +139,10 @@ public class MatrixAnalyzer {
         return Xc;
     }
 
+    public List<int[]> getIndices() {
+        return indices;
+    }
+
     public double[][] doPCA2(int nPC) {
         SimpleMatrix centered = centerColumns(dataMatrix);
         SimpleSVD<SimpleMatrix> svd = centered.svd();
@@ -188,10 +165,10 @@ public class MatrixAnalyzer {
     }
 
     public double[] getPCADelta(int ref, int nPC) {
-        int nRows = pcValues.length;
-        int nCols = pcValues[0].length;
-        double[] result = new double[nCols];
-        for (int i = 0; i < nCols; i++) {
+        int nRows = Math.min(nPC, pcValues.length);
+        int nSamples = pcValues[0].length;
+        double[] result = new double[nSamples];
+        for (int i = 0; i < nSamples; i++) {
             double sum = 0.0;
             for (int j = 0; j < nRows; j++) {
                 double delta = pcValues[j][i] - pcValues[j][ref];
