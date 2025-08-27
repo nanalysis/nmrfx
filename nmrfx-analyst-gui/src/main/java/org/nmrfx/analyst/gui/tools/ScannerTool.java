@@ -112,7 +112,6 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
-        scannerBar.getItems().add(makeScoreMenu());
         scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
@@ -231,25 +230,21 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
-    private MenuButton makeScoreMenu() {
+    MenuButton makeMatrixAnalysisMenu () {
+        MenuButton matrixMenu = new MenuButton("Analysis");
+        MenuItem setupButton = new MenuItem("Setup PCA...");
+        setupButton.setOnAction(e -> setupBucket());
+        matrixMenu.getItems().add(setupButton);
+        MenuItem pcaButton = new MenuItem("Principal Component Analysis");
+        pcaButton.setOnAction(e -> doPCA());
+        matrixMenu.getItems().add(pcaButton);
+        MenuItem mcsButton = new MenuItem("Peak Minimum Chemical Shift ");
+        mcsButton.setOnAction(e -> doMCS());
+        matrixMenu.getItems().add(mcsButton);
         MenuButton menu = new MenuButton("Score");
         MenuItem scoreMenuItem = new MenuItem("Cosine Score");
         scoreMenuItem.setOnAction(e -> scoreSimilarity());
-        menu.getItems().addAll(scoreMenuItem);
-        return menu;
-    }
-
-    MenuButton makeMatrixAnalysisMenu () {
-        MenuButton matrixMenu = new MenuButton("Matrix Analysis");
-        MenuItem setupButton = new MenuItem("Setup");
-        setupButton.setOnAction(e -> setupBucket());
-        matrixMenu.getItems().add(setupButton);
-        MenuItem pcaButton = new MenuItem("PCA");
-        pcaButton.setOnAction(e -> doPCA());
-        matrixMenu.getItems().add(pcaButton);
-        MenuItem mcsButton = new MenuItem("MCS");
-        mcsButton.setOnAction(e -> doMCS());
-        matrixMenu.getItems().add(mcsButton);
+        matrixMenu.getItems().addAll(scoreMenuItem);
 
         return matrixMenu;
     }
@@ -840,7 +835,11 @@ public class ScannerTool implements ControllerTool {
     }
 
     void setupBucket() {
+        var intChoices = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20);
+        var choice = GUIUtils.choice(intChoices, "Choices", 10);
+        int nWidth = (Integer) choice;
         matrixAnalysisTool = new MatrixAnalysisTool(this);
+        matrixAnalysisTool.setNWidth(nWidth);
         matrixAnalysisTool.setupBucket(scanTable.getItems());
     }
 
@@ -852,6 +851,7 @@ public class ScannerTool implements ControllerTool {
         List<FileTableItem> items = scanTable.getItems();
         matrixAnalysisTool.setupBucket(items);
         matrixAnalysisTool.doPCA(items);
+        showPlot("PCA1", "PCA2");
     }
 
     void doMCS() {
@@ -861,6 +861,14 @@ public class ScannerTool implements ControllerTool {
         scanTable.getSelectedAttributes();
         matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
         matrixAnalysisTool.doMCS();
+        showPlot("row", "MCS");
+    }
 
+    void showPlot(String xChoice, String yChoice) {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView, null);
+        }
+        plotGUI.showPlotStage();
+        plotGUI.updateChoice(xChoice, yChoice);
     }
 }

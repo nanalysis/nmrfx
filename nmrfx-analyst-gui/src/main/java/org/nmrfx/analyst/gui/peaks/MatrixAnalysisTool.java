@@ -62,6 +62,7 @@ public class MatrixAnalysisTool {
     int refIndex = 0;
     PolyChart chart = PolyChartManager.getInstance().getActiveChart();
     int nPCA = 5;
+    int nWidth = 10;
 
     public MatrixAnalysisTool(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
@@ -69,6 +70,10 @@ public class MatrixAnalysisTool {
 
     public void setRefIndex(int value) {
         refIndex = value;
+    }
+
+    public void setNWidth(int value) {
+        nWidth = value;
     }
 
     public void addPCA() {
@@ -123,7 +128,7 @@ public class MatrixAnalysisTool {
         int[] deltas = new int[nDim];
         if (chart.getCrossHairs().hasRegion()) {
             for (int i = 0; i < nDim; i++) {
-                deltas[i] = 10;
+                deltas[i] = nWidth;
                 Double[] positions0 = chart.getCrossHairs().getPositions(0);
                 Double[] positions1 = chart.getCrossHairs().getPositions(1);
                 ppms[i][0] = positions0[i];
@@ -131,7 +136,7 @@ public class MatrixAnalysisTool {
             }
         } else {
             for (int i = 0; i < nDim; i++) {
-                deltas[i] = 10;
+                deltas[i] = nWidth;
                 double[][] bounds = chart.getWorld();
                 ppms[i][0] = bounds[i][0];
                 ppms[i][1] = bounds[i][1];
