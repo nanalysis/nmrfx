@@ -221,6 +221,12 @@ public class ScanTable {
         chart.updateDatasetsByNames(datasetNames);
     }
 
+    public void ensureDatasetAttributes() {
+        if (getItems().stream().filter(item -> item.getDatasetAttributes() == null).findAny().isPresent()) {
+            setDatasetAttributes();
+        }
+    }
+
     private void setDatasetAttributes() {
         PolyChart chart = scannerTool.getChart();
         List<DatasetAttributes> datasetAttributesList = chart.getDatasetAttributes();
@@ -241,7 +247,7 @@ public class ScanTable {
     }
 
     boolean arrayed(DatasetAttributes datasetAttributes) {
-        Dataset dataset = (Dataset) datasetAttributes.getDataset();
+        Dataset dataset = datasetAttributes.getDataset();
         int nFreqDim = dataset.getNFreqDims();
         int nDim = dataset.getNDim();
         return (nFreqDim != 0) && (nFreqDim < nDim);
@@ -259,7 +265,7 @@ public class ScanTable {
         datasetAttributesList.forEach(d -> d.setPos(false));
         boolean singleData = datasetAttributesList.size() == 1;
         if (singleData) {
-            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            DatasetAttributes dataAttr = datasetAttributesList.getFirst();
             if (arrayed(dataAttr)) {
                 dataAttr.setMapColor(0, dataAttr.getMapColor(0)); // ensure colorMap is not empty
             } else {
@@ -288,7 +294,7 @@ public class ScanTable {
         );
 
         if (singleData) {
-            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            DatasetAttributes dataAttr = datasetAttributesList.getFirst();
             int nDim = dataAttr.nDim;
             chart.full(nDim - 1);
             if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1) {
@@ -384,7 +390,7 @@ public class ScanTable {
             success = true;
 
             // Only get the first file from the list
-            final File file = db.getFiles().get(0);
+            final File file = db.getFiles().getFirst();
             if (file.isDirectory()) {
                 scanDir = file;
                 Platform.runLater(() -> {
@@ -406,7 +412,7 @@ public class ScanTable {
 
         List<File> files = db.getFiles();
         if (db.hasFiles()) {
-            if (!files.isEmpty() && (files.get(0).isDirectory() || files.get(0).toString().endsWith(".txt"))) {
+            if (!files.isEmpty() && (files.getFirst().isDirectory() || files.getFirst().toString().endsWith(".txt"))) {
                 tableView.setStyle("-fx-border-color: green;"
                         + "-fx-border-width: 1;");
                 e.acceptTransferModes(TransferMode.COPY);
@@ -490,7 +496,7 @@ public class ScanTable {
             String initScript = ChartProcessor.buildInitScript();
             processInterp.exec(initScript);
 
-            int nDim = fileTableItems.get(0).getNDim();
+            int nDim = fileTableItems.getFirst().getNDim();
             String processScript = chartProcessor.buildScript(nDim);
             Processor processor = Processor.getProcessor();
             processor.keepDatasetOpen(false);
@@ -563,7 +569,7 @@ public class ScanTable {
     }
 
     public void combineDatasets() {
-        List<Dataset> datasets = getDatasetAttributesList().stream().map(dAttr -> (Dataset) dAttr.getDataset()).toList();
+        List<Dataset> datasets = getDatasetAttributesList().stream().map(DatasetAttributes::getDataset).toList();
         if (currentChart.getDatasetAttributes().size() < 2) {
             GUIUtils.warn("Combine", "Need more than one dataset to combine");
         } else {
@@ -657,7 +663,7 @@ public class ScanTable {
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
         for (var datasetAttributes : datasetAttributesList) {
-            Dataset dataset = (Dataset) datasetAttributes.getDataset();
+            Dataset dataset = datasetAttributes.getDataset();
             long eTime = 0;
             FileTableItem fileTableItem = new FileTableItem(dataset.getName(), "", dataset.getNDim(),
                     eTime, iRow + 1, dataset.getName(), fieldMap);
@@ -896,7 +902,7 @@ public class ScanTable {
                     Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
                     // If there is only one unique dataset name, assume an arrayed experiment
                     List<String> uniqueDatasetNames = fileListItems.stream().map(FileTableItem::getDatasetName).distinct().toList();
-                    if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).isEmpty()) {
+                    if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.getFirst() != null && !uniqueDatasetNames.getFirst().isEmpty()) {
                         firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
                     }
                     PolyChart chart = scannerTool.getChart();
@@ -1093,7 +1099,6 @@ public class ScanTable {
         TableColumn<FileTableItem, Color> posColorCol = makeColorColumns(scannerTool, true);
         TableColumn<FileTableItem, Color> negColorCol = makeColorColumns(scannerTool, false);
 
-      //  TableColumn<FileTableItem, Boolean> posDrawOnCol = makePosDrawColumn(scannerTool, true);
         TableColumn<FileTableItem, Boolean> negDrawOnCol = makePosDrawColumn(scannerTool, false);
 
 
@@ -1372,11 +1377,16 @@ public class ScanTable {
         return colorMenu;
     }
 
+    public int getSelectedIndex() {
+        int index = tableView.getSelectionModel().getSelectedIndex();
+        return index == -1 ? 0 : index;
+    }
+
     private void unifyColors(boolean posColorMode) {
         if (!getItems().isEmpty()) {
             var selectedItem = tableView.getSelectionModel().getSelectedItem();
             if (selectedItem == null) {
-                selectedItem = getItems().get(0);
+                selectedItem = getItems().getFirst();
             }
             TableColors.unifyColor(getItems(), selectedItem.getColor(posColorMode), (item, color) -> item.setColor(color, posColorMode));
             scannerTool.getChart().refresh();
@@ -1387,7 +1397,7 @@ public class ScanTable {
     private void interpolateColors(boolean posColorMode) {
         int size = getItems().size();
         if (size > 1) {
-            Color color1 = getItems().get(0).getColor(posColorMode);
+            Color color1 = getItems().getFirst().getColor(posColorMode);
             Color color2 = getItems().get(size - 1).getColor(posColorMode);
             TableColors.interpolateColors(getItems(), color1, color2,
                     (item, color) -> item.setColor(color, posColorMode));
@@ -1626,7 +1636,7 @@ public class ScanTable {
         if (!datasetAttributesList.isEmpty()) {
             FileTableItem item0 = tableView.getSelectionModel().getSelectedItem();
             if (item0 == null) {
-                item0 = getItems().get(0);
+                item0 = getItems().getFirst();
             }
             if (item0 != null) {
                 dataAttr0 = item0.getDatasetAttributes();
@@ -1666,7 +1676,7 @@ public class ScanTable {
         Double value = null;
         List<DatasetAttributes> datasetAttributesList = getSelectedDatasetAttributesList();
         if (!datasetAttributesList.isEmpty()) {
-            value = attrColumn.getValue(datasetAttributesList.get(0)).doubleValue();
+            value = attrColumn.getValue(datasetAttributesList.getFirst()).doubleValue();
         }
         return value;
     }
@@ -1803,7 +1813,7 @@ public class ScanTable {
                 datasetAttributes.setOffset(value.doubleValue());
             }
         },
-        CLM(OFFSET_COLUMN_NAME, "Contour Level Multiplier") {
+        CLM(CLM_COLUMN_NAME, "Contour Level Multiplier") {
             GUIUtils.SliderRange getSliderRange(double value) {
                 return new GUIUtils.SliderRange(1.01, value, 4.0, 0.01);
             }
