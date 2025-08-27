@@ -221,6 +221,12 @@ public class ScanTable {
         chart.updateDatasetsByNames(datasetNames);
     }
 
+    public void ensureDatasetAttributes() {
+        if (getItems().stream().filter(item -> item.getDatasetAttributes() == null).findAny().isPresent()) {
+            setDatasetAttributes();
+        }
+    }
+
     private void setDatasetAttributes() {
         PolyChart chart = scannerTool.getChart();
         List<DatasetAttributes> datasetAttributesList = chart.getDatasetAttributes();

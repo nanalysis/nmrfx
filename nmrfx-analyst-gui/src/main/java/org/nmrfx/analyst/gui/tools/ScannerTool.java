@@ -846,6 +846,7 @@ public class ScannerTool implements ControllerTool {
     void doPCA() {
         if (matrixAnalysisTool == null) {
             matrixAnalysisTool = new MatrixAnalysisTool(this);
+            scanTable.ensureDatasetAttributes();
         }
         matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
         List<FileTableItem> items = scanTable.getItems();
@@ -857,6 +858,7 @@ public class ScannerTool implements ControllerTool {
     void doMCS() {
         if (matrixAnalysisTool == null) {
             matrixAnalysisTool = new MatrixAnalysisTool(this);
+            scanTable.ensureDatasetAttributes();
         }
         scanTable.getSelectedAttributes();
         matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
