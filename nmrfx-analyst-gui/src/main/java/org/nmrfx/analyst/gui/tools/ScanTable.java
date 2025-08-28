@@ -872,47 +872,7 @@ public class ScanTable {
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
             }
-            for (int i = 0; i < headers.length; i++) {
-                if (!notInteger[i]) {
-                    columnTypes.put(headers[i], "I");
-                } else if (!notDouble[i]) {
-                    columnTypes.put(headers[i], "D");
-                } else {
-                    columnTypes.put(headers[i], "S");
-                }
-            }
-            columnTypes.put(PATH_COLUMN_NAME, "S");
-            columnTypes.put(SEQUENCE_COLUMN_NAME, "S");
-            columnTypes.put(NDIM_COLUMN_NAME, "I");
-            columnTypes.put(ROW_COLUMN_NAME, "I");
-            columnTypes.put(DATASET_COLUMN_NAME, "S");
-            columnTypes.put(ETIME_COLUMN_NAME, "I");
-
-            for (FileTableItem item : fileListItems) {
-                item.setDate(item.getDate() - firstDate);
-                item.setTypes(headers, notDouble, notInteger);
-            }
-            initTable();
-            addHeaders(headers);
-            fileTableFilter.resetFilter();
-            if (!firstDatasetName.isEmpty()) {
-                File parentDir = file.getParentFile();
-                Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
-                if (path.toFile().exists()) {
-                    Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
-                    // If there is only one unique dataset name, assume an arrayed experiment
-                    List<String> uniqueDatasetNames = fileListItems.stream().map(FileTableItem::getDatasetName).distinct().toList();
-                    if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.getFirst() != null && !uniqueDatasetNames.getFirst().isEmpty()) {
-                        firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
-                    }
-                    PolyChart chart = scannerTool.getChart();
-                    List<Integer> rows = new ArrayList<>();
-                    rows.add(0);
-                    chart.setDrawlist(rows);
-                    chart.full();
-                    chart.autoScale();
-                }
-            }
+            processColumns(file, headers, notInteger, notDouble, firstDate, firstDatasetName);
             addGroupColumn();
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
@@ -920,6 +880,51 @@ public class ScanTable {
             log.warn(e.getMessage(), e);
         } finally {
             processingTable = false;
+        }
+    }
+
+    private void processColumns(File file, String[] headers, boolean[] notInteger, boolean[] notDouble, long firstDate, String firstDatasetName) {
+        for (int i = 0; i < headers.length; i++) {
+            if (!notInteger[i]) {
+                columnTypes.put(headers[i], "I");
+            } else if (!notDouble[i]) {
+                columnTypes.put(headers[i], "D");
+            } else {
+                columnTypes.put(headers[i], "S");
+            }
+        }
+        columnTypes.put(PATH_COLUMN_NAME, "S");
+        columnTypes.put(SEQUENCE_COLUMN_NAME, "S");
+        columnTypes.put(NDIM_COLUMN_NAME, "I");
+        columnTypes.put(ROW_COLUMN_NAME, "I");
+        columnTypes.put(DATASET_COLUMN_NAME, "S");
+        columnTypes.put(ETIME_COLUMN_NAME, "I");
+
+        for (FileTableItem item : fileListItems) {
+            item.setDate(item.getDate() - firstDate);
+            item.setTypes(headers, notDouble, notInteger);
+        }
+        initTable();
+        addHeaders(headers);
+
+        fileTableFilter.resetFilter();
+        if (!firstDatasetName.isEmpty()) {
+            File parentDir = file.getParentFile();
+            Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
+            if (path.toFile().exists()) {
+                Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
+                // If there is only one unique dataset name, assume an arrayed experiment
+                List<String> uniqueDatasetNames = fileListItems.stream().map(FileTableItem::getDatasetName).distinct().toList();
+                if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.getFirst() != null && !uniqueDatasetNames.getFirst().isEmpty()) {
+                    firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
+                }
+                PolyChart chart = scannerTool.getChart();
+                List<Integer> rows = new ArrayList<>();
+                rows.add(0);
+                chart.setDrawlist(rows);
+                chart.full();
+                chart.autoScale();
+            }
         }
     }
 
@@ -1031,7 +1036,13 @@ public class ScanTable {
     public void addTableColumn(String newName, String type) {
         if (headerAbsent(newName)) {
             columnTypes.put(newName, type);
-            addColumn(newName);
+            TableColumn column = createColumn(newName);
+            if (column != null) {
+                tableView.getColumns().add(column);
+                setColumnGraphic(column);
+                column.graphicProperty().addListener(e -> graphicChanged(column));
+                updateFilter();
+            }
         }
     }
 
@@ -1305,15 +1316,26 @@ public class ScanTable {
 
     private void addHeaders(String[] headers) {
         var missingHeaders = headersMissing(headers);
+        List<TableColumn<FileTableItem, ?>> columns = new ArrayList<>();
         for (var header : missingHeaders) {
-            addColumn(header);
+            TableColumn<FileTableItem, ?> column = createColumn(header);
+            if (column != null) {
+                columns.add(column);
+            }
         }
+        tableView.getColumns().addAll(columns);
+
+        for (TableColumn column : columns) {
+            setColumnGraphic(column);
+            column.graphicProperty().addListener(e -> graphicChanged(column));
+        }
+        updateFilter();
     }
 
-    private void addColumn(String header) {
+    private TableColumn<FileTableItem, ?> createColumn(String header) {
+        final TableColumn<FileTableItem, ?> newColumn;
         if (headerAbsent(header)) {
             String type = columnTypes.get(header);
-            final TableColumn<FileTableItem, ?> newColumn;
             if (type == null) {
                 type = "S";
                 log.info("No type for {}", header);
@@ -1335,26 +1357,23 @@ public class ScanTable {
                             }
                         }
                     });
-                    tableView.getColumns().add(doubleExtraColumn);
                     break;
                 case "I":
                     TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
                     newColumn = intExtraColumn;
                     intExtraColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
-                    tableView.getColumns().add(intExtraColumn);
                     break;
                 default:
                     TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
                     newColumn = extraColumn;
                     extraColumn.setCellValueFactory(e -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
-                    tableView.getColumns().add(extraColumn);
                     break;
             }
 
-            updateFilter();
-            setColumnGraphic(newColumn);
-            newColumn.graphicProperty().addListener(e -> graphicChanged(newColumn));
+        } else {
+            newColumn = null;
         }
+        return newColumn;
     }
 
     private void graphicChanged(TableColumn<FileTableItem, ?> column) {
