@@ -484,7 +484,7 @@ public class ProjectBase {
                     String fileName = f.toFile().getName();
                     String peakListName = fileName.substring(0, fileName.length() - 5);
                     PeakList peakList = PeakList.get(peakListName);
-                    if ((peakList != null) && Files.exists(f)) {
+                    if ((peakList != null) && !peakList.hasMeasures() && Files.exists(f) ) {
                         peakReader.readMPK2(peakList, f.toString());
                     }
                 }

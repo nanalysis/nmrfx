@@ -16,7 +16,7 @@ import static org.nmrfx.structure.chemistry.energy.ConstraintCreator.addDistance
 public class RNAStructureSetup {
     private static final Logger log = LoggerFactory.getLogger(RNAStructureSetup.class);
 
-    private static final Map<Integer, String> angleKeyMap = new HashMap<>();
+    private static final Map<Residue, String> angleKeyMap = new HashMap<>();
     public static boolean dumpKeys = true;
 
     private static boolean usePlanarity = true;
@@ -368,6 +368,7 @@ public class RNAStructureSetup {
         }
         return resName;
     }
+
     public static List<AtomAtomLowUp> stackTo(String resName) {
         resName = dnaToRNA(resName);
         return stackTo.getOrDefault(resName, Collections.emptyList());
@@ -396,7 +397,7 @@ public class RNAStructureSetup {
         for (AtomAtomLowUp atomAtomLowUp : stackTo(resNameJ)) {
             addStack(atomAtomLowUp, polyI, polyJ, resNumI, resNumJ);
         }
-        for (AtomAtomLowUp atomAtomLowUp : stackPairs(resNameI , resNameJ)) {
+        for (AtomAtomLowUp atomAtomLowUp : stackPairs(resNameI, resNameJ)) {
             addStackPair(atomAtomLowUp, polyI, polyJ, resNumI, resNumJ);
         }
     }
@@ -559,7 +560,7 @@ public class RNAStructureSetup {
             RNARotamer.setDihedrals(residue, anglesToSet, 0.0, lockAngles);
         });
         key = found.get() ? "PRESENT:" + key : "ABSENT:" + key;
-        angleKeyMap.put(residue.getResNum(), key);
+        angleKeyMap.put(residue, key);
     }
 
 
@@ -820,15 +821,14 @@ public class RNAStructureSetup {
         if (dumpKeys) {
             Molecule molecule = (Molecule) ssGen.structures().getFirst().firstResidue().molecule;
             String dotBracket = molecule.getDotBracket();
-
-            angleKeyMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).forEach(entry -> {
-                int iRes = entry.getKey();
-                System.out.printf("%3d %c %s\n", iRes, dotBracket.charAt(iRes - 1), entry.getValue());
+            angleKeyMap.entrySet().stream().sorted(Comparator.comparingInt(e -> e.getKey().getIDNum())).forEach(entry -> {
+                Residue residue = entry.getKey();
+                System.out.printf("%3d %c %s\n", residue.getResNum(), dotBracket.charAt(residue.getIDNum() - 1), entry.getValue());
             });
         }
     }
 
-    public static Map<Integer, String> getAngleKeyMap() {
+    public static Map<Residue, String> getAngleKeyMap() {
         return angleKeyMap;
     }
 
