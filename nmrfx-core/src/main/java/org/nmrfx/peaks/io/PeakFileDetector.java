@@ -31,7 +31,12 @@ public class PeakFileDetector extends FileTypeDetector {
         } else if (fileName.endsWith(".save")) {
             type = "sparky_save";
         } else if (fileName.endsWith(".csv")) {
-            type = "csv";
+            String firstLine = firstLine(path).strip();
+            if (ccpnLine(firstLine)) {
+                type = "ccpn";
+            } else {
+                type = "csv";
+            }
         } else if (fileName.endsWith(".peaks")) {
             type = "xeasy";
         } else {
@@ -46,6 +51,27 @@ public class PeakFileDetector extends FileTypeDetector {
         }
 
         return type;
+    }
+
+    boolean ccpnLine(String line) {
+        //Number,#,Position F1,Position F2,Assign F1,Assign F2,Height,Volume,Line Width F1 (Hz),Line Width F2 (Hz),Merit,Details,Fit Method,Vol. Method
+        String[] ccpnFields = {"Number", "Position F", "Height", "Volume"};
+        boolean isCCPN = false;
+        String[] fields = line.split(",");
+        if (fields.length > 0) {
+            for (String ccpnField : ccpnFields) {
+                for (String field : fields) {
+                    if (field.startsWith(ccpnField)) {
+                        isCCPN = true;
+                        break;
+                    }
+                }
+                if (isCCPN) {
+                    break;
+                }
+            }
+        }
+        return isCCPN;
     }
 
     boolean nmrPipeLine(String line) {
