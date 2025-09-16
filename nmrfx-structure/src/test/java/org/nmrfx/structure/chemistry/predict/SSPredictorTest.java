@@ -32,12 +32,8 @@ public class SSPredictorTest {
         return new double[]{ppv, recall, f1};
     }
 
-    @Test
-    public void predictSS() {
-        String testFile = "/Users/ekoag/ssPredictorTest/bpRNA_TS0.txt";
+    public void predictSS(String testFile, String modelFile, String outFilePath) {
         List<double[]> scores = new ArrayList<>();
-        //String modelFile = "/Users/ekoag/rna_ss_models/model_163/fine_tune_model.export";
-        String modelFile = "/Users/ekoag/nmrfx/rna_bp_v1/";
         SSPredictor.setModelFile(modelFile);
         try (BufferedReader reader = new BufferedReader(new FileReader(testFile))) {
             String line;
@@ -83,8 +79,7 @@ public class SSPredictorTest {
                     sb.append("\n");
                 }
             }
-            String filePath = "/Users/ekoag/ssPredictorTest/model_embedded.txt";
-            try (FileWriter fileWriter = new FileWriter(filePath)) {
+            try (FileWriter fileWriter = new FileWriter(outFilePath)) {
                 fileWriter.write(sb.toString());
             }
 
