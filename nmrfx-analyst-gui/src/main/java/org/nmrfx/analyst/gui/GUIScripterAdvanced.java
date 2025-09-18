@@ -11,7 +11,9 @@ import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.structure.seqassign.RunAbout;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.File;
 import java.util.*;
@@ -188,7 +190,7 @@ public class GUIScripterAdvanced extends GUIScripter {
     }
 
     public void loadYAMLOnFx(String inputData, String pathName, boolean createNewStage) {
-        var yaml = new Yaml();
+        Yaml yaml = getYamlReader();
         var data = (Map<String, Object>) yaml.load(inputData);
         FXMLController controller = getStageController(createNewStage, pathName);
 
