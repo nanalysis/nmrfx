@@ -322,7 +322,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.14</version>
+                <version>1.14.0</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
