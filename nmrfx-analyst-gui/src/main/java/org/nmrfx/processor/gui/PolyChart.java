@@ -1611,13 +1611,14 @@ public class PolyChart extends Region {
             controller.addDataset(this, newAttributes.get(0).getDataset(), false, false);
             newAttributes.remove(0);
             datasetAttrs.addAll(newAttributes);
+            updateProjections();
         } else {
             datasetAttrs.clear();
             datasetAttrs.addAll(newAttributes);
         }
         if (!newAttributes.isEmpty()) {
             AnalystApp.getFXMLControllerManager().getOrCreateActiveController().updateSpectrumStatusBarOptions(false);
-            DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            DISDIM newDISDIM = datasetAttrs.getFirst().getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
             // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
             fullChart = fullChart || newDISDIM != disDimProp.get();
             disDimProp.set(newDISDIM);
@@ -1813,7 +1814,7 @@ public class PolyChart extends Region {
         List<Integer> first = datasetAttributesList.get(0).drawList;
         for (int i = 1; i < datasetAttributesList.size(); i++) {
             if (!first.equals(datasetAttributesList.get(i).drawList)) {
-                log.warn("Dataset draw lists are not equal. Using draw list for: {}", datasetAttributesList.get(0).getFileName());
+                log.warn("Dataset draw lists are not equal. Using draw list for: {}", datasetAttributesList.get(0).getFileName() + " " + datasetAttributesList.get(i).drawList);
                 break;
             }
         }
