@@ -924,10 +924,14 @@ public class GUIScripter {
         opts.setTagInspector(tag -> {
             String className = tag.getClassName();
             return className != null
-                    && className.startsWith("org.nmrfx.processor.gui.annotations.");
+                    && (
+                    className.startsWith("org.nmrfx.processor.gui.annotations.")
+                            || className.startsWith("org.nmrfx.analyst.gui.annotations.")
+                            || className.startsWith("org.nmrfx.analyst.gui.molecule.CanvasMolecule")
+            );
         });
 
         Constructor constructor = new Constructor(Object.class, opts);
-        return  new Yaml(constructor);
+        return new Yaml(constructor);
     }
 }
