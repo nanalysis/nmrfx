@@ -23,6 +23,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -65,6 +66,7 @@ import java.util.regex.Pattern;
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
     private static final String BIN_MEASURE_NAME = "binValues";
+
     enum TableSelectionMode {
         ALL,
         HIGHLIGHT,
@@ -230,7 +232,7 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
-    MenuButton makeMatrixAnalysisMenu () {
+    MenuButton makeMatrixAnalysisMenu() {
         MenuButton matrixMenu = new MenuButton("Analysis");
         MenuItem setupButton = new MenuItem("Setup PCA...");
         setupButton.setOnAction(e -> setupBucket());
@@ -819,6 +821,7 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
     void showDiffusionGUI() {
         if (diffusionGUI == null) {
             diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION);
@@ -835,12 +838,7 @@ public class ScannerTool implements ControllerTool {
     }
 
     void setupBucket() {
-        var intChoices = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20);
-        var choice = GUIUtils.choice(intChoices, "Choices", 10);
-        int nWidth = (Integer) choice;
-        matrixAnalysisTool = new MatrixAnalysisTool(this);
-        matrixAnalysisTool.setNWidth(nWidth);
-        matrixAnalysisTool.setupBucket(scanTable.getItems());
+        getPCAModes();
     }
 
     void doPCA() {
@@ -849,8 +847,14 @@ public class ScannerTool implements ControllerTool {
             scanTable.ensureDatasetAttributes();
         }
         matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
-        List<FileTableItem> items = scanTable.getItems();
-        matrixAnalysisTool.setupBucket(items);
+        List<FileTableItem> items = scanTable.getActiveItems();
+        if (matrixAnalysisTool.getTableMode()) {
+            double[][] data = getScanTable().getData(items);
+            matrixAnalysisTool.setupPCAWithData(data);
+        } else {
+            matrixAnalysisTool.setupBucket(items);
+            matrixAnalysisTool.setupPCAFromTable(items);
+        }
         matrixAnalysisTool.doPCA(items);
         showPlot("PCA1", "PCA2");
     }
@@ -871,6 +875,71 @@ public class ScannerTool implements ControllerTool {
             plotGUI = new TablePlotGUI(tableView, null);
         }
         plotGUI.showPlotStage();
+        plotGUI.setPlotType("ScatterPlot");
         plotGUI.updateChoice(xChoice, yChoice);
+    }
+
+    record PCAModes(boolean tableMode, int bucketSize, boolean center, boolean standardize) {
+
+    }
+
+    public void getPCAModes() {
+        if (matrixAnalysisTool == null) {
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
+        }
+        Dialog<PCAModes> dialog = new Dialog<>();
+        dialog.setTitle("PCA");
+        dialog.setHeaderText("PCA Setup:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+
+        CheckBox tableModeCheckBox = new CheckBox();
+        grid.add(new Label("Use Table Data"), 0, 0);
+        grid.add(tableModeCheckBox, 1, 0);
+        tableModeCheckBox.setSelected(matrixAnalysisTool.getTableMode());
+
+
+        var intChoices = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20);
+        ChoiceBox<Integer> bucketChoice = new ChoiceBox<>();
+        bucketChoice.getItems().addAll(intChoices);
+        bucketChoice.setValue(matrixAnalysisTool.getnWidth());
+        grid.add(new Label("Bucket Size"), 0, 1);
+        grid.add(bucketChoice, 1, 1);
+
+        CheckBox centerCheckBox = new CheckBox();
+        grid.add(new Label("Center Data"), 0, 2);
+        grid.add(centerCheckBox, 1, 2);
+        centerCheckBox.setSelected(matrixAnalysisTool.centerData());
+
+        CheckBox standardizeCheckBox = new CheckBox();
+        grid.add(new Label("Standardize Data"), 0, 3);
+        grid.add(standardizeCheckBox, 1, 3);
+        standardizeCheckBox.setSelected(matrixAnalysisTool.standardizeData());
+
+        bucketChoice.disableProperty().bind(tableModeCheckBox.selectedProperty());
+
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                // The value set in the formatter may not have been set yet so commit the value before retrieving
+                return new PCAModes(tableModeCheckBox.isSelected(), bucketChoice.getValue(),
+                        centerCheckBox.isSelected(), standardizeCheckBox.isSelected());
+            }
+            return null;
+        });
+
+        PeakSlider.MatchListPair gd = null;
+        Optional<PCAModes> result = dialog.showAndWait();
+        result.ifPresent(pcaModes -> {
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
+            matrixAnalysisTool.setNWidth(pcaModes.bucketSize);
+            matrixAnalysisTool.setupBucket(scanTable.getItems());
+            matrixAnalysisTool.setTableMode(pcaModes.tableMode);
+            matrixAnalysisTool.centerData(pcaModes.center);
+            matrixAnalysisTool.standardizeData(pcaModes.standardize);
+        });
     }
 }

@@ -249,6 +249,10 @@ public class TablePlotGUI {
         }
     }
 
+    public void setPlotType(String type) {
+        chartTypeChoice.setValue(type);
+    }
+
     private void updatePlot() {
         switch (chartTypeChoice.getValue()) {
             case "ScatterPlot" -> updateScatterPlot();

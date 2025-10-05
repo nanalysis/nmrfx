@@ -63,7 +63,7 @@ public class MatrixAnalysisTool {
     PolyChart chart = PolyChartManager.getInstance().getActiveChart();
     int nPCA = 5;
     int nWidth = 10;
-
+    boolean tableMode = false;
     public MatrixAnalysisTool(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
     }
@@ -74,6 +74,35 @@ public class MatrixAnalysisTool {
 
     public void setNWidth(int value) {
         nWidth = value;
+    }
+
+    public int getnWidth() {
+        return nWidth;
+    }
+
+    public void setTableMode(boolean mode) {
+        tableMode = mode;
+    }
+
+    public boolean getTableMode() {
+        return tableMode;
+    }
+
+    public void centerData(boolean mode) {
+        matrixAnalyzer.centerData(mode);
+    }
+
+    public boolean centerData() {
+        return matrixAnalyzer.centerData();
+    }
+
+
+    public void standardizeData(boolean mode) {
+        matrixAnalyzer.standardizeData(mode);
+    }
+
+    public boolean standardizeData() {
+        return matrixAnalyzer.standardizeData();
     }
 
     public void addPCA() {
@@ -143,10 +172,9 @@ public class MatrixAnalysisTool {
             }
         }
         matrixAnalyzer.setup(fileTableItems.getFirst().getDatasetAttributes().getDataset(), dimNames, ppms, deltas);
-        setupPCA(fileTableItems);
     }
 
-    private void setupPCA(List<FileTableItem> fileTableItems) {
+    public void setupPCA(List<FileTableItem> fileTableItems) {
         List<LigandScannerInfo> ligandScannerInfos = new ArrayList<>();
         for (FileTableItem item : fileTableItems) {
             Dataset dataset = item.getDatasetAttributes().getDataset();
@@ -162,7 +190,12 @@ public class MatrixAnalysisTool {
         matrixAnalyzer.setScannerRows(ligandScannerInfos);
     }
 
-    public void doPCA(List<FileTableItem> scannerRows) {
+    public void setupPCAWithData(double[][] data) {
+        matrixAnalyzer.setDataMatrix(data);
+    }
+
+    public void setupPCAFromTable(List<FileTableItem> items) {
+        setupPCA(items);
         if (chart.getDatasetAttributes().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("No dataset in active window");
@@ -180,7 +213,7 @@ public class MatrixAnalysisTool {
             Analyzer analyzer = new Analyzer(chart.getDatasetAttributes().getFirst().getDataset());
             analyzer.calculateThreshold();
         } else {
-             threshold = chart.getDatasetAttributes().getFirst().getLvl();
+            threshold = chart.getDatasetAttributes().getFirst().getLvl();
         }
 
         try {
@@ -190,8 +223,11 @@ public class MatrixAnalysisTool {
             eDialog.showAndWait();
             return;
         }
-        addPCA();
+    }
+
+    public void doPCA(List<FileTableItem> scannerRows) {
         double[][] pcaValues = matrixAnalyzer.doPCA2(nPCA);
+        addPCA();
         double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, 2);
         int iRow = 0;
         for (FileTableItem scannerRow : scannerRows) {
