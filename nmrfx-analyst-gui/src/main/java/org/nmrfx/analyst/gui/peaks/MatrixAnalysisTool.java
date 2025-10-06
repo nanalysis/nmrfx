@@ -24,8 +24,14 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.peaks.PeakList;
@@ -61,9 +67,15 @@ public class MatrixAnalysisTool {
     double mcsTol = 0.0;
     int refIndex = 0;
     PolyChart chart = PolyChartManager.getInstance().getActiveChart();
+    Stage stage;
+    CheckBox tableModeCheckBox;
+    ChoiceBox<Integer> bucketChoice;
+    CheckBox centerCheckBox;
+    CheckBox standardizeCheckBox;
     int nPCA = 5;
     int nWidth = 10;
     boolean tableMode = false;
+
     public MatrixAnalysisTool(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
     }
@@ -182,7 +194,7 @@ public class MatrixAnalysisTool {
             if (row == null) {
                 row = 0;
             } else {
-                row = row -1;
+                row = row - 1;
             }
             LigandScannerInfo scannerInfo = new LigandScannerInfo(dataset, row);
             ligandScannerInfos.add(scannerInfo);
@@ -233,9 +245,9 @@ public class MatrixAnalysisTool {
         for (FileTableItem scannerRow : scannerRows) {
             for (int j = 0; j < pcaValues.length; j++) {
                 double pca = pcaValues[j][iRow];
-                scannerRow.setExtra("PCA"+(j+1), pca);
+                scannerRow.setExtra("PCA" + (j + 1), pca);
             }
-            scannerRow.setExtra("PCADelta",pcaDists[iRow]);
+            scannerRow.setExtra("PCADelta", pcaDists[iRow]);
             iRow++;
         }
         refresh();
@@ -278,5 +290,80 @@ public class MatrixAnalysisTool {
             }
         }
         refresh();
+    }
+
+
+    private void doPCA() {
+        ScanTable scanTable = scannerTool.getScanTable();
+        setNWidth(bucketChoice.getValue());
+        setupBucket(scanTable.getItems());
+        setTableMode(tableModeCheckBox.isSelected());
+        centerData(centerCheckBox.isSelected());
+        standardizeData(standardizeCheckBox.isSelected());
+        scanTable.ensureDatasetAttributes();
+
+        setRefIndex(scanTable.getSelectedIndex());
+        List<FileTableItem> items = scanTable.getActiveItems();
+        if (getTableMode()) {
+            double[][] data = scanTable.getData(items);
+            setupPCAWithData(data);
+        } else {
+            setupBucket(items);
+            setupPCAFromTable(items);
+        }
+        doPCA(items);
+        scannerTool.showPlot("PCA1", "PCA2");
+    }
+
+    public void showPCATool() {
+        if (stage == null) {
+            stage = new Stage();
+            stage.setTitle("PCA");
+            BorderPane borderPane = new BorderPane();
+            Scene stageScene = new Scene(borderPane);
+            GridPane grid = new GridPane();
+            grid.setPadding(new Insets(10, 10, 10, 10));
+            grid.setVgap(10);
+            grid.setHgap(10);
+
+            tableModeCheckBox = new CheckBox();
+            grid.add(new Label("Use Table Data"), 0, 0);
+            grid.add(tableModeCheckBox, 1, 0);
+            tableModeCheckBox.setSelected(getTableMode());
+
+
+            var intChoices = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20);
+            bucketChoice = new ChoiceBox<>();
+            bucketChoice.getItems().addAll(intChoices);
+            bucketChoice.setValue(getnWidth());
+            grid.add(new Label("Bucket Size"), 0, 1);
+            grid.add(bucketChoice, 1, 1);
+
+             centerCheckBox = new CheckBox();
+            grid.add(new Label("Center Data"), 0, 2);
+            grid.add(centerCheckBox, 1, 2);
+            centerCheckBox.setSelected(centerData());
+
+            standardizeCheckBox = new CheckBox();
+            grid.add(new Label("Standardize Data"), 0, 3);
+            grid.add(standardizeCheckBox, 1, 3);
+            standardizeCheckBox.setSelected(standardizeData());
+
+            bucketChoice.disableProperty().bind(tableModeCheckBox.selectedProperty());
+            borderPane.setCenter(grid);
+            stageScene.setRoot(borderPane);
+
+            stage.setScene(stageScene);
+
+            Button mathButton = new Button("Evaluate");
+            mathButton.setOnAction(e -> doPCA());
+            ToolBar toolBar = new ToolBar();
+            toolBar.getItems().add(mathButton);
+            borderPane.setBottom(toolBar);
+
+        }
+        stage.show();
+        stage.toFront();
+
     }
 }
