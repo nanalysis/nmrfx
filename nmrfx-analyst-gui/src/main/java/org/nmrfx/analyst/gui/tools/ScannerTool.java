@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
     private static final String BIN_MEASURE_NAME = "binValues";
-    enum TableSelectionMode {
+    public enum TableSelectionMode {
         ALL,
         HIGHLIGHT,
         ONLY
@@ -92,8 +92,8 @@ public class ScannerTool implements ControllerTool {
     MinerController miner;
     ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
     TableMath tableMath = null;
-    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
-    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
+    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE]W)$");
+    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
 
     public ScannerTool(FXMLController controller) {
@@ -246,7 +246,6 @@ public class ScannerTool implements ControllerTool {
         MenuItem mcsButton = new MenuItem("Peak Minimum Chemical Shift ");
         mcsButton.setOnAction(e -> doMCS());
         matrixMenu.getItems().add(mcsButton);
-        MenuButton menu = new MenuButton("Score");
         MenuItem scoreMenuItem = new MenuItem("Cosine Score");
         scoreMenuItem.setOnAction(e -> scoreSimilarity());
         matrixMenu.getItems().addAll(scoreMenuItem);
@@ -398,7 +397,7 @@ public class ScannerTool implements ControllerTool {
                 }
 
                 List<Double> values = measureRegion(itemDataset, measure);
-                if (values == null) {
+                if (values.isEmpty()) {
                     return;
                 }
                 allValues.addAll(values);
@@ -417,7 +416,7 @@ public class ScannerTool implements ControllerTool {
             values = measure.measure(dataset);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
-            return null;
+            return Collections.emptyList();
         }
         return values;
     }
@@ -449,7 +448,7 @@ public class ScannerTool implements ControllerTool {
             }
 
             List<double[]> values = measureBins(itemDataset, measure, nBins);
-            if (values == null) {
+            if (values.isEmpty()) {
                 return;
             }
             allValues.addAll(values);
@@ -495,7 +494,7 @@ public class ScannerTool implements ControllerTool {
             values = measure.measureBins(dataset, nBins);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
-            return null;
+            return Collections.emptyList();
         }
         return values;
     }
@@ -608,7 +607,7 @@ public class ScannerTool implements ControllerTool {
      * Loads the short version of the regions file into the scanner table.
      *
      * @param file The file to load
-     * @throws IOException
+     * @throws IOException if data can't be read from dataset
      */
     private void loadRegionsShort(File file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
@@ -643,7 +642,7 @@ public class ScannerTool implements ControllerTool {
      * have a Measure Type of volume and an Offset Type of none.
      *
      * @param file The file to load
-     * @throws IOException
+     * @throws IOException if data can't be read from dataset
      */
     private void loadRegionsLong(File file) throws IOException {
         List<DatasetRegion> regions = new ArrayList<>(DatasetRegion.loadRegions(file));
