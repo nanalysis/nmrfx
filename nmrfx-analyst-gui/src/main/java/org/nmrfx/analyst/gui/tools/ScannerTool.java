@@ -91,7 +91,7 @@ public class ScannerTool implements ControllerTool {
     TablePlotGUI diffusionGUI = null;
     MinerController miner;
     ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
-
+    TableMath tableMath = null;
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
@@ -232,6 +232,11 @@ public class ScannerTool implements ControllerTool {
 
     MenuButton makeMatrixAnalysisMenu () {
         MenuButton matrixMenu = new MenuButton("Analysis");
+
+        MenuItem mathItem = new MenuItem("Table Math...");
+        mathItem.setOnAction(e -> doMath());
+        matrixMenu.getItems().add(mathItem);
+
         MenuItem setupButton = new MenuItem("Setup PCA...");
         setupButton.setOnAction(e -> setupBucket());
         matrixMenu.getItems().add(setupButton);
@@ -872,5 +877,12 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
         plotGUI.updateChoice(xChoice, yChoice);
+    }
+
+    void doMath() {
+        if (tableMath == null) {
+            tableMath = new TableMath(this);
+        }
+        tableMath.showTableMath();
     }
 }
