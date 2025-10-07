@@ -44,6 +44,7 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Multiplet;
@@ -52,6 +53,7 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
@@ -59,6 +61,7 @@ import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.TableUtils;
 
+import javax.tools.Tool;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -119,6 +122,11 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         peakMenuBar = new PeakMenuBar(this);
         peakMenuBar.initMenuBar(toolBar, false);
         GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.PEAK_MENU, this);
+    }
+
+    public ToolBar getToolBar() {
+        return toolBar;
     }
 
     public void updatePeakListMenu() {
