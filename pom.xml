@@ -25,6 +25,7 @@
         <module>nmrfx-analyst</module>
         <module>nmrfx-analyst-gui</module>
         <module>nmrfx-jmx-connector</module>
+        <module>nmrfx-example-plugin</module>
     </modules>
 
     <repositories>

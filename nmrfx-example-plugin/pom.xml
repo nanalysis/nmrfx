@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.nmrfx</groupId>
+        <artifactId>nmrfx</artifactId>
+        <version>11.4.32-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>nmrfx-example-plugin</artifactId>
+    <packaging>jar</packaging>
+    <build>
+        <plugins>
+        </plugins>
+    </build>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.nmrfx</groupId>
+                <artifactId>nmrfx-bom</artifactId>
+                <version>11.4.32-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.nmrfx</groupId>
+            <artifactId>nmrfx-plugin-api</artifactId>
+            <version>11.4.32-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.nmrfx</groupId>
+            <artifactId>nmrfx-analyst-gui</artifactId>
+            <version>11.4.32-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+</project>

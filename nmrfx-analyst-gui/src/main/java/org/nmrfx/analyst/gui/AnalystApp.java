@@ -226,7 +226,6 @@ public class AnalystApp extends Application {
         PluginFunction pluginFunction = new PluginFunction(pluginsMenu, this::pluginCommand);
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginFunction);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
-        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
         Menu spectraWindowMenu = new Menu("Spectra Windows");
         Menu windowMenu = new Menu("Window");
@@ -244,6 +243,7 @@ public class AnalystApp extends Application {
             menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
         if (startInAdvanced || advancedIsActive) {
             advanced(null);
         }
