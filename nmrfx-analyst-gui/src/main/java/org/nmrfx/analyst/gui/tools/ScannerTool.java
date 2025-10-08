@@ -23,7 +23,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -236,11 +235,7 @@ public class ScannerTool implements ControllerTool {
         MenuItem mathItem = new MenuItem("Table Math...");
         mathItem.setOnAction(e -> doMath());
         matrixMenu.getItems().add(mathItem);
-
-        MenuItem setupButton = new MenuItem("Setup PCA...");
-        setupButton.setOnAction(e -> setupBucket());
-        matrixMenu.getItems().add(setupButton);
-        MenuItem pcaButton = new MenuItem("Principal Component Analysis");
+        MenuItem pcaButton = new MenuItem("Principal Component Analysis...");
         pcaButton.setOnAction(e -> doPCA());
         matrixMenu.getItems().add(pcaButton);
         MenuItem mcsButton = new MenuItem("Peak Minimum Chemical Shift ");
@@ -839,9 +834,6 @@ public class ScannerTool implements ControllerTool {
         tractGUI.showMCplot();
     }
 
-    void setupBucket() {
-        getPCAModes();
-    }
 
     void doPCA() {
         if (matrixAnalysisTool == null) {
