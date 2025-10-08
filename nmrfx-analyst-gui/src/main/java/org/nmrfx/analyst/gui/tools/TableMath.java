@@ -79,7 +79,7 @@ public class TableMath {
     Map<String, String> getVMap(ScanTable scanTable) {
         Map<String, String> vMap = new HashMap<>();
         for (String header : scanTable.getHeaders()) {
-            Matcher matcher = ScanTable.VPAT.matcher(header.trim());
+            Matcher matcher = ScanTable.VPAT2.matcher(header.trim());
             if (matcher.matches()) {
                 String vGroup = matcher.group(1);
                 vMap.put(vGroup, header);
@@ -147,21 +147,23 @@ public class TableMath {
             if ((tableColumn != null) && !tableColumn.isBlank()) {
                 parMap.put(entry.getKey(), tableColumn);
             }
+        }
 
-            List<String> exprVariables = findVariables(expressionField.getText());
-            for (String exprVar : exprVariables) {
-                String headerName = vMap.get(exprVar);
-                if (!parMap.containsKey(exprVar)) {
-                    if (!vMap.containsKey(exprVar)) {
-                        GUIUtils.warn("Invalid variable", exprVar + " doesn't exist");
-                        return;
-                    } else {
-                        parMap.put(exprVar, headerName);
-                    }
+        List<String> exprVariables = findVariables(expressionField.getText());
+        for (String exprVar : exprVariables) {
+            String headerName = vMap.get(exprVar);
+            if (!parMap.containsKey(exprVar)) {
+                if (!vMap.containsKey(exprVar)) {
+                    GUIUtils.warn("Invalid variable", exprVar + " doesn't exist");
+                    return;
+                } else {
+                    parMap.put(exprVar, headerName);
                 }
             }
-            processExpress(scanTable, parMap, expressionField.getText(), resultField.getText());
         }
+
+        processExpress(scanTable, parMap, expressionField.getText(), resultField.getText());
+        scanTable.getTableView().refresh();
     }
 
     private void updateChoiceBox(ChoiceBox<String> choiceBox) {

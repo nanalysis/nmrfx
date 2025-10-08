@@ -102,6 +102,7 @@ public class ScanTable {
     static final String OFFSET_COLUMN_NAME = "Offset";
     static final String SCANNER_ERROR = "Scanner Error";
     public static final Pattern VPAT = Pattern.compile("^(V[0-9]+):.*");
+    public static final Pattern VPAT2 = Pattern.compile("(^[A-Za-z][A-Za-z0-9]*):.*");
 
     static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME, ACTIVE_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
