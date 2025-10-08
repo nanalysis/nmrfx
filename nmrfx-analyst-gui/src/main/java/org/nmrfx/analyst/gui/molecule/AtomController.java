@@ -43,6 +43,7 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.tools.LACSPlotGui;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
@@ -55,6 +56,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
@@ -262,6 +264,12 @@ public class AtomController implements Initializable, StageBasedController, Free
                 new Label("Ref Set:"), refSetChoice);
         ppmSetChoice.setOnAction(e -> atomTableView.refresh());
         refSetChoice.setOnAction(e -> atomTableView.refresh());
+        System.out.println("register atoms");
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.ATOM_MENU, this);
+    }
+
+    public ToolBar getToolBar() {
+        return menuBar;
     }
 
     private void showLACSPlot() {
@@ -561,7 +569,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             }
         }
         atomTableView.refresh();
+    }
 
+    public List<Atom> getAtoms() {
+        return atoms;
     }
 
     void getRandomPPM() {

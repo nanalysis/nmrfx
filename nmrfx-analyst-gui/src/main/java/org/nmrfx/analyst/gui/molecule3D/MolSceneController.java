@@ -25,6 +25,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.molecule.SSViewer;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.models.ModelFetcher;
 import org.nmrfx.analyst.peaks.PeakGenerator;
 import org.nmrfx.chemistry.*;
@@ -34,6 +35,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
@@ -71,6 +73,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private Stage stage;
     SSViewer ssViewer;
     MolViewer molViewer;
+    @FXML
+    public HBox mol3dHBox;
 
     @FXML
     TextField selectField;
@@ -273,6 +277,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
         }
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.MENU_MOLECULE_VIEWER, this);
+
+    }
+
+    public MolViewer getMolViewer() {
+        return molViewer;
     }
 
     private void selectedResidue(MouseEvent event) {

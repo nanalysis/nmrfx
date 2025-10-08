@@ -55,10 +55,12 @@ import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
@@ -111,6 +113,14 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     public Stage getStage() {
         return stage;
+    }
+
+    public ToolBar getToolBar() {
+        return toolBar;
+    }
+
+    public List<Dataset> getSelectedDatasets() {
+        return tableView.getSelectionModel().getSelectedItems().stream().map(datasetBase -> (Dataset) datasetBase).toList();
     }
 
     public static DatasetsController create() {
@@ -173,6 +183,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             }
         }
         toolBar.getItems().addAll(buttons);
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.DATASET_MENU, this);
     }
 
     @Override
