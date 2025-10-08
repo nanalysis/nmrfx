@@ -288,51 +288,26 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         if (nDim == currentDims) {
             return;
         }
-        tableView.getItems().clear();
+        tableView.setItems(FXCollections.emptyObservableList());
         tableView.getColumns().clear();
         currentDims = nDim;
 
         TableColumn<Peak, Integer> idNumCol = new TableColumn<>("id");
         idNumCol.setCellValueFactory(new PropertyValueFactory("IdNum"));
         idNumCol.setEditable(false);
+        idNumCol.setMinWidth(60);
         idNumCol.setPrefWidth(50);
 
         TableColumn<Peak, Float> intensityCol = new TableColumn<>("intensity");
         intensityCol.setCellValueFactory(new PropertyValueFactory("Intensity"));
+        intensityCol.setMinWidth(60);
         intensityCol.setPrefWidth(75);
 
         TableColumn<Peak, Float> volumeCol = new TableColumn<>("volume");
         volumeCol.setCellValueFactory(new PropertyValueFactory("Volume1"));
+        volumeCol.setMinWidth(60);
         volumeCol.setPrefWidth(75);
 
-        TableColumn<Peak, Color> posColorCol = new TableColumn<>("color");
-        posColorCol.setPrefWidth(50);
-        posColorCol.setCellValueFactory((CellDataFeatures<Peak, Color> p) -> new ReadOnlyObjectWrapper(p.getValue().getColor()));
-        posColorCol.setCellFactory((TableColumn<Peak, Color> column) -> new TableCell<>() {
-            @Override
-            protected void updateItem(Color item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(null);
-                if (empty || (item == null)) {
-                    setGraphic(null);
-                } else {
-                    final ColorPicker cp = new ColorPicker();
-                    cp.setValue(item);
-                    setGraphic(cp);
-                    cp.setOnAction((javafx.event.ActionEvent t) -> {
-                        getTableView().edit(getTableRow().getIndex(), column);
-                        commitEdit(cp.getValue());
-                    });
-                }
-            }
-
-            @Override
-            public void commitEdit(Color item) {
-                super.commitEdit(item);
-                Peak peak = (Peak) getTableRow().getItem();
-                peak.setColor(item.toString());
-            }
-        });
         tableView.getColumns().addAll(idNumCol, intensityCol, volumeCol);
 
         for (int i = 0; i < nDim; i++) {
@@ -367,6 +342,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 }
             });
 
+            labelCol.setMinWidth(75);
             labelCol.setPrefWidth(75);
             tableView.getColumns().add(labelCol);
         }
@@ -387,6 +363,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             });
             shiftCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".000")));
 
+            shiftCol.setMinWidth(60);
             shiftCol.setPrefWidth(75);
             tableView.getColumns().addAll(shiftCol);
         }
@@ -420,7 +397,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         this.peakList = peakList;
         if (tableView != null) {
             if (peakList == null) {
-                tableView.getItems().clear();
+                tableView.setItems(FXCollections.emptyObservableList());
                 stage.setTitle("Peaks: ");
             } else {
                 ObservableList<Peak> peaks = FXCollections.observableList(peakList.peaks());
