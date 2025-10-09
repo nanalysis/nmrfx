@@ -1340,6 +1340,20 @@ public class ScanTable {
         updateFilter();
     }
 
+    public double[][] getData(List<FileTableItem> items) {
+        var columns = tableView.getColumns().stream().filter(column -> isData(column.getText())).toList();
+        int nRows = items.size();
+        int nColumns = columns.size();
+        double[][] data = new double[nRows][nColumns];
+        for (int iCol = 0; iCol < nColumns; iCol++) {
+            for (int iRow = 0; iRow < nRows; iRow++) {
+                data[iRow][iCol] = items.get(iRow).getDoubleExtra(columns.get(iCol).getText());
+            }
+        }
+
+        return data;
+    }
+
     private TableColumn<FileTableItem, ?> createColumn(String header) {
         final TableColumn<FileTableItem, ?> newColumn;
         if (headerAbsent(header)) {
@@ -1598,6 +1612,9 @@ public class ScanTable {
 
     public ObservableList<FileTableItem> getItems() {
         return fileListItems;
+    }
+    public ObservableList<FileTableItem> getActiveItems() {
+        return tableView.getItems();
     }
 
     public List<DatasetAttributes> getDatasetAttributesList() {

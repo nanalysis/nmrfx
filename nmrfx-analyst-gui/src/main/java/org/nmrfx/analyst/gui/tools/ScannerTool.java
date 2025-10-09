@@ -230,17 +230,12 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
-    MenuButton makeMatrixAnalysisMenu () {
+    MenuButton makeMatrixAnalysisMenu() {
         MenuButton matrixMenu = new MenuButton("Analysis");
-
         MenuItem mathItem = new MenuItem("Table Math...");
         mathItem.setOnAction(e -> doMath());
         matrixMenu.getItems().add(mathItem);
-
-        MenuItem setupButton = new MenuItem("Setup PCA...");
-        setupButton.setOnAction(e -> setupBucket());
-        matrixMenu.getItems().add(setupButton);
-        MenuItem pcaButton = new MenuItem("Principal Component Analysis");
+        MenuItem pcaButton = new MenuItem("Principal Component Analysis...");
         pcaButton.setOnAction(e -> doPCA());
         matrixMenu.getItems().add(pcaButton);
         MenuItem mcsButton = new MenuItem("Peak Minimum Chemical Shift ");
@@ -823,6 +818,7 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
     void showDiffusionGUI() {
         if (diffusionGUI == null) {
             diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION);
@@ -838,25 +834,12 @@ public class ScannerTool implements ControllerTool {
         tractGUI.showMCplot();
     }
 
-    void setupBucket() {
-        var intChoices = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20);
-        var choice = GUIUtils.choice(intChoices, "Choices", 10);
-        int nWidth = (Integer) choice;
-        matrixAnalysisTool = new MatrixAnalysisTool(this);
-        matrixAnalysisTool.setNWidth(nWidth);
-        matrixAnalysisTool.setupBucket(scanTable.getItems());
-    }
 
     void doPCA() {
         if (matrixAnalysisTool == null) {
             matrixAnalysisTool = new MatrixAnalysisTool(this);
-            scanTable.ensureDatasetAttributes();
         }
-        matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
-        List<FileTableItem> items = scanTable.getItems();
-        matrixAnalysisTool.setupBucket(items);
-        matrixAnalysisTool.doPCA(items);
-        showPlot("PCA1", "PCA2");
+        matrixAnalysisTool.showPCATool();
     }
 
     void doMCS() {
@@ -870,11 +853,12 @@ public class ScannerTool implements ControllerTool {
         showPlot("row", "MCS");
     }
 
-    void showPlot(String xChoice, String yChoice) {
+    public void showPlot(String xChoice, String yChoice) {
         if (plotGUI == null) {
             plotGUI = new TablePlotGUI(tableView, null);
         }
         plotGUI.showPlotStage();
+        plotGUI.setPlotType("ScatterPlot");
         plotGUI.updateChoice(xChoice, yChoice);
     }
 

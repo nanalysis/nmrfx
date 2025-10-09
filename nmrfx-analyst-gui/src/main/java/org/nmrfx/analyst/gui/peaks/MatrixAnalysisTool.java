@@ -24,8 +24,14 @@
 package org.nmrfx.analyst.gui.peaks;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.peaks.PeakList;
@@ -61,8 +67,16 @@ public class MatrixAnalysisTool {
     double mcsTol = 0.0;
     int refIndex = 0;
     PolyChart chart = PolyChartManager.getInstance().getActiveChart();
+    Stage stage;
+    CheckBox tableModeCheckBox;
+    ChoiceBox<Integer> bucketChoice;
+    ChoiceBox<Integer> pcaDeltaChoice;
+    CheckBox centerCheckBox;
+    CheckBox standardizeCheckBox;
+    CheckBox transposeCheckBox;
     int nPCA = 5;
     int nWidth = 10;
+    boolean tableMode = false;
 
     public MatrixAnalysisTool(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
@@ -74,6 +88,43 @@ public class MatrixAnalysisTool {
 
     public void setNWidth(int value) {
         nWidth = value;
+    }
+
+    public int getnWidth() {
+        return nWidth;
+    }
+
+    public void setTableMode(boolean mode) {
+        tableMode = mode;
+    }
+
+    public boolean getTableMode() {
+        return tableMode;
+    }
+
+    public void setCenterData(boolean mode) {
+        matrixAnalyzer.setCenterData(mode);
+    }
+
+    public boolean getCenterData() {
+        return matrixAnalyzer.getCenterData();
+    }
+
+
+    public void setStandardizeData(boolean mode) {
+        matrixAnalyzer.setStandardizeData(mode);
+    }
+
+    public boolean getStandardizeData() {
+        return matrixAnalyzer.getStandardizeData();
+    }
+
+    public void setTransposeData(boolean mode) {
+        matrixAnalyzer.setTransposeData(mode);
+    }
+
+    public boolean getTransposeData() {
+        return matrixAnalyzer.getTransposeData();
     }
 
     public void addPCA() {
@@ -143,10 +194,9 @@ public class MatrixAnalysisTool {
             }
         }
         matrixAnalyzer.setup(fileTableItems.getFirst().getDatasetAttributes().getDataset(), dimNames, ppms, deltas);
-        setupPCA(fileTableItems);
     }
 
-    private void setupPCA(List<FileTableItem> fileTableItems) {
+    public void setupPCA(List<FileTableItem> fileTableItems) {
         List<LigandScannerInfo> ligandScannerInfos = new ArrayList<>();
         for (FileTableItem item : fileTableItems) {
             Dataset dataset = item.getDatasetAttributes().getDataset();
@@ -154,7 +204,7 @@ public class MatrixAnalysisTool {
             if (row == null) {
                 row = 0;
             } else {
-                row = row -1;
+                row = row - 1;
             }
             LigandScannerInfo scannerInfo = new LigandScannerInfo(dataset, row);
             ligandScannerInfos.add(scannerInfo);
@@ -162,7 +212,12 @@ public class MatrixAnalysisTool {
         matrixAnalyzer.setScannerRows(ligandScannerInfos);
     }
 
-    public void doPCA(List<FileTableItem> scannerRows) {
+    public void setupPCAWithData(double[][] data) {
+        matrixAnalyzer.setDataMatrix(data);
+    }
+
+    public void setupPCAFromTable(List<FileTableItem> items) {
+        setupPCA(items);
         if (chart.getDatasetAttributes().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("No dataset in active window");
@@ -180,7 +235,7 @@ public class MatrixAnalysisTool {
             Analyzer analyzer = new Analyzer(chart.getDatasetAttributes().getFirst().getDataset());
             analyzer.calculateThreshold();
         } else {
-             threshold = chart.getDatasetAttributes().getFirst().getLvl();
+            threshold = chart.getDatasetAttributes().getFirst().getLvl();
         }
 
         try {
@@ -190,16 +245,19 @@ public class MatrixAnalysisTool {
             eDialog.showAndWait();
             return;
         }
-        addPCA();
+    }
+
+    public void doPCA(List<FileTableItem> scannerRows) {
         double[][] pcaValues = matrixAnalyzer.doPCA2(nPCA);
-        double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, 2);
+        addPCA();
+        double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, pcaDeltaChoice.getValue());
         int iRow = 0;
         for (FileTableItem scannerRow : scannerRows) {
             for (int j = 0; j < pcaValues.length; j++) {
                 double pca = pcaValues[j][iRow];
-                scannerRow.setExtra("PCA"+(j+1), pca);
+                scannerRow.setExtra("PCA" + (j + 1), pca);
             }
-            scannerRow.setExtra("PCADelta",pcaDists[iRow]);
+            scannerRow.setExtra("PCADelta", pcaDists[iRow]);
             iRow++;
         }
         refresh();
@@ -242,5 +300,92 @@ public class MatrixAnalysisTool {
             }
         }
         refresh();
+    }
+
+
+    private void doPCA() {
+        ScanTable scanTable = scannerTool.getScanTable();
+        setNWidth(bucketChoice.getValue());
+        setupBucket(scanTable.getItems());
+        setTableMode(tableModeCheckBox.isSelected());
+        setCenterData(centerCheckBox.isSelected());
+        setStandardizeData(standardizeCheckBox.isSelected());
+        scanTable.ensureDatasetAttributes();
+
+        setRefIndex(scanTable.getSelectedIndex());
+        List<FileTableItem> items = scanTable.getActiveItems();
+        if (getTableMode()) {
+            double[][] data = scanTable.getData(items);
+            setupPCAWithData(data);
+        } else {
+            setupBucket(items);
+            setupPCAFromTable(items);
+        }
+        doPCA(items);
+        scannerTool.showPlot("PCA1", "PCA2");
+    }
+
+    public void showPCATool() {
+        if (stage == null) {
+            stage = new Stage();
+            stage.setTitle("PCA");
+            BorderPane borderPane = new BorderPane();
+            Scene stageScene = new Scene(borderPane);
+            GridPane grid = new GridPane();
+            grid.setPadding(new Insets(10, 10, 10, 10));
+            grid.setVgap(10);
+            grid.setHgap(10);
+
+            tableModeCheckBox = new CheckBox();
+            grid.add(new Label("Use Table Data"), 0, 0);
+            grid.add(tableModeCheckBox, 1, 0);
+            tableModeCheckBox.setSelected(getTableMode());
+
+
+            var intChoices = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20);
+            bucketChoice = new ChoiceBox<>();
+            bucketChoice.getItems().addAll(intChoices);
+            bucketChoice.setValue(getnWidth());
+            grid.add(new Label("Bucket Size"), 0, 1);
+            grid.add(bucketChoice, 1, 1);
+
+             centerCheckBox = new CheckBox();
+            grid.add(new Label("Center Data"), 0, 2);
+            grid.add(centerCheckBox, 1, 2);
+            centerCheckBox.setSelected(getCenterData());
+
+            standardizeCheckBox = new CheckBox();
+            grid.add(new Label("Standardize Data"), 0, 3);
+            grid.add(standardizeCheckBox, 1, 3);
+            standardizeCheckBox.setSelected(getStandardizeData());
+
+            transposeCheckBox = new CheckBox();
+            grid.add(new Label("Transpose Data"), 0, 4);
+            grid.add(transposeCheckBox, 1, 4);
+            transposeCheckBox.setSelected(getTransposeData());
+
+            var pcaDeltaChoices = List.of(1, 2, 3, 4, 5);
+            pcaDeltaChoice = new ChoiceBox<>();
+            pcaDeltaChoice.getItems().addAll(pcaDeltaChoices);
+            pcaDeltaChoice.setValue(2);
+            grid.add(new Label("PCA Delta N"), 0, 5);
+            grid.add(pcaDeltaChoice, 1, 5);
+
+            bucketChoice.disableProperty().bind(tableModeCheckBox.selectedProperty());
+            borderPane.setCenter(grid);
+            stageScene.setRoot(borderPane);
+
+            stage.setScene(stageScene);
+
+            Button mathButton = new Button("Evaluate");
+            mathButton.setOnAction(e -> doPCA());
+            ToolBar toolBar = new ToolBar();
+            toolBar.getItems().add(mathButton);
+            borderPane.setBottom(toolBar);
+
+        }
+        stage.show();
+        stage.toFront();
+
     }
 }

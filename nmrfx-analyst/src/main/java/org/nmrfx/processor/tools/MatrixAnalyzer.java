@@ -26,9 +26,35 @@ public class MatrixAnalyzer {
     SimpleMatrix dataMatrix;
     double[][] pcValues = null;
     List<int[]> indices = new ArrayList<>();
+    boolean centerData = true;
+    boolean standardizeData = false;
+    boolean transposeData = false;
 
     public void setScannerRows(List<LigandScannerInfo> scannerRows) {
         this.scannerRows = scannerRows;
+    }
+    public void setCenterData(boolean mode) {
+        centerData = mode;
+    }
+
+    public boolean getCenterData() {
+        return centerData;
+    }
+
+    public void setStandardizeData(boolean mode) {
+        standardizeData = mode;
+    }
+
+    public boolean getStandardizeData() {
+        return standardizeData;
+    }
+
+    public void setTransposeData(boolean value) {
+        transposeData = value;
+    }
+
+    public boolean getTransposeData() {
+        return transposeData;
     }
 
 
@@ -121,36 +147,157 @@ public class MatrixAnalyzer {
         }
     }
 
-    private static SimpleMatrix centerColumns(SimpleMatrix X) {
-        int n = X.numRows();
-        int d = X.numCols();
-        SimpleMatrix Xc = new SimpleMatrix(n, d);
+    public void setDataMatrix(double[][] data) {
+        dataMatrix = new SimpleMatrix(data);
+    }
 
-        for (int j = 0; j < d; j++) {
+    private static SimpleMatrix centerColumns(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xc = new SimpleMatrix(nRows, nCols);
+
+        for (int j = 0; j < nCols; j++) {
             double mean = 0;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < nRows; i++) {
                 mean += X.get(i, j);
             }
-            mean /= n;
-            for (int i = 0; i < n; i++) {
+            mean /= nRows;
+            for (int i = 0; i < nRows; i++) {
                 Xc.set(i, j, X.get(i, j) - mean);
             }
         }
         return Xc;
     }
+    private static SimpleMatrix centerRows(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xc = new SimpleMatrix(nRows, nCols);
 
+        for (int j = 0; j < nRows; j++) {
+            double mean = 0;
+            for (int i = 0; i < nCols; i++) {
+                mean += X.get(j, i);
+            }
+            mean /= nCols;
+            for (int i = 0; i < nCols; i++) {
+                Xc.set(j, i, X.get(j, i) - mean);
+            }
+        }
+        return Xc;
+    }
+
+    /**
+     * Standardizes columns: subtract mean and divide by standard deviation.
+     * Returns a new matrix with standardized columns.
+     */
+    private static SimpleMatrix standardizeColumns(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xs = new SimpleMatrix(nRows, nCols);
+
+        for (int j = 0; j < nCols; j++) {
+            double mean = 0;
+            for (int i = 0; i < nRows; i++) {
+                mean += X.get(i, j);
+            }
+            mean /= nRows;
+
+            // compute standard deviation
+            double var = 0;
+            for (int i = 0; i < nRows; i++) {
+                double diff = X.get(i, j) - mean;
+                var += diff * diff;
+            }
+            double std = Math.sqrt(var / (nRows - 1));
+
+            // avoid divide by zero
+            if (std < 1.0e-6) {
+                std = 1e-12;
+            }
+
+            // standardize column j
+            for (int i = 0; i < nRows; i++) {
+                double value = (X.get(i, j) - mean) / std;
+                Xs.set(i, j, value);
+            }
+        }
+        return Xs;
+    }
+
+    /**
+     * Standardizes columns: subtract mean and divide by standard deviation.
+     * Returns a new matrix with standardized columns.
+     */
+    private static SimpleMatrix standardizeRows(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xs = new SimpleMatrix(nRows, nCols);
+
+        for (int j = 0; j < nRows; j++) {
+            double mean = 0;
+            for (int i = 0; i < nCols; i++) {
+                mean += X.get(j, i);
+            }
+            mean /= nCols;
+
+            // compute standard deviation
+            double variance = 0;
+            for (int i = 0; i < nCols; i++) {
+                double diff = X.get(j, i) - mean;
+                variance += diff * diff;
+            }
+            double std = Math.sqrt(variance / (nCols - 1));
+
+            // avoid divide by zero
+            if (std < 1.0e-6) {
+                std = 1e-12;
+            }
+
+            // standardize column j
+            for (int i = 0; i < nCols; i++) {
+                double value = (X.get(j, i) - mean) / std;
+                Xs.set(j, i, value);
+            }
+        }
+        return Xs;
+    }
     public List<int[]> getIndices() {
         return indices;
     }
 
     public double[][] doPCA2(int nPC) {
-        SimpleMatrix centered = centerColumns(dataMatrix);
-        SimpleSVD<SimpleMatrix> svd = centered.svd();
+        SimpleMatrix adjustedData;
+        boolean transpose = getTransposeData();
+        if (transpose) {
+            if (centerData && !standardizeData) {
+                adjustedData = centerRows(dataMatrix.transpose());
+            } else if (standardizeData) {
+                adjustedData = standardizeRows(dataMatrix.transpose());
+            } else {
+                adjustedData = dataMatrix.transpose();
+            }
+        } else {
+            if (centerData && !standardizeData) {
+                adjustedData = centerColumns(dataMatrix);
+            } else if (standardizeData) {
+                adjustedData = standardizeColumns(dataMatrix);
+            } else {
+                adjustedData = dataMatrix;
+            }
+
+        }
+
+        SimpleSVD<SimpleMatrix> svd = adjustedData.svd();
 
         SimpleMatrix U = svd.getU();
         SimpleMatrix W = svd.getW(); // singular values (diag matrix)
-        SimpleMatrix scores = U.mult(W);
-
+        SimpleMatrix scores;
+        SimpleMatrix Vt = svd.getV().transpose();
+        if (transpose) {
+            scores = W.mult(Vt);
+        } else {
+            scores = U.mult(W);
+        }
 
         int nSamples = dataMatrix.numRows();
         pcValues = new double[nPC][nSamples];
@@ -158,7 +305,7 @@ public class MatrixAnalyzer {
         int n = Math.min(nPC, scores.numRows());
         for (int iPC = 0; iPC < n; iPC++) {
             for (int iSample = 0; iSample < nSamples; iSample++) {
-                pcValues[iPC][iSample] = scores.get(iSample, iPC);
+                pcValues[iPC][iSample] = transpose ? scores.get(iPC, iSample) : scores.get(iSample, iPC);
             }
         }
         return pcValues;
