@@ -76,6 +76,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.DoubleConsumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -100,6 +101,8 @@ public class ScanTable {
     static final String NLVL_COLUMN_NAME = "NLevels";
     static final String OFFSET_COLUMN_NAME = "Offset";
     static final String SCANNER_ERROR = "Scanner Error";
+    public static final Pattern VPAT = Pattern.compile("^(V[0-9]+):.*");
+    public static final Pattern VPAT2 = Pattern.compile("(^[A-Za-z][A-Za-z0-9]*):.*");
 
     static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME, ACTIVE_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
@@ -992,7 +995,7 @@ public class ScanTable {
             } else {
                 for (String columnType : columnTypes.keySet()) {
                     int columnNum;
-                    if (columnType.startsWith("V.")) {
+                    if (VPAT.matcher(columnType).matches()) {
                         try {
                             int colonPos = columnType.indexOf(":");
                             columnNum = Integer.parseInt(columnType.substring(2, colonPos));
@@ -1337,6 +1340,20 @@ public class ScanTable {
         updateFilter();
     }
 
+    public double[][] getData(List<FileTableItem> items) {
+        var columns = tableView.getColumns().stream().filter(column -> isData(column.getText())).toList();
+        int nRows = items.size();
+        int nColumns = columns.size();
+        double[][] data = new double[nRows][nColumns];
+        for (int iCol = 0; iCol < nColumns; iCol++) {
+            for (int iRow = 0; iRow < nRows; iRow++) {
+                data[iRow][iCol] = items.get(iRow).getDoubleExtra(columns.get(iCol).getText());
+            }
+        }
+
+        return data;
+    }
+
     private TableColumn<FileTableItem, ?> createColumn(String header) {
         final TableColumn<FileTableItem, ?> newColumn;
         if (headerAbsent(header)) {
@@ -1531,6 +1548,9 @@ public class ScanTable {
                 !isAttributeColumn(text);
     }
 
+    public boolean isNumeric(String text) {
+        return "D".equals(columnTypes.get(text)) || "I".equals(columnTypes.get(text));
+    }
     public boolean isData(String text) {
         return !standardHeaders.contains(text) && !text.equals(GROUP_COLUMN_NAME)
                 && text.contains(":") && !text.equals(DATASET_COLUMN_NAME) && !isAttributeColumn(text);
@@ -1592,6 +1612,9 @@ public class ScanTable {
 
     public ObservableList<FileTableItem> getItems() {
         return fileListItems;
+    }
+    public ObservableList<FileTableItem> getActiveItems() {
+        return tableView.getItems();
     }
 
     public List<DatasetAttributes> getDatasetAttributesList() {
