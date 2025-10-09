@@ -93,17 +93,21 @@ public class SSPredictorTest {
             while ((line1 = reader1.readLine()) != null && (line2 = reader2.readLine()) != null) {
                 String[] items = line1.split(";");
                 String seq1 = items[0];
-                String[] bps1 = {};
-                Set<SSPredictor.BasePairProbability> referenceSet = makeSet(bps1);
+                sb.append(seq1).append(" ");
+                String[] bps1 = items[1].split(",");
+                Set<SSPredictor.BasePairProbability> predSet = makeSet(bps1);
+
                 String[] items2 = line2.split(";");
                 String seq2 = items2[0];
                 assert seq1.equals(seq2);
-                String[] bps2 = {};
-                Set<SSPredictor.BasePairProbability> predSet = makeSet(bps2);
-                double[] results = evaluate(referenceSet, predSet);
-                scores.add(results);
+                String[] bps2 = items[1].split(",");
+                Set<SSPredictor.BasePairProbability> expSet = makeSet(bps2);
 
-                sb.append(seq1).append(" ");
+                double[] results = evaluate(expSet, predSet);
+                scores.add(results);
+                Arrays.stream(results).forEach(result -> sb.append(String.format("%.3f", result)).append(" "));
+                sb.append("\n");
+
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -160,10 +164,17 @@ public class SSPredictorTest {
 
     }
 @Test
-public void runTest() {
+public void runInference() {
         String testFile = "/Users/ekoag/rna_ss_models/RNAStrAlign_test.txt";
         String modelPath = "/Users/ekoag/rna_ss_models/model_224/fine_tune_model.export/";
         String outFile = "/Users/ekoag/rna_ss_models/predicted_bps.out";
         inference(testFile, modelPath, outFile, false);
     }
+@Test
+public void runEvaluation() throws IOException {
+        String predFile = "/Users/ekoag/rna_ss_models/ufold_predictions.txt";
+        String expFile = "/Users/ekoag/rna_ss_models/RNAStrAlign_test.txt";
+        String outFile = "/Users/ekoag/rna_ss_models/ufold_scores.txt";
+        evaluateOnly(predFile, expFile, outFile);
+}
 }
