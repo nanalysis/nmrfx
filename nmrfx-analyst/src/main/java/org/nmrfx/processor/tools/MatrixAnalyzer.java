@@ -239,15 +239,15 @@ public class MatrixAnalyzer {
             mean /= nCols;
 
             // compute standard deviation
-            double var = 0;
+            double variance = 0;
             for (int i = 0; i < nCols; i++) {
                 double diff = X.get(j, i) - mean;
-                var += diff * diff;
+                variance += diff * diff;
             }
-            double std = Math.sqrt(var / (nCols - 1));
+            double std = Math.sqrt(variance / (nCols - 1));
 
             // avoid divide by zero
-            if (std == 0.0) std = 1e-12;
+            if (std < 1.0e-12) std = 1.0e-12;
 
             // standardize column j
             for (int i = 0; i < nCols; i++) {
