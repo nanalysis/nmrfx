@@ -211,7 +211,9 @@ public class MatrixAnalyzer {
             double std = Math.sqrt(var / (nRows - 1));
 
             // avoid divide by zero
-            if (std == 0.0) std = 1e-12;
+            if (std < 1.0e-6) {
+                std = 1e-12;
+            }
 
             // standardize column j
             for (int i = 0; i < nRows; i++) {
@@ -247,7 +249,9 @@ public class MatrixAnalyzer {
             double std = Math.sqrt(variance / (nCols - 1));
 
             // avoid divide by zero
-            if (std < 1.0e-12) std = 1.0e-12;
+            if (std < 1.0e-6) {
+                std = 1e-12;
+            }
 
             // standardize column j
             for (int i = 0; i < nCols; i++) {
