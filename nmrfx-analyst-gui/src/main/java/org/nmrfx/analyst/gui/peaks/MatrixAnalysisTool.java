@@ -70,8 +70,10 @@ public class MatrixAnalysisTool {
     Stage stage;
     CheckBox tableModeCheckBox;
     ChoiceBox<Integer> bucketChoice;
+    ChoiceBox<Integer> pcaDeltaChoice;
     CheckBox centerCheckBox;
     CheckBox standardizeCheckBox;
+    CheckBox transposeCheckBox;
     int nPCA = 5;
     int nWidth = 10;
     boolean tableMode = false;
@@ -100,21 +102,29 @@ public class MatrixAnalysisTool {
         return tableMode;
     }
 
-    public void centerData(boolean mode) {
-        matrixAnalyzer.centerData(mode);
+    public void setCenterData(boolean mode) {
+        matrixAnalyzer.setCenterData(mode);
     }
 
-    public boolean centerData() {
-        return matrixAnalyzer.centerData();
+    public boolean getCenterData() {
+        return matrixAnalyzer.getCenterData();
     }
 
 
-    public void standardizeData(boolean mode) {
-        matrixAnalyzer.standardizeData(mode);
+    public void setStandardizeData(boolean mode) {
+        matrixAnalyzer.setStandardizeData(mode);
     }
 
-    public boolean standardizeData() {
-        return matrixAnalyzer.standardizeData();
+    public boolean getStandardizeData() {
+        return matrixAnalyzer.getStandardizeData();
+    }
+
+    public void setTransposeData(boolean mode) {
+        matrixAnalyzer.setTransposeData(mode);
+    }
+
+    public boolean getTransposeData() {
+        return matrixAnalyzer.getTransposeData();
     }
 
     public void addPCA() {
@@ -240,7 +250,7 @@ public class MatrixAnalysisTool {
     public void doPCA(List<FileTableItem> scannerRows) {
         double[][] pcaValues = matrixAnalyzer.doPCA2(nPCA);
         addPCA();
-        double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, 2);
+        double[] pcaDists = matrixAnalyzer.getPCADelta(refIndex, pcaDeltaChoice.getValue());
         int iRow = 0;
         for (FileTableItem scannerRow : scannerRows) {
             for (int j = 0; j < pcaValues.length; j++) {
@@ -298,8 +308,8 @@ public class MatrixAnalysisTool {
         setNWidth(bucketChoice.getValue());
         setupBucket(scanTable.getItems());
         setTableMode(tableModeCheckBox.isSelected());
-        centerData(centerCheckBox.isSelected());
-        standardizeData(standardizeCheckBox.isSelected());
+        setCenterData(centerCheckBox.isSelected());
+        setStandardizeData(standardizeCheckBox.isSelected());
         scanTable.ensureDatasetAttributes();
 
         setRefIndex(scanTable.getSelectedIndex());
@@ -342,12 +352,24 @@ public class MatrixAnalysisTool {
              centerCheckBox = new CheckBox();
             grid.add(new Label("Center Data"), 0, 2);
             grid.add(centerCheckBox, 1, 2);
-            centerCheckBox.setSelected(centerData());
+            centerCheckBox.setSelected(getCenterData());
 
             standardizeCheckBox = new CheckBox();
             grid.add(new Label("Standardize Data"), 0, 3);
             grid.add(standardizeCheckBox, 1, 3);
-            standardizeCheckBox.setSelected(standardizeData());
+            standardizeCheckBox.setSelected(getStandardizeData());
+
+            transposeCheckBox = new CheckBox();
+            grid.add(new Label("Transpose Data"), 0, 4);
+            grid.add(transposeCheckBox, 1, 4);
+            transposeCheckBox.setSelected(getTransposeData());
+
+            var pcaDeltaChoices = List.of(1, 2, 3, 4, 5);
+            pcaDeltaChoice = new ChoiceBox<>();
+            pcaDeltaChoice.getItems().addAll(pcaDeltaChoices);
+            pcaDeltaChoice.setValue(2);
+            grid.add(new Label("PCA Delta N"), 0, 5);
+            grid.add(pcaDeltaChoice, 1, 5);
 
             bucketChoice.disableProperty().bind(tableModeCheckBox.selectedProperty());
             borderPane.setCenter(grid);
