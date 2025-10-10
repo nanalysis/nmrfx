@@ -59,7 +59,7 @@ public class MCSAnalysis {
         }
     }
 
-    public class Hit {
+    public static class Hit {
 
         int index;
         String atomName;
@@ -106,7 +106,7 @@ public class MCSAnalysis {
                 String targetAtomName = "";
                 for (String aName : aNames) {
                     Atom atom = residue.getAtom(aName);
-                    if (targetAtomName.equals("")) {
+                    if (targetAtomName.isEmpty()) {
                         targetAtomName = atom.getShortName();
                     }
                     if (atom != null) {
@@ -184,7 +184,6 @@ public class MCSAnalysis {
                 nShifted++;
             }
         }
-        double mean = sum / nShifted;
-        return mean;
+        return nShifted > 0 ? sum / nShifted : 0.0;
     }
 }

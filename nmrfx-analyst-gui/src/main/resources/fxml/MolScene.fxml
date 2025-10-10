@@ -20,7 +20,7 @@
                         <BorderPane fx:id="molBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"
                                     prefWidth="400.0">
                             <top>
-                                <HBox>
+                                <HBox fx:id="mol3dHBox">
                                     <children>
                                         <MenuButton mnemonicParsing="false" text="Select">
                                             <items>
@@ -71,18 +71,24 @@
                                         </MenuButton>
                                         <MenuButton mnemonicParsing="false" text="Calculate">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#to3DAction"
-                                                          text="Small Molecule to 3D"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#initStructureAction"
-                                                          text="Inititialize Structure"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
-                                                          text="Anneal Structure"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"
-                                                          text="Refine Structure"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#refineCFFStructureAction"
-                                                          text="Refine Structure (complex force field)"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#drawTree"
-                                                          text="Draw RotationTree"/>
+                                                <Menu text="Small Molecule">
+                                                    <MenuItem mnemonicParsing="false" onAction="#to3DAction"
+                                                              text="Generate 3D coordinates"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#minimizeAction"
+                                                              text="Energy Minimization"/>
+                                                </Menu>
+                                                <Menu text="Torsion Angle Dynamics">
+                                                    <MenuItem mnemonicParsing="false" onAction="#initStructureAction"
+                                                              text="Inititialize Structure"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
+                                                              text="Anneal Structure"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"
+                                                              text="Refine Structure"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#refineCFFStructureAction"
+                                                              text="Refine Structure (complex force field)"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#drawTree"
+                                                              text="Draw RotationTree"/>
+                                                </Menu>
                                             </items>
                                         </MenuButton>
                                         <MenuButton mnemonicParsing="false" text="Constraints">

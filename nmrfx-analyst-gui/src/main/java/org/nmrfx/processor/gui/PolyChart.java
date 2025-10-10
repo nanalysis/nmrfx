@@ -818,11 +818,14 @@ public class PolyChart extends Region {
     }
 
     private List<DatasetAttributes> getUpdateList() {
-        final List<DatasetAttributes> updateThese;
+        List<DatasetAttributes> updateThese;
 
         Optional<ScanTable> scanTableOpt = getFXMLController().getScannerTable();
         if (scanTableOpt.isPresent()) {
             updateThese = scanTableOpt.get().getSelectedDatasetAttributesList();
+            if (updateThese.isEmpty()) {
+                updateThese = datasetAttributesList;
+            }
         } else {
             updateThese = datasetAttributesList;
         }
@@ -1344,7 +1347,10 @@ public class PolyChart extends Region {
     protected void setPivotToMax() {
         if (is1D()) {
             getFirstVec().ifPresent(vec -> {
-                int maxIndex = vec.maxIndex().getIndex();
+                double[][] limits = axes.getLimits();
+                int first = vec.refToPt(limits[0][0]);
+                int last = vec.refToPt(limits[0][1]);
+                int maxIndex = vec.maxIndex(last, first).getIndex();
                 double ppm = vec.pointToPPM(maxIndex);
                 setPivot(ppm);
             });
@@ -1605,13 +1611,14 @@ public class PolyChart extends Region {
             controller.addDataset(this, newAttributes.get(0).getDataset(), false, false);
             newAttributes.remove(0);
             datasetAttrs.addAll(newAttributes);
+            updateProjections();
         } else {
             datasetAttrs.clear();
             datasetAttrs.addAll(newAttributes);
         }
         if (!newAttributes.isEmpty()) {
             AnalystApp.getFXMLControllerManager().getOrCreateActiveController().updateSpectrumStatusBarOptions(false);
-            DISDIM newDISDIM = newAttributes.get(0).getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            DISDIM newDISDIM = datasetAttrs.getFirst().getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
             // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
             fullChart = fullChart || newDISDIM != disDimProp.get();
             disDimProp.set(newDISDIM);
@@ -1807,7 +1814,7 @@ public class PolyChart extends Region {
         List<Integer> first = datasetAttributesList.get(0).drawList;
         for (int i = 1; i < datasetAttributesList.size(); i++) {
             if (!first.equals(datasetAttributesList.get(i).drawList)) {
-                log.warn("Dataset draw lists are not equal. Using draw list for: {}", datasetAttributesList.get(0).getFileName());
+                log.warn("Dataset draw lists are not equal. Using draw list for: {}", datasetAttributesList.get(0).getFileName() + " " + datasetAttributesList.get(i).drawList);
                 break;
             }
         }
@@ -2392,10 +2399,12 @@ public class PolyChart extends Region {
             textY = yPos + borders.getTop() - 2;
         }
         for (DatasetAttributes datasetAttributes : draw2DList) {
-            gC.setFill(datasetAttributes.getPosColor());
-            String title = datasetAttributes.getDataset().getTitle();
-            gC.fillText(title, textX, textY);
-            textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
+            if (datasetAttributes.getPos() || datasetAttributes.getNeg()) {
+                gC.setFill(datasetAttributes.getPosColor());
+                String title = datasetAttributes.getDataset().getTitle();
+                gC.fillText(title, textX, textY);
+                textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
+            }
         }
     }
 
@@ -3943,6 +3952,10 @@ public class PolyChart extends Region {
                 }
             }
         }
+    }
+
+    public Double getPivotPosition() {
+        return pivotPosition == null ? null : pivotPosition[0];
     }
 
     public double getPivotFraction() {

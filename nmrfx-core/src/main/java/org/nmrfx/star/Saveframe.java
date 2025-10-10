@@ -388,7 +388,7 @@ public class Saveframe {
         return loop;
     }
 
-    public Map getLoopRowMap(String tagCategory, int iRow) throws ParseException {
+    public Map<String, String> getLoopRowMap(String tagCategory, int iRow) throws ParseException {
         Loop loop = (Loop) loops.get(tagCategory);
         if (loop == null) {
             throw new ParseException("Can't find loop \"" + tagCategory + "\"");

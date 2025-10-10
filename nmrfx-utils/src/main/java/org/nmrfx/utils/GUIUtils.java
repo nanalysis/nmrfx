@@ -127,12 +127,15 @@ public class GUIUtils {
     }
 
     public static Object choice(Collection choices, String message) {
-        ChoiceDialog choiceDialog = new ChoiceDialog(null, choices);
+        return choice(choices, message, null);
+    }
+
+    public static Object choice(Collection choices, String message, Object defaultChoice) {
+        ChoiceDialog choiceDialog = new ChoiceDialog(defaultChoice, choices);
         choiceDialog.setHeaderText(message);
         choiceDialog.setContentText("Value:");
         Optional result = choiceDialog.showAndWait();
         return result.orElse(null);
-
     }
 
     public static String input(String message) {

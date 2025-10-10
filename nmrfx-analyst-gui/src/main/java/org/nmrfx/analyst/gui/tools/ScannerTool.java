@@ -30,6 +30,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
+import org.nmrfx.analyst.gui.peaks.MatrixAnalysisTool;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Dataset;
@@ -64,7 +65,7 @@ import java.util.regex.Pattern;
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
     private static final String BIN_MEASURE_NAME = "binValues";
-    enum TableSelectionMode {
+    public enum TableSelectionMode {
         ALL,
         HIGHLIGHT,
         ONLY
@@ -85,13 +86,14 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
     TRACTGUI tractGUI = null;
+    MatrixAnalysisTool matrixAnalysisTool = null;
     TablePlotGUI plotGUI = null;
     TablePlotGUI diffusionGUI = null;
     MinerController miner;
     ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
-
-    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
-    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
+    TableMath tableMath = null;
+    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE]W)$");
+    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
 
     public ScannerTool(FXMLController controller) {
@@ -110,7 +112,7 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
-        scannerBar.getItems().add(makeScoreMenu());
+        scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         Button reloadButton = new Button("Reload");
@@ -228,12 +230,22 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
-    private MenuButton makeScoreMenu() {
-        MenuButton menu = new MenuButton("Score");
+    MenuButton makeMatrixAnalysisMenu() {
+        MenuButton matrixMenu = new MenuButton("Analysis");
+        MenuItem mathItem = new MenuItem("Table Math...");
+        mathItem.setOnAction(e -> doMath());
+        matrixMenu.getItems().add(mathItem);
+        MenuItem pcaButton = new MenuItem("Principal Component Analysis...");
+        pcaButton.setOnAction(e -> doPCA());
+        matrixMenu.getItems().add(pcaButton);
+        MenuItem mcsButton = new MenuItem("Peak Minimum Chemical Shift ");
+        mcsButton.setOnAction(e -> doMCS());
+        matrixMenu.getItems().add(mcsButton);
         MenuItem scoreMenuItem = new MenuItem("Cosine Score");
         scoreMenuItem.setOnAction(e -> scoreSimilarity());
-        menu.getItems().addAll(scoreMenuItem);
-        return menu;
+        matrixMenu.getItems().addAll(scoreMenuItem);
+
+        return matrixMenu;
     }
 
     private MenuButton makeToolMenu() {
@@ -380,7 +392,7 @@ public class ScannerTool implements ControllerTool {
                 }
 
                 List<Double> values = measureRegion(itemDataset, measure);
-                if (values == null) {
+                if (values.isEmpty()) {
                     return;
                 }
                 allValues.addAll(values);
@@ -399,7 +411,7 @@ public class ScannerTool implements ControllerTool {
             values = measure.measure(dataset);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
-            return null;
+            return Collections.emptyList();
         }
         return values;
     }
@@ -431,7 +443,7 @@ public class ScannerTool implements ControllerTool {
             }
 
             List<double[]> values = measureBins(itemDataset, measure, nBins);
-            if (values == null) {
+            if (values.isEmpty()) {
                 return;
             }
             allValues.addAll(values);
@@ -477,7 +489,7 @@ public class ScannerTool implements ControllerTool {
             values = measure.measureBins(dataset, nBins);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
-            return null;
+            return Collections.emptyList();
         }
         return values;
     }
@@ -590,7 +602,7 @@ public class ScannerTool implements ControllerTool {
      * Loads the short version of the regions file into the scanner table.
      *
      * @param file The file to load
-     * @throws IOException
+     * @throws IOException if data can't be read from dataset
      */
     private void loadRegionsShort(File file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
@@ -625,7 +637,7 @@ public class ScannerTool implements ControllerTool {
      * have a Measure Type of volume and an Offset Type of none.
      *
      * @param file The file to load
-     * @throws IOException
+     * @throws IOException if data can't be read from dataset
      */
     private void loadRegionsLong(File file) throws IOException {
         List<DatasetRegion> regions = new ArrayList<>(DatasetRegion.loadRegions(file));
@@ -806,6 +818,7 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
     void showDiffusionGUI() {
         if (diffusionGUI == null) {
             diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION);
@@ -821,4 +834,38 @@ public class ScannerTool implements ControllerTool {
         tractGUI.showMCplot();
     }
 
+
+    void doPCA() {
+        if (matrixAnalysisTool == null) {
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
+        }
+        matrixAnalysisTool.showPCATool();
+    }
+
+    void doMCS() {
+        if (matrixAnalysisTool == null) {
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
+            scanTable.ensureDatasetAttributes();
+        }
+        scanTable.getSelectedAttributes();
+        matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
+        matrixAnalysisTool.doMCS();
+        showPlot("row", "MCS");
+    }
+
+    public void showPlot(String xChoice, String yChoice) {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView, null);
+        }
+        plotGUI.showPlotStage();
+        plotGUI.setPlotType("ScatterPlot");
+        plotGUI.updateChoice(xChoice, yChoice);
+    }
+
+    void doMath() {
+        if (tableMath == null) {
+            tableMath = new TableMath(this);
+        }
+        tableMath.showTableMath();
+    }
 }

@@ -331,6 +331,8 @@ public interface NMRData {
         } else {
             if (string.equalsIgnoreCase("H2O")) {
                 value = ReferenceCalculator.getH2ORefPPM(getTempK());
+            } else if (string.equalsIgnoreCase("AUTOZERO")) {
+                value = NMRDataUtil.autoRef(this, 0.0);
             } else if ("NCPDH".contains(string)) {
                 double refZero = getZeroFreq();
                 Nuclei nuclei = Nuclei.findNuclei(string);

@@ -18,7 +18,9 @@ import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.ColorProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -517,7 +519,7 @@ public class GUIScripter {
 
     public void loadAnnotationsOnFx(PolyChart chart, String yamlData) {
         try (InputStream stream = new ByteArrayInputStream(yamlData.getBytes())) {
-            Yaml yaml = new Yaml();
+            Yaml yaml = getYamlReader();
             List<CanvasAnnotation> annoTypes = (List<CanvasAnnotation>) yaml.load(stream);
             for (CanvasAnnotation annoType : annoTypes) {
                 chart.addAnnotation(annoType);
@@ -917,4 +919,19 @@ public class GUIScripter {
         });
     }
 
+    public static Yaml getYamlReader() {
+        LoaderOptions opts = new LoaderOptions();
+        opts.setTagInspector(tag -> {
+            String className = tag.getClassName();
+            return className != null
+                    && (
+                    className.startsWith("org.nmrfx.processor.gui.annotations.")
+                            || className.startsWith("org.nmrfx.analyst.gui.annotations.")
+                            || className.startsWith("org.nmrfx.analyst.gui.molecule.CanvasMolecule")
+            );
+        });
+
+        Constructor constructor = new Constructor(Object.class, opts);
+        return new Yaml(constructor);
+    }
 }
