@@ -53,7 +53,11 @@ public class ResidueAtomDistances {
         AtomGraph atomGraph = new AtomGraph(new ArrayList<>(), new ArrayList<>());
         for (int iAtomA = 0; iAtomA < atoms.size(); iAtomA++) {
             Atom atomA = atoms.get(iAtomA);
-            int useNode = atomA.getEntity() == compound0 ? 1 : 0;
+            int atomicNumber = atomA.getAtomicNumber();
+            if (atomicNumber < 1) {
+                System.out.println("no atom " + atomicNumber + " " + atomA.getElementName());
+                continue;
+            }            int useNode = atomA.getEntity() == compound0 ? 1 : 0;
             Point3 pointA = atomA.getPoint(iStruct);
             PPMv ppmV = atomA.getPPM(iStruct);
             double ppm;
@@ -63,7 +67,8 @@ public class ResidueAtomDistances {
             } else {
                 ppm = ppmV.getValue();
             }
-            AtomNode atomNode = new AtomNode(iAtomA, atomMap.get(atomA.getElementName()), ppm, useNode);
+
+            AtomNode atomNode = new AtomNode(iAtomA, atomicNumber, ppm, useNode);
             atomGraph.nodes.add(atomNode);
             for (int iAtomB = 0; iAtomB < atoms.size(); iAtomB++) {
                 Atom atomB = atoms.get(iAtomB);
