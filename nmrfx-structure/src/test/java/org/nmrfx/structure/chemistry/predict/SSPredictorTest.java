@@ -100,7 +100,7 @@ public class SSPredictorTest {
                 String[] items2 = line2.split(";");
                 String seq2 = items2[0];
                 assert seq1.equals(seq2);
-                String[] bps2 = items[1].split(",");
+                String[] bps2 = items2[1].split(",");
                 Set<SSPredictor.BasePairProbability> expSet = makeSet(bps2);
 
                 double[] results = evaluate(expSet, predSet);
