@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -291,8 +293,8 @@ public class SDFile {
 
                 if (atomList != null) {
                     if ((iBond < atomList.size()) && (jBond < atomList.size())) {
-                        Atom atom1 = (Atom) atomList.get(iBond);
-                        Atom atom2 = (Atom) atomList.get(jBond);
+                        Atom atom1 = atomList.get(iBond);
+                        Atom atom2 = atomList.get(jBond);
 
                         Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
@@ -344,7 +346,7 @@ public class SDFile {
         while ((string = lineReader.readLine()) != null) {
             String valueName;
             string = string.trim();
-            if (string.length() != 0) {
+            if (!string.isBlank()) {
                 if (string.equals("$$$$")) {
                     break;
                 } else if (string.startsWith(">")) {
@@ -358,15 +360,17 @@ public class SDFile {
                                 break;
                             }
                             String value = string.trim();
-                            if (value.length() == 0) {
+                            if (value.isEmpty()) {
                                 break;
                             }
-                            if (sBuilder.length() > 0) {
+                            if (!sBuilder.isEmpty()) {
                                 sBuilder.append("\n");
                             }
 
                             if (value.endsWith("\\")) {
-                                value = value.substring(0, value.length() - 1);
+                                if (!valueName.equals("NMREDATA_ASSIGNMENT")) {
+                                    value = value.substring(0, value.length() - 1);
+                                }
                             }
                             sBuilder.append(value);
                         }
@@ -375,6 +379,17 @@ public class SDFile {
                             molName = molecule.name;
                         } else {
                             molecule.setProperty(valueName, sBuilder.toString());
+                        }
+                        if (valueName.equals("NMREDATA_ASSIGNMENT")) {
+                            String[] rows = sBuilder.toString().split("\\\\");
+                            Iterator<Atom> atomIterator = atomList.iterator();
+                            Arrays.stream(rows).forEach(row -> {
+                                String[] values = row.split(",");
+                                int resNum = Integer.parseInt(values[0].trim());
+                                double shift = Double.parseDouble(values[1].trim());
+                                int atomNum = Integer.parseInt(values[2].trim());
+                                atomIterator.next().setPPM(shift);
+                            });
                         }
 
                     }
