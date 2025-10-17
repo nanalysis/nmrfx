@@ -24,10 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -380,15 +377,21 @@ public class SDFile {
                         } else {
                             molecule.setProperty(valueName, sBuilder.toString());
                         }
+
                         if (valueName.equals("NMREDATA_ASSIGNMENT")) {
                             String[] rows = sBuilder.toString().split("\\\\");
-                            Iterator<Atom> atomIterator = atomList.iterator();
+                            HashMap<String, Double> shifts = new HashMap<>();
                             Arrays.stream(rows).forEach(row -> {
                                 String[] values = row.split(",");
-                                int resNum = Integer.parseInt(values[0].trim());
+                                int resNum = Integer.parseInt(values[0].trim()) + 1;
                                 double shift = Double.parseDouble(values[1].trim());
                                 int atomNum = Integer.parseInt(values[2].trim());
-                                atomIterator.next().setPPM(shift);
+                                String atomName = Objects.requireNonNull(AtomProperty.get(atomNum)).name();
+                                shifts.putIfAbsent(atomName+resNum, shift);
+                            });
+                            atomList.forEach(atom -> {
+                                double shift = shifts.get(atom.getName());
+                                atom.setPPM(shift);
                             });
                         }
 
