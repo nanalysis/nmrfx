@@ -31,7 +31,7 @@ public class TableMath {
     TextField expressionField = new TextField();
     TextField resultField = new TextField();
     Map<String, String> parMap = new HashMap<>();
-    static Pattern headerPattern = Pattern.compile("^([_$a-zA-Z][_$a-zA-Z0-9]*)(:.*)*");
+    static Pattern headerPattern = Pattern.compile("^([_$a-zA-Z][_$a-zA-Z0-9]*)(:.*)");
     static Pattern exprVarPattern = Pattern.compile("(?<!\\.)\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b(?!\\s*\\(|\\s*\\.)");
 
     public TableMath(ScannerTool scannerTool) {
