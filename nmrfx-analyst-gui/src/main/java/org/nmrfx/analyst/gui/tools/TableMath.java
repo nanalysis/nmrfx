@@ -25,14 +25,14 @@ import java.util.regex.*;
 import static org.nmrfx.analyst.gui.tools.TableMath.VariableNameScanner.findVariables;
 
 public class TableMath {
+    static Pattern headerPattern = Pattern.compile("^([_$a-zA-Z][_$a-zA-Z0-9]*)(:.*)*+");
+    static Pattern exprVarPattern = Pattern.compile("(?<!\\.)\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b(?!\\s*\\(|\\s*\\.)");
     Stage stage = null;
     ScannerTool scannerTool;
     Map<String, ChoiceBox<String>> choiceMap = new HashMap<>();
     TextField expressionField = new TextField();
     TextField resultField = new TextField();
     Map<String, String> parMap = new HashMap<>();
-    static Pattern headerPattern = Pattern.compile("^([_$a-zA-Z][_$a-zA-Z0-9]*)(:.*)*+");
-    static Pattern exprVarPattern = Pattern.compile("(?<!\\.)\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b(?!\\s*\\(|\\s*\\.)");
 
     public TableMath(ScannerTool scannerTool) {
         this.scannerTool = scannerTool;
