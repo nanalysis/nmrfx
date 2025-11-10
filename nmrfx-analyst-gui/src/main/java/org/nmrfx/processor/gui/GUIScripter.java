@@ -233,7 +233,7 @@ public class GUIScripter {
             ColumnConstraints columnConstraint = columnConstraints.get(i);
             Double percent = columnConstraint.getPercentWidth();
             Map<String, Double> parMap = new HashMap<>();
-            percent = percent == null ? 100.0 : percent;
+            percent = percent < 0 ? 100.0 : percent;
             parMap.put("percent", percent);
             columnResult.add(parMap);
         }
@@ -325,7 +325,7 @@ public class GUIScripter {
                 }
             }
             if (!indices.isEmpty()) {
-                chart.getFXMLController().getStatusBar().updateRowSpinner(indices.get(0), 1);
+                chart.getFXMLController().getStatusBar().updateRowSpinner(indices.getFirst(), 1);
             }
             chart.refresh();
         });
@@ -371,7 +371,7 @@ public class GUIScripter {
     public Map<String, Object> config(List<String> datasetNames) throws InterruptedException, ExecutionException {
         final String datasetName;
         if ((datasetNames != null) && !datasetNames.isEmpty()) {
-            datasetName = datasetNames.get(0);
+            datasetName = datasetNames.getFirst();
         } else {
             datasetName = null;
         }
@@ -441,7 +441,7 @@ public class GUIScripter {
     public Map<String, Object> pconfig(List<String> peakListNames) throws InterruptedException, ExecutionException {
         final String peakListName;
         if ((peakListNames != null) && !peakListNames.isEmpty()) {
-            peakListName = peakListNames.get(0);
+            peakListName = peakListNames.getFirst();
         } else {
             peakListName = null;
         }
@@ -580,7 +580,7 @@ public class GUIScripter {
     public void newStage(String title) {
         Fx.runOnFxThread(() -> {
             FXMLController controller = AnalystApp.getFXMLControllerManager().newController(title);
-            PolyChart chartActive = controller.getCharts().get(0);
+            PolyChart chartActive = controller.getCharts().getFirst();
             controller.setActiveChart(chartActive);
         });
     }
@@ -657,7 +657,7 @@ public class GUIScripter {
             FXMLController controller1 = getActiveController();
             controller1.setNCharts(nCharts);
             controller1.arrange(orient);
-            PolyChart chartActive = controller1.getCharts().get(0);
+            PolyChart chartActive = controller1.getCharts().getFirst();
             controller1.setActiveChart(chartActive);
             controller1.setChartDisable(false);
             controller1.draw();
