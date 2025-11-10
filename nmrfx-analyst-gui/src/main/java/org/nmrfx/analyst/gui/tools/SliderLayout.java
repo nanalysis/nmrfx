@@ -47,6 +47,8 @@ public class SliderLayout {
         try {
             loadLayouts();
         } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
         }
         return layouts.keySet();
     }
@@ -126,7 +128,7 @@ public class SliderLayout {
         var synchronizer = PolyChartManager.getInstance().getSynchronizer();
         for (var entry : syncMap.entrySet()) {
             if (entry.getValue().size() > 1) {
-                PolyChart chart = entry.getValue().get(0);
+                PolyChart chart = entry.getValue().getFirst();
                 var dimNames = chart.getDimNames();
                 if (iDim < dimNames.size()) {
                     String dimName = chart.getDimNames().get(iDim);
