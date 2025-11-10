@@ -185,7 +185,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     private String getTextAnchor() {
         return switch (textAlignment) {
             case CENTER -> "middle";
-            case LEFT -> "start";
             case RIGHT -> "end";
             default -> "start";
         };
@@ -204,14 +203,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         StringBuilder sBuilder = new StringBuilder();
         //      transform="matrix(1,0,0,1,100,20)"
         for (Object obj : transforms) {
-            if (obj instanceof Rotate) {
-                double value = ((Rotate) obj).value;
+            if (obj instanceof Rotate(double value)) {
                 sBuilder.append("rotate(");
                 sBuilder.append(value).append(") ");
             }
-            if (obj instanceof Translate) {
-                double x = ((Translate) obj).x;
-                double y = ((Translate) obj).y;
+            if (obj instanceof Translate(double x, double y)) {
                 sBuilder.append("translate(");
                 sBuilder.append(x).append(",");
                 sBuilder.append(y).append(") ");
@@ -290,7 +286,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             builder.append(String.join(" ", Arrays.stream(lineDashes).mapToObj(this::format).toList()));
             builder.append(';');
         }
-        if (clipPath.length() != 0) {
+        if (!clipPath.isEmpty()) {
             builder.append(clipPath);
         }
         return builder.toString();
@@ -339,7 +335,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
                 writer.writeEndElement();
             }
             clipPath += pathBuilder.toString();
-            if (clipPath.length() > 0) {
+            if (!clipPath.isEmpty()) {
                 writer.writeStartElement("defs");
                 writer.writeStartElement("clipPath");
                 writer.writeAttribute("id", "clipPath" + clipIndex);
@@ -357,7 +353,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             }
 
         } catch (XMLStreamException ex) {
-            System.out.println(ex.getMessage());
+            log.error(ex.getMessage());
         }
     }
 
