@@ -8,6 +8,7 @@ package org.nmrfx.utils;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
@@ -22,6 +23,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
@@ -469,4 +472,22 @@ public class GUIUtils {
         });
         return dialog.showAndWait();
     }
+    public static Screen getScreenForStage(Stage stage) {
+        // Get the bounds of the stage
+        double x = stage.getX();
+        double y = stage.getY();
+        ObservableList<Screen> screens = Screen.getScreensForRectangle(x, y, 1.0, 1.0);
+
+        if (!screens.isEmpty()) {
+            return screens.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    public static double getDPI(Stage stage) {
+        Screen screen = getScreenForStage(stage);
+        return screen == null ? 96 : screen.getDpi();
+    }
 }
+

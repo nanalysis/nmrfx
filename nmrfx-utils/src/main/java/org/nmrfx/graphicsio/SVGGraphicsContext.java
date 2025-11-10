@@ -114,25 +114,34 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     public void create(String fileName) {
-        create(1024, 1024, fileName);
+        create(1024, 1024,"8.5in" ,"11in", fileName);
     }
 
     // still used by RingNMR with landcape=true is all calls
     @Deprecated(forRemoval = true)
-    public void create(boolean _landscape, double width, double height, String fileName) {
-        create(width, height, fileName);
+    public void create(boolean _landscape, double width, double height, String outputWidth, String outputHeight, String fileName) {
+        create(width, height,outputWidth, outputHeight, fileName);
     }
 
-    public void create(double width, double height, String fileName) {
+    public void create(double width, double height, String outputWidth, String outputHeight, String fileName) {
         try {
             OutputStream stream = new FileOutputStream(fileName);
-            create(width, height, stream);
+            create(width, height,  outputWidth,  outputHeight,stream);
         } catch (FileNotFoundException ex) {
             log.warn(ex.getMessage(), ex);
         }
     }
 
-    public void create(double width, double height, OutputStream stream) {
+    public void create(double width, double height, String fileName) {
+        try {
+            OutputStream stream = new FileOutputStream(fileName);
+            create(width, height,  null,  null,stream);
+        } catch (FileNotFoundException ex) {
+            log.warn(ex.getMessage(), ex);
+        }
+    }
+
+    public void create(double width, double height, String outputWidth, String outputHeight, OutputStream stream) {
         try {
             this.pageWidth = width;
             this.pageHeight = height;
@@ -145,13 +154,22 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeStartDocument();
             writer.writeCharacters("\n");
             writer.writeStartElement("svg");
+
             writer.writeAttribute("baseProfile", "tiny");
-            writer.writeAttribute("width", format(pageWidth));
-            writer.writeAttribute("height", format(pageHeight));
+            if ((outputHeight != null) && (outputWidth != null)) {
+                String viewFormat = String.format("%.2f %.2f %.2f %.2f", 0.0, 0.0, pageWidth, pageHeight);
+                writer.writeAttribute("viewBox", viewFormat);
+                writer.writeAttribute("width", outputWidth);
+                writer.writeAttribute("height", outputHeight);
+                writer.writeAttribute("preserveAspectRatio", "xMidYMid");
+            } else {
+                writer.writeAttribute("width", format(pageWidth));
+                writer.writeAttribute("height", format(pageHeight));
+            }
             writer.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
 
             writer.writeCharacters("\n");
-        } catch (XMLStreamException ex) {
+        } catch (Exception ex) {
             log.warn(ex.getMessage(), ex);
         }
 
