@@ -1,6 +1,8 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.Cursor;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -215,6 +217,38 @@ public class GUIScripter {
             limits.add(v2);
             result.put(axName, limits);
         }
+        return result;
+    }
+
+
+
+    public Map<String, List<Map<String, Double>>> gridConf(FXMLController controller) {
+        int nRows = controller.arrangeGetRows();
+        int nColumns = controller.arrangeGetColumns();
+        GridPaneCanvas gridPaneCanvas = controller.getGridPaneCanvas();
+        var columnConstraints = gridPaneCanvas.getColumnConstraints();
+        Map<String, List<Map<String, Double>>> result = new HashMap<>();
+        List<Map<String, Double>> columnResult = new ArrayList<>();
+        for (int i=0;i<Math.min(nColumns, columnConstraints.size());i++) {
+            ColumnConstraints columnConstraint = columnConstraints.get(i);
+            Double percent = columnConstraint.getPercentWidth();
+            Map<String, Double> parMap = new HashMap<>();
+            percent = percent == null ? 100.0 : percent;
+            parMap.put("percent", percent);
+            columnResult.add(parMap);
+        }
+        var rowConstraints = gridPaneCanvas.getRowConstraints();
+        List<Map<String, Double>> rowResult = new ArrayList<>();
+        for (int i=0;i<Math.min(nRows, rowConstraints.size());i++) {
+            RowConstraints rowConstraint = rowConstraints.get(i);
+            Double percent = rowConstraint.getPercentHeight();
+            Map<String, Double> parMap = new HashMap<>();
+            percent = percent == null ? 100.0 : percent;
+            parMap.put("percent", percent);
+            rowResult.add(parMap);
+        }
+        result.put("column", columnResult);
+        result.put("row", rowResult);
         return result;
     }
 
@@ -577,6 +611,46 @@ public class GUIScripter {
         controller.draw();
     }
 
+    public void gridOnFx(FXMLController controller, Map<String, List<Map<String, Double>>> gridConf) {
+        var columConf = gridConf.get("column");
+        GridPaneCanvas gridPaneCanvas = controller.getGridPaneCanvas();
+        var columnConstraints = gridPaneCanvas.getColumnConstraints();
+        if (columConf != null) {
+            int column = 0;
+            for (var conf : columConf) {
+                Double percent = conf.get("percent");
+                percent = percent == null ? 100.0 : percent;
+                ColumnConstraints columnConstraint;
+                if (column < columnConstraints.size()) {
+                    columnConstraint = columnConstraints.get(column);
+                } else {
+                    columnConstraint = new ColumnConstraints();
+                    columnConstraints.add(columnConstraint);
+                }
+                columnConstraint.setPercentWidth(percent);
+                column++;
+            }
+        }
+        var rowConf = gridConf.get("row");
+        var rowConstraints = gridPaneCanvas.getRowConstraints();
+        if (rowConf != null) {
+            int row = 0;
+            for (var conf : rowConf) {
+                Double percent = conf.get("percent");
+                percent = percent == null ? 100.0 : percent;
+                RowConstraints rowConstraint;
+                if (row < rowConstraints.size()) {
+                    rowConstraint = rowConstraints.get(row);
+                } else {
+                    rowConstraint = new RowConstraints();
+                    rowConstraints.add(rowConstraint);
+                }
+                rowConstraint.setPercentHeight(percent);
+                row++;
+            }
+        }
+    }
+
     public void grid(int nCharts, String orientName) {
         GridPaneCanvas.ORIENTATION orient = GridPaneCanvas.parseOrientationFromString(orientName);
         Fx.runOnFxThread(() -> {
@@ -621,6 +695,23 @@ public class GUIScripter {
             controller1.draw();
         });
     }
+
+    public void gridcolumn(int column, double percent) {
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            GridPaneCanvas gridPaneCanvas = controller1.getGridPaneCanvas();
+            gridPaneCanvas.gridColumn(column, percent);
+        });
+    }
+
+    public void gridrow(int row, double percent) {
+        Fx.runOnFxThread(() -> {
+            FXMLController controller1 = getActiveController();
+            GridPaneCanvas gridPaneCanvas = controller1.getGridPaneCanvas();
+            gridPaneCanvas.gridRow(row, percent);
+        });
+    }
+
     public void insetPosition(PolyChart chart, Double x, Double y, Double w, Double h) {
         Fx.runOnFxThread(() -> {
             FXMLController controller1 = getActiveController();

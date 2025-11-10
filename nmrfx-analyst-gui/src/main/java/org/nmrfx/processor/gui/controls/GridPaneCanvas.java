@@ -20,13 +20,12 @@ package org.nmrfx.processor.gui.controls;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Bounds;
+import javafx.geometry.HPos;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.*;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
@@ -83,9 +82,9 @@ public class GridPaneCanvas extends GridPane {
 
     @Override
     public void layoutChildren() {
-        super.layoutChildren();
         double width = getWidth();
         double height = getHeight();
+        disableCharts(true);
 
         GraphicsContext gC = canvas.getGraphicsContext2D();
         gC.clearRect(0, 0, width, height);
@@ -93,31 +92,120 @@ public class GridPaneCanvas extends GridPane {
             gC.setFill(controller.getBgColor());
             gC.fillRect(0, 0, width, height);
         }
+        GridValue gridSize = getGridSize();
+        int nChartColumns = gridSize.columns;
+        int nChartRows = gridSize.rows;
+
+        double[][] borderGrid = controller.prepareChildren(nChartRows, nChartColumns);
+
+        double[] widths = new double[nChartColumns];
+        double[] xStarts = new double[nChartColumns];
+        double[] widthPercents = new double[nChartColumns];
+        double[] heights = new double[nChartRows];
+        double[] yStarts = new double[nChartRows];
+        double[] heightPercents = new double[nChartRows];
+        var columnConstraints = getColumnConstraints();
+        var rowConstraints = getRowConstraints();
+        double sumColumnBorders = 0.0;
+        double sumColumnPercent = 0.0;
+        for (int i=0;i<nChartColumns;i++) {
+            widthPercents[i] = 100.0;
+            widths[i] = borderGrid[0][i] + borderGrid[1][i];
+            sumColumnBorders += widths[i];
+            if (i < columnConstraints.size()) {
+                widthPercents[i] = columnConstraints.get(i).getPercentWidth();
+            }
+            sumColumnPercent += widthPercents[i];
+        }
+
+        double sumRowBorders = 0.0;
+        double sumRowPercent = 0.0;
+        for (int i=0;i<nChartRows;i++) {
+            heightPercents[i] = 100.0;
+            heights[i] = borderGrid[2][i] + borderGrid[3][i];
+            sumRowBorders += heights[i];
+            if (i < rowConstraints.size()) {
+                heightPercents[i] = rowConstraints.get(i).getPercentHeight();
+            }
+            sumRowPercent += heightPercents[i];
+        }
+
+        double flexWidth = width - sumColumnBorders;
+        double columnNorm = sumColumnPercent >= 99.9 ? sumColumnPercent : 100.0;
+        for (int i=0;i<nChartColumns;i++) {
+            double coreWidth =  flexWidth * widthPercents[i] / columnNorm;
+            System.out.println(i + " " + widths[i] + " " + coreWidth + " " + (widths[i] + coreWidth) + " " + widthPercents[i] + " " + (widthPercents[i] / columnNorm));
+            widths[i] += coreWidth;
+            if (i < nChartColumns-1) {
+                xStarts[i + 1] = xStarts[i] + widths[i];
+            }
+        }
+        double rowNorm = sumRowPercent >= 99.9 ? sumRowPercent : 100.0;
+
+        double flexHeight = height - sumRowBorders;
+        for (int i=0;i<nChartRows;i++) {
+            heights[i] += flexHeight * heightPercents[i] / rowNorm;
+            if (i < nChartRows-1) {
+                yStarts[i + 1] = yStarts[i] + heights[i];
+            }
+        }
+
+        layoutChildren(xStarts, widths, heights, yStarts);
+    }
+
+    private void layoutChildren(double[] xStarts, double[] widths, double[] heights, double[] yStarts) {
+        double width;
+        double height;
+        for (var node : getChildren()) {
+            Integer column = getColumnIndex(node);
+            Integer row = getRowIndex(node);
+            if ((column == null) || (row == null)) {
+                break;
+            }
+            Integer columnSpan = getColumnSpan(node);
+            Integer rowSpan = getRowSpan(node);
+            System.out.println(node + " " + column + " " + xStarts[column] + " " + widths[column]);
+            width = widths[column];
+            for (int i=1;i < columnSpan;i++) {
+                width += widths[column + i];
+            }
+            height = heights[row];
+            for (int i=1;i < rowSpan;i++) {
+                height += heights[row + i];
+            }
+            Region.layoutInArea(node, xStarts[column], yStarts[row], width, height, 0.0,null, true, true, HPos.CENTER, VPos.CENTER, true);
+        }
+        disableCharts(false);
         for (var child : getChildren()) {
             if (child instanceof PolyChart chart) {
                 chart.refresh();
             }
         }
+
     }
 
     public boolean setOrientation(ORIENTATION orient, boolean force) {
         orientation = orient;
         int nChildren = getChildren().size();
         int newRows;
-        if (orient == ORIENTATION.VERTICAL) {
-            newRows = nChildren;
-        } else if (orient == ORIENTATION.HORIZONTAL) {
-            newRows = 1;
-        } else {
-            if (nChildren < 3) {
+        switch (orient) {
+            case ORIENTATION.VERTICAL -> {
+                newRows = nChildren;
+            }
+            case ORIENTATION.HORIZONTAL -> {
                 newRows = 1;
-                setRows(1);
-            } else if (nChildren < 9) {
-                newRows = 2;
-            } else if (nChildren < 16) {
-                newRows = 3;
-            } else {
-                newRows = 4;
+            }
+            default -> {
+                if (nChildren < 3) {
+                    newRows = 1;
+                    setRows(1);
+                } else if (nChildren < 9) {
+                    newRows = 2;
+                } else if (nChildren < 16) {
+                    newRows = 3;
+                } else {
+                    newRows = 4;
+                }
             }
         }
         if (force || (newRows != nRows)) {
@@ -162,10 +250,10 @@ public class GridPaneCanvas extends GridPane {
                     break;
                 }
                 var node = getChildren().get(iChild);
-                setRowIndex(node, iRow * 2);
-                setRowSpan(node, 2);
-                setColumnIndex(node, jColumn * 2);
-                setColumnSpan(node, 2);
+                setRowIndex(node, iRow );
+                setRowSpan(node, 1);
+                setColumnIndex(node, jColumn );
+                setColumnSpan(node, 1);
                 iChild++;
             }
         }
@@ -175,10 +263,10 @@ public class GridPaneCanvas extends GridPane {
     }
 
     public void setPosition(PolyChart node, int iRow, int jColumn, int rowSpan, int columnSpan) {
-        setRowIndex(node, iRow * 2);
-        setRowSpan(node, rowSpan * 2);
-        setColumnIndex(node, jColumn * 2);
-        setColumnSpan(node, columnSpan * 2);
+        setRowIndex(node, iRow );
+        setRowSpan(node, rowSpan);
+        setColumnIndex(node, jColumn);
+        setColumnSpan(node, columnSpan);
         updateConstraints();
         disableCharts(false);
         layoutChildren();
@@ -229,7 +317,7 @@ public class GridPaneCanvas extends GridPane {
             rows = Math.max(rows, row + rowSpan);
         }
 
-        return new GridValue(rows / 2, columns / 2);
+        return new GridValue(rows, columns);
 
     }
 
@@ -237,12 +325,32 @@ public class GridPaneCanvas extends GridPane {
         Integer column = getColumnIndex(chart);
         Integer row = getRowIndex(chart);
         Integer columnSpan = getColumnSpan(chart);
-        columnSpan = columnSpan == null ? 1 : columnSpan / 2;
+        columnSpan = columnSpan == null ? 1 : columnSpan;
         Integer rowSpan = getRowSpan(chart);
-        rowSpan = rowSpan == null ? 1 : rowSpan / 2;
-        column = column == null ? 0 : column / 2;
-        row = row == null ? 0 : row / 2;
+        rowSpan = rowSpan == null ? 1 : rowSpan;
+        column = column == null ? 0 : column;
+        row = row == null ? 0 : row;
         return new GridPosition(row, column, rowSpan, columnSpan);
+    }
+
+    public void gridColumn(int column, double percent) {
+        var columnConstraints = getColumnConstraints();
+        for (int i = columnConstraints.size();i< column+1;i++) {
+            ColumnConstraints columnConstraint = new ColumnConstraints();
+            columnConstraint.setPercentWidth(100.0);
+        }
+        ColumnConstraints columnConstraint = columnConstraints.get(column);
+        columnConstraint.setPercentWidth(percent);
+    }
+
+    public void gridRow(int row, double percent) {
+        var rowConstraints = getRowConstraints();
+        for (int i = rowConstraints.size();i< row+1;i++) {
+            RowConstraints rowConstraint = new RowConstraints();
+            rowConstraint.setPercentHeight(100.0);
+        }
+        RowConstraints rowConstraint = rowConstraints.get(row);
+        rowConstraint.setPercentHeight(percent);
     }
 
     public void updateConstraints() {
@@ -251,24 +359,21 @@ public class GridPaneCanvas extends GridPane {
         int nChartColumns = gridSize.columns;
         int nChartRows = gridSize.rows;
         if ((nChartColumns > 0) && (nChartRows > 0)) {
-            getRowConstraints().clear();
-            getColumnConstraints().clear();
-            double[][] borderGrid = controller.prepareChildren(nChartRows, nChartColumns);
+            var columnConstraints = getColumnConstraints();
             for (int i = 0; i < nChartColumns; i++) {
-                ColumnConstraints borderConstraint = new ColumnConstraints();
-                borderConstraint.setPrefWidth(borderGrid[0][i]);
-                borderConstraint.setHgrow(Priority.NEVER);
-                ColumnConstraints chartConstraint = new ColumnConstraints();
-                chartConstraint.setHgrow(Priority.ALWAYS);
-                getColumnConstraints().addAll(borderConstraint, chartConstraint);
+                if (i >= columnConstraints.size()) {
+                    ColumnConstraints chartConstraint = new ColumnConstraints();
+                    chartConstraint.setPercentWidth(100);
+                    columnConstraints.add(chartConstraint);
+                }
             }
+            var rowConstraints = getRowConstraints();
             for (int i = 0; i < nChartRows; i++) {
-                RowConstraints borderConstraint = new RowConstraints();
-                borderConstraint.setPrefHeight(borderGrid[2][i]);
-                borderConstraint.setVgrow(Priority.NEVER);
-                RowConstraints chartConstraint = new RowConstraints();
-                chartConstraint.setVgrow(Priority.ALWAYS);
-                getRowConstraints().addAll(borderConstraint, chartConstraint);
+                if (i >= rowConstraints.size()) {
+                    RowConstraints chartConstraint = new RowConstraints();
+                    chartConstraint.setPercentHeight(100.0);
+                    rowConstraints.add(chartConstraint);
+                }
             }
         }
         disableCharts(false);

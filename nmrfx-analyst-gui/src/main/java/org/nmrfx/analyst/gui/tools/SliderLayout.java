@@ -70,6 +70,10 @@ public class SliderLayout {
             PolyChart chart = charts.get(i++);
             scripter.grid(chart, layout.row(), layout.column(), layout.rowspan(), layout.columnspan());
         }
+        Map<String, List<Map<String, Double>>> gridConstraints = sliderLayoutTypes.getGridconstraints();
+        if (gridConstraints != null) {
+            scripter.gridOnFx(controller, gridConstraints);
+        }
         i = 0;
         for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
             PolyChart chart = charts.get(i++);
