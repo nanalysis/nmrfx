@@ -1960,7 +1960,8 @@ public class PolyChart extends Region {
                 double ppmRatio = dXAxis / dYAxis;
                 double ppmRatioF = fRatio1 / fRatio0;
                 double chartAspectRatio = chartProps.getAspectRatio();
-                double aspectRatio = chartAspectRatio * (ppmRatio / ppmRatioF);
+                boolean fixedAspect = chartProps.getFixedAspect();
+                double aspectRatio = fixedAspect ? chartAspectRatio : chartAspectRatio * (ppmRatio / ppmRatioF);
                 double dX = width - borders.getLeft() - adjustedRight;
                 double dY = height - (borders.getBottom() + adjustedTop);
                 double newDX = dY * aspectRatio;

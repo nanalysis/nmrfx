@@ -102,6 +102,7 @@ public class GUIScripterAdvanced extends GUIScripter {
             Map<String, Double> widthMap = (Map<String, Double>) Objects.requireNonNullElse(runAboutData.getOrDefault(WIDTHS, Map.of()), Map.of());
             Map<String, Double> tolMap = (Map<String, Double>) Objects.requireNonNullElse(runAboutData.getOrDefault(TOLERANCES, Map.of()), Map.of());
             PeakList refList = PeakList.get(refListName);
+            runAboutGUI.setRefList(refList);
             runAboutGUI.getRunAbout().setRefList(refList);
             runAboutGUI.unifyLimits(unifyLimits);
             runAboutGUI.genWin(arrangement);

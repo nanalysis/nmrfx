@@ -31,10 +31,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
+import javafx.geometry.*;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -44,6 +41,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -83,6 +81,7 @@ import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.processor.gui.utils.FileExtensionFilterType;
+import org.nmrfx.processor.gui.utils.OuputSizeDialog;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
 import org.nmrfx.processor.processing.ProcessingSection;
 import org.nmrfx.project.ProjectBase;
@@ -765,9 +764,20 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void exportPDF(String fileName) {
         if (fileName != null) {
+            double chartWidth = chartDrawingLayers.getWidth();
+            double chartHeight = chartDrawingLayers.getHeight();
             try {
+                OuputSizeDialog.OutputDimensions outputDimensions = OuputSizeDialog.getOutputDimensions(chartWidth, chartHeight, GUIUtils.getDPI(stage));
+                double width = PDRectangle.LETTER.getWidth();
+                double height = PDRectangle.LETTER.getHeight();
+                if (outputDimensions != null) {
+                    Dimension2D dimension2D = OuputSizeDialog.getPDFDimensions(outputDimensions);
+                    width = dimension2D.getWidth();
+                    height = dimension2D.getHeight();
+                }
+
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
-                pdfGC.create(true, chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), fileName);
+                pdfGC.create(true, chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), width, height, fileName);
                 for (PolyChart chart : getAllCharts()) {
                     chart.exportVectorGraphics(pdfGC);
                 }
@@ -800,8 +810,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void exportSVG(String fileName) {
         if (fileName != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
+            double chartWidth = chartDrawingLayers.getWidth();
+            double chartHeight = chartDrawingLayers.getHeight();
             try {
-                svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), fileName);
+                OuputSizeDialog.OutputDimensions outputDimensions = OuputSizeDialog.getOutputDimensions(chartWidth, chartHeight, GUIUtils.getDPI(stage));
+                String width = null;
+                String height = null;
+                if (outputDimensions != null) {
+                     width = String.format("%.2f%s", outputDimensions.width(), outputDimensions.widthUnits());
+                     height = String.format("%.2f%s", outputDimensions.height(), outputDimensions.heightUnits());
+                }
+                svgGC.create(chartWidth, chartHeight, width, height, fileName);
                 for (PolyChart chart : getAllCharts()) {
                     chart.exportVectorGraphics(svgGC);
                 }
@@ -818,7 +837,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         SVGGraphicsContext svgGC = new SVGGraphicsContext();
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), stream);
+            svgGC.create(chartDrawingLayers.getWidth(), chartDrawingLayers.getHeight(), null, null, stream);
             for (PolyChart chart : getAllCharts()) {
                 chart.exportVectorGraphics(svgGC);
             }
