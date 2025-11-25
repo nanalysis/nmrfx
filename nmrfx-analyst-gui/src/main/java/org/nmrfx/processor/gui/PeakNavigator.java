@@ -204,7 +204,6 @@ public class PeakNavigator implements PeakListener {
             }
         });
 
-        this.peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
