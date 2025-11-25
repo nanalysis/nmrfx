@@ -1928,7 +1928,7 @@ public class PolyChart extends Region {
         return new Insets(top, right, bottom, left);
     }
 
-    private Insets getUseBorders() {
+    public Insets getUseBorders() {
         Insets min = getMinBorders();
         double left = Math.max(min.getLeft(), minLeftBorder);
         left = Math.max(left, chartProps.getLeftBorderSize());
