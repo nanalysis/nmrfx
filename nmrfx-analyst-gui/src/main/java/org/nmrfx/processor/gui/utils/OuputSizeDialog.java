@@ -27,7 +27,7 @@ public class OuputSizeDialog {
         grid.setVgap(10);
         grid.setHgap(10);
         dialog.getDialogPane().setContent(grid);
-        int comboBoxWidth = 60;
+        int comboBoxWidth = 80;
 
         ComboBox<String>  widthUnits = new ComboBox<>();
         widthUnits.getItems().addAll(List.of("px", "in", "cm"));
