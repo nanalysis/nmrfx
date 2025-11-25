@@ -73,6 +73,18 @@ public class SpinSystem {
         void tol(double value) {
             this.tol = value;
         }
+
+        static Optional<AtomEnum> findValue(String value) {
+            value = value.toLowerCase();
+            AtomEnum result = null;
+            for (AtomEnum atomEnum : AtomEnum.values()) {
+                if (atomEnum.name.equals(value)) {
+                    result = atomEnum;
+                    break;
+                }
+            }
+            return Optional.ofNullable(result);
+        }
     }
 
     EnumMap<AtomEnum, ShiftValue>[] shiftValues = new EnumMap[2];
@@ -871,13 +883,14 @@ public class SpinSystem {
                     String resType = userField.substring(0, dotIndex);
                     String atomType = userField.substring(dotIndex + 1).toUpperCase();
                     int k = resType.endsWith("-1") ? 0 : 1;
-                    AtomEnum atomEnum = AtomEnum.valueOf(atomType);
-                    if (atomEnum != null) {
+                    Optional<AtomEnum> atomEnumOpt = AtomEnum.findValue(atomType);
+                    int finalIDim = iDim;
+                    atomEnumOpt.ifPresent(atomEnum -> {
                         var shiftList = atomShifts[k].computeIfAbsent(atomEnum, key -> new ArrayList<>());
                         shiftList.add(peakDim.getChemShift().doubleValue());
-                        peakMatch.setIndex(iDim, atomEnum);
-                        peakMatch.setIntraResidue(iDim, k == 1);
-                    }
+                        peakMatch.setIndex(finalIDim, atomEnum);
+                        peakMatch.setIntraResidue(finalIDim, k == 1);
+                    });
                 }
                 iDim++;
 
