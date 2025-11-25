@@ -425,12 +425,15 @@ public class ScannerTool implements ControllerTool {
         int extra = 1;
         Measure measure = new Measure(BIN_MEASURE_NAME, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
         measure.setName("bins");
-        List<double[]> allValues = new ArrayList<>();
+        Map<String, double[]> valueMap = new HashMap<>();
         List<FileTableItem> items = scanTable.getItems();
 
         for (FileTableItem item : items) {
             String datasetName = item.getDatasetName();
             Dataset itemDataset = Dataset.getDataset(datasetName);
+            if (valueMap.containsKey(datasetName + "_" + 1)) {
+                continue;
+            }
 
             if (itemDataset == null) {
                 File datasetFile = new File(scanTable.getScanDir(), datasetName);
@@ -446,25 +449,25 @@ public class ScannerTool implements ControllerTool {
             if (values.isEmpty()) {
                 return;
             }
-            allValues.addAll(values);
-            if (allValues.size() >= items.size()) {
-                break;
+            for (int iRow=0;iRow<values.size();iRow++) {
+                double[] dataValues = values.get(iRow);
+                String key = datasetName + "_" + (iRow+1);
+                valueMap.put(key, dataValues);
             }
         }
-        int iItem = 0;
         for (FileTableItem item : items) {
-            item.setObjectExtra(BIN_MEASURE_NAME, allValues.get(iItem++));
+            String key = item.getDatasetName() + "_" + item.getRow();
+            double[] values = valueMap.get(key);
+            item.setObjectExtra(BIN_MEASURE_NAME, values);
         }
     }
 
     void scoreSimilarity() {
         FileTableItem refItem = tableView.getSelectionModel().getSelectedItem();
         if (refItem != null) {
-            double[] refValues = (double[]) refItem.getObjectExtra(BIN_MEASURE_NAME);
-            if (refValues == null) {
-                measureSearchBins();
-            }
+            measureSearchBins();
             scoreSimilarity(refItem);
+            showPlot("row", "score");
         }
     }
 
