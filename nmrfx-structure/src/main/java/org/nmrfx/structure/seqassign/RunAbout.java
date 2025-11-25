@@ -13,6 +13,7 @@ import org.nmrfx.peaks.io.PeakPatternReader;
 import org.nmrfx.peaks.types.PeakListTypes;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.*;
+import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -454,6 +455,11 @@ public class RunAbout implements SaveframeWriter {
                 }
             }
         }
+    }
+
+    public boolean missingRefShifts() {
+        return Molecule.getActive().getAtoms().stream().filter(atom -> atom.getName().equals("CA"))
+                .anyMatch(atom -> ((atom.getSDevRefPPM() == null) || (atom.getSDevRefPPM() < 1.0e-4)));
     }
 
     public void calcCombinations() {
