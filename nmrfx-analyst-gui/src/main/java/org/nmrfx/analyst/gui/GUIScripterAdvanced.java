@@ -11,9 +11,7 @@ import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.structure.seqassign.RunAbout;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.File;
 import java.util.*;
@@ -117,6 +115,7 @@ public class GUIScripterAdvanced extends GUIScripter {
         winMap.put(GEOMETRY, geometryOnFx(controller));
         winMap.put("title", stage.getTitle());
         winMap.put("grid", gridOnFx(controller));
+        winMap.put("gridconstraints", gridConf(controller));
         winMap.put(SCONFIG, controller.getPublicPropertiesValues());
         List<Object> spectra = new ArrayList<>();
         winMap.put(SPECTRA, spectra);
@@ -208,6 +207,11 @@ public class GUIScripterAdvanced extends GUIScripter {
             int nGridSpectra = countGridSpectra(spectraList);
             var grid = (List<Integer>) data.get("grid");
             gridOnFx(controller, grid.get(0), grid.get(1), nGridSpectra);
+
+            if (data.containsKey("gridconstraints")) {
+                var gridConf = (Map<String, List<Map<String, Double>>>) data.get("gridconstraints");
+                gridOnFx(controller, gridConf);
+            }
         }
         if (data.containsKey(SCONFIG)) {
             var map = (Map<String, Object>) data.get(SCONFIG);
