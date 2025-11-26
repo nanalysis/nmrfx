@@ -146,8 +146,6 @@ public class NMRAxisBase {
             } while (n < 10);
 
             if (n == 10) {
-                System.out.println("Invalid axis " + min + " " + max + " " + delPix);
-
                 return false;
             }
 

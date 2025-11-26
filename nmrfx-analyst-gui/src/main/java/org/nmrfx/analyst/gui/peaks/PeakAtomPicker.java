@@ -144,7 +144,6 @@ public class PeakAtomPicker {
                     SpectralDim sDim = selPeak.getPeakList().getSpectralDim(peakDim);
                     double shift = selPeak.getPeakDim(peakDim).getChemShiftValue();
                     List<AtomDelta> atoms1 = AtomBrowser.getMatchingAtomNames(dataset, sDim, shift, tol);
-                    System.out.println(atoms1.toString());
                     atomChoices[i].getItems().clear();
                     atomChoices[i].getItems().add("Other");
                     atomDeltaMaps[i].clear();
@@ -177,7 +176,6 @@ public class PeakAtomPicker {
         int i = 0;
         for (ChoiceBox<String> cBox : atomChoices) {
             String value = cBox.getValue();
-            System.out.println("val " + value + " " + i);
             PeakDim peakDim0 = selPeak.getPeakDim(peakDims[i]);
 
             if (value == null) {
@@ -197,7 +195,6 @@ public class PeakAtomPicker {
                 String[] fields = value.split(" ");
                 if (fields.length > 0) {
                     String atomSpecifier = fields[0];
-                    System.out.println(atomSpecifier);
                     AtomDelta atomDelta = atomDeltaMaps[i].get(atomSpecifier);
                     peakDim0.setLabel(atomSpecifier);
                     if (atomDelta.getPeakDim() != null) {
