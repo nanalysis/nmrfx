@@ -650,8 +650,6 @@ public class AtomController implements Initializable, StageBasedController, Free
         if (predictorController != null) {
             predictorController.getStage().show();
             predictorController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make predictor controller");
         }
     }
     @Override

@@ -408,7 +408,6 @@ public class ChemicalLibraryController {
         double roundShift = Math.round(shift * 100.0) / 100.0;
         ppmSlider.setMin(roundShift - range / 2);
         ppmSlider.setMax(roundShift + range / 2);
-        System.out.println(delta + " " + range + " " + roundShift + " " + shift);
         ppmSlider.setValue(shift);
     }
 

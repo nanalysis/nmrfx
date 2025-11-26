@@ -134,7 +134,6 @@ public class GridPaneCanvas extends GridPane {
         double columnNorm = sumColumnPercent >= 99.9 ? sumColumnPercent : 100.0;
         for (int i=0;i<nChartColumns;i++) {
             double coreWidth =  flexWidth * widthPercents[i] / columnNorm;
-            System.out.println(i + " " + widths[i] + " " + coreWidth + " " + (widths[i] + coreWidth) + " " + widthPercents[i] + " " + (widthPercents[i] / columnNorm));
             widths[i] += coreWidth;
             if (i < nChartColumns-1) {
                 xStarts[i + 1] = xStarts[i] + widths[i];
@@ -164,7 +163,6 @@ public class GridPaneCanvas extends GridPane {
             }
             Integer columnSpan = getColumnSpan(node);
             Integer rowSpan = getRowSpan(node);
-            System.out.println(node + " " + column + " " + xStarts[column] + " " + widths[column]);
             width = widths[column];
             for (int i=1;i < columnSpan;i++) {
                 width += widths[column + i];

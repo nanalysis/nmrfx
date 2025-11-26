@@ -97,7 +97,6 @@ public class WindowIO implements FileWatchListener {
                         sorted().
                         map(fileName -> {
                             Matcher matcher = pattern.matcher(fileName);
-                            System.out.println("match " + fileName + " " + matcher.matches());
                             return matcher.group(1);
                         }).
                         collect(Collectors.toList());

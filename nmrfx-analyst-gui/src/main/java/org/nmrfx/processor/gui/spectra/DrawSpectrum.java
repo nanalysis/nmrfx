@@ -373,7 +373,6 @@ public class DrawSpectrum {
         Optional<Double> result = Optional.empty();
         try {
             if (!dataAttributes.getIntegralVec(specVec, iChunk + 1, ppm1, ppm2, offsets)) {
-                System.out.println("no  vec int");
                 return result;
             }
         } catch (IOException ioE) {
