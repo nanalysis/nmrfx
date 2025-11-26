@@ -325,13 +325,13 @@ public class RunAbout implements SaveframeWriter {
         return patternType.equals(testType);
     }
 
-    public Optional<PeakList> getPeakListForCell(String row, String dDir) {
+    public List<PeakList> getPeakListForCell(String row, String dDir) {
         Optional<String> typeName = Optional.empty();
         dDir = dDir.replace("h", "i");
         dDir = dDir.replace("j", "i");
         dDir = dDir.replace("k", "i");
         final String iDir = dDir;
-        Optional<PeakList> result = Optional.empty();
+        List<PeakList> peakListsForCell = new ArrayList<>();
         for (PeakList peakList : peakLists) {
             Optional<SpectralDim> sDimOpt = getCarbonDim(peakList);
             if (sDimOpt.isPresent()) {
@@ -345,13 +345,13 @@ public class RunAbout implements SaveframeWriter {
                         String[] resTypes = resPart.split(",");
                         if (((resTypes.length == 2) && (iDir.equals("i"))) ||
                                 ((resTypes.length == 1) && resTypes[0].equals(iDir))) {
-                            result = Optional.of(peakList);
+                            peakListsForCell.add(peakList);
                         }
                     }
                 }
             }
         }
-        return result;
+        return peakListsForCell;
     }
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {

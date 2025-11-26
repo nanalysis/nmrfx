@@ -9,26 +9,6 @@ arrangements:
     columns: [ h-1,h,i-1,i,j-1,j ]
     widths: *Pfp
     dims: [ H,C,N ]
-  HC_hij_CACB:
-    rows: [ CB,CA ]
-    columns: [ h-1,h,i-1,i,j-1,j ]
-    widths: *Pfp
-    dims: [ H,C,N ]
-  HC_hij_CB:
-    rows: [ CB]
-    columns: [ h-1,h,i-1,i,j-1,j ]
-    widths: *Pfp
-    dims: [ H,C,N ]
-  HC_hij_CA:
-    rows: [ CA ]
-    columns: [ h-1,h,i-1,i,j-1,j ]
-    widths: *Pfp
-    dims: [ H,C,N ]
-  HC_hij_C:
-    rows: [ C ]
-    columns: [ h-1,h,i-1,i,j-1,j ]
-    widths: *Pfp
-    dims: [ H,C,N ]
   HC_NC:
     rows: [ CB,CA,C ]
     columns: [ i-1,i-1,i,i ]
