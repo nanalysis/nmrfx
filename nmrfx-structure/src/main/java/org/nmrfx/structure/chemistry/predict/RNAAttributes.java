@@ -10,6 +10,7 @@ import org.tribuo.regression.Regressor;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
+import org.nmrfx.structure.rna.SSLayout.BasePairRecord;
 
 /**
  * @author Bruce Johnson
@@ -217,13 +218,13 @@ public class RNAAttributes {
         return n;
     }
 
-    String checkNC(int[] basePairs, int index) {
+    String checkNC(BasePairRecord[] basePairs, int index) {
         int nNucs = basePairs.length;
         String type = "-";
         if ((index > 0) && (index < nNucs - 1)) {
-            int bp0 = basePairs[index - 1];
-            int bp1 = basePairs[index];
-            int bp2 = basePairs[index + 1];
+            int bp0 = basePairs[index - 1].end();
+            int bp1 = basePairs[index].end();
+            int bp2 = basePairs[index + 1].end();
             if ((bp0 != -1) && (bp1 != -1) && (Math.abs(bp0 - bp1) != 1)) {
                 type = "5prime-nc";
             }
@@ -250,7 +251,7 @@ public class RNAAttributes {
         return isWC;
     }
 
-    int[] getPairs(Molecule molecule) {
+    BasePairRecord[] getPairs(Molecule molecule) {
         String dotBracket = molecule.getDotBracket();
         var ssLayout = new SSLayout(dotBracket.length());
         ssLayout.interpVienna(dotBracket);
@@ -260,7 +261,7 @@ public class RNAAttributes {
 
     public List<Integer> genRNAAttrDeep() {
         Molecule molecule = Molecule.getActive();
-        int[] basePairs = getPairs(molecule);
+        BasePairRecord[] basePairs = getPairs(molecule);
         SSGen ssGen = new SSGen(molecule, molecule.getDotBracket());
         ssGen.analyze();
 
@@ -268,8 +269,8 @@ public class RNAAttributes {
         List<RNAPair> rnaPairs = new ArrayList<>();
         for (int i = 0; i < basePairs.length; i++) {
             Residue residue = rnaResidues.get(i);
-            Residue partner = basePairs[i] >= 0 ? rnaResidues.get(basePairs[i]) : null;
-            var pair = new RNAPair(i, residue, partner, basePairs[i]);
+            Residue partner = basePairs[i].isPaired() ? rnaResidues.get(basePairs[i].end()) : null;
+            var pair = new RNAPair(i, residue, partner, basePairs[i].end());
             rnaPairs.add(pair);
         }
         List<Integer> tokens = new ArrayList<>();
@@ -317,15 +318,15 @@ public class RNAAttributes {
 
     public List<List<String>> genRNAData() {
         Molecule molecule = Molecule.getActive();
-        int[] basePairs = getPairs(molecule);
+        BasePairRecord[] basePairs = getPairs(molecule);
         Pattern gnraPat = Pattern.compile("G[AGUC][AG]A");
         Pattern uncgPat = Pattern.compile("U[AGUC]CG");
         List<Residue> rnaResidues = getSeqList(molecule);
         List<RNAPair> rnaPairs = new ArrayList<>();
         for (int i = 0; i < basePairs.length; i++) {
             Residue residue = rnaResidues.get(i);
-            Residue partner = basePairs[i] >= 0 ? rnaResidues.get(basePairs[i]) : null;
-            var pair = new RNAPair(i, residue, partner, basePairs[i]);
+            Residue partner = basePairs[i].isPaired() ? rnaResidues.get(basePairs[i].end()) : null;
+            var pair = new RNAPair(i, residue, partner, basePairs[i].end());
             rnaPairs.add(pair);
         }
 
@@ -365,7 +366,7 @@ public class RNAAttributes {
         return getRNAAttributes(rnaPairs, tetraLoops, basePairs, nNeighbors);
     }
 
-    List<List<String>> getRNAAttributes(List<RNAPair> rnaPairs, String[] tetraLoops, int[] basePairs, int nNeighbors) {
+    List<List<String>> getRNAAttributes(List<RNAPair> rnaPairs, String[] tetraLoops, BasePairRecord[] basePairs, int nNeighbors) {
         List<List<String>> results = new ArrayList<>();
         for (int i = 0; i < rnaPairs.size(); i++) {
             List<String> pairing = new ArrayList<>();
