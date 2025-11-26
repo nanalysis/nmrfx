@@ -699,9 +699,6 @@ public class SSViewer extends Pane {
         deltaCoords = new AtomCoord[n];
         boolean gotBP = false;
         for (int iRes = 0; iRes < n; iRes++) {
-            if (ssLayout.ssClass[iRes] == 0) {
-                continue;
-            }
             gotBP = true;
             Point2D point2 = points.get(iRes);
             double x2 = point2.getX();
@@ -814,6 +811,9 @@ public class SSViewer extends Pane {
             double x1 = point.getX();
             double y1 = point.getY();
             AtomCoord aCoord = deltaCoords[iRes];
+            if (aCoord == null) {
+                continue;
+            }
             int startAtom = -2;
             int iDrawn = 0;
             for (int j = startAtom; j < N_ATOMS; j++) {
@@ -1084,10 +1084,10 @@ public class SSViewer extends Pane {
         setBasePairs(ssLayout.getBasePairs());
     }
 
-    void setBasePairs(int[] basePairs) {
+    void setBasePairs(SSLayout.BasePairRecord[] basePairRecords) {
         List<Integer> bpList = new ArrayList<>();
-        for (int i = 0; i < basePairs.length; i++) {
-            int target = basePairs[i];
+        for (int i = 0; i < basePairRecords.length; i++) {
+            int target = basePairRecords[i].end();
             if ((target >= 0) && (i < target)) {
                 bpList.add(i);
                 bpList.add(target);
