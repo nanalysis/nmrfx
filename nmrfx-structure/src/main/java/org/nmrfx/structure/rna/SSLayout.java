@@ -177,7 +177,7 @@ public class SSLayout implements MultivariateFunction {
         if (log.isDebugEnabled()) {
             StringBuilder pairStr = new StringBuilder();
             for (int i = 0; i < basePairRecords.length; i++) {
-                pairStr.append(String.format("%4d %4d%n", i, basePairRecords[i]));
+                pairStr.append(String.format("%4d %4d%n", i, basePairRecords[i].end()));
             }
             log.debug(pairStr.toString());
         }
