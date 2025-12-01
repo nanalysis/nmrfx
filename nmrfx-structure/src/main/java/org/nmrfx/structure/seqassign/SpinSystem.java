@@ -50,9 +50,16 @@ public class SpinSystem {
         H("h", 0.04, false),
         N("n", 0.5, false),
         C("c", 0.6, true),
-        HA("ha", 0.04, false),
         CA("ca", 0.6, true),
-        CB("cb", 0.6, true);
+        CB("cb", 0.6, true),
+        CG("cg", 0.6, true),
+        CD("cd", 0.6, true),
+        CE("ce", 0.6, true),
+        HA("ha*", 0.04, false),
+        HB("hb*", 0.6, true),
+        HG("hg*", 0.6, true),
+        HD("hd*", 0.6, true),
+        HE("he*", 0.6, true);
 
         final String name;
 
@@ -76,9 +83,16 @@ public class SpinSystem {
 
         static Optional<AtomEnum> findValue(String value) {
             value = value.toLowerCase();
+            if (value.length() > 2) {
+                value = value.substring(0, 2);
+            }
             AtomEnum result = null;
             for (AtomEnum atomEnum : AtomEnum.values()) {
-                if (atomEnum.name.equals(value)) {
+                String enumName = atomEnum.name;
+                if (enumName.length() > 2) {
+                    enumName = enumName.substring(0,2);
+                }
+                if (enumName.equals(value)) {
                     result = atomEnum;
                     break;
                 }
@@ -113,7 +127,10 @@ public class SpinSystem {
             this.positive = positive;
             this.ambiguousRes = ambiguousRes;
             for (int i = 0; i < atomTypes.length; i++) {
-                atomTypeIndex[i] = AtomEnum.valueOf(atomTypes[i].toUpperCase());
+                var atomEnumOpt = AtomEnum.findValue(atomTypes[i].toUpperCase());
+                if (atomEnumOpt.isPresent()) {
+                    atomTypeIndex[i] = atomEnumOpt.get();
+                }
             }
         }
 
@@ -491,6 +508,10 @@ public class SpinSystem {
     double getProb(String aName, double ppm) {
         if (aName.equalsIgnoreCase("ca")) {
             if (ppm < 38.0) {
+                return 0.0;
+            }
+        } else if (aName.toLowerCase().startsWith("ha")) {
+            if (ppm < 3.0) {
                 return 0.0;
             }
         }

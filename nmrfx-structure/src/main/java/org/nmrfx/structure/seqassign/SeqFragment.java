@@ -442,6 +442,8 @@ public class SeqFragment {
             if (atom != null) {
                 double ppm = atomShiftValue.getPPM();
                 atom.setPPM(ppm);
+            } else {
+                System.out.println("no atom " + aName);
             }
         }
     }

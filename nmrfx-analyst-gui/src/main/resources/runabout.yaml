@@ -4,11 +4,21 @@ arrangements:
     columns: [ i-1,i ]
     widths: &Pfp [ peak,full,plane ]
     dims: [ H,C,N ]
+  HC_Hali:
+    rows: [ CB,CA,C,Hali]
+    columns: [ i-1,i ]
+    widths: &Pfp [ peak,full,plane ]
+    dims: [ H,X,N ]
   HC_hij:
-    rows: [ CB,CA,C ]
+    rows: [ CB,CA,C]
     columns: [ h-1,h,i-1,i,j-1,j ]
     widths: *Pfp
     dims: [ H,C,N ]
+  HC_Hali_hij:
+    rows: [ CB,CA,C,Hali]
+    columns: [ h-1,h,i-1,i,j-1,j ]
+    widths: *Pfp
+    dims: [ H,X,N ]
   HC_NC:
     rows: [ CB,CA,C ]
     columns: [ i-1,i-1,i,i ]

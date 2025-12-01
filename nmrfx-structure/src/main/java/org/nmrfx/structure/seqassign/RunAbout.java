@@ -122,7 +122,14 @@ public class RunAbout implements SaveframeWriter {
                 patElems.add(patElem);
                 int dotPos = patElem.indexOf(".");
                 if (dotPos != -1) {
-                    aType = patElem.substring(dotPos + 1, dotPos + 2);
+                    String atomElem = patElem.substring(dotPos+1);
+                    String[] atomElems = atomElem.split(",");
+                    String firstAtom = atomElems[0].toUpperCase();
+                    if (firstAtom.equals("H") || firstAtom.equals("N") || firstAtom.equals("C")) {
+                        aType = firstAtom;
+                    } else {
+                        aType = "X";
+                    }
                 }
             }
             aTypes.add(aType);
@@ -239,14 +246,17 @@ public class RunAbout implements SaveframeWriter {
                             sign = 1;
                         }
                         aName = aName.toLowerCase();
-                        SpinSystem.AtomEnum atomEnum = SpinSystem.AtomEnum.valueOf(aName.toUpperCase());
-                        Integer count = countMap[iDir].getOrDefault(atomEnum, 0);
-                        count += dimMult[i];
-                        countMap[iDir].put(atomEnum, count);
-                        intraResidue[j] = iDir == 1;
-                        allNames[j] = aName;
-                        signs[j] = sign;
-                        j++;
+                        Optional<SpinSystem.AtomEnum> atomEnumOpt = SpinSystem.AtomEnum.findValue(aName.toUpperCase());
+                        if (atomEnumOpt.isPresent()) {
+                            SpinSystem.AtomEnum atomEnum = atomEnumOpt.get();
+                            Integer count = countMap[iDir].getOrDefault(atomEnum, 0);
+                            count += dimMult[i];
+                            countMap[iDir].put(atomEnum, count);
+                            intraResidue[j] = iDir == 1;
+                            allNames[j] = aName;
+                            signs[j] = sign;
+                            j++;
+                        }
                     }
                 }
                 typeInfo.setIntraResidue(i, intraResidue);
@@ -311,15 +321,37 @@ public class RunAbout implements SaveframeWriter {
         }
         return Optional.empty();
     }
+    public Optional<SpectralDim> getHAliphaticDim(PeakList peakList) {
+        for (var sDim : peakList.getSpectralDims()) {
+            if (!sDim.getPattern().contains("i.H") && !sDim.getPattern().contains("i.N")
+                    && sDim.getPattern().contains("H")) {
+                return Optional.of(sDim);
+            }
+        }
+        return Optional.empty();
+    }
 
     public boolean checkRowType(String pattern, String testType) {
         pattern = pattern.toUpperCase();
-        String[] types = {"CB", "CA", "C"};
+        String[] types = {"CB", "CA", "C", "Hali"};
         String patternType = "";
+        String[] hsTypes = {"HA", "HB", "HG"};
         for (var type : types) {
-            if (pattern.contains(type)) {
-                patternType = type;
-                break;
+            if (type.equals("Hali")) {
+                for (String hsType : hsTypes) {
+                    if (pattern.contains(hsType)) {
+                        patternType = type;
+                        break;
+                    }
+                }
+                if (!patternType.isEmpty()) {
+                    break;
+                }
+            } else {
+                if (pattern.contains(type)) {
+                    patternType = type;
+                    break;
+                }
             }
         }
         return patternType.equals(testType);
@@ -333,7 +365,7 @@ public class RunAbout implements SaveframeWriter {
         final String iDir = dDir;
         List<PeakList> peakListsForCell = new ArrayList<>();
         for (PeakList peakList : peakLists) {
-            Optional<SpectralDim> sDimOpt = getCarbonDim(peakList);
+            Optional<SpectralDim> sDimOpt = row.equals("Hali") ? getHAliphaticDim(peakList) : getCarbonDim(peakList);
             if (sDimOpt.isPresent()) {
                 var sDim = sDimOpt.get();
                 String pattern = sDim.getPattern();
@@ -376,6 +408,16 @@ public class RunAbout implements SaveframeWriter {
                 dimName = dim;
             }
             int peakDim = aTypeMap.get(typeName).indexOf(dimName);
+            if ((peakDim == -1) && dimName.equals("C")) {
+                peakDim = aTypeMap.get(typeName).indexOf("C");
+            }
+            if ((peakDim == -1) && dimName.equals("C")) {
+                peakDim = aTypeMap.get(typeName).indexOf("X");
+            }
+
+            if (peakDim == -1) {
+                peakDim = 1;
+            }
             String peakListDimName = peakList.getSpectralDim(peakDim).getDimName();
             iDims[j] = dataset.getDim(peakListDimName);
             j++;
