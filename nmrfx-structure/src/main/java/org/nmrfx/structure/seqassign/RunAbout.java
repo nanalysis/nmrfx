@@ -203,7 +203,11 @@ public class RunAbout implements SaveframeWriter {
             if (parts.length == 2) {
                 String[] types = parts[0].split(",");
                 String[] aNames = parts[1].split(",");
-                dimCount[i] = types.length * aNames.length;
+                if (aNames.length == 2 && aNames[0].equals("HB*") && aNames[1].equals("HA*")) {
+                    dimCount[i] = types.length * 3;
+                } else {
+                    dimCount[i] = types.length * aNames.length;
+                }
             }
             i++;
         }

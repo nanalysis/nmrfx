@@ -177,6 +177,10 @@ public class SpinSystem {
             return intraResidue[dim];
         }
 
+        public double getIntensity() {
+            return peak.getIntensity();
+        }
+
         public boolean getPositive() {
             return peak.getIntensity() > 0.0;
         }
@@ -449,6 +453,34 @@ public class SpinSystem {
         return counts;
     }
 
+    private String[] getHAHBPattern(String[] atomPats, boolean isGly) {
+        List<String> newAtomPatList = new ArrayList<>();
+        for (String pat : atomPats) {
+            pat = pat.toUpperCase();
+            if (pat.startsWith("HB")) {
+                if (!isGly) {
+                    newAtomPatList.add("HB2");
+                    newAtomPatList.add("HB3");
+                }
+            } else if (pat.equals("HA") || pat.equals("HA*")) {
+                if (isGly) {
+                    newAtomPatList.add("HA2");
+                    newAtomPatList.add("HA3");
+                } else {
+                    newAtomPatList.add(pat);
+                }
+            } else {
+                newAtomPatList.add(pat);
+            }
+        }
+        String[] newAtomPats = new String[newAtomPatList.size()];
+        int i = 0;
+        for (String pat : newAtomPatList) {
+            newAtomPats[i++] = pat;
+        }
+        return newAtomPats;
+    }
+
     List<ResAtomPattern> getPatterns(Peak peak) {
         int nDim = peak.getNDim();
         String[][] allResPats = new String[nDim][];
@@ -572,6 +604,18 @@ public class SpinSystem {
         return new double[]{mean, range};
     }
 
+    boolean isGly(EnumMap<AtomEnum, List<Double>>[] shiftList, int k) {
+        List<Double> caShifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
+        boolean isGly = false;
+        if (!caShifts.isEmpty()) {
+            double caShift = shiftRange(caShifts)[0];
+            if (caShift < 50.0) {
+                isGly = true;
+            }
+        }
+        return isGly;
+    }
+
     void dumpShifts(EnumMap<AtomEnum, List<Double>>[] shiftList) {
         double score = analyzeShifts(shiftList);
         if (score > 0.0) {
@@ -580,13 +624,7 @@ public class SpinSystem {
             double pCum = 1.0;
             boolean[] isGly = new boolean[2];
             for (int k = 0; k < 2; k++) {
-                List<Double> caShifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
-                if (!caShifts.isEmpty()) {
-                    double caShift = shiftRange(caShifts)[0];
-                    if (caShift < 50.0) {
-                        isGly[k] = true;
-                    }
-                }
+                isGly[k] = isGly(shiftList, k);
             }
             for (int k = 0; k < 2; k++) {
                 for (AtomEnum atomEnum : AtomEnum.values()) {
@@ -729,13 +767,13 @@ public class SpinSystem {
 
     }
 
-    double[] getNormalizedIntensities() {
+    double[] getNormalizedIntensities(List<PeakMatch> peakTypeMatches) {
         purgeDeleted();
-        double[] intensities = new double[peakMatches.size()];
+        double[] intensities = new double[peakTypeMatches.size()];
         Map<String, Double> intensityMap = new HashMap<>();
         Map<String, List<PeakMatch>> listOfMatches = new HashMap<>();
 
-        for (PeakMatch peakMatch : peakMatches) {
+        for (PeakMatch peakMatch : peakTypeMatches) {
             Peak peak = peakMatch.peak;
             peak.setFlag(1, false);
             String peakListName = peak.getPeakList().getName();
@@ -762,7 +800,7 @@ public class SpinSystem {
 
         }
         int iPeak = 0;
-        for (PeakMatch peakMatch : peakMatches) {
+        for (PeakMatch peakMatch : peakTypeMatches) {
             String peakListName = peakMatch.peak.getPeakList().getName();
             double maxIntensity = intensityMap.get(peakListName);
             intensities[iPeak++] = peakMatch.peak.getIntensity() / maxIntensity;
@@ -779,15 +817,116 @@ public class SpinSystem {
         return addShift(nPeaks, resAtomPatterns, shiftList, pt);
     }
 
+    boolean isType(PeakMatch peakMatch, String type) {
+        Peak peak = peakMatch.getPeak();
+        for (SpectralDim spectralDim : peak.getPeakList().getSpectralDims()) {
+            String pattern = spectralDim.getPattern();
+            if (pattern.contains(".")) {
+                String[] resAtoms = pattern.split("\\.");
+                String[] atomPats = resAtoms[1].split(",");
+                String atomPat = atomPats[0];
+                if (!atomPat.equalsIgnoreCase("H") && !atomPat.equalsIgnoreCase("N")) {
+                    if (type.equalsIgnoreCase("C") && atomPat.equalsIgnoreCase("C")) {
+                        return true;
+                    }
+                    if (type.equalsIgnoreCase("Hali") && atomPat.substring(0,1).equalsIgnoreCase("H")) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    record PeakTypeMatches( List<PeakMatch> cMatches,  List<PeakMatch> hMatches,  List<PeakMatch> otherMatches) {}
+
+    PeakTypeMatches getPeakMatches() {
+        List<PeakMatch> cMatches = new ArrayList<>();
+        List<PeakMatch> hMatches = new ArrayList<>();
+        List<PeakMatch> otherMatches = new ArrayList<>();
+        for (PeakMatch peakMatch : peakMatches) {
+            if (isType(peakMatch,"C")) {
+                cMatches.add(peakMatch);
+            } else if (isType(peakMatch, "Hali")) {
+                hMatches.add(peakMatch);
+            } else {
+                otherMatches.add(peakMatch);
+            }
+        }
+        return new PeakTypeMatches(cMatches, hMatches, otherMatches);
+    }
+
     public void calcCombinations(boolean display) {
+        PeakTypeMatches peakTypeMatches = getPeakMatches();
+        Optional<EnumMap<AtomEnum, List<Double>>[]> cResultOpt = calcCombinations(peakTypeMatches.cMatches, display);
+        Optional<EnumMap<AtomEnum, List<Double>>[]> otherResultOpt = calcCombinations(peakTypeMatches.otherMatches, display);
+        boolean isGly = false;
+        if (otherResultOpt.isPresent()) {
+            EnumMap<AtomEnum, List<Double>>[] shiftList = otherResultOpt.get();
+            isGly = isGly(shiftList, 0);
+            calcCombinationsHBHA(peakTypeMatches.hMatches, isGly);
+        }
+        updateSpinSystem();
+    }
+    public void calcCombinationsHBHA(List<PeakMatch> peakTypeMatches, boolean isGly) {
+        List<PeakDim> hLower = new ArrayList<>();
+        List<PeakDim> hUpper = new ArrayList<>();
+        peakTypeMatches.stream().sorted(Comparator.comparing(PeakMatch::getIntensity).reversed()).forEach(peakMatch -> {
+            for (PeakDim peakDim : peakMatch.peak.peakDims) {
+                if (peakDim.getSpectralDimObj().getPattern().equalsIgnoreCase("i.H")) {
+                    peakDim.setUser("i.h");
+                } else if (peakDim.getSpectralDimObj().getPattern().equalsIgnoreCase("i.N")) {
+                    peakDim.setUser("i.n");
+                } else {
+                    double ppm = peakDim.getChemShiftValue();
+                    if (isGly) {
+                        if ((ppm > 3.0) && (hUpper.size() < 2)) {
+                            peakDim.setUser("i-1.ha*");
+                            hUpper.add(peakDim);
+                        }
+                    } else {
+                        if (ppm < 3.0) {
+                            hLower.add(peakDim);
+                        } else {
+                            hUpper.add(peakDim);
+                        }
+                    }
+                }
+            }
+        });
+        if (!isGly) {
+            if (!hLower.isEmpty()) {
+                if (hLower.size() == 1) {
+                    hLower.getFirst().setUser("i-1.HB*");
+                } else {
+                    hLower.getFirst().setUser("i-1.HBx");
+                    hLower.get(1).setUser("i-1.hby");
+
+                }
+                if (!hUpper.isEmpty()) {
+                    hUpper.getFirst().setUser("i-1.HA");
+                }
+            } else {
+                for (PeakDim peakDim : hUpper) {
+                    peakDim.setUser("i-1.HB*,HA*");
+                }
+            }
+        }
+    }
+
+    public Optional<EnumMap<AtomEnum, List<Double>>[]> calcCombinations(List<PeakMatch> peakTypeMatches,  boolean display) {
         purgeDeleted();
-        double[] intensities = getNormalizedIntensities();
-        int nPeaks = peakMatches.size();
+        double[] intensities = getNormalizedIntensities(peakTypeMatches);
+        int nPeaks = peakTypeMatches.size();
         List<ResAtomPattern>[] resAtomPatterns = new List[nPeaks];
         int nCountable = 0;
         int iPeak = 0;
         int[] counts = new int[nPeaks];
-        for (PeakMatch peakMatch : peakMatches) {
+        if (peakTypeMatches.isEmpty()) {
+            return Optional.empty();
+        }
+
+        for (PeakMatch peakMatch : peakTypeMatches) {
             List<ResAtomPattern> okPats = new ArrayList<>();
             Peak peak = peakMatch.peak;
             if (!peak.getFlag(1)) {
@@ -819,6 +958,7 @@ public class SpinSystem {
             counts[iPeak] = okPats.size();
             iPeak++;
         }
+        Optional<EnumMap<AtomEnum, List<Double>>[]> result = Optional.empty();
 
         if (nCountable == 0) {
             EnumMap<AtomEnum, List<Double>>[] shiftList = new EnumMap[2];
@@ -856,18 +996,24 @@ public class SpinSystem {
                     }
                 }
             }
-            if (display && (bestIndex >= 0)) {
+            if (bestIndex >= 0) {
                 int[] pt = counter.getCounts(bestIndex);
                 boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
-                System.out.println("best is " + bestIndex);
-                dumpShifts(shiftList);
+                if (validShifts) {
+                    result = Optional.of(shiftList);
+                }
+                if (display) {
+                    System.out.println("best is " + bestIndex);
+                    dumpShifts(shiftList);
+                }
             }
+
             if (!display && (bestIndex >= 0)) {
                 int[] pt = counter.getCounts(bestIndex);
-                setUserFields(resAtomPatterns, pt);
-                updateSpinSystem();
+                setUserFields(peakTypeMatches, resAtomPatterns, pt);
             }
         }
+        return result;
     }
 
     void getLinkedPeaks() {
@@ -937,18 +1083,15 @@ public class SpinSystem {
         return userFieldSet;
     }
 
-    void setUserFields(List<ResAtomPattern>[] resAtomPatterns, int[] pt) {
-        StringBuilder sBuilder = new StringBuilder();
-        String linkDim = RunAbout.getNDimName(rootPeak.getPeakList()); // fixme
-        List<Peak> linkedPeaks = PeakList.getLinks(rootPeak,
-                rootPeak.getPeakList().getSpectralDim(linkDim).getIndex());
-        for (Peak peak : linkedPeaks) {
-            for (PeakDim peakDim : peak.getPeakDims()) {
+    void setUserFields(List<PeakMatch> peakTypeMatches, List<ResAtomPattern>[] resAtomPatterns, int[] pt) {
+        for (PeakMatch peakMatch : peakTypeMatches) {
+            for (PeakDim peakDim : peakMatch.peak.getPeakDims()) {
                 peakDim.setUser("");
             }
         }
 
         int j = 0;
+        StringBuilder sBuilder = new StringBuilder();
         for (List<ResAtomPattern> atomPattern : resAtomPatterns) {
             int k = 0;
             if (atomPattern.size() > 1) {
