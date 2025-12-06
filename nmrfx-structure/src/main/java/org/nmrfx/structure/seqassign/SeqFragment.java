@@ -285,7 +285,7 @@ public class SeqFragment {
             result.add(values);
 
             for (var entry : spinSystem.getShiftValues(i).entrySet()) {
-                AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
+                AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name(), entry.getValue().value(), null);
                 values.add(atomValue);
             }
         }
@@ -306,26 +306,26 @@ public class SeqFragment {
                 result.add(values);
 
                 for (var entry : spinSysA.getShiftValues(0).entrySet()) {
-                    AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
+                    AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name(), entry.getValue().value(), null);
                     values.add(atomValue);
                 }
             }
             List<AtomShiftValue> values = new ArrayList<>();
             result.add(values);
             for (SpinSystem.AtomEnum matchedAtom : spinMatch.matched) {
-                if (matchedAtom.resMatch) {
+                if (matchedAtom.resMatch()) {
                     Optional<Double> vAOpt = spinSysA.getValue(1, matchedAtom);
                     Optional<Double> vBOpt = spinSysB.getValue(0, matchedAtom);
                     if (vAOpt.isPresent() && vBOpt.isPresent()) {
                         double avg = (vAOpt.get() + vBOpt.get()) / 2.0;
-                        AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name, avg, null);
+                        AtomShiftValue atomValue = new AtomShiftValue(matchedAtom.name(), avg, null);
                         values.add(atomValue);
                     }
                 }
             }
             for (var shiftValue : spinSysA.shiftValues[1].entrySet()) {
-                if (!shiftValue.getKey().resMatch) {
-                    AtomShiftValue atomValue = new AtomShiftValue(shiftValue.getKey().name, shiftValue.getValue().value(), null);
+                if (!shiftValue.getKey().resMatch()) {
+                    AtomShiftValue atomValue = new AtomShiftValue(shiftValue.getKey().name(), shiftValue.getValue().value(), null);
                     values.add(atomValue);
                 }
             }
@@ -336,7 +336,7 @@ public class SeqFragment {
             result.add(values);
 
             for (var entry : spinSysB.getShiftValues(1).entrySet()) {
-                AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name, entry.getValue().value(), null);
+                AtomShiftValue atomValue = new AtomShiftValue(entry.getKey().name(), entry.getValue().value(), null);
                 values.add(atomValue);
             }
         }

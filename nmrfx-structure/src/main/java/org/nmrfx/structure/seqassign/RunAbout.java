@@ -41,7 +41,7 @@ public class RunAbout implements SaveframeWriter {
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
 
 
-    EnumMap<SpinSystem.AtomEnum, Integer>[] countMap = new EnumMap[2];
+    Map<SpinSystem.AtomEnum, Integer>[] countMap = new HashMap[2];
 
     boolean active = false;
     Map<Residue, SpinSystem> residueSpinSystemsMap = new HashMap<>();
@@ -280,8 +280,8 @@ public class RunAbout implements SaveframeWriter {
     public void setPeakLists(List<PeakList> lists) {
         refList = lists.get(0);
         PeakList.clusterOrigin = refList;
-        countMap[0] = new EnumMap<>(SpinSystem.AtomEnum.class);
-        countMap[1] = new EnumMap<>(SpinSystem.AtomEnum.class);
+        countMap[0] = new HashMap<>();
+        countMap[1] = new HashMap<>();
         peakLists.clear();
         peakListMap.clear();
         datasetMap.clear();

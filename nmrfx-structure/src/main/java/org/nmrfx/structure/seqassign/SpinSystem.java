@@ -46,62 +46,62 @@ public class SpinSystem {
     int index = -1;
 
 
-    public enum AtomEnum {
-        H("h", 0.04, false),
-        N("n", 0.5, false),
-        C("c", 0.6, true),
-        CA("ca", 0.6, true),
-        CB("cb", 0.6, true),
-        CG("cg", 0.6, true),
-        CD("cd", 0.6, true),
-        CE("ce", 0.6, true),
-        HA("ha*", 0.04, false),
-        HB("hb*", 0.6, true),
-        HG("hg*", 0.6, true),
-        HD("hd*", 0.6, true),
-        HE("he*", 0.6, true);
+    public record AtomEnum(String name, double tol, boolean resMatch) {
+        static Map<String, AtomEnum> atomMap = new HashMap<>();
 
-        final String name;
-
-        double tol;
-
-        boolean resMatch;
-
-        AtomEnum(String name, double tol, boolean resMatch) {
-            this.name = name;
-            this.tol = tol;
-            this.resMatch = resMatch;
+        static {
+            atomMap.put("H", new AtomEnum("h", 0.04, false));
+            atomMap.put("N", new AtomEnum("n", 0.5, false));
+            atomMap.put("C", new AtomEnum("c", 0.6, true));
+            atomMap.put("CA", new AtomEnum("ca", 0.6, true));
+            atomMap.put("CB", new AtomEnum("cb", 0.6, true));
+            atomMap.put("CG", new AtomEnum("cg", 0.6, false));
+            atomMap.put("CD", new AtomEnum("cd", 0.6, false));
+            atomMap.put("CE", new AtomEnum("ce", 0.6, false));
+            atomMap.put("HA", new AtomEnum("ha*", 0.04, false));
+            atomMap.put("HB", new AtomEnum("hb*", 0.6, false));
+            atomMap.put("HG", new AtomEnum("hg*", 0.6, false));
+            atomMap.put("HD", new AtomEnum("hd*", 0.6, false));
+            atomMap.put("HE", new AtomEnum("he*", 0.6, false));
         }
 
-        double tol() {
-            return tol;
+        public static Collection<AtomEnum> values() {
+            return atomMap.values();
         }
 
-        void tol(double value) {
-            this.tol = value;
+        AtomEnum createAtomEnum(String name, double tol, boolean resMatch) {
+            return atomMap.computeIfAbsent(name.toUpperCase(), n -> new AtomEnum(name, tol, resMatch));
         }
 
         static Optional<AtomEnum> findValue(String value) {
+            return findValue(value, false);
+        }
+
+        static Optional<AtomEnum> findValue(String value, boolean createIfAbsent) {
             value = value.toLowerCase();
             if (value.length() > 2) {
                 value = value.substring(0, 2);
             }
             AtomEnum result = null;
-            for (AtomEnum atomEnum : AtomEnum.values()) {
+            for (AtomEnum atomEnum : atomMap.values()) {
                 String enumName = atomEnum.name;
                 if (enumName.length() > 2) {
-                    enumName = enumName.substring(0,2);
+                    enumName = enumName.substring(0, 2);
                 }
                 if (enumName.equals(value)) {
                     result = atomEnum;
                     break;
                 }
             }
+            if ((result == null) && createIfAbsent) {
+                double tol = (value.substring(0, 1).equalsIgnoreCase("H")) ? 0.04 : 0.6;
+                result = new AtomEnum(value, tol, false);
+            }
             return Optional.ofNullable(result);
         }
     }
 
-    EnumMap<AtomEnum, ShiftValue>[] shiftValues = new EnumMap[2];
+    Map<AtomEnum, ShiftValue>[] shiftValues = new HashMap[2];
 
     record ShiftValue(int n, double value, double range) {
     }
@@ -230,8 +230,8 @@ public class SpinSystem {
         this.rootPeak = peak;
         addPeak(peak, 1.0);
         peakToSpinSystemMap.put(peak.getIdNum(), this);
-        shiftValues[0] = new EnumMap<>(AtomEnum.class);
-        shiftValues[1] = new EnumMap<>(AtomEnum.class);
+        shiftValues[0] = new HashMap<>();
+        shiftValues[1] = new HashMap<>();
     }
 
     public static Optional<SpinSystem> spinSystemFromPeak(Peak peak) {
@@ -328,7 +328,7 @@ public class SpinSystem {
         index = i;
     }
 
-    public EnumMap<AtomEnum, ShiftValue> getShiftValues(int k) {
+    public Map<AtomEnum, ShiftValue> getShiftValues(int k) {
         return shiftValues[k];
     }
 
@@ -604,8 +604,8 @@ public class SpinSystem {
         return new double[]{mean, range};
     }
 
-    boolean isGly(EnumMap<AtomEnum, List<Double>>[] shiftList, int k) {
-        List<Double> caShifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
+    boolean isGly(Map<AtomEnum, List<Double>>[] shiftList, int k) {
+        List<Double> caShifts = shiftList[k].getOrDefault(AtomEnum.findValue("CA"), Collections.EMPTY_LIST);
         boolean isGly = false;
         if (!caShifts.isEmpty()) {
             double caShift = shiftRange(caShifts)[0];
@@ -616,7 +616,7 @@ public class SpinSystem {
         return isGly;
     }
 
-    void dumpShifts(EnumMap<AtomEnum, List<Double>>[] shiftList) {
+    void dumpShifts(Map<AtomEnum, List<Double>>[] shiftList) {
         double score = analyzeShifts(shiftList);
         if (score > 0.0) {
             double pMissing = Math.exp(-1.0);
@@ -630,7 +630,7 @@ public class SpinSystem {
                 for (AtomEnum atomEnum : AtomEnum.values()) {
                     List<Double> shifts = shiftList[k].getOrDefault(atomEnum, Collections.EMPTY_LIST);
                     int nExpected = spinSystems.runAbout.getExpected(k, atomEnum);
-                    if (isGly[k] && (atomEnum == AtomEnum.CB)) {
+                    if (isGly[k] && (atomEnum == AtomEnum.findValue("CB").get())) {
                         nExpected = 0;
                     }
                     if (!shifts.isEmpty()) {
@@ -653,13 +653,13 @@ public class SpinSystem {
         }
     }
 
-    double analyzeShifts(EnumMap<AtomEnum, List<Double>>[] shiftList) {
+    double analyzeShifts(Map<AtomEnum, List<Double>>[] shiftList) {
         double pMissing = Math.exp(-1.0);
         int nAtoms = 0;
         double pCum = 1.0;
         boolean[] isGly = new boolean[2];
         for (int k = 0; k < 2; k++) {
-            List<Double> shifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
+            List<Double> shifts = shiftList[k].getOrDefault(AtomEnum.findValue("CA"), Collections.EMPTY_LIST);
 
             if (!shifts.isEmpty()) {
                 double caShift = shiftRange(shifts)[0];
@@ -675,7 +675,7 @@ public class SpinSystem {
 
                 int nExpected = spinSystems.runAbout.getExpected(k, atomEnum);
 
-                if (isGly[k] && (atomEnum == AtomEnum.CB)) {
+                if (isGly[k] && (atomEnum == AtomEnum.findValue("CB").get())) {
                     nExpected = 0;
                 }
                 if ((nExpected == 0) && (nShifts > 0)) {
@@ -701,7 +701,7 @@ public class SpinSystem {
         return pCum;
     }
 
-    void saveShifts(EnumMap<AtomEnum, List<Double>>[] atomShifts) {
+    void saveShifts(Map<AtomEnum, List<Double>>[] atomShifts) {
         for (int k = 0; k < 2; k++) {
             for (var entry : atomShifts[k].entrySet()) {
                 var shifts = entry.getValue();
@@ -716,7 +716,7 @@ public class SpinSystem {
         }
     }
 
-    void writeShifts(EnumMap<AtomEnum, List<Double>>[] shiftList) {
+    void writeShifts(Map<AtomEnum, List<Double>>[] shiftList) {
         int nAtoms = 0;
 
         for (int k = 0; k < 2; k++) {
@@ -736,7 +736,7 @@ public class SpinSystem {
         System.out.printf("  nA %2d %6.4f\n", nAtoms, pCum);
     }
 
-    boolean addShift(int nPeaks, List<ResAtomPattern>[] resAtomPatterns, EnumMap<AtomEnum, List<Double>>[] shiftList, int[] pt) {
+    boolean addShift(int nPeaks, List<ResAtomPattern>[] resAtomPatterns, Map<AtomEnum, List<Double>>[] shiftList, int[] pt) {
         int j = 0;
         for (int i = 0; i < nPeaks; i++) {
             int k = 0;
@@ -809,10 +809,10 @@ public class SpinSystem {
     }
 
     boolean getShifts(int nPeaks, List<ResAtomPattern>[] resAtomPatterns,
-                      EnumMap<AtomEnum, List<Double>>[] shiftList, int[] pt
+                      Map<AtomEnum, List<Double>>[] shiftList, int[] pt
     ) {
-        shiftList[0] = new EnumMap<>(AtomEnum.class);
-        shiftList[1] = new EnumMap<>(AtomEnum.class);
+        shiftList[0] = new HashMap<>();
+        shiftList[1] = new HashMap<>();
 
         return addShift(nPeaks, resAtomPatterns, shiftList, pt);
     }
@@ -858,11 +858,11 @@ public class SpinSystem {
 
     public void calcCombinations(boolean display) {
         PeakTypeMatches peakTypeMatches = getPeakMatches();
-        Optional<EnumMap<AtomEnum, List<Double>>[]> cResultOpt = calcCombinations(peakTypeMatches.cMatches, display);
-        Optional<EnumMap<AtomEnum, List<Double>>[]> otherResultOpt = calcCombinations(peakTypeMatches.otherMatches, display);
+        Optional<Map<AtomEnum, List<Double>>[]> cResultOpt = calcCombinations(peakTypeMatches.cMatches, display);
+        Optional<Map<AtomEnum, List<Double>>[]> otherResultOpt = calcCombinations(peakTypeMatches.otherMatches, display);
         boolean isGly = false;
         if (otherResultOpt.isPresent()) {
-            EnumMap<AtomEnum, List<Double>>[] shiftList = otherResultOpt.get();
+            Map<AtomEnum, List<Double>>[] shiftList = otherResultOpt.get();
             isGly = isGly(shiftList, 0);
             calcCombinationsHBHA(peakTypeMatches.hMatches, isGly);
         }
@@ -914,7 +914,7 @@ public class SpinSystem {
         }
     }
 
-    public Optional<EnumMap<AtomEnum, List<Double>>[]> calcCombinations(List<PeakMatch> peakTypeMatches,  boolean display) {
+    public Optional<Map<AtomEnum, List<Double>>[]> calcCombinations(List<PeakMatch> peakTypeMatches,  boolean display) {
         purgeDeleted();
         double[] intensities = getNormalizedIntensities(peakTypeMatches);
         int nPeaks = peakTypeMatches.size();
@@ -958,12 +958,12 @@ public class SpinSystem {
             counts[iPeak] = okPats.size();
             iPeak++;
         }
-        Optional<EnumMap<AtomEnum, List<Double>>[]> result = Optional.empty();
+        Optional<Map<AtomEnum, List<Double>>[]> result = Optional.empty();
 
         if (nCountable == 0) {
-            EnumMap<AtomEnum, List<Double>>[] shiftList = new EnumMap[2];
-            shiftList[0] = new EnumMap<>(AtomEnum.class);
-            shiftList[1] = new EnumMap<>(AtomEnum.class);
+            Map<AtomEnum, List<Double>>[] shiftList = new Map[2];
+            shiftList[0] = new HashMap<>();
+            shiftList[1] = new HashMap<>();
             addShift(nPeaks, resAtomPatterns, shiftList, null);
 
         } else {
@@ -978,9 +978,9 @@ public class SpinSystem {
             Iterator iter = counter.iterator();
             double best = 0.0;
             int bestIndex = -1;
-            EnumMap<AtomEnum, List<Double>>[] shiftList = new EnumMap[2];
-            shiftList[0] = new EnumMap<>(AtomEnum.class);
-            shiftList[1] = new EnumMap<>(AtomEnum.class);
+            Map<AtomEnum, List<Double>>[] shiftList = new Map[2];
+            shiftList[0] = new HashMap<>();
+            shiftList[1] = new HashMap<>();
             while (iter.hasNext()) {
                 iter.next();
                 int[] pt = iter.getCounts();
@@ -1037,9 +1037,9 @@ public class SpinSystem {
 
     public void updateSpinSystem() {
         purgeDeleted();
-        EnumMap<AtomEnum, List<Double>>[] atomShifts = new EnumMap[2];
-        atomShifts[0] = new EnumMap<>(AtomEnum.class);
-        atomShifts[1] = new EnumMap<>(AtomEnum.class);
+        Map<AtomEnum, List<Double>>[] atomShifts = new HashMap[2];
+        atomShifts[0] = new HashMap<>();
+        atomShifts[1] = new HashMap<>();
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
             int iDim = 0;
@@ -1050,7 +1050,7 @@ public class SpinSystem {
                     String resType = userField.substring(0, dotIndex);
                     String atomType = userField.substring(dotIndex + 1).toUpperCase();
                     int k = resType.endsWith("-1") ? 0 : 1;
-                    Optional<AtomEnum> atomEnumOpt = AtomEnum.findValue(atomType);
+                    Optional<AtomEnum> atomEnumOpt = AtomEnum.findValue(atomType, true);
                     int finalIDim = iDim;
                     atomEnumOpt.ifPresent(atomEnum -> {
                         var shiftList = atomShifts[k].computeIfAbsent(atomEnum, key -> new ArrayList<>());
@@ -1123,7 +1123,7 @@ public class SpinSystem {
         double sum = 0.0;
         boolean ok = false;
         int nMatch = 0;
-        EnumSet<AtomEnum> matchedSet = EnumSet.noneOf(AtomEnum.class);
+        Set<AtomEnum> matchedSet = new HashSet<>();
 
         double c0 = -100.0;
         double c1 = 50.0;
@@ -1132,7 +1132,7 @@ public class SpinSystem {
             var shiftValueB = spinSysB.shiftValues[idxB].get(entryA.getKey());
             double vA = entryA.getValue().value;
             double vB = shiftValueB != null ? shiftValueB.value : Double.NaN;
-            double tolA = entryA.getKey().tol;
+            double tolA = entryA.getKey().tol();
             if (Double.isFinite(vA) && Double.isFinite(vB)) {
                 double delta = Math.abs(vA - vB);
                 if (matchMode == MatchMode.SUMINVG) {
