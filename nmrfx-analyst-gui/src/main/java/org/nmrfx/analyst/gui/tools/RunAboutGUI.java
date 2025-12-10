@@ -721,10 +721,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         actionMenuButton.getItems().add(assembleItem);
 
         MenuItem calcCombItem = new MenuItem("Combinations");
-        calcCombItem.setOnAction(e -> runAbout.calcCombinations());
+        calcCombItem.setOnAction(e -> calcCombinations());
         actionMenuButton.getItems().add(calcCombItem);
         MenuItem compareItem = new MenuItem("Compare");
-        compareItem.setOnAction(e -> runAbout.compare());
+        compareItem.setOnAction(e -> compare());
         actionMenuButton.getItems().add(compareItem);
 
         toolBar.getItems().addAll(buttons);
@@ -838,6 +838,28 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
+    }
+
+    boolean missingRefShifts(String title) {
+        boolean missingRefShifts = runAbout.missingRefShifts();
+        if (missingRefShifts) {
+            GUIUtils.warn(title, "Missing Reference Shift Errors");
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+    void compare() {
+        if (!missingRefShifts("Compare")) {
+            runAbout.compare();
+        }
+    }
+
+    void calcCombinations() {
+        if (!missingRefShifts("Combinations")) {
+            runAbout.calcCombinations();
+        }
     }
 
     class ClusterStatus {
@@ -1775,8 +1797,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
 
     void makeGraphMatcher() {
-        GraphMatcherGUI graphMatcherGUI = new GraphMatcherGUI(this, runAbout);
-
+        if (!missingRefShifts("Graph Matcher")) {
+            GraphMatcherGUI graphMatcherGUI = new GraphMatcherGUI(this, runAbout);
+        }
     }
 
     public void setSpinSystems(List<SpinSystem> spinSystems, boolean useBest) {
@@ -2223,6 +2246,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
     }
 
+    public void setRefList(PeakList peakList) {
+        refListObj.set(peakList);
+    }
+
     void loadArrangements() {
         try {
             FileChooser fileChooser = new FileChooser();
@@ -2460,7 +2487,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void updatePeakPattern(Peak peak, SpectralDim sDim, String pattern) {
-        if (pattern.endsWith("-")) {
+        if (pattern.endsWith("-") || pattern.endsWith("+")) {
             pattern = pattern.substring(0, pattern.length() - 1);
         }
         peak.getPeakDim(sDim.getIndex()).setUser(pattern);

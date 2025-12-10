@@ -174,7 +174,6 @@ public class GraphMatcherGUI {
 
         task.setOnSucceeded(event -> {
             double result = task.getValue();
-            System.out.println("result " + result);
             Fx.runOnFxThread(() -> {
                 assignButton.setDisable(false);
                 stopButton.setDisable(true);
