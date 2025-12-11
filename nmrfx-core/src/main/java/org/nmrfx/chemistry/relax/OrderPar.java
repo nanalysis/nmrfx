@@ -25,10 +25,7 @@ import org.nmrfx.chemistry.MoleculeFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author brucejohnson
@@ -320,7 +317,7 @@ public class OrderPar implements RelaxationValues {
             case "chisq":
                 return sumSqErr;
             case "rchisq":
-                if ((nValues != null) && (nPars != null)) {
+                if ((nValues != null) && (nPars != null) && ((nValues - nPars) > 0)) {
                     return sumSqErr / (nValues - nPars);
                 } else {
                     return null;
@@ -334,11 +331,11 @@ public class OrderPar implements RelaxationValues {
         return sumSqErr;
     }
 
-    public double getReducedChiSqr() {
-        if ((nValues != null) && (nPars != null)) {
+    public Double getReducedChiSqr() {
+        if ((nValues != null) && (nPars != null) && ((nValues - nPars) > 0)) {
             return sumSqErr / (nValues - nPars);
         } else {
-            return 0.0;
+            return null;
         }
     }
 
@@ -348,16 +345,35 @@ public class OrderPar implements RelaxationValues {
 
     public double getAIC() {
         if ((nValues != null) && (nPars != null) && (sumSqErr != null)) {
-            return 2 * (nPars + 1) + nValues * Math.log(sumSqErr / nValues);
+            return 2 * nPars + sumSqErr;
         } else {
             return 0.0;
         }
     }
 
-    public double getAICC() {
-        int k = nPars;
-        return getAIC() + 2.0 * (k + 1) * (k + 2) / (nValues - k);
+
+    public Optional<Double> getAICC() {
+        return getAICCv();
     }
+
+    public Optional<Double> getAICCnv() {
+        int k = nPars;
+        if ((nValues - k -1) < 1) {
+            return Optional.empty();
+        } else {
+            return Optional.of(getAIC() + 2.0 * k * (k + 1) / (nValues - k - 1));
+        }
+    }
+
+    public Optional<Double> getAICCv() {
+        int k = nPars;
+        if ((nValues - k) < 1) {
+            return Optional.empty();
+        } else {
+            return Optional.of(getAIC() + 2.0 * (k + 1) * (k + 2) / (nValues - k));
+        }
+    }
+
 
     public int getN() {
         return nValues;
@@ -455,8 +471,8 @@ public class OrderPar implements RelaxationValues {
         RelaxationValues.appendValueErrorWithSep(sBuilder, Rex, Rexerr, "%.5f", sepChar);
         sBuilder.append(sepChar).append(model).append(sepChar).append(modelNum);
         sBuilder.append(sepChar).append(String.format("%.4f", sumSqErr)).append(sepChar).
-                append(String.format("%.4f", getReducedChiSqr())).
-                append(sepChar).append(String.format("%.4f", getAICC())).append(sepChar).
+                append(String.format("%.4f", (getReducedChiSqr() != null) ? getReducedChiSqr() : 0.1)).
+                append(sepChar).append(String.format("%.4f", getAICCv().isPresent() ? getAICCv().get() : 0.0)).append(sepChar).
                 append(nValues).append(sepChar).append(nPars);
         return sBuilder.toString();
     }
