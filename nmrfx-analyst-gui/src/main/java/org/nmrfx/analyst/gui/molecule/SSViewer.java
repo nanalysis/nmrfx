@@ -304,10 +304,12 @@ public class SSViewer extends Pane {
                 }
             }
         }
-        var extentBasePairs = ssPredictor.getExtentBasePairs();
+        //var extentBasePairs = ssPredictor.getExtentBasePairs();
+        var extentBasePairs = ssPredictor.getAllBasePairs(0.2);
         for (var bp : extentBasePairs) {
             int r = bp.r();
             int c = bp.c();
+            double probability = bp.probability();
             double x1 = border + c * delta + deltaHalf;
             double y1 = border + r * delta + deltaHalf;
             Line line2 = new Line(x1, y1, y1, y1);
@@ -321,12 +323,11 @@ public class SSViewer extends Pane {
             rectangle.setY(border + r * delta);
             rectangle.setWidth(delta);
             rectangle.setHeight(delta);
-            rectangle.setFill(Color.BLACK);
+            Color color = Color.YELLOW.interpolate(Color.ORANGE, probability);
+            rectangle.setFill(color);
             mapDrawingGroup.getChildren().add(rectangle);
 
         }
-
-
     }
 
     void updateScale() {
