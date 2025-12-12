@@ -611,13 +611,15 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void dotBracketFieldChanged() {
         try {
             String dotBracket = dotBracketField.getText().trim();
-            if (dotBracket.length() > 0) {
+            if (!dotBracket.isEmpty()) {
                 boolean ok = updateDotBracket(dotBracket);
                 if (ok) {
                     Molecule mol = Molecule.getActive();
                     if (mol != null) {
                         mol.setDotBracket(dotBracket);
                         layoutSS();
+                        storeSecondaryStructures(List.of(dotBracket));
+                        updateSSChoiceBox();
                     }
                 }
             }

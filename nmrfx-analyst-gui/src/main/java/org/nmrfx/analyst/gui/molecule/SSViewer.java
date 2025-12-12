@@ -323,7 +323,7 @@ public class SSViewer extends Pane {
             rectangle.setY(border + r * delta);
             rectangle.setWidth(delta);
             rectangle.setHeight(delta);
-            Color color = Color.YELLOW.interpolate(Color.ORANGE, probability);
+            Color color = Color.LIGHTYELLOW.interpolate(Color.DARKORANGE, probability);
             rectangle.setFill(color);
             mapDrawingGroup.getChildren().add(rectangle);
 
