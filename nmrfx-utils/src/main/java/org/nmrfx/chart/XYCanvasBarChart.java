@@ -24,7 +24,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
-import org.nmrfx.graphicsio.GraphicsIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,9 +152,9 @@ public class XYCanvasBarChart extends XYCanvasChart {
                     }
                 } else {
                     if (drawError) {
-                        barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high);
+                        barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high, value.isDisabled());
                     } else {
-                        barMark.draw(gC, xC, yC, barThickness, barLength);
+                        barMark.draw(gC, xC, yC, barThickness, barLength, value.isDisabled());
                     }
                 }
                 iValue++;
