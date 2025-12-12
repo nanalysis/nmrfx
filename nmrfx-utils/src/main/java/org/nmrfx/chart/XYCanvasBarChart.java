@@ -24,8 +24,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -35,8 +33,6 @@ import java.util.Optional;
 //TODO uncomment once core & utils are merged
 //@PluginAPI("ring")
 public class XYCanvasBarChart extends XYCanvasChart {
-
-    private static final Logger log = LoggerFactory.getLogger(XYCanvasBarChart.class);
 
     public XYCanvasBarChart(Canvas canvas, final Axis... AXIS) {
         super(canvas, AXIS);
@@ -127,8 +123,8 @@ public class XYCanvasBarChart extends XYCanvasChart {
                 double y = yAxis.getDisplayPosition(value.getYValue());
                 boolean drawError = false;
                 double errValue = 0.0;
-                if (value instanceof XYEValue) {
-                    errValue = Math.abs(((XYEValue) value).getError());
+                if (value instanceof XYEValue xyeValue) {
+                    errValue = Math.abs(xyeValue.getError());
                     if (errValue > 1.0e-30) {
                         drawError = true;
                     }
