@@ -470,9 +470,13 @@ public class OrderPar implements RelaxationValues {
         RelaxationValues.appendValueErrorWithSep(sBuilder, TauS, TauSerr, "%.5f", sepChar);
         RelaxationValues.appendValueErrorWithSep(sBuilder, Rex, Rexerr, "%.5f", sepChar);
         sBuilder.append(sepChar).append(model).append(sepChar).append(modelNum);
+        double aicVal = 0.0;
+        if (getAICCv().isPresent()) {
+            aicVal = getAICCv().get();
+        }
         sBuilder.append(sepChar).append(String.format("%.4f", sumSqErr)).append(sepChar).
                 append(String.format("%.4f", (getReducedChiSqr() != null) ? getReducedChiSqr() : 0.1)).
-                append(sepChar).append(String.format("%.4f", getAICCv().isPresent() ? getAICCv().get() : 0.0)).append(sepChar).
+                append(sepChar).append(String.format("%.4f", aicVal)).append(sepChar).
                 append(nValues).append(sepChar).append(nPars);
         return sBuilder.toString();
     }
