@@ -60,8 +60,8 @@ public class XYCanvasChart {
 
     public final Canvas canvas;
     String title = "";
-    private final Axis xAxis;
-    private final Axis yAxis;
+    protected Axis xAxis;
+    protected Axis yAxis;
     double xPos = 0.0;
     double yPos = 0.0;
     double leftBorder = 0.0;
