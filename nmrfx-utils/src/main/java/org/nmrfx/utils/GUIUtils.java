@@ -28,7 +28,10 @@ import javafx.stage.Stage;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import org.nmrfx.fxutil.Fx;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -351,8 +354,7 @@ public class GUIUtils {
         return pw;
     }
 
-    public static void snapNode(Node node, File file) throws IOException {
-        double scale = 4.0;
+    public static void snapNode(Node node, File file, double scale) throws IOException {
         final Bounds bounds = node.getLayoutBounds();
         final WritableImage image = new WritableImage(
                 (int) Math.round(bounds.getWidth() * scale),
@@ -360,7 +362,16 @@ public class GUIUtils {
         final SnapshotParameters spa = new SnapshotParameters();
         spa.setTransform(javafx.scene.transform.Transform.scale(scale, scale));
         node.snapshot(spa, image);
-        javax.imageio.ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+        BufferedImage swingImage = SwingFXUtils.fromFXImage(image, null);
+        new Thread(() -> {
+            try {
+                ImageIO.write(swingImage, "png", file);
+            } catch (IOException e) {
+                Fx.runOnFxThread(() -> {
+                    GUIUtils.warn("Error writing file", e.getMessage());
+                });
+            }
+        }).start();
     }
 
     public static void bindSliderField(Slider slider, TextField field) {
