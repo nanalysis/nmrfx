@@ -284,14 +284,16 @@ public class MoleculeMenuActions extends MenuActions {
 
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
-        if (type.isEmpty()) {
-            type = getType(file.toPath());
-        }
-        if (type != null) {
-            Molecule molecule = readMolecule(file, type);
-            if (molecule != null) {
-                showMols();
-                resetAtomController();
+        if (file != null) {
+            if (type.isEmpty()) {
+                type = getType(file.toPath());
+            }
+            if (type != null) {
+                Molecule molecule = readMolecule(file, type);
+                if (molecule != null) {
+                    showMols();
+                    resetAtomController();
+                }
             }
         }
     }
