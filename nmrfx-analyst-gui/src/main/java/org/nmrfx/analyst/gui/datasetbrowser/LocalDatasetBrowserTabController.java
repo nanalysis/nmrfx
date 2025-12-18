@@ -36,9 +36,8 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
         // Add extra button to open file browser to select directory
         Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
         button.setOnAction(e -> {
-                    datasetBrowserController.getStage().setAlwaysOnTop(false);
                     browseDirectory();
-                    datasetBrowserController.getStage().setAlwaysOnTop(true);
+                    datasetBrowserController.getStage().toFront();
                 }
         );
         hBox.getChildren().add(button);
