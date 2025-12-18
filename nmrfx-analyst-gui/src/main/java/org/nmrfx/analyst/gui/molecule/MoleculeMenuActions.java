@@ -12,7 +12,6 @@ import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
 import org.nmrfx.chemistry.AtomContainer;
-import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -185,7 +184,7 @@ public class MoleculeMenuActions extends MenuActions {
             MolecularConstraints molConstr = MoleculeFactory.getActive().getMolecularConstraints();
             if (!molConstr.getRDCSetNames().isEmpty()) {
                 rdcGUI.setChoice.getItems().addAll(molConstr.getRDCSetNames());
-                rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
+                rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().getFirst());
             }
         }
 
@@ -252,7 +251,7 @@ public class MoleculeMenuActions extends MenuActions {
             if (molecule != null) {
                 try {
                     AtomContainer atomContainer = null;
-                    if (molecule.entities.size() > 0) {
+                    if (!molecule.entities.isEmpty()) {
                         if (!molecule.getLigands().isEmpty()) {
                             atomContainer = molecule.getLigands().getFirst();
                         } else if (!molecule.getPolymers().isEmpty()) {
@@ -284,14 +283,16 @@ public class MoleculeMenuActions extends MenuActions {
 
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
-        if (type.isEmpty()) {
-            type = getType(file.toPath());
-        }
-        if (type != null) {
-            Molecule molecule = readMolecule(file, type);
-            if (molecule != null) {
-                showMols();
-                resetAtomController();
+        if (file != null) {
+            if (type.isEmpty()) {
+                type = getType(file.toPath());
+            }
+            if (type != null) {
+                Molecule molecule = readMolecule(file, type);
+                if (molecule != null) {
+                    showMols();
+                    resetAtomController();
+                }
             }
         }
     }
@@ -317,7 +318,6 @@ public class MoleculeMenuActions extends MenuActions {
                         molecule.updateAtomArray();
                     }
                     case "pdbLigand" -> {
-                        PDBFile pdb = new PDBFile();
                         molecule = Molecule.getActive();
                         PDBFile.readResidue(file.toString(), null, molecule,null);
                         molecule.updateAtomArray();
@@ -340,12 +340,12 @@ public class MoleculeMenuActions extends MenuActions {
                     case "smiles" -> {
                         List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
                         if (!molecules.isEmpty()) {
-                            molecule = molecules.get(0);
+                            molecule = molecules.getFirst();
                             ProjectBase.getActive().putMolecule(molecule);
                         }
                     }
-                    default -> {
-                    }
+                    default -> GUIUtils.warn("Molecule Open", "Invalid molecule type " + type);
+
                 }
                 MoleculeFactory.setActive(molecule);
             } catch (Exception ex) {
