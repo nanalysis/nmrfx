@@ -27,6 +27,7 @@ public class XYValue {
     private final double x;
     private final double y;
     private Object extraValue;
+    private boolean disabled;
 
     public XYValue(double x, double y) {
         this.x = x;
@@ -75,4 +76,11 @@ public class XYValue {
         return extraValue;
     }
 
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean state) {
+        disabled = state;
+    }
 }

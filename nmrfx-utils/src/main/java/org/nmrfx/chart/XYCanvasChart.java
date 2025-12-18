@@ -27,7 +27,6 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
-import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -61,8 +60,8 @@ public class XYCanvasChart {
 
     public final Canvas canvas;
     String title = "";
-    public Axis xAxis;
-    public Axis yAxis;
+    protected Axis xAxis;
+    protected Axis yAxis;
     double xPos = 0.0;
     double yPos = 0.0;
     double leftBorder = 0.0;
@@ -72,7 +71,6 @@ public class XYCanvasChart {
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
     boolean showLegend = true;
-    double legendHeight = 50;
     CanvasLegend legend;
     ObservableList<DataSeries> data = FXCollections.observableArrayList();
 
@@ -190,8 +188,7 @@ public class XYCanvasChart {
             }
 
             if (ok) {
-                double[] bounds = {xMin, xMax, yMin, yMax};
-                return bounds;
+                return new double[]{xMin, xMax, yMin, yMax};
             }
         }
         return null;
@@ -288,7 +285,7 @@ public class XYCanvasChart {
     public void drawChart(GraphicsContextInterface gC) {
         double width = getWidth();
         double height = getHeight();
-        double minDimSize = width < height ? width : height;
+        double minDimSize = Math.min(width, height);
         gC.save();
         try {
             // fixme
@@ -374,7 +371,7 @@ public class XYCanvasChart {
         gC.restore();
     }
 
-    public class PickPoint {
+    public static class PickPoint {
         double x;
         double y;
         double radius;
@@ -386,7 +383,7 @@ public class XYCanvasChart {
         }
     }
 
-    public class Hit {
+    public static class Hit {
 
         DataSeries series;
         int index;
@@ -416,7 +413,7 @@ public class XYCanvasChart {
     }
 
     public Optional<Hit> pickChart(double mouseX, double mouseY, double hitRadius) {
-        double minDimSize = getWidth() < getHeight() ? getWidth() : getHeight();
+        double minDimSize = Math.min(getWidth(), getHeight());
         Optional<Hit> hitOpt = Optional.empty();
         double minDelta = Double.MAX_VALUE;
         for (DataSeries series : data) {
@@ -434,12 +431,10 @@ public class XYCanvasChart {
                 double dY = Math.abs(yC - mouseY);
                 if ((dX < hitRadius) && (dY < hitRadius)) {
                     double delta = Math.sqrt(dX * dX + dY * dY);
-                    if (delta < hitRadius) {
-                        if (delta < minDelta) {
-                            minDelta = delta;
-                            Hit hit = new Hit(series, i, xyValue);
-                            hitOpt = Optional.of(hit);
-                        }
+                    if ((delta < hitRadius) && (delta < minDelta)) {
+                        minDelta = delta;
+                        Hit hit = new Hit(series, i, xyValue);
+                        hitOpt = Optional.of(hit);
                     }
                 }
                 i++;
@@ -465,7 +460,7 @@ public class XYCanvasChart {
         getData().add(series);
     }
 
-    protected void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
+    protected void exportChart(SVGGraphicsContext svgGC) {
         svgGC.beginPath();
         drawChart(svgGC);
     }
@@ -476,15 +471,10 @@ public class XYCanvasChart {
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             SVGGraphicsContext svgGC = new SVGGraphicsContext();
-            try {
-                Canvas canvas = getCanvas();
-                svgGC.create(canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
-                exportChart(svgGC);
-                svgGC.saveFile();
-            } catch (GraphicsIOException ex) {
-                ExceptionDialog eDialog = new ExceptionDialog(ex);
-                eDialog.showAndWait();
-            }
+            Canvas exportCanvas = getCanvas();
+            svgGC.create(exportCanvas.getWidth(), exportCanvas.getHeight(), selectedFile.toString());
+            exportChart(svgGC);
+            svgGC.saveFile();
         }
     }
 
