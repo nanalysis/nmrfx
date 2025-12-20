@@ -25,7 +25,7 @@ arrangements:
     widths: *Pfp
     xdims: [ [ N,C,H ],[ H,C,N ],[ H,C,N ],[ N,C,H ] ]
   HN:
-    rows: [ CB,CA,C ]
+    rows: [ CB,CA,C,Hali]
     columns: [ i-1,i ]
     widths: [ peak,peak ]
     dims: [ H,N ]
