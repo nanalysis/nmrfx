@@ -327,8 +327,8 @@ public class RunAbout implements SaveframeWriter {
     }
     public Optional<SpectralDim> getHAliphaticDim(PeakList peakList) {
         for (var sDim : peakList.getSpectralDims()) {
-            if (!sDim.getPattern().contains("i.H") && !sDim.getPattern().contains("i.N")
-                    && sDim.getPattern().contains("H")) {
+            if (!sDim.getPattern().equalsIgnoreCase("i.H") && !sDim.getPattern().equalsIgnoreCase("i.N")
+                    && sDim.getPattern().toUpperCase().contains("H")) {
                 return Optional.of(sDim);
             }
         }
