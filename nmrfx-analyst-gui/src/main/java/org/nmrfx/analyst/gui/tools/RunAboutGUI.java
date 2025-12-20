@@ -2576,17 +2576,16 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             chart.clearAnnotations();
             if (peak != null && !chart.getDatasetAttributes().isEmpty()) {
                 refreshChart(chart, iChart, peak, false);
-                PeakList currentList = null;
-                if (!chart.getPeakListAttributes().isEmpty()) {
-                    PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
+                for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
                     peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Cluster);
-                    currentList = peakAttr.getPeakList();
-                }
-                if (winPatterns.containsKey(chart)) {
-                    drawPeakTypeAnnotations(chart, spinSystem, iCol);
-                }
-                if (currentList != null) {
-                    drawAnno(chart, currentList, spinSystem);
+                    PeakList currentList = peakAttr.getPeakList();
+
+                    if (winPatterns.containsKey(chart)) {
+                        drawPeakTypeAnnotations(chart, spinSystem, iCol);
+                    }
+                    if (currentList != null) {
+                        drawAnno(chart, currentList, spinSystem);
+                    }
                 }
                 chart.refresh();
             }
