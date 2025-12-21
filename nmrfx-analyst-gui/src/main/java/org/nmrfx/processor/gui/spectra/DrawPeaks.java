@@ -409,8 +409,8 @@ public class DrawPeaks {
                 // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
                 if (multipletMode && peak.peakDims[0].hasMultiplet()) {
                     String couplings = peak.peakDims[0].getMultiplet().getCouplingsAsSimpleString();
-                    if (peak.peakList.scale > 0.0) {
-                        normVal = peak.peakDims[0].getMultiplet().getVolume() / peak.peakList.scale;
+                    if (peak.peakList.getScale() > 0.0) {
+                        normVal = peak.peakDims[0].getMultiplet().getVolume() / peak.peakList.getScale();
                     }
                     label = Format.format2(normVal) + " " + peak.peakDims[0].getMultiplet().getMultiplicity() + " " + couplings
                             + "\n" + Format.format4(peak.peakDims[0].getMultiplet().getCenter());
@@ -516,8 +516,8 @@ public class DrawPeaks {
 
                 // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
                 String couplings = multiplet.getCouplingsAsSimpleString();
-                if (peak.peakList.scale > 0.0) {
-                    normVal = multiplet.getVolume() / peak.peakList.scale;
+                if (peak.peakList.getScale() > 0.0) {
+                    normVal = multiplet.getVolume() / peak.peakList.getScale();
                 }
                 StringBuilder sBuilder = new StringBuilder();
                 sBuilder.append(Format.format2(normVal)).append(' ').

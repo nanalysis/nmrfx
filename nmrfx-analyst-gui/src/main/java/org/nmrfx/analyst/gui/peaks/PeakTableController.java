@@ -376,8 +376,8 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
                 String couplingString = multiplet.getCouplingsAsSimpleString();
                 double normVal = 0.0;
-                if (peak.peakList.scale > 0.0) {
-                    normVal = multiplet.getVolume() / peak.peakList.scale;
+                if (peak.peakList.getScale() > 0.0) {
+                    normVal = multiplet.getVolume() / peak.peakList.getScale();
                 }
                 String label = String.format("%.2f", normVal) + " " + multiplet.getMultiplicity() + " " + couplingString;
 

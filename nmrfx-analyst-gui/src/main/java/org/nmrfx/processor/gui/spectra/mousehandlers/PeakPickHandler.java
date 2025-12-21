@@ -2,6 +2,8 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.chart.Axis;
+import org.nmrfx.datasets.RegionData;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakListTools;
@@ -11,8 +13,11 @@ import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+
+import static org.nmrfx.peaks.Peak.getMeasureFunction;
 
 public class PeakPickHandler extends MouseHandler {
     MouseBindings.MOUSE_ACTION mouseAction;
@@ -82,7 +87,22 @@ public class PeakPickHandler extends MouseHandler {
         if (completed) {
             PeakList peakList = chart.getPeakListAttributes().get(0).getPeakList();
             if (peakList.getNDim() == 1) {
-                PeakListTools.quantifyPeaks(peakList, "evolume");
+                if (chart.is1D() && singlePick && peakList.peaks().size() > 1) {
+                    Peak peak = peakList.peaks().getLast();
+                    Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();
+                    java.util.function.Function<RegionData, Double> f = getMeasureFunction("evolume");
+                    int[] pdim = {0};
+                    try {
+                        peak.quantifyPeak(dataset, pdim, f, "intensity");
+                        double amp = peak.getIntensity();
+                        double sigWidthPPM = peak.getPeakDim(0).getLineWidthValue();
+                        double volume =  amp * sigWidthPPM * (Math.PI / 2.0) / 1.05;
+                        peak.setVolume1((float) volume);
+                    } catch (IOException e) {
+                    }
+                } else {
+                    PeakListTools.quantifyPeaks(peakList, "evolume");
+                }
             }
             chart.drawPeakLists(true);
         }
@@ -97,13 +117,15 @@ public class PeakPickHandler extends MouseHandler {
     public void mouseDragged(MouseEvent mouseEvent) {
         double deltaX = Math.abs(mouseBindings.getDragStart()[0] - mouseBindings.getMouseX());
         double deltaY = Math.abs(mouseBindings.getDragStart()[1] - mouseBindings.getMouseY());
-        if ((deltaX > 5) || (deltaY > 5)) {
+        boolean moved = false;
+        if ((deltaX > 20) || (deltaY > 20)) {
             singlePick = false;
+            moved = true;
         }
         mouseBindings.getChart().dragBox(mouseAction, mouseBindings.getDragStart(), mouseBindings.getMouseX(), mouseBindings.getMouseY());
 
         PolyChart chart = mouseBindings.getChart();
-        if (chart.is1D()) {
+        if (chart.is1D() && moved) {
             double xLim0 = chart.getAxes().getX().getValueForDisplay(mouseBindings.dragStart[0]).doubleValue();
             double xLim1 = chart.getAxes().getX().getValueForDisplay(mouseBindings.getMouseX()).doubleValue();
             double threshold = chart.getAxes().getY().getValueForDisplay(mouseBindings.getMouseY()).doubleValue();
