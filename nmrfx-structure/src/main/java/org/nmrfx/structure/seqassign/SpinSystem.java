@@ -48,13 +48,17 @@ public class SpinSystem {
 
     public record AtomEnum(String name, double tol, boolean resMatch) {
         static Map<String, AtomEnum> atomMap = new HashMap<>();
-
+        static AtomEnum H = new AtomEnum("h", 0.04, false);
+        static AtomEnum N = new AtomEnum("n", 0.5, false);
+        static AtomEnum CA = new AtomEnum("ca", 0.6, true);
+        static AtomEnum CB = new AtomEnum("cb", 0.6, true);
+        static AtomEnum C = new AtomEnum("c", 0.6, true);
         static {
-            atomMap.put("H", new AtomEnum("h", 0.04, false));
-            atomMap.put("N", new AtomEnum("n", 0.5, false));
-            atomMap.put("C", new AtomEnum("c", 0.6, true));
-            atomMap.put("CA", new AtomEnum("ca", 0.6, true));
-            atomMap.put("CB", new AtomEnum("cb", 0.6, true));
+            atomMap.put("H", H);
+            atomMap.put("N", N);
+            atomMap.put("C", C);
+            atomMap.put("CA", CA);
+            atomMap.put("CB", CB);
             atomMap.put("CG", new AtomEnum("cg", 0.6, false));
             atomMap.put("CD", new AtomEnum("cd", 0.6, false));
             atomMap.put("CE", new AtomEnum("ce", 0.6, false));
@@ -605,14 +609,15 @@ public class SpinSystem {
     }
 
     boolean isGly(Map<AtomEnum, List<Double>>[] shiftList, int k) {
-        List<Double> caShifts = shiftList[k].getOrDefault(AtomEnum.findValue("CA"), Collections.EMPTY_LIST);
         boolean isGly = false;
+        List<Double> caShifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
         if (!caShifts.isEmpty()) {
             double caShift = shiftRange(caShifts)[0];
             if (caShift < 50.0) {
                 isGly = true;
             }
         }
+
         return isGly;
     }
 
@@ -626,11 +631,12 @@ public class SpinSystem {
             for (int k = 0; k < 2; k++) {
                 isGly[k] = isGly(shiftList, k);
             }
+
             for (int k = 0; k < 2; k++) {
                 for (AtomEnum atomEnum : AtomEnum.values()) {
                     List<Double> shifts = shiftList[k].getOrDefault(atomEnum, Collections.EMPTY_LIST);
                     int nExpected = spinSystems.runAbout.getExpected(k, atomEnum);
-                    if (isGly[k] && (atomEnum == AtomEnum.findValue("CB").get())) {
+                    if (isGly[k] && (atomEnum == AtomEnum.CB)) {
                         nExpected = 0;
                     }
                     if (!shifts.isEmpty()) {
@@ -658,9 +664,9 @@ public class SpinSystem {
         int nAtoms = 0;
         double pCum = 1.0;
         boolean[] isGly = new boolean[2];
-        for (int k = 0; k < 2; k++) {
-            List<Double> shifts = shiftList[k].getOrDefault(AtomEnum.findValue("CA"), Collections.EMPTY_LIST);
 
+        for (int k = 0; k < 2; k++) {
+            List<Double> shifts = shiftList[k].getOrDefault(AtomEnum.CA, Collections.EMPTY_LIST);
             if (!shifts.isEmpty()) {
                 double caShift = shiftRange(shifts)[0];
                 if (caShift < 50.0) {
@@ -675,7 +681,7 @@ public class SpinSystem {
 
                 int nExpected = spinSystems.runAbout.getExpected(k, atomEnum);
 
-                if (isGly[k] && (atomEnum == AtomEnum.findValue("CB").get())) {
+                if (isGly[k] && (atomEnum == AtomEnum.CB)) {
                     nExpected = 0;
                 }
                 if ((nExpected == 0) && (nShifts > 0)) {
