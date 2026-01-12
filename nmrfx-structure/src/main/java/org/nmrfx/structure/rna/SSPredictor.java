@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
+import static org.tensorflow.ndarray.Shape.scalar;
+
 public class SSPredictor {
     private static final Logger log = LoggerFactory.getLogger(SSPredictor.class);
 
@@ -111,6 +113,26 @@ public class SSPredictor {
         }
         var inputTF = TInt32.vectorOf(tokenized);
         var matrix1 = NdArrays.ofInts(Shape.of(1, nCols));
+
+        var seqLength = TInt32.vectorOf(rnaSequence.length());
+        var seqArr = NdArrays.ofInts(Shape.of(1,1));
+        seqArr.set(seqLength);
+
+        Map<String, Integer> pairs = Map.of("AU", 2, "UA" , 2, "GC" ,3, "CG", 3, "GU" ,1, "UG" , 1);
+
+        var probArr = NdArrays.ofInts(Shape.of(1, nCols, nCols));
+        for (int i=0; i < nCols; i++) {
+            for (int j = 0; j < nCols; j++) {
+                if (i < rnaSequence.length() & j < rnaSequence.length()) {
+                    String pair = String.valueOf(rnaSequence.charAt(i) + rnaSequence.charAt(j));
+                    int probability = pairs.getOrDefault(pair,0);
+                    probArr.setObject(probability, i, j);
+                }
+                else {
+                    probArr.setObject(0, i, j);
+                }
+            }
+        }
 
         matrix1.set(inputTF, 0);
         double threshold = 0.4;
