@@ -674,8 +674,8 @@ public class ZZPlotTool {
             xValues = currentPeak.getPeakList().getMeasureValues();
         }
         activeChart.getData().clear();
-        activeChart.xAxis.setAutoRanging(true);
-        activeChart.yAxis.setAutoRanging(true);
+        activeChart.getXAxis().setAutoRanging(true);
+        activeChart.getYAxis().setAutoRanging(true);
         Axis yAxis = activeChart.getYAxis();
         if (tableInRatioMode) {
             yAxis.setLabel("Ratio");

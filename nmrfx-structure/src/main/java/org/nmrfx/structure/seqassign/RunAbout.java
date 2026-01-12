@@ -41,7 +41,7 @@ public class RunAbout implements SaveframeWriter {
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
 
 
-    EnumMap<SpinSystem.AtomEnum, Integer>[] countMap = new EnumMap[2];
+    Map<SpinSystem.AtomEnum, Integer>[] countMap = new HashMap[2];
 
     boolean active = false;
     Map<Residue, SpinSystem> residueSpinSystemsMap = new HashMap<>();
@@ -122,7 +122,14 @@ public class RunAbout implements SaveframeWriter {
                 patElems.add(patElem);
                 int dotPos = patElem.indexOf(".");
                 if (dotPos != -1) {
-                    aType = patElem.substring(dotPos + 1, dotPos + 2);
+                    String atomElem = patElem.substring(dotPos+1);
+                    String[] atomElems = atomElem.split(",");
+                    String firstAtom = atomElems[0].toUpperCase();
+                    if (firstAtom.equals("H") || firstAtom.equals("N") || firstAtom.equals("C")) {
+                        aType = firstAtom;
+                    } else {
+                        aType = "X";
+                    }
                 }
             }
             aTypes.add(aType);
@@ -196,7 +203,11 @@ public class RunAbout implements SaveframeWriter {
             if (parts.length == 2) {
                 String[] types = parts[0].split(",");
                 String[] aNames = parts[1].split(",");
-                dimCount[i] = types.length * aNames.length;
+                if (aNames.length == 2 && aNames[0].equals("HB*") && aNames[1].equals("HA*")) {
+                    dimCount[i] = types.length * 3;
+                } else {
+                    dimCount[i] = types.length * aNames.length;
+                }
             }
             i++;
         }
@@ -239,14 +250,17 @@ public class RunAbout implements SaveframeWriter {
                             sign = 1;
                         }
                         aName = aName.toLowerCase();
-                        SpinSystem.AtomEnum atomEnum = SpinSystem.AtomEnum.valueOf(aName.toUpperCase());
-                        Integer count = countMap[iDir].getOrDefault(atomEnum, 0);
-                        count += dimMult[i];
-                        countMap[iDir].put(atomEnum, count);
-                        intraResidue[j] = iDir == 1;
-                        allNames[j] = aName;
-                        signs[j] = sign;
-                        j++;
+                        Optional<SpinSystem.AtomEnum> atomEnumOpt = SpinSystem.AtomEnum.findValue(aName.toUpperCase());
+                        if (atomEnumOpt.isPresent()) {
+                            SpinSystem.AtomEnum atomEnum = atomEnumOpt.get();
+                            Integer count = countMap[iDir].getOrDefault(atomEnum, 0);
+                            count += dimMult[i];
+                            countMap[iDir].put(atomEnum, count);
+                            intraResidue[j] = iDir == 1;
+                            allNames[j] = aName;
+                            signs[j] = sign;
+                            j++;
+                        }
                     }
                 }
                 typeInfo.setIntraResidue(i, intraResidue);
@@ -266,8 +280,8 @@ public class RunAbout implements SaveframeWriter {
     public void setPeakLists(List<PeakList> lists) {
         refList = lists.get(0);
         PeakList.clusterOrigin = refList;
-        countMap[0] = new EnumMap<>(SpinSystem.AtomEnum.class);
-        countMap[1] = new EnumMap<>(SpinSystem.AtomEnum.class);
+        countMap[0] = new HashMap<>();
+        countMap[1] = new HashMap<>();
         peakLists.clear();
         peakListMap.clear();
         datasetMap.clear();
@@ -311,29 +325,51 @@ public class RunAbout implements SaveframeWriter {
         }
         return Optional.empty();
     }
+    public Optional<SpectralDim> getHAliphaticDim(PeakList peakList) {
+        for (var sDim : peakList.getSpectralDims()) {
+            if (!sDim.getPattern().equalsIgnoreCase("i.H") && !sDim.getPattern().equalsIgnoreCase("i.N")
+                    && sDim.getPattern().toUpperCase().contains("H")) {
+                return Optional.of(sDim);
+            }
+        }
+        return Optional.empty();
+    }
 
     public boolean checkRowType(String pattern, String testType) {
         pattern = pattern.toUpperCase();
-        String[] types = {"CB", "CA", "C"};
+        String[] types = {"CB", "CA", "C", "Hali"};
         String patternType = "";
+        String[] hsTypes = {"HA", "HB", "HG"};
         for (var type : types) {
-            if (pattern.contains(type)) {
-                patternType = type;
-                break;
+            if (type.equals("Hali")) {
+                for (String hsType : hsTypes) {
+                    if (pattern.contains(hsType)) {
+                        patternType = type;
+                        break;
+                    }
+                }
+                if (!patternType.isEmpty()) {
+                    break;
+                }
+            } else {
+                if (pattern.contains(type)) {
+                    patternType = type;
+                    break;
+                }
             }
         }
         return patternType.equals(testType);
     }
 
-    public Optional<PeakList> getPeakListForCell(String row, String dDir) {
+    public List<PeakList> getPeakListForCell(String row, String dDir) {
         Optional<String> typeName = Optional.empty();
         dDir = dDir.replace("h", "i");
         dDir = dDir.replace("j", "i");
         dDir = dDir.replace("k", "i");
         final String iDir = dDir;
-        Optional<PeakList> result = Optional.empty();
+        List<PeakList> peakListsForCell = new ArrayList<>();
         for (PeakList peakList : peakLists) {
-            Optional<SpectralDim> sDimOpt = getCarbonDim(peakList);
+            Optional<SpectralDim> sDimOpt = row.equals("Hali") ? getHAliphaticDim(peakList) : getCarbonDim(peakList);
             if (sDimOpt.isPresent()) {
                 var sDim = sDimOpt.get();
                 String pattern = sDim.getPattern();
@@ -345,13 +381,13 @@ public class RunAbout implements SaveframeWriter {
                         String[] resTypes = resPart.split(",");
                         if (((resTypes.length == 2) && (iDir.equals("i"))) ||
                                 ((resTypes.length == 1) && resTypes[0].equals(iDir))) {
-                            result = Optional.of(peakList);
+                            peakListsForCell.add(peakList);
                         }
                     }
                 }
             }
         }
-        return result;
+        return peakListsForCell;
     }
 
     public List<SpectralDim> getPeakListDims(PeakList peakList, DatasetBase dataset, int[] iDims) {
@@ -376,6 +412,16 @@ public class RunAbout implements SaveframeWriter {
                 dimName = dim;
             }
             int peakDim = aTypeMap.get(typeName).indexOf(dimName);
+            if ((peakDim == -1) && dimName.equals("C")) {
+                peakDim = aTypeMap.get(typeName).indexOf("C");
+            }
+            if ((peakDim == -1) && dimName.equals("C")) {
+                peakDim = aTypeMap.get(typeName).indexOf("X");
+            }
+
+            if (peakDim == -1) {
+                peakDim = 1;
+            }
             String peakListDimName = peakList.getSpectralDim(peakDim).getDimName();
             iDims[j] = dataset.getDim(peakListDimName);
             j++;
