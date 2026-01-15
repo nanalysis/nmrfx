@@ -7,18 +7,19 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tensorflow.Result;
 import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
+import org.tensorflow.types.TFloat64;
 import org.tensorflow.types.TInt32;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
-
-import static org.tensorflow.ndarray.Shape.scalar;
 
 public class SSPredictor {
     private static final Logger log = LoggerFactory.getLogger(SSPredictor.class);
@@ -114,22 +115,21 @@ public class SSPredictor {
         var inputTF = TInt32.vectorOf(tokenized);
         var matrix1 = NdArrays.ofInts(Shape.of(1, nCols));
 
-        var seqLength = TInt32.vectorOf(rnaSequence.length());
-        var seqArr = NdArrays.ofInts(Shape.of(1,1));
-        seqArr.set(seqLength);
+        var lenInput = NdArrays.ofInts(Shape.of(1));
+        lenInput.setInt(rnaSequence.length(), 0);
 
         Map<String, Integer> pairs = Map.of("AU", 2, "UA" , 2, "GC" ,3, "CG", 3, "GU" ,1, "UG" , 1);
 
-        var probArr = NdArrays.ofInts(Shape.of(1, nCols, nCols));
+        var probArr = NdArrays.ofDoubles(Shape.of(1, nCols, nCols));
         for (int i=0; i < nCols; i++) {
             for (int j = 0; j < nCols; j++) {
                 if (i < rnaSequence.length() & j < rnaSequence.length()) {
-                    String pair = String.valueOf(rnaSequence.charAt(i) + rnaSequence.charAt(j));
+                    String pair = String.valueOf(rnaSequence.charAt(i)) + rnaSequence.charAt(j);
                     int probability = pairs.getOrDefault(pair,0);
-                    probArr.setObject(probability, i, j);
+                    probArr.setDouble(probability, 0,i, j);
                 }
                 else {
-                    probArr.setObject(0, i, j);
+                    probArr.setDouble(0, 0,i, j);
                 }
             }
         }
@@ -138,11 +138,18 @@ public class SSPredictor {
         double threshold = 0.4;
         allBasePairs = new HashMap<>();
 
-        var inputs = TInt32.tensorOf(matrix1);
-        try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
+        Map<String, Tensor> inputs = new HashMap<>();
+        var input1 = TInt32.tensorOf(matrix1);
+        var input2 = TInt32.tensorOf(lenInput);
+        var input3 = TFloat64.tensorOf(probArr);
+        inputs.put("seq", input1);
+        inputs.put("len", input2);
+        inputs.put("prob", input3);
+        try (Result tensor0 = graphModel.function("serving_default").call(inputs)) {
+            TFloat32 output = (TFloat32) tensor0.get("output_0").get();
             int seqLen = rnaSequence.length();
             predictions = new double[seqLen][seqLen];
-            setPredictions(rnaSequence, seqLen, nCols, tensor0, threshold);
+            setPredictions(rnaSequence, seqLen, nCols, output, threshold);
         }
     }
 
@@ -151,6 +158,7 @@ public class SSPredictor {
             for (int c = r + delta; c < seqLen; c++) {
                 int index = getIndex(r, c, nCols, delta);
                 double prediction = tensor0.getFloat(0, index);
+                prediction = 1.0 / (1.0 + Math.exp(-prediction));
                 char rChar = rnaSequence.charAt(r);
                 char cChar = rnaSequence.charAt(c);
                 String bp = rChar + String.valueOf(cChar);
