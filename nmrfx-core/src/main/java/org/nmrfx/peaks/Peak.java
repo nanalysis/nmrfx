@@ -154,6 +154,8 @@ public class Peak implements Comparable, PeakOrMulti {
     protected float intensityErr;
     protected float volume2;
     protected float volume2Err;
+    protected float rate;
+    protected float rateErr;
     protected int type = COMPOUND;
     protected int status;
     protected String comment;
@@ -441,6 +443,8 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.intensity = intensity;
         newPeak.volume2 = volume2;
         newPeak.volume1Err = volume1Err;
+        newPeak.rate = rate;
+        newPeak.rateErr = rateErr;
         newPeak.intensityErr = intensityErr;
         newPeak.volume2Err = volume2Err;
         newPeak.type = type;
@@ -486,6 +490,8 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.volume1Err = volume1Err;
         newPeak.intensityErr = intensityErr;
         newPeak.volume2Err = volume2Err;
+        newPeak.rate = rate;
+        newPeak.rateErr = rateErr;
         newPeak.type = type;
         newPeak.status = status;
         newPeak.comment = comment;
@@ -967,6 +973,14 @@ public class Peak implements Comparable, PeakOrMulti {
     public void setVolume2(float volume2) {
         this.volume2 = volume2;
         peakUpdated(this);
+    }
+
+    public void setRate(float rate) {
+        this.rate = rate;
+    }
+
+    public float getRate() {
+        return rate;
     }
 
     public void setType(int type) {

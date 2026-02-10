@@ -1041,8 +1041,19 @@ public class PeakListTools {
         if (dataset == null) {
             throw new IllegalArgumentException("No dataset for peak list");
         }
+        quantifyPeaks(peakList, dataset, mode);
+    }
 
-        java.util.function.Function<RegionData, Double> f = getMeasureFunction(mode);
+    public static void quantifyPeaks(PeakList peakList, Dataset dataset, String mode) {
+            if ((peakList.peaks() == null) || peakList.peaks().isEmpty()) {
+                return;
+            }
+            if (dataset == null) {
+                throw new IllegalArgumentException("No dataset for peak list");
+            }
+
+
+            java.util.function.Function<RegionData, Double> f = getMeasureFunction(mode);
         if (f == null) {
             throw new IllegalArgumentException("Invalid measurment mode: " + mode);
         }
@@ -1661,7 +1672,7 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
             // intensity at infinite delay
             if ((delays != null) && (delays.length > 0) && !zzMode) {
                 double r1Guess = 2.0 / maxDelay;
-                gValue = new GuessValue(r1Guess, r1Guess / 10.0, r1Guess * 5.0, true, RELAX_RATE);
+                gValue = new GuessValue(r1Guess, r1Guess / 100.0, r1Guess * 5.0, true, RELAX_RATE);
                 guessList.add(gValue);
                 if (fitC) {
                     gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true, RELAX_END_INTENSITY);
@@ -1906,6 +1917,7 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
                         if (fitC) {
                             peak.setComment(String.format("R1 %.4f %.3f", values[index++], values[index++]));
                         } else {
+                            peak.setRate((float) values[index]);
                             peak.setComment(String.format("R1 %.4f", values[index++]));
                         }
                     }
