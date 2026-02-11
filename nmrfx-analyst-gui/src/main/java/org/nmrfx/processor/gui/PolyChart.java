@@ -1618,7 +1618,8 @@ public class PolyChart extends Region {
         }
         if (!newAttributes.isEmpty()) {
             AnalystApp.getFXMLControllerManager().getOrCreateActiveController().updateSpectrumStatusBarOptions(false);
-            DISDIM newDISDIM = datasetAttrs.getFirst().getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            Dataset dataset = datasetAttrs.getFirst().getDataset();
+            DISDIM newDISDIM = (dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1) ? DISDIM.OneDX : TwoD;
             // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
             fullChart = fullChart || newDISDIM != disDimProp.get();
             disDimProp.set(newDISDIM);
