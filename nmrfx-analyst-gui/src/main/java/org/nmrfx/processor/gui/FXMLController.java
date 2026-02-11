@@ -722,21 +722,16 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         );
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
-            try {
-                chartDrawingLayers.getTopPane().setVisible(false);
-                GUIUtils.snapNode(chartPane, selectedFile);
-            } catch (IOException ex) {
-                GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
-            } finally {
-                chartDrawingLayers.getTopPane().setVisible(true);
-            }
+            exportPNG(selectedFile);
         }
     }
 
     public void exportPNG(File selectedFile) {
         try {
+            List<Integer> scaleChoices = List.of(1,2,3,4,5);
+            Integer scale = (Integer) GUIUtils.choice(scaleChoices, "Scale image by this amount", 1);
             chartDrawingLayers.getTopPane().setVisible(false);
-            GUIUtils.snapNode(chartPane, selectedFile);
+            GUIUtils.snapNode(chartPane, selectedFile, scale.doubleValue());
         } catch (IOException ex) {
             GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
         } finally {
