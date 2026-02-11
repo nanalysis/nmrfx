@@ -33,15 +33,19 @@ import org.nmrfx.analyst.gui.TablePlotGUI;
 import org.nmrfx.analyst.gui.peaks.MatrixAnalysisTool;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
+import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -57,6 +61,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.quantifyPeaks;
+
 /**
  * ScannerTool class
  *
@@ -65,6 +71,7 @@ import java.util.regex.Pattern;
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
     private static final String BIN_MEASURE_NAME = "binValues";
+
     public enum TableSelectionMode {
         ALL,
         HIGHLIGHT,
@@ -112,6 +119,7 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
+        scannerBar.getItems().add(makePeakMenu());
         scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
@@ -193,6 +201,16 @@ public class ScannerTool implements ControllerTool {
         menu.getItems().addAll(loadRowFIDItem, processAndCombineItem,
                 processItem, combineItem);
         return menu;
+    }
+
+    private MenuButton makePeakMenu() {
+        MenuButton menu = new MenuButton("Peak Fit");
+        MenuItem addPeakFitMenuItem = new MenuItem("Fit Peak Decay");
+        addPeakFitMenuItem.setOnAction(e -> fitPeakDecay());
+        menu.getItems().addAll(addPeakFitMenuItem);
+
+        return menu;
+
     }
 
     private MenuButton makeRegionMenu() {
@@ -449,9 +467,9 @@ public class ScannerTool implements ControllerTool {
             if (values.isEmpty()) {
                 return;
             }
-            for (int iRow=0;iRow<values.size();iRow++) {
+            for (int iRow = 0; iRow < values.size(); iRow++) {
                 double[] dataValues = values.get(iRow);
-                String key = datasetName + "_" + (iRow+1);
+                String key = datasetName + "_" + (iRow + 1);
                 valueMap.put(key, dataValues);
             }
         }
@@ -871,4 +889,73 @@ public class ScannerTool implements ControllerTool {
         }
         tableMath.showTableMath();
     }
+
+    void fitPeakDecay() {
+        TextInputDialog textInput = new TextInputDialog();
+        textInput.setHeaderText("New column name");
+       // Optional<String> columNameOpt = textInput.showAndWait();
+        if (chart.getPeakListAttributes().isEmpty()) {
+            return;
+        }
+        org.nmrfx.processor.gui.spectra.PeakListAttributes peakListAttr = chart.getPeakListAttributes().getFirst();
+        List<FileTableItem> items = scanTable.getItems();
+        PeakFitParameters fitPars = new PeakFitParameters();
+        fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.EXP);
+        chart.fitPeakLists(fitPars, true);
+
+        for (Peak peak : peakListAttr.getPeakList().peaks()) {
+            String label = peak.getPeakDim(0).getLabel();
+            if (label.isBlank()) {
+                label = "#"+peak.getIdNum();
+            }
+            String rateColumnName = peak.getPeakList().getName() + "_" + label+ "_Rate:" + peak.getIdNum();
+            String intColumnName = peak.getPeakList().getName() + "_" + label+ "_Int:" + peak.getIdNum();
+            List<Double> rateValues = new ArrayList<>();
+            List<Double> intValues = new ArrayList<>();
+            for (FileTableItem item : items) {
+                DatasetAttributes datasetAttributes = item.getDatasetAttributes();
+                Dataset dataset = datasetAttributes.getDataset();
+                double[] delays = getFitValues(peakListAttr, datasetAttributes);
+                int[] fitRows = getFitRows(peakListAttr);
+                quantifyPeaks(peak.getPeakList(), dataset, "center");
+                PeakListTools.groupPeaksAndFit(peak.getPeakList(), dataset, fitRows, delays, List.of(peak), fitPars);
+                rateValues.add((double) peak.getRate());
+                intValues.add((double) peak.getIntensity());
+            }
+            setItems(rateColumnName, rateValues);
+            scanTable.addTableColumn(rateColumnName, "D");
+            setItems(intColumnName, intValues);
+            scanTable.addTableColumn(intColumnName, "D");
+        }
+        scanTable.refresh();
+    }
+
+    int[] getFitRows(PeakListAttributes peakListAttr) {
+        int nPeakDims = peakListAttr.getPeakList().getNDim();
+        DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int nDataDims = dataAttr.getDataset().getNDim();
+        int nRows = nDataDims - nPeakDims;
+        int[] dims = dataAttr.getDims();
+        int[] rows = new int[nRows];
+        for (int i = 0; i < nRows; i++) {
+            int iDim = dims[nPeakDims + i];
+            rows[i] = dataAttr.getPoint(iDim)[0];
+        }
+        return rows;
+    }
+
+    double[] getFitValues(PeakListAttributes peakListAttr, DatasetAttributes datasetAttributes) {
+        int nPeakDims = peakListAttr.getPeakList().getNDim();
+        DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int nDataDims = dataAttr.getDataset().getNDim();
+        int nRows = nDataDims - nPeakDims;
+        int[] dims = dataAttr.getDims();
+        double[] values = null;
+        if (nRows == 1) {
+            values = dataAttr.getDataset().getValues(dims[nPeakDims]);
+            log.info("values {}", values);
+        }
+        return values;
+    }
+
 }

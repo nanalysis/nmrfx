@@ -34,8 +34,8 @@ public class NMRFxPluginMenuExamplePlugin implements NMRFxPlugin {
 
     private void addToPluginMenu(Object object) {
         Menu menu;
-        Function<String, String> nmrfxFunction;
-        if (object instanceof PluginFunction(Object guiObject, Function<String, String> pluginFunction)) {
+        Function<String, Object> nmrfxFunction;
+        if (object instanceof PluginFunction(Object guiObject, Function<String, Object> pluginFunction)) {
             menu = (Menu) guiObject;
             nmrfxFunction = pluginFunction;
         } else if ((object instanceof Menu)) {

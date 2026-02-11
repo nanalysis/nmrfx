@@ -3,11 +3,13 @@ package org.nmrfx.analyst.gui;
 import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.spectra.StripController;
 import org.nmrfx.analyst.gui.tools.RunAboutGUI;
+import org.nmrfx.analyst.gui.tools.ScanTable;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.structure.seqassign.RunAbout;
@@ -366,5 +368,30 @@ public class GUIScripterAdvanced extends GUIScripter {
             var peakConfigMap = (Map<String, Object>) peakListMap.get(CONFIG);
             pconfigOnFx(chart, List.of(name), peakConfigMap);
         }
+    }
+
+    public Map<String, double[]> getScannerTable() {
+        FXMLController fxmlController = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
+        var scannerTableOpt = fxmlController.getScannerTable();
+        Map<String, double[]> dataMap = new HashMap<>();
+        System.out.println(scannerTableOpt);
+        if (scannerTableOpt.isPresent()) {
+            ScanTable scanTable = scannerTableOpt.get();
+            List<String> dataColumns = scanTable.getDataColumns();
+            System.out.println("data " + dataColumns);
+            List<FileTableItem> items = scanTable.getItems();
+            System.out.println(items.size());
+            for (String header : dataColumns) {
+                double[] values = new double[items.size()];
+                int iRow = 0;
+                for (FileTableItem item : items) {
+                    String datasetName = item.getDatasetName();
+                    values[iRow] = item.getDouble(header);
+                    iRow++;
+                }
+                dataMap.put(header, values);
+            }
+        }
+        return dataMap;
     }
 }
