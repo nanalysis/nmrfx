@@ -392,9 +392,11 @@ public class ChemicalLibraryController {
     }
 
     void setActive(boolean state) {
-        int iRegion = spinner.getValue();
-        if (activeMatch != null) {
-            activeMatch.setActive(iRegion, state);
+        if (spinner != null) {
+            int iRegion = spinner.getValue();
+            if (activeMatch != null) {
+                activeMatch.setActive(iRegion, state);
+            }
         }
     }
 
@@ -577,6 +579,8 @@ public class ChemicalLibraryController {
         ppmButtons.clear();
         coupButtons.clear();
         int iRow = 0;
+        ppmSlider.setDisable(true);
+        couplingSlider.setDisable(true);
         for (int iBlock = 0;iBlock<nBlocks;iBlock++) {
             SimData.AtomBlock atomBlock = simData.atomBlock(iBlock);
             int nPPMs = atomBlock.nPPMs();
@@ -589,9 +593,6 @@ public class ChemicalLibraryController {
                 ppmRadioButton.setText(String.valueOf(atomBlock.id(iPPM)));
                 ppmRadioButton.setUserData(blockIndex);
                 gridPane.add(ppmRadioButton, 0, iRow);
-                if (iPPM== 0) {
-                    atomToggleGroup.selectToggle(ppmRadioButton);
-                }
                 SimpleDoubleProperty ppmProperty = new SimpleDoubleProperty(atomBlock.ppm(iPPM));
                 ppmProperties.add(ppmProperty);
                 ppmProperty.addListener(propChangeListener);
@@ -631,7 +632,9 @@ public class ChemicalLibraryController {
     }
 
     private void updatePPMSlider(BlockIndex atomBlockIndex) {
-        if ((atomBlockIndex != null) && (atomBlockIndex.iProp < ppmProperties.size())) {
+       if ((atomBlockIndex != null) && (atomBlockIndex.iProp < ppmProperties.size())) {
+           ppmSlider.setDisable(false);
+           couplingSlider.setDisable(false);
             for (var ppmProp : ppmProperties) {
                 ppmSlider.valueProperty().unbindBidirectional(ppmProp);
             }
@@ -755,13 +758,16 @@ public class ChemicalLibraryController {
                     var ppmProp = ppmProperties.get(blockIndex.iProp);
                     simData.atomBlock(blockIndex.block).ppm(blockIndex.index, ppmProp.doubleValue());
                 }
-                for (BlockIndex blockIndex : blockIndices) {
-                    int iBlock = atomBlockIndex.block;
-                    int iIndex = atomBlockIndex.index;
-                    int jBlock = blockIndex.block;
-                    int jIndex = blockIndex.index;
-                    if (iBlock == jBlock) {
-                        simData.atomBlock(iBlock).j(iIndex, jIndex, jProperties.get(blockIndex.iProp).doubleValue());
+                RadioButton jRadioButton = (RadioButton) jToggleGroup.getSelectedToggle();
+                if (jRadioButton != null) {
+                    for (BlockIndex blockIndex : blockIndices) {
+                        int iBlock = atomBlockIndex.block;
+                        int iIndex = atomBlockIndex.index;
+                        int jBlock = blockIndex.block;
+                        int jIndex = blockIndex.index;
+                        if (iBlock == jBlock) {
+                            simData.atomBlock(iBlock).j(iIndex, jIndex, jProperties.get(blockIndex.iProp).doubleValue());
+                        }
                     }
                 }
                 updateDataset(simData, testDataset);

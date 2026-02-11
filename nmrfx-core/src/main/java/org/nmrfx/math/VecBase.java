@@ -1278,7 +1278,6 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
      */
     public void copy(VecBase target) {
         target.resize(size, isComplex);
-
         if (isComplex) {
             target.makeComplex();
             if (useApache) {
@@ -2035,6 +2034,21 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
             sumI += getImag(i);
         }
         return new Complex(sumR, sumI);
+    }
+
+    public String toLine(String format) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=0;i<size;i++) {
+            if (i > 0) {
+                stringBuilder.append(" ");
+            }
+            stringBuilder.append(String.format(format,getReal(i)));
+            if (isComplex) {
+                stringBuilder.append(" ");
+                stringBuilder.append(String.format(format,getImag(i)));
+            }
+        }
+        return stringBuilder.toString();
     }
 
     @Override

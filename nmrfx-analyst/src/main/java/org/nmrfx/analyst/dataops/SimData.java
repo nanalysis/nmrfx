@@ -5,6 +5,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -273,6 +274,21 @@ public class SimData {
         return dataset;
     }
 
+    public static Vec genVec(String name, SimDataVecPars simDataVecPars, double lb) throws IOException {
+        SimData simData = simDataMap.get(name);
+        Vec vec = prepareVec(name, simDataVecPars);
+        genVec(simData, vec, lb);
+        return vec;
+    }
+
+    public static void updateDataset(String name, Dataset dataset, double lb) throws IOException {
+        SimDataVecPars simDataVecPars = new SimDataVecPars(dataset);
+        SimData simData = simDataMap.get(name);
+        Vec vec = prepareVec(dataset.getName(), simDataVecPars);
+        genVec(simData, vec, lb);
+        dataset.writeVector(vec, 0, 0);
+    }
+
     public static CompoundData genCompoundData(String cmpdID, String name, SimData simData, SimDataVecPars pars, double lb,
                                                double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
@@ -331,7 +347,7 @@ public class SimData {
                 simShifts.setValues(shifts, couplings, pairs, vec.getSF());
                 simShifts.diag();
             }
-            simShifts.makeSpec(vec);
+            simShifts.makeSpec(vec, lb);
         }
         regions.sort((a, b) -> Double.compare(a[0], b[0]));
         List<Region> filteredRegions = new ArrayList<>();
@@ -358,11 +374,15 @@ public class SimData {
             }
         }
         filteredRegions.sort((a, b) -> Double.compare(b.min, a.min));
-        vec.hft();
-        vec.ift();
-        vec.decay(lb, 0.0, 1.0);
-        vec.fft();
-        vec.phase(45.0, 0.0);
+        boolean increaseLW = false;
+        if (increaseLW) {
+            vec.hft();
+            vec.ift();
+            vec.resize(vec.getSize() / 2);
+            vec.decay(lb, 0.0, 1.0);
+            vec.fft();
+            vec.phase(45.0, 0.0);
+        }
         vec.scale(250.0);
         return filteredRegions;
     }
