@@ -1555,6 +1555,10 @@ public class ScanTable {
                 && text.contains(":") && !text.equals(DATASET_COLUMN_NAME) && !isAttributeColumn(text);
     }
 
+    public List<String> getDataColumns() {
+        return getHeaders().stream().filter(header -> isNumeric(header)).toList();
+    }
+
     private void hitDataDelete(TableColumn<FileTableItem, ?> column) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Delete column " + column.getText());
         alert.showAndWait().ifPresent(response -> {

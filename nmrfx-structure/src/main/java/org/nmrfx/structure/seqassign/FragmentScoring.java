@@ -186,7 +186,7 @@ public class FragmentScoring {
 
         if (!atomName.isEmpty() && !(resName.equalsIgnoreCase("gly")
                 && atomName.equalsIgnoreCase("cb"))) {
-            Atom atom = residue.getAtom(atomName);
+            Atom atom = residue.getAtomLoose(atomName);
             if (atom != null) {
                 StandardPPM stdShift = null;
                 PPMv ppmV = atom.spatialSet.getPPM(0);
@@ -226,7 +226,8 @@ public class FragmentScoring {
         double resScore = 0.0;
         int nValues = 0;
         for (AtomShiftValue atomShiftValue : atomShiftValues) {
-            if (residue.getAtom(atomShiftValue.getAName()) == null) { // fail residues like proline without HN
+            String atomName = atomShiftValue.getAName();
+            if (atomName.equalsIgnoreCase("H")  && (residue.getAtom(atomShiftValue.getAName()) == null)) { // fail residues like proline without HN
                 nValues = 0;
                 break;
             }

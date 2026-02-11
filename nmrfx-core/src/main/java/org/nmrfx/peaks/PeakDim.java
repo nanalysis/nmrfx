@@ -177,8 +177,8 @@ public class PeakDim {
     public String getSummary() {
         double normVal = 0;
         // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
-        if (myPeak.peakList.scale > 0.0) {
-            normVal = myPeak.getVolume1() / myPeak.peakList.scale;
+        if (myPeak.peakList.getScale() > 0.0) {
+            normVal = myPeak.getVolume1() / myPeak.peakList.getScale();
         }
 
         return Format.format3(getChemShiftValue()) + " " + Format.format2(normVal);
