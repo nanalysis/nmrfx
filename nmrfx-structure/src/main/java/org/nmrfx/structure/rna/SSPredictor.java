@@ -7,7 +7,9 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tensorflow.Result;
 import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
@@ -17,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import ai.onnxruntime.*;
 
 public class SSPredictor {
     private static final Logger log = LoggerFactory.getLogger(SSPredictor.class);
@@ -103,24 +106,52 @@ public class SSPredictor {
         if (graphModel == null) {
             load();
         }
-        String rnaTokens = "AUGC";
         int nCols = 512;
+        String rnaTokens = "AUGC";
         int[] tokenized = new int[nCols];
         for (int i = 0; i < rnaSequence.length(); i++) {
             tokenized[i] = rnaTokens.indexOf(rnaSequence.charAt(i)) + 2;
         }
         var inputTF = TInt32.vectorOf(tokenized);
         var matrix1 = NdArrays.ofInts(Shape.of(1, nCols));
-
         matrix1.set(inputTF, 0);
+
+        var lenInput = NdArrays.ofInts(Shape.of(1));
+        lenInput.setInt(rnaSequence.length(), 0);
+
+        Map<String, Tensor> inputs = new HashMap<>();
+        var input1 = TInt32.tensorOf(matrix1);
+        var input2 = TInt32.tensorOf(lenInput);
+        inputs.put("seq", input1);
+        inputs.put("len", input2);
+
         double threshold = 0.4;
         allBasePairs = new HashMap<>();
-
-        var inputs = TInt32.tensorOf(matrix1);
-        try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
+        try (Result tensor0 = graphModel.function("serving_default").call(inputs)) {
+            TFloat32 output = tensor0.get("output_0").isPresent() ? (TFloat32) tensor0.get("output_0").get() : null;
             int seqLen = rnaSequence.length();
             predictions = new double[seqLen][seqLen];
-            setPredictions(rnaSequence, seqLen, nCols, tensor0, threshold);
+            setPredictions(rnaSequence, seqLen, nCols, output, threshold);
+        }
+    }
+
+    public void predictOnnx(String rnaSequence) throws OrtException {
+        var env = OrtEnvironment.getEnvironment();
+        var session = env.createSession("/Users/ekoag/model144.onnx",new OrtSession.SessionOptions());
+        int nCols = 512;
+        String rnaTokens = "AUGC";
+        int[] tokenized = new int[nCols];
+        for (int i = 0; i < rnaSequence.length(); i++) {
+            tokenized[i] = rnaTokens.indexOf(rnaSequence.charAt(i)) + 2;
+        }
+        int[] seqLen = new int[]{rnaSequence.length()};
+        var input1 = OnnxTensor.createTensor(env, tokenized);
+        var input2 = OnnxTensor.createTensor(env, seqLen);
+
+        var inputs = Map.of("seq", input1,"len", input2);
+        double threshold = 0.4;
+        try(var output = session.run(inputs)) {
+            System.out.println(output);
         }
     }
 

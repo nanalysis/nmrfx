@@ -78,6 +78,12 @@
                 <version>1.0.0-rc.1</version>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.onnxruntime</groupId>
+                <artifactId>onnxruntime</artifactId>
+                <version>1.23.2</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>28.2-jre</version>

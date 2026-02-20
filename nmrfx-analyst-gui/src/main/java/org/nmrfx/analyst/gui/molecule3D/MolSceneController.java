@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
+import ai.onnxruntime.OrtException;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -1164,7 +1165,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
             }
             String sequence = seqBuilder.toString();
             try {
-                ssPredictor.predict(sequence);
+                ssPredictor.predictOnnx(sequence);
                 ssViewer.setSSPredictor(ssPredictor);
                 ssPredictor.bipartiteMatch(0.7, 0.05, 20);
                 updateSSChoiceBox();
@@ -1173,6 +1174,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
+            } catch (OrtException e) {
+                throw new RuntimeException(e);
             }
         }
     }
