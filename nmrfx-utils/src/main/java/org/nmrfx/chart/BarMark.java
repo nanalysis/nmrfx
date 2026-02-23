@@ -37,12 +37,12 @@ public class BarMark extends ChartMark {
     }
 
     void draw(GraphicsContextInterface gC, double x, double y, double w,
-              double h) {
-        draw(gC, x, y, w, h, false, 0.0, 0.0);
+              double h, boolean disabled) {
+        draw(gC, x, y, w, h, false, 0.0, 0.0, disabled);
     }
 
     void draw(GraphicsContextInterface gC, double x, double y, double thickness,
-              double length, boolean hasError, double low, double high) {
+              double length, boolean hasError, double low, double high, boolean disabled) {
         gC.setFill(fill);
         if (orientation == Orientation.VERTICAL) {
             double x1 = x - thickness / 2.0;
@@ -50,10 +50,14 @@ public class BarMark extends ChartMark {
                 y += length;
                 length = -length;
             }
-            gC.fillRect(x1, y, thickness, length);
-            if (hasError) {
-                gC.setStroke(stroke);
-                gC.strokeLine(x, low, x, high);
+            if (!disabled) {
+                gC.fillRect(x1, y, thickness, length);
+                if (hasError) {
+                    gC.setStroke(stroke);
+                    gC.strokeLine(x, low, x, high);
+                }
+            } else {
+                gC.strokeRect(x1, y, thickness, length);
             }
         } else {
             double y1 = y - thickness / 2.0;
@@ -61,10 +65,15 @@ public class BarMark extends ChartMark {
                 x += length;
                 length = -length;
             }
-            gC.fillRect(x, y1, length, thickness);
-            if (hasError) {
-                gC.setStroke(stroke);
-                gC.strokeLine(low, y, high, y);
+            if (!disabled) {
+                gC.fillRect(x, y1, length, thickness);
+
+                if (hasError) {
+                    gC.setStroke(stroke);
+                    gC.strokeLine(low, y, high, y);
+                }
+            } else {
+                gC.strokeRect(x, y1, length, thickness);
             }
 
         }

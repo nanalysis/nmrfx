@@ -205,7 +205,6 @@ public class TRACTGUI {
                     double y = item.getDoubleExtra(yElem);
                     series.add(new XYValue(x, y));
                 }
-                System.out.println("plot");
                 activeChart.getData().add(series);
 
                 activeChart.autoScale(true);
@@ -214,7 +213,6 @@ public class TRACTGUI {
     }
 
     void updateMCPlotChoices() {
-        System.out.println("up");
         xArrayChoice.getItems().clear();
         yArrayChoice.getItems().clear();
         if (scannerTool != null) {

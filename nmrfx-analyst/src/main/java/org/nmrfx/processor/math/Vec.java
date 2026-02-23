@@ -43,8 +43,7 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.math.VecException;
-import org.nmrfx.processor.operations.IDBaseline2;
-import org.nmrfx.processor.operations.OperationException;
+import org.nmrfx.processor.datasets.peaks.LineShapes;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -142,6 +141,12 @@ public class Vec extends VecBase {
         var vec = new Vec(size, name, complex);
         put(name, vec);
         return vec;
+    }
+
+    public Vec copyVec() {
+        Vec newVec = new Vec(size, isComplex);
+        copy(newVec);
+        return newVec;
     }
 
     @Override
@@ -3344,6 +3349,48 @@ public class Vec extends VecBase {
         }
 
         return (this);
+    }
+
+    public Vec convolveLorentzian(double lw, double mult) {
+        double ptWidth = getSize() / getSW() * lw;
+        int halfWidth = (int) (ptWidth * mult / 2.0);
+        double[] shape = new double[halfWidth * 2 + 1];
+
+        for (int j=0, i = -halfWidth;i <= halfWidth;i++) {
+            shape[j++] = LineShapes.LORENTZIAN.calculate(i, 1.0, 0, ptWidth);
+        }
+        return convolveSame(shape);
+    }
+    /**
+     * Calculates convolution where output length equals signal length.
+     *
+     * @param impulse The impulse response array (length M)
+     * @return this Vec after convolution
+     */
+    public Vec convolveSame(double[] impulse) {
+        if (isComplex()) {
+            throw new VecException("esmooth: vector complex");
+        }
+        int m = impulse.length;
+        double[] result = new double[size];
+
+        // Calculate the offset to center the impulse response
+        // This effectively "skips" the edges of the full convolution
+        int offset = (m - 1) / 2;
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < m; j++) {
+                // Determine the corresponding index in a "full" convolution
+                int fullIdx = i + j - offset;
+
+                // Only add to result if the index falls within the signal's bounds
+                if (fullIdx >= 0 && fullIdx < size) {
+                    result[fullIdx] += rvec[i] * impulse[j];
+                }
+            }
+        }
+        System.arraycopy(result, 0, rvec, 0, size);
+        return this;
     }
 
     /**

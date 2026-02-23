@@ -139,7 +139,6 @@ public class DiffusionFitGUI extends FitGUI {
                 double Derr = Math.round(bErr / scale * 1.0e13) / 1000.0;
                 TablePlotGUI.ParItem newItem = new TablePlotGUI.ParItem(parItem.columnName(), 0, "D", D, Derr);
                 newItems.add(newItem);
-                System.out.println(newItem);
             }
         }
         return newItems;

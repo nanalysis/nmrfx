@@ -796,7 +796,7 @@ public class PeakSlider implements ControllerTool {
                         criteria2Met = true;
                     } else {
                         peaksWithinTol.forEach(peakInTol -> {
-                            double w = PeakCluster.calcWeight(peak, peakInTol, peak.getPeakList().scale);
+                            double w = PeakCluster.calcWeight(peak, peakInTol, peak.getPeakList().getScale());
                             log.info(String.format("\t\t* Predicted peak '%s' has experimental peak '%s' within a '%f' ppm tolerance. The weight b/t the 2 peaks is '%f'.", peak, peakInTol, tolerance, w));
                         });
                     }
@@ -829,7 +829,7 @@ public class PeakSlider implements ControllerTool {
                                 if (jAssocExpClus != null) {
                                     jAssocExpClus.getLinkedPeaks()
                                             .forEach(eP -> {
-                                                double w = PeakCluster.calcWeight(predP, eP, predP.getPeakList().scale);
+                                                double w = PeakCluster.calcWeight(predP, eP, predP.getPeakList().getScale());
                                                 log.info(String.format("\tPred Peak ('%s') and Exp Peak ('%s'), weight : '%f'", predP, eP, w));
                                             });
                                 } else {

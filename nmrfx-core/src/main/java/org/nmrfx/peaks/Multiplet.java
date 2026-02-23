@@ -297,8 +297,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
         String summary = "";
         // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
         PeakList peakList = myPeakDim.getPeak().getPeakList();
-        if (peakList.scale > 0.0) {
-            normVal = getVolume() / peakList.scale;
+        if (peakList.getScale() > 0.0) {
+            normVal = getVolume() / peakList.getScale();
         }
 
         String couplings = getCouplingsAsSimpleString();

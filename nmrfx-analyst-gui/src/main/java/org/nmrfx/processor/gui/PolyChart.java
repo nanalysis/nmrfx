@@ -1618,7 +1618,8 @@ public class PolyChart extends Region {
         }
         if (!newAttributes.isEmpty()) {
             AnalystApp.getFXMLControllerManager().getOrCreateActiveController().updateSpectrumStatusBarOptions(false);
-            DISDIM newDISDIM = datasetAttrs.getFirst().getDataset().getNDim() == 1 ? DISDIM.OneDX : TwoD;
+            Dataset dataset = datasetAttrs.getFirst().getDataset();
+            DISDIM newDISDIM = (dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1) ? DISDIM.OneDX : TwoD;
             // If the display has switched dimensions, full the chart otherwise the axis might be much larger than the current dataset
             fullChart = fullChart || newDISDIM != disDimProp.get();
             disDimProp.set(newDISDIM);
@@ -1928,7 +1929,7 @@ public class PolyChart extends Region {
         return new Insets(top, right, bottom, left);
     }
 
-    private Insets getUseBorders() {
+    public Insets getUseBorders() {
         Insets min = getMinBorders();
         double left = Math.max(min.getLeft(), minLeftBorder);
         left = Math.max(left, chartProps.getLeftBorderSize());
@@ -1960,7 +1961,8 @@ public class PolyChart extends Region {
                 double ppmRatio = dXAxis / dYAxis;
                 double ppmRatioF = fRatio1 / fRatio0;
                 double chartAspectRatio = chartProps.getAspectRatio();
-                double aspectRatio = chartAspectRatio * (ppmRatio / ppmRatioF);
+                boolean fixedAspect = chartProps.getFixedAspect();
+                double aspectRatio = fixedAspect ? chartAspectRatio : chartAspectRatio * (ppmRatio / ppmRatioF);
                 double dX = width - borders.getLeft() - adjustedRight;
                 double dY = height - (borders.getBottom() + adjustedTop);
                 double newDX = dY * aspectRatio;

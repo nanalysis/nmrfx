@@ -148,7 +148,7 @@ public class PeakList {
     /**
      *
      */
-    public double scale = 1.0;
+    private double scale = 1.0;
     protected SpectralDim[] spectralDims = null;
 
     /**

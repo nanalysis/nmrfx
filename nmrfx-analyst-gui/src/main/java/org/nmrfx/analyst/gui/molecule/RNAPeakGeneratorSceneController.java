@@ -212,7 +212,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     }
 
     void doQuickCode(KeyEvent e, String code) {
-        System.out.println("quick " + code);
         if (defaultBackground == null) {
             defaultBackground = quickCodeField.getBackground();
         }
@@ -235,7 +234,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
         StringBuilder sBuilder = new StringBuilder();
         boolean ok = false;
         while (matcher.find()) {
-            System.out.println(matcher.group(1));
             Matcher matcher2 = quickPat2.matcher(matcher.group(1));
             String base = matcher.group(1).substring(0, 1);
             sBuilder.append("*:").append(base).append("*.");
@@ -248,7 +246,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
                     first = false;
                 }
                 String atomType = matcher2.group(1);
-                System.out.println(atomType);
                 if (atomType.equals("r")) {
                     sBuilder.append("Hr");
                 } else if (atomType.equals("n")) {
@@ -283,7 +280,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
             }
             sBuilder.append(" ");
         }
-        System.out.println(sBuilder.toString());
         if (ok) {
             if (e.getCode() == KeyCode.ENTER) {
                 updateButtons(sBuilder.toString());
@@ -568,7 +564,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
                 result.append(suffix[0]);
             }
         }
-        System.out.println("selAtoms: " + result.toString());
         return result.toString().trim();
     }
 

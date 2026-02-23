@@ -117,9 +117,6 @@ public class Contour extends java.lang.Object {
 
                     //Nv_SetColor(colrs[level + 1]);
                     if ((lineCount + 8) >= coords[coordLevel].length) {
-                        System.out.println("Contour region too dense: "
-                                + lineCount + " lines");
-
                         return true;
                     }
 

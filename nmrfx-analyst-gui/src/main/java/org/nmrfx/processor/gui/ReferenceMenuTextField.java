@@ -109,7 +109,6 @@ public class ReferenceMenuTextField extends MenuTextField {
         String menuLabel = menuItem.getText();
         PolyChart chart = processorController.chartProcessor.getChart();
         double ppm = chart.getCrossHairs().getPosition(0, Orientation.VERTICAL);
-        System.out.println(ppm);
         double newCenter = 0.0;
         if (menuLabel.equals("0.0")) {
             newCenter = chart.getRefPositionFromCrossHair(0.0);

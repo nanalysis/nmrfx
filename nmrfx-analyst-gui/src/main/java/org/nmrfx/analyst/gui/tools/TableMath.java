@@ -25,6 +25,8 @@ import java.util.regex.*;
 import static org.nmrfx.analyst.gui.tools.TableMath.VariableNameScanner.findVariables;
 
 public class TableMath {
+    static Pattern headerPattern = Pattern.compile("^([_$a-zA-Z][_$a-zA-Z0-9]*)(:.*)*+");
+    static Pattern exprVarPattern = Pattern.compile("(?<!\\.)\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b(?!\\s*\\(|\\s*\\.)");
     Stage stage = null;
     ScannerTool scannerTool;
     Map<String, ChoiceBox<String>> choiceMap = new HashMap<>();
@@ -56,8 +58,7 @@ public class TableMath {
         public static List<String> findVariables(String text) {
 
             // Regex for valid identifier pattern
-            Pattern pattern = Pattern.compile("\\b[_$a-zA-Z][_$a-zA-Z0-9]*\\b");
-            Matcher matcher = pattern.matcher(text);
+            Matcher matcher = exprVarPattern.matcher(text);
 
             List<String> validVariables = new ArrayList<>();
 
@@ -79,7 +80,7 @@ public class TableMath {
     Map<String, String> getVMap(ScanTable scanTable) {
         Map<String, String> vMap = new HashMap<>();
         for (String header : scanTable.getHeaders()) {
-            Matcher matcher = ScanTable.VPAT2.matcher(header.trim());
+            Matcher matcher = headerPattern.matcher(header.trim());
             if (matcher.matches()) {
                 String vGroup = matcher.group(1);
                 vMap.put(vGroup, header);
@@ -169,6 +170,7 @@ public class TableMath {
     private void updateChoiceBox(ChoiceBox<String> choiceBox) {
         ScanTable scanTable = scannerTool.getScanTable();
         List<String> columnNames = getColumnNames(scanTable);
+        choiceBox.getItems().clear();
         choiceBox.getItems().addAll(columnNames);
     }
 

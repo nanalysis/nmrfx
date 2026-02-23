@@ -160,7 +160,7 @@ public class SSLayoutXY implements MultivariateFunction {
                     // now search forward for another basepair
                     for (int j = i + 1; j < nNuc; j++) {
                         if ((basePairs[j] != -1) && (loopStart != -1)) {
-                            // Check if the start of the loop is basepaired to j
+                            // Check if the start of the loop is basepaired to end
                             if (basePairs[loopStart] == j) {  // it is, so we have a stemloop with loop size loopSize
                                 loopSize = j - loopStart - 1;
                             } else if (basePairs[loopStart] == (basePairs[j] + 1)) {  // check for a bulge

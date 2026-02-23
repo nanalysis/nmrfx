@@ -44,7 +44,7 @@ public class PeakClusterMatcher {
             double eIntMedian = eDStats.getPercentile(50);
             double pIntMedian = pDStats.getPercentile(50);
             double scale = eIntMedian / pIntMedian;
-            predPeakList.scale = scale;
+            predPeakList.setScale(scale);
         }
     }
 

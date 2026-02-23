@@ -29,7 +29,7 @@ public class SSLayout implements MultivariateFunction {
 
     private static final Logger log = LoggerFactory.getLogger(SSLayout.class);
     private final int[][] interactions;
-    private final int[] basePairs;
+    private final BasePairRecord[] basePairRecords;
     private final int[] basePairs2;
     private final double[] baseBondLength;
     StructureType[] structureTypes;
@@ -57,6 +57,12 @@ public class SSLayout implements MultivariateFunction {
     List<List<String>> sequences;
     public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
 
+    public record BasePairRecord(int start, int end, int level) {
+        public boolean isPaired() {
+            return end >= 0 && level == 0;
+        }
+    }
+
     public SSLayout(int... nValues) {
         int n = 0;
         for (int nValue : nValues) {
@@ -71,7 +77,7 @@ public class SSLayout implements MultivariateFunction {
         }
         nNuc = n;
         interactions = new int[n][n];
-        basePairs = new int[n];
+        basePairRecords = new BasePairRecord[n];
         basePairs2 = new int[n];
         baseBondLength = new double[n];
         values = new double[nNuc * 2];
@@ -87,7 +93,7 @@ public class SSLayout implements MultivariateFunction {
         ssClass = new int[nNuc];
 
         for (int i = 0; i < n; i++) {
-            basePairs[i] = -1;
+            basePairRecords[i] = new BasePairRecord(i, -1, 0);
             basePairs2[i] = -1;
             baseBondLength[i] = targetSeqDistance;
         }
@@ -160,120 +166,20 @@ public class SSLayout implements MultivariateFunction {
         return sequences;
     }
 
-    public void addPair(int i, int j) {
+    public void addPair(int i, int j, int level) {
         interactions[i][j] = 1;
         interactions[j][i] = 1;
-        basePairs[i] = j;
-        basePairs[j] = i;
+        basePairRecords[i] = new BasePairRecord(i, j, level);
+        basePairRecords[j] = new BasePairRecord(j, i, level);
     }
 
     public void dumpPairs() {
         if (log.isDebugEnabled()) {
             StringBuilder pairStr = new StringBuilder();
-            for (int i = 0; i < basePairs.length; i++) {
-                pairStr.append(String.format("%4d %4d%n", i, basePairs[i]));
+            for (int i = 0; i < basePairRecords.length; i++) {
+                pairStr.append(String.format("%4d %4d%n", i, basePairRecords[i].end()));
             }
             log.debug(pairStr.toString());
-        }
-    }
-
-    public void fillPairs() {
-        try {
-            for (int i = 0; i < (nNuc - 1); i++) {
-                for (int j = i + 2; j < nNuc; j++) {
-                    if (interactions[i][j] == 1) {
-                        if (interactions[i + 1][j - 1] == 1) {
-                            interactions[i + 1][j] = 2;
-                            interactions[j][i + 1] = 2;
-                            basePairs2[i + 1] = j;
-                            interactions[i][j - 1] = 2;
-                            interactions[j - 1][i] = 2;
-                            basePairs2[j - 1] = i;
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < (nNuc - 1); i++) {
-                int pos = 0;
-                int loopSize = 0;
-                int gapSize = 0;
-                int bulgeSize = 0;
-                int loopStart = -1;
-                if (basePairs[i] == -1) {
-                    for (int j = i - 1; j >= 0; j--) {
-                        if (basePairs[j] != -1) {
-                            pos = i - j - 1;
-                            loopStart = j;
-                            break;
-                        }
-                    }
-                    for (int j = i + 1; j < nNuc; j++) {
-                        if ((basePairs[j] != -1) && (loopStart != -1)) {
-                            if (basePairs[loopStart] == j) {
-                                loopSize = j - loopStart - 1;
-                            } else if (basePairs[loopStart] == (basePairs[j] + 1)) {
-                                bulgeSize = j - loopStart - 1;
-                                if (bulgeSize == 2) {
-                                    baseBondLength[i - 1] = targetSeqDistance * 0.75;
-                                    if (i > 1) {
-                                        baseBondLength[i - 2] = targetSeqDistance * 0.75;
-                                    }
-                                } else {
-                                    baseBondLength[i - 1] = targetSeqDistance * 0.8;
-                                    if (i > 1) {
-                                        baseBondLength[i - 2] = targetSeqDistance * 0.8;
-                                    }
-                                }
-                            } else {
-                                gapSize = j - loopStart - 1;
-                            }
-                            break;
-                        }
-                    }
-                }
-                if (loopSize != 0) {
-                    double interiorAngle = Math.PI * loopSize / (loopSize + 2);
-                    double target;
-                    if (pos == 0) {
-                        target = (interiorAngle - Math.PI / 2.0);
-                    } else {
-                        target = -(Math.PI - interiorAngle);
-                    }
-                    if (pos == (loopSize - 1)) {
-                        double endTarget = -(Math.PI - interiorAngle);
-                        angleTargets[i - 1] = endTarget;
-                        angleFixed[i - 1] = true;
-                        endTarget = (interiorAngle - Math.PI / 2.0);
-                        if (i < angleTargets.length) {
-                            angleTargets[i] = endTarget;
-                            angleFixed[i] = true;
-                        }
-                    }
-                    if (i > 1) {
-                        angleTargets[i - 2] = target;
-                        angleFixed[i - 2] = true;
-                    }
-                } else if (gapSize > 4) {
-                    boolean free = false;
-                    if ((pos % 3) == 0) {
-                        free = true;
-                    }
-                    if ((pos % 3) == 1) {
-                        angleTargets[i - 2] = 0.0;
-                        angleFixed[i - 2] = true;
-                        angleRelations[i - 2] = -1;
-                    }
-                    if ((pos % 3) == 2) {
-                        angleTargets[i - 2] = 0.0;
-                        angleFixed[i - 2] = true;
-                        angleRelations[i - 2] = 1;
-                    }
-                    log.warn("gap {} {}", pos, free);
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException aiE) {
-            log.warn(aiE.getMessage(), aiE);
         }
     }
 
@@ -297,7 +203,7 @@ public class SSLayout implements MultivariateFunction {
     public void fillPairsNew() {
         int nBP = 0;
         for (int i = 0; i < nNuc; i++) {
-            if (basePairs[i] != -1) {
+            if (basePairRecords[i].isPaired()) {
                 nBP++;
             }
         }
@@ -387,9 +293,9 @@ public class SSLayout implements MultivariateFunction {
         int startI = -1;
         int startJ = -1;
         for (int j = start; j >= 0; j--) {
-            if (basePairs[j] != -1) {
+            if (basePairRecords[j].isPaired()) {
                 startJ = j;
-                startI = basePairs[j];
+                startI = basePairRecords[j].end;
                 break;
             }
         }
@@ -404,9 +310,9 @@ public class SSLayout implements MultivariateFunction {
         int startI = -1;
         int startJ = -1;
         for (int j = start; j < nNuc; j++) {
-            if (basePairs[j] != -1) {
+            if (basePairRecords[j].isPaired()) {
                 startI = j;
-                startJ = basePairs[j];
+                startJ = basePairRecords[j].end();
                 break;
             }
         }
@@ -422,8 +328,8 @@ public class SSLayout implements MultivariateFunction {
         int startJ = -1;
         int maxDelta = 0;
         for (int i = lastStart.startI; i <= lastStart.startJ; i++) {
-            if (basePairs[i] != -1) {
-                int j = basePairs[i];
+            if (basePairRecords[i].isPaired()) {
+                int j = basePairRecords[i].end();
                 int delta = j - i;
                 if (delta > maxDelta) {
                     maxDelta = delta;
@@ -471,7 +377,7 @@ public class SSLayout implements MultivariateFunction {
             if (nSet >= nNuc) {
                 break;
             }
-            if ((basePairs[i + 1] != -1) && (basePairs[j - 1] != -1) && (basePairs[i+1] == (j - 1))) {
+            if ((basePairRecords[i + 1].isPaired()) && (basePairRecords[j - 1].isPaired()) && (basePairRecords[i+1].end == (j - 1))) {
                 if (coordsSet[i + 1]) {
                     break;
                 }
@@ -492,13 +398,13 @@ public class SSLayout implements MultivariateFunction {
         loopBPList.clear();
         bases.add(i);
         int k = i + 1;
-        while (basePairs[k] != i) {
+        while (basePairRecords[k].end() != i) {
             bases.add(k);
-            if (basePairs[k] != -1) {
+            if (basePairRecords[k].isPaired()) {
                 loopBPList.add(k);
-                loopBPList.add(basePairs[k]);
-                bases.add(basePairs[k]);
-                k = basePairs[k];
+                loopBPList.add(basePairRecords[k].end());
+                bases.add(basePairRecords[k].end());
+                k = basePairRecords[k].end();
             }
             k++;
         }
@@ -566,7 +472,7 @@ public class SSLayout implements MultivariateFunction {
                 double y1 = coords[1][j + 1];
                 double y2 = y1 + (y1 - y0);
                 setXY(j, x2, y2);
-                if (basePairs[j] != -1) {
+                if (basePairRecords[j].isPaired()) {
                     lastFill = j;
                     break;
                 }
@@ -586,7 +492,7 @@ public class SSLayout implements MultivariateFunction {
                 double y1 = coords[1][j - 1];
                 double y2 = y1 + (y1 - y0);
                 setXY(j, x2, y2);
-                if (basePairs[j] != -1) {
+                if (basePairRecords[j].isPaired()) {
                     lastFill = j;
                     break;
                 }
@@ -774,8 +680,8 @@ public class SSLayout implements MultivariateFunction {
         double sumNBError = 0.0;
         int nIntersections = 0;
         for (int i = 0; i < limit; i++) {
-            if (basePairs[i] != -1) {
-                int j = basePairs[i];
+            if (basePairRecords[i].isPaired()) {
+                int j = basePairRecords[i].end();
                 if ((j < limit) && (i < j)) {
                     double x1 = values[i * 2];
                     double y1 = values[i * 2 + 1];
@@ -916,35 +822,10 @@ public class SSLayout implements MultivariateFunction {
     }
 
     public void interpVienna(String vienna) {
-        String leftBrackets = "({[";
-        String rightBrackets = ")}]";
-        int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
-        int[] levels = new int[leftBrackets.length()];
-        for (int i = 0; i < vienna.length(); i++) {
-            char curChar = vienna.charAt(i);
-            try {
-                boolean dot = (curChar == '.') || (Character.isLetter(curChar));
-                if (!dot) {
-                    int leftIndex = leftBrackets.indexOf(curChar);
-                    int rightIndex = rightBrackets.indexOf(curChar);
-                    if (leftIndex != -1) {
-                        levelMap[levels[leftIndex]][leftIndex] = i;
-                        levels[leftIndex]++;
-                    } else if (rightIndex != -1) {
-                        levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];
-                        addPair(start, i);
-
-                    }
-                }
-            } catch (ArrayIndexOutOfBoundsException aiE) {
-                log.warn(aiE.getMessage(), aiE);
-                return;
-            }
-        }
+        interpVienna(vienna, null);
     }
 
-    public List<Residue> interpVienna(String vienna, List<Residue> res) {
+    public void interpVienna(String vienna, List<Residue> res) {
         String leftBrackets = "({[";
         String rightBrackets = ")}]";
         int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
@@ -962,9 +843,11 @@ public class SSLayout implements MultivariateFunction {
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
                         int start = levelMap[levels[rightIndex]][rightIndex];
-                        addPair(start, i);
-                        res.get(start).pairedTo = res.get(i);
-                        res.get(i).pairedTo = res.get(start);
+                        addPair(start, i, rightIndex);
+                        if (res != null) {
+                            res.get(start).pairedTo = res.get(i);
+                            res.get(i).pairedTo = res.get(start);
+                        }
 
                     }
                 }
@@ -973,14 +856,13 @@ public class SSLayout implements MultivariateFunction {
                 break;
             }
         }
-        return res;
     }
 
     public double[] getValues() {
         return values.clone();
     }
 
-    public int[] getBasePairs() {
-        return basePairs.clone();
+    public BasePairRecord[] getBasePairs() {
+        return basePairRecords.clone();
     }
 }

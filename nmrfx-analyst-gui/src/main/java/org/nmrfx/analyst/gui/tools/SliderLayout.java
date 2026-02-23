@@ -47,6 +47,8 @@ public class SliderLayout {
         try {
             loadLayouts();
         } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
         }
         return layouts.keySet();
     }
@@ -69,6 +71,10 @@ public class SliderLayout {
         for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
             PolyChart chart = charts.get(i++);
             scripter.grid(chart, layout.row(), layout.column(), layout.rowspan(), layout.columnspan());
+        }
+        Map<String, List<Map<String, Double>>> gridConstraints = sliderLayoutTypes.getGridconstraints();
+        if (gridConstraints != null) {
+            scripter.gridOnFx(controller, gridConstraints);
         }
         i = 0;
         for (SliderLayoutChart layout : sliderLayoutTypes.getLayout()) {
@@ -122,7 +128,7 @@ public class SliderLayout {
         var synchronizer = PolyChartManager.getInstance().getSynchronizer();
         for (var entry : syncMap.entrySet()) {
             if (entry.getValue().size() > 1) {
-                PolyChart chart = entry.getValue().get(0);
+                PolyChart chart = entry.getValue().getFirst();
                 var dimNames = chart.getDimNames();
                 if (iDim < dimNames.size()) {
                     String dimName = chart.getDimNames().get(iDim);
