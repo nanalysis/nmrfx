@@ -365,7 +365,7 @@ public class SDFile {
                             }
 
                             if (value.endsWith("\\")) {
-                                if (!valueName.equals("NMREDATA_ASSIGNMENT")) {
+                                if (!valueName.equals("NMREDATA_ASSIGNMENT") && !valueName.equals("NMREDATA_J")) {
                                     value = value.substring(0, value.length() - 1);
                                 }
                             }
@@ -379,19 +379,32 @@ public class SDFile {
                         }
 
                         if (valueName.equals("NMREDATA_ASSIGNMENT")) {
-                            String[] rows = sBuilder.toString().split("\\\\");
+                            String[] rows = sBuilder.toString().split("\n");
                             HashMap<String, Double> shifts = new HashMap<>();
                             Arrays.stream(rows).forEach(row -> {
                                 String[] values = row.split(",");
-                                int resNum = Integer.parseInt(values[0].trim()) + 1;
+                                int atomIndex = Integer.parseInt(values[0].trim()) + 1;
                                 double shift = Double.parseDouble(values[1].trim());
                                 int atomNum = Integer.parseInt(values[2].trim());
                                 String atomName = Objects.requireNonNull(AtomProperty.get(atomNum)).name();
-                                shifts.putIfAbsent(atomName+resNum, shift);
+                                shifts.putIfAbsent(atomName+atomIndex, shift);
                             });
                             atomList.forEach(atom -> {
                                 double shift = shifts.get(atom.getName());
                                 atom.setPPM(shift);
+                            });
+                        } else if (valueName.equals("NMREDATA_J")) {
+                            String[] rows = sBuilder.toString().split("\n");
+                            Arrays.stream(rows).forEach(row -> {
+                                String[] values = row.split(",");
+                                int atomIndexI = Integer.parseInt(values[0].trim());
+                                int atomINdexJ = Integer.parseInt(values[1].trim());
+                                double coupling = Double.parseDouble(values[2].trim());
+                                String couplingName = values[3].trim();
+                                Atom atomI = compound.getAtom(atomIndexI);
+                                Atom atomJ = compound.getAtom(atomINdexJ);
+                                atomI.addAtomCouplingPair(new AtomCouplingPair(atomI, atomJ, coupling, couplingName));
+                                atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI,  coupling, couplingName));
                             });
                         }
 
