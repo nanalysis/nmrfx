@@ -11,15 +11,27 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OnnxTest {
     ResidueAtomDistances rad = new ResidueAtomDistances();
     static final int nAtomTypes = 9;
     static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 7, 1, 16, 9, 17, 35, 15));
+    Map<Integer, Double[]> normValues = Map.of(
+            1, new Double[]{3.4, 4.9},
+            6, new Double[]{123.6, 84.4},
+            7, new Double[]{-234.3, 183.3},
+            8, new Double[]{129.1, 306.9},
+            9, new Double[]{273.4, 50.1},
+            15, new Double[]{301.1, 23.9},
+            16, new Double[]{293.7, 225.0},
+            17, new Double[]{736.0, 97.3},
+            35, new Double[]{2054.2, 79.2});
+
+    private double denormalize(int atomType, double output) {
+        Double[] values = normValues.get(atomType);
+        return (output * values[1]) + values[0];
+    }
 
     @Test
     public void predictOnnx() throws OrtException, MoleculeIOException {
@@ -55,16 +67,23 @@ public class OnnxTest {
             }
         }
 
-
-        //inputs are x (nodes, 9) edge_index (edges, 2), edge_attr (2, edges)
+        //inputs are x (nodes, 9) edge_index (2, edges), edge_attr (edges, 2)
         var input1 = OnnxTensor.createTensor(env, nodes);
         var input2 = OnnxTensor.createTensor(env, edgeIndex);
         var input3 = OnnxTensor.createTensor(env, edgeAttr);
 
+        List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes(); //assuming just a single graph
         var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
         try (OrtSession.Result result = session.run(inputs)) {
             Object output = result.get(0).getValue();
-            System.out.println(Arrays.deepToString((Object[]) output));
+            String[] outputs = Arrays.deepToString((Object[]) output).split(",");
+            for (int i = 0; i < nAtoms; i++) {
+                String value = outputs[i].replace("[","").replace("]","");
+                double prediction = Double.parseDouble(value);
+                prediction = denormalize(graphNodes.get(i).property(), prediction);
+                System.out.println(graphNodes.get(i).property() + " " + prediction);
+            }
+
 
         }
     }
