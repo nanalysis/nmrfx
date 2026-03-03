@@ -11,6 +11,9 @@ import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 public class OnnxTest {
@@ -33,19 +36,66 @@ public class OnnxTest {
         return (output * values[1]) + values[0];
     }
 
-    @Test
-    public void predictOnnx() throws OrtException, MoleculeIOException {
-        String filename = "/Users/ekoag/IMPG2-testing-data/Dataset3/Data3_JESHIZ_NMR.nmredata.sdf";
-        var env = OrtEnvironment.getEnvironment();
-        var session = env.createSession("/Users/ekoag/multigat.onnx", new OrtSession.SessionOptions());
+    public void readFromDataset(int id) throws IOException {
+        String nodesFilename = "/Users/ekoag/gatv2/nodes_norm.csv";
+        String edgesFilename = "/Users/ekoag/gatv2/edges_norm.csv";
+        List<ResidueAtomDistances.AtomNode> nodes = new ArrayList<>();
+        List<ResidueAtomDistances.AtomEdge> edges = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(nodesFilename))) {
+            reader.readLine();
+            String line;
+            while((line = reader.readLine()) != null) {
+                String[] values = line.strip().split(",");
+                int graphId = Integer.parseInt(values[0]);
+                if (graphId == id) {
+                    int nodeId = Integer.parseInt(values[1]);
+                    int nodeType = Integer.parseInt(values[2]);
+                    double label = Double.parseDouble(values[3]);
+                    int mask = Integer.parseInt(values[4]);
+                    ResidueAtomDistances.AtomNode node = new ResidueAtomDistances.AtomNode(nodeId, nodeType, label, mask);
+                    nodes.add(node);
+                }
+            }
+        }
 
+        try (BufferedReader reader = new BufferedReader(new FileReader(edgesFilename))) {
+            reader.readLine();
+            String line;
+            while((line = reader.readLine()) != null) {
+                String[] values = line.strip().split(",");
+                int graphId = Integer.parseInt(values[0]);
+                if (graphId == id) {
+                    int source = Integer.parseInt(values[1]);
+                    int target = Integer.parseInt(values[2]);
+                    double distance = Double.parseDouble(values[3]);
+                    int nBonds = Integer.parseInt(values[4]);
+                    ResidueAtomDistances.AtomEdge edge = new ResidueAtomDistances.AtomEdge(source, target, distance, nBonds);
+                    edges.add(edge);
+                }
+            }
+        }
+        rad.atomGraphs.add(id, new ResidueAtomDistances.AtomGraph(nodes, edges));
+
+    }
+
+    public void fromSDFile() throws MoleculeIOException {
+        String filename = "/Users/ekoag/IMPG2-testing-data/Dataset3/Data3_JESHIZ_NMR.nmredata.sdf";
         SDFile sdf = new SDFile();
         Compound compound = SDFile.read(filename, null, null, null);
         compound.molecule.updateAtomArray();
         MoleculeFactory.setActive(compound.molecule);
         DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(compound, 6, -1, -1);
         rad.generate(compound, paths, 5.0, 0);
-        int nAtoms = compound.atoms.size();
+    }
+
+    @Test
+    public void predictOnnx() throws OrtException, IOException {
+        var env = OrtEnvironment.getEnvironment();
+        var session = env.createSession("/Users/ekoag/multigat.onnx", new OrtSession.SessionOptions());
+
+        readFromDataset(0);
+
+        int nAtoms = rad.atomGraphs.stream().mapToInt(graph -> graph.nodes().size()).sum();
         int nEdges = rad.atomGraphs.stream().mapToInt(graph -> graph.edges().size()).sum();
         float[][] nodes = new float[nAtoms][nAtomTypes];
         long[][] edgeIndex = new long[2][nEdges];
@@ -73,19 +123,28 @@ public class OnnxTest {
         var input3 = OnnxTensor.createTensor(env, edgeAttr);
 
         List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes(); //assuming just a single graph
+        double[] labels = rad.atomGraphs.getFirst().nodes().stream().mapToDouble(ResidueAtomDistances.AtomNode::ppm).toArray();
         var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
         try (OrtSession.Result result = session.run(inputs)) {
             Object output = result.get(0).getValue();
             String[] outputs = Arrays.deepToString((Object[]) output).split(",");
+            System.out.println("nodeId pred label delta");
             for (int i = 0; i < nAtoms; i++) {
                 String value = outputs[i].replace("[","").replace("]","");
+                int nodeType = graphNodes.get(i).property();
                 double prediction = Double.parseDouble(value);
-                prediction = denormalize(graphNodes.get(i).property(), prediction);
-                System.out.println(graphNodes.get(i).property() + " " + prediction);
+                prediction = denormalize(nodeType, prediction);
+                double label = labels[i];
+                label = denormalize(nodeType, label);
+                double delta = label - prediction;
+                System.out.println(nodeType + " " + formatStr(prediction) + " " + formatStr(label) + " " + formatStr(delta));
             }
 
-
         }
+    }
+
+    private String formatStr(double value) {
+        return String.format("%.3f", value);
     }
 
 }
