@@ -29,7 +29,7 @@ public class ResidueAtomDistances {
                 }
                 stringBuilder.append(i);
             }
-            return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder.toString(), distance, pathLen, couplingValue, couoplingName);
+            return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couoplingName);
         }
     }
 
