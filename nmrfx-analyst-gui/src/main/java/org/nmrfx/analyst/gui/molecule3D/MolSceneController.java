@@ -84,6 +84,10 @@ public class MolSceneController implements Initializable, StageBasedController, 
     @FXML
     CheckBox ssDisplayCheckBox;
     @FXML
+    Slider thresholdSlider;
+    @FXML
+    CheckBox pseudoKnotCheckBox;
+    @FXML
     CheckBox mapDisplayCheckBox;
     @FXML
     BorderPane molBorderPane;
@@ -271,6 +275,12 @@ public class MolSceneController implements Initializable, StageBasedController, 
         ssChoiceBox.setOnAction(e -> {
             showSelectedSS();
         });
+        thresholdSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
+            if (!isChanging) {
+                updateThreshold();
+            }
+        });
+        pseudoKnotCheckBox.setOnAction(e -> updateThreshold());
 
         try {
             molViewer.drawMol();
@@ -1164,16 +1174,32 @@ public class MolSceneController implements Initializable, StageBasedController, 
             }
             String sequence = seqBuilder.toString();
             try {
-                ssPredictor.predict(sequence);
+                double threshold = thresholdSlider.getValue();
+                ssPredictor.predict(sequence, threshold, pseudoKnotCheckBox.isSelected());
                 ssViewer.setSSPredictor(ssPredictor);
-                ssPredictor.bipartiteMatch(0.7, 0.05, 20);
+                ssPredictor.bipartiteMatch(threshold, 0.25, 20);
                 updateSSChoiceBox();
                 showSS(ssChoiceBox.getItems().get(0));
-
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
             }
+        }
+    }
+
+    void updateThreshold() {
+        if ((ssPredictor != null) && !thresholdSlider.isValueChanging()) {
+            double threshold = thresholdSlider.getValue();
+            ssPredictor.updateBasePairs(threshold, pseudoKnotCheckBox.isSelected());
+            ssPredictor.bipartiteMatch(threshold, 0.25, 20);
+            updateSSChoiceBox();
+            try {
+                showSS(ssChoiceBox.getItems().get(0));
+            } catch (IllegalArgumentException | InvalidMoleculeException e) {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.showAndWait();
+            }
+
         }
     }
 
