@@ -165,6 +165,11 @@
                                             <ChoiceBox fx:id="ssChoiceBox"/>
                                             <CheckBox fx:id="ssDisplayCheckBox" text="Sec. Struct."/>
                                             <CheckBox fx:id="mapDisplayCheckBox" text="Map"/>
+                                            <Label text="Threshold"/>
+                                            <Slider fx:id="thresholdSlider" min="0.0" max="1.0" value="0.5"/>
+                                            <CheckBox fx:id="pseudoKnotCheckBox" text="Predict PseudoKnots" selected="true"/>
+
+
                                             <MenuButton mnemonicParsing="false" text="Matching">
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#scoreSecStructures"
