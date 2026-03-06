@@ -128,9 +128,12 @@ public class SSPredictor {
         inputs.put("seq", input1);
         inputs.put("len", input2);
         try (Result tensor0 = graphModel.function("serving_default").call(inputs)) {
-            TFloat32 output = tensor0.get("output_0").isPresent() ? (TFloat32) tensor0.get("output_0").get() : null;
-            int seqLen = rnaSequence.length();
-            setPredictions(rnaSequence, seqLen, nCols, output, threshold);
+            var tensorDataOpt = tensor0.get("output_0");
+            tensorDataOpt.ifPresent(tensorData -> {
+                TFloat32 output = (TFloat32) tensorData;
+                int seqLen = rnaSequence.length();
+                setPredictions(rnaSequence, seqLen, nCols, output, threshold);
+            });
         }
     }
 
