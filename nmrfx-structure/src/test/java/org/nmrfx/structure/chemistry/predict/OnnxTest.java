@@ -18,8 +18,9 @@ import java.util.*;
 
 public class OnnxTest {
     ResidueAtomDistances rad = new ResidueAtomDistances();
-    static final int nAtomTypes = 9;
     static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 7, 1, 16, 9, 17, 35, 15));
+    private List<Double> jValues = new ArrayList<>();
+
     Map<Integer, Double[]> normValues = Map.of(
             1, new Double[]{3.4, 4.9},
             6, new Double[]{123.6, 84.4},
@@ -37,8 +38,8 @@ public class OnnxTest {
     }
 
     public void readFromDataset(int id) throws IOException {
-        String nodesFilename = "/Users/ekoag/gatv2/nodes_norm.csv";
-        String edgesFilename = "/Users/ekoag/gatv2/edges_norm.csv";
+        String nodesFilename = "/Users/ekoag/gatv2/nodes_jnorm.csv";
+        String edgesFilename = "/Users/ekoag/gatv2/edges_jnorm.csv";
         List<ResidueAtomDistances.AtomNode> nodes = new ArrayList<>();
         List<ResidueAtomDistances.AtomEdge> edges = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(nodesFilename))) {
@@ -67,8 +68,10 @@ public class OnnxTest {
                 if (graphId == id) {
                     int source = Integer.parseInt(values[1]);
                     int target = Integer.parseInt(values[2]);
-                    double distance = Double.parseDouble(values[3]);
-                    int nBonds = Integer.parseInt(values[4]);
+                    double distance = Double.parseDouble(values[6]);
+                    int nBonds = Integer.parseInt(values[7]);
+                    double jValue = Double.parseDouble(values[8]);
+                    jValues.add(jValue);
                     ResidueAtomDistances.AtomEdge edge = new ResidueAtomDistances.AtomEdge(source, target, distance, nBonds);
                     edges.add(edge);
                 }
@@ -91,56 +94,69 @@ public class OnnxTest {
     @Test
     public void predictOnnx() throws OrtException, IOException {
         var env = OrtEnvironment.getEnvironment();
-        var session = env.createSession("/Users/ekoag/multigat.onnx", new OrtSession.SessionOptions());
+        var session = env.createSession("/Users/ekoag/gatv2/jshift.onnx", new OrtSession.SessionOptions());
 
         readFromDataset(0);
 
-        int nAtoms = rad.atomGraphs.stream().mapToInt(graph -> graph.nodes().size()).sum();
-        int nEdges = rad.atomGraphs.stream().mapToInt(graph -> graph.edges().size()).sum();
-        float[][] nodes = new float[nAtoms][nAtomTypes];
+        int nNodes = rad.atomGraphs.getFirst().nodes().size();
+        int nEdges = rad.atomGraphs.getFirst().edges().size();
+
+        ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
+        long[] nodes = graph.nodes().stream().mapToLong(node -> tokens.indexOf(node.property())).toArray();
         long[][] edgeIndex = new long[2][nEdges];
         float[][] edgeAttr = new float[nEdges][2];
-        for (ResidueAtomDistances.AtomGraph graph : rad.atomGraphs) {
-            int i = 0;
-            for (ResidueAtomDistances.AtomNode node : graph.nodes()) {
-                Arrays.fill(nodes[i], 0);
-                nodes[i][tokens.indexOf(node.property())] = 1;
-                i++;
-            }
-            int j = 0;
-            for (ResidueAtomDistances.AtomEdge edge : graph.edges()) {
-                edgeIndex[0][j] = edge.indexA();
-                edgeIndex[1][j] = edge.indexB();
-                edgeAttr[j][0] = (float) edge.distance();
-                edgeAttr[j][1] = edge.pathLen();
-                j++;
-            }
+        for (int j = 0; j < graph.edges().size(); j++) {
+            ResidueAtomDistances.AtomEdge edge = graph.edges().get(j);
+            edgeIndex[0][j] = edge.indexA();
+            edgeIndex[1][j] = edge.indexB();
+            edgeAttr[j][0] = (float) edge.distance();
+            edgeAttr[j][1] = edge.pathLen();
         }
 
-        //inputs are x (nodes, 9) edge_index (2, edges), edge_attr (edges, 2)
+        //inputs are x (nNodes) edge_index (2, nEdges), edge_attr (nEdges, 2)
         var input1 = OnnxTensor.createTensor(env, nodes);
         var input2 = OnnxTensor.createTensor(env, edgeIndex);
         var input3 = OnnxTensor.createTensor(env, edgeAttr);
 
-        List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes(); //assuming just a single graph
+        List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes();
         double[] labels = rad.atomGraphs.getFirst().nodes().stream().mapToDouble(ResidueAtomDistances.AtomNode::ppm).toArray();
         var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
         try (OrtSession.Result result = session.run(inputs)) {
-            Object output = result.get(0).getValue();
-            String[] outputs = Arrays.deepToString((Object[]) output).split(",");
-            System.out.println("nodeId pred label delta");
-            for (int i = 0; i < nAtoms; i++) {
-                String value = outputs[i].replace("[","").replace("]","");
-                int nodeType = graphNodes.get(i).property();
-                double prediction = Double.parseDouble(value);
-                prediction = denormalize(nodeType, prediction);
-                double label = labels[i];
-                label = denormalize(nodeType, label);
-                double delta = label - prediction;
-                System.out.println(nodeType + " " + formatStr(prediction) + " " + formatStr(label) + " " + formatStr(delta));
-            }
+            Object nodeOut = result.get(0).getValue();
+            Object edgeOut = result.get(1).getValue();
 
+            double[] nodeOutputs = processOutput(nodeOut);
+            double[] edgeOutputs = processOutput(edgeOut);
+
+            System.out.println("nodeId pshift eshift dshift");
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < nNodes; i++) {
+                int nodeType = graphNodes.get(i).property();
+                double pshift = denormalize(nodeType, nodeOutputs[i]);
+                double eshift = denormalize(nodeType, labels[i]);
+                sb.append(nodeType).append(" ")
+                        .append(formatStr(pshift)).append(" ")
+                        .append(formatStr(eshift)).append(" ")
+                        .append(formatStr(eshift - pshift))
+                        .append("\n");
+            }
+            System.out.println(sb);
+            StringBuilder edgeSb = new StringBuilder();
+            for (int i = 0; i < nEdges; i++) {
+                double pjValue = edgeOutputs[i];
+                double ejValue = jValues.get(i);
+                edgeSb.append(formatStr(pjValue)).append(" ")
+                        .append(ejValue).append(" ")
+                        .append(formatStr(ejValue - pjValue)).append("\n");
+            }
+            System.out.println(edgeSb);
         }
+    }
+
+    private double[] processOutput(Object obj) {
+        return Arrays.stream(Arrays.deepToString((Object[]) obj)
+                .replace("[","").replace("]","")
+                .split(",")).mapToDouble(Double::parseDouble).toArray();
     }
 
     private String formatStr(double value) {
