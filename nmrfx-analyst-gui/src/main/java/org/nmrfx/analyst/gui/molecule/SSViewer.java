@@ -22,6 +22,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
 import org.nmrfx.chemistry.Atom;
@@ -48,6 +49,7 @@ public class SSViewer extends Pane {
 
     Group drawingGroup;
     Group mapDrawingGroup;
+    Text probabilityText;
     Group infoGroup;
     HBox hBox;
     Pane pane;
@@ -210,7 +212,7 @@ public class SSViewer extends Pane {
             if (drawMapProp.get()) {
                 node = mapPane;
             } else {
-                 node = pane;
+                node = pane;
             }
             PageLayout pageLayout = job.getJobSettings().getPageLayout();
             double printableWidth = pageLayout.getPrintableWidth();
@@ -241,8 +243,13 @@ public class SSViewer extends Pane {
 
     public void drawSS() {
         drawingGroup.getChildren().clear();
-        if ((ssPredictor != null) && drawMapProp.get()) {
-            drawProbabilityMap();
+        if (drawMapProp.get()) {
+            drawMapLines();
+            double[][] predictions = ssPredictor != null ? ssPredictor.getPredictions() : null;
+            if ((ssPredictor != null)) {
+                drawProbMap();
+            }
+            drawBPRectangles(predictions);
         }
         try {
             if (drawSSProp.get()) {
@@ -254,10 +261,9 @@ public class SSViewer extends Pane {
 
     }
 
-    private void drawProbabilityMap() {
-        double[][] predictions = ssPredictor.getPredictions();
-        double threshold = ssPredictor.getGraphThreshold();
-        int n = predictions.length;
+
+    private void drawMapLines() {
+        int n = sequence.size();
         double mapPaneWidth = mapPane.getWidth();
         double mapPaneHeight = mapPane.getHeight();
         double border = 20.0;
@@ -290,6 +296,20 @@ public class SSViewer extends Pane {
             rectangle.setFill(Color.GRAY);
             mapDrawingGroup.getChildren().add(rectangle);
         }
+    }
+
+    void drawProbMap() {
+        int n = sequence.size();
+        double mapPaneWidth = mapPane.getWidth();
+        double mapPaneHeight = mapPane.getHeight();
+        double border = 20.0;
+        double deltaX = (mapPaneWidth - 2.0 * border) / n;
+        double deltaY = (mapPaneHeight - 2 * border) / n;
+        double delta = Math.min(deltaX, deltaY);
+        double deltaHalf = delta / 2.0;
+        double deltaSmall = delta / 5.0;
+        double[][] predictions = ssPredictor.getPredictions();
+        double threshold = ssPredictor.getGraphThreshold();
         for (int r = 0; r < n; r++) {
             for (int c = 0; c < n; c++) {
                 double value = predictions[r][c];
@@ -300,14 +320,56 @@ public class SSViewer extends Pane {
                     rectangle.setWidth(delta);
                     rectangle.setHeight(delta);
                     rectangle.setFill(Color.LIGHTGREEN);
+                    SSPredictor.BPRegion bpRegion = ssPredictor.getBPRegion(r, c);
+                    String resPairText = String.format("%s:%s", sequence.get(r), sequence.get(c));
+                    rectangle.setOnMouseEntered(e -> showProbability(e, rectangle, value, bpRegion, resPairText));
+                    rectangle.setOnMouseExited(e -> removeProbabilityText());
                     mapDrawingGroup.getChildren().add(rectangle);
                 }
             }
         }
-        var extentBasePairs = ssPredictor.getExtentBasePairs();
-        for (var bp : extentBasePairs) {
-            int r = bp.r();
-            int c = bp.c();
+    }
+
+    void showProbability(MouseEvent event, Rectangle rectangle, double probability, SSPredictor.BPRegion bpRegion, String resPairText) {
+        double x = rectangle.getX() + 15;
+        double y = rectangle.getY() + rectangle.getHeight();
+
+        if (probabilityText == null) {
+            probabilityText = new Text(String.format("%.2f", probability));
+            probabilityText.setFill(Color.MAGENTA);
+            probabilityText.setFont(Font.font(null, FontWeight.BOLD, 16));
+        }
+        int iRegion = bpRegion == null ? -1 : bpRegion.getIndex();
+        probabilityText.setText(String.format("%s %.2f %d", resPairText, probability, iRegion));
+        if (x > (mapPane.getWidth() / 2.0)) {
+            double width = probabilityText.getBoundsInLocal().getWidth();
+            x -= (width + 20);
+        }
+        probabilityText.setX(x);
+        probabilityText.setY(y);
+        mapDrawingGroup.getChildren().add(probabilityText);
+    }
+
+    void removeProbabilityText() {
+        if (probabilityText != null) {
+            mapDrawingGroup.getChildren().remove(probabilityText);
+        }
+    }
+
+    void drawBPRectangles(double[][] predictions) {
+        int n = sequence.size();
+        double mapPaneWidth = mapPane.getWidth();
+        double mapPaneHeight = mapPane.getHeight();
+        double border = 20.0;
+        double deltaX = (mapPaneWidth - 2.0 * border) / n;
+        double deltaY = (mapPaneHeight - 2 * border) / n;
+        double delta = Math.min(deltaX, deltaY);
+        double deltaHalf = delta / 2.0;
+        double deltaSmall = delta / 5.0;
+        for (int i = 0; i < basePairs.length; i += 2) {
+            int r = basePairs[i];
+            int c = basePairs[i + 1];
+            double value = predictions != null ? predictions[r][c] : 0.0;
             double x1 = border + c * delta + deltaHalf;
             double y1 = border + r * delta + deltaHalf;
             Line line2 = new Line(x1, y1, y1, y1);
@@ -322,11 +384,12 @@ public class SSViewer extends Pane {
             rectangle.setWidth(delta);
             rectangle.setHeight(delta);
             rectangle.setFill(Color.BLACK);
+            SSPredictor.BPRegion bpRegion = ssPredictor == null ? null : ssPredictor.getBPRegion(r, c);
+            String resPairText = String.format("%s:%s", sequence.get(r), sequence.get(c));
+            rectangle.setOnMouseEntered(e -> showProbability(e, rectangle, value, bpRegion, resPairText));
+            rectangle.setOnMouseExited(e -> removeProbabilityText());
             mapDrawingGroup.getChildren().add(rectangle);
-
         }
-
-
     }
 
     void updateScale() {
