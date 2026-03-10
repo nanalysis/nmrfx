@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SSPredictor {
     private static final Logger log = LoggerFactory.getLogger(SSPredictor.class);
@@ -27,10 +28,8 @@ public class SSPredictor {
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
     double[][] savedPredictions;
     double[][] predictions;
-    int[][] regions;
-    int[][] regionStart;
-    int[][] regionEnd;
-    int nRegions = 0;
+    Map<BPKey, BPRegion> regionsMap = new HashMap<>();
+    List<BPRegion> regionsList = new ArrayList<>();
     boolean predictPseudoKnots = true;
     double graphThreshold = 0.7;
 
@@ -45,8 +44,8 @@ public class SSPredictor {
     static SavedModelBundle graphModel;
     static String modelFilePath = null;
 
-    public record BasePairsMatching(double value, Set<BasePairProbability> basePairsSet) {
-
+    public record BasePairsMatching(double value, Set<BasePairProbability> basePairsSet)
+            implements Comparable<BasePairsMatching> {
         boolean exists(List<BasePairsMatching> extentBasePairsList) {
             for (BasePairsMatching basePairsMatching : extentBasePairsList) {
                 if (basePairsMatching.basePairsSet.equals(basePairsSet)) {
@@ -55,16 +54,20 @@ public class SSPredictor {
             }
             return false;
         }
+
+        @Override
+        public int compareTo(BasePairsMatching other) {
+            // First compare on set size
+            int sizeCompare = Integer.compare(this.basePairsSet.size(), other.basePairsSet.size());
+            if (sizeCompare != 0) {
+                return sizeCompare;
+            }
+            // Then compare on double value
+            return Double.compare(this.value, other.value);
+        }
     }
 
     record BPKey(int row, int col) {
-        static Map<Integer, Map<Integer, BPKey>> bpMap = new HashMap<>();
-
-        static BPKey getBPKey(int row, int col) {
-            Map<Integer, BPKey> colMap = bpMap.computeIfAbsent(row, key -> new HashMap<>());
-            return colMap.computeIfAbsent(col, key -> new BPKey(row, col));
-        }
-
     }
 
     public static void setModelFile(String fileName) {
@@ -146,13 +149,14 @@ public class SSPredictor {
         String bp = rChar + String.valueOf(cChar);
         double thisP = predictions[r][c];
         if ((thisP < limit) && validBPs.contains(bp)) {
-            double nextP = predictions[r+1][c-1];
-            if (nextP > limit) {
+            double nextP = predictions[r + 1][c - 1];
+            if (thisP < nextP) {
                 predictions[r][c] = nextP;
             }
         }
 
     }
+
     private void setPredictions(String rnaSequence, int seqLen, int nCols, TFloat32 tensor0, double threshold) {
         savedPredictions = new double[seqLen][seqLen];
         predictions = new double[seqLen][seqLen];
@@ -172,7 +176,7 @@ public class SSPredictor {
             }
         }
         double scale = 1.0;
-        if (maxPred < 0.9) {
+        if (((maxPred > 1.0e-6) && maxPred < 0.9)) {
             scale = 0.9 / maxPred;
         }
         for (int r = 0; r < seqLen; r++) {
@@ -181,10 +185,10 @@ public class SSPredictor {
             }
         }
 
-        fixEnd(rnaSequence, seqLen, 0.75);
+        fixEnd(rnaSequence, seqLen, threshold);
         for (int r = 0; r < seqLen; r++) {
-            for (int c = r + delta; c < seqLen; c++) {
-                savedPredictions[r][c] = predictions[r][c];
+            if (seqLen - (r + delta) >= 0) {
+                System.arraycopy(predictions[r], r + delta, savedPredictions[r], r + delta, seqLen - (r + delta));
             }
         }
         updateBasePairs(threshold, predictPseudoKnots);
@@ -193,9 +197,7 @@ public class SSPredictor {
     private void getSavedPredictions() {
         int seqLen = predictions.length;
         for (int r = 0; r < seqLen; r++) {
-            for (int c = 0; c < seqLen; c++) {
-                predictions[r][c] = savedPredictions[r][c];
-            }
+            System.arraycopy(savedPredictions[r], 0, predictions[r], 0, seqLen);
         }
     }
 
@@ -211,9 +213,8 @@ public class SSPredictor {
             for (int c = r + delta; c < seqLen; c++) {
                 double prediction = predictions[r][c];
                 if (prediction > threshold) {
-                    BPKey bpKey = BPKey.getBPKey(r, c);
                     BasePairProbability basePairProbability = new BasePairProbability(r, c, prediction);
-                    allBasePairs.put(bpKey, basePairProbability);
+                    allBasePairs.put(new BPKey(r, c), basePairProbability);
                 }
             }
         }
@@ -293,7 +294,7 @@ public class SSPredictor {
         }
 
         BPKey bpKey() {
-            return BPKey.getBPKey(r, c);
+            return new BPKey(r, c);
         }
 
         @Override
@@ -424,20 +425,27 @@ public class SSPredictor {
         paritionedGraph = new ParitionedGraph(simpleGraph, partition1, partition2);
     }
 
-    private void setGraphWeights(Graph<Integer, DefaultWeightedEdge> graph, double threshold, double randomScale) {
+    private void setGraphWeights(Graph<Integer, DefaultWeightedEdge> graph, double threshold, double randomScale, int iTry) {
         int n = predictions.length;
         for (var edge : graph.edgeSet()) {
             int i = graph.getEdgeSource(edge);
             int j = graph.getEdgeTarget(edge) - n;
+            BPRegion bpRegion = regionsMap.get(new BPKey(i, j));
             double weight = 0.0;
             if (i == j) {
                 weight = 1.0;
             } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
-                double adjustment = randomScale * random.nextGaussian();
-                double prediction = predictions[i][j] + adjustment;
-                prediction = Math.min(prediction, 1.0);
-                weight = 100.0 + prediction;
+                double adjustment = randomScale * (random.nextDouble() - 0.5);
+                double prediction = predictions[i][j] + adjustment + bpRegion.delta;
+                if (prediction < 0.0) {
+                    weight = 1.0;
+                } else {
+                    prediction = Math.min(prediction, 500.0);
+                    prediction = Math.max(prediction, 0.0);
+                    weight = 100.0 + prediction;
+                }
             }
+
             graph.setEdgeWeight(i, j + n, weight);
         }
     }
@@ -453,8 +461,7 @@ public class SSPredictor {
                     int r = simpleGraph.getEdgeSource(edge);
                     int c = simpleGraph.getEdgeTarget(edge) - n;
                     if (((r + 3) < c) && (matchUsed[r] == null) && (matchUsed[c] == null)) {
-                        BPKey bpKey = BPKey.getBPKey(r, c);
-                        BasePairProbability basePairProbability = allBasePairs.get(bpKey);
+                        BasePairProbability basePairProbability = allBasePairs.get(new BPKey(r, c));
                         matches.add(basePairProbability);
                         matchUsed[r] = basePairProbability;
                         matchUsed[c] = basePairProbability;
@@ -502,20 +509,20 @@ public class SSPredictor {
         }
     }
 
-    boolean checkForExisting(List<BasePairProbability> matches, int[][] matchTries) {
+    int checkForExisting(List<BasePairProbability> matches, int[][] matchTries) {
         int nFound = extentBasePairsList.size();
         int n = predictions.length;
-        boolean foundMatch = false;
-        for (int j = 0; j < nFound; j++) {
-            int[] matchTest = new int[n];
-            Arrays.fill(matchTest, -1);
-            for (BasePairProbability basePairProbability : matches) {
-                if (basePairProbability != null) {
-                    matchTest[basePairProbability.r] = basePairProbability.c;
-                    matchTest[basePairProbability.c] = basePairProbability.r;
-                }
+        int foundMatch = -1;
+        int[] matchTest = new int[n];
+        Arrays.fill(matchTest, -1);
+        for (BasePairProbability basePairProbability : matches) {
+            if (basePairProbability != null) {
+                matchTest[basePairProbability.r] = basePairProbability.c;
+                matchTest[basePairProbability.c] = basePairProbability.r;
             }
+        }
 
+        for (int j = 0; j < nFound; j++) {
             boolean ok = true;
             for (int i = 0; i < n; i++) {
                 if (matchTest[i] != matchTries[j][i]) {
@@ -524,7 +531,7 @@ public class SSPredictor {
                 }
             }
             if (ok) {
-                foundMatch = true;
+                foundMatch = j;
                 break;
             }
         }
@@ -545,7 +552,7 @@ public class SSPredictor {
         if (!predictPseudoKnots) {
             filterAllCrossings(newExtentBasePairs);
         }
-        addMissing(newExtentBasePairs);
+        //addMissing(newExtentBasePairs);
         double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
         BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
         if (!basePairsMatching.exists(extentBasePairsList)) {
@@ -554,9 +561,27 @@ public class SSPredictor {
 
     }
 
+    private double matchRegion(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph, int[][] matchTries, double threshold, int iTry, double randomScale) {
+        setGraphWeights(simpleGraph, threshold, randomScale, iTry);
+        var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
+                paritionedGraph.partition1, paritionedGraph.partition2);
+        MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
+        List<BasePairProbability> matches = getMatches(matchResult);
+        double sum = 0.0;
+        int foundMatch = checkForExisting(matches, matchTries);
+        if (foundMatch == -1) {
+            refineMatches(matches, matchTries);
+            for (BasePairProbability basePairProbability : matches) {
+                sum += basePairProbability.probability;
+            }
+        }
+        return sum;
+    }
+
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
         int n = predictions.length;
         buildGraph(threshold);
+        nTries = 1000;
 
         graphThreshold = threshold;
         int[][] matchTries = new int[nTries][n];
@@ -566,49 +591,80 @@ public class SSPredictor {
         extentBasePairsList.clear();
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
 
-        for (int iTry = 0; iTry < nTries; iTry++) {
-            double randomValue = iTry == 0 ? 0.0 : randomScale;
-            setGraphWeights(simpleGraph, threshold, randomValue);
-            var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
-                    paritionedGraph.partition1, paritionedGraph.partition2);
-            MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
-            List<BasePairProbability> matches = getMatches(matchResult);
-            boolean foundMatch = checkForExisting(matches, matchTries);
-            if (!foundMatch) {
-                refineMatches(matches, matchTries);
+        int nRegions = regionsList.size();
+        int iTry = 0;
+        for (int i = 0; i < nRegions; i++) {
+            for (int j = 0; j < nRegions; j++) {
+                for (int k = 0; k < nRegions; k++) {
+                    for (BPRegion bpRegion : regionsList) {
+                        bpRegion.delta = 0.0;
+                    }
+                    regionsList.get(i).delta = 500.0;
+                    regionsList.get(j).delta = 500.0;
+                    regionsList.get(k).delta = 500.0;
+                    double matchSum = matchRegion(simpleGraph, matchTries, threshold, iTry, 0.0);
+                    iTry++;
+                }
             }
         }
-        extentBasePairsList.sort((a, b) -> Double.compare(b.value, a.value));
+        extentBasePairsList.sort(Comparator.reverseOrder());
+    }
+
+
+    public class BPRegion {
+        final BPKey start;
+        int size;
+        int index;
+        double delta = 0.0;
+
+        BPRegion(BPKey start, int index) {
+            this.start = start;
+            size = 1;
+            this.index = index;
+        }
+
+        void incr() {
+            size++;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        @Override
+        public String toString() {
+            return index + " " + start.row + " " + start.col + " " + size + " " + delta;
+        }
     }
 
     void findRegions(double threshold) {
         int seqLen = predictions.length;
-        regions = new int[seqLen][seqLen];
-        regionStart = new int[seqLen][2];
-        regionEnd = new int[seqLen][2];
-        for (int r = 0; r < seqLen; r++) {
-            Arrays.fill(regions[r], -1);
-        }
-        nRegions = 0;
+        regionsMap.clear();
+        regionsList.clear();
+        AtomicInteger index = new AtomicInteger(0);
 
         for (int r = 0; r < seqLen; r++) {
             for (int c = r + delta; c < seqLen; c++) {
                 boolean aboveThreshold = predictions[r][c] > threshold;
                 if (aboveThreshold) {
-                    boolean neighbor = r > 1 && c < seqLen - 1 && regions[r - 1][c + 1] != -1;
+                    BPKey bpKey = new BPKey(r, c);
+                    BPKey neighborKey = new BPKey(r - 1, c + 1);
+                    boolean neighbor = r > 0 && c < seqLen - 1 && regionsMap.containsKey(neighborKey);
                     if (neighbor) {
-                        int regionNum = regions[r - 1][c + 1];
-                        regions[r][c] = regionNum;
-                        regionEnd[regionNum][0] = r;
-                        regionEnd[regionNum][1] = c;
+                        BPRegion bpRegion = regionsMap.get(neighborKey);
+                        bpRegion.incr();
+                        regionsMap.put(bpKey, bpRegion);
                     } else {
-                        regions[r][c] = nRegions;
-                        regionStart[nRegions][0] = r;
-                        regionStart[nRegions][1] = c;
-                        nRegions++;
+                        BPRegion bpRegion = new BPRegion(bpKey, index.getAndIncrement());
+                        regionsMap.put(bpKey, bpRegion);
+                        regionsList.add(bpRegion);
                     }
                 }
             }
         }
+    }
+
+    public BPRegion getBPRegion(int r, int c) {
+        return regionsMap.get(new BPKey(r, c));
     }
 }
