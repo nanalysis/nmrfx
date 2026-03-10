@@ -84,7 +84,8 @@ public class RNASSViewController implements Initializable, StageBasedController,
     MenuButton peakListMenuButton;
     @FXML
     MenuButton modeMenuButton;
-    public Label rnaSecStructureScoreLabel;
+    @FXML
+    Label rnaSecStructureScoreLabel;
     SSPredictor ssPredictor = null;
     PeakList peakList = null;
 
@@ -104,6 +105,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     }
 
     record SecondaryStructureEntry(String dotBracket, SSOrigin type, int pIindex, int fIndex) {
+        @Override
         public String toString() {
             return switch (type) {
                 case PRED -> type + ":" + pIindex;
@@ -216,9 +218,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                     (a, b, c) -> updatePeaks());
         }
         ssChoiceBox.setDisable(true);
-        ssChoiceBox.setOnAction(e -> {
-            showSelectedSS();
-        });
+        ssChoiceBox.setOnAction(e -> showSelectedSS());
         thresholdSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
             if (!isChanging) {
                 updateThreshold();
@@ -238,7 +238,6 @@ public class RNASSViewController implements Initializable, StageBasedController,
         rnaStructureScores.clear();
         ssChoiceBox.getItems().forEach(ss -> {
             molecule.setDotBracket(ss.dotBracket);
-            System.out.println(ss.dotBracket);
             rnaMatcher.predict();
             rnaMatcher.genPeaks();
             double score = rnaMatcher.score();
@@ -315,11 +314,11 @@ public class RNASSViewController implements Initializable, StageBasedController,
             alert.showAndWait();
         } else {
 
-            if (molecule.getDotBracket().equals("")) {
+            if (molecule.getDotBracket().isEmpty()) {
                 initWithAllDots();
             }
             String dotBracket = molecule.getDotBracket();
-            if (dotBracket.length() == 0) {
+            if (dotBracket.isEmpty()) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "No RNA present", ButtonType.CLOSE);
                 alert.showAndWait();
             } else {
@@ -337,7 +336,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
         }
     }
 
-    void initWithAllDots() throws InvalidMoleculeException {
+    void initWithAllDots() {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             List<List<String>> seqs = SSLayout.setupSequence(molecule);
@@ -345,11 +344,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             for (List<String> seq : seqs) {
                 nChars += seq.size();
             }
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < nChars; i++) {
-                sBuilder.append('.');
-            }
-            molecule.setDotBracket(sBuilder.toString());
+            molecule.setDotBracket(".".repeat(Math.max(0, nChars)));
         }
     }
 
@@ -417,7 +412,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     void dotBracketFieldChanged() {
         try {
             String dotBracket = dotBracketField.getText().trim();
-            if (dotBracket.length() > 0) {
+            if (!dotBracket.isEmpty()) {
                 boolean ok = updateDotBracket(dotBracket);
                 if (ok) {
                     Molecule mol = Molecule.getActive();
@@ -484,11 +479,11 @@ public class RNASSViewController implements Initializable, StageBasedController,
             String newDotBracket = new String(vienna);
             molecule.setDotBracket(newDotBracket);
 
-            if (molecule.getDotBracket().equals("")) {
+            if (molecule.getDotBracket().isEmpty()) {
                 initWithAllDots();
             }
             String dotBracket = molecule.getDotBracket();
-            if (dotBracket.length() == 0) {
+            if (dotBracket.isEmpty()) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "No RNA present", ButtonType.CLOSE);
                 alert.showAndWait();
             } else {
@@ -577,7 +572,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 ssViewer.setSSPredictor(ssPredictor);
                 ssPredictor.bipartiteMatch(threshold, 0.1, 10);
                 updateSSChoiceBox();
-                showSS(ssChoiceBox.getItems().get(0));
+                showSS(ssChoiceBox.getItems().getFirst());
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
@@ -592,7 +587,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             ssPredictor.bipartiteMatch(threshold, 0.1, 10);
             updateSSChoiceBox();
             try {
-                showSS(ssChoiceBox.getItems().get(0));
+                showSS(ssChoiceBox.getItems().getFirst());
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
@@ -626,7 +621,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             }
             i++;
         }
-        ssChoiceBox.setValue(ssChoiceBox.getItems().get(0));
+        ssChoiceBox.setValue(ssChoiceBox.getItems().getFirst());
         ssChoiceBox.setDisable(false);
     }
 
@@ -636,7 +631,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             try {
                 showSS(secondaryStructureEntry);
                 showRNAPeakScore(secondaryStructureEntry.dotBracket);
-            } catch (InvalidMoleculeException e) {
+            } catch (InvalidMoleculeException ignored) {
             }
         }
     }
@@ -650,7 +645,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     void showSS(SecondaryStructureEntry secondaryStructureEntry) throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
-            String dotBracket = "";
+            final String dotBracket;
             if ((ssPredictor != null) && (secondaryStructureEntry.type == SSOrigin.PRED || secondaryStructureEntry.type == SSOrigin.BOTH)) {
                 Set<SSPredictor.BasePairProbability> basePairsExt = ssPredictor.getExtentBasePairs(secondaryStructureEntry.pIindex).basePairsSet();
                 dotBracket = ssPredictor.getDotBracket(basePairsExt);
@@ -679,8 +674,8 @@ public class RNASSViewController implements Initializable, StageBasedController,
         for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
-                PeakList peakList = PeakList.get(peakListName);
-                if (peakList.getNDim() == 2) {
+                PeakList peakList1 = PeakList.get(peakListName);
+                if (peakList1.getNDim() == 2) {
                     setPeakList(peakListName);
                 }
             });
@@ -719,20 +714,8 @@ public class RNASSViewController implements Initializable, StageBasedController,
                     if (!onlyFrozen || (frozen1 && frozen2)) {
                         String name1 = peak.getPeakDim(0).getLabel();
                         String name2 = peak.getPeakDim(1).getLabel();
-                        if (!name1.equals("") && !name2.equals("")) {
-                            double intensity = peak.getIntensity();
-                            double normIntensity = intensity / peakList.getScale();
-                            double distance = Math.exp(-1.0 / exponent * Math.log(normIntensity));
-                            String intMode;
-                            if (distance < 2.8) {
-                                intMode = "s";
-                            } else if (distance < 3.8) {
-                                intMode = "m";
-                            } else if (distance < 5.0) {
-                                intMode = "w";
-                            } else {
-                                intMode = "vw";
-                            }
+                        if (!name1.isEmpty() && !name2.isEmpty()) {
+                            String intMode = getIntensityMode(peak, exponent);
                             if (peakClasses.contains(intMode)) {
                                 constraintPairs.add(name1);
                                 constraintPairs.add(name2);
@@ -742,7 +725,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                     }
                 }
                 String datasetName = peakList.getDatasetName();
-                if ((datasetName != null) && !datasetName.equals("") && (Molecule.getActive() != null)) {
+                if ((datasetName != null) && !datasetName.isEmpty() && (Molecule.getActive() != null)) {
                     Dataset dataset = Dataset.getDataset(datasetName);
                     if (dataset != null) {
                         String labelScheme = dataset.getProperty("labelScheme");
@@ -754,6 +737,23 @@ public class RNASSViewController implements Initializable, StageBasedController,
             ssViewer.setConstraintPairs(constraintPairs);
             ssViewer.drawSS();
         }
+    }
+
+    private String getIntensityMode(Peak peak, double exponent) {
+        double intensity = peak.getIntensity();
+        double normIntensity = intensity / peakList.getScale();
+        double distance = Math.exp(-1.0 / exponent * Math.log(normIntensity));
+        String intMode;
+        if (distance < 2.8) {
+            intMode = "s";
+        } else if (distance < 3.8) {
+            intMode = "m";
+        } else if (distance < 5.0) {
+            intMode = "w";
+        } else {
+            intMode = "vw";
+        }
+        return intMode;
     }
 
     @Override

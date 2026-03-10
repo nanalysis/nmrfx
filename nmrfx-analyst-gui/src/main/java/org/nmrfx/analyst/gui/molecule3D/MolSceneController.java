@@ -7,7 +7,6 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.SubScene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -25,7 +24,6 @@ import org.nmrfx.chemistry.*;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
-import org.nmrfx.peaks.events.FreezeListener;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -45,9 +43,7 @@ import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode
 
 public class MolSceneController implements Initializable, StageBasedController, MolSelectionListener, ProgressUpdater {
     private static final Logger log = LoggerFactory.getLogger(MolSceneController.class);
-    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
-    static Random random = new Random();
     private Stage stage;
     MolViewer molViewer;
     @FXML
@@ -71,10 +67,9 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private StatusBar statusBar;
     @FXML
     private ToolBar lowerToolBar;
-    private Circle statusCircle = new Circle(10.0, Color.GREEN);
+    private final Circle statusCircle = new Circle(10.0, Color.GREEN);
     Throwable processingThrowable;
 
-    Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
     Pane twoDPane = new Pane();
     Pane ligandCanvasPane;
@@ -142,10 +137,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
         return molViewer;
     }
 
-    private void selectedResidue(MouseEvent event) {
-
-    }
-
 
     @Override
     public void setStage(Stage stage) {
@@ -196,7 +187,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     }
 
     void firstStructure(ActionEvent event) {
-        activeStructureProp.set(getActiveStructures().get(0));
+        activeStructureProp.set(getActiveStructures().getFirst());
         refresh();
     }
 
@@ -229,8 +220,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     void refresh() {
         molViewer.clearAll();
         itemIndex = 0;
-        List<MolViewer.RenderType> modes = new ArrayList<>();
-        modes.addAll(currentDrawingModes);
+        List<MolViewer.RenderType> modes = new ArrayList<>(currentDrawingModes);
         for (MolViewer.RenderType mode : modes) {
             switch (mode) {
                 case LINES -> drawLines();
@@ -261,8 +251,6 @@ public class MolSceneController implements Initializable, StageBasedController, 
             if (result.isPresent()) {
                 dotBracket = result.get().trim();
                 molecule.setDotBracket(dotBracket);
-            } else {
-                return;
             }
         }
     }
@@ -280,7 +268,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         }
         molecule.selectAtoms("*:*.*");
         molecule.setAtomProperty(Atom.DISPLAY, false);
-        int nBonds = molecule.selectBonds("atoms");
+        molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, false);
     }
 
@@ -289,15 +277,13 @@ public class MolSceneController implements Initializable, StageBasedController, 
         if (molecule == null) {
             return;
         }
-        List<SpatialSet> selected = new ArrayList<>();
-        selected.addAll(molecule.globalSelected);
-        int nPrevious = selected.size();
+        List<SpatialSet> selected = new ArrayList<>(molecule.globalSelected);
         hideAll();
         molecule.globalSelected.clear();
         molecule.globalSelected.addAll(selected);
-        int nAtoms = molecule.selectResidues();
+        molecule.selectResidues();
         molecule.setAtomProperty(Atom.DISPLAY, true);
-        int nBonds = molecule.selectBonds("atoms");
+        molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, true);
 
     }
@@ -310,7 +296,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
         hideAll();
         String[] fields = selection.split("\\s+");
         for (String field : fields) {
-            if (field.length() > 0) {
+            if (!field.isEmpty()) {
                 molecule.selectAtoms(field);
                 molecule.setAtomProperty(Atom.DISPLAY, true);
                 molecule.selectBonds("atoms");
@@ -413,7 +399,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
 
     public int getFirstStructure() {
         List<Integer> structures = getStructures();
-        return structures.isEmpty() ? 0 : structures.get(0);
+        return structures.isEmpty() ? 0 : structures.getFirst();
     }
 
     public void drawCartoon() throws InvalidMoleculeException {
@@ -430,23 +416,23 @@ public class MolSceneController implements Initializable, StageBasedController, 
         molViewer.addNucleicAcidBases(getStructures(), 0.3, "bases", getIndex());
     }
 
-    public void drawOrientationSpheresX() throws InvalidMoleculeException {
+    public void drawOrientationSpheresX() {
         molViewer.addOrientationSphere(getFirstStructure(), 122, 3.0, 0, "osphereX");
     }
 
-    public void drawOrientationSpheresY() throws InvalidMoleculeException {
+    public void drawOrientationSpheresY() {
         molViewer.addOrientationSphere(getFirstStructure(), 122, 3.0, 1, "osphereY");
     }
 
-    public void drawOrientationSpheresZ() throws InvalidMoleculeException {
+    public void drawOrientationSpheresZ() {
         molViewer.addOrientationSphere(getFirstStructure(), 122, 3.0, 2, "osphereZ");
     }
 
-    public void drawOrientationCyl() throws InvalidMoleculeException {
+    public void drawOrientationCyl() {
         molViewer.addOrientationCyls(getFirstStructure(), 122, 3.0, 2, "ocyls");
     }
 
-    public void drawBox() throws InvalidMoleculeException {
+    public void drawBox() {
         molViewer.deleteItems("delete", "box");
         molViewer.addBox(getFirstStructure(), 0.3, "box " + getIndex());
     }
@@ -474,9 +460,8 @@ public class MolSceneController implements Initializable, StageBasedController, 
     /**
      * Draws the rotated axes from an SVD calculation.
      *
-     * @throws InvalidMoleculeException
      */
-    public void drawSVDAxes() throws InvalidMoleculeException {
+    public void drawSVDAxes() {
         molViewer.deleteItems("delete", "svdaxes");
         molViewer.addAxes(getFirstStructure(), 0.3, "svdaxes " + getIndex(), "svd");
     }
@@ -484,19 +469,18 @@ public class MolSceneController implements Initializable, StageBasedController, 
     /**
      * Draws the rotated axes from an RDC calculation.
      *
-     * @throws InvalidMoleculeException
      */
-    public void drawRDCAxes() throws InvalidMoleculeException {
+    public void drawRDCAxes() {
         molViewer.deleteItems("delete", "rdcaxes");
         molViewer.addAxes(getFirstStructure(), 0.3, "rdcaxes " + getIndex(), "rdc");
     }
 
-    public void rotateMoleculeRDC() throws InvalidMoleculeException {
+    public void rotateMoleculeRDC() {
         molViewer.resetTransform();
         molViewer.rotateSVDRDC("rdc");
     }
 
-    public void rotateMoleculeSVD() throws InvalidMoleculeException {
+    public void rotateMoleculeSVD() {
         molViewer.resetTransform();
         molViewer.rotateSVDRDC("svd");
     }
@@ -536,15 +520,11 @@ public class MolSceneController implements Initializable, StageBasedController, 
                 }
             }
         }
-        for (String item : items) {
-            removeItems.add(item);
-        }
+        removeItems.addAll(items);
 
         for (String item : removeItems) {
             MenuItem menuItem = new MenuItem(item);
-            menuItem.setOnAction(e -> {
-                molViewer.deleteItems("delete", item);
-            });
+            menuItem.setOnAction(e -> molViewer.deleteItems("delete", item));
             removeMenuButton.getItems().add(menuItem);
         }
     }
@@ -663,7 +643,7 @@ public class MolSceneController implements Initializable, StageBasedController, 
     private void genAngleTree() {
         Molecule molecule = Molecule.getActive();
         if (molecule.globalSelected.size() == 1) {
-            Atom startAtom = molecule.globalSelected.get(0).getAtom();
+            Atom startAtom = molecule.globalSelected.getFirst().getAtom();
             AngleTreeGenerator angleGen = new AngleTreeGenerator();
             List<List<Atom>> aTree = angleGen.genTree(molecule, startAtom, null);
         }
