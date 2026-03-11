@@ -577,7 +577,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 double threshold = thresholdSlider.getValue();
                 ssPredictor.predict(sequence, threshold, pseudoKnotCheckBox.isSelected());
                 ssViewer.setSSPredictor(ssPredictor);
-                ssPredictor.bipartiteMatch(threshold, 0.1, 10);
+                ssPredictor.bipartiteMatch(threshold, 0.1, 20);
                 updateSSChoiceBox();
                 showSS(ssList.getFirst());
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
@@ -591,7 +591,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
         if ((ssPredictor != null) && !thresholdSlider.isValueChanging()) {
             double threshold = thresholdSlider.getValue();
             ssPredictor.updateBasePairs(threshold, pseudoKnotCheckBox.isSelected());
-            ssPredictor.bipartiteMatch(threshold, 0.1, 10);
+            ssPredictor.bipartiteMatch(threshold, 0.1, 20);
             updateSSChoiceBox();
             try {
                 showSS(ssList.getFirst());

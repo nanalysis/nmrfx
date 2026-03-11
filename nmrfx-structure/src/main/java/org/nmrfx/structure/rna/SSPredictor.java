@@ -160,7 +160,7 @@ public class SSPredictor {
     private void setPredictions(String rnaSequence, int seqLen, int nCols, TFloat32 tensor0, double threshold) {
         savedPredictions = new double[seqLen][seqLen];
         predictions = new double[seqLen][seqLen];
-        double maxPred = 0.0;
+        double maxPred = 1.0e-6;
         for (int r = 0; r < seqLen; r++) {
             for (int c = r + delta; c < seqLen; c++) {
                 int index = getIndex(r, c, nCols, delta);
@@ -435,7 +435,7 @@ public class SSPredictor {
             if (i == j) {
                 weight = 1.0;
             } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
-                double adjustment = randomScale * (random.nextDouble() - 0.5);
+                double adjustment = iTry == 0 ? 0.0 : randomScale * (random.nextDouble() - 0.5);
                 double prediction = predictions[i][j] + adjustment + bpRegion.delta;
                 if (prediction < 0.0) {
                     weight = 1.0;
@@ -538,6 +538,53 @@ public class SSPredictor {
         return foundMatch;
     }
 
+    boolean checkRC(boolean[][] exists, int r, int c) {
+        int n = exists.length;
+        return (r >= 0) && (r < n) && (c >= 0) && (c < n) && exists[r][c];
+    }
+
+    void removeLonely(Set<BasePairProbability> extentBasePairs) {
+        Set<BasePairProbability> temp = new HashSet<>();
+        int n = predictions.length;
+        boolean[][] exists = new boolean[n][n];
+        for (BasePairProbability basePairProbability : extentBasePairs) {
+            int r = basePairProbability.r;
+            int c = basePairProbability.c;
+            exists[r][c] = true;
+        }
+        for (BasePairProbability basePairProbability : extentBasePairs) {
+            int r = basePairProbability.r;
+            int c = basePairProbability.c;
+            boolean found = false;
+            for (int i = 1; i <= 2; i++) {
+                if (checkRC(exists, r - i, c + i)) {
+                    found = true;
+                }
+                if (checkRC(exists, r + i, c - i)) {
+                    found = true;
+                }
+            }
+            if (checkRC(exists, r - 2, c + 1)) {
+                found = true;
+            }
+            if (checkRC(exists, r - 1, c + 2)) {
+                found = true;
+            }
+            if (checkRC(exists, r + 2, c - 1)) {
+                found = true;
+            }
+            if (checkRC(exists, r + 1, c - 2)) {
+                found = true;
+            }
+
+            if (found) {
+                temp.add(basePairProbability);
+            }
+        }
+        extentBasePairs.clear();
+        extentBasePairs.addAll(temp);
+    }
+
     void refineMatches(List<BasePairProbability> matches, int[][] matchTries) {
         Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
         int nFound = extentBasePairsList.size();
@@ -552,7 +599,8 @@ public class SSPredictor {
         if (!predictPseudoKnots) {
             filterAllCrossings(newExtentBasePairs);
         }
-        //addMissing(newExtentBasePairs);
+        addMissing(newExtentBasePairs);
+        removeLonely(newExtentBasePairs);
         double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
         BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
         if (!basePairsMatching.exists(extentBasePairsList)) {
@@ -592,7 +640,6 @@ public class SSPredictor {
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
 
         int nRegions = regionsList.size();
-        int iTry = 0;
         for (int i = 0; i < nRegions; i++) {
             for (int j = 0; j < nRegions; j++) {
                 for (int k = 0; k < nRegions; k++) {
@@ -602,16 +649,21 @@ public class SSPredictor {
                     regionsList.get(i).delta = 500.0;
                     regionsList.get(j).delta = 500.0;
                     regionsList.get(k).delta = 500.0;
-                    double matchSum = matchRegion(simpleGraph, matchTries, threshold, iTry, 0.0);
-                    iTry++;
+                    matchRegion(simpleGraph, matchTries, threshold, 0, 0.0);
                 }
             }
+        }
+        for (BPRegion bpRegion : regionsList) {
+            bpRegion.delta = 0.0;
+        }
+        for (int iTry = 0;iTry < nTries;iTry++) {
+            matchRegion(simpleGraph, matchTries, threshold, iTry, randomScale);
         }
         extentBasePairsList.sort(Comparator.reverseOrder());
     }
 
 
-    public class BPRegion {
+    public static class BPRegion {
         final BPKey start;
         int size;
         int index;
