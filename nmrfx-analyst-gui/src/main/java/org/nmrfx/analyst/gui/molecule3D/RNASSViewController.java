@@ -1,5 +1,7 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -58,7 +60,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     @FXML
     Pane dotBracketPane;
     @FXML
-    ChoiceBox<SecondaryStructureEntry> ssChoiceBox;
+    Spinner<SecondaryStructureEntry> ssSpinner;
     @FXML
     MenuButton atomMenu;
     @FXML
@@ -96,6 +98,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     List<CheckMenuItem> atomCheckItems = new ArrayList<>();
     List<CheckMenuItem> peakClassCheckItems = new ArrayList<>();
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
+    ObservableList<SecondaryStructureEntry> ssList = FXCollections.observableArrayList();
 
 
     enum SSOrigin {
@@ -217,8 +220,8 @@ public class RNASSViewController implements Initializable, StageBasedController,
             menuItem.selectedProperty().addListener(
                     (a, b, c) -> updatePeaks());
         }
-        ssChoiceBox.setDisable(true);
-        ssChoiceBox.setOnAction(e -> showSelectedSS());
+        ssSpinner.setDisable(true);
+       // ssSpinner.setOn(e -> showSelectedSS());
         thresholdSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
             if (!isChanging) {
                 updateThreshold();
@@ -226,6 +229,10 @@ public class RNASSViewController implements Initializable, StageBasedController,
         });
         pseudoKnotCheckBox.setOnAction(e -> updateThreshold());
 
+        SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry> factory = new SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry>(ssList);
+        ssSpinner.setValueFactory(factory);
+        ContextMenu menu = new ContextMenu();
+        ssSpinner.getEditor().setContextMenu(menu);
     }
     public void moleculeChanged(MoleculeEvent e) {
         Fx.runOnFxThread(ssViewer::drawSS);
@@ -236,7 +243,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
         Molecule molecule = Molecule.getActive();
         String currentDotBracket = molecule.getDotBracket();
         rnaStructureScores.clear();
-        ssChoiceBox.getItems().forEach(ss -> {
+        ssList.forEach(ss -> {
             molecule.setDotBracket(ss.dotBracket);
             rnaMatcher.predict();
             rnaMatcher.genPeaks();
@@ -273,7 +280,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
 
     public void selectSecStructure() {
         Molecule molecule = Molecule.getActive();
-        molecule.setDotBracket(ssChoiceBox.getValue().dotBracket);
+        molecule.setDotBracket(ssSpinner.getValue().dotBracket);
         RNAMatcher rnaMatcher = new RNAMatcher();
         rnaMatcher.predict();
         rnaMatcher.genPeaks();
@@ -572,7 +579,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 ssViewer.setSSPredictor(ssPredictor);
                 ssPredictor.bipartiteMatch(threshold, 0.1, 10);
                 updateSSChoiceBox();
-                showSS(ssChoiceBox.getItems().getFirst());
+                showSS(ssList.getFirst());
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
@@ -587,7 +594,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             ssPredictor.bipartiteMatch(threshold, 0.1, 10);
             updateSSChoiceBox();
             try {
-                showSS(ssChoiceBox.getItems().getFirst());
+                showSS(ssList.getFirst());
             } catch (IllegalArgumentException | InvalidMoleculeException e) {
                 ExceptionDialog exceptionDialog = new ExceptionDialog(e);
                 exceptionDialog.showAndWait();
@@ -596,8 +603,9 @@ public class RNASSViewController implements Initializable, StageBasedController,
         }
     }
 
+
     void updateSSChoiceBox() {
-        ssChoiceBox.getItems().clear();
+        ssList.clear();
         Set<String> commonEntries = new HashSet<>();
         if (ssPredictor != null) {
             int n = ssPredictor.getNExtents();
@@ -607,7 +615,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 int fileIndex = fileSecondaryStructures.indexOf(dotBracket);
                 SSOrigin origin = fileIndex != -1 ? SSOrigin.BOTH : SSOrigin.PRED;
                 SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, origin, i, fileIndex);
-                ssChoiceBox.getItems().add(secondaryStructureEntry);
+                ssList.add(secondaryStructureEntry);
                 if (fileIndex != -1) {
                     commonEntries.add(dotBracket);
                 }
@@ -617,16 +625,27 @@ public class RNASSViewController implements Initializable, StageBasedController,
         for (String dotBracket : fileSecondaryStructures) {
             if (!commonEntries.contains(dotBracket)) {
                 SecondaryStructureEntry secondaryStructureEntry = new SecondaryStructureEntry(dotBracket, SSOrigin.FILE, -1, i);
-                ssChoiceBox.getItems().add(secondaryStructureEntry);
+                ssList.add(secondaryStructureEntry);
             }
             i++;
         }
-        ssChoiceBox.setValue(ssChoiceBox.getItems().getFirst());
-        ssChoiceBox.setDisable(false);
+        ssSpinner.getEditor().getContextMenu().getItems().clear();
+        for (SecondaryStructureEntry secondaryStructureEntry : ssList) {
+            MenuItem item = new MenuItem(secondaryStructureEntry.toString());
+            item.setOnAction(e -> {
+                ssSpinner.getValueFactory().setValue(secondaryStructureEntry);
+            });
+            ssSpinner.getEditor().getContextMenu().getItems().add(item);
+        }
+        ssSpinner.getValueFactory().setValue(ssList.getFirst());
+        ssSpinner.setDisable(false);
+        ssSpinner.getValueFactory().valueProperty().addListener(e -> {
+            showSelectedSS();
+        });
     }
 
     void showSelectedSS() {
-        SecondaryStructureEntry secondaryStructureEntry = ssChoiceBox.getValue();
+        SecondaryStructureEntry secondaryStructureEntry = ssSpinner.getValue();
         if (secondaryStructureEntry != null) {
             try {
                 showSS(secondaryStructureEntry);

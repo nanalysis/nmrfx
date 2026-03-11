@@ -48,7 +48,7 @@
             </ToolBar>
             <ToolBar HBox.hgrow="ALWAYS">
                 <Label text="Sec. Structure Selector"/>
-                <ChoiceBox fx:id="ssChoiceBox" prefWidth="150"/>
+                <Spinner fx:id="ssSpinner" prefWidth="150"/>
                 <CheckBox fx:id="ssDisplayCheckBox" text="Show Sec. Struct."/>
                 <CheckBox fx:id="mapDisplayCheckBox" text="Show Map"/>
                 <Pane HBox.hgrow="ALWAYS"/>
