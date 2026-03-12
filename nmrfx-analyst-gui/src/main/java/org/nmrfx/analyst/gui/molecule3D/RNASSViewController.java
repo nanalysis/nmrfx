@@ -50,6 +50,7 @@ import static org.nmrfx.analyst.gui.molecule3D.StructureCalculator.StructureMode
 
 public class RNASSViewController implements Initializable, StageBasedController, MolSelectionListener, FreezeListener, MoleculeListener {
     private static final Logger log = LoggerFactory.getLogger(RNASSViewController.class);
+    public static final String MODEL_VERSION = "v2";
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     private Stage stage;
     SSViewer ssViewer;
@@ -552,7 +553,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             DirectoryChooser directoryChooser = new DirectoryChooser();
             File outDirectory = directoryChooser.showDialog(null);
             if (outDirectory != null) {
-                String modelName = "rna_bp_v1";
+                String modelName = "rna_bp_" + MODEL_VERSION;
                 ModelFetcher.fetch(outDirectory.toPath(), modelName);
                 Path path = outDirectory.toPath().resolve(modelName);
                 PreferencesController.setRNAModelDirectory(path.toString());
@@ -566,30 +567,46 @@ public class RNASSViewController implements Initializable, StageBasedController,
         return false;
     }
 
+    boolean browseOrFetch(boolean noModelDir) {
+        String message = noModelDir ? "No Model Set" : "Wrong Model Version";
+        String[] choices =  {"Browse", "Fetch"};
+        int iChoice = GUIUtils.getResponse(message, choices);
+        if (iChoice == 0) {
+            return false;
+        }
+        if (iChoice == 1) {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setTitle("Choose a model version: " + MODEL_VERSION);
+            File file = directoryChooser.showDialog(null);
+            if (file == null) {
+                return false;
+            } else {
+                if (!file.toString().endsWith(MODEL_VERSION)) {
+                    GUIUtils.warn("RNA Model", "Must be version: " + MODEL_VERSION);
+                    return false;
+                }
+                PreferencesController.setRNAModelDirectory(file.toString());
+                SSPredictor.setModelFile(file.toString());
+            }
+        } else {
+            return fetchSSModel();
+        }
+        return true;
+    }
     @FXML
     private void seqTo2D() {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             ssPredictor = new SSPredictor();
             String rnaModelDir = PreferencesController.getRNAModelDirectory();
-            if (rnaModelDir.isEmpty()) {
-                DirectoryChooser directoryChooser = new DirectoryChooser();
-                File file = directoryChooser.showDialog(null);
-                if (file == null) {
+            boolean noModelDir = rnaModelDir.isEmpty();
+            if (noModelDir || !rnaModelDir.endsWith(MODEL_VERSION)) {
+                if (!browseOrFetch(noModelDir)) {
                     return;
-                } else {
-                    PreferencesController.setRNAModelDirectory(file.toString());
-                    SSPredictor.setModelFile(file.toString());
                 }
-            } else {
-                SSPredictor.setModelFile(rnaModelDir);
             }
             if (!ssPredictor.hasValidModelFile()) {
-                if (GUIUtils.affirm("No model in directory\nFetch one from NMRFx.org?")) {
-                    if (!fetchSSModel()) {
-                        return;
-                    }
-                } else {
+                if (!browseOrFetch(false)) {
                     return;
                 }
             }

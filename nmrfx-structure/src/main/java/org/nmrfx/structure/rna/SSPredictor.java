@@ -77,6 +77,9 @@ public class SSPredictor {
     public boolean hasValidModelFile() {
         if (modelFilePath != null) {
             File file = new File(modelFilePath);
+            if (!file.exists()) {
+                return false;
+            }
             PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:saved_model.pb");
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(file.toPath())) {
                 for (Path path : paths) {
