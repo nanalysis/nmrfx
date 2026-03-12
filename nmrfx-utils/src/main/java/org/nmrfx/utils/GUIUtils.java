@@ -124,6 +124,28 @@ public class GUIUtils {
         }
         return result;
     }
+    public static int getResponse(String message, String[] choices) {
+        ButtonType[] buttons = new ButtonType[choices.length + 1];
+        buttons[0] = ButtonType.CANCEL;
+        int i = 1;
+        for (String choice : choices) {
+            buttons[i++] = new ButtonType(choice);
+        }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message,  buttons);
+        Optional<ButtonType> response = alert.showAndWait();
+        int result = 0;
+        if (response.isPresent()) {
+            i = 0;
+            for (ButtonType buttonType : buttons) {
+                if (buttonType == response.get()) {
+                    result = i;
+                    break;
+                }
+                i++;
+            }
+        }
+        return result;
+    }
 
     public static void warn(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
