@@ -145,7 +145,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        ssViewer = new SSViewer();
+        ssViewer = new SSViewer(this);
         ssBorderPane.setCenter(ssViewer);
         ssViewer.getDrawNumbersProp().bind(numbersCheckBox.selectedProperty());
         ssViewer.getDrawProbabilitiesProp().bind(probabilitiesCheckBox.selectedProperty());
@@ -435,6 +435,31 @@ public class RNASSViewController implements Initializable, StageBasedController,
 
     }
 
+    public void toggleChar(int iPos, int jPos, char iChar, char jChar)  {
+        String dotBracket = dotBracketField.getText();
+        if (dotBracket.isBlank()) {
+            dotBracket = Molecule.getActive().getDotBracket();
+            if (dotBracket.isBlank()) {
+                initWithAllDots();
+                dotBracket = Molecule.getActive().getDotBracket();
+            }
+        }
+        try {
+            StringBuilder newDotBracket = new StringBuilder(dotBracket);
+            newDotBracket.setCharAt(iPos, iChar);
+            newDotBracket.setCharAt(jPos, jChar);
+            boolean ok = updateDotBracket(newDotBracket.toString());
+            if (ok) {
+                Molecule mol = Molecule.getActive();
+                if (mol != null) {
+                    mol.setDotBracket(newDotBracket.toString());
+                    layoutSS();
+                }
+            }
+        } catch (InvalidMoleculeException ignored) {
+        }
+    }
+
     void toggleChar(String dotBracket, int iChar) throws InvalidMoleculeException {
         int nChar = dotBracket.length();
         char leftChar = iChar > 0 ? dotBracket.charAt(iChar - 1) : '(';
@@ -462,6 +487,10 @@ public class RNASSViewController implements Initializable, StageBasedController,
             default:
                 newChar = '.';
         }
+        setDotBracketChar(dotBracket, iChar, newChar);
+    }
+
+    void setDotBracketChar(String dotBracket, int iChar, char newChar) throws InvalidMoleculeException {
         StringBuilder newDotBracket = new StringBuilder(dotBracket);
         newDotBracket.setCharAt(iChar, newChar);
         boolean ok = updateDotBracket(newDotBracket.toString());
@@ -472,8 +501,8 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 layoutSS();
             }
         }
-    }
 
+    }
 
     @FXML
     void ssFrom3D() throws InvalidMoleculeException {

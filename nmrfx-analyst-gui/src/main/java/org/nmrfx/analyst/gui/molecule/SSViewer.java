@@ -9,6 +9,8 @@ import javafx.print.PageLayout;
 import javafx.print.PrinterJob;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ZoomEvent;
@@ -25,6 +27,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Scale;
+import org.nmrfx.analyst.gui.molecule3D.RNASSViewController;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -56,6 +59,8 @@ public class SSViewer extends Pane {
     ScrollPane scrollPane;
     Pane mapPane;
     SSLayout ssLayout;
+    int selRes = -1;
+    int selRes2 = -1;
 
     ArrayList<Point2D> points = new ArrayList<>();
     int[] basePairs = null;
@@ -94,8 +99,12 @@ public class SSViewer extends Pane {
 
     double superScale = 1.0;
     HashMap<Integer, NodeRecord> nodeRecordHashMap = new HashMap<>();
+    RNASSViewController controller;
 
-    public SSViewer() {
+    ContextMenu contextMenu = new ContextMenu();
+
+    public SSViewer(RNASSViewController controller) {
+        this.controller = controller;
         initScene();
     }
 
@@ -176,7 +185,7 @@ public class SSViewer extends Pane {
         pane.setPrefSize(boxDim, boxDim);
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
-        pane.setOnMousePressed(e -> revertToOriginal());
+        pane.setOnMousePressed(e -> revertToOriginal(true));
         pane.setBackground(Background.fill(Color.WHITE));
 
         scrollPane.setContent(pane);
@@ -193,6 +202,23 @@ public class SSViewer extends Pane {
             double zoom = rEvent.getZoomFactor();
             zoom(zoom);
         });
+
+
+        char[] pairs = {'.','.','(',')','[',']','{','}','<','>','A','a'};
+        for (int i=0;i<pairs.length;i += 2) {
+            MenuItem closePairItem1 = new MenuItem(String.valueOf(pairs[i]) + String.valueOf(pairs[i+1]));
+            final int ii = i;
+            closePairItem1.setOnAction(e -> {
+                if (selRes < selRes2) {
+                    controller.toggleChar(selRes, selRes2, pairs[ii], pairs[ii + 1]);
+                } else {
+                    controller.toggleChar(selRes, selRes2, pairs[ii + 1], pairs[ii]);
+                }
+                selRes = -1;
+                selRes2 = -1;
+            });
+            contextMenu.getItems().add(closePairItem1);
+        }
 
     }
 
@@ -461,8 +487,9 @@ public class SSViewer extends Pane {
     }
 
     public void selectResidue(int selectedResidue) {
-        revertToOriginal();
+        revertToOriginal(false);
         if (drawProbabilitiesProp.get()) {
+            selRes = selectedResidue;
             for (var entry : nodeRecordHashMap.entrySet()) {
                 NodeRecord nodeRecord = entry.getValue();
                 int iRes = entry.getKey();
@@ -494,10 +521,25 @@ public class SSViewer extends Pane {
                     }
                 }
             }
+        } else {
+            if (selRes != -1) {
+                selRes2 = selectedResidue;
+                if (selRes < selRes2) {
+                    controller.toggleChar(selRes, selRes2, '(',')');
+                } else {
+                    controller.toggleChar(selRes, selRes2, ')', '(');
+                }
+                selRes = -1;
+                selRes2 = -1;
+            } else {
+                selRes = selectedResidue;
+                selRes2 = -1;
+                nodeRecordHashMap.get(selectedResidue).circle.setFill(Color.GRAY);
+            }
         }
     }
 
-    void revertToOriginal() {
+    void revertToOriginal(boolean clearSel) {
         for (var entry : nodeRecordHashMap.entrySet()) {
             NodeRecord nodeRecord = entry.getValue();
             Circle circle = nodeRecord.circle;
@@ -505,6 +547,10 @@ public class SSViewer extends Pane {
             circle.setFill(nodeRecord.color);
             text.setText(nodeRecord.label);
             text.setFont(Font.font(nodeRecord.fontSize));
+        }
+        if (clearSel) {
+            selRes = -1;
+            selRes2 = -1;
         }
     }
 
@@ -1021,8 +1067,12 @@ public class SSViewer extends Pane {
             int finalIRes = iRes;
             group.getChildren().add(nodeRecord.node);
             nodeRecord.node.setOnMousePressed(e -> {
+                if (e.isPopupTrigger() || e.isControlDown() || e.isSecondaryButtonDown()  && (selRes != -1)) {
+                    showNodeMenu(e, nodeRecord, finalIRes);
+                } else if (e.isPrimaryButtonDown()) {
+                    selectResidue(finalIRes);
+                }
                 e.consume();
-                selectResidue(finalIRes);
             });
             nodeRecordHashMap.put(iRes, nodeRecord);
             iRes++;
@@ -1032,6 +1082,11 @@ public class SSViewer extends Pane {
         if (constraintPairState) {
             drawConstraints(group);
         }
+    }
+
+    void showNodeMenu(MouseEvent e, NodeRecord nodeRecord, int iRes) {
+        selRes2 = iRes;
+        contextMenu.show(nodeRecord.node, e.getScreenX(), e.getScreenY());
     }
 
     void drawConstraints(Group group) {
