@@ -830,8 +830,8 @@ public class SSLayout implements MultivariateFunction {
     }
 
     public void interpVienna(String vienna, List<Residue> res) {
-        String leftBrackets = "([{";
-        String rightBrackets = ")]}";
+        String leftBrackets = "([{<";
+        String rightBrackets = ")]}>";
         int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
         int[] levels = new int[leftBrackets.length()];
         for (int i = 0; i < vienna.length(); i++) {

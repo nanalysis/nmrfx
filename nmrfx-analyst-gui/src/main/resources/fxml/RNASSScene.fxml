@@ -39,12 +39,17 @@
                         text="Predict"/>
                 <Button mnemonicParsing="false" onAction="#ssTo3D"
                         text="To 3D "/>
-                <Pane prefWidth="50"/>
+                <Pane prefWidth="10"/>
                 <Label text="Predictor Threshold"/>
                 <Slider fx:id="thresholdSlider" max="1.0" value="0.5"/>
                 <TextField fx:id="thresholdField" prefWidth="40"/>
-                <Pane prefWidth="20"/>
-                <CheckBox fx:id="pseudoKnotCheckBox" text="Predict PseudoKnots"/>
+                <Pane prefWidth="10"/>
+                <MenuButton text="Options">
+                    <items>
+                        <CheckMenuItem fx:id="pseudoKnotCheckBox" text="Allow PseudoKnots"/>
+                        <CheckMenuItem fx:id="canonicalCheckBox" text="Require Canonical" selected="true"/>
+                    </items>
+                </MenuButton>
             </ToolBar>
             <ToolBar HBox.hgrow="ALWAYS">
                 <Label text="Sec. Structure Selector"/>

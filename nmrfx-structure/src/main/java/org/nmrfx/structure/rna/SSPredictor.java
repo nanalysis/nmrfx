@@ -31,6 +31,7 @@ public class SSPredictor {
     Map<BPKey, BPRegion> regionsMap = new HashMap<>();
     List<BPRegion> regionsList = new ArrayList<>();
     boolean predictPseudoKnots = true;
+    boolean requireCanonical = true;
     double graphThreshold = 0.7;
 
     ParitionedGraph paritionedGraph = null;
@@ -111,9 +112,10 @@ public class SSPredictor {
         return r * nCols - (r - 1) * (r - 1 + 1) / 2 + c - d - r * (d + 1);
     }
 
-    public void predict(String rnaSequence, double threshold, boolean predictPseudoKnots) {
+    public void predict(String rnaSequence, double threshold, boolean predictPseudoKnots, boolean requireCanonical) {
         this.rnaSequence = rnaSequence;
         this.predictPseudoKnots = predictPseudoKnots;
+        this.requireCanonical = requireCanonical;
         if (graphModel == null) {
             load();
         }
@@ -150,11 +152,11 @@ public class SSPredictor {
         char rChar = rnaSequence.charAt(r);
         char cChar = rnaSequence.charAt(c);
         String bp = rChar + String.valueOf(cChar);
-        double thisP = predictions[r][c];
+        double thisP = savedPredictions[r][c];
         if ((thisP < limit) && validBPs.contains(bp)) {
-            double nextP = predictions[r + 1][c - 1];
+            double nextP = savedPredictions[r + 1][c - 1];
             if (thisP < nextP) {
-                predictions[r][c] = nextP;
+                savedPredictions[r][c] = nextP;
             }
         }
 
@@ -167,15 +169,8 @@ public class SSPredictor {
         for (int r = 0; r < seqLen; r++) {
             for (int c = r + delta; c < seqLen; c++) {
                 int index = getIndex(r, c, nCols, delta);
-                double prediction = tensor0.getFloat(0, index);
-                char rChar = rnaSequence.charAt(r);
-                char cChar = rnaSequence.charAt(c);
-                String bp = rChar + String.valueOf(cChar);
-                if (!validBPs.contains(bp)) {
-                    prediction = 0.0;
-                }
-                predictions[r][c] = prediction;
-                maxPred = Math.max(maxPred, prediction);
+                savedPredictions[r][c] = tensor0.getFloat(0, index);
+                maxPred = Math.max(maxPred, savedPredictions[r][c]);
             }
         }
         double scale = 1.0;
@@ -184,28 +179,34 @@ public class SSPredictor {
         }
         for (int r = 0; r < seqLen; r++) {
             for (int c = r + delta; c < seqLen; c++) {
-                predictions[r][c] *= scale;
+                savedPredictions[r][c] *= scale;
             }
         }
-
         fixEnd(rnaSequence, seqLen, threshold);
-        for (int r = 0; r < seqLen; r++) {
-            if (seqLen - (r + delta) >= 0) {
-                System.arraycopy(predictions[r], r + delta, savedPredictions[r], r + delta, seqLen - (r + delta));
-            }
-        }
-        updateBasePairs(threshold, predictPseudoKnots);
+        getSavedPredictions();
+        updateBasePairs(threshold, predictPseudoKnots, requireCanonical);
     }
 
     private void getSavedPredictions() {
         int seqLen = predictions.length;
+
         for (int r = 0; r < seqLen; r++) {
-            System.arraycopy(savedPredictions[r], 0, predictions[r], 0, seqLen);
+            for (int c = r + delta; c < seqLen; c++) {
+                char rChar = rnaSequence.charAt(r);
+                char cChar = rnaSequence.charAt(c);
+                String bp = rChar + String.valueOf(cChar);
+                if (requireCanonical && !validBPs.contains(bp)) {
+                    predictions[r][c] = 0.0;
+                } else {
+                    predictions[r][c] = savedPredictions[r][c];
+                }
+            }
         }
     }
 
-    public void updateBasePairs(double threshold, boolean predictPseudoKnots) {
+    public void updateBasePairs(double threshold, boolean predictPseudoKnots, boolean requireCanonical) {
         this.predictPseudoKnots = predictPseudoKnots;
+        this.requireCanonical = requireCanonical;
         getSavedPredictions();
         findRegions(threshold);
         int seqLen = predictions.length;

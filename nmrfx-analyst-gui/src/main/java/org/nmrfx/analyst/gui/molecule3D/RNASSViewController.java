@@ -73,7 +73,9 @@ public class RNASSViewController implements Initializable, StageBasedController,
     @FXML
     TextField thresholdField;
     @FXML
-    CheckBox pseudoKnotCheckBox;
+    CheckMenuItem pseudoKnotCheckBox;
+    @FXML
+    CheckMenuItem canonicalCheckBox;
     @FXML
     CheckBox mapDisplayCheckBox;
     CheckMenuItem frozenCheckBox = new CheckMenuItem("Frozen");
@@ -229,6 +231,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             }
         });
         pseudoKnotCheckBox.setOnAction(e -> updateThreshold());
+        canonicalCheckBox.setOnAction(e -> updateThreshold());
 
         SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry> factory = new SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry>(ssList);
         ssSpinner.setValueFactory(factory);
@@ -445,6 +448,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 dotBracket = Molecule.getActive().getDotBracket();
             }
         }
+
         try {
             StringBuilder newDotBracket = new StringBuilder(dotBracket);
             newDotBracket.setCharAt(iPos, iChar);
@@ -604,6 +608,8 @@ public class RNASSViewController implements Initializable, StageBasedController,
                 if (!browseOrFetch(noModelDir)) {
                     return;
                 }
+            } else {
+                ssPredictor.setModelFile(rnaModelDir);
             }
             if (!ssPredictor.hasValidModelFile()) {
                 if (!browseOrFetch(false)) {
@@ -621,7 +627,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             String sequence = seqBuilder.toString();
             try {
                 double threshold = thresholdSlider.getValue();
-                ssPredictor.predict(sequence, threshold, pseudoKnotCheckBox.isSelected());
+                ssPredictor.predict(sequence, threshold, pseudoKnotCheckBox.isSelected(), canonicalCheckBox.isSelected());
                 ssViewer.setSSPredictor(ssPredictor);
                 ssPredictor.bipartiteMatch(threshold, 0.1, 20);
                 updateSSChoiceBox();
@@ -636,7 +642,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     void updateThreshold() {
         if ((ssPredictor != null) && !thresholdSlider.isValueChanging()) {
             double threshold = thresholdSlider.getValue();
-            ssPredictor.updateBasePairs(threshold, pseudoKnotCheckBox.isSelected());
+            ssPredictor.updateBasePairs(threshold, pseudoKnotCheckBox.isSelected(),canonicalCheckBox.isSelected());
             ssPredictor.bipartiteMatch(threshold, 0.1, 20);
             updateSSChoiceBox();
             try {
