@@ -49,12 +49,12 @@ public class PredictorSceneController implements Initializable, StageBasedContro
         targetType.setValue("Ref Set");
         targetChoice.getItems().addAll(0, 1, 2, 3, 4);
         targetChoice.setValue(0);
-        proteinChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.THREED, PredictionModes.SHELL);
+        proteinChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.THREED, PredictionModes.GATV2, PredictionModes.SHELL);
         proteinChoice.setValue(PredictionModes.THREED);
         rnaChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.RNA_ATTRIBUTES, PredictionModes.THREED_DIST, PredictionModes.THREED_RC);
         rnaChoice.setValue(PredictionModes.RNA_ATTRIBUTES);
-        molChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.SHELL);
-        molChoice.setValue(PredictionModes.SHELL);
+        molChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.GATV2, PredictionModes.SHELL);
+        molChoice.setValue(PredictionModes.GATV2);
     }
 
     public static PredictorSceneController create(AtomController atomController) {
