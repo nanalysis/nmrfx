@@ -7,7 +7,9 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tensorflow.Result;
 import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
@@ -23,8 +25,13 @@ public class SSPredictor {
 
     static final Random random = new Random();
     public static final Set<String> validBPs = Set.of("GC", "CG", "AU", "UA", "GU", "UG");
+    double[][] savedPredictions;
     double[][] predictions;
-
+    int[][] regions;
+    int[][] regionStart;
+    int[][] regionEnd;
+    int nRegions = 0;
+    boolean predictPseudoKnots = true;
     double graphThreshold = 0.7;
 
     ParitionedGraph paritionedGraph = null;
@@ -98,8 +105,9 @@ public class SSPredictor {
         return r * nCols - (r - 1) * (r - 1 + 1) / 2 + c - d - r * (d + 1);
     }
 
-    public void predict(String rnaSequence) {
+    public void predict(String rnaSequence, double threshold, boolean predictPseudoKnots) {
         this.rnaSequence = rnaSequence;
+        this.predictPseudoKnots = predictPseudoKnots;
         if (graphModel == null) {
             load();
         }
@@ -111,20 +119,44 @@ public class SSPredictor {
         }
         var inputTF = TInt32.vectorOf(tokenized);
         var matrix1 = NdArrays.ofInts(Shape.of(1, nCols));
-
+        var lenInput = NdArrays.ofInts(Shape.of(1));
+        lenInput.setInt(rnaSequence.length(), 0);
         matrix1.set(inputTF, 0);
-        double threshold = 0.4;
-        allBasePairs = new HashMap<>();
-
-        var inputs = TInt32.tensorOf(matrix1);
-        try (TFloat32 tensor0 = (TFloat32) graphModel.function("serving_default").call(inputs)) {
-            int seqLen = rnaSequence.length();
-            predictions = new double[seqLen][seqLen];
-            setPredictions(rnaSequence, seqLen, nCols, tensor0, threshold);
+        Map<String, Tensor> inputs = new HashMap<>();
+        var input1 = TInt32.tensorOf(matrix1);
+        var input2 = TInt32.tensorOf(lenInput);
+        inputs.put("seq", input1);
+        inputs.put("len", input2);
+        try (Result tensor0 = graphModel.function("serving_default").call(inputs)) {
+            var tensorDataOpt = tensor0.get("output_0");
+            tensorDataOpt.ifPresent(tensorData -> {
+                TFloat32 output = (TFloat32) tensorData;
+                int seqLen = rnaSequence.length();
+                setPredictions(rnaSequence, seqLen, nCols, output, threshold);
+            });
         }
     }
 
+    // end pairs are not always predicted correctly
+    void fixEnd(String rnaSequence, int seqLen, double limit) {
+        int r = 0;
+        int c = seqLen - 1;
+        char rChar = rnaSequence.charAt(r);
+        char cChar = rnaSequence.charAt(c);
+        String bp = rChar + String.valueOf(cChar);
+        double thisP = predictions[r][c];
+        if ((thisP < limit) && validBPs.contains(bp)) {
+            double nextP = predictions[r+1][c-1];
+            if (nextP > limit) {
+                predictions[r][c] = nextP;
+            }
+        }
+
+    }
     private void setPredictions(String rnaSequence, int seqLen, int nCols, TFloat32 tensor0, double threshold) {
+        savedPredictions = new double[seqLen][seqLen];
+        predictions = new double[seqLen][seqLen];
+        double maxPred = 0.0;
         for (int r = 0; r < seqLen; r++) {
             for (int c = r + delta; c < seqLen; c++) {
                 int index = getIndex(r, c, nCols, delta);
@@ -136,14 +168,51 @@ public class SSPredictor {
                     prediction = 0.0;
                 }
                 predictions[r][c] = prediction;
+                maxPred = Math.max(maxPred, prediction);
             }
         }
+        double scale = 1.0;
+        if (maxPred < 0.9) {
+            scale = 0.9 / maxPred;
+        }
+        for (int r = 0; r < seqLen; r++) {
+            for (int c = r + delta; c < seqLen; c++) {
+                predictions[r][c] *= scale;
+            }
+        }
+
+        fixEnd(rnaSequence, seqLen, 0.75);
+        for (int r = 0; r < seqLen; r++) {
+            for (int c = r + delta; c < seqLen; c++) {
+                savedPredictions[r][c] = predictions[r][c];
+            }
+        }
+        updateBasePairs(threshold, predictPseudoKnots);
+    }
+
+    private void getSavedPredictions() {
+        int seqLen = predictions.length;
+        for (int r = 0; r < seqLen; r++) {
+            for (int c = 0; c < seqLen; c++) {
+                predictions[r][c] = savedPredictions[r][c];
+            }
+        }
+    }
+
+    public void updateBasePairs(double threshold, boolean predictPseudoKnots) {
+        this.predictPseudoKnots = predictPseudoKnots;
+        getSavedPredictions();
+        findRegions(threshold);
+        int seqLen = predictions.length;
+        allBasePairs = new HashMap<>();
+
         filterPredictions(seqLen, threshold);
         for (int r = 0; r < seqLen; r++) {
             for (int c = r + delta; c < seqLen; c++) {
-                if (predictions[r][c] > threshold) {
+                double prediction = predictions[r][c];
+                if (prediction > threshold) {
                     BPKey bpKey = BPKey.getBPKey(r, c);
-                    BasePairProbability basePairProbability = new BasePairProbability(r, c, predictions[r][c]);
+                    BasePairProbability basePairProbability = new BasePairProbability(r, c, prediction);
                     allBasePairs.put(bpKey, basePairProbability);
                 }
             }
@@ -151,13 +220,20 @@ public class SSPredictor {
     }
 
     private void filterPredictions(int seqLen, double threshold) {
-        for (int r = 1; r < seqLen - 1; r++) {
-            for (int c = r + delta; c < seqLen - 1; c++) {
-                double v0 = predictions[r - 1][c + 1];
-                double v1 = predictions[r][c];
-                double v2 = predictions[r + 1][c - 1];
-                if ((v1 > threshold) && (v0 < threshold) && (v2 < threshold)) {
-                    predictions[r][c] = 0.0;
+        for (int r = 2; r < seqLen - 2; r++) {
+            for (int c = 2 + delta; c < seqLen - 2; c++) {
+                double vC = predictions[r][c];
+                if (vC > threshold) {
+                    boolean ok = false;
+                    for (int i = -2; i <= 2; i++) {
+                        if ((i != 0) && (predictions[r - i][c + i] > threshold)) {
+                            ok = true;
+                            break;
+                        }
+                    }
+                    if (!ok) {
+                        predictions[r][c] = 0.0;
+                    }
                 }
             }
         }
@@ -309,22 +385,16 @@ public class SSPredictor {
 
     public String getDotBracket(Collection<BasePairProbability> basePairProbabilities) {
         int n = rnaSequence.length();
-        List<String> dotBracketList = new ArrayList<>();
+        int[] ssin = new int[n];
+        Arrays.fill(ssin, -1);
 
-        for (int i = 0; i < n; i++) {
-            dotBracketList.add(".");
-        }
         for (BasePairProbability basePairProbability : basePairProbabilities) {
             int i = basePairProbability.r;
             int j = basePairProbability.c;
-            dotBracketList.set(i, "(");
-            dotBracketList.set(j, ")");
+            ssin[i] = j;
+            ssin[j] = i;
         }
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < n; i++) {
-            stringBuilder.append(dotBracketList.get(i));
-        }
-        return stringBuilder.toString();
+        return RNADotBracketCalculator.fcfs(ssin);
     }
 
     record ParitionedGraph(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph,
@@ -424,7 +494,7 @@ public class SSPredictor {
             }
         }
         for (BasePairProbability bp : extras) {
-            if (!crosses(basePairProbabilities, bp) &&  hasNeighbor(matches, bp)) {
+            if (!crosses(basePairProbabilities, bp) && hasNeighbor(matches, bp)) {
                 basePairProbabilities.add(bp);
                 matches[bp.r] = bp;
                 matches[bp.c] = bp;
@@ -472,7 +542,9 @@ public class SSPredictor {
             }
         }
 
-        filterAllCrossings(newExtentBasePairs);
+        if (!predictPseudoKnots) {
+            filterAllCrossings(newExtentBasePairs);
+        }
         addMissing(newExtentBasePairs);
         double sum = newExtentBasePairs.stream().mapToDouble(ebp -> ebp.probability).sum();
         BasePairsMatching basePairsMatching = new BasePairsMatching(sum, newExtentBasePairs);
@@ -484,9 +556,8 @@ public class SSPredictor {
 
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
         int n = predictions.length;
-        if (paritionedGraph == null) {
-            buildGraph(threshold);
-        }
+        buildGraph(threshold);
+
         graphThreshold = threshold;
         int[][] matchTries = new int[nTries][n];
         for (int i = 0; i < nTries; i++) {
@@ -510,4 +581,34 @@ public class SSPredictor {
         extentBasePairsList.sort((a, b) -> Double.compare(b.value, a.value));
     }
 
+    void findRegions(double threshold) {
+        int seqLen = predictions.length;
+        regions = new int[seqLen][seqLen];
+        regionStart = new int[seqLen][2];
+        regionEnd = new int[seqLen][2];
+        for (int r = 0; r < seqLen; r++) {
+            Arrays.fill(regions[r], -1);
+        }
+        nRegions = 0;
+
+        for (int r = 0; r < seqLen; r++) {
+            for (int c = r + delta; c < seqLen; c++) {
+                boolean aboveThreshold = predictions[r][c] > threshold;
+                if (aboveThreshold) {
+                    boolean neighbor = r > 1 && c < seqLen - 1 && regions[r - 1][c + 1] != -1;
+                    if (neighbor) {
+                        int regionNum = regions[r - 1][c + 1];
+                        regions[r][c] = regionNum;
+                        regionEnd[regionNum][0] = r;
+                        regionEnd[regionNum][1] = c;
+                    } else {
+                        regions[r][c] = nRegions;
+                        regionStart[nRegions][0] = r;
+                        regionStart[nRegions][1] = c;
+                        nRegions++;
+                    }
+                }
+            }
+        }
+    }
 }

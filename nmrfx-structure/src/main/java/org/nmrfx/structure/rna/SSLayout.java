@@ -61,6 +61,10 @@ public class SSLayout implements MultivariateFunction {
         public boolean isPaired() {
             return end >= 0 && level == 0;
         }
+        public boolean isPairedAnyLevel() {
+            return end >= 0;
+        }
+
     }
 
     public SSLayout(int... nValues) {

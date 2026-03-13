@@ -325,7 +325,7 @@ public class RNAAttributes {
         List<RNAPair> rnaPairs = new ArrayList<>();
         for (int i = 0; i < basePairs.length; i++) {
             Residue residue = rnaResidues.get(i);
-            Residue partner = basePairs[i].isPaired() ? rnaResidues.get(basePairs[i].end()) : null;
+            Residue partner = basePairs[i].isPairedAnyLevel() ? rnaResidues.get(basePairs[i].end()) : null;
             var pair = new RNAPair(i, residue, partner, basePairs[i].end());
             rnaPairs.add(pair);
         }
