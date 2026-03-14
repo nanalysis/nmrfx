@@ -111,6 +111,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     public float value = 0.0f;
     private boolean active = true;
     public ArrayList<AtomEquivalency> equivAtoms = null;
+    Map<Atom, AtomCouplingPair> atomAtomCouplingPairMap = null;
 
     private Point3 flatPoint;
     public SpatialSet spatialSet;
@@ -2416,5 +2417,20 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public static int compareByIndex(Atom a1, Atom a2) {
         return Integer.compare(a1.iAtom, a2.iAtom);
+    }
+
+    public void addAtomCouplingPair(AtomCouplingPair atomCouplingPair) {
+        if (atomAtomCouplingPairMap == null) {
+            atomAtomCouplingPairMap = new HashMap<>();
+        }
+        atomAtomCouplingPairMap.put(atomCouplingPair.atom2(), atomCouplingPair);
+    }
+
+    public Collection getAtomCouplingPairs() {
+        return atomAtomCouplingPairMap == null ? Collections.emptyList() : atomAtomCouplingPairMap.values();
+    }
+
+    public Optional<AtomCouplingPair> getAtomCouplingPair(Atom atom) {
+        return atomAtomCouplingPairMap == null ? Optional.empty() : Optional.ofNullable(atomAtomCouplingPairMap.get(atom));
     }
 }
