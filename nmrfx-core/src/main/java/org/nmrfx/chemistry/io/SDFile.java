@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
  */
 public class SDFile {
     private static final Logger log = LoggerFactory.getLogger(SDFile.class);
+    public static boolean IS_SPECIAL_BUTTS = false;
 
     private static final int MOLECULE = 0;
     private static final int ATOM = 1;
@@ -381,31 +382,50 @@ public class SDFile {
                         if (valueName.equals("NMREDATA_ASSIGNMENT")) {
                             String[] rows = sBuilder.toString().split("\n");
                             HashMap<String, Double> shifts = new HashMap<>();
-                            Arrays.stream(rows).forEach(row -> {
-                                String[] values = row.split(",");
-                                int atomIndex = Integer.parseInt(values[0].trim()) + 1;
-                                double shift = Double.parseDouble(values[1].trim());
-                                int atomNum = Integer.parseInt(values[2].trim());
-                                String atomName = Objects.requireNonNull(AtomProperty.get(atomNum)).name();
-                                shifts.putIfAbsent(atomName+atomIndex, shift);
-                            });
-                            atomList.forEach(atom -> {
-                                double shift = shifts.get(atom.getName());
-                                atom.setPPM(shift);
-                            });
+                            if (IS_SPECIAL_BUTTS) {
+                                Arrays.stream(rows).forEach(row -> {
+                                    String[] values = row.split(",");
+                                    int atomIndex = Integer.parseInt(values[0].trim()) + 1;
+                                    double shift = Double.parseDouble(values[1].trim());
+                                    int atomNum = Integer.parseInt(values[2].trim());
+                                    String atomName = Objects.requireNonNull(AtomProperty.get(atomNum)).name();
+                                    shifts.putIfAbsent(atomName + atomIndex, shift);
+                                });
+                                atomList.forEach(atom -> {
+                                    double shift = shifts.get(atom.getName());
+                                    atom.setPPM(shift);
+                                });
+
+                            } else {
+                                Arrays.stream(rows).forEach(row -> {
+                                    String[] values = row.split(",");
+                                    double shift = Double.parseDouble(values[1].trim());
+                                    for (int i=2;i<values.length;i++) {
+                                        int atomIndex;
+                                        if (StringUtils.isNumeric(values[i].trim())) {
+                                            atomIndex = Integer.parseInt(values[i].trim()) - 1;
+                                            atomList.get(atomIndex).setPPM(shift);
+                                        } else {
+                                            atomIndex = Integer.parseInt(values[i].trim().substring(1)) - 1;
+                                        }
+                                    }
+                                });
+                            }
                         } else if (valueName.equals("NMREDATA_J")) {
                             String[] rows = sBuilder.toString().split("\n");
-                            Arrays.stream(rows).forEach(row -> {
-                                String[] values = row.split(",");
-                                int atomIndexI = Integer.parseInt(values[0].trim());
-                                int atomINdexJ = Integer.parseInt(values[1].trim());
-                                double coupling = Double.parseDouble(values[2].trim());
-                                String couplingName = values[3].trim();
-                                Atom atomI = compound.getAtom(atomIndexI);
-                                Atom atomJ = compound.getAtom(atomINdexJ);
-                                atomI.addAtomCouplingPair(new AtomCouplingPair(atomI, atomJ, coupling, couplingName));
-                                atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI,  coupling, couplingName));
-                            });
+                            if (IS_SPECIAL_BUTTS) {
+                                Arrays.stream(rows).forEach(row -> {
+                                    String[] values = row.split(",");
+                                    int atomIndexI = Integer.parseInt(values[0].trim());
+                                    int atomINdexJ = Integer.parseInt(values[1].trim());
+                                    double coupling = Double.parseDouble(values[2].trim());
+                                    String couplingName = values[3].trim();
+                                    Atom atomI = compound.getAtom(atomIndexI);
+                                    Atom atomJ = compound.getAtom(atomINdexJ);
+                                    atomI.addAtomCouplingPair(new AtomCouplingPair(atomI, atomJ, coupling, couplingName));
+                                    atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI, coupling, couplingName));
+                                });
+                            }
                         }
 
                     }
