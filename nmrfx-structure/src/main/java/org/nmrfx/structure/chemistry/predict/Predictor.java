@@ -592,7 +592,7 @@ public class Predictor {
         GATV2Predictor gatv2Predictor = null;
         try {
             gatv2Predictor = new GATV2Predictor();
-            gatv2Predictor.predict(aC, iRef);
+            gatv2Predictor.predict(aC, iRef, GATV2Predictor.SolventCorr.D2O);
         } catch (OrtException e) {
         }
     }

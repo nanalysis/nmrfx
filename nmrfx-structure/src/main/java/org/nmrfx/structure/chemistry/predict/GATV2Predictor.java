@@ -36,6 +36,33 @@ public class GATV2Predictor {
             17, new Double[]{736.0, 97.3},
             35, new Double[]{2054.2, 79.2});
 
+    public enum SolventCorr {
+        Chloroform(0.995, -0.007),
+        DMSO(1.014, -0.185),
+        Methanol(0.996, -0.017),
+        D2O(1.0, 0.0);
+
+        double m;
+        double b;
+
+        SolventCorr(double m, double b) {
+            this.m = m;
+            this.b = b;
+        }
+
+        double toD2O(double shift) {
+            return (shift - b) / m;
+        }
+
+        double fromD2O(double shift) {
+            return shift * m + b;
+        }
+
+        double toSolvent(double shift) {
+            return fromD2O(Chloroform.toD2O(shift));
+        }
+    }
+
     public GATV2Predictor() throws OrtException {
         if (session == null) {
             getOnnxSession();
@@ -102,8 +129,13 @@ public class GATV2Predictor {
                         n++;
                     }
                 }
-                for (Atom hAtom : methylH) {
-                    setPPM(hAtom, sum / n, sumError / n, iRef);
+                if (n != 0) {
+                    double avgPPM = Math.round((sum / n) * 100.0) / 100.0;
+                    double avgError = Math.round((sumError / n) * 100.0) / 100.0;
+
+                    for (Atom hAtom : methylH) {
+                        setPPM(hAtom, avgPPM, avgError, iRef);
+                    }
                 }
             }
         }
@@ -124,9 +156,15 @@ public class GATV2Predictor {
 
     }
 
-    private void setShift(ResidueAtomDistances.AtomNode atomNode, double value, int iRef) {
+    private void setShift(ResidueAtomDistances.AtomNode atomNode, double value, int iRef, SolventCorr solventCorr) {
         int nodeType = atomNode.property();
-        double shift = Math.round(denormalize(nodeType, value) * 1000.0) / 1000.0;
+        double shift = denormalize(nodeType, value);
+        if (nodeType == 1) {
+            shift = solventCorr.toSolvent(shift);
+        } else if ((nodeType == 7) && (solventCorr == SolventCorr.D2O)) {
+            shift += 380.2;
+        }
+        shift = Math.round(shift * 100.0) / 100.0;
         double error;
         if (nodeType == 1) {
             error = 0.1;
@@ -151,7 +189,7 @@ public class GATV2Predictor {
 
     }
 
-    public void predict(Entity compound, int iRef) throws OrtException {
+    public void predict(Entity compound, int iRef, SolventCorr solventCorr) throws OrtException {
         ResidueAtomDistances rad = getRAD(compound);
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
 
@@ -185,7 +223,7 @@ public class GATV2Predictor {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
                     int nodeType = atomNode.property();
                     if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
-                        setShift(atomNode, nodeOutputs[i], iRef);
+                        setShift(atomNode, nodeOutputs[i], iRef, solventCorr);
                     }
                 }
                 averageMethyls(compound, iRef);
