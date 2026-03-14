@@ -31,6 +31,13 @@ public class ResidueAtomDistances {
             }
             return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couoplingName);
         }
+
+        public int indexA() {
+            return iAtomList.getFirst();
+        }
+        public int indexB() {
+            return iAtomList.get(1);
+        }
     }
 
     public record AtomGraph(List<AtomNode> nodes, List<AtomEdge> edges) {

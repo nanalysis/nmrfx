@@ -7,6 +7,7 @@ import ai.onnxruntime.OrtSession;
 import org.jgrapht.alg.shortestpath.DefaultManyToManyShortestPaths;
 import org.jgrapht.graph.DefaultEdge;
 import org.nmrfx.chemistry.Atom;
+import org.nmrfx.chemistry.AtomCouplingPair;
 import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
@@ -20,7 +21,6 @@ public class GATV2Predictor {
     OrtEnvironment env;
     OrtSession session;
     static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 7, 1, 16, 9, 17, 35, 15));
-    private List<Double> jValues = new ArrayList<>();
 
     Map<Integer, Double[]> normValues = Map.of(
             1, new Double[]{3.4, 4.9},
@@ -57,13 +57,45 @@ public class GATV2Predictor {
         session = env.createSession("/Users/brucejohnson/Development/nanalysis/models/jshift.onnx", new OrtSession.SessionOptions());
     }
 
+    private void setShift(ResidueAtomDistances.AtomNode atomNode, double value, int iRef) {
+        int nodeType = atomNode.property();
+        double shift = denormalize(nodeType, value);
+        double error;
+        if (nodeType == 1) {
+            error = 0.1;
+        } else {
+            error = 0.8;
+        }
+        Atom atom = atomNode.atom();
+        if (iRef < 0) {
+            atom.setRefPPM(-iRef - 1, shift);
+            atom.setRefError(-iRef - 1, error);
+        } else {
+            atom.setPPM(iRef, shift);
+            atom.setRefError(iRef, error);
+        }
+    }
+
+    private void setCoupling(Atom atomI, Atom atomJ, int pathLen, double value) {
+        double jScale = pathLen > 1.1 ? 1.0 : 10.0;
+        double pjValue = value * jScale;
+        String couplingName;
+        if (atomI.getAtomicNumber() < atomJ.getAtomicNumber()) {
+            couplingName = pathLen + "J" + atomI.getElementName() + atomJ.getElementName();
+        } else {
+            couplingName = pathLen + "J" + atomJ.getElementName() + atomI.getElementName();
+        }
+        atomI.addAtomCouplingPair(new AtomCouplingPair(atomI, atomJ, pjValue, couplingName));
+        atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI, pjValue, couplingName));
+
+    }
     public void predict(Entity compound, int iRef) throws OrtException {
         ResidueAtomDistances rad = getRAD(compound);
-
-        int nNodes = rad.atomGraphs.getFirst().nodes().size();
-        int nEdges = rad.atomGraphs.getFirst().edges().size();
-
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
+
+        int nNodes = graph.nodes().size();
+        int nEdges = graph.edges().size();
+
         long[] nodes = graph.nodes().stream().mapToLong(node -> tokens.indexOf(node.property())).toArray();
         long[][] edgeIndex = new long[2][nEdges];
         float[][] edgeAttr = new float[nEdges][2];
@@ -77,59 +109,32 @@ public class GATV2Predictor {
         }
 
         //inputs are x (nNodes) edge_index (2, nEdges), edge_attr (nEdges, 2)
-        var input1 = OnnxTensor.createTensor(env, nodes);
-        var input2 = OnnxTensor.createTensor(env, edgeIndex);
-        var input3 = OnnxTensor.createTensor(env, edgeAttr);
+        try (var input1 = OnnxTensor.createTensor(env, nodes); var input2 = OnnxTensor.createTensor(env, edgeIndex); var input3 = OnnxTensor.createTensor(env, edgeAttr)) {
+            List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes();
+            var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
+            try (OrtSession.Result result = session.run(inputs)) {
+                Object nodeOut = result.get(0).getValue();
+                Object edgeOut = result.get(1).getValue();
 
-        List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes();
-        double[] labels = rad.atomGraphs.getFirst().nodes().stream().mapToDouble(ResidueAtomDistances.AtomNode::ppm).toArray();
-        var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
-        try (OrtSession.Result result = session.run(inputs)) {
-            Object nodeOut = result.get(0).getValue();
-            Object edgeOut = result.get(1).getValue();
+                double[] nodeOutputs = processOutput(nodeOut);
+                double[] edgeOutputs = processOutput(edgeOut);
 
-            double[] nodeOutputs = processOutput(nodeOut);
-            double[] edgeOutputs = processOutput(edgeOut);
-
-            System.out.println("nodeId pshift eshift dshift");
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < nNodes; i++) {
-                ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
-                int nodeType = atomNode.property();
-                double pshift = denormalize(nodeType, nodeOutputs[i]);
-                double error;
-                if (atomNode.property() == 1) {
-                    error = 0.1;
-                } else {
-                    error = 0.8;
+                for (int i = 0; i < nNodes; i++) {
+                    ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
+                    setShift(atomNode, nodeOutputs[i], iRef);
                 }
-                Atom atom = atomNode.atom();
-                if (iRef < 0) {
-                    atom.setRefPPM(-iRef - 1, pshift);
-                    atom.setRefError(-iRef - 1, error);
-                } else {
-                    atom.setPPM(iRef, pshift);
-                    atom.setRefError(iRef, error);
+                for (int i = 0; i < nEdges; i++) {
+                    float pathLen = edgeAttr[i][1];
+                    String cName = graph.edges().get(i).couoplingName();
+                    if ((pathLen < 5) && !cName.isBlank()) {
+                        int iIndex = (int) edgeIndex[0][i];
+                        int jIndex = (int) edgeIndex[1][i];
+                        Atom atomI = graphNodes.get(iIndex).atom();
+                        Atom atomJ = graphNodes.get(jIndex).atom();
+                        setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i]);
+                    }
                 }
-                double eshift = denormalize(nodeType, labels[i]);
-                sb.append(nodeType).append(" ")
-                        .append(formatStr(pshift)).append(" ")
-                        .append(formatStr(eshift)).append(" ")
-                        .append(formatStr(eshift - pshift))
-                        .append("\n");
             }
-            System.out.println(sb);
-            StringBuilder edgeSb = new StringBuilder();
-            for (int i = 0; i < nEdges; i++) {
-                double ejValue = 0.0;
-                float pathLen = edgeAttr[i][1];
-                double jScale = pathLen > 1.1 ? 1.0 : 10.0;
-                double pjValue = edgeOutputs[i] * jScale;
-                edgeSb.append(formatStr(pjValue)).append(" ")
-                        .append(ejValue).append(" ")
-                        .append(formatStr(ejValue - pjValue)).append("\n");
-            }
-            System.out.println(edgeSb);
         }
     }
 
@@ -138,9 +143,4 @@ public class GATV2Predictor {
                 .replace("[", "").replace("]", "")
                 .split(",")).mapToDouble(Double::parseDouble).toArray();
     }
-
-    private String formatStr(double value) {
-        return String.format("%.3f", value);
-    }
-
 }
