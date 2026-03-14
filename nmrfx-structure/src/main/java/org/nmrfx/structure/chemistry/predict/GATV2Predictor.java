@@ -12,14 +12,20 @@ import org.nmrfx.chemistry.Entity;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+
+import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class GATV2Predictor {
-    OrtEnvironment env;
-    OrtSession session;
+    static OrtSession session = null;
+    static         OrtEnvironment env = null;
     static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 7, 1, 16, 9, 17, 35, 15));
 
     Map<Integer, Double[]> normValues = Map.of(
@@ -34,7 +40,9 @@ public class GATV2Predictor {
             35, new Double[]{2054.2, 79.2});
 
     public GATV2Predictor() throws OrtException {
-        getOnnxSession();
+        if (session == null) {
+            getOnnxSession();
+        }
     }
 
     private double denormalize(int atomType, double output) {
@@ -52,14 +60,38 @@ public class GATV2Predictor {
         return rad;
     }
 
-    public void getOnnxSession() throws OrtException {
+    public static void getOnnxSession() throws OrtException {
         env = OrtEnvironment.getEnvironment();
-        session = env.createSession("/Users/brucejohnson/Development/nanalysis/models/jshift.onnx", new OrtSession.SessionOptions());
+        String homeDirPath = System.getProperty("user.home");
+        Path path = Path.of(homeDirPath, "nmrfx_models", "jshift_v1.onnx");
+        File file = path.toFile();
+        if (file.exists()) {
+            session = env.createSession(file.toString(), new OrtSession.SessionOptions());
+        } else {
+            InputStream modelStream = ClassLoader.getSystemResourceAsStream("data/jshift_v1.onnx");
+            if (modelStream == null) {
+                throw new IllegalArgumentException("Model file not found in classpath");
+            }
+
+            byte[] modelBytes;
+            try (InputStream in = modelStream; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+                modelBytes = out.toByteArray();
+                session = env.createSession(modelBytes);
+            } catch (IOException ioException) {
+
+            }
+
+        }
     }
 
     private void setShift(ResidueAtomDistances.AtomNode atomNode, double value, int iRef) {
         int nodeType = atomNode.property();
-        double shift = denormalize(nodeType, value);
+        double shift = Math.round(denormalize(nodeType, value) * 1000.0) / 1000.0;
         double error;
         if (nodeType == 1) {
             error = 0.1;
@@ -78,7 +110,7 @@ public class GATV2Predictor {
 
     private void setCoupling(Atom atomI, Atom atomJ, int pathLen, double value) {
         double jScale = pathLen > 1.1 ? 1.0 : 10.0;
-        double pjValue = value * jScale;
+        double pjValue = Math.round(value * jScale * 100.0) / 100.0;
         String couplingName;
         if (atomI.getAtomicNumber() < atomJ.getAtomicNumber()) {
             couplingName = pathLen + "J" + atomI.getElementName() + atomJ.getElementName();
@@ -89,6 +121,7 @@ public class GATV2Predictor {
         atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI, pjValue, couplingName));
 
     }
+
     public void predict(Entity compound, int iRef) throws OrtException {
         ResidueAtomDistances rad = getRAD(compound);
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
@@ -121,7 +154,10 @@ public class GATV2Predictor {
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
-                    setShift(atomNode, nodeOutputs[i], iRef);
+                    int nodeType = atomNode.property();
+                    if ((nodeType == 1) || (nodeType==6) || (nodeType==7) || (nodeType==9) || (nodeType==15)) {
+                        setShift(atomNode, nodeOutputs[i], iRef);
+                    }
                 }
                 for (int i = 0; i < nEdges; i++) {
                     float pathLen = edgeAttr[i][1];
