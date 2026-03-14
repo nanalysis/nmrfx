@@ -2048,6 +2048,20 @@ public class Atom implements IAtom, Comparable<Atom> {
             return nH == 3;
         }
     }
+    public List<Atom> getMethylProtons() {
+        if ((aNum != 1) || (parent == null)) {
+            return Collections.emptyList();
+        } else {
+            List<Atom> atoms = parent.getConnected();
+            List<Atom> methylAtoms = new ArrayList<>();
+            for (Atom atom : atoms) {
+                if (atom.getAtomicNumber() == 1) {
+                    methylAtoms.add(atom);
+                }
+            }
+            return methylAtoms;
+        }
+    }
 
     public boolean isMethylCarbon() {
         boolean result = false;

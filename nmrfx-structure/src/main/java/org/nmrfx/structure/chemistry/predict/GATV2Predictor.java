@@ -6,10 +6,7 @@ import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 import org.jgrapht.alg.shortestpath.DefaultManyToManyShortestPaths;
 import org.jgrapht.graph.DefaultEdge;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.AtomCouplingPair;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.MoleculeFactory;
+import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
 
 import java.io.IOException;
@@ -25,7 +22,7 @@ import java.util.Map;
 
 public class GATV2Predictor {
     static OrtSession session = null;
-    static         OrtEnvironment env = null;
+    static OrtEnvironment env = null;
     static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 7, 1, 16, 9, 17, 35, 15));
 
     Map<Integer, Double[]> normValues = Map.of(
@@ -60,6 +57,7 @@ public class GATV2Predictor {
         return rad;
     }
 
+
     public static void getOnnxSession() throws OrtException {
         env = OrtEnvironment.getEnvironment();
         String homeDirPath = System.getProperty("user.home");
@@ -89,6 +87,43 @@ public class GATV2Predictor {
         }
     }
 
+    private void averageMethyls(Entity entity, int iRef) {
+        for (Atom atom : entity.getAtoms()) {
+            if (atom.isMethyl() && atom.isFirstInMethyl()) {
+                var methylH = atom.getMethylProtons();
+                double sum = 0.0;
+                double sumError = 0.0;
+                int n = 0;
+                for (Atom hAtom : methylH) {
+                    PPMv ppMv = iRef < 0 ? hAtom.getRefPPM(-iRef - 1) : hAtom.getPPM(iRef);
+                    if ((ppMv != null) && ppMv.isValid()) {
+                        sum += ppMv.getValue();
+                        sumError += ppMv.getError();
+                        n++;
+                    }
+                }
+                for (Atom hAtom : methylH) {
+                    setPPM(hAtom, sum / n, sumError / n, iRef);
+                }
+            }
+        }
+    }
+
+    private void setPPM(Atom atom, double shift, Double error, int iRef) {
+        if (iRef < 0) {
+            atom.setRefPPM(-iRef - 1, shift);
+            if (error != null) {
+                atom.setRefError(-iRef - 1, error);
+            }
+        } else {
+            atom.setPPM(iRef, shift);
+            if (error != null) {
+                atom.setRefError(iRef, error);
+            }
+        }
+
+    }
+
     private void setShift(ResidueAtomDistances.AtomNode atomNode, double value, int iRef) {
         int nodeType = atomNode.property();
         double shift = Math.round(denormalize(nodeType, value) * 1000.0) / 1000.0;
@@ -99,13 +134,7 @@ public class GATV2Predictor {
             error = 0.8;
         }
         Atom atom = atomNode.atom();
-        if (iRef < 0) {
-            atom.setRefPPM(-iRef - 1, shift);
-            atom.setRefError(-iRef - 1, error);
-        } else {
-            atom.setPPM(iRef, shift);
-            atom.setRefError(iRef, error);
-        }
+        setPPM(atom, shift, error, iRef);
     }
 
     private void setCoupling(Atom atomI, Atom atomJ, int pathLen, double value) {
@@ -155,10 +184,11 @@ public class GATV2Predictor {
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
                     int nodeType = atomNode.property();
-                    if ((nodeType == 1) || (nodeType==6) || (nodeType==7) || (nodeType==9) || (nodeType==15)) {
+                    if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
                         setShift(atomNode, nodeOutputs[i], iRef);
                     }
                 }
+                averageMethyls(compound, iRef);
                 for (int i = 0; i < nEdges; i++) {
                     float pathLen = edgeAttr[i][1];
                     String cName = graph.edges().get(i).couoplingName();
