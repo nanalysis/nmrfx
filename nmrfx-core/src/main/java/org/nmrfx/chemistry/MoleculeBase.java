@@ -534,8 +534,10 @@ public class MoleculeBase implements Serializable, ITree {
                         Atom atomTest = nodeTest.getAtom();
 
                         if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
-                            shell = kGroup.shells.get(jj);
-                            break;
+                            if (jj < kGroup.shells.size()) {
+                                shell = kGroup.shells.get(jj);
+                                break;
+                            }
                         }
                     }
 

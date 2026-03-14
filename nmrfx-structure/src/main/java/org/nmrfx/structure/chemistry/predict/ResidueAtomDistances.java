@@ -2,10 +2,8 @@ package org.nmrfx.structure.chemistry.predict;
 
 import org.jgrapht.alg.shortestpath.DefaultManyToManyShortestPaths;
 import org.jgrapht.graph.DefaultEdge;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.chemistry.Point3;
+import org.nmrfx.chemistry.*;
+import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
 
 import java.io.FileWriter;
@@ -22,9 +20,16 @@ public class ResidueAtomDistances {
         }
     }
 
-    public record AtomEdge(int indexA, int indexB, double distance, int pathLen) {
+    public record AtomEdge(List<Integer> iAtomList, double distance, int pathLen, double couplingValue, String couoplingName) {
         public String getCSV(int iGraph) {
-            return String.format("%d,%d,%d,%.3f,%d", iGraph, indexA, indexB, distance, pathLen);
+            StringBuilder stringBuilder = new StringBuilder();
+            for (Integer i: iAtomList) {
+                if (!stringBuilder.isEmpty()) {
+                    stringBuilder.append(",");
+                }
+                stringBuilder.append(i);
+            }
+            return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couoplingName);
         }
     }
 
@@ -78,8 +83,37 @@ public class ResidueAtomDistances {
                     double distance = pointA.distance(pointB);
                     if (distance < limit) {
                         var path = paths.getPath(atomA, atomB);
-                        int pathLen = path != null ? path.getLength() : 0;
-                        AtomEdge atomEdge = new AtomEdge(iAtomA, iAtomB, distance, pathLen);
+                        List<Atom> pathAtoms = path.getVertexList();
+                        var couplingOpt = JCoupling.CouplingName.getCoupling(pathAtoms);
+                        String couplingName = "";
+                        if (couplingOpt.isPresent()) {
+                            couplingName = couplingOpt.get().name().trim();
+                        }
+                        int pathLen = Math.min(6, path != null ? path.getLength() : 6);
+                        double coupling = 0.0;
+                        List<Atom> vertexList = new ArrayList<>();
+                        vertexList.add(atomA);
+                        vertexList.add(atomB);
+                        if (path != null) {
+                            var pList = path.getVertexList();
+                            for (int i=1;i<pList.size() - 1 ;i++) {
+                                vertexList.add(pList.get(i));
+                            }
+                            var atomCouplingPairOpt = atomA.getAtomCouplingPair(atomB);
+                            if (atomCouplingPairOpt.isPresent()) {
+                                coupling = atomCouplingPairOpt.get().coupling();
+                            }
+                        }
+                        List<Integer> iAtomList = new ArrayList<>();
+                        for (int i=0;i<5;i++) {
+                            int index = -1;
+                            if (i < vertexList.size()) {
+                                index = atoms.indexOf(vertexList.get(i));
+                            }
+                            iAtomList.add(index);
+                        }
+
+                        AtomEdge atomEdge = new AtomEdge(iAtomList, distance, pathLen, coupling, couplingName);
                         atomGraph.edges.add(atomEdge);
                     }
                 }
@@ -113,7 +147,7 @@ public class ResidueAtomDistances {
 
     public void dumpGraphs(String nodeFileName, String edgeFileName) throws IOException {
         String nodeHeader = "graph_id,node_id,node_type,label,mask\n";
-        String edgeHeader = "graph_id,source,target,weight,nbonds\n";
+        String edgeHeader = "graph_id,source,target,node1,node2,node3,weight,nbonds,jvalue, cname\n";
         try (FileWriter fileWriter = new FileWriter(nodeFileName)) {
             fileWriter.write(nodeHeader);
             int i = 0;
