@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane fx:id="ssBorderPane" prefHeight="600.0" prefWidth="900.0"
+            styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.nmrfx.analyst.gui.molecule3D.RNASSViewController">
+    <top>
+        <HBox HBox.hgrow="ALWAYS">
+            <ButtonBar HBox.hgrow="ALWAYS">
+                <buttons>
+                    <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0"
+                            prefWidth="87.0" text="Draw"/>
+                    <Button mnemonicParsing="false" onAction="#printSS" prefHeight="27.0"
+                            prefWidth="87.0" text="Print"/>
+                    <MenuButton fx:id="atomMenu" text="Atoms"/>
+                    <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
+                    <MenuButton fx:id="modeMenuButton" text="Modes"/>
+                    <ChoiceBox fx:id="constraintTypeChoiceBox"/>
+
+                </buttons>
+            </ButtonBar>
+        </HBox>
+    </top>
+    <center>
+    </center>
+    <bottom>
+        <VBox HBox.hgrow="ALWAYS">
+            <Pane fx:id="dotBracketPane" minHeight="40" HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="dotBracketField" HBox.hgrow="ALWAYS"/>
+            <ToolBar>
+                <Label text="Sec. Structure"/>
+                <Button mnemonicParsing="false" onAction="#loadFromFile"
+                        text="Open..."/>
+                <Button mnemonicParsing="false" onAction="#ssFrom3D"
+                        text="From 3D"/>
+                <Button mnemonicParsing="false" onAction="#seqTo2D"
+                        text="Predict"/>
+                <Button mnemonicParsing="false" onAction="#ssTo3D"
+                        text="To 3D "/>
+                <Pane prefWidth="10"/>
+                <Label text="Predictor Threshold"/>
+                <Slider fx:id="thresholdSlider" max="1.0" value="0.5"/>
+                <TextField fx:id="thresholdField" prefWidth="40"/>
+                <Pane prefWidth="10"/>
+                <MenuButton text="Options">
+                    <items>
+                        <CheckMenuItem fx:id="pseudoKnotCheckBox" text="Allow PseudoKnots"/>
+                        <CheckMenuItem fx:id="canonicalCheckBox" text="Require Canonical" selected="true"/>
+                    </items>
+                </MenuButton>
+            </ToolBar>
+            <ToolBar HBox.hgrow="ALWAYS">
+                <Label text="Sec. Structure Selector"/>
+                <Spinner fx:id="ssSpinner" prefWidth="150"/>
+                <CheckBox fx:id="ssDisplayCheckBox" text="Show Sec. Struct."/>
+                <CheckBox fx:id="mapDisplayCheckBox" text="Show Map"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Label text="Zoom"/>
+                <Button text="-" onAction="#zoomOut"/>
+                <Button text="+" onAction="#zoomIn"/>
+            </ToolBar>
+            <ToolBar>
+
+                <MenuButton mnemonicParsing="false" text="Matching">
+                    <items>
+                        <MenuItem mnemonicParsing="false" onAction="#scoreSecStructures"
+                                  text="Match"/>
+                        <MenuItem mnemonicParsing="false" onAction="#selectSecStructure"
+                                  text="Select"/>
+                    </items>
+                </MenuButton>
+                <Label fx:id="rnaSecStructureScoreLabel"/>
+            </ToolBar>
+        </VBox>
+    </bottom>
+</BorderPane>
+
