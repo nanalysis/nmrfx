@@ -279,10 +279,6 @@ public class SSPredictor {
         return basePairsMatching;
     }
 
-    public Set<BasePairProbability> getExtentBasePairs() {
-        return extentBasePairs;
-    }
-
     public double[][] getPredictions() {
         return predictions;
     }
@@ -429,26 +425,33 @@ public class SSPredictor {
         paritionedGraph = new ParitionedGraph(simpleGraph, partition1, partition2);
     }
 
-    private void setGraphWeights(Graph<Integer, DefaultWeightedEdge> graph, double threshold, double randomScale, int iTry) {
+    private void setGraphWeights(Graph<Integer, DefaultWeightedEdge> graph, double threshold, boolean[] inRegion, double randomScale, int iTry) {
         int n = predictions.length;
         for (var edge : graph.edgeSet()) {
             int i = graph.getEdgeSource(edge);
             int j = graph.getEdgeTarget(edge) - n;
             BPRegion bpRegion = regionsMap.get(new BPKey(i, j));
+            double regionWeight = bpRegion != null ? bpRegion.delta : 0.0;
             double weight = 0.0;
             if (i == j) {
-                weight = 1.0;
+                weight = 1.0e-6;
             } else if (((i + 2) < j) && (predictions[i][j] > threshold)) {
-                double adjustment = iTry == 0 ? 0.0 : randomScale * (random.nextDouble() - 0.5);
-                double prediction = predictions[i][j] + adjustment + bpRegion.delta;
+                double prediction;
+                if ((inRegion[i] || inRegion[j]) && (regionWeight < 1.0)) {
+                    prediction = -1.0;
+                } else {
+                    double adjustment = iTry == 0 ? 0.0 : randomScale * (random.nextDouble() - 0.5);
+                    prediction = predictions[i][j] + adjustment + regionWeight;
+                }
                 if (prediction < 0.0) {
-                    weight = 1.0;
+                    weight = 1.0e-6;
                 } else {
                     prediction = Math.min(prediction, 500.0);
                     prediction = Math.max(prediction, 0.0);
                     weight = 100.0 + prediction;
-                }
+                 }
             }
+
 
             graph.setEdgeWeight(i, j + n, weight);
         }
@@ -472,7 +475,6 @@ public class SSPredictor {
                     }
                 });
         return matches;
-
     }
 
     public double getGraphThreshold() {
@@ -613,21 +615,28 @@ public class SSPredictor {
 
     }
 
-    private double matchRegion(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph, int[][] matchTries, double threshold, int iTry, double randomScale) {
-        setGraphWeights(simpleGraph, threshold, randomScale, iTry);
+    private void matchRegion(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph, int[][] matchTries,
+                               double threshold, boolean[] inRegion, int iTry,
+                               double randomScale) {
+        setGraphWeights(simpleGraph, threshold, inRegion, randomScale, iTry);
         var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
                 paritionedGraph.partition1, paritionedGraph.partition2);
         MatchingAlgorithm.Matching<Integer, DefaultWeightedEdge> matchResult = matcher.getMatching();
         List<BasePairProbability> matches = getMatches(matchResult);
-        double sum = 0.0;
         int foundMatch = checkForExisting(matches, matchTries);
         if (foundMatch == -1) {
             refineMatches(matches, matchTries);
-            for (BasePairProbability basePairProbability : matches) {
-                sum += basePairProbability.probability;
-            }
         }
-        return sum;
+    }
+
+    private void setupRegion(BPRegion bpRegion, boolean[] inRegion) {
+        for (int i=0;i<bpRegion.size;i++) {
+            int r = bpRegion.start.row + i;
+            int c = bpRegion.start.col - i;
+            inRegion[r] = true;
+            inRegion[c] = true;
+        }
+        bpRegion.delta = 400.0;
     }
 
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
@@ -644,24 +653,27 @@ public class SSPredictor {
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
 
         int nRegions = regionsList.size();
+        boolean[] inRegion = new boolean[n];
         for (int i = 0; i < nRegions; i++) {
             for (int j = 0; j < nRegions; j++) {
                 for (int k = 0; k < nRegions; k++) {
                     for (BPRegion bpRegion : regionsList) {
                         bpRegion.delta = 0.0;
                     }
-                    regionsList.get(i).delta = 500.0;
-                    regionsList.get(j).delta = 500.0;
-                    regionsList.get(k).delta = 500.0;
-                    matchRegion(simpleGraph, matchTries, threshold, 0, 0.0);
+                    Arrays.fill(inRegion, false);
+                    setupRegion(regionsList.get(i), inRegion);
+                    setupRegion(regionsList.get(j), inRegion);
+                    setupRegion(regionsList.get(k), inRegion);
+                    matchRegion(simpleGraph, matchTries, threshold, inRegion, 0, 0.0);
                 }
             }
         }
         for (BPRegion bpRegion : regionsList) {
             bpRegion.delta = 0.0;
         }
+        Arrays.fill(inRegion, false);
         for (int iTry = 0;iTry < nTries;iTry++) {
-            matchRegion(simpleGraph, matchTries, threshold, iTry, randomScale);
+            matchRegion(simpleGraph, matchTries, threshold, inRegion, iTry, randomScale);
         }
         extentBasePairsList.sort(Comparator.reverseOrder());
     }
@@ -695,8 +707,7 @@ public class SSPredictor {
 
     void findRegions(double threshold) {
         int seqLen = predictions.length;
-        regionsMap.clear();
-        regionsList.clear();
+        List<BPRegion> localRegions = new ArrayList<>();
         AtomicInteger index = new AtomicInteger(0);
 
         for (int r = 0; r < seqLen; r++) {
@@ -713,9 +724,15 @@ public class SSPredictor {
                     } else {
                         BPRegion bpRegion = new BPRegion(bpKey, index.getAndIncrement());
                         regionsMap.put(bpKey, bpRegion);
-                        regionsList.add(bpRegion);
+                        localRegions.add(bpRegion);
                     }
                 }
+            }
+        }
+        regionsList.clear();
+        for (BPRegion bpRegion : localRegions) {
+            if (bpRegion.size > 2) {
+                regionsList.add(bpRegion);
             }
         }
     }
