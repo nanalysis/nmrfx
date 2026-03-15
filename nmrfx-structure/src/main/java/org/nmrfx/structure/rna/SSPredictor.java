@@ -449,7 +449,7 @@ public class SSPredictor {
                     prediction = Math.min(prediction, 500.0);
                     prediction = Math.max(prediction, 0.0);
                     weight = 100.0 + prediction;
-                 }
+                }
             }
 
 
@@ -515,7 +515,7 @@ public class SSPredictor {
         }
     }
 
-    int checkForExisting(List<BasePairProbability> matches, int[][] matchTries) {
+    int checkForExisting(List<BasePairProbability> matches, List<int[]> matchTries) {
         int nFound = extentBasePairsList.size();
         int n = predictions.length;
         int foundMatch = -1;
@@ -530,8 +530,9 @@ public class SSPredictor {
 
         for (int j = 0; j < nFound; j++) {
             boolean ok = true;
+            int[] testTry = matchTries.get(j);
             for (int i = 0; i < n; i++) {
-                if (matchTest[i] != matchTries[j][i]) {
+                if (matchTest[i] != testTry[i]) {
                     ok = false;
                     break;
                 }
@@ -591,14 +592,16 @@ public class SSPredictor {
         extentBasePairs.addAll(temp);
     }
 
-    void refineMatches(List<BasePairProbability> matches, int[][] matchTries) {
+    void refineMatches(List<BasePairProbability> matches, List<int[]> matchTries) {
         Set<BasePairProbability> newExtentBasePairs = new HashSet<>();
-        int nFound = extentBasePairsList.size();
+        int[] testTry = new int[predictions.length];
+        Arrays.fill(testTry, -1);
+        matchTries.add(testTry);
         for (BasePairProbability basePairProbability : matches) {
             if (basePairProbability != null) {
                 newExtentBasePairs.add(basePairProbability);
-                matchTries[nFound][basePairProbability.r] = basePairProbability.c;
-                matchTries[nFound][basePairProbability.c] = basePairProbability.r;
+                testTry[basePairProbability.r] = basePairProbability.c;
+                testTry[basePairProbability.c] = basePairProbability.r;
             }
         }
 
@@ -615,9 +618,9 @@ public class SSPredictor {
 
     }
 
-    private void matchRegion(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph, int[][] matchTries,
-                               double threshold, boolean[] inRegion, int iTry,
-                               double randomScale) {
+    private void matchRegion(SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph, List<int[]> matchTries,
+                             double threshold, boolean[] inRegion, int iTry,
+                             double randomScale) {
         setGraphWeights(simpleGraph, threshold, inRegion, randomScale, iTry);
         var matcher = new MaximumWeightBipartiteMatching<>(simpleGraph,
                 paritionedGraph.partition1, paritionedGraph.partition2);
@@ -630,7 +633,7 @@ public class SSPredictor {
     }
 
     private void setupRegion(BPRegion bpRegion, boolean[] inRegion) {
-        for (int i=0;i<bpRegion.size;i++) {
+        for (int i = 0; i < bpRegion.size; i++) {
             int r = bpRegion.start.row + i;
             int c = bpRegion.start.col - i;
             inRegion[r] = true;
@@ -642,13 +645,9 @@ public class SSPredictor {
     public void bipartiteMatch(double threshold, double randomScale, int nTries) {
         int n = predictions.length;
         buildGraph(threshold);
-        nTries = 1000;
 
         graphThreshold = threshold;
-        int[][] matchTries = new int[nTries][n];
-        for (int i = 0; i < nTries; i++) {
-            Arrays.fill(matchTries[i], -1);
-        }
+        List<int[]> matchTries = new ArrayList<>();
         extentBasePairsList.clear();
         SimpleWeightedGraph<Integer, DefaultWeightedEdge> simpleGraph = paritionedGraph.simpleGraph;
 
@@ -672,7 +671,7 @@ public class SSPredictor {
             bpRegion.delta = 0.0;
         }
         Arrays.fill(inRegion, false);
-        for (int iTry = 0;iTry < nTries;iTry++) {
+        for (int iTry = 0; iTry < nTries; iTry++) {
             matchRegion(simpleGraph, matchTries, threshold, inRegion, iTry, randomScale);
         }
         extentBasePairsList.sort(Comparator.reverseOrder());

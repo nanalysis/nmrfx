@@ -204,21 +204,21 @@ public class SSViewer extends Pane {
         });
 
 
-        char[] pairs = {'.','.','(',')','[',']','{','}','<','>','A','a'};
-        for (int i=0;i<pairs.length;i += 2) {
-            MenuItem closePairItem1 = new MenuItem(String.valueOf(pairs[i]) + String.valueOf(pairs[i+1]));
-            final int ii = i;
-            closePairItem1.setOnAction(e -> {
-                if (selRes < selRes2) {
-                    controller.toggleChar(selRes, selRes2, pairs[ii], pairs[ii + 1]);
-                } else {
-                    controller.toggleChar(selRes, selRes2, pairs[ii + 1], pairs[ii]);
-                }
-                selRes = -1;
-                selRes2 = -1;
-            });
-            contextMenu.getItems().add(closePairItem1);
-        }
+        MenuItem breakPairItem = new MenuItem("Break Pair");
+        breakPairItem.setOnAction(e -> {
+            controller.toggleChar(selRes, selRes2, false);
+            selRes = -1;
+            selRes2=-1;
+        });
+        MenuItem addPairItem = new MenuItem("Add Pair");
+        addPairItem.setOnAction(e -> {
+            controller.toggleChar(selRes, selRes2, true);
+            selRes = -1;
+            selRes2=-1;
+        });
+
+            contextMenu.getItems().addAll(breakPairItem, addPairItem);
+
 
     }
 
@@ -524,11 +524,7 @@ public class SSViewer extends Pane {
         } else {
             if (selRes != -1) {
                 selRes2 = selectedResidue;
-                if (selRes < selRes2) {
-                    controller.toggleChar(selRes, selRes2, '(',')');
-                } else {
-                    controller.toggleChar(selRes, selRes2, ')', '(');
-                }
+                controller.toggleChar(selRes, selRes2, true);
                 selRes = -1;
                 selRes2 = -1;
             } else {

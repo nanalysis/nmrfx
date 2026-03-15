@@ -31,10 +31,7 @@ import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.processor.tools.RNAMatcher;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.rna.RNAAnalysis;
-import org.nmrfx.structure.rna.RNALabels;
-import org.nmrfx.structure.rna.SSLayout;
-import org.nmrfx.structure.rna.SSPredictor;
+import org.nmrfx.structure.rna.*;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,7 +163,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
         ssDisplayCheckBox.setSelected(true);
         ssDisplayCheckBox.setOnAction(e -> ssViewer.resizeWindow());
         mapDisplayCheckBox.setOnAction(e -> ssViewer.resizeWindow());
-        GUIUtils.bindSliderField(thresholdSlider, thresholdField,"#.##");
+        GUIUtils.bindSliderField(thresholdSlider, thresholdField, "#.##");
         thresholdSlider.setValue(0.5);
 
 
@@ -224,7 +221,6 @@ public class RNASSViewController implements Initializable, StageBasedController,
                     (a, b, c) -> updatePeaks());
         }
         ssSpinner.setDisable(true);
-       // ssSpinner.setOn(e -> showSelectedSS());
         thresholdSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
             if (!isChanging) {
                 updateThreshold();
@@ -233,11 +229,12 @@ public class RNASSViewController implements Initializable, StageBasedController,
         pseudoKnotCheckBox.setOnAction(e -> updateThreshold());
         canonicalCheckBox.setOnAction(e -> updateThreshold());
 
-        SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry> factory = new SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry>(ssList);
+        SpinnerValueFactory.ListSpinnerValueFactory<SecondaryStructureEntry> factory = new SpinnerValueFactory.ListSpinnerValueFactory<>(ssList);
         ssSpinner.setValueFactory(factory);
         ContextMenu menu = new ContextMenu();
         ssSpinner.getEditor().setContextMenu(menu);
     }
+
     public void moleculeChanged(MoleculeEvent e) {
         Fx.runOnFxThread(ssViewer::drawSS);
     }
@@ -392,7 +389,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
             int nRight = 0;
             for (int i = 0; i < dotBracket.length(); i++) {
                 String dotChar = dotBracket.substring(i, i + 1);
-                Text textItem = new Text(start + i * fontSize, 2 * fontSize, dotChar);
+                Text textItem = new Text(start + i * fontSize, 2.0 * fontSize, dotChar);
                 textItem.setFont(font);
                 final int dPos = i;
                 textItem.setOnMouseClicked(e -> {
@@ -439,7 +436,10 @@ public class RNASSViewController implements Initializable, StageBasedController,
 
     }
 
-    public void toggleChar(int iPos, int jPos, char iChar, char jChar)  {
+    public void toggleChar(int iPos, int jPos, boolean addPair) {
+        if ((iPos < 0) || (jPos < 0) || (iPos == jPos)) {
+            return;
+        }
         String dotBracket = dotBracketField.getText();
         if (dotBracket.isBlank()) {
             dotBracket = Molecule.getActive().getDotBracket();
@@ -449,15 +449,29 @@ public class RNASSViewController implements Initializable, StageBasedController,
             }
         }
 
+        int[] pairs = SSLayout.viennaToPairs(dotBracket);
+        int currentI = pairs[iPos];
+        if (currentI != -1) {
+            pairs[currentI] = -1;
+            pairs[iPos] = -1;
+        }
+        int currentJ = pairs[jPos];
+        if (currentJ != -1) {
+            pairs[currentJ] = -1;
+            pairs[jPos] = -1;
+        }
+        if (addPair) {
+            pairs[iPos] = jPos;
+            pairs[jPos] = iPos;
+        }
+        String newDotBracket = RNADotBracketCalculator.fcfs(pairs);
+
         try {
-            StringBuilder newDotBracket = new StringBuilder(dotBracket);
-            newDotBracket.setCharAt(iPos, iChar);
-            newDotBracket.setCharAt(jPos, jChar);
-            boolean ok = updateDotBracket(newDotBracket.toString());
+            boolean ok = updateDotBracket(newDotBracket);
             if (ok) {
                 Molecule mol = Molecule.getActive();
                 if (mol != null) {
-                    mol.setDotBracket(newDotBracket.toString());
+                    mol.setDotBracket(newDotBracket);
                     layoutSS();
                 }
             }
@@ -573,7 +587,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
 
     boolean browseOrFetch(boolean noModelDir) {
         String message = noModelDir ? "No Model Set" : "Wrong Model Version";
-        String[] choices =  {"Browse", "Fetch"};
+        String[] choices = {"Browse", "Fetch"};
         int iChoice = GUIUtils.getResponse(message, choices);
         if (iChoice == 0) {
             return false;
@@ -597,6 +611,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
         }
         return true;
     }
+
     @FXML
     private void seqTo2D() {
         Molecule molecule = Molecule.getActive();
@@ -609,12 +624,10 @@ public class RNASSViewController implements Initializable, StageBasedController,
                     return;
                 }
             } else {
-                ssPredictor.setModelFile(rnaModelDir);
+                SSPredictor.setModelFile(rnaModelDir);
             }
-            if (!ssPredictor.hasValidModelFile()) {
-                if (!browseOrFetch(false)) {
-                    return;
-                }
+            if (!ssPredictor.hasValidModelFile() && !browseOrFetch(false)) {
+                return;
             }
             StringBuilder seqBuilder = new StringBuilder();
             for (Polymer polymer : molecule.getPolymers()) {
@@ -642,7 +655,7 @@ public class RNASSViewController implements Initializable, StageBasedController,
     void updateThreshold() {
         if ((ssPredictor != null) && !thresholdSlider.isValueChanging()) {
             double threshold = thresholdSlider.getValue();
-            ssPredictor.updateBasePairs(threshold, pseudoKnotCheckBox.isSelected(),canonicalCheckBox.isSelected());
+            ssPredictor.updateBasePairs(threshold, pseudoKnotCheckBox.isSelected(), canonicalCheckBox.isSelected());
             ssPredictor.bipartiteMatch(threshold, 0.1, 20);
             updateSSChoiceBox();
             try {
@@ -684,16 +697,12 @@ public class RNASSViewController implements Initializable, StageBasedController,
         ssSpinner.getEditor().getContextMenu().getItems().clear();
         for (SecondaryStructureEntry secondaryStructureEntry : ssList) {
             MenuItem item = new MenuItem(secondaryStructureEntry.toString());
-            item.setOnAction(e -> {
-                ssSpinner.getValueFactory().setValue(secondaryStructureEntry);
-            });
+            item.setOnAction(e -> ssSpinner.getValueFactory().setValue(secondaryStructureEntry));
             ssSpinner.getEditor().getContextMenu().getItems().add(item);
         }
         ssSpinner.getValueFactory().setValue(ssList.getFirst());
         ssSpinner.setDisable(false);
-        ssSpinner.getValueFactory().valueProperty().addListener(e -> {
-            showSelectedSS();
-        });
+        ssSpinner.getValueFactory().valueProperty().addListener(e -> showSelectedSS());
     }
 
     void showSelectedSS() {
