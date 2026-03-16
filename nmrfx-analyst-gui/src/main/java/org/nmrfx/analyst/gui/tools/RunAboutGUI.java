@@ -923,10 +923,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                         Label label = new Label(aName);
                         label.setMinWidth(45.0);
                         pane1.add(label, col, 0);
+
                         Label labelPPM = new Label(String.valueOf(n));
                         labelPPM.setMinWidth(45.0);
                         labelMap.put(aName, labelPPM);
                         pane1.add(labelPPM, col, 1);
+
+                        Label matchLabelPPM = new Label(String.valueOf(n));
+                        matchLabelPPM.setMinWidth(45.0);
+                        labelMap.put(aName+"_match_"+k, matchLabelPPM);
+                        pane1.add(matchLabelPPM, col, 2);
+
                         col++;
                     }
                 }
@@ -982,6 +989,24 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                     label.setTooltip(toolTip);
                 }
                 toolTip.setText(String.format("%.1f : %2d", range, nValues));
+            }
+        }
+
+        void setLabel(String aName, double value, double delta) {
+            Label label = labelMap.get(aName);
+            if (!Double.isNaN(value)) {
+                label.setText(String.format("%.1f", value));
+                if (delta > 0.6) {
+                    label.setTextFill(Color.MAGENTA);
+                } else {
+                    label.setTextFill(Color.BLACK);
+                }
+                Tooltip toolTip = label.getTooltip();
+                if (toolTip == null) {
+                    toolTip = new Tooltip();
+                    label.setTooltip(toolTip);
+                }
+                toolTip.setText(String.format("%.1f",delta));
             }
         }
 
@@ -1284,10 +1309,25 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                             viableLabels[i].setText("v");
                             viableLabels[i].setStyle("-fx-background-color:YELLOW");
                         }
+                        List<SeqFragment.ShiftMatch> atomShiftValues;
+                        if (i == 0) {
+                            atomShiftValues = SeqFragment.getAToBValues(matches.get(index));
+                        } else {
+                            atomShiftValues = SeqFragment.getBToAValues(matches.get(index));
+                        }
+                        for (SeqFragment.ShiftMatch atomShiftValue : atomShiftValues) {
+                            String aName = i == 0 ? atomShiftValue.aName().toLowerCase() : atomShiftValue.aName().toUpperCase();
+                            String labelKey = aName+"_match_"+i;
+                            double delta = atomShiftValue.shiftB() != null ? Math.abs(atomShiftValue.shiftA() - atomShiftValue.shiftB()) : 100.0;
+                            clusterStatus.setLabel(labelKey,atomShiftValue.shiftA(), delta);
+                        }
 
                         sysFields[i].setText(String.valueOf(otherSys.getId()));
                         nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
-                        scoreFields[i].setText(String.format("%5.0f", spinMatch.getScore()));
+                        double score = spinMatch.getScore();
+                        scoreFields[i].setText(String.format("%5.0f", score));
+                        Color scoreColor = score < 0.0 ? Color.BLACK : Color.MAGENTA;
+                        scoreFields[i].setTextFill(scoreColor);
                         ok = true;
                     } else {
                         sysFields[i].setText("");
@@ -1944,8 +1984,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             int pIndex = Math.max(0, currentSpinSystem.getConfirmedPrevious());
             int sIndex = Math.max(0, currentSpinSystem.getConfirmedNext());
 
-            gotoSpinSystems(pIndex, sIndex, true);
             clusterStatus.setLabels();
+            gotoSpinSystems(pIndex, sIndex, true);
             var spinSys = currentSpinSystem;
             spinStatus.updateFragment(spinSys);
             refreshRefChart(currentSpinSystem.getRootPeak());

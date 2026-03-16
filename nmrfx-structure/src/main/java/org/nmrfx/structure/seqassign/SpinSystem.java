@@ -1146,7 +1146,9 @@ public class SpinSystem {
                     matchedSet.add(entryA.getKey());
                     double ratio = delta / 0.17;
                     sum += c0 * Math.exp(-0.5 * ratio * ratio) + c1;
-                    nMatch++;
+                    if (delta < (4.0 * tolA)) {
+                        nMatch++;
+                    }
                 } else {
                     ok = true;
                     if (delta > 4.0 * tolA) {
