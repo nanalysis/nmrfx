@@ -936,6 +936,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             int i = 0;
             leftResidues.clear();
             rightResidues.clear();
+            leftGroup.getChildren().clear();
+            rightGroup.getChildren().clear();
             double width = 20.0;
             for (String aaName : AtomParser.getAANames()) {
                 String aaChar = AtomParser.convert3To1(aaName);
