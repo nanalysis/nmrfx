@@ -954,14 +954,14 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 rightResidues.add(rightLabel);
                 leftGroup.getChildren().add(leftLabel);
                 rightGroup.getChildren().add(rightLabel);
-                leftLabel.place(x, y, width, width);
-                rightLabel.place(x, y, width, width);
+                leftLabel.place(x, y, leftLabel.width, leftLabel.height);
+                rightLabel.place(x, y, rightLabel.width, rightLabel.height);
                 x += leftLabel.width;
                 i++;
                 if (i >= 10) {
                     i = 0;
                     x = 10.0;
-                    y = y + 20.0;
+                    y = y + leftLabel.height;
                 }
             }
 
@@ -1357,7 +1357,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     class ResidueLabel extends StackPane {
 
         boolean active = false;
-        double width = clusterCharHeight;
+        double height = clusterCharHeight;
+        double width = clusterCharHeight + 4;
         Rectangle rect;
         Line line;
         Line bottomLine;
