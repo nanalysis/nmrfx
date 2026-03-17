@@ -823,6 +823,13 @@ public class SpinSystem {
         return addShift(nPeaks, resAtomPatterns, shiftList, pt);
     }
 
+    public static String removeSignModifier(String str) {
+        if (str != null && (str.endsWith("+") || str.endsWith("-"))) {
+            return str.substring(0, str.length() - 1);
+        }
+        return str;
+    }
+
     boolean isType(PeakMatch peakMatch, String type) {
         Peak peak = peakMatch.getPeak();
         for (SpectralDim spectralDim : peak.getPeakList().getSpectralDims()) {
@@ -830,8 +837,8 @@ public class SpinSystem {
             if (pattern.contains(".")) {
                 String[] resAtoms = pattern.split("\\.");
                 String[] atomPats = resAtoms[1].split(",");
-                String atomPat = atomPats[0];
-                if (!atomPat.equalsIgnoreCase("H") && !atomPat.equalsIgnoreCase("N")) {
+                String atomPat = removeSignModifier(atomPats[0]);
+                if ((atomPat != null) && !atomPat.equalsIgnoreCase("H") && !atomPat.equalsIgnoreCase("N")) {
                     if (type.equalsIgnoreCase("C") && atomPat.equalsIgnoreCase("C")) {
                         return true;
                     }
