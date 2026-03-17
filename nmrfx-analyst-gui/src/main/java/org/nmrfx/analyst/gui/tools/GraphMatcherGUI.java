@@ -31,9 +31,9 @@ public class GraphMatcherGUI {
     SimpleIntegerProperty eliteNumberProp = new SimpleIntegerProperty(100);
     SimpleIntegerProperty maxPhenoTypeAgeProp = new SimpleIntegerProperty(50);
     SimpleIntegerProperty steadyLimitProp = new SimpleIntegerProperty(200);
-    SimpleDoubleProperty mutationRateProp = new SimpleDoubleProperty(0.1);
+    SimpleDoubleProperty mutationRateProp = new SimpleDoubleProperty(0.7);
     SimpleBooleanProperty mutationProfileProp = new SimpleBooleanProperty(true);
-    SimpleDoubleProperty crossOverRateProp = new SimpleDoubleProperty(0.1);
+    SimpleDoubleProperty crossOverRateProp = new SimpleDoubleProperty(0.7);
     SimpleDoubleProperty sdevRatioProp = new SimpleDoubleProperty(1.5);
     SimpleIntegerProperty nTriesProp = new SimpleIntegerProperty(25);
 
@@ -45,7 +45,7 @@ public class GraphMatcherGUI {
         this.runAboutGUI = runAboutGUI;
         this.resSeqMatcher = new ResSeqMatcher();
         this.runAbout = runAbout;
-        this.resSeqMatcher.setUpdater((d) -> updateProgress(d));
+        this.resSeqMatcher.setUpdater((d,i) -> updateProgress(d, i));
         build();
     }
 
@@ -116,7 +116,7 @@ public class GraphMatcherGUI {
 
     void resetMatcher() {
         resSeqMatcher = new ResSeqMatcher();
-        resSeqMatcher.setUpdater((d) -> updateProgress(d));
+        resSeqMatcher.setUpdater((d,i) -> updateProgress(d, i));
     }
     void dumpResSeqMatcher() {
         SpinSystem currentSpinSystem = runAboutGUI.getCurrentSpinSystem();
@@ -138,10 +138,10 @@ public class GraphMatcherGUI {
         }
     }
 
-    synchronized void updateProgress(SeqGeneticAlgorithm.Progress d) {
+    synchronized void updateProgress(SeqGeneticAlgorithm.Progress d, int iTry) {
         best = Math.min(d.best(), best);
         Fx.runOnFxThread(() -> {
-            progressField.setText(String.format("n %5d current %8.1f best %8.1f", d.generation(), d.best(), best));
+            progressField.setText(String.format("Try %d n %5d current %8.1f best %8.1f", (iTry + 1), d.generation(), d.best(), best));
         });
 
     }

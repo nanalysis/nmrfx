@@ -11,6 +11,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ResSeqMatcher {
@@ -35,11 +36,11 @@ public class ResSeqMatcher {
     Random random = new Random();
     PartionedGraph paritionedGraph = null;
     SeqGeneticAlgorithm seqGeneticAlgorithm;
-    Consumer<SeqGeneticAlgorithm.Progress> updateConsumer;
+    BiConsumer<SeqGeneticAlgorithm.Progress, Integer> updateConsumer;
 
     AtomicBoolean stopWork = new AtomicBoolean(false);
 
-    public void setUpdater(Consumer<SeqGeneticAlgorithm.Progress> consumer) {
+    public void setUpdater(BiConsumer<SeqGeneticAlgorithm.Progress, Integer> consumer) {
         this.updateConsumer = consumer;
     }
 
@@ -241,9 +242,9 @@ public class ResSeqMatcher {
         System.out.println("global score " + score);
     }
 
-    void updateProgress(SeqGeneticAlgorithm.Progress value) {
+    void updateProgress(SeqGeneticAlgorithm.Progress value, int iTry) {
         if (updateConsumer != null) {
-            updateConsumer.accept(value);
+            updateConsumer.accept(value, iTry);
         }
     }
     private void assignFragment(SpinSystem startSys, int nRes, Residue startResidue, double score) {
@@ -340,7 +341,8 @@ public class ResSeqMatcher {
         List<Matching> currentBestMatchings = new ArrayList<>();
         int nStart = 5;
         for (int i = 0; i < nStart; i++) {
-            Matching matching = runGraphGenetics(seqGenParameters, Collections.emptyList(), (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v));
+            final int iTry = i;
+            Matching matching = runGraphGenetics(seqGenParameters, Collections.emptyList(), (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v, iTry));
             System.out.println("matching " + matching.score);
             matchings.add(matching);
             currentBestMatchings.add(matching);
@@ -350,7 +352,8 @@ public class ResSeqMatcher {
         }
         for (int i = 0; i < nTries-nStart; i++) {
            // List<Matching> useTheseMatchings = ((i %2) == 1) ? Collections.emptyList() : currentBestMatchings;
-            Matching matching = runGraphGenetics(seqGenParameters, currentBestMatchings, (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v));
+            final int iTry = i;
+            Matching matching = runGraphGenetics(seqGenParameters, currentBestMatchings, (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v, iTry));
             System.out.println("matching " + matching.score);
             matchings.add(matching);
             currentBestMatchings.add(matching);
