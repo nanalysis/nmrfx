@@ -717,17 +717,23 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         filterItem.setOnAction(e -> filter());
         actionMenuButton.getItems().add(filterItem);
 
-        MenuItem assembleItem = new MenuItem("Assemble");
+        MenuItem assembleItem = new MenuItem("Assemble Spin Systems");
         assembleItem.setOnAction(e -> {
-            assemble();
-            clusterStatus.refresh();
+            if (GUIUtils.affirm("This will unlink previous fragments, continue?")) {
+                assemble();
+                clusterStatus.refresh();
+            }
         });
         actionMenuButton.getItems().add(assembleItem);
 
-        MenuItem calcCombItem = new MenuItem("Combinations");
-        calcCombItem.setOnAction(e -> calcCombinations());
+        MenuItem calcCombItem = new MenuItem("Assign Atom Types");
+        calcCombItem.setOnAction(e -> {
+            if (GUIUtils.affirm("This will undo previous atom typing, continue?")) {
+                calcCombinations();
+            }
+        });
         actionMenuButton.getItems().add(calcCombItem);
-        MenuItem compareItem = new MenuItem("Compare");
+        MenuItem compareItem = new MenuItem("Match Adjacent");
         compareItem.setOnAction(e -> compare());
         actionMenuButton.getItems().add(compareItem);
 
