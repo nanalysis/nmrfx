@@ -36,6 +36,7 @@ public class GraphMatcherGUI {
     SimpleDoubleProperty crossOverRateProp = new SimpleDoubleProperty(0.7);
     SimpleDoubleProperty sdevRatioProp = new SimpleDoubleProperty(1.5);
     SimpleIntegerProperty nTriesProp = new SimpleIntegerProperty(25);
+    SimpleDoubleProperty fractionMatchedProp = new SimpleDoubleProperty(0.5);
 
     Label statusLabel = new Label();
     Label tryLabel = new Label();
@@ -134,6 +135,9 @@ public class GraphMatcherGUI {
         gridPane.add(new Label("Crossover Rate"),0, row);
         gridPane.add(GUIUtils.getDoubleTextField(crossOverRateProp), 1, row++);
 
+        gridPane.add(new Label("Fraction Match Requirement"),0, row);
+        gridPane.add(GUIUtils.getDoubleTextField(fractionMatchedProp), 1, row++);
+
         gridPane.add(new Label("N Steady"),0, row);
         gridPane.add(GUIUtils.getIntegerTextField(steadyLimitProp), 1, row++);
 
@@ -171,7 +175,7 @@ public class GraphMatcherGUI {
 
     void assignFragments() {
         if (resSeqMatcher != null) {
-            resSeqMatcher.assignMatches(runAbout.getSpinSystems());
+            resSeqMatcher.assignMatches(runAbout.getSpinSystems(), fractionMatchedProp.getValue());
             runAboutGUI.gotoSpinSystems();
             runAboutGUI.updateClusterCanvas();
         }
@@ -197,7 +201,7 @@ public class GraphMatcherGUI {
 
             SeqGenParameters seqGenParameters = new SeqGenParameters(popSizeProp.get(), nGenProp.get(),
                     mutationRateProp.get(),mutationProfileProp.get(), crossOverRateProp.get(),eliteNumberProp.get(),maxPhenoTypeAgeProp.get(),
-                    steadyLimitProp.get());
+                    steadyLimitProp.get(), fractionMatchedProp.get());
 
         task = new Task<>() {
             @Override

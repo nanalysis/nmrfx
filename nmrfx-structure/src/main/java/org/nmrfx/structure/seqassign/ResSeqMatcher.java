@@ -259,7 +259,7 @@ public class ResSeqMatcher {
 
     }
 
-    public void assignMatches(SpinSystems spinSystems) {
+    public void assignMatches(SpinSystems spinSystems, double fractionMatchLimit) {
         for (SpinSystem spinSystem : spinSystems.getSystems()) {
             spinSystem.confirmP().ifPresent(spinSystemMatch -> spinSystem.unconfirm(spinSystemMatch, true));
             spinSystem.confirmS().ifPresent(spinSystemMatch -> spinSystem.unconfirm(spinSystemMatch, false));
@@ -268,7 +268,7 @@ public class ResSeqMatcher {
         Arrays.fill(residues, -1);
         for (int i = 0; i < nSys; i++) {
             int iRes = bestMatching.matches[i];
-            if ((iRes >= 0) && (iRes < nResidues) && (fractionMatched[i] > 0.5)) {
+            if ((iRes >= 0) && (iRes < nResidues) && (fractionMatched[i] > fractionMatchLimit)) {
                 residues[iRes] = i;
             }
         }

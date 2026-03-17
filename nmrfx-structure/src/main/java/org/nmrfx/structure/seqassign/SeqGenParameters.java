@@ -12,13 +12,14 @@ public class SeqGenParameters {
     private int steadyLimit = 200;
     private int nGenerations = 2000;
     private double sdevRatio = 1.5;
+    private double fractionMatch = 0.5;
 
     public SeqGenParameters() {
 
     }
 
     public SeqGenParameters(int populationSize, int nGenerations, double mutationRate, boolean mutationProfile, double crossoverRate, int eliteNumber,
-                     int maximumPhenoTypeAge, int steadyLimit) {
+                     int maximumPhenoTypeAge, int steadyLimit, double fractionMatch) {
         this.nGenerations = nGenerations;
         this.populationSize = populationSize;
         this.mutationRate = mutationRate;
@@ -27,6 +28,7 @@ public class SeqGenParameters {
         this.eliteNumber = eliteNumber;
         this.maximumPhenoTypeAge = maximumPhenoTypeAge;
         this.steadyLimit = steadyLimit;
+        this.fractionMatch = fractionMatch;
     }
 
     public int populationSize() {
@@ -58,5 +60,9 @@ public class SeqGenParameters {
 
     public int nGenerations() {
         return nGenerations;
+    }
+
+    public double getFractionMatch() {
+        return fractionMatch;
     }
 }
