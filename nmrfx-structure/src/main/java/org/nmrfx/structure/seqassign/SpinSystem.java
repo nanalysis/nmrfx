@@ -47,7 +47,7 @@ public class SpinSystem {
 
 
     public record AtomEnum(String name, double tol, boolean resMatch) {
-        static Map<String, AtomEnum> atomMap = new HashMap<>();
+        static Map<String, AtomEnum> atomMap = new LinkedHashMap<>();
         static AtomEnum H = new AtomEnum("h", 0.04, false);
         static AtomEnum N = new AtomEnum("n", 0.5, false);
         static AtomEnum CA = new AtomEnum("ca", 0.6, true);
