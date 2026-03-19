@@ -47,12 +47,13 @@ public class SpinSystem {
 
 
     public record AtomEnum(String name, double tol, boolean resMatch) {
-        static Map<String, AtomEnum> atomMap = new HashMap<>();
+        static Map<String, AtomEnum> atomMap = new LinkedHashMap<>();
         static AtomEnum H = new AtomEnum("h", 0.04, false);
         static AtomEnum N = new AtomEnum("n", 0.5, false);
         static AtomEnum CA = new AtomEnum("ca", 0.6, true);
         static AtomEnum CB = new AtomEnum("cb", 0.6, true);
         static AtomEnum C = new AtomEnum("c", 0.6, true);
+
         static {
             atomMap.put("H", H);
             atomMap.put("N", N);
@@ -557,16 +558,10 @@ public class SpinSystem {
     boolean checkPat(ResAtomPattern pattern, double intensity) {
         boolean ok = !pattern.requireSign || ((!pattern.positive || (!(intensity < 0.0))) && (pattern.positive || (!(intensity > 0.0))));
 
-        boolean isGly = false;
         if (ok) {
             for (int i = 0; i < pattern.atomTypes.length; i++) {
                 String aName = pattern.atomTypes[i];
                 double shift = pattern.peak.getPeakDim(i).getAdjustedChemShiftValue();
-                if (aName.equalsIgnoreCase("ca")) {
-                    if (shift < 50.0) {
-                        isGly = true;
-                    }
-                }
                 double ppmProb = getProb(aName, shift);
                 if (ppmProb < 1.0e-6) {
                     ok = false;
@@ -574,21 +569,35 @@ public class SpinSystem {
                 }
             }
         }
-        if (ok) {
-            if (pattern.ambiguousRes) {
-                boolean isInter = false;
-                for (int iRes : pattern.resType) {
-                    if (iRes == -1) {
-                        isInter = true;
-                        break;
-                    }
-                }
-                // 
-                double limit = isGly ? 1.2 : 0.95;
+        return ok;
+    }
 
-                if (isInter && (Math.abs(intensity) > limit)) {
-                    ok = false;
+    boolean isGly(ResAtomPattern pattern) {
+        boolean isGly = false;
+        for (int i = 0; i < pattern.atomTypes.length; i++) {
+            String aName = pattern.atomTypes[i];
+            double shift = pattern.peak.getPeakDim(i).getAdjustedChemShiftValue();
+            if (aName.equalsIgnoreCase("ca") && (shift < 50.0)) {
+                isGly = true;
+            }
+        }
+        return isGly;
+    }
+
+    boolean checkIntensity(ResAtomPattern pattern, boolean isGly, double intensity) {
+        boolean ok = true;
+        if (pattern.ambiguousRes) {
+            boolean isInter = false;
+            for (int iRes : pattern.resType) {
+                if (iRes == -1) {
+                    isInter = true;
+                    break;
                 }
+            }
+            double limit = isGly ? 1.2 : 0.95;
+
+            if (isInter && (Math.abs(intensity) > limit)) {
+                ok = false;
             }
         }
         return ok;
@@ -842,7 +851,7 @@ public class SpinSystem {
                     if (type.equalsIgnoreCase("C") && atomPat.equalsIgnoreCase("C")) {
                         return true;
                     }
-                    if (type.equalsIgnoreCase("Hali") && atomPat.substring(0,1).equalsIgnoreCase("H")) {
+                    if (type.equalsIgnoreCase("Hali") && atomPat.substring(0, 1).equalsIgnoreCase("H")) {
                         return true;
                     }
                 }
@@ -851,14 +860,15 @@ public class SpinSystem {
         return false;
     }
 
-    record PeakTypeMatches( List<PeakMatch> cMatches,  List<PeakMatch> hMatches,  List<PeakMatch> otherMatches) {}
+    record PeakTypeMatches(List<PeakMatch> cMatches, List<PeakMatch> hMatches, List<PeakMatch> otherMatches) {
+    }
 
     PeakTypeMatches getPeakMatches() {
         List<PeakMatch> cMatches = new ArrayList<>();
         List<PeakMatch> hMatches = new ArrayList<>();
         List<PeakMatch> otherMatches = new ArrayList<>();
         for (PeakMatch peakMatch : peakMatches) {
-            if (isType(peakMatch,"C")) {
+            if (isType(peakMatch, "C")) {
                 cMatches.add(peakMatch);
             } else if (isType(peakMatch, "Hali")) {
                 hMatches.add(peakMatch);
@@ -881,6 +891,7 @@ public class SpinSystem {
         }
         updateSpinSystem();
     }
+
     public void calcCombinationsHBHA(List<PeakMatch> peakTypeMatches, boolean isGly) {
         List<PeakDim> hLower = new ArrayList<>();
         List<PeakDim> hUpper = new ArrayList<>();
@@ -927,7 +938,7 @@ public class SpinSystem {
         }
     }
 
-    public Optional<Map<AtomEnum, List<Double>>[]> calcCombinations(List<PeakMatch> peakTypeMatches,  boolean display) {
+    public Optional<Map<AtomEnum, List<Double>>[]> calcCombinations(List<PeakMatch> peakTypeMatches, boolean display) {
         purgeDeleted();
         double[] intensities = getNormalizedIntensities(peakTypeMatches);
         int nPeaks = peakTypeMatches.size();
@@ -1293,6 +1304,7 @@ public class SpinSystem {
         }
         return Optional.empty();
     }
+
     public Optional<SpinSystemMatch> getMatchToNext(SpinSystem spinSystem) {
         for (SpinSystemMatch spinMatch : spinMatchS) {
             if (spinMatch.spinSystemB == spinSystem) {
@@ -1369,7 +1381,7 @@ public class SpinSystem {
     public void printScores(double sdevRatio) {
         List<List<AtomShiftValue>> shiftValues = SeqFragment.getShiftsForSystem(this);
         Molecule molecule = Molecule.getActive();
-        for (var v: shiftValues) {
+        for (var v : shiftValues) {
             for (var vs : v) {
                 System.out.println(vs);
             }

@@ -917,7 +917,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             labelMap.clear();
             int col = 0;
             for (int k = 0; k < 2; k++) {
-                for (SpinSystem.AtomEnum atomEnum : SpinSystem.AtomEnum.values()) {
+                List<SpinSystem.AtomEnum> atomEnums = SpinSystem.AtomEnum.values().stream().toList();
+                if (k == 0) {
+                    atomEnums = atomEnums.reversed();
+                }
+                for (SpinSystem.AtomEnum atomEnum : atomEnums) {
                     int n = runAbout.getExpected(k, atomEnum);
                     if (n != 0) {
                         String aName = atomEnum.name();
@@ -967,7 +971,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 if (i >= 10) {
                     i = 0;
                     x = 10.0;
-                    y = y + leftLabel.height;
+                    y = y + leftLabel.height + 4;
                 }
             }
 
