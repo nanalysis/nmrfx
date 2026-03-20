@@ -12,6 +12,7 @@ import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.predict.GATV2Predictor;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.Predictor.PredictionModes;
 
@@ -39,6 +40,8 @@ public class PredictorSceneController implements Initializable, StageBasedContro
     ChoiceBox<Predictor.PredictionModes> rnaChoice;
     @FXML
     ChoiceBox<Predictor.PredictionModes> molChoice;
+    @FXML
+    ChoiceBox<GATV2Predictor.SolventCorr> solventChoice;
 
     /**
      * Initializes the controller class.
@@ -49,12 +52,14 @@ public class PredictorSceneController implements Initializable, StageBasedContro
         targetType.setValue("Ref Set");
         targetChoice.getItems().addAll(0, 1, 2, 3, 4);
         targetChoice.setValue(0);
-        proteinChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.THREED, PredictionModes.SHELL);
+        proteinChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.THREED, PredictionModes.GATV2, PredictionModes.SHELL);
         proteinChoice.setValue(PredictionModes.THREED);
         rnaChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.RNA_ATTRIBUTES, PredictionModes.THREED_DIST, PredictionModes.THREED_RC);
         rnaChoice.setValue(PredictionModes.RNA_ATTRIBUTES);
-        molChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.SHELL);
-        molChoice.setValue(PredictionModes.SHELL);
+        molChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.GATV2, PredictionModes.SHELL);
+        molChoice.setValue(PredictionModes.GATV2);
+        solventChoice.getItems().addAll(GATV2Predictor.SolventCorr.values());
+        solventChoice.setValue(GATV2Predictor.SolventCorr.D2O);
     }
 
     public static PredictorSceneController create(AtomController atomController) {

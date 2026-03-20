@@ -44,7 +44,7 @@ public class RNAMatcher {
     public void predict() {
         Predictor predictor = new Predictor();
         Predictor.PredictionTypes predictionTypes =
-                new Predictor.PredictionTypes(Predictor.PredictionModes.THREED, Predictor.PredictionModes.RNA_ATTRIBUTES, Predictor.PredictionModes.SHELL);
+                new Predictor.PredictionTypes(Predictor.PredictionModes.THREED, Predictor.PredictionModes.RNA_ATTRIBUTES, Predictor.PredictionModes.GATV2);
         try {
             predictor.predictAll(Molecule.getActive(), predictionTypes, -1);
         } catch (InvalidMoleculeException | IOException e) {

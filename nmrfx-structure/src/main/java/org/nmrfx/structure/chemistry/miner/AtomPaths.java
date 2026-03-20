@@ -36,8 +36,7 @@ public class AtomPaths {
                 }
             }
         }
-        var pathAlgorithm = new DefaultManyToManyShortestPaths<Atom, DefaultEdge>(simpleGraph);
-        return pathAlgorithm;
+        return new DefaultManyToManyShortestPaths<Atom, DefaultEdge>(simpleGraph);
     }
 
     public static List<GraphPath<Atom, DefaultEdge>> getPaths(Entity entity, int pathLimit, int elementTypeA, int elementTypeB) {

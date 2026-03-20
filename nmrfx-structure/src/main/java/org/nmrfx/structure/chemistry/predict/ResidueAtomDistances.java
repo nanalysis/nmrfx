@@ -14,7 +14,7 @@ import java.util.List;
 public class ResidueAtomDistances {
     List<AtomGraph> atomGraphs = new ArrayList<>();
 
-    public record AtomNode(int index, int property, double ppm, int mask) {
+    public record AtomNode(Atom atom, int index, int property, double ppm, int mask) {
         public String getCSV(int iGraph) {
             return String.format("%d,%d,%d,%.3f,%d", iGraph, index, property, ppm, mask);
         }
@@ -30,6 +30,13 @@ public class ResidueAtomDistances {
                 stringBuilder.append(i);
             }
             return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couoplingName);
+        }
+
+        public int indexA() {
+            return iAtomList.getFirst();
+        }
+        public int indexB() {
+            return iAtomList.get(1);
         }
     }
 
@@ -53,8 +60,8 @@ public class ResidueAtomDistances {
         }
     }
 
-    AtomGraph getNodesAndEdges(List<Compound> compounds, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, int iStruct, double limit) {
-        Compound compound0 = compounds.getFirst();
+    AtomGraph getNodesAndEdges(List<Entity> compounds, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, int iStruct, double limit) {
+        Entity compound0 = compounds.getFirst();
         List<Atom> atoms = compounds.stream().flatMap(compound -> compound.atoms.stream()).toList();
         AtomGraph atomGraph = new AtomGraph(new ArrayList<>(), new ArrayList<>());
         for (int iAtomA = 0; iAtomA < atoms.size(); iAtomA++) {
@@ -74,7 +81,7 @@ public class ResidueAtomDistances {
                 ppm = ppmV.getValue();
             }
 
-            AtomNode atomNode = new AtomNode(iAtomA, atomicNumber, ppm, useNode);
+            AtomNode atomNode = new AtomNode(atomA, iAtomA, atomicNumber, ppm, useNode);
             atomGraph.nodes.add(atomNode);
             for (int iAtomB = 0; iAtomB < atoms.size(); iAtomB++) {
                 Atom atomB = atoms.get(iAtomB);
@@ -129,7 +136,7 @@ public class ResidueAtomDistances {
                         .stream().map(Compound.class::cast)).toList());
         residueList.addAll(molecule.getLigands());
         for (Compound residueA : residueList) {
-            List<Compound> compounds = new ArrayList<>();
+            List<Entity> compounds = new ArrayList<>();
             compounds.add(residueA);
             for (Compound residueB : residueList) {
                 if ((residueA != residueB) && (residueA.overlaps(residueB, limit, iStruct))) {
@@ -140,8 +147,8 @@ public class ResidueAtomDistances {
         }
     }
 
-    public void generate(Compound compound, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
-        List<Compound> compounds = List.of(compound);
+    public void generate(Entity compound, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
+        List<Entity> compounds = List.of(compound);
         atomGraphs.add(getNodesAndEdges(compounds, paths, iStruct, limit));
     }
 

@@ -5,6 +5,7 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import ai.onnxruntime.OrtException;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -170,6 +171,7 @@ public class Predictor {
         THREED_DIST,
         THREED_RC,
         THREED,
+        GATV2,
         SHELL
     }
 
@@ -344,7 +346,7 @@ public class Predictor {
         }
         boolean hasPolymer = !mol.getPolymers().isEmpty();
         for (Entity entity : mol.getLigands()) {
-            predictWithShells(entity, iRef);
+            predictWithGATv2(entity, iRef);
             if (hasPolymer) {
                 predictLigandWithRingCurrent(entity, iRef);
             }
@@ -405,6 +407,10 @@ public class Predictor {
                     int iStructure = 0;
                     predictProtein(mol, iStructure, ppmSet);
                 }
+            } else if (predictionTypes.protein == PredictionModes.GATV2) {
+                for (Polymer polymer : mol.getPolymers()) {
+                    predictWithGATv2(polymer, ppmSet);
+                }
             } else if (predictionTypes.protein == PredictionModes.SHELL) {
                 for (Polymer polymer : mol.getPolymers()) {
                     predictWithShells(polymer, ppmSet);
@@ -413,11 +419,16 @@ public class Predictor {
         }
         boolean hasPolymer = !mol.getPolymers().isEmpty();
         for (Entity entity : mol.getLigands()) {
-            if (predictionTypes.smallMol == PredictionModes.SHELL) {
-                predictWithShells(entity, ppmSet);
+            if (predictionTypes.smallMol == PredictionModes.GATV2) {
+                predictWithGATv2(entity, ppmSet);
                 if (hasPolymer) {
                     predictLigandWithRingCurrent(entity, ppmSet);
                 }
+            } else if (predictionTypes.smallMol == PredictionModes.SHELL) {
+                    predictWithShells(entity, ppmSet);
+                    if (hasPolymer) {
+                        predictLigandWithRingCurrent(entity, ppmSet);
+                    }
             }
         }
     }
@@ -574,6 +585,15 @@ public class Predictor {
                     }
                 }
             }
+        }
+    }
+
+    public void predictWithGATv2(Entity aC, int iRef)  {
+        GATV2Predictor gatv2Predictor = null;
+        try {
+            gatv2Predictor = new GATV2Predictor();
+            gatv2Predictor.predict(aC, iRef, GATV2Predictor.SolventCorr.D2O);
+        } catch (OrtException e) {
         }
     }
 

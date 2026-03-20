@@ -29,6 +29,8 @@
                        GridPane.rowIndex="3"/>
                 <ChoiceBox fx:id="molChoice" minWidth="125"
                            GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                <ChoiceBox fx:id="solventChoice" minWidth="200"
+                           GridPane.columnIndex="2" GridPane.rowIndex="3"/>
             </children>
         </GridPane>
     </center>
