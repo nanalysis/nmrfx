@@ -56,7 +56,7 @@ public class MoleculeBase implements Serializable, ITree {
     public AtomicBoolean atomUpdated = new AtomicBoolean(false);
     Updater atomUpdater = null;
     MoleculeListener atomChangeListener;
-    List<String> activePPMSets = new ArrayList<>();
+    Set<String> activePPMSets = new HashSet<>();
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -149,11 +149,7 @@ public class MoleculeBase implements Serializable, ITree {
                                 if (isInverse) {
                                     if (!nameMatches) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
+                                        validAtom = spatialSet != null;
                                     } else {
                                         validAtom = false;
                                         break;
@@ -651,21 +647,20 @@ public class MoleculeBase implements Serializable, ITree {
                 if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
-                if (entity instanceof Polymer) {
-                    Polymer polymer = (Polymer) entity;
+                if (entity instanceof Polymer polymer) {
                     if (molFilter.firstRes.equals("*")) {
                         firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
+                        firstResidue = polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
                         lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
+                        lastResidue = polymer.getResidue(molFilter.lastRes);
                     }
 
-                    compound = (Compound) firstResidue;
+                    compound = firstResidue;
                 } else {
                     compound = (Compound) entity;
                 }
@@ -704,11 +699,7 @@ public class MoleculeBase implements Serializable, ITree {
                                     if (!Util.stringMatch(atom.name.toLowerCase(), atomName.substring(1))) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
 
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
+                                        validAtom = spatialSet != null;
                                     } else {
                                         validAtom = false;
 
@@ -754,7 +745,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public static Atom getAtom(MolFilter molFilter) throws InvalidMoleculeException {
-        ArrayList spatialSets = new ArrayList();
+        ArrayList<Atom> spatialSets = new ArrayList<>();
         MoleculeBase.selectAtomsForTable(molFilter, spatialSets);
         SpatialSet spSet = MoleculeBase.getSpatialSet(molFilter);
         Atom atom = null;
