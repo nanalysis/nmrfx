@@ -10,7 +10,9 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.molecule3D.RNASSViewController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
+import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
@@ -34,6 +36,7 @@ import java.util.Optional;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
+    private RNASSViewController rnassViewController;
     private SeqDisplayController seqDisplayController = null;
     private AtomController atomController;
     private RDCGUI rdcGUI = null;
@@ -82,7 +85,17 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem smileItem = new MenuItem("Input SMILE...");
         smileItem.setOnAction(e -> getSMILEMolecule());
 
-        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem);
+        Menu saveMenuItem = new Menu("Save");
+
+        MenuItem writePDBItem = new MenuItem("Write PDB");
+        writePDBItem.setOnAction(e -> writePDB());
+
+        MenuItem writeMolItem = new MenuItem("Write Molfile");
+        writeMolItem.setOnAction(e -> writeMol());
+
+        saveMenuItem.getItems().addAll(writePDBItem, writeMolItem);
+
+        menu.getItems().addAll(molFileMenu, smileItem, clearAllItem, saveMenuItem);
 
     }
 
@@ -99,8 +112,11 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
         sequenceMenuItem.setOnAction(this::showSequence);
 
-        MenuItem molMenuItem = new MenuItem("Viewer...");
+        MenuItem molMenuItem = new MenuItem("Molecule Viewer...");
         molMenuItem.setOnAction(e -> showMols());
+
+        MenuItem rnaMenuItem = new MenuItem("Nucleic Acid Viewer...");
+        rnaMenuItem.setOnAction(e -> showRNA());
 
 
         Menu molConstraintsMenu = new Menu("Constraints");
@@ -117,7 +133,7 @@ public class MoleculeMenuActions extends MenuActions {
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
+                sequenceMenuItem, molMenuItem, rnaMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
     }
 
     void clearExisting() {
@@ -128,7 +144,9 @@ public class MoleculeMenuActions extends MenuActions {
             }
             if (molController != null) {
                 molController.removeAll();
-                molController.clearSS();
+            }
+            if (rnassViewController != null) {
+                rnassViewController.clearSS();
             }
         }
     }
@@ -140,6 +158,18 @@ public class MoleculeMenuActions extends MenuActions {
         }
         molController.getStage().show();
         molController.getStage().toFront();
+    }
+
+    @FXML
+    public void showRNA() {
+        if (rnassViewController == null) {
+            if (molController == null) {
+                molController = MolSceneController.create();
+            }
+            rnassViewController = RNASSViewController.create(molController);
+        }
+        rnassViewController.getStage().show();
+        rnassViewController.getStage().toFront();
     }
 
 
@@ -173,7 +203,7 @@ public class MoleculeMenuActions extends MenuActions {
             MolecularConstraints molConstr = MoleculeFactory.getActive().getMolecularConstraints();
             if (!molConstr.getRDCSetNames().isEmpty()) {
                 rdcGUI.setChoice.getItems().addAll(molConstr.getRDCSetNames());
-                rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
+                rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().getFirst());
             }
         }
 
@@ -215,6 +245,52 @@ public class MoleculeMenuActions extends MenuActions {
         }
     }
 
+    public void writePDB() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            Molecule molecule = Molecule.getActive();
+            if (molecule != null) {
+                try {
+                    molecule.writeXYZToPDB(file.toString(), -1);
+                } catch (IOException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
+
+    }
+
+    public void writeMol() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            Molecule molecule = Molecule.getActive();
+            if (molecule != null) {
+                try {
+                    AtomContainer atomContainer = null;
+                    if (!molecule.entities.isEmpty()) {
+                        if (!molecule.getLigands().isEmpty()) {
+                            atomContainer = molecule.getLigands().getFirst();
+                        } else if (!molecule.getPolymers().isEmpty()) {
+                            atomContainer = molecule.getPolymers().getFirst();
+                        }
+                    }
+                    if (atomContainer == null) {
+                        GUIUtils.warn("Molfile writer", "No ligand, compound or polymer");
+                        return;
+                    }
+                    OpenChemLibConverter.writeToMolfile(atomContainer, file);
+                } catch (IOException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
+
+    }
+
     public void readMolecule() {
         readMolecule("");
     }
@@ -226,14 +302,31 @@ public class MoleculeMenuActions extends MenuActions {
 
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
-        if (type.isEmpty()) {
-            type = getType(file.toPath());
-        }
-        if (type != null) {
-            Molecule molecule = readMolecule(file, type);
-            if (molecule != null) {
-                showMols();
-                resetAtomController();
+        if (file != null) {
+            if (type.isEmpty()) {
+                type = getType(file.toPath());
+            }
+            if (type != null) {
+                Molecule molecule = readMolecule(file, type);
+                if (molecule != null) {
+                    if (type.equals("seq")) {
+                        boolean nucleicAcid = !molecule.getPolymers().isEmpty();
+                        for (Polymer polymer : molecule.getPolymers()) {
+                            if (!(polymer.isRNA() || polymer.isDNA())) {
+                                nucleicAcid = false;
+                                break;
+                            }
+                        }
+                        if (nucleicAcid) {
+                            showRNA();
+                        } else {
+                            showSequence(null);
+                        }
+                    } else {
+                        showMols();
+                    }
+                    resetAtomController();
+                }
             }
         }
     }
@@ -259,9 +352,8 @@ public class MoleculeMenuActions extends MenuActions {
                         molecule.updateAtomArray();
                     }
                     case "pdbLigand" -> {
-                        PDBFile pdb = new PDBFile();
                         molecule = Molecule.getActive();
-                        PDBFile.readResidue(file.toString(), null, molecule,null);
+                        PDBFile.readResidue(file.toString(), null, molecule, null);
                         molecule.updateAtomArray();
                     }
                     case "sdf", "mol" -> {
@@ -282,12 +374,12 @@ public class MoleculeMenuActions extends MenuActions {
                     case "smiles" -> {
                         List<Molecule> molecules = OpenChemLibConverter.readSMILES(file);
                         if (!molecules.isEmpty()) {
-                            molecule = molecules.get(0);
+                            molecule = molecules.getFirst();
                             ProjectBase.getActive().putMolecule(molecule);
                         }
                     }
-                    default -> {
-                    }
+                    default -> GUIUtils.warn("Molecule Open", "Invalid molecule type " + type);
+
                 }
                 MoleculeFactory.setActive(molecule);
             } catch (Exception ex) {
@@ -387,6 +479,7 @@ public class MoleculeMenuActions extends MenuActions {
     public record Renumbering(Polymer polymer, int offset, boolean updateResidues, boolean updatePeaks) {
 
     }
+
     public static Optional<Renumbering> renumberingDialog() {
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
@@ -440,6 +533,6 @@ public class MoleculeMenuActions extends MenuActions {
             return null;
         });
 
-        return  dialog.showAndWait();
+        return dialog.showAndWait();
     }
 }

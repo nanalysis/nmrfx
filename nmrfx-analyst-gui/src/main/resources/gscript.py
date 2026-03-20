@@ -76,6 +76,14 @@ class NMRFxWindowScripting:
         self.cmd.grid(chart, row, column, rowSpan, columnSpan)
         return self
 
+    def gridcolumn(self,  column=0, percent=100.0):
+        self.cmd.gridcolumn(column, percent)
+        return self
+
+    def gridrow(self, row=0, percent=100.0):
+        self.cmd.gridrow(row, percent)
+        return self
+
     def getGrid(self):
         return self.cmd.grid()
 
@@ -114,7 +122,7 @@ class NMRFxWindowScripting:
                     datasetNames.append(dataset)
                 else:
                     datasetNames.append(dataset.getName())
-            self.cmd.datasets(datasetNames)
+            self.cmd.datasetNames(datasetNames)
 
     def openFID(self, fidName):
         self.cmd.openFID(fidName)

@@ -1,0 +1,9 @@
+org.nmrfx.example.plugin.NMRFxFileMenuExamplePlugin
+org.nmrfx.example.plugin.NMRFxMoleculeViewerExamplePlugin
+org.nmrfx.example.plugin.NMRFxPluginMenuExamplePlugin
+org.nmrfx.example.plugin.NMRFxStatusBarExamplePlugin
+org.nmrfx.example.plugin.NMRFxRighthandToolsExamplePlugin
+org.nmrfx.example.plugin.NMRFxStartupExamplePlugin
+org.nmrfx.example.plugin.NMRFxAtomTableExamplePlugin
+org.nmrfx.example.plugin.NMRFxPeakTableExamplePlugin
+org.nmrfx.example.plugin.NMRFxDatasetTableExamplePlugin

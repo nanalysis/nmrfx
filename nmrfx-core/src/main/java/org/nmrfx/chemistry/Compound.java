@@ -212,4 +212,23 @@ public class Compound extends Entity implements AtomIterable {
         return String.format("%8d %7s %7d %9s %-14s %-7s", idx, chainID, num, resName, link, resVar);
     }
 
+    public boolean overlaps(Compound compoundB, double limit, int iStruct) {
+        boolean overlaps = false;
+        for (Atom atomA : atoms) {
+            Point3 pointA = atomA.getPoint(iStruct);
+            for (Atom atomB : compoundB.atoms) {
+                Point3 pointB = atomB.getPoint(iStruct);
+                double distance = pointA.distance(pointB);
+                if (distance < limit) {
+                    overlaps = true;
+                    break;
+                }
+            }
+            if (overlaps) {
+                break;
+            }
+        }
+        return  overlaps;
+    }
+
 }

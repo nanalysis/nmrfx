@@ -28,6 +28,7 @@
                             <children>
                                 <Separator orientation="horizontal" minHeight="20"/>
                                 <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
+                                <CheckBox fx:id="fixedAspectBox" text="Ignore ppm ratios"/>
                                 <Label text="Aspect ratio:" minWidth="35"/>
                                 <HBox>
                                     <Slider fx:id="aspectSlider" prefWidth="150"/>

@@ -149,7 +149,6 @@ public class PathPlotTool {
 
     public void updateTable(ObservableList<PeakPath> paths) {
         tableView.getItems().setAll(paths);
-        System.out.println("items " + tableView.getItems().size());
     }
 
     void initTable() {

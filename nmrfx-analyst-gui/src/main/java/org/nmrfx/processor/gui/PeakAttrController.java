@@ -311,9 +311,9 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                 return;
             }
             scatterChart.getData().clear();
-            scatterChart.xAxis.setAutoRanging(true);
-            scatterChart.yAxis.setAutoRanging(true);
-            scatterChart.yAxis.setZeroIncluded(true);
+            scatterChart.getXAxis().setAutoRanging(true);
+            scatterChart.getYAxis().setAutoRanging(true);
+            scatterChart.getYAxis().setZeroIncluded(true);
             DataSeries series = new DataSeries();
 
             PEAK_NORM normMode = normChoice.getValue();
@@ -415,8 +415,8 @@ public class PeakAttrController implements Initializable, StageBasedController, 
                     Peak[] peaks = {currentPeak, peakBB, peakAB, peakBA};
                     double[] xValues = currentPeak.getPeakList().getMeasureValues();
                     scatterChart.getData().clear();
-                    scatterChart.xAxis.setAutoRanging(true);
-                    scatterChart.yAxis.setAutoRanging(true);
+                    scatterChart.getXAxis().setAutoRanging(true);
+                    scatterChart.getYAxis().setAutoRanging(true);
 
                     int iSig = 0;
                     String[] peakLabels = {"AA", "BB", "BA", "AB"};

@@ -40,7 +40,7 @@ import java.util.Optional;
 public class ReferenceMenuTextField extends MenuTextField {
 
     ProcessorController processorController;
-    String[] mainMenuLabels = {"default", "H2O", "H2O PPM", "0.0"};
+    String[] mainMenuLabels = {"default", "H2O", "H2O PPM", "0.0", "AUTOZERO"};
     String[] nucleusMenuLabels = {"C", "D", "H", "N", "P"};
     String[] crosshairMenuItems = {"0.0", "H2O", "DSS", "Acetone", "DMSO", "Input..."};
 
@@ -109,7 +109,6 @@ public class ReferenceMenuTextField extends MenuTextField {
         String menuLabel = menuItem.getText();
         PolyChart chart = processorController.chartProcessor.getChart();
         double ppm = chart.getCrossHairs().getPosition(0, Orientation.VERTICAL);
-        System.out.println(ppm);
         double newCenter = 0.0;
         if (menuLabel.equals("0.0")) {
             newCenter = chart.getRefPositionFromCrossHair(0.0);

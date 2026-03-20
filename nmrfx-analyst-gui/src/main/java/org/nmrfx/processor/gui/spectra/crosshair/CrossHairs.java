@@ -382,19 +382,27 @@ public class CrossHairs {
         }
 
         if ((result[0] == -1) && (result[1] == -1)) {
-            if (!primary.isHorizontalDisplayed()) {
-                result[Orientation.HORIZONTAL.ordinal()] = 0;
-            } else if (!secondary.isHorizontalDisplayed()) {
-                result[Orientation.HORIZONTAL.ordinal()] = 1;
-            } else if (closest[0] != -1) {
-                result[Orientation.HORIZONTAL.ordinal()] = closest[0];
-            }
-            if (!primary.isVerticalDisplayed()) {
-                result[Orientation.VERTICAL.ordinal()] = 0;
-            } else if (!secondary.isVerticalDisplayed()) {
-                result[Orientation.VERTICAL.ordinal()] = 1;
-            } else if (closest[1] != -1) {
-                result[Orientation.VERTICAL.ordinal()] = closest[1];
+            if (hasMiddleMouseButton) {
+                if (!middleButton) {
+                    result = new int[]{0,0};
+                } else {
+                    result = new int[]{1,1};
+                }
+            } else {
+                if (!primary.isHorizontalDisplayed()) {
+                    result[Orientation.HORIZONTAL.ordinal()] = 0;
+                } else if (!secondary.isHorizontalDisplayed()) {
+                    result[Orientation.HORIZONTAL.ordinal()] = 1;
+                } else if (closest[0] != -1) {
+                    result[Orientation.HORIZONTAL.ordinal()] = closest[0];
+                }
+                if (!primary.isVerticalDisplayed()) {
+                    result[Orientation.VERTICAL.ordinal()] = 0;
+                } else if (!secondary.isVerticalDisplayed()) {
+                    result[Orientation.VERTICAL.ordinal()] = 1;
+                } else if (closest[1] != -1) {
+                    result[Orientation.VERTICAL.ordinal()] = closest[1];
+                }
             }
         }
 

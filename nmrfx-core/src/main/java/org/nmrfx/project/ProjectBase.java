@@ -390,6 +390,7 @@ public class ProjectBase {
         }
         datasetMap.clear();
         datasets.clear();
+        refreshDatasetList();
     }
 
     public void setProjectDir(Path projectDir) {
@@ -483,7 +484,7 @@ public class ProjectBase {
                     String fileName = f.toFile().getName();
                     String peakListName = fileName.substring(0, fileName.length() - 5);
                     PeakList peakList = PeakList.get(peakListName);
-                    if ((peakList != null) && Files.exists(f)) {
+                    if ((peakList != null) && !peakList.hasMeasures() && Files.exists(f) ) {
                         peakReader.readMPK2(peakList, f.toString());
                     }
                 }
@@ -592,6 +593,10 @@ public class ProjectBase {
         }
     }
 
+    public void saveMemoryFile(DatasetBase datasetBase) {
+
+    }
+
     public void saveDatasets() throws IOException {
         if (projectDir == null) {
             throw new IllegalArgumentException(PROJECT_DIR_NOT_SET);
@@ -607,6 +612,10 @@ public class ProjectBase {
                     datasetBase.writeVecMat(newFile);
                 }
                 continue;
+            } else {
+                if (datasetBase.getFileName().contains(DatasetBase.DATASET_PROJECTION_TAG)) {
+                    continue;
+                }
             }
             Path currentPath = datasetFile.toPath();
             Path fileNameAsPath = currentPath.getFileName();
@@ -630,8 +639,10 @@ public class ProjectBase {
             String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
             datasetBase.writeParFile(parFilePath);
             List<DatasetRegion> regions = datasetBase.getReadOnlyRegions();
-            File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
-            DatasetRegion.saveRegions(regionFile, regions);
+            if (!regions.isEmpty()) {
+                File regionFile = DatasetRegion.getRegionFile(pathInProject.toString());
+                DatasetRegion.saveRegions(regionFile, regions);
+            }
         }
     }
 

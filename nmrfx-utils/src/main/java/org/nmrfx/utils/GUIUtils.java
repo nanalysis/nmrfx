@@ -8,6 +8,7 @@ package org.nmrfx.utils;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.ObservableList;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
@@ -22,10 +23,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import org.nmrfx.fxutil.Fx;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -118,12 +124,46 @@ public class GUIUtils {
         }
         return result;
     }
+    public static int getResponse(String message, String[] choices) {
+        ButtonType[] buttons = new ButtonType[choices.length + 1];
+        buttons[0] = ButtonType.CANCEL;
+        int i = 1;
+        for (String choice : choices) {
+            buttons[i++] = new ButtonType(choice);
+        }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message,  buttons);
+        Optional<ButtonType> response = alert.showAndWait();
+        int result = 0;
+        if (response.isPresent()) {
+            i = 0;
+            for (ButtonType buttonType : buttons) {
+                if (buttonType == response.get()) {
+                    result = i;
+                    break;
+                }
+                i++;
+            }
+        }
+        return result;
+    }
 
     public static void warn(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    public static Object choice(Collection choices, String message) {
+        return choice(choices, message, null);
+    }
+
+    public static Object choice(Collection choices, String message, Object defaultChoice) {
+        ChoiceDialog choiceDialog = new ChoiceDialog(defaultChoice, choices);
+        choiceDialog.setHeaderText(message);
+        choiceDialog.setContentText("Value:");
+        Optional result = choiceDialog.showAndWait();
+        return result.orElse(null);
     }
 
     public static String input(String message) {
@@ -336,8 +376,7 @@ public class GUIUtils {
         return pw;
     }
 
-    public static void snapNode(Node node, File file) throws IOException {
-        double scale = 4.0;
+    public static void snapNode(Node node, File file, double scale) throws IOException {
         final Bounds bounds = node.getLayoutBounds();
         final WritableImage image = new WritableImage(
                 (int) Math.round(bounds.getWidth() * scale),
@@ -345,7 +384,16 @@ public class GUIUtils {
         final SnapshotParameters spa = new SnapshotParameters();
         spa.setTransform(javafx.scene.transform.Transform.scale(scale, scale));
         node.snapshot(spa, image);
-        javax.imageio.ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+        BufferedImage swingImage = SwingFXUtils.fromFXImage(image, null);
+        new Thread(() -> {
+            try {
+                ImageIO.write(swingImage, "png", file);
+            } catch (IOException e) {
+                Fx.runOnFxThread(() -> {
+                    GUIUtils.warn("Error writing file", e.getMessage());
+                });
+            }
+        }).start();
     }
 
     public static void bindSliderField(Slider slider, TextField field) {
@@ -457,4 +505,22 @@ public class GUIUtils {
         });
         return dialog.showAndWait();
     }
+    public static Screen getScreenForStage(Stage stage) {
+        // Get the bounds of the stage
+        double x = stage.getX();
+        double y = stage.getY();
+        ObservableList<Screen> screens = Screen.getScreensForRectangle(x, y, 1.0, 1.0);
+
+        if (!screens.isEmpty()) {
+            return screens.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    public static double getDPI(Stage stage) {
+        Screen screen = getScreenForStage(stage);
+        return screen == null ? 96 : screen.getDpi();
+    }
 }
+

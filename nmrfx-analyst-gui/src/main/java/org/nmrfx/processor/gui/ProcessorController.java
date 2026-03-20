@@ -315,10 +315,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     private void setActivePane(ProcessingSection section, TitledPane titledPane) {
-        System.out.println(titledPane.getText() + " " + titledPane.isExpanded() + " " + currentSection + " " + section);
-
         if (titledPane.isExpanded() && (currentSection == null || (currentSection != section))) {
-            System.out.println("Update");
             currentSection = section;
             if (section.isRef()) {
                 currentSection = processingSection1;
@@ -895,9 +892,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                 }
             }
         }
-        for (IndirectDimOpPar indirectDimOpPar : indirectDimOpPars) {
-            System.out.println(indirectDimOpPar);
-        }
      }
     private Pane makeIndirectPane(ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
         GridPane gridPane = new GridPane();
@@ -908,7 +902,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         gridPane.add(new Label("Negate"),3,0, 2,1);
         gridPane.setHgap(10);
         gridPane.setVgap(10);
-        System.out.println("OPPP " + processingOperation.getParameterMap());
 
         String[] dimLabels = {"Y","Z","A"};
         indirectDimOpPars.clear();
@@ -950,7 +943,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     String getIndirectOpString(ProcessingOperation processingOperation) {
-        System.out.println("GET ID OP");
         List<String> ph0s  = new ArrayList<>();
         List<String> ph1s  = new ArrayList<>();
         List<String> negImags  = new ArrayList<>();
@@ -972,7 +964,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         String negPairString = String.join(",", negPairs);
         String opString = String.format("PHASE_ID(ph0=[%s],ph1=[%s],negateImag=[%s],negatePairs=[%s])",
                 ph0String,ph1String, negImagString, negPairString);
-        System.out.println(opString);
         if (processingOperation != null) {
             processingOperation.update(opString);
             chartProcessor.updateOpList();
@@ -1704,7 +1695,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             processingThrowable = null;
         } else {
             statusCircle.setFill(Color.RED);
-            log.warn("error: {}", s);
             processingThrowable = throwable;
         }
         statusBar.setProgress(0.0);

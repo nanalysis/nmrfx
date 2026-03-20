@@ -61,7 +61,7 @@ public class Noe extends DistanceConstraint {
     private final SpatialSetGroup spg2;
 
     AtomDistancePair[] atomPairs = null;
-    public final Peak peak;
+    private Peak peak;
     private double intensity = 0.0;
     private double volume = 0.0;
     private double scale;
@@ -446,6 +446,15 @@ public class Noe extends DistanceConstraint {
 
     public void setSymmetrical(boolean symmetrical) {
         this.symmetrical = symmetrical;
+    }
+
+    public Peak peak() {
+        return peak;
+    }
+
+    public Noe peak(Peak peak) {
+        this.peak = peak;
+        return this;
     }
 
     public record NoeMatch(SpatialSet sp1, SpatialSet sp2, GenTypes type, double error) {

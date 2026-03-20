@@ -46,6 +46,8 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.peaks.PeakPPMGetterGUI;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.tools.LACSPlotGui;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
@@ -58,6 +60,7 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
@@ -136,6 +139,8 @@ public class AtomController implements Initializable, StageBasedController, Free
             this.refMode = refMode;
         }
     }
+
+    PeakPPMGetterGUI peakPPMGetterGUI = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -233,19 +238,16 @@ public class AtomController implements Initializable, StageBasedController, Free
                     atomTableView.refresh();
                 }
         );
-        MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
-        getPPMItem.setOnAction(e -> {
+        MenuItem getFrozenPPMItem = new MenuItem("Get Frozen PPM");
+        getFrozenPPMItem.setOnAction(e -> {
                     ProjectBase.activeResonanceFactory().assignFrozenAtoms("sim");
                     atomTableView.refresh();
                 }
         );
-        MenuItem getAllPPMItem = new MenuItem("Get PPM");
-        getAllPPMItem.setOnAction(e -> {
-                    ProjectBase.activeResonanceFactory().assignFromPeaks(null);
-                    atomTableView.refresh();
-                }
-        );
-        editMenu.getItems().addAll(clearPPMItem, clearRefItem, getPPMItem, getAllPPMItem);
+
+        MenuItem showGetPPMItem = new MenuItem("Get PPMs");
+        showGetPPMItem.setOnAction(e -> showPeakPPMGetter());
+        editMenu.getItems().addAll(clearPPMItem, clearRefItem, getFrozenPPMItem, showGetPPMItem);
 
         menuBar.getItems().add(editMenu);
 
@@ -378,12 +380,32 @@ public class AtomController implements Initializable, StageBasedController, Free
         atomTableView.getColumns().add(sdevCol);
         return sdevCol;
     }
+/*
+        ppmSetChoice.setValue(0);
+        refSetChoice.setValue(0);
+        menuBar.getItems().addAll(new Label("PPM Set:"), ppmSetChoice,
+                new Label("Ref Set:"), refSetChoice);
+        ppmSetChoice.setOnAction(e -> atomTableView.refresh());
+        refSetChoice.setOnAction(e -> atomTableView.refresh());
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.ATOM_MENU, this);
+    }
+*/
+
+    public ToolBar getToolBar() {
+        return menuBar;
+    }
 
     private void showLACSPlot() {
         if (lacsPlotGui == null) {
             lacsPlotGui = new LACSPlotGui();
         }
         lacsPlotGui.showMCplot();
+    }
+    private void showPeakPPMGetter() {
+        if (peakPPMGetterGUI == null) {
+            peakPPMGetterGUI = new PeakPPMGetterGUI();
+        }
+        peakPPMGetterGUI.showPeakPPMGetter();
     }
     @Override
     public void freezeHappened(Peak peak, boolean state) {
@@ -628,6 +650,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         atomTableView.refresh();
     }
 
+    public List<Atom> getAtoms() {
+        return atoms;
+    }
+
     void getRandomPPM() {
         Molecule mol = Molecule.getActive();
         if (mol != null) {
@@ -700,8 +726,6 @@ public class AtomController implements Initializable, StageBasedController, Free
         if (predictorController != null) {
             predictorController.getStage().show();
             predictorController.getStage().toFront();
-        } else {
-            System.out.println("Couldn't make predictor controller");
         }
     }
     @Override

@@ -18,7 +18,6 @@ from org.nmrfx.chemistry.io import Sequence
 from org.nmrfx.structure.rna import RNALabels
 from org.nmrfx.structure.rna import SSLayout
 from org.nmrfx.structure.rna import RNAAnalysis
-from org.nmrfx.structure.chemistry import SVMPredict
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.predict import RNAStats
 from org.nmrfx.structure.chemistry.predict import RNAAttributes

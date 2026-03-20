@@ -47,16 +47,22 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.plugin.api.EntryPoint;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.ColumnMath;
@@ -65,6 +71,8 @@ import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
@@ -86,6 +94,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
     TableColumn dim1Column;
     Button valueButton;
     Button saveParButton;
+    Button saveDatasetButton;
     Button closeButton;
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
@@ -106,6 +115,14 @@ public class DatasetsController implements Initializable, StageBasedController, 
         return stage;
     }
 
+    public ToolBar getToolBar() {
+        return toolBar;
+    }
+
+    public List<Dataset> getSelectedDatasets() {
+        return tableView.getSelectionModel().getSelectedItems().stream().map(datasetBase -> (Dataset) datasetBase).toList();
+    }
+
     public static DatasetsController create() {
         DatasetsController controller = Fxml.load(DatasetsController.class, "DatasetsScene.fxml")
                 .withNewStage("Datasets")
@@ -122,6 +139,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
         buttons.add(saveParButton);
         saveParButton.setOnAction(e -> savePars());
         saveParButton.setDisable(true);
+
+        saveDatasetButton = new Button("Save Dataset");
+        buttons.add(saveDatasetButton);
+        saveDatasetButton.setOnAction(e -> saveDataset());
+        saveDatasetButton.setDisable(true);
 
         closeButton = new Button("Close");
         buttons.add(closeButton);
@@ -161,6 +183,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             }
         }
         toolBar.getItems().addAll(buttons);
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.DATASET_MENU, this);
     }
 
     @Override
@@ -681,7 +704,22 @@ public class DatasetsController implements Initializable, StageBasedController, 
         for (DatasetBase dataset : datasets) {
             dataset.writeParFile();
         }
+    }
 
+    void saveDataset() {
+        Dataset dataset = (Dataset) tableView.getSelectionModel().getSelectedItems().getFirst();
+        if (dataset != null) {
+            FileChooser fileChooser = new FileChooser();
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                try {
+                    dataset.copyDataset(file.toString(), file.getName());
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
     }
 
     void doValues(DoubleUnaryOperator function) {

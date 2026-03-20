@@ -51,10 +51,12 @@ import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.chemistry.constraints.*;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
@@ -72,6 +74,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.Format;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -258,11 +261,13 @@ public class NOETableController implements Initializable, StageBasedController {
         Button refreshButton = new Button("Refresh");
         refreshButton.setOnAction(e -> update());
         noeSetMenuItem = new MenuButton("NoeSets");
+        Button genPeakListButton = new Button("Gen PeakList");
+        genPeakListButton.setOnAction(e -> genPeakList());
         peakListMenuButton = new MenuButton("PeakLists");
         detailsCheckBox = new CheckBox("Options");
         noeSetMenuItem.setOnContextMenuRequested(e -> updateNoeSetMenu());
 
-        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton,
+        toolBar.getItems().addAll(exportButton, clearButton, noeSetMenuItem, peakListMenuButton, genPeakListButton,
                 calibrateButton, refreshButton, ToolBarUtils.makeFiller(20), detailsCheckBox);
         updateNoeSetMenu();
     }
@@ -620,11 +625,31 @@ public class NOETableController implements Initializable, StageBasedController {
     }
 
     void showPeakInfo(Noe noe) {
-        Peak peak = noe.peak;
+        Peak peak = noe.peak();
         if (peak != null) {
             FXMLController.showPeakAttr();
             FXMLController.getPeakAttrController().gotoPeak(peak);
             FXMLController.getPeakAttrController().getStage().toFront();
+        }
+    }
+
+    void genPeakList() {
+        if (noeSet == null) {
+            Optional<NoeSet> noeSetOpt = molConstr.activeNOESet();
+            noeSet = noeSetOpt.orElseGet(() -> molConstr.newNOESet("default"));
+        }
+        if (noeSet != null) {
+
+            PeakList peakList = noeSet.getPeakList();
+            if (peakList != null) {
+                if (GUIUtils.affirm("Remove peak list " + peakList.getName())) {
+                    peakList.remove();
+                }
+            }
+            Collection<DatasetBase> datasets = Dataset.datasets();
+            var selectDataset =   (Dataset) GUIUtils.choice(datasets, "Select dataset");
+            noeSet.genPeakList(selectDataset);
+            tableView.refresh();
         }
     }
 }

@@ -54,6 +54,7 @@ public class ChartProperties implements PublicPropertyContainer {
     private final DoubleProperty integralHighPos;
     private final DoubleProperty aspectRatio;
     private final BooleanProperty aspect;
+    private final BooleanProperty fixedAspect;
     private final DoubleProperty stackX;
     private final DoubleProperty stackY;
     private final BooleanProperty titles;
@@ -86,6 +87,7 @@ public class ChartProperties implements PublicPropertyContainer {
         parameters = add(new SimpleBooleanProperty(polyChart, "parameters", false));
         aspectRatio = add(new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0));
         aspect = add(new SimpleBooleanProperty(polyChart, "aspect", false));
+        fixedAspect = add(new SimpleBooleanProperty(polyChart, "fixedAspect", false));
         stackX = add(new SimpleDoubleProperty(polyChart, "stackX", 0.0), false);
         stackY = add(new SimpleDoubleProperty(polyChart, "stackY", 0.0), false);
     }
@@ -135,6 +137,7 @@ public class ChartProperties implements PublicPropertyContainer {
         destProps.setParameters(getParameters());
         destProps.setAspectRatio(getAspectRatio());
         destProps.setAspect(getAspect());
+        destProps.setFixedAspect(getFixedAspect());
         destProps.setStackX(getStackX());
         destProps.setStackY(getStackY());
     }
@@ -399,6 +402,18 @@ public class ChartProperties implements PublicPropertyContainer {
 
     public void setAspect(boolean value) {
         aspectProperty().set(value);
+    }
+
+    public BooleanProperty fixedAspectProperty() {
+        return fixedAspect;
+    }
+
+    public boolean getFixedAspect() {
+        return fixedAspectProperty().get();
+    }
+
+    public void setFixedAspect(boolean value) {
+        fixedAspectProperty().set(value);
     }
 
     public double getStackX() {

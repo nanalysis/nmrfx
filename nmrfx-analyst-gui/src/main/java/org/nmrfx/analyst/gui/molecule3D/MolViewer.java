@@ -3,15 +3,18 @@ package org.nmrfx.analyst.gui.molecule3D;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
+import javafx.geometry.Pos;
 import javafx.scene.*;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.input.ZoomEvent;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
@@ -176,7 +179,10 @@ public class MolViewer extends Pane {
                     name = molItem.getNodeName(node, res.getIntersectedPoint());
                     String[] fields = name.split(" ");
                     Label label = new Label();
-                    label.setTextFill(Color.WHITE);
+                    label.setBackground(Background.fill(Color.WHITE));
+                    label.setTextFill(Color.BLACK);
+                    label.setTextAlignment(TextAlignment.CENTER);
+                    label.setAlignment(Pos.CENTER);
                     if (fields.length > 1) {
                         label.setText(fields[1]);
                     } else {
@@ -273,7 +279,9 @@ public class MolViewer extends Pane {
             double x = coordinates.getX();
             double y = coordinates.getY();
             Point2D pt2 = twoDPane.sceneToLocal(0, 0);
-            labelNode.label.getTransforms().setAll(new Translate(x + pt2.getX(), y + pt2.getY() - 8));
+            double width = labelNode.label.getWidth();
+            double height = labelNode.label.getHeight();
+            labelNode.label.getTransforms().setAll(new Translate(x + pt2.getX() - width / 2.0, y + pt2.getY() - height /2.0));
             twoDPane.getChildren().add(labelNode.label);
         }
     }

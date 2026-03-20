@@ -252,7 +252,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
         activeMultiplet.ifPresent(m -> {
             double volume = m.getVolume();
             PeakList peakList = m.getOrigin().getPeakList();
-            peakList.scale = volume / value;
+            peakList.setScale(volume / value);
             refresh();
         });
     }
@@ -320,7 +320,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
             extractButton.setDisable(!extractable());
             String peakType = Peak.typeToString(multiplet.getOrigin().getType());
             peakTypeChoice.setValue(peakType);
-            double scale = multiplet.getOrigin().getPeakList().scale;
+            double scale = multiplet.getOrigin().getPeakList().getScale();
             double value = multiplet.getVolume() / scale;
             integralField.setText(String.format("%.2f", value));
         } else {
@@ -619,7 +619,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection> {
                 if (peakListOpt.isPresent()) {
                     PeakList peakList = peakListOpt.get();
                     if (peakList.peaks().size() == 1) {
-                        peakList.scale = activeMultiplet.get().getVolume();
+                        peakList.setScale(activeMultiplet.get().getVolume());
                     }
                 }
                 PeakListUndo redo = getPeakListUndo();

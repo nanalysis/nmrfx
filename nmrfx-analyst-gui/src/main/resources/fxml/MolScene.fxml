@@ -3,12 +3,12 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.StatusBar?>
-<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0"
+<BorderPane  prefHeight="700.0" prefWidth="700.0"
             styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.nmrfx.analyst.gui.molecule3D.MolSceneController">
     <top>
-        <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
+        <ToolBar  BorderPane.alignment="CENTER">
         </ToolBar>
     </top>
     <center>
@@ -20,7 +20,7 @@
                         <BorderPane fx:id="molBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"
                                     prefWidth="400.0">
                             <top>
-                                <HBox>
+                                <HBox fx:id="mol3dHBox">
                                     <children>
                                         <MenuButton mnemonicParsing="false" text="Select">
                                             <items>
@@ -71,18 +71,24 @@
                                         </MenuButton>
                                         <MenuButton mnemonicParsing="false" text="Calculate">
                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#to3DAction"
-                                                          text="Small Molecule to 3D"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#initStructureAction"
-                                                          text="Inititialize Structure"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
-                                                          text="Anneal Structure"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"
-                                                          text="Refine Structure"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#refineCFFStructureAction"
-                                                          text="Refine Structure (complex force field)"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#drawTree"
-                                                          text="Draw RotationTree"/>
+                                                <Menu text="Small Molecule">
+                                                    <MenuItem mnemonicParsing="false" onAction="#to3DAction"
+                                                              text="Generate 3D coordinates"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#minimizeAction"
+                                                              text="Energy Minimization"/>
+                                                </Menu>
+                                                <Menu text="Torsion Angle Dynamics">
+                                                    <MenuItem mnemonicParsing="false" onAction="#initStructureAction"
+                                                              text="Inititialize Structure"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#calcStructureAction"
+                                                              text="Anneal Structure"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#refineStructureAction"
+                                                              text="Refine Structure"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#refineCFFStructureAction"
+                                                              text="Refine Structure (complex force field)"/>
+                                                    <MenuItem mnemonicParsing="false" onAction="#drawTree"
+                                                              text="Draw RotationTree"/>
+                                                </Menu>
                                             </items>
                                         </MenuButton>
                                         <MenuButton mnemonicParsing="false" text="Constraints">
@@ -112,72 +118,7 @@
                         </BorderPane>
                     </content>
                 </Tab>
-                <Tab text="Secondary Structure">
-                    <content>
-                        <BorderPane fx:id="ssBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"
-                                    prefWidth="400.0">
-                            <top>
-                                <HBox HBox.hgrow="ALWAYS">
-                                    <children>
-                                        <ButtonBar HBox.hgrow="ALWAYS">
-                                            <buttons>
-                                                <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0"
-                                                        prefWidth="87.0" text="Draw"/>
-                                                <MenuButton mnemonicParsing="false" text="Sec. Structure">
-                                                    <items>
-                                                        <MenuItem mnemonicParsing="false" onAction="#loadFromFile"
-                                                                  text="Open..."/>
-                                                        <MenuItem mnemonicParsing="false" onAction="#ssFrom3D"
-                                                                  text="From 3D"/>
-                                                        <MenuItem mnemonicParsing="false" onAction="#seqTo2D"
-                                                                  text="Predict 2D"/>
-                                                        <MenuItem mnemonicParsing="false" onAction="#ssTo3D"
-                                                                  text="To 3D "/>
-                                                    </items>
-                                                </MenuButton>
-                                                <MenuButton fx:id="atomMenu" text="Atoms"/>
-                                                <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
-                                                <MenuButton fx:id="modeMenuButton" text="Modes"/>
-                                                <ChoiceBox fx:id="constraintTypeChoiceBox"/>
 
-                                            </buttons>
-                                        </ButtonBar>
-                                    </children>
-                                </HBox>
-                            </top>
-                            <center>
-                            </center>
-                            <bottom>
-                                <VBox HBox.hgrow="ALWAYS" >
-                                    <children>
-                                        <Pane fx:id="dotBracketPane" minHeight="40" HBox.hgrow="ALWAYS"/>
-                                        <TextField fx:id="dotBracketField" HBox.hgrow="ALWAYS"/>
-                                        <HBox HBox.hgrow="ALWAYS" spacing="20" alignment="CENTER_LEFT">
-                                            <Label text="Sec. Structure Selector"/>
-                                            <ChoiceBox fx:id="ssChoiceBox"/>
-                                            <CheckBox fx:id="ssDisplayCheckBox" text="Sec. Struct."/>
-                                            <CheckBox fx:id="mapDisplayCheckBox" text="Map"/>
-                                            <MenuButton mnemonicParsing="false" text="Matching">
-                                            <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#scoreSecStructures"
-                                                          text="Match"/>
-                                                <MenuItem mnemonicParsing="false" onAction="#selectSecStructure"
-                                                          text="Select"/>
-                                            </items>
-                                            </MenuButton>
-
-                                            <Label fx:id="rnaSecStructureScoreLabel"/>
-                                            <Pane HBox.hgrow="ALWAYS"/>
-                                            <Label text="Zoom"/>
-                                            <Button text="-" onAction="#zoomOut"/>
-                                            <Button text="+" onAction="#zoomIn"/>
-                                        </HBox>
-                                    </children>
-                                </VBox>
-                            </bottom>
-                        </BorderPane>
-                    </content>
-                </Tab>
                 <Tab text="Ligands">
                     <content>
                         <BorderPane fx:id="ligandBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0"

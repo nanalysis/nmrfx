@@ -238,7 +238,7 @@ public class Processor {
 
     private void printVecReadCount() {
         if (dim[0] < 1) {
-            log.warn("read FID vector count: {}", vecReadCount.get());
+          //  log.warn("read FID vector count: {}", vecReadCount.get());
         }
     }
 
@@ -473,7 +473,7 @@ public class Processor {
             for (int i = 0; i < acqOrderToUse.length; i++) {
                 acqOrderStr.append(acqOrderToUse[i]).append(" ");
             }
-            log.debug(acqOrderStr.toString());
+          //  log.debug(acqOrderStr.toString());
         }
 
         acqSizesToUse = new int[adjustedTDSizes.length];
@@ -496,7 +496,6 @@ public class Processor {
         }
         if (nDim > 1) {
             if (acqSizesToUse.length <= adjustedTDSizes.length) {
-                log.info("useSizes <= than newTDSizes {}", acqSizesToUse.length);
                 int[] xOutSizes = acqSizesToUse.clone();
                 boolean[] oComplex = newComplex.clone();
                 int[] swapIn = new int[acqSizesToUse.length];
@@ -529,7 +528,6 @@ public class Processor {
                 }
                 tmult = new MultiVecCounter(adjustedTDSizes, xOutSizes, groupSizes, oComplex, acqOrderToUse, swapIn, dataset.getNDim());
             } else {
-                log.info("use newTDSize with useSize length {}", acqSizesToUse.length);
                 tmult = new MultiVecCounter(adjustedTDSizes, groupSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
             }
             int totalVecs = nmrData.getNVectors();
@@ -551,7 +549,6 @@ public class Processor {
                 }
                 itemsToRead = totalVecs;
             }
-            log.info(" total vecs {} {} {} {}", totalVecs, tmult.getGroupSize(), nmrData.getNVectors(), itemsToWrite);
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(groupSizes, complex, acqOrderToUse);
@@ -569,7 +566,6 @@ public class Processor {
             itemsToRead = itemsToWrite;
         }
         vectorsPerProcess = totalVecGroups / numProcessors;
-        log.info("totalVecGroups {} vectorsPerProcess {} vectin {} vectout {}", totalVecGroups, vectorsPerProcess, itemsToRead, itemsToWrite);
         if (vectorsPerProcess > maxVectorsPerProcess) {
             vectorsPerProcess = maxVectorsPerProcess;
         }
@@ -650,7 +646,6 @@ public class Processor {
         for (int i = 1; i < this.pt.length; ++i) {
             totalVecGroups *= (this.pt[i][1] - this.pt[i][0] + 1);
         }
-        log.info("complex {} vecSize {} nVectors {}", nvComplex, this.vectorSize, totalVecGroups);
         itemsToWrite = totalVecGroups;
         itemsToRead = itemsToWrite;
         scanregion = new ScanRegion(this.pt, this.dim, dataset);
@@ -1017,9 +1012,6 @@ public class Processor {
         } else {
             shapeName = fileName + "_lshapes.txt";
         }
-        log.info(fileName);
-        log.info(shapeName);
-        log.info("{}", index);
         simVecProcessor = new LineShapeCatalog(nmrDataSets.get(0), simWidths, nSimWidths,
                 nKeep, nFrac, dirName + File.separator + shapeName);
 
@@ -1511,7 +1503,6 @@ public class Processor {
             }
             finishTimeDim = System.currentTimeMillis();
             runTimeDim = (finishTimeDim - startTimeDim) / 1000.0;
-            log.info(String.format("Time elapsed for %s: %6.3f", p.getName(), runTimeDim));
         }
         dimProcesses.clear();
         elapsedTime = (System.currentTimeMillis() - startTime) / 1000.0;
@@ -1542,8 +1533,6 @@ public class Processor {
             }
             closeDataset(true);
         }
-        String elapsedTimeStr = String.format("Elapsed time %.2f", elapsedTime);
-        log.info(elapsedTimeStr);
         setProcessorAvailableStatus(true);
     }
 
@@ -1655,14 +1644,13 @@ public class Processor {
             boolean doneFlushed = true;
             if (useIOController && !p.isDataset()) {
                 doneFlushed = datasetWriter.isDone(10000);
-                log.info("done flushed {}", doneFlushed);
             }
             if (!getProcessorError() && doneFlushed) {
-                if (p.isMatrix()) {
-                    log.info("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
-                } else {
-                    log.info("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
-                }
+//                if (p.isMatrix()) {
+//                    log.info("Processed dimensions {}, {} with {} threads.", (dim[0] + 1), (dim[1] + 1), numProcessors);
+//                } else {
+//                    log.info("Processed dimension {} with {} threads.", (dim[0] + 1), numProcessors);
+//                }
                 for (int i = 0; i < dataset.getNDim(); ++i) {
                     dataset.syncPars(i);
                 }
@@ -1676,7 +1664,6 @@ public class Processor {
             printVecReadCount();
             pool.shutdown();
             if (useIOController && !p.isDataset()) {
-                log.info("shutdown now");
                 datasetWriter.shutdown();
                 datasetWriter = null;
             }

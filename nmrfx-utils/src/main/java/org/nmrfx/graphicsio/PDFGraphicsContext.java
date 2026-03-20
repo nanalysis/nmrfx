@@ -64,7 +64,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     boolean landScape = false;
     boolean nativeCoords = false;
 
-    public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
+    public void create(boolean landScape, double width, double height, Double outputWidth, Double outputHeight, String fileName) throws GraphicsIOException {
         // the document
         this.landScape = landScape;
         this.fileName = fileName;
@@ -81,7 +81,14 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
 
         try {
-            PDPage page = new PDPage(PDRectangle.LETTER);
+            PDRectangle pdfRectangle;
+            if ((outputWidth == null) || (outputHeight == null)) {
+                pdfRectangle = PDRectangle.LETTER;
+            } else {
+                pdfRectangle = new PDRectangle(outputWidth.floatValue(), outputHeight.floatValue());
+            }
+
+            PDPage page = new PDPage(pdfRectangle);
             doc.addPage(page);
             PDRectangle pageSize = page.getMediaBox();
             pageWidth = pageSize.getWidth();
@@ -107,6 +114,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
     }
 
+    @Override
     public void nativeCoords(boolean state) {
         this.nativeCoords = state;
     }
@@ -116,7 +124,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             float width = font.getStringWidth(text) / 1000.0f * fontSize;
             return switch (textAlignment) {
                 case CENTER -> width * 0.5f;
-                case LEFT -> 0.0f;
                 case RIGHT -> width;
                 default -> 0.0f;
             };
@@ -143,7 +150,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
     }
 
-    public void showText(String message, float startX, float startY) throws GraphicsIOException {
+    public void showText(String message, float startX, float startY) {
         try {
             contentStream.newLineAtOffset(startX, startY);
             contentStream.showText(message);
@@ -152,7 +159,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         }
     }
 
-    public void endText() throws GraphicsIOException {
+    public void endText() {
         try {
             contentStream.endText();
         } catch (IOException ioE) {
@@ -249,13 +256,9 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     public void fillText(String text, double x, double y) {
         float dY = getTextDY();
         float dX = getTextAnchor(text);
-        try {
-            startText();
-            showText(text, tX(x) - dX, tY(y) - dY);
-            endText();
-        } catch (GraphicsIOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
+        startText();
+        showText(text, tX(x) - dX, tY(y) - dY);
+        endText();
     }
 
     @Override
@@ -516,13 +519,9 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void strokeText(String text, double x, double y) {
-        try {
-            startText();
-            showText(text, tX(x), tY(y));
-            endText();
-        } catch (GraphicsIOException ex) {
-            log.error(ex.getMessage(), ex);
-        }
+        startText();
+        showText(text, tX(x), tY(y));
+        endText();
     }
 
     @Override
@@ -541,11 +540,8 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             contentStream.close();
 
             doc.save(fileName);
+            doc.close();
 
-            if (doc != null) {
-                doc.close();
-
-            }
         } catch (IOException ioE) {
             throw new GraphicsIOException(ioE.getMessage());
         }

@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui.spectra;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.gui.FXMLController;
@@ -42,7 +43,15 @@ public class PeakMenu extends ChartMenu {
         inspectorItem.setOnAction((ActionEvent e) -> {
             showPeakInspector();
         });
-        chartMenu.getItems().add(inspectorItem);
+
+        Menu labelPosMenu = new Menu("Label Position");
+        String[] positions = {"N","NE", "E", "SE", "S", "SW", "W", "NW"};
+        for (String position : positions) {
+            MenuItem menuItem = new MenuItem(position);
+            menuItem.setOnAction(e -> setLabelPos(position));
+            labelPosMenu.getItems().add(menuItem);
+        }
+        chartMenu.getItems().addAll(inspectorItem, labelPosMenu);
 
     }
 
@@ -56,6 +65,9 @@ public class PeakMenu extends ChartMenu {
         controller.getPeakAttrController().getStage().toFront();
     }
 
+    void setLabelPos(String position) {
+        peak.setCorner(position.toLowerCase());
+    }
     public void setActivePeak(Peak peak) {
         this.peak = peak;
     }

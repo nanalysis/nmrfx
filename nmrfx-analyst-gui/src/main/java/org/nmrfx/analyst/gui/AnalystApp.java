@@ -226,7 +226,6 @@ public class AnalystApp extends Application {
         PluginFunction pluginFunction = new PluginFunction(pluginsMenu, this::pluginCommand);
         pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_PLUGINS, pluginFunction);
         pluginsMenu.setVisible(!pluginsMenu.getItems().isEmpty());
-        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
 
         Menu spectraWindowMenu = new Menu("Spectra Windows");
         Menu windowMenu = new Menu("Window");
@@ -244,6 +243,7 @@ public class AnalystApp extends Application {
             menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, pluginsMenu, windowMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
+        pluginLoader.registerPluginsOnEntryPoint(EntryPoint.MENU_FILE, fileMenu);
         if (startInAdvanced || advancedIsActive) {
             advanced(null);
         }
@@ -261,14 +261,18 @@ public class AnalystApp extends Application {
         }
     }
 
-    String pluginCommand(String s) {
+    Object pluginCommand(String s) {
         String[] fields = s.split(" ");
         if ((fields.length == 2) && fields[0].equalsIgnoreCase("nw.showPeak")) {
             Peak peak = PeakList.getAPeak(fields[1]);
             if (peak != null) {
                 GUIScripter.showPeak(peak);
             }
+        } else if ((fields.length == 1) && fields[0].equalsIgnoreCase("nw.getScanTable")) {
+            GUIScripterAdvanced guiScripterAdvanced = new GUIScripterAdvanced();
+            return guiScripterAdvanced.getScannerTable();
         }
+
         return "";
     }
 
@@ -315,7 +319,6 @@ public class AnalystApp extends Application {
             System.exit(0);
         }
     }
-
 
 
     public void advanced(MenuItem startAdvancedItem) {
@@ -643,13 +646,13 @@ public class AnalystApp extends Application {
                 PreferencesController.getPeakShapeDirectFactor(),
                 PreferencesController.getPeakShapeIndirectFactor());
     }
+
     public static void showHistoryAction(ActionEvent event) {
         GUIProject guiProject = GUIProject.getActive();
         if ((guiProject != null) && (guiProject.getGitManager() != null)) {
             guiProject.getGitManager().showHistoryAction(event);
         }
     }
-
 
 
     public static void addMoleculeListener(MapChangeListener<String, MoleculeBase> listener) {

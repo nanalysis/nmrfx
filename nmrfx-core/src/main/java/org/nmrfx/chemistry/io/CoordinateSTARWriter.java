@@ -71,16 +71,11 @@ public class CoordinateSTARWriter {
                 continue;
             }
 
-            Iterator e = molecule.coordSets.values().iterator();
-            CoordSet coordSet;
 
-            while (e.hasNext()) {
-                coordSet = (CoordSet) e.next();
-
-                Iterator entIterator = coordSet.getEntities().values().iterator();
-
-                while (entIterator.hasNext()) {
-                    Entity entity = (Entity) entIterator.next();
+            for (var entry : molecule.coordSets.entrySet()) {
+               CoordSet coordSet = entry.getValue();
+               for (var entry2 : coordSet.entities.entrySet()) {
+                    Entity entity = entry2.getValue();
                     for (Atom atom : entity.getAtoms()) {
                         if (atom.getAtomicNumber() != 0) {
                             SpatialSet spatialSet = atom.spatialSet;

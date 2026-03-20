@@ -3,12 +3,31 @@ package org.nmrfx.processor.gui.annotations;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class AnnoLineTest {
+
+    static Yaml getYaml() {
+        LoaderOptions opts = new LoaderOptions();
+
+        opts.setTagInspector(tag -> {
+            String className = tag.getClassName();
+            return className != null
+                    && className.startsWith("org.nmrfx.processor.gui.annotations.");
+        });
+
+        Constructor constructor = new Constructor(Object.class, opts);
+
+        Yaml yaml = new Yaml(constructor);
+        return yaml;
+
+    }
+
     @Test
     public void testAnnoLineYamlNoConstructor() {
         String initialString = """
@@ -19,7 +38,8 @@ public class AnnoLineTest {
                     y2: 10.0
                     XPosType : FRACTION
                 """;
-        Yaml yaml = new Yaml();
+
+        Yaml yaml = getYaml();
         AnnoLine line = yaml.load(initialString);
         Assert.assertSame(CanvasAnnotation.POSTYPE.FRACTION, line.getXPosType());
     }
@@ -34,7 +54,7 @@ public class AnnoLineTest {
                   clipInAxes: false, fill: '0x000000ff', lineWidth: 1.0, stroke: '0x000000ff',
                   x1: 0.0, x2: 4.0, y1: 1.0, y2: 10.0}
                                 """;
-        Yaml yaml = new Yaml();
+        Yaml yaml = getYaml();
         List<Object> annotations = yaml.load(initialString);
         System.out.print(annotations);
         Assert.assertTrue(annotations.get(0) instanceof AnnoLine);

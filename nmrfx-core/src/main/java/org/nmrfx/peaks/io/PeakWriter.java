@@ -296,8 +296,28 @@ public class PeakWriter {
             }
             chan.write(peak.toSTAR3LoopPeakString() + "\n");
         }
-        chan.write("stop_\n");
+        chan.write(STAR3Base.STOP + "\n");
         chan.write("\n");
+
+        if (peakList.hasMeasures()) {
+            peakList.getMeasures().get().writeMeasures(chan);
+
+            loopStrings = Peak.getSTAR3MeasureCharStrings();
+            chan.write("loop_\n");
+            for (String loopString : loopStrings) {
+                chan.write(loopString + "\n");
+            }
+
+            chan.write("\n");
+
+            for (int i = 0; i < nPeaks; i++) {
+                Peak peak = peakList.getPeak(i);
+                chan.write(peak.toMeasureSTARString(i));
+            }
+            chan.write(STAR3Base.STOP + "\n");
+            chan.write("\n");
+        }
+
         loopStrings = Peak.getSTAR3GeneralCharStrings();
         chan.write("loop_\n");
         for (String loopString : loopStrings) {

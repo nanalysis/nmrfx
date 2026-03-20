@@ -30,17 +30,22 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
+import org.nmrfx.analyst.gui.peaks.MatrixAnalysisTool;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.datasets.DatasetRegion;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
+import org.nmrfx.processor.datasets.peaks.*;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ControllerTool;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.FileUtils;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -56,6 +61,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.nmrfx.processor.datasets.peaks.PeakListTools.quantifyPeaks;
+
 /**
  * ScannerTool class
  *
@@ -64,7 +71,8 @@ import java.util.regex.Pattern;
 public class ScannerTool implements ControllerTool {
     private static final Logger log = LoggerFactory.getLogger(ScannerTool.class);
     private static final String BIN_MEASURE_NAME = "binValues";
-    enum TableSelectionMode {
+
+    public enum TableSelectionMode {
         ALL,
         HIGHLIGHT,
         ONLY
@@ -85,13 +93,14 @@ public class ScannerTool implements ControllerTool {
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
     TRACTGUI tractGUI = null;
+    MatrixAnalysisTool matrixAnalysisTool = null;
     TablePlotGUI plotGUI = null;
     TablePlotGUI diffusionGUI = null;
     MinerController miner;
     ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
-
-    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
-    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
+    TableMath tableMath = null;
+    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE]W)$");
+    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
 
     public ScannerTool(FXMLController controller) {
@@ -110,7 +119,8 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
         scannerBar.getItems().add(makeRegionMenu());
-        scannerBar.getItems().add(makeScoreMenu());
+        scannerBar.getItems().add(makePeakMenu());
+        scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
         Button reloadButton = new Button("Reload");
@@ -193,6 +203,16 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
+    private MenuButton makePeakMenu() {
+        MenuButton menu = new MenuButton("Peak Fit");
+        MenuItem addPeakFitMenuItem = new MenuItem("Fit Peak Decay");
+        addPeakFitMenuItem.setOnAction(e -> fitPeakDecay());
+        menu.getItems().addAll(addPeakFitMenuItem);
+
+        return menu;
+
+    }
+
     private MenuButton makeRegionMenu() {
         MenuButton menu = new MenuButton("Regions");
 
@@ -228,12 +248,22 @@ public class ScannerTool implements ControllerTool {
         return menu;
     }
 
-    private MenuButton makeScoreMenu() {
-        MenuButton menu = new MenuButton("Score");
+    MenuButton makeMatrixAnalysisMenu() {
+        MenuButton matrixMenu = new MenuButton("Analysis");
+        MenuItem mathItem = new MenuItem("Table Math...");
+        mathItem.setOnAction(e -> doMath());
+        matrixMenu.getItems().add(mathItem);
+        MenuItem pcaButton = new MenuItem("Principal Component Analysis...");
+        pcaButton.setOnAction(e -> doPCA());
+        matrixMenu.getItems().add(pcaButton);
+        MenuItem mcsButton = new MenuItem("Peak Minimum Chemical Shift ");
+        mcsButton.setOnAction(e -> doMCS());
+        matrixMenu.getItems().add(mcsButton);
         MenuItem scoreMenuItem = new MenuItem("Cosine Score");
         scoreMenuItem.setOnAction(e -> scoreSimilarity());
-        menu.getItems().addAll(scoreMenuItem);
-        return menu;
+        matrixMenu.getItems().addAll(scoreMenuItem);
+
+        return matrixMenu;
     }
 
     private MenuButton makeToolMenu() {
@@ -380,7 +410,7 @@ public class ScannerTool implements ControllerTool {
                 }
 
                 List<Double> values = measureRegion(itemDataset, measure);
-                if (values == null) {
+                if (values.isEmpty()) {
                     return;
                 }
                 allValues.addAll(values);
@@ -399,7 +429,7 @@ public class ScannerTool implements ControllerTool {
             values = measure.measure(dataset);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
-            return null;
+            return Collections.emptyList();
         }
         return values;
     }
@@ -413,12 +443,15 @@ public class ScannerTool implements ControllerTool {
         int extra = 1;
         Measure measure = new Measure(BIN_MEASURE_NAME, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, getOffsetType(), getMeasureType());
         measure.setName("bins");
-        List<double[]> allValues = new ArrayList<>();
+        Map<String, double[]> valueMap = new HashMap<>();
         List<FileTableItem> items = scanTable.getItems();
 
         for (FileTableItem item : items) {
             String datasetName = item.getDatasetName();
             Dataset itemDataset = Dataset.getDataset(datasetName);
+            if (valueMap.containsKey(datasetName + "_" + 1)) {
+                continue;
+            }
 
             if (itemDataset == null) {
                 File datasetFile = new File(scanTable.getScanDir(), datasetName);
@@ -431,28 +464,28 @@ public class ScannerTool implements ControllerTool {
             }
 
             List<double[]> values = measureBins(itemDataset, measure, nBins);
-            if (values == null) {
+            if (values.isEmpty()) {
                 return;
             }
-            allValues.addAll(values);
-            if (allValues.size() >= items.size()) {
-                break;
+            for (int iRow = 0; iRow < values.size(); iRow++) {
+                double[] dataValues = values.get(iRow);
+                String key = datasetName + "_" + (iRow + 1);
+                valueMap.put(key, dataValues);
             }
         }
-        int iItem = 0;
         for (FileTableItem item : items) {
-            item.setObjectExtra(BIN_MEASURE_NAME, allValues.get(iItem++));
+            String key = item.getDatasetName() + "_" + item.getRow();
+            double[] values = valueMap.get(key);
+            item.setObjectExtra(BIN_MEASURE_NAME, values);
         }
     }
 
     void scoreSimilarity() {
         FileTableItem refItem = tableView.getSelectionModel().getSelectedItem();
         if (refItem != null) {
-            double[] refValues = (double[]) refItem.getObjectExtra(BIN_MEASURE_NAME);
-            if (refValues == null) {
-                measureSearchBins();
-            }
+            measureSearchBins();
             scoreSimilarity(refItem);
+            showPlot("row", "score");
         }
     }
 
@@ -477,7 +510,7 @@ public class ScannerTool implements ControllerTool {
             values = measure.measureBins(dataset, nBins);
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
-            return null;
+            return Collections.emptyList();
         }
         return values;
     }
@@ -590,7 +623,7 @@ public class ScannerTool implements ControllerTool {
      * Loads the short version of the regions file into the scanner table.
      *
      * @param file The file to load
-     * @throws IOException
+     * @throws IOException if data can't be read from dataset
      */
     private void loadRegionsShort(File file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
@@ -625,7 +658,7 @@ public class ScannerTool implements ControllerTool {
      * have a Measure Type of volume and an Offset Type of none.
      *
      * @param file The file to load
-     * @throws IOException
+     * @throws IOException if data can't be read from dataset
      */
     private void loadRegionsLong(File file) throws IOException {
         List<DatasetRegion> regions = new ArrayList<>(DatasetRegion.loadRegions(file));
@@ -806,6 +839,7 @@ public class ScannerTool implements ControllerTool {
         }
         plotGUI.showPlotStage();
     }
+
     void showDiffusionGUI() {
         if (diffusionGUI == null) {
             diffusionGUI = new TablePlotGUI(tableView, TablePlotGUI.ExtraMode.DIFFUSION, true);
@@ -819,6 +853,109 @@ public class ScannerTool implements ControllerTool {
 
         }
         tractGUI.showMCplot();
+    }
+
+
+    void doPCA() {
+        if (matrixAnalysisTool == null) {
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
+        }
+        matrixAnalysisTool.showPCATool();
+    }
+
+    void doMCS() {
+        if (matrixAnalysisTool == null) {
+            matrixAnalysisTool = new MatrixAnalysisTool(this);
+            scanTable.ensureDatasetAttributes();
+        }
+        scanTable.getSelectedAttributes();
+        matrixAnalysisTool.setRefIndex(scanTable.getSelectedIndex());
+        matrixAnalysisTool.doMCS();
+        showPlot("row", "MCS");
+    }
+
+    public void showPlot(String xChoice, String yChoice) {
+        if (plotGUI == null) {
+            plotGUI = new TablePlotGUI(tableView, null);
+        }
+        plotGUI.showPlotStage();
+        plotGUI.setPlotType("ScatterPlot");
+        plotGUI.updateChoice(xChoice, yChoice);
+    }
+
+    void doMath() {
+        if (tableMath == null) {
+            tableMath = new TableMath(this);
+        }
+        tableMath.showTableMath();
+    }
+
+    void fitPeakDecay() {
+        TextInputDialog textInput = new TextInputDialog();
+        textInput.setHeaderText("New column name");
+       // Optional<String> columNameOpt = textInput.showAndWait();
+        if (chart.getPeakListAttributes().isEmpty()) {
+            return;
+        }
+        org.nmrfx.processor.gui.spectra.PeakListAttributes peakListAttr = chart.getPeakListAttributes().getFirst();
+        List<FileTableItem> items = scanTable.getItems();
+        PeakFitParameters fitPars = new PeakFitParameters();
+        fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.EXP);
+        chart.fitPeakLists(fitPars, true);
+
+        for (Peak peak : peakListAttr.getPeakList().peaks()) {
+            String label = peak.getPeakDim(0).getLabel();
+            if (label.isBlank()) {
+                label = "#"+peak.getIdNum();
+            }
+            String rateColumnName = peak.getPeakList().getName() + "_" + label+ "_Rate:" + peak.getIdNum();
+            String intColumnName = peak.getPeakList().getName() + "_" + label+ "_Int:" + peak.getIdNum();
+            List<Double> rateValues = new ArrayList<>();
+            List<Double> intValues = new ArrayList<>();
+            for (FileTableItem item : items) {
+                DatasetAttributes datasetAttributes = item.getDatasetAttributes();
+                Dataset dataset = datasetAttributes.getDataset();
+                double[] delays = getFitValues(peakListAttr, datasetAttributes);
+                int[] fitRows = getFitRows(peakListAttr);
+                quantifyPeaks(peak.getPeakList(), dataset, "center");
+                PeakListTools.groupPeaksAndFit(peak.getPeakList(), dataset, fitRows, delays, List.of(peak), fitPars);
+                rateValues.add((double) peak.getRate());
+                intValues.add((double) peak.getIntensity());
+            }
+            setItems(rateColumnName, rateValues);
+            scanTable.addTableColumn(rateColumnName, "D");
+            setItems(intColumnName, intValues);
+            scanTable.addTableColumn(intColumnName, "D");
+        }
+        scanTable.refresh();
+    }
+
+    int[] getFitRows(PeakListAttributes peakListAttr) {
+        int nPeakDims = peakListAttr.getPeakList().getNDim();
+        DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int nDataDims = dataAttr.getDataset().getNDim();
+        int nRows = nDataDims - nPeakDims;
+        int[] dims = dataAttr.getDims();
+        int[] rows = new int[nRows];
+        for (int i = 0; i < nRows; i++) {
+            int iDim = dims[nPeakDims + i];
+            rows[i] = dataAttr.getPoint(iDim)[0];
+        }
+        return rows;
+    }
+
+    double[] getFitValues(PeakListAttributes peakListAttr, DatasetAttributes datasetAttributes) {
+        int nPeakDims = peakListAttr.getPeakList().getNDim();
+        DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int nDataDims = dataAttr.getDataset().getNDim();
+        int nRows = nDataDims - nPeakDims;
+        int[] dims = dataAttr.getDims();
+        double[] values = null;
+        if (nRows == 1) {
+            values = dataAttr.getDataset().getValues(dims[nPeakDims]);
+            log.info("values {}", values);
+        }
+        return values;
     }
 
 }

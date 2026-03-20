@@ -25,7 +25,7 @@ public class BMRBio {
 
     public static CompletableFuture<HttpResponse<String>> fetchEntryASync(int entryID) throws URISyntaxException {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI("http://api.bmrb.io/v2/entry/" + entryID + "?format=rawnmrstar"))
+                .uri(new URI("https://api.bmrb.io/v2/entry/" + entryID + "?format=rawnmrstar"))
                 .setHeader("Application", "NMRFx")
                 .GET()
                 .build();
@@ -75,7 +75,7 @@ public class BMRBio {
     public static CompletableFuture<HttpResponse<String>> fetchSearchResults(String searchString) throws URISyntaxException {
         searchString = searchString.replace(" ", "+");
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI("http://api.bmrb.io/v2/instant?term=" + searchString))
+                .uri(new URI("https://api.bmrb.io/v2/instant?term=" + searchString))
                 .setHeader("Application", "NMRFx")
                 .GET()
                 .build();

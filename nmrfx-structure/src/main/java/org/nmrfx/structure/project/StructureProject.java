@@ -8,6 +8,7 @@ package org.nmrfx.structure.project;
 import org.nmrfx.chemistry.InvalidMoleculeException;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.io.*;
+import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.project.GitBase;
 import org.nmrfx.project.ProjectBase;
@@ -258,7 +259,7 @@ public class StructureProject extends ProjectBase {
 
     public void loadShiftFiles(Path directory, boolean refMode) throws IOException {
         Molecule mol = activeMol();
-        Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
+        Pattern pattern = Pattern.compile("(ppm.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {
@@ -297,4 +298,8 @@ public class StructureProject extends ProjectBase {
         }
     }
 
+    @Override
+    public void saveMemoryFile(DatasetBase datasetBase) {
+
+    }
 }

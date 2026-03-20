@@ -252,6 +252,10 @@ public class TablePlotGUI {
         }
     }
 
+    public void setPlotType(String type) {
+        chartTypeChoice.setValue(type);
+    }
+
     private void updatePlot() {
         switch (chartTypeChoice.getValue()) {
             case "ScatterPlot" -> updateScatterPlot();
@@ -325,6 +329,13 @@ public class TablePlotGUI {
             }
         }
         return series;
+    }
+
+    public void updateChoice(String xChoice, String yChoice) {
+        xArrayChoice.setValue(xChoice);
+        yArrayChoice.getCheckModel().clearChecks();
+        yArrayChoice.getCheckModel().check(yChoice);
+        updateScatterPlot();
     }
 
     private void updateScatterPlot() {

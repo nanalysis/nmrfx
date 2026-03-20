@@ -169,6 +169,8 @@ public class RNAAnalysis {
 
             }
         }
+        String viennaStr = new String(vienna);
+        molecule.setDotBracket(viennaStr);
         return vienna;
     }
 

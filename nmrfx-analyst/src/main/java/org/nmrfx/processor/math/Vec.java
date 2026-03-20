@@ -43,8 +43,7 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.math.VecBase;
 import org.nmrfx.math.VecException;
-import org.nmrfx.processor.operations.IDBaseline2;
-import org.nmrfx.processor.operations.OperationException;
+import org.nmrfx.processor.datasets.peaks.LineShapes;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -142,6 +141,12 @@ public class Vec extends VecBase {
         var vec = new Vec(size, name, complex);
         put(name, vec);
         return vec;
+    }
+
+    public Vec copyVec() {
+        Vec newVec = new Vec(size, isComplex);
+        copy(newVec);
+        return newVec;
     }
 
     @Override
@@ -1763,6 +1768,30 @@ public class Vec extends VecBase {
      * order mode is used)
      */
     public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
+        return autoPhase(doFirst, winSize, ratio, mode, ph1Limit, negativePenalty, false, null, null);
+    }
+
+    /**
+     * Automatically calculate phase values for this vector using an one of two
+     * algorithms. One based on flattening baseline regions adjacent to peaks
+     * and one based on entropy minimization
+     *
+     * @param doFirst  Set to true to include first order phase correction
+     * @param winSize  Window size used for analyzing for baseline region
+     * @param ratio    Ratio Intensity to noise ratio used for indentifying
+     *                 baseline reginos
+     * @param mode     Set to 0 for flattening mode and 1 for entropy mode
+     * @param ph1Limit Set limit on first order phase. Can prevent unreasonable
+     *                 results
+     * @param useRegion Autophase using siganl in specified region
+     * @param ppmStart Starting point for region.  Find region if null;
+     * @param ppmEnd Ending point for region. Find region if null;
+     * @return an array of 1 or two phase values (depending on whether first
+     * order mode is used)
+     */
+    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode,
+                              double ph1Limit, double negativePenalty, boolean useRegion, Double ppmStart, Double ppmEnd) {
+
         int pivot = 0;
         double p1PenaltyWeight = 1.0;
         if (winSize < 1) {
@@ -1772,11 +1801,11 @@ public class Vec extends VecBase {
             ratio = 25.0;
         }
         double[] phaseResult;
-        if (!doFirst) {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+        if (!doFirst || useRegion) {
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty, useRegion, ppmStart, ppmEnd);
             phaseResult = tbPoints.autoPhaseZero();
         } else {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty, useRegion, ppmStart, ppmEnd);
             tbPoints.setP1PenaltyWeight(p1PenaltyWeight);
             phaseResult = tbPoints.autoPhase(ph1Limit);
         }
@@ -1790,7 +1819,7 @@ public class Vec extends VecBase {
 
     public double testAutoPhase(int winSize, double ratio, int mode,
                                 double negativePenalty, double phase0, double phase1) {
-        TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
+        TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty, false,  null, null);
         return tbPoints.testFit(phase0, phase1);
     }
 
@@ -3320,6 +3349,48 @@ public class Vec extends VecBase {
         }
 
         return (this);
+    }
+
+    public Vec convolveLorentzian(double lw, double mult) {
+        double ptWidth = getSize() / getSW() * lw;
+        int halfWidth = (int) (ptWidth * mult / 2.0);
+        double[] shape = new double[halfWidth * 2 + 1];
+
+        for (int j=0, i = -halfWidth;i <= halfWidth;i++) {
+            shape[j++] = LineShapes.LORENTZIAN.calculate(i, 1.0, 0, ptWidth);
+        }
+        return convolveSame(shape);
+    }
+    /**
+     * Calculates convolution where output length equals signal length.
+     *
+     * @param impulse The impulse response array (length M)
+     * @return this Vec after convolution
+     */
+    public Vec convolveSame(double[] impulse) {
+        if (isComplex()) {
+            throw new VecException("esmooth: vector complex");
+        }
+        int m = impulse.length;
+        double[] result = new double[size];
+
+        // Calculate the offset to center the impulse response
+        // This effectively "skips" the edges of the full convolution
+        int offset = (m - 1) / 2;
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < m; j++) {
+                // Determine the corresponding index in a "full" convolution
+                int fullIdx = i + j - offset;
+
+                // Only add to result if the index falls within the signal's bounds
+                if (fullIdx >= 0 && fullIdx < size) {
+                    result[fullIdx] += rvec[i] * impulse[j];
+                }
+            }
+        }
+        System.arraycopy(result, 0, rvec, 0, size);
+        return this;
     }
 
     /**

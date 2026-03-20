@@ -57,8 +57,8 @@ import java.util.stream.Stream;
 public class WindowIO implements FileWatchListener {
 
     private static final Logger log = LoggerFactory.getLogger(WindowIO.class);
-    final private static Pattern STAGE_PATTERN1 = Pattern.compile("([0-9]+_stage)\\.(yaml)");
-    final private static Pattern STAGE_PATTERN2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)");
+    final private static Pattern STAGE_PATTERN1 = Pattern.compile("([0-9]+_stage)\\.(yaml)$");
+    final private static Pattern STAGE_PATTERN2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)$");
 
     Stage stage;
     BorderPane borderPane;
@@ -97,7 +97,6 @@ public class WindowIO implements FileWatchListener {
                         sorted().
                         map(fileName -> {
                             Matcher matcher = pattern.matcher(fileName);
-                            System.out.println("match " + fileName + " " + matcher.matches());
                             return matcher.group(1);
                         }).
                         collect(Collectors.toList());

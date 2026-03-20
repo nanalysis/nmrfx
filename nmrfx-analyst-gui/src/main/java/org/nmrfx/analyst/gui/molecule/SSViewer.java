@@ -5,8 +5,12 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.event.Event;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.print.PageLayout;
+import javafx.print.PrinterJob;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ZoomEvent;
@@ -20,7 +24,10 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Scale;
+import org.nmrfx.analyst.gui.molecule3D.RNASSViewController;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.AtomSpecifier;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -38,18 +45,22 @@ public class SSViewer extends Pane {
     private static final Logger log = LoggerFactory.getLogger(SSViewer.class);
     private static final int N_ATOMS = 7;
 
-    private static Color ACTIVE_COLORS[] = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
+    private static final Color[] ACTIVE_COLORS = {Color.LIGHTGRAY, Color.YELLOW, Color.ORANGE, Color.LIGHTGREEN};
 
     record AtomCoord(double x, double y) {
     }
 
     Group drawingGroup;
     Group mapDrawingGroup;
+    Text probabilityText;
     Group infoGroup;
+    HBox hBox;
     Pane pane;
     ScrollPane scrollPane;
     Pane mapPane;
     SSLayout ssLayout;
+    int selRes = -1;
+    int selRes2 = -1;
 
     ArrayList<Point2D> points = new ArrayList<>();
     int[] basePairs = null;
@@ -88,8 +99,12 @@ public class SSViewer extends Pane {
 
     double superScale = 1.0;
     HashMap<Integer, NodeRecord> nodeRecordHashMap = new HashMap<>();
+    RNASSViewController controller;
 
-    public SSViewer() {
+    ContextMenu contextMenu = new ContextMenu();
+
+    public SSViewer(RNASSViewController controller) {
+        this.controller = controller;
         initScene();
     }
 
@@ -131,6 +146,7 @@ public class SSViewer extends Pane {
     public SimpleBooleanProperty getDrawSSProp() {
         return drawSSProp;
     }
+
     public SimpleBooleanProperty getDrawProbabilitiesProp() {
         return drawProbabilitiesProp;
     }
@@ -155,7 +171,7 @@ public class SSViewer extends Pane {
     }
 
     public final void initScene() {
-        HBox hBox = new HBox();
+        hBox = new HBox();
         scrollPane = new ScrollPane();
         mapPane = new Pane();
         mapDrawingGroup = new Group();
@@ -169,7 +185,7 @@ public class SSViewer extends Pane {
         pane.setPrefSize(boxDim, boxDim);
         pane.getChildren().add(drawingGroup);
         pane.getChildren().add(infoGroup);
-        pane.setOnMousePressed(e -> revertToOriginal());
+        pane.setOnMousePressed(e -> revertToOriginal(true));
         pane.setBackground(Background.fill(Color.WHITE));
 
         scrollPane.setContent(pane);
@@ -187,6 +203,23 @@ public class SSViewer extends Pane {
             zoom(zoom);
         });
 
+
+        MenuItem breakPairItem = new MenuItem("Break Pair");
+        breakPairItem.setOnAction(e -> {
+            controller.toggleChar(selRes, selRes2, false);
+            selRes = -1;
+            selRes2=-1;
+        });
+        MenuItem addPairItem = new MenuItem("Add Pair");
+        addPairItem.setOnAction(e -> {
+            controller.toggleChar(selRes, selRes2, true);
+            selRes = -1;
+            selRes2=-1;
+        });
+
+            contextMenu.getItems().addAll(breakPairItem, addPairItem);
+
+
     }
 
 
@@ -198,10 +231,51 @@ public class SSViewer extends Pane {
         }
     }
 
+    public void print() {
+        PrinterJob job = PrinterJob.createPrinterJob();
+        if (job != null && job.showPrintDialog(drawingGroup.getScene().getWindow())) {
+            Node node;
+            if (drawMapProp.get()) {
+                node = mapPane;
+            } else {
+                node = pane;
+            }
+            PageLayout pageLayout = job.getJobSettings().getPageLayout();
+            double printableWidth = pageLayout.getPrintableWidth();
+            double printableHeight = pageLayout.getPrintableHeight();
+
+            // Get node's current bounds
+            double nodeWidth = node.getBoundsInParent().getWidth();
+            double nodeHeight = node.getBoundsInParent().getHeight();
+
+            // Calculate scale factor
+            double scaleX = printableWidth / nodeWidth;
+            double scaleY = printableHeight / nodeHeight;
+            double scaleXY = Math.min(scaleX, scaleY);  // keep aspect ratio
+
+            // Apply scale transform
+            Scale transform = new Scale(scaleXY, scaleXY);
+            node.getTransforms().add(transform);
+            try {
+                boolean success = job.printPage(pageLayout, node);
+                if (success) {
+                    job.endJob();
+                }
+            } finally {
+                node.getTransforms().remove(transform);  // Always clean up
+            }
+        }
+    }
+
     public void drawSS() {
         drawingGroup.getChildren().clear();
-        if ((ssPredictor != null) && drawMapProp.get()) {
-            drawProbabilityMap();
+        if (drawMapProp.get()) {
+            drawMapLines();
+            double[][] predictions = ssPredictor != null ? ssPredictor.getPredictions() : null;
+            if ((ssPredictor != null)) {
+                drawProbMap();
+            }
+            drawBPRectangles(predictions);
         }
         try {
             if (drawSSProp.get()) {
@@ -213,10 +287,9 @@ public class SSViewer extends Pane {
 
     }
 
-    private void drawProbabilityMap() {
-        double[][] predictions = ssPredictor.getPredictions();
-        double threshold = ssPredictor.getGraphThreshold();
-        int n = predictions.length;
+
+    private void drawMapLines() {
+        int n = sequence.size();
         double mapPaneWidth = mapPane.getWidth();
         double mapPaneHeight = mapPane.getHeight();
         double border = 20.0;
@@ -249,6 +322,20 @@ public class SSViewer extends Pane {
             rectangle.setFill(Color.GRAY);
             mapDrawingGroup.getChildren().add(rectangle);
         }
+    }
+
+    void drawProbMap() {
+        int n = sequence.size();
+        double mapPaneWidth = mapPane.getWidth();
+        double mapPaneHeight = mapPane.getHeight();
+        double border = 20.0;
+        double deltaX = (mapPaneWidth - 2.0 * border) / n;
+        double deltaY = (mapPaneHeight - 2 * border) / n;
+        double delta = Math.min(deltaX, deltaY);
+        double deltaHalf = delta / 2.0;
+        double deltaSmall = delta / 5.0;
+        double[][] predictions = ssPredictor.getPredictions();
+        double threshold = ssPredictor.getGraphThreshold();
         for (int r = 0; r < n; r++) {
             for (int c = 0; c < n; c++) {
                 double value = predictions[r][c];
@@ -259,14 +346,56 @@ public class SSViewer extends Pane {
                     rectangle.setWidth(delta);
                     rectangle.setHeight(delta);
                     rectangle.setFill(Color.LIGHTGREEN);
+                    SSPredictor.BPRegion bpRegion = ssPredictor.getBPRegion(r, c);
+                    String resPairText = String.format("%s:%s", sequence.get(r), sequence.get(c));
+                    rectangle.setOnMouseEntered(e -> showProbability(e, rectangle, value, bpRegion, resPairText));
+                    rectangle.setOnMouseExited(e -> removeProbabilityText());
                     mapDrawingGroup.getChildren().add(rectangle);
                 }
             }
         }
-        var extentBasePairs = ssPredictor.getExtentBasePairs();
-        for (var bp : extentBasePairs) {
-            int r = bp.r();
-            int c = bp.c();
+    }
+
+    void showProbability(MouseEvent event, Rectangle rectangle, double probability, SSPredictor.BPRegion bpRegion, String resPairText) {
+        double x = rectangle.getX() + 15;
+        double y = rectangle.getY() + rectangle.getHeight();
+
+        if (probabilityText == null) {
+            probabilityText = new Text(String.format("%.2f", probability));
+            probabilityText.setFill(Color.MAGENTA);
+            probabilityText.setFont(Font.font(null, FontWeight.BOLD, 16));
+        }
+        int iRegion = bpRegion == null ? -1 : bpRegion.getIndex();
+        probabilityText.setText(String.format("%s %.2f %d", resPairText, probability, iRegion));
+        if (x > (mapPane.getWidth() / 2.0)) {
+            double width = probabilityText.getBoundsInLocal().getWidth();
+            x -= (width + 20);
+        }
+        probabilityText.setX(x);
+        probabilityText.setY(y);
+        mapDrawingGroup.getChildren().add(probabilityText);
+    }
+
+    void removeProbabilityText() {
+        if (probabilityText != null) {
+            mapDrawingGroup.getChildren().remove(probabilityText);
+        }
+    }
+
+    void drawBPRectangles(double[][] predictions) {
+        int n = sequence.size();
+        double mapPaneWidth = mapPane.getWidth();
+        double mapPaneHeight = mapPane.getHeight();
+        double border = 20.0;
+        double deltaX = (mapPaneWidth - 2.0 * border) / n;
+        double deltaY = (mapPaneHeight - 2 * border) / n;
+        double delta = Math.min(deltaX, deltaY);
+        double deltaHalf = delta / 2.0;
+        double deltaSmall = delta / 5.0;
+        for (int i = 0; i < basePairs.length; i += 2) {
+            int r = basePairs[i];
+            int c = basePairs[i + 1];
+            double value = predictions != null ? predictions[r][c] : 0.0;
             double x1 = border + c * delta + deltaHalf;
             double y1 = border + r * delta + deltaHalf;
             Line line2 = new Line(x1, y1, y1, y1);
@@ -281,11 +410,12 @@ public class SSViewer extends Pane {
             rectangle.setWidth(delta);
             rectangle.setHeight(delta);
             rectangle.setFill(Color.BLACK);
+            SSPredictor.BPRegion bpRegion = ssPredictor == null ? null : ssPredictor.getBPRegion(r, c);
+            String resPairText = String.format("%s:%s", sequence.get(r), sequence.get(c));
+            rectangle.setOnMouseEntered(e -> showProbability(e, rectangle, value, bpRegion, resPairText));
+            rectangle.setOnMouseExited(e -> removeProbabilityText());
             mapDrawingGroup.getChildren().add(rectangle);
-
         }
-
-
     }
 
     void updateScale() {
@@ -357,8 +487,9 @@ public class SSViewer extends Pane {
     }
 
     public void selectResidue(int selectedResidue) {
-        revertToOriginal();
+        revertToOriginal(false);
         if (drawProbabilitiesProp.get()) {
+            selRes = selectedResidue;
             for (var entry : nodeRecordHashMap.entrySet()) {
                 NodeRecord nodeRecord = entry.getValue();
                 int iRes = entry.getKey();
@@ -390,10 +521,21 @@ public class SSViewer extends Pane {
                     }
                 }
             }
+        } else {
+            if (selRes != -1) {
+                selRes2 = selectedResidue;
+                controller.toggleChar(selRes, selRes2, true);
+                selRes = -1;
+                selRes2 = -1;
+            } else {
+                selRes = selectedResidue;
+                selRes2 = -1;
+                nodeRecordHashMap.get(selectedResidue).circle.setFill(Color.GRAY);
+            }
         }
     }
 
-    void revertToOriginal() {
+    void revertToOriginal(boolean clearSel) {
         for (var entry : nodeRecordHashMap.entrySet()) {
             NodeRecord nodeRecord = entry.getValue();
             Circle circle = nodeRecord.circle;
@@ -401,6 +543,10 @@ public class SSViewer extends Pane {
             circle.setFill(nodeRecord.color);
             text.setText(nodeRecord.label);
             text.setFont(Font.font(nodeRecord.fontSize));
+        }
+        if (clearSel) {
+            selRes = -1;
+            selRes2 = -1;
         }
     }
 
@@ -512,7 +658,7 @@ public class SSViewer extends Pane {
                 infoGroup.getChildren().add(stack);
                 rect.setOnMousePressed(mE -> hideInfo());
             } else {
-                stack = (StackPane) infoGroup.getChildren().get(0);
+                stack = (StackPane) infoGroup.getChildren().getFirst();
                 textItem = (Text) stack.getChildren().get(1);
             }
             textItem.setText(result);
@@ -658,9 +804,6 @@ public class SSViewer extends Pane {
         deltaCoords = new AtomCoord[n];
         boolean gotBP = false;
         for (int iRes = 0; iRes < n; iRes++) {
-            if (ssLayout.ssClass[iRes] == 0) {
-                continue;
-            }
             gotBP = true;
             Point2D point2 = points.get(iRes);
             double x2 = point2.getX();
@@ -773,6 +916,9 @@ public class SSViewer extends Pane {
             double x1 = point.getX();
             double y1 = point.getY();
             AtomCoord aCoord = deltaCoords[iRes];
+            if (aCoord == null) {
+                continue;
+            }
             int startAtom = -2;
             int iDrawn = 0;
             for (int j = startAtom; j < N_ATOMS; j++) {
@@ -917,8 +1063,12 @@ public class SSViewer extends Pane {
             int finalIRes = iRes;
             group.getChildren().add(nodeRecord.node);
             nodeRecord.node.setOnMousePressed(e -> {
+                if (e.isPopupTrigger() || e.isControlDown() || e.isSecondaryButtonDown()  && (selRes != -1)) {
+                    showNodeMenu(e, nodeRecord, finalIRes);
+                } else if (e.isPrimaryButtonDown()) {
+                    selectResidue(finalIRes);
+                }
                 e.consume();
-                selectResidue(finalIRes);
             });
             nodeRecordHashMap.put(iRes, nodeRecord);
             iRes++;
@@ -928,6 +1078,11 @@ public class SSViewer extends Pane {
         if (constraintPairState) {
             drawConstraints(group);
         }
+    }
+
+    void showNodeMenu(MouseEvent e, NodeRecord nodeRecord, int iRes) {
+        selRes2 = iRes;
+        contextMenu.show(nodeRecord.node, e.getScreenX(), e.getScreenY());
     }
 
     void drawConstraints(Group group) {
@@ -1043,10 +1198,10 @@ public class SSViewer extends Pane {
         setBasePairs(ssLayout.getBasePairs());
     }
 
-    void setBasePairs(int[] basePairs) {
+    void setBasePairs(SSLayout.BasePairRecord[] basePairRecords) {
         List<Integer> bpList = new ArrayList<>();
-        for (int i = 0; i < basePairs.length; i++) {
-            int target = basePairs[i];
+        for (int i = 0; i < basePairRecords.length; i++) {
+            int target = basePairRecords[i].end();
             if ((target >= 0) && (i < target)) {
                 bpList.add(i);
                 bpList.add(target);

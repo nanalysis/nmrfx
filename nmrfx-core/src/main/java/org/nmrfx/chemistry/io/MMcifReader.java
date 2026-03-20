@@ -466,12 +466,12 @@ public class MMcifReader {
         if (loop != null) {
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> labelAtomIDColumn = loop.getColumnAsList("label_atom_id");
-            List<String> labelAltIDColumn = loop.getColumnAsList("label_alt_id");
+            List<String> labelAltIDColumn = loop.getColumnAsList("label_alt_id",".");
             List<String> labelCompIDColumn = loop.getColumnAsList("label_comp_id");
             List<String> labelAsymIDColumn = loop.getColumnAsList("label_asym_id");
             List<String> labelEntityIDColumn = loop.getColumnAsList("label_entity_id");
             List<String> labelSeqIDColumn = loop.getColumnAsList("label_seq_id");
-            List<String> pdbInsCodeColumn = loop.getColumnAsList("pdbx_PDB_ins_code");
+            List<String> pdbInsCodeColumn = loop.getColumnAsList("pdbx_PDB_ins_code", "?");
             List<String> cartnXColumn = loop.getColumnAsList("Cartn_x");
             List<String> cartnYColumn = loop.getColumnAsList("Cartn_y");
             List<String> cartnZColumn = loop.getColumnAsList("Cartn_z");
@@ -479,9 +479,9 @@ public class MMcifReader {
             List<String> bIsoColumn = loop.getColumnAsList("B_iso_or_equiv");
             List<Double> pdbFormalChargeColumn = loop.getColumnAsDoubleList("pdbx_formal_charge", 0.0);
             List<Integer> authSeqIDColumn = loop.getColumnAsIntegerList("auth_seq_id", 0);
-            List<String> authCompIDColumn = loop.getColumnAsList("auth_comp_id");
-            List<String> authAsymIDColumn = loop.getColumnAsList("auth_asym_id");
-            List<String> authAtomIDColumn = loop.getColumnAsList("auth_atom_id");
+            List<String> authCompIDColumn = loop.getColumnAsList("auth_comp_id", null);
+            List<String> authAsymIDColumn = loop.getColumnAsList("auth_asym_id", null);
+            List<String> authAtomIDColumn = loop.getColumnAsList("auth_atom_id",null);
             List<Integer> pdbModelNumColumn = loop.getColumnAsIntegerList("pdbx_PDB_model_num", 0);
 
             for (int i = 0; i < typeSymbolColumn.size(); i++) {
@@ -522,8 +522,11 @@ public class MMcifReader {
                 String pdbInsCode = pdbInsCodeColumn.get(i);
                 int authSeq = authSeqIDColumn.get(i);
                 String authComp = authCompIDColumn.get(i);
+                authComp = authComp == null ? resIDStr : authComp;
                 String authAsym = authAsymIDColumn.get(i);
+                authAsym = authAsym == null ? chainCode : authAsym;
                 String authAtom = authAtomIDColumn.get(i);
+                authAtom = authAtom == null ? atomName : authAtom;
 
                 if (atom == null) {
                     atom = Atom.genAtomWithElement(atomName, atomType);
