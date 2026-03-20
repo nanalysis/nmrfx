@@ -23,6 +23,7 @@ import org.nmrfx.chemistry.constraints.AngleConstraint;
 import org.nmrfx.chemistry.constraints.DistanceConstraint;
 import org.nmrfx.chemistry.io.AtomParser;
 import org.nmrfx.chemistry.relax.*;
+import org.nmrfx.utils.TableItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import javax.vecmath.Point2d;
 import java.util.*;
 
 @PluginAPI({"residuegen", "ring"})
-public class Atom implements IAtom, Comparable<Atom> {
+public class Atom implements IAtom, Comparable<Atom>, TableItem {
 
     private static final Logger log = LoggerFactory.getLogger(Atom.class);
     private static final String POINT_NULL_MSG_PREFIX = "Point null: ";
@@ -782,6 +783,10 @@ public class Atom implements IAtom, Comparable<Atom> {
         return ppmV;
     }
 
+    public PPMv getPPMByMode(int i, boolean mode) {
+        return mode ? getRefPPM(i) : getPPM(i);
+    }
+
     public Double getSDevRefPPM() {
         PPMv ppmV = getRefPPM(0);
         if ((ppmV != null) && ppmV.isValid()) {
@@ -791,13 +796,19 @@ public class Atom implements IAtom, Comparable<Atom> {
         }
     }
 
-    public Double getDeltaPPM(int ppmSet, int refSet) {
-        PPMv ppmV = getPPM(ppmSet);
-        PPMv refV = getRefPPM(refSet);
+    public Double getDeltaPPM(int iSet1, int iSet2, boolean ref1, boolean ref2, boolean scaleByError) {
+        PPMv ppm1 = getPPMByMode(iSet1, ref1);
+        PPMv ppm2 = getPPMByMode(iSet2, ref2);
         Double delta;
-        if ((ppmV != null) && ppmV.isValid() && (refV != null)
-                && refV.isValid()) {
-            delta = (ppmV.getValue() - refV.getValue()) / refV.getError();
+        if ((ppm1 != null) && ppm1.isValid() && (ppm2 != null) && ppm2.isValid()) {
+            double scale = 1.0;
+            if (scaleByError) {
+                scale = Math.max(ppm1.getError(), ppm2.getError());
+                if (scale < 1.0e-6) {
+                    scale = 1.0;
+                }
+            }
+            delta = (ppm1.getValue() - ppm2.getValue()) / scale;
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;
@@ -1603,7 +1614,7 @@ public class Atom implements IAtom, Comparable<Atom> {
 
         // name
         String name = bound.getName();
-        if (name.equals("")) {
+        if (name.isEmpty()) {
             name = ".";
         }
         sBuilder.append(String.format("%6s", name));
@@ -2104,7 +2115,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             MoleculeBase.findEquivalentAtoms(entity);
         }
 
-        if ((aNum == targetANum) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+        if ((aNum == targetANum) && (equivAtoms != null) && (!equivAtoms.isEmpty())) {
             int nAtoms = 0;
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
@@ -2130,7 +2141,7 @@ public class Atom implements IAtom, Comparable<Atom> {
             MoleculeBase.findEquivalentAtoms(entity);
         }
         int shells = 2;
-        if (((targetANum == -1) || (aNum == targetANum)) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+        if (((targetANum == -1) || (aNum == targetANum)) && (equivAtoms != null) && (!equivAtoms.isEmpty())) {
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
                 if (!aEquiv.getAtoms().isEmpty()) {
@@ -2268,7 +2279,7 @@ public class Atom implements IAtom, Comparable<Atom> {
         if ((equivAtoms == null) || (equivAtoms.isEmpty())) {
             aType = 1;
         } else if (equivAtoms.size() == 1) {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
+            AtomEquivalency aEquiv = equivAtoms.getFirst();
 
             if (aEquiv.getAtoms().size() == 3) {
                 aType = 1;
@@ -2278,7 +2289,7 @@ public class Atom implements IAtom, Comparable<Atom> {
                 aType = 3;
             }
         } else {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
+            AtomEquivalency aEquiv = equivAtoms.getFirst();
 
             if (aEquiv.getAtoms().size() == 3) {
                 aType = 2;
@@ -2336,7 +2347,7 @@ public class Atom implements IAtom, Comparable<Atom> {
                 MoleculeBase.findEquivalentAtoms(entity);
             }
             if (equivAtoms != null) {
-                AtomEquivalency aEquiv = equivAtoms.get(0);
+                AtomEquivalency aEquiv = equivAtoms.getFirst();
                 if (aEquiv.getAtoms().size() == 2) {
                     pseudoName = 'Q' + name.substring(1, name.length() - 1);
                 }
@@ -2419,6 +2430,31 @@ public class Atom implements IAtom, Comparable<Atom> {
         return Integer.compare(a1.iAtom, a2.iAtom);
     }
 
+    @Override
+    public Double getDouble(String elemName) {
+        if (elemName == null) {
+            return null;
+        }
+        if (elemName.startsWith("Seq")) {
+            return (double) getResidueNumber();
+        }
+        if (elemName.contains("-")) {
+            String[] sets = elemName.split("-");
+            boolean ref1 = sets[0].startsWith("REF");
+            boolean ref2 = sets[1].startsWith("REF");
+            int iSet1 = Integer.parseInt(sets[0].substring(sets[0].length() - 1));
+            int iSet2 = Integer.parseInt(sets[1].substring(sets[1].length() - 1));
+            return getDeltaPPM(iSet1, iSet2, ref1, ref2, false);
+        }
+        boolean ref = elemName.startsWith("REF");
+        int i = Integer.parseInt(elemName.substring(elemName.length() - 1));
+        PPMv ppmv = getPPMByMode(i, ref);
+        if (ppmv != null) {
+            return ppmv.getValue();
+        }
+        return null;
+    }
+
     public void addAtomCouplingPair(AtomCouplingPair atomCouplingPair) {
         if (atomAtomCouplingPairMap == null) {
             atomAtomCouplingPairMap = new HashMap<>();
@@ -2432,5 +2468,10 @@ public class Atom implements IAtom, Comparable<Atom> {
 
     public Optional<AtomCouplingPair> getAtomCouplingPair(Atom atom) {
         return atomAtomCouplingPairMap == null ? Optional.empty() : Optional.ofNullable(atomAtomCouplingPairMap.get(atom));
+    }
+
+    @Override
+    public int getGroup(){
+        return getAtomicNumber();
     }
 }
