@@ -1775,7 +1775,7 @@ public class MoleculeBase implements Serializable, ITree {
         }
     }
 
-    public List<String> getActivePPMSets() {
+    public Set<String> getActivePPMSets() {
         return activePPMSets;
     }
 

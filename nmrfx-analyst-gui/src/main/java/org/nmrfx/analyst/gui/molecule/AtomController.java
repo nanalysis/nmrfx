@@ -283,32 +283,54 @@ public class AtomController implements Initializable, StageBasedController, Free
 
     private void updateColumnContextMenu() {
         atomTableView.getColumns().forEach(column -> {
-            if (column.getContextMenu() != null) {
-                MenuItem menu = column.getContextMenu().getItems().get(1);
-                Set<String> existingSets = ((Menu) menu).getItems().stream().map(MenuItem::getText)
-                        .collect(Collectors.toSet());
-                getPPMSets(null).forEach(set -> {
-                    if (!set.equals(column.getText()) && !existingSets.contains(set)) {
-                        MenuItem menuItem = new MenuItem(set);
-                        menuItem.setOnAction(e -> makeDeltaCol(column, set));
-                        ((Menu) menu).getItems().add(menuItem);
+            ContextMenu contextMenu = column.getContextMenu();
+            if (contextMenu != null) {
+                contextMenu.setOnShowing(e -> updateColumnContextMenu());
+                if (contextMenu.getItems().size() > 1) {
+                    MenuItem menuItem = contextMenu.getItems().get(1);
+                    if (menuItem instanceof Menu menu) {
+                        Set<String> existingSets = menu.getItems().stream().map(MenuItem::getText)
+                                .collect(Collectors.toSet());
+                        getPPMSets(null).forEach(set -> {
+                            if (!set.equals(column.getText()) && !existingSets.contains(set)) {
+                                MenuItem newMenuItem = new MenuItem(set);
+                                newMenuItem.setOnAction(e -> makeDeltaCol(column, set));
+                                menu.getItems().add(newMenuItem);
+                            }
+                        });
                     }
-                });
+                }
             }
         });
     }
 
-    private void setMenuGraphics(TableColumn<Atom, ?> column) {
+    private void setMenuGraphics(TableColumn<Atom, ?> column, boolean deltaColumn) {
         Text text = GlyphsDude.createIcon(FontAwesomeIcon.BARS);
         text.setMouseTransparent(true);
         column.setGraphic(text);
         ContextMenu menu = new ContextMenu();
-        MenuItem sDevColMenu = new MenuItem("Std Dev");
-        sDevColMenu.setOnAction(e -> makeSDevCol(column));
-        Menu deltaColMenu = new Menu("Delta");
-        MenuItem clearMenuItem = new MenuItem("Clear PPM");
-        clearMenuItem.setOnAction(e -> clearPPMColumns(column));
-        menu.getItems().addAll(sDevColMenu, deltaColMenu, clearMenuItem);
+        if (deltaColumn) {
+            CheckMenuItem normalizeMenuItem = new CheckMenuItem("Normalize");
+            normalizeMenuItem.setOnAction(e -> {
+                column.getProperties().put("NORM", normalizeMenuItem.isSelected());
+                refreshAtomTable();
+            });
+            menu.getItems().add(normalizeMenuItem);
+            MenuItem removeMenuItem = new MenuItem("Remove");
+            removeMenuItem.setOnAction(e -> {
+                atomTableView.getColumns().remove(column);
+                refreshAtomTable();
+            });
+            menu.getItems().add(removeMenuItem);
+
+        } else {
+            MenuItem sDevColMenu = new MenuItem("Std Dev");
+            sDevColMenu.setOnAction(e -> makeSDevCol(column));
+            Menu deltaColMenu = new Menu("Delta");
+            MenuItem clearMenuItem = new MenuItem("Clear PPM");
+            clearMenuItem.setOnAction(e -> clearPPMColumns(column));
+            menu.getItems().addAll(sDevColMenu, deltaColMenu, clearMenuItem);
+        }
         column.setContextMenu(menu);
     }
 
@@ -337,7 +359,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                 });
         ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(new DoubleStringConverter4()));
         ppmCol.setEditable(true);
-        setMenuGraphics(ppmCol);
+        setMenuGraphics(ppmCol, false);
         atomTableView.getColumns().add(ppmCol);
     }
 
@@ -390,7 +412,7 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
     private void showPeakPPMGetter() {
         if (peakPPMGetterGUI == null) {
-            peakPPMGetterGUI = new PeakPPMGetterGUI();
+            peakPPMGetterGUI = new PeakPPMGetterGUI(this);
         }
         peakPPMGetterGUI.showPeakPPMGetter();
     }
@@ -470,7 +492,12 @@ public class AtomController implements Initializable, StageBasedController, Free
         deltaCol.setText(columnName);
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
             Atom atom = p.getValue();
-            Double delta = atom.getDeltaPPM(iSet1, iSet2, ref1, ref2);
+            Object normObj = deltaCol.getProperties().get("NORM");
+            boolean normalize = true;
+            if (normObj instanceof Boolean normValue) {
+                normalize = normValue.booleanValue();
+            }
+            Double delta = atom.getDeltaPPM(iSet1, iSet2, ref1, ref2, normalize);
             ObservableValue<Number> ov;
             if (delta != null) {
                 ov = new SimpleDoubleProperty(delta);
@@ -482,6 +509,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         deltaCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
         deltaCol.setEditable(false);
         atomTableView.getColumns().add(deltaCol);
+        setMenuGraphics(deltaCol, true);
     }
 
     public void setFilterString(String filterName) {
@@ -755,7 +783,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         public void updateItem(Number item, boolean empty) {
             super.updateItem(item, empty);
             if (item != null) {
-                setText(String.valueOf(item));
+                setText(converterProperty().get().toString(item));
             }
         }
     }

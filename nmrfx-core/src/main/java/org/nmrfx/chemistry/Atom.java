@@ -796,12 +796,19 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         }
     }
 
-    public Double getDeltaPPM(int iSet1, int iSet2, boolean ref1, boolean ref2) {
+    public Double getDeltaPPM(int iSet1, int iSet2, boolean ref1, boolean ref2, boolean scaleByError) {
         PPMv ppm1 = getPPMByMode(iSet1, ref1);
         PPMv ppm2 = getPPMByMode(iSet2, ref2);
         Double delta;
         if ((ppm1 != null) && ppm1.isValid() && (ppm2 != null) && ppm2.isValid()) {
-            delta = (ppm1.getValue() - ppm2.getValue()) / ppm2.getError();
+            double scale = 1.0;
+            if (scaleByError) {
+                scale = Math.max(ppm1.getError(), ppm2.getError());
+                if (scale < 1.0e-6) {
+                    scale = 1.0;
+                }
+            }
+            delta = (ppm1.getValue() - ppm2.getValue()) / scale;
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;
@@ -2425,6 +2432,9 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
 
     @Override
     public Double getDouble(String elemName) {
+        if (elemName == null) {
+            return null;
+        }
         if (elemName.startsWith("Seq")) {
             return (double) getResidueNumber();
         }
@@ -2434,7 +2444,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
             boolean ref2 = sets[1].startsWith("REF");
             int iSet1 = Integer.parseInt(sets[0].substring(sets[0].length() - 1));
             int iSet2 = Integer.parseInt(sets[1].substring(sets[1].length() - 1));
-            return getDeltaPPM(iSet1, iSet2, ref1, ref2);
+            return getDeltaPPM(iSet1, iSet2, ref1, ref2, false);
         }
         boolean ref = elemName.startsWith("REF");
         int i = Integer.parseInt(elemName.substring(elemName.length() - 1));

@@ -634,7 +634,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void exportDataset() {
         var chart = getActiveChart();
         DatasetBase dataset = chart.getDataset();
-        if (dataset.getNDim() > 2) {
+        if ((dataset != null) || (dataset.getNDim() > 2)) {
             GUIUtils.warn("Dataset export", "Currently only 1D and 2D files are exportable");
             return;
         }
