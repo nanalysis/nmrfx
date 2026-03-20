@@ -2451,6 +2451,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             if (arrangement == null) {
                 return;
             }
+            SpinSystem activeSpinSystem = currentSpinSystem;
             List<String> rows = filterActiveRows(arrangement.getRows());
             List<RunAboutDim> cols = arrangement.getColumnArrangement();
             int nCharts = rows.size() * cols.size();
@@ -2522,7 +2523,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             }
             controller.setChartDisable(false);
 
-            if (currentPeak != null) {
+            if (activeSpinSystem != null) {
+                currentSpinSystem = activeSpinSystem;
+                gotoSpinSystems();
+            } else if (currentPeak != null) {
                 drawWins(Collections.singletonList(currentPeak));
             } else {
                 firstPeak(null);
