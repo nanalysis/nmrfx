@@ -31,7 +31,7 @@ public class PPMPlotGUI extends TablePlotGUI {
             Double xValue = item.getDouble(nameMap.get(xElem));
             Double yValue = item.getDouble(nameMap.get(yElem));
             if (xValue != null && yValue != null) {
-                if (item.getGroup() != 1.0) {
+                if (item.getGroup() != 1) {
                     yValue /= 10.0;
                 }
                 series.add(new XYValue(xValue, yValue));
@@ -52,7 +52,7 @@ public class PPMPlotGUI extends TablePlotGUI {
             int xValue = item.getDouble(nameMap.get(xElem)).intValue();
             Double yValue = item.getDouble(nameMap.get(yElem));
             if (yValue != null) {
-                if (item.getGroup() != 1.0) {
+                if (item.getGroup() != 1) {
                     yValue /= 10.0;}
                 values.put(xValue, values.getOrDefault(xValue, 0.0) + Math.pow(yValue, 2.0));
             }
