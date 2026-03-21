@@ -192,7 +192,7 @@ public class SpinSystems {
         if (rootPeak != pkB) {
             PeakList peakListB = pkB.getPeakList();
             double[] sumArray = sums.get(peakListB);
-            if (rootPeak.getPeakList() != peakListB) {
+            if ((sumArray != null) && (rootPeak.getPeakList() != peakListB)) {
                 int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
                 double f = comparePeaks(rootPeak, pkB, aMatch);
                 if (f >= 0.0) {
