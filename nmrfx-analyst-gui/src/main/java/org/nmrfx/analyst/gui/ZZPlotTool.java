@@ -746,7 +746,8 @@ public class ZZPlotTool {
                 }
             });
 
-            double xMax = xValues[xValues.length - 1];
+
+            double xMax = series.getMaxX();
             int nPoints = 100;
             for (int i = 0; i < nPoints; i++) {
                 double delay = i * xMax / (nPoints - 1);
