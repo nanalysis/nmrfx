@@ -122,9 +122,9 @@ public class ZZPlotTool {
     TextField kdValue;
 
     public ZZPlotTool() {
-        colNamesFullAB = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
+        colNamesFullAB = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "R", "R:Err");
         colNamesRatioAB = List.of("Peak", "Label", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err");
-        colNamesFullPL = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
+        colNamesFullPL = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "R", "R:Err");
         colNamesRatioPL = List.of("Peak", "Label", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err");
         colNames = colNamesFullPL;
     }
@@ -725,7 +725,7 @@ public class ZZPlotTool {
         double r1B = peakFitPars.fitPars().get("R1B").value();
         double kAB = peakFitPars.fitPars().get("KAB").value();
         double kBA = peakFitPars.fitPars().get("KBA").value();
-        double pA = peakFitPars.fitPars().get("P").value();
+        double pA = peakFitPars.fitPars().get("R").value();
         int iSig = 0;
         String[] peakLabels = {"AA", "BB", "BA", "AB"};
 
@@ -746,7 +746,8 @@ public class ZZPlotTool {
                 }
             });
 
-            double xMax = xValues[xValues.length - 1];
+
+            double xMax = series.getMaxX();
             int nPoints = 100;
             for (int i = 0; i < nPoints; i++) {
                 double delay = i * xMax / (nPoints - 1);
