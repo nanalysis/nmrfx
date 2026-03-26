@@ -474,28 +474,25 @@ public class PeakListTools {
     /**
      *
      */
-    public static class MatchItem {
 
-        final int itemIndex;
-        final double[] values;
-
-        MatchItem(final int itemIndex, final double[] values) {
-            this.itemIndex = itemIndex;
-            this.values = values;
-        }
+    public record MatchItem(int itemIndex, double[] values) {
     }
 
+
     public static MatchResult matchPeakLists(PeakList peakListA, PeakList peakListB, int[] dims, double[] tol) {
-        List<MatchItem> peakItemsA = getMatchingItems(peakListA, dims);
-        List<MatchItem> peakItemsB = getMatchingItems(peakListB, dims);
+        return matchPeakLists(peakListA, peakListB, dims, dims, tol);
+    }
+    public static MatchResult matchPeakLists(PeakList peakListA, PeakList peakListB, int[] dimsA, int[] dimsB, double[] tol) {
+        List<MatchItem> peakItemsA = getMatchingItems(peakListA, dimsA);
+        List<MatchItem> peakItemsB = getMatchingItems(peakListB, dimsB);
         if (tol == null) {
-            tol = new double[dims.length];
-            for (int iDim = 0; iDim < dims.length; iDim++) {
+            tol = new double[dimsA.length];
+            for (int iDim = 0; iDim < dimsA.length; iDim++) {
                 tol[iDim] = peakListA.widthStatsPPM(iDim).getAverage() * 2.0;
             }
         }
-        double[] iOffsets = new double[dims.length];
-        double[] jOffsets = new double[dims.length];
+        double[] iOffsets = new double[dimsA.length];
+        double[] jOffsets = new double[dimsA.length];
         MatchResult result = doBPMatch(peakListA, peakItemsA, iOffsets, peakItemsB, jOffsets, tol);
         return result;
     }
@@ -664,21 +661,9 @@ public class PeakListTools {
         return matchList;
     }
 
-    static class MatchResult {
-        List<MatchItem> matchItemsA;
-        List<MatchItem> matchItemsB;
-        final double score;
-        final int nMatches;
-        final int[] matching;
 
-        MatchResult(List<MatchItem> matchItemsA, List<MatchItem> matchItemsB, final int[] matching, final int nMatches, final double score) {
-            this.matchItemsA = matchItemsA;
-            this.matchItemsB = matchItemsB;
-            this.matching = matching;
-            this.score = score;
-            this.nMatches = nMatches;
-        }
-    }
+    public record  MatchResult(List<MatchItem> matchItemsA, List<MatchItem> matchItemsB,  int[] matching,  int nMatches,  double score) {}
+
 
     private static MatchResult doBPMatch(PeakList peakList, List<MatchItem> iMList, final double[] iOffsets, List<MatchItem> jMList, final double[] jOffsets, double[] tol) {
         int iNPeaks = iMList.size();
