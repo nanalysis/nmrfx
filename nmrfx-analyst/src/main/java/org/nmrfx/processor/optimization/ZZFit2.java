@@ -1,17 +1,31 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.optim.PointValuePair;
+import org.nmrfx.processor.datasets.peaks.PeakListTools;
 
 /**
  * @author brucejohnson
  */
 public class ZZFit2 extends FitEquation {
-    static final String[] parNames = {"I", "R", "R1A", "R1B", "KAB", "KBA"};
-    boolean constrainKex = false;
-
+    PeakListTools.ZZFitPars zzFitPars;
+    public ZZFit2(PeakListTools.ZZFitPars zzFitPars) {
+        this.zzFitPars = zzFitPars;
+    }
     @Override
     public String[] parNames() {
-        return parNames;
+        if (zzFitPars.constrainR1()) {
+            if (zzFitPars.fitInept()) {
+                return new String[]{"Ia+Ib", "Ia/(Ia+Ib)", "R1", "KAB", "KBA", "IDelay"};
+            } else {
+                return new String[]{"Ia+Ib", "Ia/(Ia+Ib)", "R1", "KAB", "KBA"};
+            }
+        } else {
+            if (zzFitPars.fitInept()) {
+                return new String[]{"Ia+Ib", "Ia/(Ia+Ib)", "R1A", "R1B", "KAB", "KBA", "IDelay"};
+            } else {
+                return new String[]{"Ia+Ib", "Ia/(Ia+Ib)", "R1A", "R1B", "KAB", "KBA"};
+            }
+        }
     }
 
     @Override
@@ -33,24 +47,65 @@ public class ZZFit2 extends FitEquation {
         double r1 = -Math.log(0.5) / midX;
         double kEx = -Math.log(0.5) / midX2;
         double pA = yMax0 / (yMax0 + yMax1);
-        double[] start = {intensity, pA, r1, r1, kEx, kEx};
-        double[] lower = {intensity / 2.0, 0.0, r1 / 10.0, r1 / 10.0, kEx / 12.0, kEx / 12.0};
-        double[] upper = {intensity * 2.0, 1.0, r1 * 2.0, r1 * 2.0, kEx * 3.0, kEx * 3.0};
+        int nPar = 5;
+        if (!zzFitPars.constrainR1()) {
+            nPar++;
+        }
+        if (zzFitPars.fitInept()) {
+            nPar++;
+        }
+        double[] start = new double[nPar];
+        double[] lower = new double[nPar];
+        double[] upper = new double[nPar];
+
+        start[0] = intensity;
+        lower[0] = intensity / 2.0;
+        upper[0] = intensity * 2.0;
+        start[1] = pA;
+        lower[1] = 0.0;
+        upper[1] = 1.0;
+        start[2] = r1;
+        lower[2] = r1 / 10.0;
+        upper[2] = r1 * 2.0;
+        int i = 2;
+        if (!zzFitPars.constrainR1()) {
+            i++;
+            start[i] = r1;
+            lower[i] = r1 / 10.0;
+            upper[i] = r1 * 2.0;
+        }
+        i++;
+        start[i] = kEx;
+        lower[i] = kEx / 12.0;
+        upper[i] = kEx * 3.0;
+        i++;
+        start[i] = kEx;
+        lower[i] = kEx / 12.0;
+        upper[i] = kEx * 3.0;
+        if (zzFitPars.fitInept()) {
+            i++;
+            start[i] = 6.0e-3;
+            lower[i] = 0.0;
+            upper[i] = 12.0e-3;
+        }
+
         return new Guesses(start, lower, upper);
     }
 
     public double[] calcValue(double[] xA, double[] pars) {
         double delay = xA[0];
-        double intensity = pars[0];
-        double initialRatio = pars[1];
-        double r1A = pars[2];
-        double r1B = pars[3];
-        double kAB = pars[4];
-        double kBA = pars[5];
+        int i = 0;
+        double intensity = pars[i++];
+        double initialRatio = pars[i++];
+        double r1A = pars[i++];
+        double r1B = zzFitPars.constrainR1() ? r1A : pars[i++];
+        double kAB = pars[i++];
+        double kBA = pars[i++];
+        double ineptCorr = zzFitPars.fitInept() ? pars[i] : 0.0;
 
         double[] y = new double[4];
         for (int iSig = 0; iSig < 4; iSig++) {
-            y[iSig] = intensity * LorentzGaussND.zzAmplitude2(r1A, r1B, initialRatio, kAB, kBA, delay, iSig);
+            y[iSig] = intensity * LorentzGaussND.zzAmplitude2(r1A, r1B, initialRatio, kAB, kBA, delay + ineptCorr, iSig);
         }
         return y;
     }

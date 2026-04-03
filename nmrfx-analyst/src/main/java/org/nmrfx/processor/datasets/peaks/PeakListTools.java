@@ -1395,6 +1395,9 @@ public class PeakListTools {
         return fitZZPeakRatioResult;
     }
 
+    public record ZZFitPars(boolean bindingMode, boolean constrainR1, boolean fitInept, boolean fitRatios) {
+
+    }
     /**
      * Fit peak measures (intensities or volumes) to ZZ function
      *
@@ -1406,7 +1409,7 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, Collection<Peak> peaks)
+    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, Collection<Peak> peaks, ZZFitPars zzFitPars)
             throws IllegalArgumentException, IOException, PeakFitException {
         if (peaks.size() != 4) {
             throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
@@ -1416,7 +1419,7 @@ public class PeakListTools {
             PeakListTools.quantifyPeaks(peakList, "center");
         }
         List<Peak> abPeaks = PeakLinker.linkFourPeaks(peaks);
-        return fitZZPeaks(peakList, abPeaks);
+        return fitZZPeaks(peakList, abPeaks, zzFitPars);
     }
 
     /**
@@ -1490,10 +1493,10 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
         }
         return xyValues;
     }
-    public static List<PeakFitPars> fitZZPeaks(PeakList peakList, List<Peak> abPeaks) {
+    public static List<PeakFitPars> fitZZPeaks(PeakList peakList, List<Peak> abPeaks, ZZFitPars zzFitPars) {
         XYEValues xyeValues = getXYErrValues(peakList, abPeaks);
         int mode = 2;
-        FitEquation zzFit = mode == 2 ? new ZZFit2() : new ZZFit();
+        FitEquation zzFit = mode == 2 ? new ZZFit2(zzFitPars) : new ZZFit();
 
         zzFit.setXYE(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues);
         PointValuePair result = zzFit.fit();
@@ -1512,19 +1515,19 @@ public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
         }
         PeakFitPars peakFitPars = new PeakFitPars(abPeaks.get(0), fitPars);
         String[] peakLabels = {"AA", "BB", "AB", "BA"};
-        for (int jPeak = 0; jPeak < 4; jPeak++) {
-            String label = peakLabels[jPeak];
-            Peak peak = abPeaks.get(jPeak);
-            if (jPeak == 0) {
-                if (mode == 2) {
-                    peak.setComment(String.format("%s I %.3f R1A %.3f R1B %.3f KeXAB %.3f KeXBA %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3], pars[4], pars[5]));
-                } else {
-                    peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3]));
-                }
-            } else {
-                peak.setComment(label);
-            }
-        }
+//        for (int jPeak = 0; jPeak < 4; jPeak++) {
+//            String label = peakLabels[jPeak];
+//            Peak peak = abPeaks.get(jPeak);
+//            if (jPeak == 0) {
+//                if (mode == 2) {
+//                    peak.setComment(String.format("%s I %.3f R1A %.3f R1B %.3f KeXAB %.3f KeXBA %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3], pars[4], pars[5]));
+//                } else {
+//                    peak.setComment(String.format("%s I %.3f R1 %.3f KeX %.3f pA %.2f", label, pars[0], pars[1], pars[2], pars[3]));
+//                }
+//            } else {
+//                peak.setComment(label);
+//            }
+//        }
         return Collections.singletonList(peakFitPars);
     }
 
