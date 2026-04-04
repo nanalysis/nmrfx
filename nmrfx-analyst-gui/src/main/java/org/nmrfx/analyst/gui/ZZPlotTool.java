@@ -122,13 +122,15 @@ public class ZZPlotTool {
     public List<String> getColumnNames(PeakListTools.ZZFitPars zzFitPars) {
         List<String> columnNames = new ArrayList<>();
         columnNames.addAll(List.of("Peak", "Label"));
-        List<String> kNames = List.of("KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err");
+        List<String> kNames = List.of("KAB", "KAB:Err", "KBA", "KBA:Err");
         List<String> rNames = List.of("R1A", "R1A:Err", "R1B", "R1B:Err");
         if (fitRatio.isSelected()) {
             if (zzFitPars.bindingMode()) {
+                columnNames.addAll(List.of("KK", "KK:Err"));
                 columnNames.addAll(kNames);
                 columnNames.add("KA");
             } else {
+                columnNames.addAll(List.of("KK", "KK:Err"));
                 columnNames.addAll(kNames);
             }
         } else {
@@ -162,6 +164,8 @@ public class ZZPlotTool {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("ZZ Plot Tool");
+            stage.setWidth(1000);
+            stage.setHeight(600);
             MenuButton fileMenu = new MenuButton("File");
             VBox vBox = new VBox();
             ToolBar toolBar = new ToolBar();
@@ -228,6 +232,7 @@ public class ZZPlotTool {
             SplitPane sPane = new SplitPane(chartPane, tableView);
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
+            sPane.setDividerPosition(0, 0.7);
             stage.setScene(stageScene);
             updateChart(xAxisName, yAxisName);
             initTable();
