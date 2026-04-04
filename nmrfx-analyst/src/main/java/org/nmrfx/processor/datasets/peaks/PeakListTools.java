@@ -165,22 +165,10 @@ public class PeakListTools {
             throw new IllegalArgumentException("Number of maximum tolerances not equal to number of peak dimensions");
         }
 
-        class Match {
 
-            int i = 0;
-            int j = 0;
-            double delta = 0.0;
-
-            Match(int i, int j, double delta) {
-                this.i = i;
-                this.j = j;
-                this.delta = delta;
-            }
-
-            double getDelta() {
-                return delta;
-            }
+        record Match(int i, int j, double delta) {
         }
+
 
         double biggestMax = 0.0;
 
@@ -193,7 +181,7 @@ public class PeakListTools {
             }
         }
 
-        final ArrayList matches = new ArrayList();
+        final List<Match> matches = new ArrayList<>();
         for (int i = 0, n = peakList.size(); i < n; i++) {
             Peak iPeak = peakList.getPeak(i);
 
@@ -250,13 +238,11 @@ public class PeakListTools {
             }
         }
 
-        matches.sort(comparing(Match::getDelta));
+        matches.sort(comparing(Match::delta));
 
         boolean[] iUsed = new boolean[peakList.size()];
 
-        for (int i = 0, n = matches.size(); i < n; i++) {
-            Match match = (Match) matches.get(i);
-
+        for (Match match : matches) {
             if (!iUsed[match.i] && !iUsed[match.j]) {
                 iUsed[match.i] = true;
                 iUsed[match.j] = true;
@@ -318,7 +304,7 @@ public class PeakListTools {
      */
     public static DistanceMatch[][] getNeighborDistances(PeakList peakList, double[] minTol,
                                                          double[] maxTol) {
-        final ArrayList matches = new ArrayList();
+        final List<DistanceMatch> matches = new ArrayList<>();
         int nDim = peakList.getNDim();
 
         double[] deltas = new double[nDim];
@@ -378,13 +364,15 @@ public class PeakListTools {
                 dMatches[i] = new DistanceMatch[matches.size()];
 
                 for (int k = 0; k < matches.size(); k++) {
-                    dMatches[i][k] = (DistanceMatch) matches.get(k);
+                    dMatches[i][k] = matches.get(k);
                 }
             }
         }
 
         return dMatches;
     }
+
+    record Match(int i, int j, double score) {}
 
     /**
      * @param peakListA
@@ -411,20 +399,7 @@ public class PeakListTools {
         DistanceMatch[][] bNeighbors = getNeighborDistances(peakListB, minTol,
                 maxTol);
 
-        class Match {
-
-            int i = 0;
-            int j = 0;
-            double delta = 0.0;
-
-            Match(int i, int j, double delta) {
-                this.i = i;
-                this.j = j;
-                this.delta = delta;
-            }
-        }
-
-        final ArrayList matches = new ArrayList();
+        final List<Match> matches = new ArrayList<>();
 
         for (int i = 0; i < aNeighbors.length; i++) {
             if (aNeighbors[i] != null) {
@@ -451,15 +426,12 @@ public class PeakListTools {
             }
         }
 
-        matches.sort(comparing(DistanceMatch::getDelta));
+        matches.sort(comparing(Match::score));
 
-        int m = (aNeighbors.length > bNeighbors.length) ? aNeighbors.length
-                : bNeighbors.length;
+        int m = Math.max(aNeighbors.length, bNeighbors.length);
         boolean[] iUsed = new boolean[m];
 
-        for (int i = 0, n = matches.size(); i < n; i++) {
-            Match match = (Match) matches.get(i);
-
+        for (Match match : matches) {
             if (!iUsed[match.i] && !iUsed[match.j]) {
                 iUsed[match.i] = true;
                 iUsed[match.j] = true;
@@ -494,8 +466,7 @@ public class PeakListTools {
         }
         double[] iOffsets = new double[dimsA.length];
         double[] jOffsets = new double[dimsA.length];
-        MatchResult result = doBPMatch(peakListA, peakItemsA, iOffsets, peakItemsB, jOffsets, tol);
-        return result;
+        return doBPMatch(peakListA, peakItemsA, iOffsets, peakItemsB, jOffsets, tol);
     }
 
     /**
@@ -569,8 +540,7 @@ public class PeakListTools {
         List<double[]> positions = new ArrayList<>();
         List<String[]> names = new ArrayList<>();
         for (var cR : mol.getCompoundsAndResidues()) {
-            if (cR instanceof Residue) {
-                Residue res = (Residue) cR;
+            if (cR instanceof Residue res) {
                 int i = 0;
                 boolean ok = true;
                 for (var name : aNames) {
@@ -641,7 +611,7 @@ public class PeakListTools {
                 List<PeakDim> linkedPeakDims = peakList.getLinkedPeakDims(peak, dims[iDim]);
                 double ppmCenter = 0.0;
                 for (PeakDim peakDim : linkedPeakDims) {
-                    Peak peak2 = (Peak) peakDim.getPeak();
+                    Peak peak2 = peakDim.getPeak();
                     usedPeaks.add(peak2);
                     ppmCenter += peakDim.getChemShiftValue();
                 }
@@ -723,14 +693,13 @@ public class PeakListTools {
             }
 
         }
-        MatchResult matchResult = new MatchResult(iMList, jMList, matching, nMatches, score);
-        return matchResult;
+        return new MatchResult(iMList, jMList, matching, nMatches, score);
     }
 
     private static void optimizeMatch(PeakList peakList, final ArrayList<MatchItem> iMList, final double[] iOffsets, final ArrayList<MatchItem> jMList, final double[] jOffsets, final double[] tol, int minDim, double min, double max) {
         class MatchFunction implements UnivariateFunction {
 
-            int minDim = 0;
+            final int minDim;
 
             MatchFunction(int minDim) {
                 this.minDim = minDim;
@@ -971,16 +940,7 @@ public class PeakListTools {
         }
     }
 
-    final static class CenterRef {
-
-        final int index;
-        final int dim;
-
-        public CenterRef(final int index, final int dim) {
-            this.index = index;
-            this.dim = dim;
-        }
-    }
+    record CenterRef(int index, int dim) {}
 
     public enum GuessType {
         GLOBAL_INTENSITY,
@@ -1078,13 +1038,13 @@ public class PeakListTools {
         if (f == null) {
             throw new IllegalArgumentException("Invalid measurment mode: " + mode);
         }
-        int nDataDim = datasets.get(0).getNDim();
+        int nDataDim = datasets.getFirst().getNDim();
         int nDim = peakList.getNDim();
         if (nDim == nDataDim) {
             quantifyPeaks(peakList, datasets, f, mode, 1);
         } else if (nDim == (nDataDim - 1)) {
             int scanDim = 2;
-            int nPlanes = datasets.get(0).getSizeTotal(scanDim);
+            int nPlanes = datasets.getFirst().getSizeTotal(scanDim);
             quantifyPeaks(peakList, datasets, f, mode, nPlanes);
         } else if (nDim > nDataDim) {
             throw new IllegalArgumentException("Peak list has more dimensions than dataset");
@@ -1123,7 +1083,7 @@ public class PeakListTools {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
         }
 
-        peakList.peaks().stream().forEach(peak -> {
+        peakList.peaks().forEach(peak -> {
             double[][] values = new double[2][nPlanes];
             measurePlanes(nPlanes, peak, dataset, f, mode, values, 0);
             setValues(peak, values, mode);
@@ -1240,7 +1200,7 @@ public class PeakListTools {
      */
     public static void tweakPeaks(PeakList peakList, Dataset dataset, Set<Peak> speaks, int[] planes) {
         int[] pdim = peakList.getDimsForDataset(dataset, true);
-        speaks.stream().forEach(peak -> {
+        speaks.forEach(peak -> {
             try {
                 peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
@@ -1300,13 +1260,13 @@ public class PeakListTools {
      * @throws PeakFitException
      */
     public static void groupPeaksAndFit(PeakList peakList, Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, PeakFitParameters fitPars) {
-        Set<List<Set<Peak>>> oPeaks = null;
+        Set<List<Set<Peak>>> oPeaks;
         if (fitPars.constrainDim() < 0) {
             oPeaks = getPeakLayers(peaks);
         } else {
             oPeaks = getPeakColumns(peakList, peaks, fitPars.constrainDim());
         }
-        oPeaks.stream().forEach(oPeakSet -> {
+        oPeaks.forEach(oPeakSet -> {
                     try {
                         List<Peak> lPeaks = new ArrayList<>();
                         int nFit = 0;
@@ -1366,7 +1326,7 @@ public class PeakListTools {
         for (var group : peakGroups) {
             List<Peak> abPeaks = PeakLinker.linkFourPeaks(group);
             if (!simFit) {
-                peak = abPeaks.get(0);
+                peak = abPeaks.getFirst();
             }
             XYEValues xyeValues = getXYErrValues(peakList, abPeaks);
             List<XYValue> xyValues = calcRatioKK(xyeValues);
@@ -1422,7 +1382,7 @@ public class PeakListTools {
         if (peaks.size() != 4) {
             throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
         }
-        boolean missingMeasures = peaks.stream().anyMatch(peak -> !peak.getMeasures().isPresent());
+        boolean missingMeasures = peaks.stream().anyMatch(peak -> peak.getMeasures().isEmpty());
         if (missingMeasures) {
             PeakListTools.quantifyPeaks(peakList, "center");
         }
@@ -1434,7 +1394,7 @@ public class PeakListTools {
      * Fit peak measures (intensities or volumes) to ZZ function
      *
      * @param theFile The dataset to fit the peaks to
-     * @param peaks   A collection of peaks to fit simultaneously
+     * @param peakGroups   A collection of peaks to fit simultaneously
      * @return a List of alternating name/values with the parameters of the fit
      * if updatePeaks is false. Otherwise return empty list
      * @throws IllegalArgumentException
@@ -1485,7 +1445,7 @@ public class PeakListTools {
         if (peaks.size() != 4) {
             throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
         }
-        boolean missingMeasures = peaks.stream().anyMatch(peak -> !peak.getMeasures().isPresent());
+        boolean missingMeasures = peaks.stream().anyMatch(peak -> peak.getMeasures().isEmpty());
         if (missingMeasures) {
             PeakListTools.quantifyPeaks(peakList, "center");
         }
@@ -1564,7 +1524,7 @@ public class PeakListTools {
         PointValuePair result = zzFit.fit();
         if (result == null) {
             GUIUtils.warn("Fitting", "Error fitting data");
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         double[] pars = zzFit.getPars();
         double[] errs = zzFit.getParErrs();
@@ -1585,7 +1545,7 @@ public class PeakListTools {
                 FitPar fitPar = new FitPar(parNames[nPerGroup + iCommon], pars[nTotal - nCommon + iCommon], errs[nTotal - nCommon + iCommon]);
                 fitPars.put(fitPar.name(), fitPar);
             }
-            PeakFitPars peakFitPars = new PeakFitPars(abPeaks.get(iGroup).get(0), fitPars);
+            PeakFitPars peakFitPars = new PeakFitPars(abPeaks.get(iGroup).getFirst(), fitPars);
             peakFitParResult.add(peakFitPars);
         }
         return peakFitParResult;
@@ -1707,8 +1667,8 @@ public class PeakListTools {
             }
             for (int dDim = 0, iRow = 0; dDim < dataDim; dDim++) {
                 boolean gotThisDim = false;
-                for (int pDim = 0; pDim < pdim.length; pDim++) {
-                    if (pdim[pDim] == dDim) {
+                for (int i : pdim) {
+                    if (i == dDim) {
                         gotThisDim = true;
                         break;
                     }
@@ -1723,7 +1683,7 @@ public class PeakListTools {
 
             peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak], meanDimWidth, 1.0);
 
-            double intensity = (double) peak.getIntensity();
+            double intensity = peak.getIntensity();
             GuessValue gValue;
             if (intensity > 0.0) {
                 gValue = new GuessValue(intensity, intensity * 0.1, intensity * 3.5, !zzMode, INTENSITY);
@@ -1832,7 +1792,7 @@ public class PeakListTools {
         }
 
         for (int j = 0; j < nPeakDim; j++) {
-            Float shapeFactor = peaks.get(0).peakDims[j].getShapeFactor();
+            Float shapeFactor = peaks.getFirst().peakDims[j].getShapeFactor();
             double lower = 0.0;
             double upper = 1.5;
             if (fitPars.shapeParameters().constrainShape()) {
@@ -1853,9 +1813,9 @@ public class PeakListTools {
             guessList.add(gValue);
         }
         if (zzMode) {
-            guessList.add(0, new GuessValue(globalMax * 1.5, globalMax / 2.0, 4.0 * globalMax, zzMode, GLOBAL_INTENSITY));
+            guessList.addFirst(new GuessValue(globalMax * 1.5, globalMax / 2.0, 4.0 * globalMax, zzMode, GLOBAL_INTENSITY));
         } else {
-            guessList.add(0, new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, zzMode, GLOBAL_INTENSITY));
+            guessList.addFirst(new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, zzMode, GLOBAL_INTENSITY));
         }
         if (zzMode) {
             double r1Guess = 2.0 / maxDelay;
@@ -2022,7 +1982,7 @@ public class PeakListTools {
                     double err;
                     if ((noise != null) && (measures != null)) {
                         if (nPeakDim == 2) {
-                            nPoints = (int) (((double) nPoints / 4.0) * Math.PI);  // area of an ellipse
+                            nPoints = (int) ((nPoints / 4.0) * Math.PI);  // area of an ellipse
                         }
                         err = nPoints < 2 ? noise.floatValue() : Math.sqrt(nPoints) * noise.floatValue();
                         for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
@@ -2186,13 +2146,13 @@ public class PeakListTools {
                 List<PeakDim> peakDims = peakList.getLinkedPeakDims(peak, iDim);
                 Set<Peak> firstLayer = new HashSet<>();
                 for (PeakDim peakDim : peakDims) {
-                    used.add((Peak) peakDim.getPeak());
-                    firstLayer.add((Peak) peakDim.getPeak());
+                    used.add(peakDim.getPeak());
+                    firstLayer.add(peakDim.getPeak());
                 }
                 List<Set<Peak>> column = new ArrayList<>();
                 column.add(firstLayer);
-                column.add(Collections.EMPTY_SET);
-                column.add(Collections.EMPTY_SET);
+                column.add(Collections.emptySet());
+                column.add(Collections.emptySet());
                 result.add(column);
             }
 
@@ -2414,9 +2374,9 @@ public class PeakListTools {
             sBuf.append(" ");
             sBuf.append(delta);
 
-            for (int j = 0; j < deltas.length; j++) {
+            for (double v : deltas) {
                 sBuf.append(" ");
-                sBuf.append(deltas[j]);
+                sBuf.append(v);
             }
 
             return sBuf.toString();
