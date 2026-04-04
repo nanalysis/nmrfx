@@ -98,6 +98,7 @@ public class ZZPlotTool {
     CheckBox fitRatio;
     CheckBox constrainR1CheckBox;
     CheckBox fitIneptCheckBox;
+    CheckBox groupFitCheckBox;
     ChoiceBox<RxModes> rxModesChoiceBox;
     PeakListTools.ZZFitPars currentTablePars = null;
 
@@ -178,14 +179,17 @@ public class ZZPlotTool {
             fitRatio = new CheckBox("Fit Ratio");
             constrainR1CheckBox = new CheckBox("R1A == R1B");
             fitIneptCheckBox = new CheckBox("Fit Inept");
+            groupFitCheckBox = new CheckBox("Group Fit");
+
 
             rxModesChoiceBox = new ChoiceBox<>();
             rxModesChoiceBox.getItems().addAll(RxModes.values());
 
             Button showPeakButton = new Button("Goto");
             showPeakButton.setOnAction(e -> gotoPeak());
-            toolBar.setStyle("-fx-spacing: 10px;");
-            toolBar.getItems().addAll(fileMenu, new Label("Rxn Mode: "), rxModesChoiceBox, fitRatio, constrainR1CheckBox, fitIneptCheckBox, ToolBarUtils.makeFiller(15, 15),
+            toolBar.setStyle("-fx-spacing: 14px;");
+            toolBar.getItems().addAll(fileMenu, new Label("Rxn Mode: "), rxModesChoiceBox, fitRatio,
+                    constrainR1CheckBox, fitIneptCheckBox, groupFitCheckBox, ToolBarUtils.makeFiller(15, 15),
                     fitButton, ToolBarUtils.makeFiller(15), showPeakButton);
 
             rxModesChoiceBox.setValue(RxModes.BINDING);
@@ -405,15 +409,17 @@ public class ZZPlotTool {
     }
 
     PeakListTools.ZZFitPars getFitPars() {
-        return new PeakListTools.ZZFitPars(rxModesChoiceBox.getValue() == RxModes.BINDING, constrainR1CheckBox.isSelected(), fitIneptCheckBox.isSelected(), fitRatio.isSelected());
+        return new PeakListTools.ZZFitPars(rxModesChoiceBox.getValue() == RxModes.BINDING, groupFitCheckBox.isSelected(), constrainR1CheckBox.isSelected(), fitIneptCheckBox.isSelected(), fitRatio.isSelected());
     }
+
     void fitPeaks() {
         PeakListTools.ZZFitPars zzFitPars = getFitPars();
         if (!zzFitPars.equals(currentTablePars)) {
             initTable();
         }
-        if (fitRatio.isSelected()) {
-            simFitPeaks();
+        boolean fitGroup = true;
+        if (zzFitPars.groupFit()) {
+            simFitPeaks(zzFitPars);
         } else {
             fitPeaksFull(zzFitPars);
         }
@@ -452,7 +458,7 @@ public class ZZPlotTool {
         }
     }
 
-    void simFitPeaks() {
+    void simFitPeaks(PeakListTools.ZZFitPars zzFitPars) {
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         var chart = controller.getActiveChart();
         var peakListOpt = chart.getPeakListAttributes().stream().findFirst();
@@ -470,8 +476,10 @@ public class ZZPlotTool {
                 if (group.size() == 4) {
                     var groupSet = Collections.singletonList(group);
                     try {
-                        PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false);
-                        fitPars.add(result.peakFitPars());
+                        if (zzFitPars.fitRatios()) {
+                            PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false);
+                            fitPars.add(result.peakFitPars());
+                        }
                         allPeaks.add(group);
                     } catch (IOException | PeakFitException e) {
                         throw new RuntimeException(e);
@@ -481,8 +489,13 @@ public class ZZPlotTool {
                 used.addAll(group);
             }
             try {
-                fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true);
-                fitPars.add(0, fitZZPeakRatioResult.peakFitPars());
+                if (zzFitPars.fitRatios()) {
+                    fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true);
+                    fitPars.add(0, fitZZPeakRatioResult.peakFitPars());
+                } else {
+                    List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, allPeaks, zzFitPars);
+                    fitPars.addAll(result);
+                }
             } catch (IOException | PeakFitException e) {
                 throw new RuntimeException(e);
             }
