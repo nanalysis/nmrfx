@@ -61,6 +61,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -121,8 +122,7 @@ public class ZZPlotTool {
     }
 
     public List<String> getColumnNames(PeakListTools.ZZFitPars zzFitPars) {
-        List<String> columnNames = new ArrayList<>();
-        columnNames.addAll(List.of("Peak", "Label"));
+        List<String> columnNames = new ArrayList<>(List.of("Peak", "Label"));
         List<String> kNames = List.of("KAB", "KAB:Err", "KBA", "KBA:Err");
         List<String> rNames = List.of("R1A", "R1A:Err", "R1B", "R1B:Err");
         if (fitRatio.isSelected()) {
@@ -362,7 +362,7 @@ public class ZZPlotTool {
                     }
                 });
                 col.setCellFactory(c
-                        -> new TableCell<PeakFitPars, Number>() {
+                        -> new TableCell<>() {
                     @Override
                     public void updateItem(Number value, boolean empty) {
                         super.updateItem(value, empty);
@@ -417,7 +417,6 @@ public class ZZPlotTool {
         if (!zzFitPars.equals(currentTablePars)) {
             initTable();
         }
-        boolean fitGroup = true;
         if (zzFitPars.groupFit()) {
             simFitPeaks(zzFitPars);
         } else {
@@ -446,12 +445,12 @@ public class ZZPlotTool {
     }
 
     PeakFitPars fitPeakGroup(PeakListAttributes peakListAttributes, PeakList peakList, Set<Peak> peaks, PeakListTools.ZZFitPars zzFitPars) {
-        Dataset dataset = (Dataset) peakListAttributes.getDatasetAttributes().getDataset();
+        Dataset dataset = peakListAttributes.getDatasetAttributes().getDataset();
         PeakFitParameters fitPars = new PeakFitParameters();
         fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY);
         try {
             List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, peaks, zzFitPars);
-            return result.get(0);
+            return result.getFirst();
         } catch (IOException | PeakFitException e) {
             GUIUtils.warn("ZZFit", e.getMessage());
             return null;
@@ -466,7 +465,7 @@ public class ZZPlotTool {
         Set<Peak> used = new HashSet<>();
         List<Set<Peak>> allPeaks = new ArrayList<>();
         peakListOpt.ifPresent(peakAttributes -> {
-            Dataset dataset = (Dataset) peakAttributes.getDatasetAttributes().getDataset();
+            Dataset dataset = peakAttributes.getDatasetAttributes().getDataset();
             PeakList peakList = peakAttributes.getPeakList();
             for (Peak peak : peakList.peaks()) {
                 if (used.contains(peak)) {
@@ -478,11 +477,13 @@ public class ZZPlotTool {
                     try {
                         if (zzFitPars.fitRatios()) {
                             PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false);
-                            fitPars.add(result.peakFitPars());
+                            if (result != null) {
+                                fitPars.add(result.peakFitPars());
+                            }
                         }
                         allPeaks.add(group);
                     } catch (IOException | PeakFitException e) {
-                        throw new RuntimeException(e);
+                        log.warn("Error in sim fit", e);
                     }
 
                 }
@@ -491,7 +492,7 @@ public class ZZPlotTool {
             try {
                 if (zzFitPars.fitRatios()) {
                     fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true);
-                    fitPars.add(0, fitZZPeakRatioResult.peakFitPars());
+                    fitPars.addFirst(fitZZPeakRatioResult.peakFitPars());
                 } else {
                     List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, allPeaks, zzFitPars);
                     fitPars.addAll(result);
@@ -618,14 +619,14 @@ public class ZZPlotTool {
     void gotoPeak() {
         var selPars = getSelected();
         if (!selPars.isEmpty()) {
-            Peak peak = selPars.get(0).peak();
+            Peak peak = selPars.getFirst().peak();
             if (peak != null) {
                 PeakDisplayTool.gotoPeak(peak);
             }
         }
     }
 
-    final protected void selectionChanged() {
+    protected final void selectionChanged() {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         activeChart.getData().clear();
         for (Integer index : selected) {
@@ -644,7 +645,7 @@ public class ZZPlotTool {
     }
 
     private void saveTable(File file) {
-        Charset charset = Charset.forName("US-ASCII");
+        Charset charset = StandardCharsets.US_ASCII;
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
             boolean first = true;
             for (TableColumn column : tableView.getColumns()) {
@@ -670,8 +671,6 @@ public class ZZPlotTool {
                         case "Label":
                             if (item.peak() != null) {
                                 sBuilder.append(item.peak().getPeakDim(0).getLabel());
-                            } else {
-                                sBuilder.append("");
                             }
                             break;
                         default:
@@ -684,8 +683,6 @@ public class ZZPlotTool {
                             if (fitPar != null) {
                                 double v = isErr ? fitPar.error() : fitPar.value();
                                 sBuilder.append(String.format("%.4f", v));
-                            } else {
-                                sBuilder.append("");
                             }
                             break;
                     }
@@ -739,7 +736,7 @@ public class ZZPlotTool {
         DataSeries series = new DataSeries();
         DataSeries lineSeries = new DataSeries();
         if (!peaks.isEmpty()) {
-            PeakList peakList = peaks.get(0).getPeakList();
+            PeakList peakList = peaks.getFirst().getPeakList();
             PeakListTools.XYEValues xyeValues = PeakListTools.getXYErrValues(peakList, peaks);
             List<XYValue> xyValues = PeakListTools.calcRatioKK(xyeValues);
             for (XYValue xyValue : xyValues) {
