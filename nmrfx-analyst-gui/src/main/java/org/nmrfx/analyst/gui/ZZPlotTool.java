@@ -289,9 +289,8 @@ public class ZZPlotTool {
         double concLimit = 1.0e-9;
         if ((totalProtein.get() > concLimit) && (totalLigand.get() > concLimit) && (kD.get() > concLimit)) {
             freeLigand.set(totalLigand.get() - BindingUtils.boundLigand(totalProtein.get(), totalLigand.get(), kD.get()));
-            double boundLigand = totalLigand.get() - freeLigand.get();
-            double boundProtein = boundLigand;
-            double freeProtein = totalProtein.get() - boundProtein;
+            double bound = totalLigand.get() - freeLigand.get();
+            double freeProtein = totalProtein.get() - bound;
             popA.set(freeProtein / totalProtein.get());
         }
     }
@@ -783,8 +782,9 @@ public class ZZPlotTool {
                 double[] errs = measures[1];
                 for (int i = 0; i < yValues.length; i++) {
                     double yValue = yValues[i];
+                    double errValue = errs[i];
                     double xValue = xValues != null ? xValues[i] : 1.0 * i;
-                    XYValue value = new XYValue(xValue, yValue);
+                    XYEValue value = new XYEValue(xValue, yValue, errValue);
                     series.add(value);
                 }
             });
