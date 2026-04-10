@@ -52,7 +52,7 @@ public class ResonanceFactory implements FreezeListener {
     }
 
     public AtomResonance build() {
-        while (map.get(lastID++) != null) ;
+        while (map.get(++lastID) != null) ;
         AtomResonance resonance = new AtomResonance(lastID);
         map.put(lastID, resonance);
         return resonance;
