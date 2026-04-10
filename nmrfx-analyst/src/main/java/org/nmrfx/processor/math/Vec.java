@@ -798,35 +798,28 @@ public class Vec extends VecBase {
     }
 
     /**
-     * Add Lorentzian line shapes to this vector using parameters stored in
-     * another Vec object.
+     * Add frequency domain signals to this vector
      *
-     * @param par vector of parameters
+     * @param signals List of signals
      * @return this vec
      */
     @Deprecated
-    public Vec genSpec(Vec par) {
-        int i;
-        int j;
-        int k;
-        double amp;
-        double phase;
+    public Vec genSpec(List<Signal> signals) {
 
-        int halfWidth;
-        int center;
+        int regionMult = 5;
+
         resize(size, false);
 
-        for (j = 3; j < par.size; j += 4) {
-            amp = par.rvec[j];
-            phase = par.rvec[j + 1];
-            Complex cAmp = new Complex(Math.cos(phase) * amp, Math.sin(phase) * amp);
-            Complex cFreq = new Complex(-par.rvec[j + 2], -par.rvec[j + 3]);
-            center = (int) Math.round((size * (cFreq.getReal() + Math.PI)) / (2.0 * Math.PI));
-            halfWidth = (int) Math.round(4 * Math.abs(
-                    cFreq.getImaginary() * 2.0 * Math.PI * size * 2));
+        for (Signal signal : signals) {
+            int centerPt = refToPt(signal.frequency);
+            double lwHz = signal.lw();
+            double lwPts = lwToPtD(lwHz);
+            double lwPPM = lwHz / getSF();
 
-            for (i = -halfWidth; i <= halfWidth; i++) {
-                k = center + i;
+            int regionHalfWidthPts = (int) (regionMult * lwPts / 2);
+
+            for (int i = -regionHalfWidthPts; i <= regionHalfWidthPts; i++) {
+                int k = centerPt + i;
 
                 if (k < 0) {
                     continue;
@@ -835,18 +828,12 @@ public class Vec extends VecBase {
                 if (k >= size) {
                     continue;
                 }
-
-                double f1Real = (((1.0 * k) / size) * 2.0 * Math.PI) - Math.PI;
-                double f1Imaginary = 0.0;
-                Complex f1 = new Complex(f1Real, f1Imaginary);
-                Complex sig = cAmp.divide(f1.subtract(cFreq));
-
-                rvec[k] += -sig.getImaginary();
+                double freq = pointToPPM(k);
+                double v = LineShapes.G_LORENTZIAN.calculate(freq, signal.amplitude, signal.frequency, lwPPM, 1.0);
+                rvec[k] += v;
             }
         }
-
         freqDomain = true;
-
         return (this);
     }
 
@@ -2855,7 +2842,7 @@ public class Vec extends VecBase {
 
         int nWidths = 40;
         signals.stream().forEach((signal) -> {
-            double d = signal.decay;
+            double d = signal.decayRate;
             double f = signal.frequency;
             if (!signalInPoints) {
                 d = d / getSW() * getSize();
@@ -2884,7 +2871,7 @@ public class Vec extends VecBase {
         }
         int nWidths = 40;
         signals.stream().forEach((signal) -> {
-            double d = signal.decay;
+            double d = signal.decayRate;
             double f = signal.frequency;
             double a = signal.amplitude;
             int start = (int) Math.round(f - nWidths / 2 * d);
