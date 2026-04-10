@@ -19,6 +19,7 @@ package org.nmrfx.analyst.gui;
 
 import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -66,6 +67,8 @@ public class TablePlotGUI {
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
     TableView<ParItem> parTable = new TableView<>();
     VBox extraBox = new VBox();
+    SimpleBooleanProperty xZeroIncludedProp = new SimpleBooleanProperty(true);
+    SimpleBooleanProperty yZeroIncludedProp = new SimpleBooleanProperty(true);
 
     FitGUI fitGUI = null;
 
@@ -335,6 +338,14 @@ public class TablePlotGUI {
         return series;
     }
 
+    public void xZeroIncluded(boolean state) {
+        xZeroIncludedProp.setValue(state);
+    }
+
+    public void yZeroIncluded(boolean state) {
+        yZeroIncludedProp.setValue(state);
+    }
+
     public void updateChoice(String xChoice, String yChoice) {
         xArrayChoice.setValue(xChoice);
         yArrayChoice.getCheckModel().clearChecks();
@@ -356,8 +367,8 @@ public class TablePlotGUI {
                     String yElem = yElems.getFirst();
                     if (yElem != null) {
                         yAxis.setLabel(yElem);
-                        xAxis.setZeroIncluded(true);
-                        yAxis.setZeroIncluded(true);
+                        xAxis.setZeroIncluded(xZeroIncludedProp.get());
+                        yAxis.setZeroIncluded(yZeroIncludedProp.get());
                         xAxis.setAutoRanging(true);
                         yAxis.setAutoRanging(true);
                         activeChart.getData().clear();
