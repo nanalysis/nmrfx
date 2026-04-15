@@ -23,12 +23,10 @@
  */
 package org.nmrfx.processor.gui;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -192,6 +190,44 @@ public class DatasetsController implements Initializable, StageBasedController, 
             List<DatasetBase> datasetList = ProjectBase.getActive().getDatasets();
             if (datasetList instanceof ObservableList) {
                 setDatasetList((ObservableList<DatasetBase>) datasetList);
+            }
+        }
+    }
+
+    public class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Number> {
+
+        public ValueItemDoubleFieldTableCell() {
+            super(new StringConverter<Number>() {
+                @Override
+                public String toString(Number number) {
+                    return number == null ? "" : String.format("%.5f", number.doubleValue());
+                }
+
+                @Override
+                public Number fromString(String string) {
+                    try {
+                        return Double.parseDouble(string.trim());
+                    } catch (NumberFormatException e) {
+                        return 0.0;
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void commitEdit(Number newValue) {
+            super.commitEdit(newValue);
+            ((ValueItem) getTableRow().getItem()).setValue(newValue.doubleValue());
+
+            TableView<ValueItem> table = getTableView();
+            TableColumn<ValueItem, Number> column = getTableColumn();
+            int nextRow = getIndex() + 1;
+
+            if (nextRow < table.getItems().size()) {
+                Platform.runLater(() -> {
+                    table.getSelectionModel().select(nextRow, column);
+                    table.edit(nextRow, column);
+                });
             }
         }
     }
@@ -530,19 +566,22 @@ public class DatasetsController implements Initializable, StageBasedController, 
     public static class ValueItem {
 
         int index;
-        double value;
+        private DoubleProperty value = new SimpleDoubleProperty();
 
         public ValueItem(int index, double value) {
             this.index = index;
-            this.value = value;
+            this.value.setValue(value);
         }
 
-        public double getValue() {
+        private DoubleProperty valueProperty() {
             return value;
+        }
+        public double getValue() {
+            return value.getValue();
         }
 
         public void setValue(double value) {
-            this.value = value;
+            this.value.setValue(value);
         }
 
         public int getIndex() {
@@ -552,25 +591,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
         public void setIndex(int index) {
             this.index = index;
         }
-    }
-
-    class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Double> {
-
-        ValueItemDoubleFieldTableCell(StringConverter<Double> converter) {
-            super(converter);
-        }
-
-        @Override
-        public void commitEdit(Double newValue) {
-            String column = getTableColumn().getText();
-            ValueItem value = getTableRow().getItem();
-            super.commitEdit(newValue);
-            if ("Value".equals(column)) {
-                value.setValue(newValue);
-                saveValueTable();
-            }
-        }
-
     }
 
     private void saveValueTable() {
@@ -613,7 +633,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
                 }
             }
             if (!savedValues.containsKey(valueDataset.getName())) {
-                double[] saveValues = valueList.stream().mapToDouble(v -> v.value).toArray();
+                double[] saveValues = valueList.stream().mapToDouble(v -> v.valueProperty().getValue()).toArray();
                 savedValues.put(valueDataset.getName(), saveValues);
             }
         }
@@ -650,7 +670,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
             Node node = (Node) event.getSource();
             Bounds buttonBounds = node.localToScreen(node.getBoundsInLocal());
 
-            DoubleStringConverter dsConverter = new DoubleStringConverter();
             valueStage = new Stage(StageStyle.DECORATED);
             BorderPane borderPane = new BorderPane();
             borderPane.setPrefWidth(225);
@@ -673,12 +692,15 @@ public class DatasetsController implements Initializable, StageBasedController, 
             borderPane.setCenter(valueTableView);
             TableColumn<ValueItem, Integer> indexColumn = new TableColumn<>("Index");
             indexColumn.setEditable(false);
-            TableColumn<ValueItem, Double> valueColumn = new TableColumn<>("Value");
+            TableColumn<ValueItem, Number> valueColumn = new TableColumn<>("Value");
             valueColumn.setEditable(true);
 
             indexColumn.setCellValueFactory(new PropertyValueFactory<>("index"));
-            valueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
-            valueColumn.setCellFactory(tc -> new ValueItemDoubleFieldTableCell(dsConverter));
+            valueColumn.setCellValueFactory(cell -> cell.getValue().valueProperty());
+            valueColumn.setCellFactory(col -> new ValueItemDoubleFieldTableCell());
+            valueColumn.setOnEditCommit(editEvent ->
+                    editEvent.getRowValue().setValue(editEvent.getNewValue().doubleValue())
+            );
 
             valueTableView.getColumns().addAll(indexColumn, valueColumn);
             valueTableView.setPrefWidth(225);
@@ -724,7 +746,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     void doValues(DoubleUnaryOperator function) {
         for (var item : valueTableView.getItems()) {
-            item.setValue(function.applyAsDouble(item.value));
+            item.setValue(function.applyAsDouble(item.value.getValue()));
         }
         saveValueTable();
         valueTableView.refresh();
