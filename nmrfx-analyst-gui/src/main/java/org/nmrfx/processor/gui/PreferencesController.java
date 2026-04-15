@@ -59,6 +59,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static IntegerProperty tickFontSizeProp = null;
     private static IntegerProperty labelFontSizeProp = null;
     private static IntegerProperty peakFontSizeProp = null;
+    private static BooleanProperty displayTitlesProp = null;
     private static BooleanProperty fitPeakShapeProp = null;
     private static BooleanProperty constrainPeakShapeProp = null;
     private static DoubleProperty peakShapeDirectFactorProp = null;
@@ -133,6 +134,13 @@ public class PreferencesController implements Initializable, StageBasedControlle
                     peakFontSizeProp.setValue((Integer) c);
                 },
                 getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
+
+        BooleanOperationItem displayTitlesItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    displayTitlesProp.setValue((Boolean) c);
+                    setBoolean("DISPLAY_TITLES", (Boolean) c);
+                },
+                getDisplayTitles(), "Spectra", "Display Titles", "Display dataset titles on spectra");
 
         BooleanOperationItem useImmediateModeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
@@ -251,7 +259,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
-                autoAddPeaksItem,
+                autoAddPeaksItem, displayTitlesItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem,
                 projectSaveItem, projectSaveIntervalItem,
                 autoProcessDataItem, useFIDParApodizationItem, useFIDParPhasesItem, doAutoPhaseItem, doAutoPhase1Item,
@@ -533,6 +541,11 @@ public class PreferencesController implements Initializable, StageBasedControlle
     public static Integer getPeakFontSize() {
         peakFontSizeProp = getInteger(peakFontSizeProp, "PEAK_FONT_SIZE", 12);
         return peakFontSizeProp.getValue();
+    }
+
+    public static Boolean getDisplayTitles() {
+        displayTitlesProp = getBoolean(displayTitlesProp, "DISPLAY_TITLES", true);
+        return displayTitlesProp.getValue();
     }
 
     public static Boolean getUseImmediateMode() {
