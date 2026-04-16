@@ -731,6 +731,13 @@ public class Vec extends VecBase {
         return ftIn;
     }
 
+    public void genFID(List<Signal> signals) {
+        for (Signal signal : signals) {
+            double freqHz = signal.getFrequencyHz(getSF(), getRefValue());
+            System.out.println(signal.frequency + " " + freqHz + " " + getSF() + " " + getRefValue() + " " + getSW());
+            genSignalHz(freqHz, signal.lw(), signal.amplitude, 0.0);
+        }
+    }
     /**
      * Generate damped sinusoidal signal, and add to Vec instance.
      *
