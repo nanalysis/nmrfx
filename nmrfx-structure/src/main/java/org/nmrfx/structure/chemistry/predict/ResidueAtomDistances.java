@@ -20,7 +20,7 @@ public class ResidueAtomDistances {
         }
     }
 
-    public record AtomEdge(List<Integer> iAtomList, double distance, int pathLen, double couplingValue, String couoplingName) {
+    public record AtomEdge(List<Integer> iAtomList, double distance, int pathLen, double couplingValue, String couplingName) {
         public String getCSV(int iGraph) {
             StringBuilder stringBuilder = new StringBuilder();
             for (Integer i: iAtomList) {
@@ -29,7 +29,7 @@ public class ResidueAtomDistances {
                 }
                 stringBuilder.append(i);
             }
-            return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couoplingName);
+            return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couplingName);
         }
 
         public int indexA() {
@@ -88,6 +88,7 @@ public class ResidueAtomDistances {
                 if (atomA != atomB) {
                     Point3 pointB = atomB.getPoint(iStruct);
                     double distance = pointA.distance(pointB);
+                    //distance = (distance - 3.3) / 1.8;
                     if (distance < limit) {
                         var path = paths.getPath(atomA, atomB);
                         List<Atom> pathAtoms = path.getVertexList();

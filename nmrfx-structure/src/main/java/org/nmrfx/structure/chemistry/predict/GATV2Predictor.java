@@ -75,12 +75,13 @@ public class GATV2Predictor {
     }
 
 
-    public ResidueAtomDistances getRAD(Entity compound) {
+    public ResidueAtomDistances getRAD(Entity compound) throws IOException {
         compound.molecule.updateAtomArray();
         MoleculeFactory.setActive(compound.molecule);
         DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(compound, 6, -1, -1);
         ResidueAtomDistances rad = new ResidueAtomDistances();
         rad.generate(compound, paths, 5.0, 0);
+        rad.dumpGraphs("/Users/ekoag/gatv2/nodes.txt","/Users/ekoag/gatv2/edges.txt");
         return rad;
     }
 
@@ -176,7 +177,7 @@ public class GATV2Predictor {
     }
 
     private void setCoupling(Atom atomI, Atom atomJ, int pathLen, double value) {
-        double jScale = pathLen > 1.1 ? 1.0 : 10.0;
+        double jScale = pathLen > 1.1 ? 10.0 : 100.0;
         double pjValue = Math.round(value * jScale * 100.0) / 100.0;
         String couplingName;
         if (atomI.getAtomicNumber() < atomJ.getAtomicNumber()) {
@@ -184,12 +185,12 @@ public class GATV2Predictor {
         } else {
             couplingName = pathLen + "J" + atomJ.getElementName() + atomI.getElementName();
         }
-        atomI.addAtomCouplingPair(new AtomCouplingPair(atomI, atomJ, pjValue, couplingName));
-        atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI, pjValue, couplingName));
+        atomI.addPredictedCouplingPair(new AtomCouplingPair(atomI, atomJ, pjValue, couplingName));
+        atomJ.addPredictedCouplingPair(new AtomCouplingPair(atomJ, atomI, pjValue, couplingName));
 
     }
 
-    public void predict(Entity compound, int iRef, SolventCorr solventCorr) throws OrtException {
+    public void predict(Entity compound, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances rad = getRAD(compound);
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
 
@@ -213,38 +214,35 @@ public class GATV2Predictor {
             List<ResidueAtomDistances.AtomNode> graphNodes = rad.atomGraphs.getFirst().nodes();
             var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
             try (OrtSession.Result result = session.run(inputs)) {
-                Object nodeOut = result.get(0).getValue();
-                Object edgeOut = result.get(1).getValue();
+                Object nodeOut = result.get(0);
+                Object edgeOut = result.get(1);
 
-                double[] nodeOutputs = processOutput(nodeOut);
-                double[] edgeOutputs = processOutput(edgeOut);
+                OnnxTensor nodeTensor = (OnnxTensor) nodeOut;
+                OnnxTensor edgeTensor = (OnnxTensor) edgeOut;
+                float[][] nodeOutputs = (float[][]) nodeTensor.getValue();
+                float[][] edgeOutputs = (float[][]) edgeTensor.getValue();
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
                     int nodeType = atomNode.property();
                     if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
-                        setShift(atomNode, nodeOutputs[i], iRef, solventCorr);
+                        setShift(atomNode, nodeOutputs[i][0], iRef, solventCorr);
                     }
                 }
                 averageMethyls(compound, iRef);
                 for (int i = 0; i < nEdges; i++) {
                     float pathLen = edgeAttr[i][1];
-                    String cName = graph.edges().get(i).couoplingName();
+                    String cName = graph.edges().get(i).couplingName();
                     if ((pathLen < 5) && !cName.isBlank()) {
                         int iIndex = (int) edgeIndex[0][i];
                         int jIndex = (int) edgeIndex[1][i];
                         Atom atomI = graphNodes.get(iIndex).atom();
                         Atom atomJ = graphNodes.get(jIndex).atom();
-                        setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i]);
+                        setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i][0]);
                     }
                 }
             }
         }
     }
 
-    private double[] processOutput(Object obj) {
-        return Arrays.stream(Arrays.deepToString((Object[]) obj)
-                .replace("[", "").replace("]", "")
-                .split(",")).mapToDouble(Double::parseDouble).toArray();
-    }
 }

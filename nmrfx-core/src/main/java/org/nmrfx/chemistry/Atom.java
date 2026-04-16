@@ -112,6 +112,7 @@ public class Atom implements IAtom, Comparable<Atom> {
     private boolean active = true;
     public ArrayList<AtomEquivalency> equivAtoms = null;
     Map<Atom, AtomCouplingPair> atomAtomCouplingPairMap = null;
+    Map<Atom, AtomCouplingPair> predictedCouplingPairMap = null;
 
     private Point3 flatPoint;
     public SpatialSet spatialSet;
@@ -2440,6 +2441,13 @@ public class Atom implements IAtom, Comparable<Atom> {
         atomAtomCouplingPairMap.put(atomCouplingPair.atom2(), atomCouplingPair);
     }
 
+    public void addPredictedCouplingPair(AtomCouplingPair atomCouplingPair) {
+        if (predictedCouplingPairMap == null) {
+            predictedCouplingPairMap = new HashMap<>();
+        }
+        predictedCouplingPairMap.put(atomCouplingPair.atom2(), atomCouplingPair);
+    }
+
     public Collection getAtomCouplingPairs() {
         return atomAtomCouplingPairMap == null ? Collections.emptyList() : atomAtomCouplingPairMap.values();
     }
@@ -2447,4 +2455,14 @@ public class Atom implements IAtom, Comparable<Atom> {
     public Optional<AtomCouplingPair> getAtomCouplingPair(Atom atom) {
         return atomAtomCouplingPairMap == null ? Optional.empty() : Optional.ofNullable(atomAtomCouplingPairMap.get(atom));
     }
+
+    public Optional<AtomCouplingPair> getPredictedCouplingPair(Atom atom) {
+        return predictedCouplingPairMap == null ? Optional.empty() : Optional.ofNullable(predictedCouplingPairMap.get(atom));
+    }
+
+    public Collection getPredictedCouplingPairs() {
+        return predictedCouplingPairMap == null ? Collections.emptyList() : predictedCouplingPairMap.values();
+    }
+
+
 }
