@@ -8,6 +8,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.analyst.gui.molecule.AtomController;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.peaks.PeakPPMGetter;
@@ -24,8 +25,13 @@ public class PeakPPMGetterGUI {
     ChoiceBox<String> assignOrRefChoice;
     ChoiceBox<Integer> refSetChoice;
     PeakPPMGetter peakPPMGetter = new PeakPPMGetter();
+    final AtomController atomController;
 
     Map<PeakList, PeakPPMGetter.PeakListPPMState> peakListStateMap;
+
+    public PeakPPMGetterGUI(AtomController atomController) {
+        this.atomController = atomController;
+    }
 
     public void showPeakPPMGetter() {
         if (stage == null) {
@@ -40,7 +46,7 @@ public class PeakPPMGetterGUI {
             ToolBar toolBar = new ToolBar();
             peakListMenuButton = new MenuButton("Lists");
             toolBar.getItems().add(peakListMenuButton);
-            toolBar.setPrefWidth(350);
+            toolBar.setPrefWidth(400);
             assignOrRefChoice = new ChoiceBox<>();
             assignOrRefChoice.getItems().addAll(ASSIGNED, REFERENCE);
             refSetChoice = new ChoiceBox<>();
@@ -73,6 +79,12 @@ public class PeakPPMGetterGUI {
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
+        MenuItem clearItem = new MenuItem("Clear All");
+        clearItem.setOnAction(e -> {
+            peakListStateMap.clear();
+        });
+        peakListMenuButton.getItems().add(clearItem);
+
         for (PeakList peakList1 : ProjectBase.getActive().getPeakLists()) {
             String peakListName = peakList1.getName();
             CheckMenuItem menuItem = new CheckMenuItem(peakListName);
@@ -88,6 +100,11 @@ public class PeakPPMGetterGUI {
 
     private void showPeakListOptions(PeakList peakList) {
         gridPane.getChildren().clear();
+        if (peakListStateMap.containsKey(peakList)) {
+            peakListStateMap.remove(peakList);
+            return;
+        }
+
         PeakPPMGetter.PeakListPPMState peakListPPMState = peakListStateMap.computeIfAbsent(peakList,
                 peakList1 -> new PeakPPMGetter.PeakListPPMState(new HashSet<>(), new HashSet<>()));
 
@@ -127,5 +144,6 @@ public class PeakPPMGetterGUI {
         boolean refMode = assignOrRefChoice.getValue().equals(REFERENCE);
         int index = refSetChoice.getValue();
         peakPPMGetter.getPPMs(peakListStateMap, refMode, index);
+        atomController.refreshAtomTable();
     }
 }

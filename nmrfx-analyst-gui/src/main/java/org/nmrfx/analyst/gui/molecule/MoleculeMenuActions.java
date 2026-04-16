@@ -10,6 +10,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
+import org.nmrfx.analyst.gui.molecule3D.RNASSViewController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
 import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.MoleculeFactory;
@@ -35,6 +36,7 @@ import java.util.Optional;
 
 public class MoleculeMenuActions extends MenuActions {
     private MolSceneController molController;
+    private RNASSViewController rnassViewController;
     private SeqDisplayController seqDisplayController = null;
     private AtomController atomController;
     private RDCGUI rdcGUI = null;
@@ -110,8 +112,11 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem sequenceMenuItem = new MenuItem("Sequence Viewer...");
         sequenceMenuItem.setOnAction(this::showSequence);
 
-        MenuItem molMenuItem = new MenuItem("Viewer...");
+        MenuItem molMenuItem = new MenuItem("Molecule Viewer...");
         molMenuItem.setOnAction(e -> showMols());
+
+        MenuItem rnaMenuItem = new MenuItem("Nucleic Acid Viewer...");
+        rnaMenuItem.setOnAction(e -> showRNA());
 
 
         Menu molConstraintsMenu = new Menu("Constraints");
@@ -128,7 +133,7 @@ public class MoleculeMenuActions extends MenuActions {
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
+                sequenceMenuItem, molMenuItem, rnaMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
     }
 
     void clearExisting() {
@@ -139,7 +144,9 @@ public class MoleculeMenuActions extends MenuActions {
             }
             if (molController != null) {
                 molController.removeAll();
-                molController.clearSS();
+            }
+            if (rnassViewController != null) {
+                rnassViewController.clearSS();
             }
         }
     }
@@ -151,6 +158,18 @@ public class MoleculeMenuActions extends MenuActions {
         }
         molController.getStage().show();
         molController.getStage().toFront();
+    }
+
+    @FXML
+    public void showRNA() {
+        if (rnassViewController == null) {
+            if (molController == null) {
+                molController = MolSceneController.create();
+            }
+            rnassViewController = RNASSViewController.create(molController);
+        }
+        rnassViewController.getStage().show();
+        rnassViewController.getStage().toFront();
     }
 
 
@@ -226,7 +245,7 @@ public class MoleculeMenuActions extends MenuActions {
         }
     }
 
-    public void writePDB()  {
+    public void writePDB() {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
@@ -290,7 +309,22 @@ public class MoleculeMenuActions extends MenuActions {
             if (type != null) {
                 Molecule molecule = readMolecule(file, type);
                 if (molecule != null) {
-                    showMols();
+                    if (type.equals("seq")) {
+                        boolean nucleicAcid = !molecule.getPolymers().isEmpty();
+                        for (Polymer polymer : molecule.getPolymers()) {
+                            if (!(polymer.isRNA() || polymer.isDNA())) {
+                                nucleicAcid = false;
+                                break;
+                            }
+                        }
+                        if (nucleicAcid) {
+                            showRNA();
+                        } else {
+                            showSequence(null);
+                        }
+                    } else {
+                        showMols();
+                    }
                     resetAtomController();
                 }
             }
@@ -319,7 +353,7 @@ public class MoleculeMenuActions extends MenuActions {
                     }
                     case "pdbLigand" -> {
                         molecule = Molecule.getActive();
-                        PDBFile.readResidue(file.toString(), null, molecule,null);
+                        PDBFile.readResidue(file.toString(), null, molecule, null);
                         molecule.updateAtomArray();
                     }
                     case "sdf", "mol" -> {
@@ -445,6 +479,7 @@ public class MoleculeMenuActions extends MenuActions {
     public record Renumbering(Polymer polymer, int offset, boolean updateResidues, boolean updatePeaks) {
 
     }
+
     public static Optional<Renumbering> renumberingDialog() {
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
@@ -498,6 +533,6 @@ public class MoleculeMenuActions extends MenuActions {
             return null;
         });
 
-        return  dialog.showAndWait();
+        return dialog.showAndWait();
     }
 }

@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.concurrent.Task;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -23,20 +24,25 @@ public class GraphMatcherGUI {
     ResSeqMatcher resSeqMatcher;
     RunAbout runAbout;
     Task<Double> task;
-    TextField progressField = new TextField();
     Button assignButton;
     Button stopButton;
-    SimpleIntegerProperty popSizeProp = new SimpleIntegerProperty(500);
+    SimpleIntegerProperty popSizeProp = new SimpleIntegerProperty(1000);
     SimpleIntegerProperty nGenProp = new SimpleIntegerProperty(2000);
     SimpleIntegerProperty eliteNumberProp = new SimpleIntegerProperty(100);
     SimpleIntegerProperty maxPhenoTypeAgeProp = new SimpleIntegerProperty(50);
     SimpleIntegerProperty steadyLimitProp = new SimpleIntegerProperty(200);
-    SimpleDoubleProperty mutationRateProp = new SimpleDoubleProperty(0.1);
+    SimpleDoubleProperty mutationRateProp = new SimpleDoubleProperty(0.7);
     SimpleBooleanProperty mutationProfileProp = new SimpleBooleanProperty(true);
-    SimpleDoubleProperty crossOverRateProp = new SimpleDoubleProperty(0.1);
+    SimpleDoubleProperty crossOverRateProp = new SimpleDoubleProperty(0.7);
     SimpleDoubleProperty sdevRatioProp = new SimpleDoubleProperty(1.5);
     SimpleIntegerProperty nTriesProp = new SimpleIntegerProperty(25);
+    SimpleDoubleProperty fractionMatchedProp = new SimpleDoubleProperty(0.5);
 
+    Label statusLabel = new Label();
+    Label tryLabel = new Label();
+    Label genLabel = new Label();
+    Label currentLabel = new Label();
+    Label bestLabel = new Label();
 
 
     double best = 0.0;
@@ -45,7 +51,7 @@ public class GraphMatcherGUI {
         this.runAboutGUI = runAboutGUI;
         this.resSeqMatcher = new ResSeqMatcher();
         this.runAbout = runAbout;
-        this.resSeqMatcher.setUpdater((d) -> updateProgress(d));
+        this.resSeqMatcher.setUpdater((d,i) -> updateProgress(d, i));
         build();
     }
 
@@ -72,9 +78,30 @@ public class GraphMatcherGUI {
         resetButton.setOnAction(e -> resetMatcher());
 
         toolBar.getItems().addAll(matchButton, stopButton, detailButton, resetButton, assignButton);
-        progressField.setPrefWidth(200);
+
+        int fieldWidth  = 100;
+        statusLabel.setPrefWidth(320);
+        tryLabel.setPrefWidth(fieldWidth);
+        genLabel.setPrefWidth(fieldWidth);
+        bestLabel.setPrefWidth(fieldWidth);
+        currentLabel.setPrefWidth(fieldWidth);
         borderPane.setTop(toolBar);
-        borderPane.setBottom(progressField);
+        GridPane gridPane = new GridPane(20, 10);
+        Insets insets = new Insets(5,20,5,20);
+        gridPane.setPadding(insets);
+
+        gridPane.add(new Label("Status"), 0, 0);
+        gridPane.add(statusLabel, 1, 0, 3, 1);
+        gridPane.add(new Label("Try"),0, 1);
+        gridPane.add(tryLabel, 1, 1);
+        gridPane.add(new Label("Gen"), 2, 1);
+        gridPane.add(genLabel, 3, 1);
+        gridPane.add(new Label("Current"),0, 2);
+        gridPane.add(currentLabel, 1, 2);
+        gridPane.add(new Label("Best"), 2, 2);
+        gridPane.add(bestLabel, 3, 2);
+
+        borderPane.setBottom(gridPane);
         borderPane.setCenter(makeParPane());
 
         stage.setTitle("Graph Matcher");
@@ -84,29 +111,45 @@ public class GraphMatcherGUI {
 
     Pane makeParPane() {
         GridPane gridPane = new GridPane();
+        Insets insets = new Insets(5,20,5,20);
+        gridPane.setPadding(insets);
+
         int row = 0;
         gridPane.add(new Label("N Tries"),0, row);
         gridPane.add(GUIUtils.getIntegerTextField(nTriesProp), 1, row++);
+
         gridPane.add(new Label("Population Size"),0, row);
         gridPane.add(GUIUtils.getIntegerTextField(popSizeProp), 1, row++);
+
         gridPane.add(new Label("N Generations"),0, row);
         gridPane.add(GUIUtils.getIntegerTextField(nGenProp), 1, row++);
-        gridPane.add(new Label("Max Age"),0, row);
-        gridPane.add(GUIUtils.getIntegerTextField(maxPhenoTypeAgeProp), 1, row++);
-        gridPane.add(new Label("Elite Number"),0, row);
-        gridPane.add(GUIUtils.getIntegerTextField(eliteNumberProp), 1, row++);
-        gridPane.add(new Label("N Steady"),0, row);
-        gridPane.add(GUIUtils.getIntegerTextField(steadyLimitProp), 1, row++);
+
         gridPane.add(new Label("Mutation Rate"),0, row);
         gridPane.add(GUIUtils.getDoubleTextField(mutationRateProp), 1, row++);
+
         gridPane.add(new Label("Use Mutation Profile"),0, row);
         CheckBox checkBox = new CheckBox();
         checkBox.selectedProperty().bindBidirectional(mutationProfileProp);
         gridPane.add(checkBox, 1, row++);
+
         gridPane.add(new Label("Crossover Rate"),0, row);
         gridPane.add(GUIUtils.getDoubleTextField(crossOverRateProp), 1, row++);
+
+        gridPane.add(new Label("Fraction Match Requirement"),0, row);
+        gridPane.add(GUIUtils.getDoubleTextField(fractionMatchedProp), 1, row++);
+
+        gridPane.add(new Label("N Steady"),0, row);
+        gridPane.add(GUIUtils.getIntegerTextField(steadyLimitProp), 1, row++);
+
         gridPane.add(new Label("SDev Ratio"),0, row);
         gridPane.add(GUIUtils.getDoubleTextField(sdevRatioProp), 1, row++);
+
+        gridPane.add(new Label("Max Age"),0, row);
+        gridPane.add(GUIUtils.getIntegerTextField(maxPhenoTypeAgeProp), 1, row++);
+
+        gridPane.add(new Label("Elite Number"),0, row);
+        gridPane.add(GUIUtils.getIntegerTextField(eliteNumberProp), 1, row++);
+
         return gridPane;
     }
     void stop() {
@@ -116,7 +159,7 @@ public class GraphMatcherGUI {
 
     void resetMatcher() {
         resSeqMatcher = new ResSeqMatcher();
-        resSeqMatcher.setUpdater((d) -> updateProgress(d));
+        resSeqMatcher.setUpdater((d,i) -> updateProgress(d, i));
     }
     void dumpResSeqMatcher() {
         SpinSystem currentSpinSystem = runAboutGUI.getCurrentSpinSystem();
@@ -132,16 +175,20 @@ public class GraphMatcherGUI {
 
     void assignFragments() {
         if (resSeqMatcher != null) {
-            resSeqMatcher.assignMatches(runAbout.getSpinSystems());
+            resSeqMatcher.assignMatches(runAbout.getSpinSystems(), fractionMatchedProp.getValue());
             runAboutGUI.gotoSpinSystems();
             runAboutGUI.updateClusterCanvas();
         }
     }
 
-    synchronized void updateProgress(SeqGeneticAlgorithm.Progress d) {
+    synchronized void updateProgress(SeqGeneticAlgorithm.Progress d, int iTry) {
         best = Math.min(d.best(), best);
         Fx.runOnFxThread(() -> {
-            progressField.setText(String.format("n %5d current %8.1f best %8.1f", d.generation(), d.best(), best));
+            statusLabel.setText("Evolving");
+            tryLabel.setText(String.valueOf(iTry + 1));
+            genLabel.setText(String.valueOf(d.generation()));
+            currentLabel.setText(String.format("%8.1f", d.best()));
+            bestLabel.setText(String.format("%8.1f", best));
         });
 
     }
@@ -149,12 +196,12 @@ public class GraphMatcherGUI {
         best = 0.0;
         assignButton.setDisable(true);
         stopButton.setDisable(false);
-        progressField.setText("Initializing");
+        statusLabel.setText("Initializing");
         resSeqMatcher.compareMatrix(runAbout.getSpinSystems(), sdevRatioProp.get());
 
             SeqGenParameters seqGenParameters = new SeqGenParameters(popSizeProp.get(), nGenProp.get(),
                     mutationRateProp.get(),mutationProfileProp.get(), crossOverRateProp.get(),eliteNumberProp.get(),maxPhenoTypeAgeProp.get(),
-                    steadyLimitProp.get());
+                    steadyLimitProp.get(), fractionMatchedProp.get());
 
         task = new Task<>() {
             @Override
@@ -177,6 +224,7 @@ public class GraphMatcherGUI {
             Fx.runOnFxThread(() -> {
                 assignButton.setDisable(false);
                 stopButton.setDisable(true);
+                statusLabel.setText("Matched");
             });
         });
 

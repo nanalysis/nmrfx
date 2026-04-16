@@ -83,7 +83,7 @@ public class ChartProperties implements PublicPropertyContainer {
         integralLowPos = add(new SimpleDoubleProperty(polyChart, "integralLowPos", 0.8));
         integralHighPos = add(new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95));
         integralFontSize = add(new SimpleIntegerProperty(polyChart, "integralFontSize", PreferencesController.getLabelFontSize()));
-        titles = add(new SimpleBooleanProperty(polyChart, "titles", true));
+        titles = add(new SimpleBooleanProperty(polyChart, "titles", PreferencesController.getDisplayTitles()));
         parameters = add(new SimpleBooleanProperty(polyChart, "parameters", false));
         aspectRatio = add(new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0));
         aspect = add(new SimpleBooleanProperty(polyChart, "aspect", false));

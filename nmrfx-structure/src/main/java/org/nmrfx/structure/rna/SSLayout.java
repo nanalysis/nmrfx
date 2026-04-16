@@ -61,6 +61,7 @@ public class SSLayout implements MultivariateFunction {
         public boolean isPaired() {
             return end >= 0 && level == 0;
         }
+
         public boolean isPairedAnyLevel() {
             return end >= 0;
         }
@@ -154,7 +155,7 @@ public class SSLayout implements MultivariateFunction {
                 for (Residue residue : polymer.getResidues()) {
                     String resName = residue.getName();
                     if (resName.length() > 1) {
-                        resName = resName.substring(1,2);
+                        resName = resName.substring(1, 2);
                     } else {
                         resName = resName.substring(0, 1);
                     }
@@ -381,7 +382,7 @@ public class SSLayout implements MultivariateFunction {
             if (nSet >= nNuc) {
                 break;
             }
-            if ((basePairRecords[i + 1].isPaired()) && (basePairRecords[j - 1].isPaired()) && (basePairRecords[i+1].end == (j - 1))) {
+            if ((basePairRecords[i + 1].isPaired()) && (basePairRecords[j - 1].isPaired()) && (basePairRecords[i + 1].end == (j - 1))) {
                 if (coordsSet[i + 1]) {
                     break;
                 }
@@ -830,8 +831,8 @@ public class SSLayout implements MultivariateFunction {
     }
 
     public void interpVienna(String vienna, List<Residue> res) {
-        String leftBrackets = "({[";
-        String rightBrackets = ")}]";
+        String leftBrackets = "([{<";
+        String rightBrackets = ")]}>";
         int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
         int[] levels = new int[leftBrackets.length()];
         for (int i = 0; i < vienna.length(); i++) {
@@ -860,6 +861,38 @@ public class SSLayout implements MultivariateFunction {
                 break;
             }
         }
+    }
+
+    public static int[] viennaToPairs(String vienna) {
+        String leftBrackets = "([{<";
+        String rightBrackets = ")]}>";
+        int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
+        int[] levels = new int[leftBrackets.length()];
+        int[] pairs = new int[vienna.length()];
+        Arrays.fill(pairs, -1);
+        for (int i = 0; i < vienna.length(); i++) {
+            char curChar = vienna.charAt(i);
+            try {
+                boolean dot = (curChar == '.') || (Character.isLetter(curChar));
+                if (!dot) {
+                    int leftIndex = leftBrackets.indexOf(curChar);
+                    int rightIndex = rightBrackets.indexOf(curChar);
+                    if (leftIndex != -1) {
+                        levelMap[levels[leftIndex]][leftIndex] = i;
+                        levels[leftIndex]++;
+                    } else if (rightIndex != -1) {
+                        levels[rightIndex]--;
+                        int start = levelMap[levels[rightIndex]][rightIndex];
+                        pairs[start] = i;
+                        pairs[i] = start;
+                    }
+                }
+            } catch (ArrayIndexOutOfBoundsException aiE) {
+                log.warn(aiE.getMessage(), aiE);
+                break;
+            }
+        }
+        return pairs;
     }
 
     public double[] getValues() {

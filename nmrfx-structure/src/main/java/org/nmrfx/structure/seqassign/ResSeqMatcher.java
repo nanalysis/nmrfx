@@ -11,6 +11,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ResSeqMatcher {
@@ -22,6 +23,7 @@ public class ResSeqMatcher {
     List<List<Integer>> sysResidueList = new ArrayList<>();
 
     Matching bestMatching = null;
+    double[] fractionMatched = null;
 
 
     int nResidues;
@@ -35,11 +37,11 @@ public class ResSeqMatcher {
     Random random = new Random();
     PartionedGraph paritionedGraph = null;
     SeqGeneticAlgorithm seqGeneticAlgorithm;
-    Consumer<SeqGeneticAlgorithm.Progress> updateConsumer;
+    BiConsumer<SeqGeneticAlgorithm.Progress, Integer> updateConsumer;
 
     AtomicBoolean stopWork = new AtomicBoolean(false);
 
-    public void setUpdater(Consumer<SeqGeneticAlgorithm.Progress> consumer) {
+    public void setUpdater(BiConsumer<SeqGeneticAlgorithm.Progress, Integer> consumer) {
         this.updateConsumer = consumer;
     }
 
@@ -238,12 +240,11 @@ public class ResSeqMatcher {
             iSys++;
         }
         double score = matcher(sysToRes, resToSys);
-        System.out.println("global score " + score);
     }
 
-    void updateProgress(SeqGeneticAlgorithm.Progress value) {
+    void updateProgress(SeqGeneticAlgorithm.Progress value, int iTry) {
         if (updateConsumer != null) {
-            updateConsumer.accept(value);
+            updateConsumer.accept(value, iTry);
         }
     }
     private void assignFragment(SpinSystem startSys, int nRes, Residue startResidue, double score) {
@@ -258,7 +259,7 @@ public class ResSeqMatcher {
 
     }
 
-    public void assignMatches(SpinSystems spinSystems) {
+    public void assignMatches(SpinSystems spinSystems, double fractionMatchLimit) {
         for (SpinSystem spinSystem : spinSystems.getSystems()) {
             spinSystem.confirmP().ifPresent(spinSystemMatch -> spinSystem.unconfirm(spinSystemMatch, true));
             spinSystem.confirmS().ifPresent(spinSystemMatch -> spinSystem.unconfirm(spinSystemMatch, false));
@@ -267,8 +268,7 @@ public class ResSeqMatcher {
         Arrays.fill(residues, -1);
         for (int i = 0; i < nSys; i++) {
             int iRes = bestMatching.matches[i];
-            System.out.println(" isys " + i + " res " + iRes);
-            if ((iRes >= 0) && (iRes < nResidues)) {
+            if ((iRes >= 0) && (iRes < nResidues) && (fractionMatched[i] > fractionMatchLimit)) {
                 residues[iRes] = i;
             }
         }
@@ -340,8 +340,8 @@ public class ResSeqMatcher {
         List<Matching> currentBestMatchings = new ArrayList<>();
         int nStart = 5;
         for (int i = 0; i < nStart; i++) {
-            Matching matching = runGraphGenetics(seqGenParameters, Collections.emptyList(), (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v));
-            System.out.println("matching " + matching.score);
+            final int iTry = i;
+            Matching matching = runGraphGenetics(seqGenParameters, Collections.emptyList(), (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v, iTry));
             matchings.add(matching);
             currentBestMatchings.add(matching);
             if ((bestMatching == null) || (matching.score < bestMatching.score)) {
@@ -350,8 +350,8 @@ public class ResSeqMatcher {
         }
         for (int i = 0; i < nTries-nStart; i++) {
            // List<Matching> useTheseMatchings = ((i %2) == 1) ? Collections.emptyList() : currentBestMatchings;
-            Matching matching = runGraphGenetics(seqGenParameters, currentBestMatchings, (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v));
-            System.out.println("matching " + matching.score);
+            final int iTry = i + nStart;
+            Matching matching = runGraphGenetics(seqGenParameters, currentBestMatchings, (v) -> updateProgress((SeqGeneticAlgorithm.Progress) v, iTry));
             matchings.add(matching);
             currentBestMatchings.add(matching);
             if ((bestMatching == null) || (matching.score < bestMatching.score)) {
@@ -363,7 +363,6 @@ public class ResSeqMatcher {
         }
         int[] count = new int[nSys];
         int[] bestMatches = bestMatching.matches;
-        System.out.println(bestMatching.score);
         for (int i = 0; i < matchings.size(); i++) {
             int[] current = matchings.get(i).matches;
             for (int j = 0; j < count.length; j++) {
@@ -371,6 +370,10 @@ public class ResSeqMatcher {
                     count[j]++;
                 }
             }
+        }
+        fractionMatched = new double[bestMatches.length];
+        for (int i = 0;i<count.length;i++) {
+            fractionMatched[i] = (double) count[i] / matchings.size();
         }
         return bestMatching.score;
     }
@@ -403,7 +406,6 @@ public class ResSeqMatcher {
                 initMatches.set(replaceList.get(iTry), matching);
             }
             ranFrac = 0.1;
-            System.out.println("try " + iTry + " " + score);
         }
 
     }
