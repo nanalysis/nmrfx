@@ -583,7 +583,10 @@ public class AtomController implements Initializable, StageBasedController, Free
             Path path = file.toPath();
             Molecule molecule = Molecule.getActive();
             if (molecule != null) {
-                int iSet = getPPMSets(refMode).size() + 1;
+                Integer iSet = (Integer) GUIUtils.choice(List.of(0,1,2,3,4,5),"Set:", Integer.valueOf(0));
+                if (iSet == null) {
+                    return;
+                }
                 if (file.getName().endsWith(".str")) {
                     if (refMode) {
                         iSet = -1 - iSet;
@@ -598,7 +601,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                     PPMFiles.readPPM(molecule, path, iSet, refMode);
                 }
             }
-            atomTableView.refresh();
+            refreshAtomTable();
         }
     }
 

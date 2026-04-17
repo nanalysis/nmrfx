@@ -76,7 +76,7 @@ public class FDSignalOpt implements MultivariateFunction {
                 parameters[iSig * 2 + 1] = signal.frequency;
                 parameters[iSig * 2 + 2] = signal.amplitude;
                 this.signals.add(new Signal(signal));
-                sumWidth += signal.decay;
+                sumWidth += signal.decayRate;
                 iSig++;
             }
             parameters[0] = sumWidth / signals.size();
@@ -89,7 +89,7 @@ public class FDSignalOpt implements MultivariateFunction {
                 parMap[i + 2] = i + 2;
                 parameters[i++] = signal.frequency;
                 parameters[i++] = signal.amplitude;
-                parameters[i++] = signal.decay;
+                parameters[i++] = signal.decayRate;
                 this.signals.add(new Signal(signal));
             }
         }
@@ -178,7 +178,7 @@ public class FDSignalOpt implements MultivariateFunction {
         for (Signal signal : signals) {
             signal.frequency = parameters[parMap[i++]];
             signal.amplitude = parameters[parMap[i++]];
-            signal.decay = parameters[parMap[i++]];
+            signal.decayRate = parameters[parMap[i++]];
         }
     }
 
