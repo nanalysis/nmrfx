@@ -23,6 +23,7 @@
 package org.nmrfx.processor.math;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.interpolation.AkimaSplineInterpolator;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -734,7 +735,6 @@ public class Vec extends VecBase {
     public void genFID(List<Signal> signals) {
         for (Signal signal : signals) {
             double freqHz = signal.getFrequencyHz(getSF(), getRefValue());
-            System.out.println(signal.frequency + " " + freqHz + " " + getSF() + " " + getRefValue() + " " + getSW());
             genSignalHz(freqHz, signal.lw(), signal.amplitude, 0.0);
         }
     }
@@ -3315,6 +3315,28 @@ public class Vec extends VecBase {
         return xyValsFinal;
     }
 
+    public Vec interpolate(double newRef, double swPPM, int n) {
+        double[] x = new double[getSize()];
+        double[] y = new double[getSize()];
+        for (int i=0;i<x.length;i++) {
+            x[x.length - i - 1] = pointToPPM(i);
+            y[x.length - i - 1] = getReal(i);
+        }
+        double first = x[0];
+        double last = x[x.length - 1];
+        var interpolator = new AkimaSplineInterpolator();
+        var interpPoly = interpolator.interpolate(x, y);
+        resize(n, false);
+        double newSW = swPPM * getSF();
+        setSW(newSW);
+        setRefValue(newRef);
+        for (int i=0;i<n;i++) {
+            double xVal = pointToPPM(i);
+            double newY = xVal >= first && xVal <= last ? interpPoly.value(xVal) : 0.0;
+            setReal(i,newY);
+        }
+        return this;
+    }
     /**
      * Reference deconvolution
      *
