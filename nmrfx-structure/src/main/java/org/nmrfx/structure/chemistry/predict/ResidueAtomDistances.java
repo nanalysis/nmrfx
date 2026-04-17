@@ -88,7 +88,6 @@ public class ResidueAtomDistances {
                 if (atomA != atomB) {
                     Point3 pointB = atomB.getPoint(iStruct);
                     double distance = pointA.distance(pointB);
-                    //distance = (distance - 3.3) / 1.8;
                     if (distance < limit) {
                         var path = paths.getPath(atomA, atomB);
                         List<Atom> pathAtoms = path.getVertexList();

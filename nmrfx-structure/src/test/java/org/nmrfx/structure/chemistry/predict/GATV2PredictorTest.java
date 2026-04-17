@@ -22,11 +22,15 @@ public class GATV2PredictorTest {
         compound.molecule.updateAtomArray();
         MoleculeFactory.setActive(compound.molecule);
         Atom atomI = compound.molecule.getAtomList().getFirst();
-        for (Object obj : atomI.getAtomCouplingPairs()) {
-            AtomCouplingPair pair = (AtomCouplingPair) obj;
-            System.out.println(atomI.getName() + " " + pair.atom2().getName() + " " + pair.coupling());
-        }
         gatv2Predictor.predict(compound, -1, GATV2Predictor.SolventCorr.Chloroform);
+        for (Atom atom : compound.molecule.getAtomList()) {
+            double ppm = atom.getPPM();
+            if (atom.getRefPPM() != null) {
+                double ref = atom.getRefPPM();
+                double delta = ppm - ref;
+                System.out.println(ppm + " " + ref + " " + delta);
+            }
+        }
         for (Object obj : atomI.getPredictedCouplingPairs()) {
             AtomCouplingPair pair = (AtomCouplingPair) obj;
             System.out.println(pair.couplingName());
