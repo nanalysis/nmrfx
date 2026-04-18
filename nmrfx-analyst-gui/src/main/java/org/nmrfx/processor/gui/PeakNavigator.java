@@ -144,6 +144,7 @@ public class PeakNavigator implements PeakListener {
             } else {
                 this.peakListMenuButton = peakListMenuButton;
             }
+            peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
             updatePeakListMenu();
         } else {
             parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());
@@ -212,12 +213,11 @@ public class PeakNavigator implements PeakListener {
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (PeakList peakList1 : ProjectBase.getActive().getPeakLists()) {
-            String peakListName = peakList1.getName();
+        ProjectBase.getActive().getPeakLists().stream().map(PeakList::getName).sorted().forEach(peakListName -> {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> PeakNavigator.this.setPeakList(peakListName));
             peakListMenuButton.getItems().add(menuItem);
-        }
+        });
     }
 
     public void setPeakList() {
