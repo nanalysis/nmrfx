@@ -184,6 +184,11 @@ public class SpinSystems {
         return sumMap;
     }
 
+    public void createSpinSystem(Peak newRoot) {
+        SpinSystem newSys = new SpinSystem(newRoot, this);
+        add(newSys);
+    }
+
     public void addPeak(SpinSystem spinSys, Peak pkB) {
         if ((sums == null) || (sums.get(pkB.getPeakList()).length != spinSys.rootPeak.getPeakList().size())) {
             sums = calcNormalization(runAbout.getRefList(), runAbout.getPeakLists());
@@ -497,6 +502,15 @@ public class SpinSystems {
                     return Optional.of(spinSys);
                 }
             }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<SpinSystem> findSpinSystemForRoot(Peak peak) {
+        for (var spinSys : systems) {
+                if (peak == spinSys.getRootPeak()) {
+                    return Optional.of(spinSys);
+                }
         }
         return Optional.empty();
     }

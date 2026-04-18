@@ -759,6 +759,10 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         moveItem.setOnAction(e -> moveToThisCluster());
         spinSysMenuButton.getItems().add(moveItem);
 
+        MenuItem addSpinSystem = new MenuItem("Add SpinSystem");
+        addSpinSystem.setOnAction(e -> addSpinSystem());
+        spinSysMenuButton.getItems().add(addSpinSystem);
+
         MenuItem analyzeItem = new MenuItem("Analyze");
         analyzeItem.setOnAction(e -> analyzeSystem());
         spinSysMenuButton.getItems().add(analyzeItem);
@@ -2789,17 +2793,19 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void alignCenters() {
-        List<String> dimNames = new ArrayList<>();
-        for (var sDim : refListObj.get().getSpectralDims()) {
-            if (sDim.getPattern().equalsIgnoreCase("i.h") || sDim.getPattern().equalsIgnoreCase("i.n")) {
-                dimNames.add(sDim.getDimName());
+        if ((runAbout.spinSystemCount() == 0) || GUIUtils.affirm("Align Peaks, Warning this will unlink spin systems!!")) {
+            List<String> dimNames = new ArrayList<>();
+            for (var sDim : refListObj.get().getSpectralDims()) {
+                if (sDim.getPattern().equalsIgnoreCase("i.h") || sDim.getPattern().equalsIgnoreCase("i.n")) {
+                    dimNames.add(sDim.getDimName());
+                }
             }
-        }
-        if (dimNames.size() != 2) {
-            GUIUtils.warn("Alignment", "Can't find H and N dims");
-        } else {
-            List<PeakList> movingLists = runAbout.getPeakLists();
-            PeakListAlign.alignCenters(refListObj.get(), dimNames, movingLists);
+            if (dimNames.size() != 2) {
+                GUIUtils.warn("Alignment", "Can't find H and N dims");
+            } else {
+                List<PeakList> movingLists = runAbout.getPeakLists();
+                PeakListAlign.alignCenters(refListObj.get(), dimNames, movingLists);
+            }
         }
     }
 
@@ -2858,6 +2864,27 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         var spinSys = currentSpinSystem;
         spinSys.split();
         controller.draw();
+    }
+
+    void addSpinSystem() {
+        Peak currentPeak = getPeak();
+        if (RunAboutGUI.this.useSpinSystem) {
+            GUIUtils.warn("Add Spin System Error", "Must be in peak list (not spinsystems) mode");
+            return;
+        }
+        if (currentPeak == null) {
+            GUIUtils.warn("Add Spin System Error", "No current peak");
+            return;
+        }
+        if (currentPeak.getPeakList() != runAbout.getRefList()) {
+            GUIUtils.warn("Add Spin System Error", "Peak must be in reference list (" + runAbout.getRefList().getName() + ")");
+            return;
+        }
+        if (runAbout.getSpinSystems().findSpinSystemForRoot(currentPeak).isPresent()) {
+            GUIUtils.warn("Add Spin System Error", "Peak already in spin system");
+            return;
+        }
+        runAbout.getSpinSystems().createSpinSystem(currentPeak);
     }
 
     void moveToThisCluster() {

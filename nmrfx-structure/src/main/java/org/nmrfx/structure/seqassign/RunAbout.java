@@ -77,6 +77,10 @@ public class RunAbout implements SaveframeWriter {
         return spinSystems;
     }
 
+    public int spinSystemCount() {
+        return spinSystems == null ? 0 : spinSystems.getSize();
+    }
+
     public Optional<DatasetBase> getDataset(String key) {
         Optional<DatasetBase> result;
         result = datasetMap.containsKey(key)
