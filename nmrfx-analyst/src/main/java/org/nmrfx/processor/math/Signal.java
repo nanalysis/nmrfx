@@ -25,25 +25,35 @@ public class Signal implements Comparable<Signal> {
     public double amplitude = 0.0;
     public double phase = 0.0;
     public double frequency = 0.0;
-    public double decay = 0.0;
+    public double decayRate = 0.0;
 
-    public Signal(double amplitude, double phase, double frequency, double decay) {
+    public Signal(double amplitude, double phase, double frequency, double decayRate) {
         this.amplitude = amplitude;
         this.phase = phase;
         this.frequency = frequency;
-        this.decay = decay;
+        this.decayRate = decayRate;
+    }
+    public Signal(double amplitude, double frequency, double decayRate) {
+        this.amplitude = amplitude;
+        this.phase = 0.0;
+        this.frequency = frequency;
+        this.decayRate = decayRate;
+    }
+
+    public double lw() {
+        return decayRate / Math.PI;
     }
 
     public Signal(Signal signal) {
         this.amplitude = signal.amplitude;
         this.phase = signal.phase;
         this.frequency = signal.frequency;
-        this.decay = signal.decay;
+        this.decayRate = signal.decayRate;
     }
 
     @Override
     public String toString() {
-        String result = String.format("%8.4f %8.4f %8.4f %8.4f", amplitude, phase, frequency, decay);
+        String result = String.format("%8.4f %8.4f %8.4f %8.4f", amplitude, phase, frequency, decayRate);
         return result;
     }
 
