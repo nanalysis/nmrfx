@@ -44,6 +44,10 @@ public class Signal implements Comparable<Signal> {
         return decayRate / Math.PI;
     }
 
+    public double getFrequencyHz(double sf, double ref) {
+        return (ref - frequency) * sf;
+    }
+
     public Signal(Signal signal) {
         this.amplitude = signal.amplitude;
         this.phase = signal.phase;
