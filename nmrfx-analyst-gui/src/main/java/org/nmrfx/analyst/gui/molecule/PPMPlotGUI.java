@@ -14,6 +14,8 @@ public class PPMPlotGUI extends TablePlotGUI {
         super(atomTableView, null, false);
         setChartTypeChoice(Arrays.asList("ScatterPlot", "BarChart", "BarChart-Euclidean"));
         skipColumns = Arrays.asList("Index", "Entity", "Res", "Atom");
+        xZeroIncluded(false);
+        yZeroIncluded(false);
     }
 
 @Override

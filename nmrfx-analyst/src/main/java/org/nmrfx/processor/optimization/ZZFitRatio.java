@@ -38,8 +38,8 @@ public class ZZFitRatio extends FitEquation {
         double median = dStat.getPercentile(50);
 
         double[] start = {median};
-        double[] lower = {0.0};
-        double[] upper = {median * 5.0};
+        double[] lower = {median * 0.75};
+        double[] upper = {median * 1.25};
         return new Guesses(start, lower, upper);
     }
 
