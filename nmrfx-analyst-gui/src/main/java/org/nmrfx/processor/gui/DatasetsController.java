@@ -195,7 +195,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         }
     }
 
-    public static class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Number> {
+    public class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Number> {
 
         public ValueItemDoubleFieldTableCell() {
             super(new StringConverter<>() {
@@ -220,10 +220,13 @@ public class DatasetsController implements Initializable, StageBasedController, 
             super.commitEdit(newValue);
             getTableRow().getItem().setValue(newValue.doubleValue());
 
-            TableView<ValueItem> table = getTableView();
             TableColumn<ValueItem, Number> column = getTableColumn();
-            int nextRow = getIndex() + 1;
+            if ("Value".equals(column.getText())) {
+                saveValueTable();
+            }
 
+            int nextRow = getIndex() + 1;
+            TableView<ValueItem> table = getTableView();
             if (nextRow < table.getItems().size()) {
                 Platform.runLater(() -> {
                     table.getSelectionModel().select(nextRow, column);
