@@ -314,8 +314,9 @@ public class EnergyCoords {
                 double rMin = iProp.getR();
                 double eMin = Math.abs(iProp.getE());
                 contactRadii[i] = useFF ? RSCALE * rMin / 2.0 : rh1;
-                aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
-                bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
+                double s = EnergyFFPairs.calcS(1.0, 0.25, 2.0, rMin * rMin);
+                aValues[i] = 2.0 * eMin * Math.pow(1.0 / s, 9);
+                bValues[i] = 3.0 * eMin * Math.pow(1.0 / s, 6);
                 cValues[i] = atom1.getCharge();
                 double lambda = 3.5; // fixme should use 6.0 for ionic side chains
                 double sigma2 = rMin; // fixme use sigma
