@@ -419,7 +419,12 @@ public class BrukerData implements NMRData {
         if ((parMap == null) || (parMap.get(parname) == null)) {
             return null;
         } else {
-            return Double.parseDouble(parMap.get(parname));
+            try {
+                return Double.parseDouble(parMap.get(parname));
+            } catch (NumberFormatException numberFormatException) {
+                log.warn("Failure in getParDouble for " + parname + " " + parMap.get(parname), numberFormatException);
+                return 0.0;
+            }
         }
     }
 

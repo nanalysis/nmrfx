@@ -26,6 +26,7 @@ package org.nmrfx.analyst.gui.peaks;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -401,8 +402,10 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 stage.setTitle("Peaks: ");
             } else {
                 ObservableList<Peak> peaks = FXCollections.observableList(peakList.peaks());
+                SortedList<Peak> sorted = new SortedList<>(peaks);
+                sorted.comparatorProperty().bind(tableView.comparatorProperty());
                 updateColumns(peakList.getNDim());
-                tableView.setItems(peaks);
+                tableView.setItems(sorted);
                 stage.setTitle("Peaks: " + peakList.getName());
                 peakList.registerPeakChangeListener(this);
             }
