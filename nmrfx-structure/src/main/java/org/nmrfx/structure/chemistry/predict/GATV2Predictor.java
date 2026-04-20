@@ -23,7 +23,7 @@ import java.util.Map;
 public class GATV2Predictor {
     static OrtSession session = null;
     static OrtEnvironment env = null;
-    static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 7, 1, 16, 9, 17, 35, 15));
+    static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 1, 7, 17, 16, 9, 15, 35));
 
     Map<Integer, Double[]> normValues = Map.of(
             1, new Double[]{3.4, 4.9},
@@ -81,7 +81,6 @@ public class GATV2Predictor {
         DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(compound, 6, -1, -1);
         ResidueAtomDistances rad = new ResidueAtomDistances();
         rad.generate(compound, paths, 5.0, 0);
-        rad.dumpGraphs("/Users/ekoag/gatv2/nodes.txt","/Users/ekoag/gatv2/edges.txt");
         return rad;
     }
 

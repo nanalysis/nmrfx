@@ -33,7 +33,6 @@ public class GATV2PredictorTest {
         }
         for (Object obj : atomI.getPredictedCouplingPairs()) {
             AtomCouplingPair pair = (AtomCouplingPair) obj;
-            System.out.println(pair.couplingName());
             if (atomI.getAtomCouplingPair(pair.atom2()).isPresent()) {
                 double actual= atomI.getAtomCouplingPair(pair.atom2()).get().coupling();
                 System.out.println(atomI.getName() + " " + pair.atom2().getName() + " " + pair.coupling() + " " + actual);
