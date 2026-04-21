@@ -2484,7 +2484,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         predictedCouplingPairMap.put(atomCouplingPair.atom2(), atomCouplingPair);
     }
 
-    public Collection getAtomCouplingPairs() {
+    public Collection<AtomCouplingPair> getAtomCouplingPairs() {
         return atomAtomCouplingPairMap == null ? Collections.emptyList() : atomAtomCouplingPairMap.values();
     }
 
@@ -2501,7 +2501,7 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         return predictedCouplingPairMap == null ? Optional.empty() : Optional.ofNullable(predictedCouplingPairMap.get(atom));
     }
 
-    public Collection getPredictedCouplingPairs() {
+    public Collection<AtomCouplingPair> getPredictedCouplingPairs() {
         return predictedCouplingPairMap == null ? Collections.emptyList() : predictedCouplingPairMap.values();
     }
 

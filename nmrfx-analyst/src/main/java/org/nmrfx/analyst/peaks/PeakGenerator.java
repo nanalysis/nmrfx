@@ -237,28 +237,25 @@ public class PeakGenerator {
                         peakDim.setLineWidthHz(1.5f);
                         peak.setVolume1(intensity);
                         peakDim.setBoundsHz(3.0f);
-                        var jCouplings = jCouplingMap.get(atom);
-                        if ((jCouplings != null)) {
-                            List<Double> values = new ArrayList<>();
-                            List<Double> sin2thetas = new ArrayList<>();
-                            List<String> types = new ArrayList<>();
+                        List<Double> values = new ArrayList<>();
+                        List<Double> sin2thetas = new ArrayList<>();
+                        List<String> types = new ArrayList<>();
 
-                            var multiplet = peakDim.getMultiplet();
-                            for (var jCoupling : jCouplingMap.get(atom)) {
-                                int nAtoms = jCoupling.getNAtoms();
-                                double value;
-                                if (nAtoms == 3) {
-                                    value = 12.0;
-                                } else {
-                                    value = 5.0;
-                                }
-                                values.add(value);
-                                types.add("d");
-                                sin2thetas.add(0.0);
-                            }
-                            var couplingPattern = new CouplingPattern(multiplet, values, types, sin2thetas, 1.0);
-                            multiplet.setCoupling(couplingPattern);
-                        }
+                        var multiplet = peakDim.getMultiplet();
+                        var atomCouplingPairs = atom.getPredictedCouplingPairs();
+                        atomCouplingPairs.stream().filter(c -> c.atom1() == atom)
+                                .filter(c -> c.atom2().getAtomicNumber() == 1)
+                                .filter(c -> c.coupling() > 0.5)
+                                .sorted(Comparator.comparing(AtomCouplingPair::coupling).reversed())
+                                .forEach(coupling -> {
+                                    values.add(coupling.coupling());
+                                    types.add("d");
+                                    sin2thetas.add(0.0);
+
+                                });
+                        var couplingPattern = new CouplingPattern(multiplet, values, types, sin2thetas, 1.0);
+                        multiplet.setCoupling(couplingPattern);
+
                     }
 
                 });

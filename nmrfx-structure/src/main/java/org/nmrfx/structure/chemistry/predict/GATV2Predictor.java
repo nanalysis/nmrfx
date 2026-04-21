@@ -178,14 +178,18 @@ public class GATV2Predictor {
     private void setCoupling(Atom atomI, Atom atomJ, int pathLen, double value) {
         double jScale = pathLen > 1.1 ? 10.0 : 100.0;
         double pjValue = Math.round(value * jScale * 100.0) / 100.0;
-        String couplingName;
-        if (atomI.getAtomicNumber() < atomJ.getAtomicNumber()) {
-            couplingName = pathLen + "J" + atomI.getElementName() + atomJ.getElementName();
-        } else {
-            couplingName = pathLen + "J" + atomJ.getElementName() + atomI.getElementName();
+        if (Math.abs(pjValue) > 0.5) {
+            String couplingName;
+            if (atomI.getAtomicNumber() < atomJ.getAtomicNumber()) {
+                couplingName = pathLen + "J" + atomI.getElementName() + atomJ.getElementName();
+            } else {
+                couplingName = pathLen + "J" + atomJ.getElementName() + atomI.getElementName();
+            }
+            AtomCouplingPair atomCouplingPairIJ = new AtomCouplingPair(atomI, atomJ, pjValue, couplingName);
+            AtomCouplingPair atomCouplingPairJI= new AtomCouplingPair(atomJ, atomI, pjValue, couplingName);
+            atomI.addPredictedCouplingPair(atomCouplingPairIJ);
+            atomJ.addPredictedCouplingPair(atomCouplingPairJI);
         }
-        atomI.addPredictedCouplingPair(new AtomCouplingPair(atomI, atomJ, pjValue, couplingName));
-        atomJ.addPredictedCouplingPair(new AtomCouplingPair(atomJ, atomI, pjValue, couplingName));
 
     }
 
