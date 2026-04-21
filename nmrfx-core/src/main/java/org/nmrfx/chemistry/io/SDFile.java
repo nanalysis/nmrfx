@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
  */
 public class SDFile {
     private static final Logger log = LoggerFactory.getLogger(SDFile.class);
-    public static boolean IS_SPECIAL_BUTTS = false;
 
     private static final int MOLECULE = 0;
     private static final int ATOM = 1;
@@ -65,6 +64,7 @@ public class SDFile {
     boolean chiral = false;
     int structureNumber = 0;
     List<Atom> atomList = new ArrayList<>();
+    boolean specialButtsFormat = false;
 
     void getMolName(String fileName) {
         File file = new File(fileName);
@@ -382,7 +382,7 @@ public class SDFile {
                         if (valueName.equals("NMREDATA_ASSIGNMENT")) {
                             String[] rows = sBuilder.toString().split("\n");
                             HashMap<String, Double> shifts = new HashMap<>();
-                            if (IS_SPECIAL_BUTTS) {
+                            if (specialButtsFormat) {
                                 Arrays.stream(rows).forEach(row -> {
                                     String[] values = row.split(",");
                                     int atomIndex = Integer.parseInt(values[0].trim()) + 1;
@@ -413,7 +413,7 @@ public class SDFile {
                             }
                         } else if (valueName.equals("NMREDATA_J")) {
                             String[] rows = sBuilder.toString().split("\n");
-                            if (IS_SPECIAL_BUTTS) {
+                            if (specialButtsFormat) {
                                 Arrays.stream(rows).forEach(row -> {
                                     String[] values = row.split(",");
                                     int atomIndexI = Integer.parseInt(values[0].trim());
@@ -484,6 +484,9 @@ public class SDFile {
         }
         Compound compound = null;
         SDFile sdFile = new SDFile();
+        if (fileName.contains("IMPG2-testing-data")) {
+            sdFile.specialButtsFormat = true;
+        }
         if (molecule != null) {
             sdFile.getMolName(fileName);
             String compoundName = sdFile.molName;
@@ -505,8 +508,13 @@ public class SDFile {
 
     public static MoleculeBase read(String fileName, String fileContent)
             throws MoleculeIOException {
+
         SDFile sdFile = new SDFile();
-        return sdFile.readMol(fileName, fileContent);
+        if (fileName.contains("IMPG2-testing-data")) {
+             sdFile.specialButtsFormat = true;
+        }
+        MoleculeBase moleculeBase =  sdFile.readMol(fileName, fileContent);
+        return moleculeBase;
     }
 
     /**
