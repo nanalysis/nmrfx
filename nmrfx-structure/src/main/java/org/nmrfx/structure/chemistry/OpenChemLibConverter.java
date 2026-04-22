@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.nmrfx.chemistry.Bond.*;
 
@@ -119,18 +120,40 @@ public class OpenChemLibConverter {
         molecule.structures.add(0);
         compound.molecule = molecule;
         molecule.addEntity(compound, molName);
-        convertFromStereoMolecule(stereoMolecule, compound, null);
+        convertFromStereoMolecule(stereoMolecule, compound, null, null);
         return molecule;
     }
 
-    public static void convertFromStereoMolecule(StereoMolecule stereoMolecule, Compound compound, List<Point3> points) {
+    public static void convertFromStereoMolecule(StereoMolecule stereoMolecule, Compound compound, List<Point3> points, List<Atom> atoms) {
         stereoMolecule.ensureHelperArrays(StereoMolecule.cHelperNeighbours);
         compound.removeAllAtoms();
         int structureNumber = 0;
         int nAtoms = stereoMolecule.getAllAtoms();
+        Map<String, Atom> atomMap = new HashMap<>();
+        if (atoms != null) {
+            for (Atom atom : atoms) {
+                atomMap.put(atom.getName(), atom);
+            }
+        }
+        System.out.println(atomMap);
         for (int i = 0; i < nAtoms; i++) {
             String aName = stereoMolecule.getAtomLabel(i);
+            String customLabel = stereoMolecule.getAtomCustomLabel(i);
             Atom atom = Atom.genAtomWithElement(aName, stereoMolecule.getAtomicNo(i));
+            compound.addAtom(atom);
+            // Atom atom = i < atoms.size() ? atoms.get(i) : Atom.genAtomWithElement(aName, stereoMolecule.getAtomicNo(i));
+            Atom atomX = atomMap.containsKey(customLabel) ? atomMap.get(customLabel) : Atom.genAtomWithElement(aName, stereoMolecule.getAtomicNo(i));
+
+            if ((customLabel == null) || customLabel.isEmpty()) {
+                atom.setName(aName + (i + 1));
+            } else {
+                atom.setName(customLabel);
+            }
+            if (atomX.getPPM() != null) {
+                atom.setPPM(atomX.getPPM());
+            }
+
+
             atom.setPointValidity(structureNumber, true);
             double x = stereoMolecule.getAtomX(i);
             double y = -stereoMolecule.getAtomY(i);
@@ -145,13 +168,6 @@ public class OpenChemLibConverter {
             if (stereoMolecule.isAromaticAtom(i)) {
                 atom.setFlag(Atom.AROMATIC, true);
             }
-            String name = stereoMolecule.getAtomCustomLabel(i);
-            if ((name == null) || name.isEmpty()) {
-                atom.setName(aName + (i + 1));
-            } else {
-                atom.setName(name);
-            }
-            compound.addAtom(atom);
         }
         int nBonds = stereoMolecule.getAllBonds();
         for (int i = 0; i < nBonds; i++) {
@@ -233,15 +249,18 @@ public class OpenChemLibConverter {
         }
         return points;
     }
+
+
     public static void to3D(Molecule molecule) {
         for (var ligand : molecule.getLigands()) {
             StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand, -1);
             ConformerGenerator.addHydrogenAtoms(sMol);
             List<Point3> points = getCoords(sMol);
+            List<Atom> atoms = new ArrayList<>(ligand.getAtoms());
             ConformerGenerator cg = new ConformerGenerator();
             var conf = cg.getOneConformer(sMol);
             var mol3D = conf.toMolecule(sMol);
-            OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand, points);
+            OpenChemLibConverter.convertFromStereoMolecule(mol3D, ligand, points, atoms);
         }
         molecule.inactivateAtoms();
         molecule.updateAtomArray();
@@ -255,12 +274,14 @@ public class OpenChemLibConverter {
         double energy = ff.getTotalEnergy();
         System.out.println(energy);
     }
+
     public static void minimize(Molecule molecule) {
         for (var ligand : molecule.getLigands()) {
             StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand, -1);
             List<Point3> points = getCoords(sMol);
+            List<Atom> atoms = new ArrayList<>(ligand.getAtoms());
             minimize(sMol);
-            OpenChemLibConverter.convertFromStereoMolecule(sMol, ligand, points);
+            OpenChemLibConverter.convertFromStereoMolecule(sMol, ligand, points, atoms);
         }
         molecule.inactivateAtoms();
         molecule.updateAtomArray();
@@ -293,9 +314,9 @@ public class OpenChemLibConverter {
         var mol3D = conf.toMolecule(sMol);
         Molecule molecule = new Molecule("testmol");
         molecule.setActive();
-        Compound compound = new Compound("1","A");
+        Compound compound = new Compound("1", "A");
         molecule.addEntity(compound);
-        OpenChemLibConverter.convertFromStereoMolecule(mol3D, compound, points);
+        OpenChemLibConverter.convertFromStereoMolecule(mol3D, compound, points, null);
     }
 
     public static FXEditorDialog editor() {
