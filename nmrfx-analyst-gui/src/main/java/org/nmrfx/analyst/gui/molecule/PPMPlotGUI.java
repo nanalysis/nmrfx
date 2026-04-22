@@ -20,6 +20,8 @@ public class PPMPlotGUI extends TablePlotGUI {
         skipColumns = Arrays.asList("Index", "Entity", "Res", "Atom");
         statusField.setPrefWidth(300);
         setBottom(statusField);
+        xZeroIncluded(false);
+        yZeroIncluded(false);
     }
 
     @Override

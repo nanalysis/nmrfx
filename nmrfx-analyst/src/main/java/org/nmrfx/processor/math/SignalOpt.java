@@ -76,7 +76,7 @@ public class SignalOpt implements MultivariateFunction {
         int i = 0;
         for (Signal signal : signals) {
             parameters[i++] = signal.frequency;
-            parameters[i++] = signal.decay;
+            parameters[i++] = signal.decayRate;
             parameters[i++] = signal.amplitude;
             parameters[i++] = signal.phase;
         }
