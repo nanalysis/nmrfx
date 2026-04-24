@@ -17,7 +17,6 @@ public class GATV2PredictorTest {
     public void predictTest() throws OrtException, MoleculeIOException, IOException {
         GATV2Predictor gatv2Predictor = new GATV2Predictor();
         String molFile = "/Users/ekoag/IMPG2-testing-data/Holdout/Data6_D7118510241.nmredata.sdf";
-        SDFile.IS_SPECIAL_BUTTS = true;
         Compound compound = SDFile.read(molFile, null, null, null);
         compound.molecule.updateAtomArray();
         MoleculeFactory.setActive(compound.molecule);
