@@ -14,6 +14,7 @@ import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
+import org.nmrfx.structure.chemistry.miner.AtomPaths;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
@@ -374,6 +375,10 @@ public class Predictor {
 
     public void predictAll(Molecule mol, PredictionTypes predictionTypes, int ppmSet) throws InvalidMoleculeException, IOException {
         boolean hasPeptide = false;
+        if ((predictionTypes.protein == PredictionModes.GATV2) && (predictionTypes.rna == PredictionModes.GATV2) && (predictionTypes.smallMol == PredictionModes.GATV2)) {
+            predictWithGATv2(mol, ppmSet);
+            return;
+        }
 
         for (Polymer polymer : mol.getPolymers()) {
             if (polymer.isRNA()) {
@@ -425,10 +430,10 @@ public class Predictor {
                     predictLigandWithRingCurrent(entity, ppmSet);
                 }
             } else if (predictionTypes.smallMol == PredictionModes.SHELL) {
-                    predictWithShells(entity, ppmSet);
-                    if (hasPolymer) {
-                        predictLigandWithRingCurrent(entity, ppmSet);
-                    }
+                predictWithShells(entity, ppmSet);
+                if (hasPolymer) {
+                    predictLigandWithRingCurrent(entity, ppmSet);
+                }
             }
         }
     }
@@ -588,11 +593,27 @@ public class Predictor {
         }
     }
 
-    public void predictWithGATv2(Entity aC, int iRef)  {
+    void predictWithGATv2(Molecule molecule, int iRef) {
+
+        Map<Entity, List<Entity>> compoundListMap = ResidueAtomDistances.generateCompoundListMap(molecule, 0);
+
         GATV2Predictor gatv2Predictor = null;
         try {
             gatv2Predictor = new GATV2Predictor();
-            gatv2Predictor.predict(aC, iRef, GATV2Predictor.SolventCorr.D2O);
+            for (var entry : compoundListMap.entrySet()) {
+                gatv2Predictor.predict(entry.getValue(), iRef, GATV2Predictor.SolventCorr.D2O);
+            }
+        } catch (OrtException e) {
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void predictWithGATv2(Entity entity, int iRef) {
+        GATV2Predictor gatv2Predictor = null;
+        try {
+            gatv2Predictor = new GATV2Predictor();
+            gatv2Predictor.predict(entity, iRef, GATV2Predictor.SolventCorr.D2O);
         } catch (OrtException e) {
         } catch (IOException e) {
             throw new RuntimeException(e);

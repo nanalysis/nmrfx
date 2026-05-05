@@ -54,7 +54,7 @@ public class PredictorSceneController implements Initializable, StageBasedContro
         targetChoice.setValue(0);
         proteinChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.THREED, PredictionModes.GATV2, PredictionModes.SHELL);
         proteinChoice.setValue(PredictionModes.THREED);
-        rnaChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.RNA_ATTRIBUTES, PredictionModes.THREED_DIST, PredictionModes.THREED_RC);
+        rnaChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.RNA_ATTRIBUTES, PredictionModes.THREED_DIST, PredictionModes.THREED_RC, PredictionModes.GATV2);
         rnaChoice.setValue(PredictionModes.RNA_ATTRIBUTES);
         molChoice.getItems().addAll(PredictionModes.OFF, PredictionModes.GATV2, PredictionModes.SHELL);
         molChoice.setValue(PredictionModes.GATV2);

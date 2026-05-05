@@ -16,7 +16,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ public class GATV2Predictor {
     static OrtEnvironment env = null;
     static final List<Integer> tokens = new ArrayList<>(List.of(6, 8, 1, 7, 17, 16, 9, 15, 35));
 
-    Map<Integer, Double[]> normValues = Map.of(
+    static final Map<Integer, Double[]> normValues = Map.of(
             1, new Double[]{3.4, 4.9},
             6, new Double[]{123.6, 84.4},
             7, new Double[]{-234.3, 183.3},
@@ -42,8 +41,8 @@ public class GATV2Predictor {
         Methanol(0.996, -0.017),
         D2O(1.0, 0.0);
 
-        double m;
-        double b;
+        final double m;
+        final double b;
 
         SolventCorr(double m, double b) {
             this.m = m;
@@ -69,9 +68,18 @@ public class GATV2Predictor {
         }
     }
 
-    private double denormalize(int atomType, double output) {
+    public static double denormalize(int atomType, double output) {
         Double[] values = normValues.get(atomType);
         return (output * values[1]) + values[0];
+    }
+
+    public static double normalize(int atomType, double input) {
+        Double[] values = normValues.get(atomType);
+        if (values != null) {
+            return (input - values[0]) / values[1];
+        } else {
+            return input;
+        }
     }
 
 
@@ -81,6 +89,16 @@ public class GATV2Predictor {
         DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(compound, 6, -1, -1);
         ResidueAtomDistances rad = new ResidueAtomDistances();
         rad.generate(compound, paths, 5.0, 0);
+        return rad;
+    }
+
+    public static ResidueAtomDistances getRAD(List<Entity> entities) {
+        entities.getFirst().molecule.updateAtomArray();
+        MoleculeFactory.setActive(entities.getFirst().molecule);
+
+        DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(entities, 6, -1, -1);
+        ResidueAtomDistances rad = new ResidueAtomDistances();
+        rad.generate(entities, paths, 5.0, 0);
         return rad;
     }
 
@@ -186,15 +204,24 @@ public class GATV2Predictor {
                 couplingName = pathLen + "J" + atomJ.getElementName() + atomI.getElementName();
             }
             AtomCouplingPair atomCouplingPairIJ = new AtomCouplingPair(atomI, atomJ, pjValue, couplingName);
-            AtomCouplingPair atomCouplingPairJI= new AtomCouplingPair(atomJ, atomI, pjValue, couplingName);
+            AtomCouplingPair atomCouplingPairJI = new AtomCouplingPair(atomJ, atomI, pjValue, couplingName);
             atomI.addPredictedCouplingPair(atomCouplingPairIJ);
             atomJ.addPredictedCouplingPair(atomCouplingPairJI);
         }
 
     }
+    public void predict(List<Entity> entities, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
+        ResidueAtomDistances rad = getRAD(entities);
+        predict(entities.getFirst(), rad, iRef, solventCorr);
+    }
 
-    public void predict(Entity compound, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
-        ResidueAtomDistances rad = getRAD(compound);
+
+    public void predict(Entity entity, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
+        ResidueAtomDistances rad = getRAD(entity);
+        predict(entity, rad, iRef, solventCorr);
+    }
+
+    public void predict(Entity entityToPredict, ResidueAtomDistances rad, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
 
         int nNodes = graph.nodes().size();
@@ -207,6 +234,9 @@ public class GATV2Predictor {
             ResidueAtomDistances.AtomEdge edge = graph.edges().get(j);
             edgeIndex[0][j] = edge.indexA();
             edgeIndex[1][j] = edge.indexB();
+            if ((edge.indexA() >= nodes.length) && (edge.indexA() >= nodes.length)) {
+                System.out.println("Edge out of range " + edge.indexA() + " " + edge.indexB() + " " + nodes.length);
+            }
             double scaledDistance = (edge.distance() - 3.3) / 1.8;
             edgeAttr[j][0] = (float) scaledDistance;
             edgeAttr[j][1] = edge.pathLen();
@@ -227,12 +257,14 @@ public class GATV2Predictor {
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
-                    int nodeType = atomNode.property();
-                    if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
-                        setShift(atomNode, nodeOutputs[i][0], iRef, solventCorr);
+                    if (atomNode.atom().getEntity() == entityToPredict) {
+                        int nodeType = atomNode.property();
+                        if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
+                            setShift(atomNode, nodeOutputs[i][0], iRef, solventCorr);
+                        }
                     }
                 }
-                averageMethyls(compound, iRef);
+                averageMethyls(entityToPredict, iRef);
                 for (int i = 0; i < nEdges; i++) {
                     float pathLen = edgeAttr[i][1];
                     String cName = graph.edges().get(i).couplingName();
@@ -241,7 +273,9 @@ public class GATV2Predictor {
                         int jIndex = (int) edgeIndex[1][i];
                         Atom atomI = graphNodes.get(iIndex).atom();
                         Atom atomJ = graphNodes.get(jIndex).atom();
-                        setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i][0]);
+                        if ((atomI.getEntity() == entityToPredict) && (atomJ.getEntity() == entityToPredict)) {
+                            setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i][0]);
+                        }
                     }
                 }
             }
