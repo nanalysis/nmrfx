@@ -23,9 +23,11 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -100,6 +102,9 @@ public class TablePlotGUI {
     public record ParItem(String columnName, int group, String parName, double value, double error) {
     }
 
+    public void setBottom(Node node) {
+        borderPane.setBottom(node);
+    }
     /**
      * Creates and populates a new stage for the TablePlotGUI, if not already
      * created. The stage is displayed and raised to front.
@@ -177,6 +182,7 @@ public class TablePlotGUI {
             borderPane.setCenter(chartPane);
             borderPane.setRight(null);
             stage.setScene(stageScene);
+            activeChart.getCanvas().setOnMouseClicked(this::mouseClicked);
         }
         updateAxisChoices();
         if (extraMode == ExtraMode.DIFFUSION) {
@@ -188,6 +194,8 @@ public class TablePlotGUI {
         updatePlot();
     }
 
+    public void mouseClicked(MouseEvent e) {
+    }
 
     private void toggleFitPane(CheckBox showFitBox) {
         if (showFitBox.isSelected()) {

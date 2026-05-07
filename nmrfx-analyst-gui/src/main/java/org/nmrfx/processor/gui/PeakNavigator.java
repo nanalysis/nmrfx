@@ -144,7 +144,7 @@ public class PeakNavigator implements PeakListener {
             } else {
                 this.peakListMenuButton = peakListMenuButton;
             }
-            peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
+            this.peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
             updatePeakListMenu();
         } else {
             parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());
