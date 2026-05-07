@@ -1323,7 +1323,6 @@ public class PeakListTools {
         }
         List<Double> xValues = new ArrayList<>();
         List<Double> yValues = new ArrayList<>();
-        List<Double> errValues = new ArrayList<>();
         Peak peak = null;
         for (var group : peakGroups) {
             List<Peak> abPeaks = PeakLinker.linkFourPeaks(group);
@@ -1536,16 +1535,17 @@ public class PeakListTools {
         double[][] xValues = xyeValues.xValues;
         double[][] yValues = xyeValues.yValues;
         List<XYValue> xyValues = new ArrayList<>();
-        double[] ratioValues = new double[xValues[0].length];
         for (int i = 0; i < xValues[0].length; i++) {
             double delay = xValues[0][i];
-            double aa = yValues[0][i];
-            double bb = yValues[1][i];
-            double ab = yValues[2][i];
-            double ba = yValues[3][i];
-            double ratio = (ab * ba) / (aa * bb - ab * ba);
-            XYValue xyValue = new XYValue(delay, ratio);
-            xyValues.add(xyValue);
+            if (delay < 0.1) {
+                double aa = yValues[0][i];
+                double bb = yValues[1][i];
+                double ab = yValues[2][i];
+                double ba = yValues[3][i];
+                double ratio = (ab * ba) / (aa * bb - ab * ba);
+                XYValue xyValue = new XYValue(delay, ratio);
+                xyValues.add(xyValue);
+            }
         }
         return xyValues;
     }
