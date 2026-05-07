@@ -102,7 +102,7 @@ public class ZZFit2 extends FitEquation {
             if (zzFitPars.fitInept()) {
                 start[i] = 6.0e-3;
                 lower[i] = 0.0;
-                upper[i++] = 12.0e-3;
+                upper[i++] = 20.0e-3;
             }
 
             start[i] = r1;
