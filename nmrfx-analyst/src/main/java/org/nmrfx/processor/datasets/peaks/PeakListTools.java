@@ -56,6 +56,8 @@ import static org.nmrfx.processor.datasets.peaks.PeakListTools.GuessType.*;
 public class PeakListTools {
     private static final Logger log = LoggerFactory.getLogger(PeakListTools.class);
 
+    public record IgnoreValue(Peak peak, int index) {}
+
     public static void swap(double[] limits) {
         double hold;
 
@@ -1305,7 +1307,7 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static FitZZPeakRatioResult fitZZPeakRatios(PeakList peakList, Dataset theFile, List<Set<Peak>> peakGroups, boolean simFit)
+    public static FitZZPeakRatioResult fitZZPeakRatios(PeakList peakList, Dataset theFile, List<Set<Peak>> peakGroups, boolean simFit, Set<IgnoreValue> ignoreSet)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean ok = peakGroups.stream().filter(group -> group.size() != 4).findAny().isEmpty();
         if (!ok) {
@@ -1328,7 +1330,7 @@ public class PeakListTools {
             if (!simFit) {
                 peak = abPeaks.getFirst();
             }
-            XYEValues xyeValues = getXYErrValues(peakList, abPeaks);
+            XYEValues xyeValues = getXYErrValues(peakList, abPeaks, ignoreSet);
             List<XYValue> xyValues = calcRatioKK(xyeValues);
             for (XYValue xyValue : xyValues) {
                 xValues.add(xyValue.getXValue());
@@ -1377,7 +1379,7 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, Collection<Peak> peaks, ZZFitPars zzFitPars)
+    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, Collection<Peak> peaks, ZZFitPars zzFitPars, Set<IgnoreValue> ignoreSet)
             throws IllegalArgumentException, IOException, PeakFitException {
         if (peaks.size() != 4) {
             throw new IllegalArgumentException("ZZ fit requires 4 peaks but " + peaks.size() + " provided");
@@ -1387,7 +1389,7 @@ public class PeakListTools {
             PeakListTools.quantifyPeaks(peakList, "center");
         }
         List<Peak> abPeaks = PeakLinker.linkFourPeaks(peaks);
-        return fitZZPeaks(peakList, abPeaks, zzFitPars);
+        return fitZZPeaks(peakList, abPeaks, zzFitPars, ignoreSet);
     }
 
     /**
@@ -1401,7 +1403,7 @@ public class PeakListTools {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, List<Set<Peak>> peakGroups, ZZFitPars zzFitPars)
+    public static List<PeakFitPars> fitZZPeakIntensities(PeakList peakList, Dataset theFile, List<Set<Peak>> peakGroups, ZZFitPars zzFitPars, Set<IgnoreValue> ignoreValueSet)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean missingMeasures = peakGroups.stream().flatMap(g -> g.stream().toList().stream()).anyMatch(peak -> !peak.getMeasures().isPresent());
         if (missingMeasures) {
@@ -1415,7 +1417,7 @@ public class PeakListTools {
             List<Peak> abPeaks = PeakLinker.linkFourPeaks(group);
             groupedPeaks.add(abPeaks);
         }
-        return fitZZPeakGroups(peakList, groupedPeaks, zzFitPars);
+        return fitZZPeakGroups(peakList, groupedPeaks, zzFitPars,ignoreValueSet);
     }
 
     /**
@@ -1454,11 +1456,33 @@ public class PeakListTools {
 
     }
 
-    public record XYEValues(double[][] xValues, double[][] yValues, double[][] errValues) {
+    public record XYEValues(double[][] xValues, double[][] yValues, double[][] errValues, boolean[][] mask) {
     }
 
-    public static XYEValues getXYErrValues(PeakList peakList, List<Peak> abPeaks) {
-        var measureX = peakList.getMeasureValues();
+    static XYEValues getFilteredXYEValues(XYEValues xyeValues, List<Peak> peaks, Set<IgnoreValue> ignoreSet) {
+        boolean[][] mask = new boolean[xyeValues.yValues.length][];
+        for (int i=0;i<mask.length;i++) {
+            mask[i] = new boolean[xyeValues.yValues[i].length];
+        }
+        int nIgnore = 0;
+        for (IgnoreValue ignoreVal : ignoreSet) {
+            for (Peak peak : peaks) {
+                if (ignoreVal.peak == peak) {
+                    for (int i=0;i<mask.length;i++) {
+                        mask[i][ignoreVal.index] = true;
+                        nIgnore++;
+                    }
+                }
+            }
+        }
+        if (nIgnore > 0) {
+            xyeValues = new XYEValues(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues, mask);
+        }
+        return xyeValues;
+    }
+
+    public static XYEValues getXYErrValues(PeakList peakList, List<Peak> abPeaks, Set<IgnoreValue> ignoreSet) {
+        double[] measureX = peakList.getMeasureValues();
         double[][] xValues = new double[1][measureX.length];
         double[][] yValues = new double[4][measureX.length];
         double[][] errValues = new double[4][measureX.length];
@@ -1471,31 +1495,41 @@ public class PeakListTools {
                 System.arraycopy(measures[1], 0, errValues[iSig], 0, errValues[iSig].length);
             });
         }
-        return new XYEValues(xValues, yValues, errValues);
+        XYEValues xyeValues =  new XYEValues(xValues, yValues, errValues, null);
+        if (!ignoreSet.isEmpty()) {
+            xyeValues = getFilteredXYEValues(xyeValues, abPeaks, ignoreSet);
+        }
+        return  xyeValues;
     }
 
-    public static XYEValues getGroupedXYErrValues(PeakList peakList, List<List<Peak>> groupedPeaks) {
+    public static XYEValues getGroupedXYErrValues(PeakList peakList, List<List<Peak>> groupedPeaks, Set<IgnoreValue> ignoreValueSet) {
         var measureX = peakList.getMeasureValues();
         int nY = 4 * groupedPeaks.size();
         double[][] xValues = new double[1][measureX.length];
         double[][] yValues = new double[nY][measureX.length];
         double[][] errValues = new double[nY][measureX.length];
+        boolean[][] mask = new boolean[nY][measureX.length];
         System.arraycopy(measureX, 0, xValues[0], 0, xValues[0].length);
         int j = 0;
         for (var group : groupedPeaks) {
             int iGroup = j;
             for (int i = 0; i < 4; i++) {
-                var measureOpt = group.get(i).getMeasures();
+                Peak peak = group.get(i);
+                var measureOpt = peak.getMeasures();
                 int iSig = i;
                 measureOpt.ifPresent(measures -> {
                     int k = iGroup * 4 + iSig;
                     System.arraycopy(measures[0], 0, yValues[k], 0, yValues[k].length);
                     System.arraycopy(measures[1], 0, errValues[k], 0, errValues[k].length);
+                    for (int iMask=0;iMask<measures[0].length;iMask++) {
+                        IgnoreValue ignoreValue = new IgnoreValue(peak, iMask);
+                        mask[k][iMask] = ignoreValueSet.contains(ignoreValue);
+                    }
                 });
             }
             j++;
         }
-        return new XYEValues(xValues, yValues, errValues);
+        return new XYEValues(xValues, yValues, errValues, null);
     }
 
     public static List<XYValue> calcRatioKK(XYEValues xyeValues) {
@@ -1516,11 +1550,11 @@ public class PeakListTools {
         return xyValues;
     }
 
-    public static List<PeakFitPars> fitZZPeakGroups(PeakList peakList, List<List<Peak>> abPeaks, ZZFitPars zzFitPars) {
-        XYEValues xyeValues = getGroupedXYErrValues(peakList, abPeaks);
+    public static List<PeakFitPars> fitZZPeakGroups(PeakList peakList, List<List<Peak>> abPeaks, ZZFitPars zzFitPars, Set<IgnoreValue> ignoreValueSet) {
+        XYEValues xyeValues = getGroupedXYErrValues(peakList, abPeaks, ignoreValueSet);
         ZZFit2 zzFit = new ZZFit2(zzFitPars);
         int nGroups = xyeValues.yValues.length / 4;
-        zzFit.setXYE(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues);
+        zzFit.setXYE(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues, xyeValues.mask);
         PointValuePair result = zzFit.fit();
         if (result == null) {
             GUIUtils.warn("Fitting", "Error fitting data");
@@ -1551,12 +1585,12 @@ public class PeakListTools {
         return peakFitParResult;
     }
 
-    public static List<PeakFitPars> fitZZPeaks(PeakList peakList, List<Peak> abPeaks, ZZFitPars zzFitPars) {
-        XYEValues xyeValues = getXYErrValues(peakList, abPeaks);
+    public static List<PeakFitPars> fitZZPeaks(PeakList peakList, List<Peak> abPeaks, ZZFitPars zzFitPars, Set<IgnoreValue> ignoreSet) {
+        XYEValues xyeValues = getXYErrValues(peakList, abPeaks, ignoreSet);
         int mode = 2;
         FitEquation zzFit = mode == 2 ? new ZZFit2(zzFitPars) : new ZZFit();
 
-        zzFit.setXYE(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues);
+        zzFit.setXYE(xyeValues.xValues, xyeValues.yValues, xyeValues.errValues,xyeValues.mask);
         PointValuePair result = zzFit.fit();
         if (result == null) {
             GUIUtils.warn("Fitting", "Error fitting data");

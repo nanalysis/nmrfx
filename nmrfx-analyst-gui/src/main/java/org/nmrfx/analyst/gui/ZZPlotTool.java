@@ -22,21 +22,21 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import jnr.ffi.annotations.In;
 import org.nmrfx.chart.*;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.binding.BindingUtils;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -72,6 +72,7 @@ public class ZZPlotTool {
 
     private static final Logger log = LoggerFactory.getLogger(ZZPlotTool.class);
     private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
+
 
     enum RxModes {
         AB("A <-> B", "[A]/([A]+[B])"),
@@ -117,6 +118,10 @@ public class ZZPlotTool {
     TextField pValue;
     TextField lValue;
     TextField kdValue;
+    Label statusField = new Label();
+    CheckBox ignoreBox = new CheckBox("Ignore");
+    Set<PeakListTools.IgnoreValue> ignoreSet = new HashSet<>();
+    PeakListTools.IgnoreValue ignoreLabel = null;
 
     public ZZPlotTool() {
     }
@@ -228,6 +233,8 @@ public class ZZPlotTool {
             activeChart = chartPane.getChart();
 
             exportSVGButton.setOnAction(e -> activeChart.exportSVG());
+            activeChart.getCanvas().setOnMouseClicked(this::mouseClicked);
+
             exportTableButton.setOnAction(e -> saveTable());
             fitButton.setOnAction(e -> fitPeaks());
 
@@ -242,6 +249,15 @@ public class ZZPlotTool {
             initTable();
             showPeakButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
             updateRxn(rxModesChoiceBox);
+            HBox statusBox = new HBox();
+            Insets insets = new Insets(0, 10, 0, 10);
+            statusBox.setPadding(insets);
+            statusField.setPrefWidth(250);
+            statusBox.getChildren().addAll(ignoreBox, statusField);
+            ignoreBox.setOnAction(e -> updateIgnoreField());
+            statusBox.setSpacing(20);
+            borderPane.setBottom(statusBox);
+
         }
         stage.show();
         stage.toFront();
@@ -424,6 +440,7 @@ public class ZZPlotTool {
     }
 
     void fitPeaksFull(PeakListTools.ZZFitPars zzFitPars) {
+        List<Integer> selected = new ArrayList<>(tableView.getSelectionModel().getSelectedIndices());
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         var chart = controller.getActiveChart();
         var peakListOpt = chart.getPeakListAttributes().stream().findFirst();
@@ -441,6 +458,15 @@ public class ZZPlotTool {
             addDerivedPars(fitPars);
         });
         tableView.setItems(fitPars);
+        if (selected.isEmpty()) {
+            selected.add(0);
+        }
+        if (selected.size() <= fitPars.size()) {
+            tableView.getSelectionModel().clearSelection();
+            for (int i : selected) {
+                tableView.getSelectionModel().select(i);
+            }
+        }
     }
 
     PeakFitPars fitPeakGroup(PeakListAttributes peakListAttributes, PeakList peakList, Set<Peak> peaks, PeakListTools.ZZFitPars zzFitPars) {
@@ -448,7 +474,7 @@ public class ZZPlotTool {
         PeakFitParameters fitPars = new PeakFitParameters();
         fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY);
         try {
-            List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, peaks, zzFitPars);
+            List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, peaks, zzFitPars, ignoreSet);
             return result.getFirst();
         } catch (IOException | PeakFitException e) {
             GUIUtils.warn("ZZFit", e.getMessage());
@@ -475,7 +501,7 @@ public class ZZPlotTool {
                     var groupSet = Collections.singletonList(group);
                     try {
                         if (zzFitPars.fitRatios()) {
-                            PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false);
+                            PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false, ignoreSet);
                             if (result != null) {
                                 fitPars.add(result.peakFitPars());
                             }
@@ -490,10 +516,10 @@ public class ZZPlotTool {
             }
             try {
                 if (zzFitPars.fitRatios()) {
-                    fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true);
+                    fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true, ignoreSet);
                     fitPars.addFirst(fitZZPeakRatioResult.peakFitPars());
                 } else {
-                    List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, allPeaks, zzFitPars);
+                    List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, allPeaks, zzFitPars, ignoreSet);
                     fitPars.addAll(result);
                 }
             } catch (IOException | PeakFitException e) {
@@ -736,7 +762,7 @@ public class ZZPlotTool {
         DataSeries lineSeries = new DataSeries();
         if (!peaks.isEmpty()) {
             PeakList peakList = peaks.getFirst().getPeakList();
-            PeakListTools.XYEValues xyeValues = PeakListTools.getXYErrValues(peakList, peaks);
+            PeakListTools.XYEValues xyeValues = PeakListTools.getXYErrValues(peakList, peaks, ignoreSet);
             List<XYValue> xyValues = PeakListTools.calcRatioKK(xyeValues);
             for (XYValue xyValue : xyValues) {
                 series.add(xyValue);
@@ -759,6 +785,9 @@ public class ZZPlotTool {
         addSeries(series, lineSeries, Color.BLACK, "AA");
     }
 
+    record PeakExtraValue(Peak peak, int index) {
+    }
+
     void addSeries(PeakFitPars peakFitPars, List<Peak> peaks, double[] xValues) {
         Map<String, FitPar> parMap = peakFitPars.fitPars();
         double intensity = parMap.get("Ia+Ib").value();
@@ -773,19 +802,27 @@ public class ZZPlotTool {
 
         for (Peak peak : peaks) {
             DataSeries series = new DataSeries();
+            DataSeries ignoreSeries = new DataSeries();
             DataSeries lineSeries = new DataSeries();
             Color color = XYCanvasChart.colors[iSig];
             addSeries(series, lineSeries, color, peakLabels[iSig]);
-
+            addSeries(ignoreSeries, null, Color.BLACK, "Ignore");
             peak.getMeasures().ifPresent(measures -> {
                 double[] yValues = measures[0];
                 double[] errs = measures[1];
                 for (int i = 0; i < yValues.length; i++) {
+                    PeakListTools.IgnoreValue ignoreValue = new PeakListTools.IgnoreValue(peak, i);
                     double yValue = yValues[i];
                     double errValue = errs[i];
                     double xValue = xValues != null ? xValues[i] : 1.0 * i;
                     XYEValue value = new XYEValue(xValue, yValue, errValue);
-                    series.add(value);
+                    PeakExtraValue peakExtraValue = new PeakExtraValue(peak, i);
+                    value.setExtraValue(peakExtraValue);
+                    if (ignoreSet.contains(ignoreValue)) {
+                        ignoreSeries.add(value);
+                    } else {
+                        series.add(value);
+                    }
                 }
             });
 
@@ -809,14 +846,46 @@ public class ZZPlotTool {
         series.setFill(color);
         series.setName(label);
         activeChart.getData().add(series);
-        lineSeries.drawLine(true);
-        lineSeries.drawSymbol(false);
-        lineSeries.fillSymbol(false);
-        lineSeries.setStroke(color);
-        lineSeries.setFill(color);
-        lineSeries.setName(label);
-        activeChart.getData().add(lineSeries);
-
+        if (lineSeries != null) {
+            lineSeries.drawLine(true);
+            lineSeries.drawSymbol(false);
+            lineSeries.fillSymbol(false);
+            lineSeries.setStroke(color);
+            lineSeries.setFill(color);
+            lineSeries.setName(label);
+            activeChart.getData().add(lineSeries);
+        }
     }
+
+    private void updateIgnoreField() {
+        if (ignoreLabel != null) {
+            if (ignoreBox.isSelected()) {
+                ignoreSet.add(ignoreLabel);
+            } else {
+                ignoreSet.remove(ignoreLabel);
+            }
+            selectionChanged();
+        }
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        Optional<XYCanvasChart.Hit> hitOpt = activeChart.pickChart(e.getX(), e.getY(), 5);
+        if (hitOpt.isPresent()) {
+            XYCanvasChart.Hit hit = hitOpt.get();
+            PeakExtraValue peakExtraValue = (PeakExtraValue) hit.getValue().getExtraValue();
+            double delay = peakExtraValue.peak.getPeakList().getMeasureValues()[peakExtraValue.index];
+            String status = String.format("HIT peak: %d idx %d delay %.3f", peakExtraValue.peak.getIdNum(), peakExtraValue.index, delay);
+            statusField.setText(status);
+            Peak peak = peakExtraValue.peak;
+            ignoreLabel = new PeakListTools.IgnoreValue(peak, peakExtraValue.index);
+            ignoreBox.setDisable(false);
+            ignoreBox.setSelected(ignoreSet.contains(ignoreLabel));
+        } else {
+            statusField.setText("");
+            ignoreBox.setSelected(false);
+            ignoreBox.setDisable(true);
+        }
+    }
+
 
 }
