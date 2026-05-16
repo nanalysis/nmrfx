@@ -48,7 +48,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
     @FXML
     private Button goToButton;
     @FXML
-    TableView<BMRBSearchResult> BMRBSearchTableView;
+    TableView<BMRBSearchResult> bmrbSearchResultTableView;
     private HostServices hostServices;
 
     @Override
@@ -96,7 +96,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
     private void doSearch() {
         String text = searchField.getText();
         if (!text.isBlank()) {
-            BMRBSearchTableView.getItems().clear();
+            bmrbSearchResultTableView.getItems().clear();
             try {
                 List<BMRBSearchResult> results = BMRBSearchResult.getSearchResults(text);
                 if (results == null) {
@@ -105,8 +105,8 @@ public class BMRBSearchController implements Initializable, StageBasedController
                     );
                     return;
                 }
-                BMRBSearchTableView.getItems().addAll(results);
-                BMRBSearchTableView.refresh();
+                bmrbSearchResultTableView.getItems().addAll(results);
+                bmrbSearchResultTableView.refresh();
             } catch (ExecutionException | InterruptedException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 Thread.currentThread().interrupt();
@@ -198,11 +198,11 @@ public class BMRBSearchController implements Initializable, StageBasedController
             }
         });
         authorsCol.setMinWidth(300);
-        BMRBSearchTableView.getColumns().addAll(entryIDCol, releaseDateCol, dataSummaryCol, entryTitleCol, authorsCol);
+        bmrbSearchResultTableView.getColumns().addAll(entryIDCol, releaseDateCol, dataSummaryCol, entryTitleCol, authorsCol);
     }
 
     public void getSelected(ActionEvent event) {
-        var selected = BMRBSearchTableView.getSelectionModel().getSelectedItem();
+        var selected = bmrbSearchResultTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
             try {
                 int entryID = Integer.parseInt(selected.getEntryID());
@@ -214,7 +214,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
         }
     }
 
-    private record FetchStarOptions(int entryID, boolean useRef, int ppmSet, boolean useHomologyMode) {
+    public record FetchStarOptions(int entryID, boolean useRef, int ppmSet, boolean useHomologyMode) {
     }
 
     public static FetchStarOptions choosePPMSet(final int entryID, boolean loadShiftsOnly) {
@@ -335,7 +335,7 @@ public class BMRBSearchController implements Initializable, StageBasedController
     }
 
     private void goToSite(ActionEvent event) {
-        var selected = BMRBSearchTableView.getSelectionModel().getSelectedItem();
+        var selected = bmrbSearchResultTableView.getSelectionModel().getSelectedItem();
         if (selected != null) {
             String entryID = selected.getEntryID();
             hostServices.showDocument("https://bmrb.io/data_library/summary/index.php?bmrbId=" + entryID);

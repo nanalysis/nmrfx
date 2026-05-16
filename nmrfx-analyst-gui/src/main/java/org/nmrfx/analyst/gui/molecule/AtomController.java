@@ -26,7 +26,6 @@ package org.nmrfx.analyst.gui.molecule;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.*;
 import javafx.fxml.FXML;
@@ -43,7 +42,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
-import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.peaks.PeakPPMGetterGUI;
@@ -109,23 +107,11 @@ public class AtomController implements Initializable, StageBasedController, Free
     @FXML
     private ToolBar menuBar;
     @FXML
-    private ToolBar atomNavigatorToolBar;
-    @FXML
     private TableView<Atom> atomTableView;
-    @FXML
-    private TextField intensityField;
-    @FXML
-    private TextField volumeField;
-    @FXML
-    private TextField commentField;
-    @FXML
-    private TextField atomListNameField;
     @FXML
     private MenuButton molFilterMenuButton;
     @FXML
     private TextField molFilterTextField;
-    @FXML
-    private ToolBar atomReferenceToolBar;
 
     public static AtomController create() {
         AtomController controller = Fxml.load(AtomController.class, "AtomScene.fxml")
@@ -387,16 +373,6 @@ public class AtomController implements Initializable, StageBasedController, Free
         sdevCol.setEditable(false);
         atomTableView.getColumns().add(sdevCol);
     }
-/*
-        ppmSetChoice.setValue(0);
-        refSetChoice.setValue(0);
-        menuBar.getItems().addAll(new Label("PPM Set:"), ppmSetChoice,
-                new Label("Ref Set:"), refSetChoice);
-        ppmSetChoice.setOnAction(e -> atomTableView.refresh());
-        refSetChoice.setOnAction(e -> atomTableView.refresh());
-        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.ATOM_MENU, this);
-    }
-*/
 
     public ToolBar getToolBar() {
         return menuBar;
@@ -494,7 +470,7 @@ public class AtomController implements Initializable, StageBasedController, Free
             Object normObj = deltaCol.getProperties().get("NORM");
             boolean normalize = true;
             if (normObj instanceof Boolean normValue) {
-                normalize = normValue.booleanValue();
+                normalize = normValue;
             }
             Double delta = atom.getDeltaPPM(iSet1, iSet2, ref1, ref2, normalize);
             ObservableValue<Number> ov;
@@ -527,7 +503,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         atoms.clear();
         if (molecule != null) {
             try {
-                Molecule.selectAtomsForTable(molFilter, atoms);
+                MoleculeBase.selectAtomsForTable(molFilter, atoms);
             } catch (InvalidMoleculeException ex) {
                 log.warn(ex.getMessage(), ex);
             }
@@ -728,10 +704,8 @@ public class AtomController implements Initializable, StageBasedController, Free
         if (predictorController == null) {
             predictorController = PredictorSceneController.create(this);
         }
-        if (predictorController != null) {
-            predictorController.getStage().show();
-            predictorController.getStage().toFront();
-        }
+        predictorController.getStage().show();
+        predictorController.getStage().toFront();
     }
 
     @Override
@@ -758,36 +732,6 @@ public class AtomController implements Initializable, StageBasedController, Free
 
         }
 
-    }
-
-    static class FloatStringConverter2 extends FloatStringConverter {
-
-        @Override
-        public Float fromString(String s) {
-            Float v;
-            try {
-                v = Float.parseFloat(s);
-            } catch (NumberFormatException nfE) {
-                v = null;
-            }
-            return v;
-        }
-
-    }
-
-    static class TextFieldTableCellDouble extends TextFieldTableCell<Atom, Double> {
-
-        public TextFieldTableCellDouble(StringConverter s) {
-            super(s);
-        }
-
-        @Override
-        public void updateItem(Double item, boolean empty) {
-            super.updateItem(item, empty);
-            if (item != null) {
-                setText(String.valueOf(item));
-            }
-        }
     }
 
     static class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {

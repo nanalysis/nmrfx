@@ -61,12 +61,12 @@ public class NEFSTARStructureCalculator {
 
     private static void setupLinks(Molecule molecule) {
         var entities = molecule.getEntities();
-        Entity firstEntity = entities.remove(0);
+        Entity firstEntity = entities.removeFirst();
         Atom startAtom = firstEntity.getLastAtom();
         AngleTreeGenerator angleTreeGenerator = new AngleTreeGenerator();
         for (Entity entity : entities) {
             if (entity instanceof Compound) {
-                Atom endAtom = angleTreeGenerator.findStartAtom(entity);
+                Atom endAtom = AngleTreeGenerator.findStartAtom(entity);
                 AngleTreeGenerator.genMeasuredTree(entity, endAtom);
                 molecule.createLinker(startAtom, endAtom, 6, 5.0, 110.0, 135.0);
             }

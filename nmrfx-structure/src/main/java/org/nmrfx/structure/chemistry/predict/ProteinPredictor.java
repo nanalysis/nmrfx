@@ -1,7 +1,6 @@
 package org.nmrfx.structure.chemistry.predict;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import jnr.ffi.annotations.In;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.NMRStarReader;

@@ -86,6 +86,9 @@ public class NMRStarReader {
         }
         return star3;
     }
+    public static STAR3 read(Reader reader, File starFile) throws ParseException {
+        return read(reader, starFile, 0);
+    }
 
     public static STAR3 read(Reader reader, File starFile, int toSet) throws ParseException {
         BufferedReader bfR = new BufferedReader(reader);
