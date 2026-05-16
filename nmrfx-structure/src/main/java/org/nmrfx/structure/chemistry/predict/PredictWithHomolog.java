@@ -2,7 +2,7 @@ package org.nmrfx.structure.chemistry.predict;
 
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.SmithWatermanBioJava;
+import org.nmrfx.structure.chemistry.AlignmentTool;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -77,7 +77,7 @@ public class PredictWithHomolog {
             String seqA = polymerA.getOneLetterCode();
             Polymer homologPolymer = homolog.getPolymers().getFirst();
             String seqB = homologPolymer.getOneLetterCode();
-            SmithWatermanBioJava aligner = new SmithWatermanBioJava(seqA, seqB);
+            AlignmentTool aligner = new AlignmentTool(seqA, seqB);
             var alignmentPair = aligner.doAlignment();
             var aList = aligner.getA();
             for (int i = 0; i < aList.size(); i++) {

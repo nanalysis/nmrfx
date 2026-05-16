@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 
-public class SmithWatermanBioJava {
+public class AlignmentTool {
 
     private final String aString;
     private final String bString;
@@ -43,7 +43,7 @@ public class SmithWatermanBioJava {
     AlignedSequence<ProteinSequence, AminoAcidCompound> targetAligned;
     SubstitutionMatrix<AminoAcidCompound> blosum62 = SubstitutionMatrixHelper.getBlosum62();
 
-    public SmithWatermanBioJava(String aString, String bString) {
+    public AlignmentTool(String aString, String bString) {
         this.aString = aString;
         this.bString = bString;
     }
