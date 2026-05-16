@@ -53,7 +53,7 @@ public class NEFSTARStructureCalculator {
             molecule = (Molecule) reader.processNEF();
         } else {
             var reader = new NMRStarReader(file, star);
-            reader.process();
+            reader.process(0);
             molecule = (Molecule) MoleculeFactory.getActive();
         }
         return molecule;

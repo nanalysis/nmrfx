@@ -110,7 +110,7 @@ public class ProteinPredictor {
                     initMinMax();
                     InputStream stream = new FileInputStream(path.toFile());
                     try (InputStreamReader reader = new InputStreamReader(stream)) {
-                        NMRStarReader.read(reader, null);
+                        NMRStarReader.read(reader, null, 0);
                     }
                     if (Molecule.getActive() != null) {
                         AtomErrors atomErrors = getAtomErrors(stringBuilder);

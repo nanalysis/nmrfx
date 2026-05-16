@@ -24,9 +24,12 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.star.BMRBio;
 import org.nmrfx.star.ParseException;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.predict.PredictWithHomolog;
 import org.nmrfx.utilities.BMRBSearchResult;
 import org.nmrfx.utils.GUIUtils;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpResponse;
 import java.util.*;
@@ -74,9 +77,13 @@ public class BMRBSearchController implements Initializable, StageBasedController
     }
 
     @Override
-    public void setStage(Stage stage) {this.stage = stage;}
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
 
-    public Stage getStage() {return stage;}
+    public Stage getStage() {
+        return stage;
+    }
 
     public static BMRBSearchController create() {
         BMRBSearchController controller = Fxml.load(BMRBSearchController.class, "BMRBScene.fxml")
@@ -167,12 +174,12 @@ public class BMRBSearchController implements Initializable, StageBasedController
 
         TableColumn<BMRBSearchResult, String> authorsCol = new TableColumn<>("Authors");
         authorsCol.setCellValueFactory((TableColumn.CellDataFeatures<BMRBSearchResult, String> p) ->
-                {
-                    BMRBSearchResult entry = p.getValue();
-                    List<String> authors = entry.getAuthors();
-                    String str = authors.toString().substring(1,authors.toString().length() - 1);
-                    return new SimpleStringProperty(str);
-                });
+        {
+            BMRBSearchResult entry = p.getValue();
+            List<String> authors = entry.getAuthors();
+            String str = authors.toString().substring(1, authors.toString().length() - 1);
+            return new SimpleStringProperty(str);
+        });
         authorsCol.setCellFactory(new Callback<>() {
             @Override
             public TableCell<BMRBSearchResult, String> call(TableColumn<BMRBSearchResult, String> param) {
@@ -207,10 +214,11 @@ public class BMRBSearchController implements Initializable, StageBasedController
         }
     }
 
-    private record fetchStarOptions(int entryID, boolean useRef, int ppmSet){}
+    private record FetchStarOptions(int entryID, boolean useRef, int ppmSet, boolean useHomologyMode) {
+    }
 
-    public static fetchStarOptions choosePPMSet(boolean promptForEntryID, boolean loadShiftsOnly) {
-        Dialog<fetchStarOptions> dialog = new Dialog<>();
+    public static FetchStarOptions choosePPMSet(final int entryID, boolean loadShiftsOnly) {
+        Dialog<FetchStarOptions> dialog = new Dialog<>();
         dialog.setTitle("Fetch BMRB");
         dialog.setHeaderText("Fetch BMRB:");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -223,7 +231,8 @@ public class BMRBSearchController implements Initializable, StageBasedController
         grid.add(new Label("BMRB ID: "), 0, row);
         grid.add(entryIDField, 1, row);
         row++;
-        if (!promptForEntryID) {
+        if (entryID != 0) {
+            entryIDField.setText(String.valueOf(entryID));
             entryIDField.setDisable(true);
         }
         CheckBox setRef = new CheckBox();
@@ -239,26 +248,35 @@ public class BMRBSearchController implements Initializable, StageBasedController
         comboBoxRows.setConverter(new IntegerStringConverter());
         grid.add(new Label("Assign to set"), 0, row);
         grid.add(comboBoxRows, 1, row);
-        if (!loadShiftsOnly) {setRef.setDisable(true); comboBoxRows.setDisable(true);}
+        row++;
+        CheckBox useHomologyMode = new CheckBox();
+        grid.add(new Label("Homology Mode: "), 0, row);
+        grid.add(useHomologyMode, 1, row);
+        if (!loadShiftsOnly) {
+            useHomologyMode.setDisable(true);
+        }
+
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.OK) {
                 // The value set in the formatter may not have been set yet so commit the value before retrieving
                 comboBoxRows.commitValue();
-                int entryID = 0;
-                if (!entryIDField.isDisable()) {
+                final int useID;
+                if (entryID == 0) {
                     try {
-                        entryID = Integer.parseInt(entryIDField.getText());
+                        useID = Integer.parseInt(entryIDField.getText());
                     } catch (Exception ex) {
                         GUIUtils.warn("Invalid Entry", "Numerical entries only");
                         return null;
                     }
+                } else {
+                    useID = entryID;
                 }
-                return new fetchStarOptions(entryID, setRef.isSelected(),comboBoxRows.getValue());
+                return new FetchStarOptions(useID, setRef.isSelected(), comboBoxRows.getValue(), useHomologyMode.isSelected());
             }
             return null;
         });
-        fetchStarOptions options = null;
-        Optional<fetchStarOptions> result = dialog.showAndWait();
+        FetchStarOptions options = null;
+        Optional<FetchStarOptions> result = dialog.showAndWait();
         if (result.isPresent()) {
             options = result.get();
         }
@@ -267,23 +285,14 @@ public class BMRBSearchController implements Initializable, StageBasedController
 
     public static void fetchStar(int entryID) {
         boolean loadShiftsOnly = GUIProject.checkProjectActive(false);
-        boolean promptForEntryID = entryID == 0;
-
-        fetchStarOptions options;
-        int ppmSet = 0;
-        if (loadShiftsOnly || promptForEntryID) {
-            options = choosePPMSet(promptForEntryID, loadShiftsOnly);
-            if (options == null) {
-                return;
-            }
-            if (promptForEntryID) {
-                entryID = options.entryID;
-            }
-            if (loadShiftsOnly) {
-                ppmSet = options.useRef ? -options.ppmSet - 1 : options.ppmSet;
-            }
+        FetchStarOptions options;
+        options = choosePPMSet(entryID, loadShiftsOnly);
+        if (options == null) {
+            return;
         }
-        int finalPpmSet = ppmSet;
+        entryID = options.entryID;
+        final int ppmSet = options.useRef ? -options.ppmSet - 1 : options.ppmSet;
+        final boolean useHomology = options.useHomologyMode;
 
         CompletableFuture<HttpResponse<String>> futureResponse;
         try {
@@ -302,11 +311,21 @@ public class BMRBSearchController implements Initializable, StageBasedController
                         return;
                     }
                     if (!loadShiftsOnly) {
-                        NMRStarReader.readFromString(r.body());
+                        NMRStarReader.readFromString(r.body(), ppmSet);
                     } else {
-                        NMRStarReader.readChemicalShiftsFromString(r.body(), finalPpmSet);
+                        if (useHomology) {
+                            NMRStarReader.getMoleculeWithShifts(r.body());
+                            var molOpt = NMRStarReader.getMoleculeWithShifts(r.body());
+                            if (molOpt.isPresent()) {
+                                var mol = (Molecule) molOpt.get();
+                                PredictWithHomolog predictWithHomolog = new PredictWithHomolog();
+                                predictWithHomolog.predict(mol, ppmSet);
+                            }
+                        } else {
+                            NMRStarReader.readChemicalShiftsFromString(r.body(), ppmSet);
+                        }
                     }
-                } catch (ParseException e) {
+                } catch (ParseException | IOException e) {
                     ExceptionDialog dialog = new ExceptionDialog(e);
                     dialog.showAndWait();
                 }

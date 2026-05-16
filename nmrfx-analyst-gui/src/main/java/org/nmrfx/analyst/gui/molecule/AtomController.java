@@ -26,6 +26,7 @@ package org.nmrfx.analyst.gui.molecule;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.*;
 import javafx.fxml.FXML;
@@ -36,6 +37,7 @@ import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -45,7 +47,6 @@ import javafx.util.converter.FloatStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.peaks.PeakPPMGetterGUI;
-import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.analyst.gui.tools.LACSPlotGui;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.chemistry.io.MoleculeIOException;
@@ -58,7 +59,6 @@ import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.FreezeListener;
-import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.utils.AtomUpdater;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
@@ -176,7 +176,7 @@ public class AtomController implements Initializable, StageBasedController, Free
 
             Set<TableColumn<Atom, ?>> removeCols = atomTableView.getColumns().stream()
                     .filter(col ->
-                        col.hasProperties() && !activePPMSets.contains((String) col.getProperties().get("SET")))
+                            col.hasProperties() && !activePPMSets.contains((String) col.getProperties().get("SET")))
                     .collect(Collectors.toSet());
             atomTableView.getColumns().removeAll(removeCols);
         }
@@ -220,7 +220,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         fileMenu.getItems().add(writeRefPPMItem);
 
         MenuItem readPPMItem = new MenuItem("Read PPM...");
-        readPPMItem.setOnAction(e -> readPPM(false));
+        readPPMItem.setOnAction(e -> readPPM());
         fileMenu.getItems().add(readPPMItem);
 
         menuBar.getItems().add(fileMenu);
@@ -262,10 +262,6 @@ public class AtomController implements Initializable, StageBasedController, Free
         peptideRandomItem.setOnAction(e -> getRandomPPM());
         refMenu.getItems().addAll(peptideRandomItem);
 
-        MenuItem readRefPPMItem = new MenuItem("Read PPM...");
-        readRefPPMItem.setOnAction(e -> readPPM(true));
-        refMenu.getItems().add(readRefPPMItem);
-
         MenuItem lacsPlotItem = new MenuItem("LACS Plot...");
         lacsPlotItem.setOnAction(e -> showLACSPlot());
         refMenu.getItems().add(lacsPlotItem);
@@ -279,7 +275,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         Button ppmPlotButton = new Button();
         ppmPlotButton.setText("Plot");
         ppmPlotButton.setOnAction(e -> showPPMPlotGUI());
-        menuBar.getItems().addAll( ppmPlotButton);
+        menuBar.getItems().addAll(ppmPlotButton);
     }
 
     private void updateColumnContextMenu() {
@@ -312,6 +308,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         ContextMenu menu = new ContextMenu();
         if (deltaColumn) {
             CheckMenuItem normalizeMenuItem = new CheckMenuItem("Normalize");
+            normalizeMenuItem.setSelected(false);
             normalizeMenuItem.setOnAction(e -> {
                 column.getProperties().put("NORM", normalizeMenuItem.isSelected());
                 refreshAtomTable();
@@ -411,6 +408,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         }
         lacsPlotGui.showMCplot();
     }
+
     private void showPeakPPMGetter() {
         if (peakPPMGetterGUI == null) {
             peakPPMGetterGUI = new PeakPPMGetterGUI(this);
@@ -481,7 +479,7 @@ public class AtomController implements Initializable, StageBasedController, Free
         boolean ref1 = getPPMSetRef(set1);
         int iSet2 = getPPMSetNum(set2);
         boolean ref2 = getPPMSetRef(set2);
-        String columnName = set1  + "-" + set2;
+        String columnName = set1 + "-" + set2;
         if (atomTableView.getColumns().stream()
                 .anyMatch(col ->
                         col.getText().equals(columnName) && col.getProperties().get("SET").equals(column.getText()))) {
@@ -577,38 +575,48 @@ public class AtomController implements Initializable, StageBasedController, Free
                 .filter(set -> set.startsWith("REF") == refMode).collect(Collectors.toSet());
     }
 
-    void readPPM(boolean refMode) {
+    void readPPM() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            GUIUtils.warn("Read PPM", "No molecule present");
+            return;
+        }
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
             Path path = file.toPath();
-            Molecule molecule = Molecule.getActive();
-            if (molecule != null) {
-                Integer iSet = (Integer) GUIUtils.choice(List.of(0,1,2,3,4,5),"Set:", Integer.valueOf(0));
-                if (iSet == null) {
-                    return;
-                }
-                if (file.getName().endsWith(".str")) {
-                    if (refMode) {
-                        iSet = -1 - iSet;
-                    }
-                    try {
-                        var molOpt =  NMRStarReader.getMoleculeWithShifts(file);
+            boolean starMode = file.getName().endsWith(".str");
+
+            var result = loadShiftsDialog(starMode);
+            if (result.isEmpty()) {
+                return;
+            }
+            ShiftLoadOptions shiftLoadOptions = result.get();
+            int iSet = shiftLoadOptions.targetSet();
+            if (shiftLoadOptions.useRefMode) {
+                iSet = -1 - iSet;
+            }
+            if (starMode) {
+                try {
+                    if (shiftLoadOptions.useHomologyModel()) {
+                        var molOpt = NMRStarReader.getMoleculeWithShifts(file);
                         if (molOpt.isPresent()) {
                             var mol = (Molecule) molOpt.get();
-                            PredictWithHomolog.predict(mol);
+                            PredictWithHomolog predictWithHomolog = new PredictWithHomolog();
+                            predictWithHomolog.predict(mol, iSet);
                         }
-                       // NMRStarReader.readChemicalShifts(file, iSet);
-                    } catch (ParseException ex) {
-                        GUIUtils.warn("Error reading .str file", ex.getMessage());
-                        return;
+                    } else {
+                        NMRStarReader.readChemicalShifts(file, iSet);
                     }
-                } else {
-                    PPMFiles.readPPM(molecule, path, iSet, refMode);
+                } catch (ParseException | IOException ex) {
+                    GUIUtils.warn("Error reading .str file", ex.getMessage());
+                    return;
                 }
+            } else {
+                PPMFiles.readPPM(molecule, path, iSet, shiftLoadOptions.useRefMode());
             }
-            refreshAtomTable();
         }
+        refreshAtomTable();
     }
 
     private String getSetName(int iSet, boolean ref) {
@@ -797,5 +805,49 @@ public class AtomController implements Initializable, StageBasedController, Free
         }
     }
 
+    public record ShiftLoadOptions(int targetSet, boolean useRefMode, boolean useHomologyModel) {
 
+    }
+
+    public static Optional<ShiftLoadOptions> loadShiftsDialog(boolean starMode) {
+        Dialog<ShiftLoadOptions> dialog = new Dialog<>();
+        dialog.setTitle("Load Chemical Shifts");
+        dialog.setHeaderText("Options:");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+        dialog.getDialogPane().setContent(grid);
+        int comboBoxWidth = 100;
+        ChoiceBox<Integer> targetSetChoice = new ChoiceBox<>();
+        targetSetChoice.getItems().addAll(0, 1, 2, 3, 4, 5);
+        targetSetChoice.setPrefWidth(comboBoxWidth);
+        targetSetChoice.setValue(0);
+        targetSetChoice.setMinWidth(comboBoxWidth);
+        targetSetChoice.setMaxWidth(comboBoxWidth);
+
+        CheckBox useRefModeCheckBox = new CheckBox("");
+        CheckBox useHomologyMatchCheckBox = new CheckBox("");
+        useHomologyMatchCheckBox.setDisable(!starMode);
+
+
+        grid.add(new Label("RefMode"), 0, 0);
+        grid.add(useRefModeCheckBox, 1, 0);
+
+        grid.add(new Label("Homology Mode"), 0, 1);
+        grid.add(useHomologyMatchCheckBox, 1, 1);
+
+        grid.add(new Label("Load to set:"), 0, 2);
+        grid.add(targetSetChoice, 1, 2);
+
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                return new ShiftLoadOptions(targetSetChoice.getValue(), useRefModeCheckBox.isSelected(), useHomologyMatchCheckBox.isSelected());
+            }
+            return null;
+        });
+
+        return dialog.showAndWait();
+    }
 }

@@ -21,7 +21,8 @@ import org.biojava.nbio.alignment.Alignments;
 import org.biojava.nbio.alignment.Alignments.PairwiseSequenceAlignerType;
 import org.biojava.nbio.alignment.SimpleGapPenalty;
 import org.biojava.nbio.alignment.template.GapPenalty;
-import org.biojava.nbio.core.alignment.matrices.SimpleSubstitutionMatrix;
+import org.biojava.nbio.core.alignment.matrices.SubstitutionMatrixHelper;
+import org.biojava.nbio.core.alignment.template.AlignedSequence;
 import org.biojava.nbio.core.alignment.template.SequencePair;
 import org.biojava.nbio.core.alignment.template.SubstitutionMatrix;
 import org.biojava.nbio.core.exceptions.CompoundNotFoundException;
@@ -29,6 +30,8 @@ import org.biojava.nbio.core.sequence.ProteinSequence;
 import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.OptionalInt;
 
 public class SmithWatermanBioJava {
 
@@ -36,21 +39,49 @@ public class SmithWatermanBioJava {
     private final String bString;
     private final ArrayList<Integer> indexA = new ArrayList<>();
     private final ArrayList<Integer> indexB = new ArrayList<>();
+    AlignedSequence<ProteinSequence, AminoAcidCompound> queryAligned;
+    AlignedSequence<ProteinSequence, AminoAcidCompound> targetAligned;
+    SubstitutionMatrix<AminoAcidCompound> blosum62 = SubstitutionMatrixHelper.getBlosum62();
 
     public SmithWatermanBioJava(String aString, String bString) {
         this.aString = aString;
         this.bString = bString;
     }
 
-    public ArrayList<Integer> getA() {
+    public AlignedSequence<ProteinSequence, AminoAcidCompound> getQueryAligned() {
+        return queryAligned;
+    }
+    public AlignedSequence<ProteinSequence, AminoAcidCompound> getTargetAligned() {
+        return targetAligned;
+    }
+
+    public List<Integer> getA() {
         return indexA;
     }
 
-    public ArrayList<Integer> getB() {
+    public List<Integer> getB() {
         return indexB;
     }
 
-    public SequencePair doAlignment() throws IllegalArgumentException {
+    public short getBlosum(int queryPos, int targetPos) {
+        AminoAcidCompound q = queryAligned.getOriginalSequence().getCompoundAt(queryPos);
+        AminoAcidCompound t = targetAligned.getOriginalSequence().getCompoundAt(targetPos);
+        return blosum62.getValue(q, t);
+    }
+
+    public OptionalInt getTargetIndex(
+            int queryIndex) {
+
+        int alignmentCol = queryAligned.getAlignmentIndexAt(queryIndex + 1);
+        AminoAcidCompound targetCompound = targetAligned.getCompoundAt(alignmentCol);
+
+        if (targetCompound.getShortName().equals("-")) {
+            return OptionalInt.empty();
+        }
+        return OptionalInt.of(targetAligned.getSequenceIndexAt(alignmentCol) - 1);
+    }
+
+    public SequencePair<ProteinSequence, AminoAcidCompound> doAlignment() throws IllegalArgumentException {
         ProteinSequence sequence1;
         ProteinSequence sequence2;
         try {
@@ -60,10 +91,12 @@ public class SmithWatermanBioJava {
             throw new IllegalArgumentException(cnfE.getMessage());
         }
         GapPenalty gapPenalty = new SimpleGapPenalty();
-        SubstitutionMatrix<AminoAcidCompound> matrix = SimpleSubstitutionMatrix.getBlosum62();
         SequencePair<ProteinSequence, AminoAcidCompound> pair
                 = Alignments.getPairwiseAlignment(sequence1, sequence2,
-                PairwiseSequenceAlignerType.GLOBAL, gapPenalty, matrix);
+                PairwiseSequenceAlignerType.GLOBAL, gapPenalty, blosum62);
+
+        queryAligned = pair.getQuery();
+        targetAligned = pair.getTarget();
 
         indexA.clear();
         indexB.clear();
