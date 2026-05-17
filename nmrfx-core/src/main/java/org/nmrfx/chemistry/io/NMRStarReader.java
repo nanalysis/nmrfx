@@ -70,24 +70,27 @@ public class NMRStarReader {
         return read(file);
     }
 
-    public static void readFromString(String starData) throws ParseException {
+    public static void readFromString(String starData, int toSet) throws ParseException {
         StringReader stringReader;
         stringReader = new StringReader(starData);
-        read(stringReader, null);
+        read(stringReader, null, toSet);
     }
 
 
     public static STAR3 read(File starFile) throws ParseException {
         STAR3 star3;
         try (FileReader fileReader = new FileReader(starFile)) {
-            star3 = read(fileReader, starFile);
+            star3 = read(fileReader, starFile, 0);
         } catch (IOException e) {
             throw new ParseException(e.getMessage());
         }
         return star3;
     }
-
     public static STAR3 read(Reader reader, File starFile) throws ParseException {
+        return read(reader, starFile, 0);
+    }
+
+    public static STAR3 read(Reader reader, File starFile, int toSet) throws ParseException {
         BufferedReader bfR = new BufferedReader(reader);
         STAR3 star = new STAR3(bfR, "star3");
 
@@ -97,7 +100,7 @@ public class NMRStarReader {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
         NMRStarReader nmrStarReader = new NMRStarReader(starFile, star);
-        nmrStarReader.process();
+        nmrStarReader.process(toSet);
         return star;
     }
 
@@ -150,6 +153,20 @@ public class NMRStarReader {
         } else {
             return Optional.empty();
         }
+    }
+
+    public static Optional<MoleculeBase> getMoleculeWithShifts(String starData) throws ParseException {
+        StringReader stringReader;
+        stringReader = new StringReader(starData);
+        BufferedReader bfR = new BufferedReader(stringReader);
+        STAR3 star = new STAR3(bfR, "star3");
+        try {
+            star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
+        NMRStarReader reader = new NMRStarReader(null, star);
+        return Optional.of(reader.processMolShifts());
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -335,18 +352,22 @@ public class NMRStarReader {
 
     public void buildChemShifts(int fromSet, final int toSet) throws ParseException {
         Iterator<Saveframe> iter = star3.getSaveFrames().values().iterator();
-        int iSet = 0;
+        int iSet = toSet;
         while (iter.hasNext()) {
             Saveframe saveframe = iter.next();
             if (saveframe.getCategoryName().equals("assigned_chemical_shifts")) {
                 log.debug("process chem shifts {}", saveframe.getName());
                 if (fromSet < 0) {
                     processChemicalShifts(saveframe, iSet);
-                } else if (fromSet == iSet) {
+                } else if ((fromSet == iSet) || (fromSet == (-iSet -1))) {
                     processChemicalShifts(saveframe, toSet);
                     break;
                 }
-                iSet++;
+                if (toSet < 0) {
+                    iSet--;
+                } else {
+                    iSet++;
+                }
             }
         }
     }
@@ -1170,13 +1191,13 @@ public class NMRStarReader {
                 refMode = true;
                 ppmSet = -1 - ppmSet;
             }
+            if (molecule == null) {
+                molecule = MoleculeFactory.getActive();
+            }
             var compoundMap = molecule.compoundMap();
             // map may be empty if we're importing shifts into new project
             // without reading star file with entity
             if (compoundMap.isEmpty()) {
-                if (molecule == null) {
-                    molecule = MoleculeFactory.getActive();
-                }
                 molecule.buildCompoundMap();
             }
             List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
@@ -1855,9 +1876,9 @@ public class NMRStarReader {
         noeSet.setCalibratable(false);
     }
 
-    public void process() throws ParseException, IllegalArgumentException {
+    public void process(int toSet) throws ParseException, IllegalArgumentException {
         String[] argv = {};
-        process(argv);
+        process(toSet, argv);
     }
 
     public MoleculeBase processMolShifts() throws ParseException {
@@ -1870,7 +1891,7 @@ public class NMRStarReader {
         return molecule;
     }
 
-    public void process(String[] argv) throws ParseException, IllegalArgumentException {
+    public void process(int toSet, String[] argv) throws ParseException, IllegalArgumentException {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
@@ -1890,7 +1911,7 @@ public class NMRStarReader {
             log.debug("process resonance lists");
             buildResonanceLists();
             log.debug("process chem shifts");
-            buildChemShifts(-1, 0);
+            buildChemShifts(-1, toSet);
             log.debug("process conformers");
             buildConformers();
             log.debug("process dist constraints");
@@ -1922,7 +1943,7 @@ public class NMRStarReader {
             log.debug("process done");
         } else if ("shifts".startsWith(argv[0])) {
             int fromSet = Integer.parseInt(argv[1]);
-            int toSet = Integer.parseInt(argv[2]);
+            toSet = Integer.parseInt(argv[2]);
             buildChemShifts(fromSet, toSet);
         }
     }
