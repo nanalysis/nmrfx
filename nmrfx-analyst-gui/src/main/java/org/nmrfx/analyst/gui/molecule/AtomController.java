@@ -64,7 +64,6 @@ import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.ParseException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
-import org.nmrfx.structure.chemistry.predict.PredictWithHomolog;
 import org.nmrfx.structure.chemistry.predict.ProteinPredictor;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -593,12 +592,7 @@ public class AtomController implements Initializable, StageBasedController, Free
                         iSet = -1 - iSet;
                     }
                     try {
-                        var molOpt =  NMRStarReader.getMoleculeWithShifts(file);
-                        if (molOpt.isPresent()) {
-                            var mol = (Molecule) molOpt.get();
-                            PredictWithHomolog.predict(mol);
-                        }
-                       // NMRStarReader.readChemicalShifts(file, iSet);
+                        NMRStarReader.readChemicalShifts(file, iSet);
                     } catch (ParseException ex) {
                         GUIUtils.warn("Error reading .str file", ex.getMessage());
                         return;
