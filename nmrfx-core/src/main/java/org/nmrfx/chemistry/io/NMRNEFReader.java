@@ -163,7 +163,7 @@ public class NMRNEFReader {
                 } else if (compound == null) {
                     compound = new Compound(seqCode, resName, resVariant, resName);
                     compound.molecule = molecule;
-                    addCompound(mapID, compound);
+                    compound.molecule.addCompound(mapID, compound);
                     compound.setIDNum(entityID);
                     compound.assemblyID = entityID;
                     compound.setPropertyObject("chain", chainCode);
@@ -176,7 +176,7 @@ public class NMRNEFReader {
                 try {
                     Residue residue = new Residue(seqCode, resName.toUpperCase(), resVariant);
                     residue.molecule = polymer.molecule;
-                    addCompound(mapID, residue);
+                    residue.molecule.addCompound(mapID, residue);
                     polymer.addResidue(residue);
                     RES_POSITION resPos = RES_POSITION.MIDDLE;
                     if (linkType.equals("start")) {
@@ -217,10 +217,6 @@ public class NMRNEFReader {
         sequence.removeBadBonds();
     }
 
-    void addCompound(String id, Compound compound) {
-        var compoundMap = MoleculeBase.compoundMap();
-        compoundMap.put(id, compound);
-    }
     void buildNEFPeakLists() throws ParseException {
         for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_nmr_spectrum")) {
@@ -478,7 +474,7 @@ public class NMRNEFReader {
     void processNEFChemicalShifts(MoleculeBase moleculeBase, Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_chemical_shift");
         if (loop != null) {
-            var compoundMap = MoleculeBase.compoundMap();
+            var compoundMap = moleculeBase.compoundMap();
             List<String> chainCodeColumn = loop.getColumnAsList("chain_code");
             List<String> sequenceCodeColumn = loop.getColumnAsList("sequence_code");
             List<String> resColumn = loop.getColumnAsList("residue_name");
@@ -520,7 +516,7 @@ public class NMRNEFReader {
         if (loop == null) {
             throw new ParseException("No \"_nef_dihedral_restraint\" loop");
         }
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         List<String>[] chainCodeColumns = new List[4];
         List<String>[] sequenceCodeColumns = new List[4];
         List<String>[] atomNameColumns = new List[4];
@@ -592,7 +588,7 @@ public class NMRNEFReader {
             throw new ParseException("No \"_nef_distance_restraint\" loop");
         }
         String origin = saveframe.getValue("_nef_distance_restraint_list", "restraint_origin", "noe");
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         List<String>[] chainCodeColumns = new ArrayList[2];
         List<String>[] sequenceColumns = new ArrayList[2];
         List<String>[] residueNameColumns = new ArrayList[2];
@@ -730,8 +726,6 @@ public class NMRNEFReader {
         MoleculeBase molecule = null;
         if (argv.length == 0) {
             hasResonances = false;
-            var compoundMap = MoleculeBase.compoundMap();
-            compoundMap.clear();
             log.debug("process molecule");
             molecule = buildNEFMolecule();
             ProjectBase.getActive().putMolecule(molecule);

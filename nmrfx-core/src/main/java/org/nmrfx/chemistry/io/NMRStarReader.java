@@ -51,7 +51,7 @@ public class NMRStarReader {
     private static final String COMP_ID = "Comp_ID";
     private static final String ASSEMBLY = "_Assembly";
 
-    
+
     final STAR3 star3;
     final File starFile;
 
@@ -115,12 +115,12 @@ public class NMRStarReader {
         reader.buildChemShifts(0, ppmSet);
     }
 
-    public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
+    static Optional<NMRStarReader> getNMRStarReader(File starFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(starFile);
         } catch (FileNotFoundException ex) {
-            return;
+            return Optional.empty();
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -132,7 +132,24 @@ public class NMRStarReader {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
         NMRStarReader reader = new NMRStarReader(starFile, star);
-        reader.buildChemShifts(0, ppmSet);
+        return Optional.of(reader);
+    }
+    public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
+        var readerOpt = getNMRStarReader(starFile);
+        if (readerOpt.isPresent()) {
+            var reader = readerOpt.get();
+            reader.buildChemShifts(0, ppmSet);
+        }
+    }
+
+    public static Optional<MoleculeBase> getMoleculeWithShifts(File starFile) throws ParseException {
+        var readerOpt = getNMRStarReader(starFile);
+        if (readerOpt.isPresent()) {
+            var reader = readerOpt.get();
+            return Optional.of(reader.processMolShifts());
+        } else {
+            return Optional.empty();
+        }
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -209,7 +226,7 @@ public class NMRStarReader {
             List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID", "");
             List<String> entityIDColumn = loop.getColumnAsList(ENTITY_ID);
             List<String> compIDColumn = loop.getColumnAsList(COMP_ID);
-            nmrStar.addCompound(mapID, compound);
+            compound.molecule.addCompound(mapID, compound);
             addComponents(saveframe, idColumn, authSeqIDColumn, compIDColumn, entityIDColumn, compound);
         } else {
             log.info("No \"_Entity_comp_index\" loop");
@@ -292,7 +309,7 @@ public class NMRStarReader {
         }
         Residue residue = new Residue(iRes, resName.toUpperCase());
         residue.molecule = polymer.molecule;
-        addCompound(mapID, residue);
+        residue.molecule.addCompound(mapID, residue);
         polymer.addResidue(residue);
         String ccSaveFrameName = STAR3Base.SAVE + "chem_comp_" + resName + "." + iRes;
         Saveframe ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
@@ -314,11 +331,6 @@ public class NMRStarReader {
                 throw new ParseException(psE.getMessage());
             }
         }
-    }
-
-    public void addCompound(String id, Compound compound) {
-        var compoundMap = MoleculeBase.compoundMap();
-        compoundMap.put(id, compound);
     }
 
     public void buildChemShifts(int fromSet, final int toSet) throws ParseException {
@@ -599,12 +611,11 @@ public class NMRStarReader {
     }
 
     public void buildResonanceLists() throws ParseException {
-        var compoundMap = MoleculeBase.compoundMap();
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
                 log.debug("process resonances {}", saveframe.getName());
-                AtomResonance.processSTAR3ResonanceList(saveframe, compoundMap);
+                AtomResonance.processSTAR3ResonanceList(saveframe, molecule.compoundMap());
             }
         }
     }
@@ -625,7 +636,7 @@ public class NMRStarReader {
         SpatialSetGroup spg = null;
         String iEntity = entityIDColumn.get(i);
         String entityAssemblyID = entityAssemblyIDColumn.get(i);
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         if (!iEntity.equals("?")) {
             String iRes = compIdxIDColumn.get(i);
             String atomName = atomColumn.get(i);
@@ -1029,7 +1040,7 @@ public class NMRStarReader {
         List<Double> valueColumn = loop.getColumnAsDoubleList("value", 0.0);
         int nMeasures = measureIdColumn.size();
         double[] values = new double[nMeasures];
-        for (int i = 0;i<measureIdColumn.size();i++) {
+        for (int i = 0; i < measureIdColumn.size(); i++) {
             values[i] = valueColumn.get(i);
         }
         Measures measures = new Measures(values);
@@ -1091,6 +1102,7 @@ public class NMRStarReader {
             }
         }
     }
+
     void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
         Loop loop = saveframe.getLoop("_Spectral_transition");
         if (loop != null) {
@@ -1158,7 +1170,7 @@ public class NMRStarReader {
                 refMode = true;
                 ppmSet = -1 - ppmSet;
             }
-            var compoundMap = MoleculeBase.compoundMap();
+            var compoundMap = molecule.compoundMap();
             // map may be empty if we're importing shifts into new project
             // without reading star file with entity
             if (compoundMap.isEmpty()) {
@@ -1261,7 +1273,7 @@ public class NMRStarReader {
             log.warn("No \"_Atom_site\" loop");
             return;
         }
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         List<String> entityAssemblyIDColumn = loop.getColumnAsList("Label_entity_assembly_ID");
         List<String> entityIDColumn = loop.getColumnAsList("Label_entity_ID");
         List<String> compIdxIDColumn = loop.getColumnAsList("Label_comp_index_ID");
@@ -1335,7 +1347,7 @@ public class NMRStarReader {
         extras.put("refDescription", refDescription);
 
         MoleculeBase mol = MoleculeFactory.getActive();
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = mol.compoundMap();
         Loop loop = saveframe.getLoop("_Heteronucl_NOE");
         if (loop == null) {
             log.warn("No \"NOE\" loop");
@@ -1430,7 +1442,7 @@ public class NMRStarReader {
         extras.put("units", units);
 
         MoleculeBase mol = MoleculeFactory.getActive();
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = mol.compoundMap();
         Loop loop = saveframe.getLoop("_" + expName);
         if (loop == null) {
             log.warn("No \"{}\" loop", expName);
@@ -1528,7 +1540,7 @@ public class NMRStarReader {
         String iRes = compIdxIDColumn.get(i);
         String atomName = atomColumn.get(i);
 
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = mol.compoundMap();
         String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
         Compound compound = compoundMap.get(mapID);
         if (compound == null) {
@@ -1730,7 +1742,7 @@ public class NMRStarReader {
         if (loop == null) {
             throw new ParseException("No \"_Gen_dist_constraint\" loop");
         }
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         List<String>[] entityAssemblyIDColumns = new ArrayList[2];
         List<String>[] entityIDColumns = new ArrayList[2];
         List<String>[] compIdxIDColumns = new ArrayList[2];
@@ -1848,6 +1860,16 @@ public class NMRStarReader {
         process(argv);
     }
 
+    public MoleculeBase processMolShifts() throws ParseException {
+        ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
+        hasResonances = false;
+        log.debug("process molecule");
+        buildMolecule();
+        buildChemShifts(-1, 0);
+        buildConformers();
+        return molecule;
+    }
+
     public void process(String[] argv) throws ParseException, IllegalArgumentException {
         if ((argv.length != 0) && (argv.length != 3)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
@@ -1856,8 +1878,6 @@ public class NMRStarReader {
         ResonanceFactory resFactory = ProjectBase.activeResonanceFactory();
         if (argv.length == 0) {
             hasResonances = false;
-            var compoundMap = MoleculeBase.compoundMap();
-            compoundMap.clear();
             buildExperiments();
             log.debug("process molecule");
             buildMolecule();
