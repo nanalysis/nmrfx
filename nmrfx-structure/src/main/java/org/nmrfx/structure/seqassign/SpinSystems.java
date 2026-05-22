@@ -343,7 +343,7 @@ public class SpinSystems {
         systems.clear();
         PeakList hncacoPeaklist = peakListMap.get("HNCACO");
         if (hncacoPeaklist != null) {
-            PeakList.clusterPeaks(List.of(hncacoPeaklist), refList, false);
+          //  PeakList.clusterPeaks(List.of(hncacoPeaklist), refList, false);
         }
 
         var searchDim = refList.getSearchDims().get(0);
