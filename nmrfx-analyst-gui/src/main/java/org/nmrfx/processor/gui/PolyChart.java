@@ -2236,6 +2236,23 @@ public class PolyChart extends Region {
         return finished;
     }
 
+    Optional<DatasetAttributes> getFirst1D() {
+        List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
+        removeIncompatibleDatasetAttributes(compatibleAttributes);
+        int n1D = 0;
+        if (disDimProp.get() != DISDIM.TwoD) {
+            n1D = compatibleAttributes.stream().filter(d -> !d.isProjection() && d.getPos())
+                    .mapToInt(d -> d.getLastChunk(0) + 1).sum();
+        }
+        int i1D = 0;
+        var firstOpt = compatibleAttributes.stream()
+                .filter(d -> d.getDataset() != null)
+                .filter(d -> d.getDataset().getSizeReal(0) > 0)
+                .filter(d -> !d.isProjection())
+                .filter(d -> d.getPos()).findFirst();
+        return firstOpt;
+    }
+
     void drawDatasetsTrace(GraphicsContextInterface gC) {
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
@@ -2266,6 +2283,7 @@ public class PolyChart extends Region {
             firstLvl = firstAttr.getLvl();
             firstOffset = firstAttr.getOffset();
             updateAxisType(false);
+            getAxes().setYAxisByLevel(firstAttr);
             if (chartProps.getRegions()) {
                 try {
                     drawRegions(firstAttr, gC);
