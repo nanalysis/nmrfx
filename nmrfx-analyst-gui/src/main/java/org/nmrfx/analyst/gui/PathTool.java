@@ -359,7 +359,7 @@ public class PathTool implements PeakNavigable, ControllerTool {
             alert.showAndWait();
             return;
         }
-        String pathName = scanTable.getScanDir() != null ? scanTable.getScanDir().getName() : datasetNames.get(0).toString();
+        String pathName = scannerTool.getScanDir() != null ? scannerTool.getScanDir().getName() : datasetNames.get(0).toString();
         if (pathName.contains(".")) {
             pathName = pathName.substring(0, pathName.indexOf("."));
         }

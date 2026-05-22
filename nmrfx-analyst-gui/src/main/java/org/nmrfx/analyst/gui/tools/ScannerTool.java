@@ -102,6 +102,7 @@ public class ScannerTool implements ControllerTool {
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
+    ScannerLoader scannerLoader;
 
     public ScannerTool(FXMLController controller) {
         this.controller = controller;
@@ -126,6 +127,8 @@ public class ScannerTool implements ControllerTool {
         Button reloadButton = new Button("Reload");
         reloadButton.setOnAction(e -> loadFromDataset());
         scanTable = new ScanTable(this, tableView);
+        scannerLoader = new ScannerLoader(scanTable);
+
         tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
         tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
         tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
@@ -290,28 +293,28 @@ public class ScannerTool implements ControllerTool {
 
     private void processScanDirAndCombine() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
-        scanTable.processScanDir(chartProcessor, true);
+        scanTable.scannerLoader.processScanDir(chartProcessor, true, scanTable);
     }
 
     private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
-        scanTable.processScanDir(chartProcessor, false);
+        scanTable.scannerLoader.processScanDir(chartProcessor, false, scanTable);
     }
 
     private void combineDatasets() {
-        scanTable.combineDatasets();
+        scanTable.scannerLoader.combineDatasets(scanTable);
     }
 
     private void scanDirAction() {
-        scanTable.loadScanFiles();
+        scanTable.scannerLoader.loadScanFiles(scanTable);
     }
 
     private void loadTableAction() {
-        scanTable.loadScanTable();
+        scannerLoader.loadScanTable();
     }
 
     private void saveTableAction() {
-        scanTable.saveScanTable();
+        scannerLoader.saveScanTable(scanTable);
     }
 
     private void purgeInactive() {
@@ -322,7 +325,7 @@ public class ScannerTool implements ControllerTool {
 
     private void loadFromDataset() {
         chart = controller.getActiveChart();
-        scanTable.loadFromDataset();
+        scannerLoader.loadFromDataset(scanTable);
         scanTable.setChart();
     }
 
@@ -349,6 +352,10 @@ public class ScannerTool implements ControllerTool {
 
     public ScanTable getScanTable() {
         return scanTable;
+    }
+
+    public File getScanDir() {
+        return scannerLoader.getScanDir();
     }
 
     private boolean hasColumnName(String columnName) {
@@ -400,7 +407,7 @@ public class ScannerTool implements ControllerTool {
                 String datasetName = item.getDatasetName();
                 Dataset itemDataset = Dataset.getDataset(datasetName);
                 if (itemDataset == null) {
-                    File datasetFile = new File(scanTable.getScanDir(), datasetName);
+                    File datasetFile = new File(scannerLoader.getScanDir(), datasetName);
                     try {
                         itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                     } catch (IOException ioE) {
@@ -454,7 +461,7 @@ public class ScannerTool implements ControllerTool {
             }
 
             if (itemDataset == null) {
-                File datasetFile = new File(scanTable.getScanDir(), datasetName);
+                File datasetFile = new File(scannerLoader.getScanDir(), datasetName);
                 try {
                     itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                 } catch (IOException ioE) {
