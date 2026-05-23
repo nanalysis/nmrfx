@@ -1,6 +1,7 @@
 package org.nmrfx.analyst.dataops;
 
 import org.nmrfx.analyst.compounds.CompoundData;
+import org.nmrfx.peaks.*;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;
@@ -51,6 +52,18 @@ public class SimData {
             return sppms.get(j[0]) * ppmScale / Short.MAX_VALUE;
         }
 
+        public List<Double> j(int index) {
+            List<Double> jV = new ArrayList<>();
+            for (int k = 0; k < jValues.size(); k++) {
+                int iTest = jPairs.get(k * 2);
+                int jTest = jPairs.get(k * 2 + 1);
+                if (((index == iTest) || (index == jTest))) {
+                    jV.add(jValues.get(k) * jScale / Short.MAX_VALUE);
+                }
+            }
+            return jV;
+        }
+
         public void ppm(int i, double value) {
             int[] iPPMs = ppmList.get(i);
             double f = value / ppmScale;
@@ -90,6 +103,14 @@ public class SimData {
                     }
                 }
             }
+        }
+
+        public double[] getPPMs() {
+            double[] values = new double[sppms.size()];
+            for (int i = 0; i < values.length; i++) {
+                values[i] = sppms.get(i) * ppmScale / Short.MAX_VALUE;
+            }
+            return values;
         }
 
         public int id(int i) {
@@ -135,7 +156,7 @@ public class SimData {
 
     public void setPPMs(int iBlock, List<Double> values) {
         AtomBlock block = blocks[iBlock];
-        double tol = 0.004;
+        double tol = 0.0025;
         block.sppms.clear();
         block.ppmList.clear();
         for (double value : values) {
@@ -179,6 +200,30 @@ public class SimData {
         return values;
     }
 
+    public List<Double> getPPMs() {
+        List<Double> ppms = new ArrayList<>();
+        for (int i = 0; i < blocks.length; i++) {
+            double[] bPPMs = getPPMs(i);
+            for (double bPPM : bPPMs) {
+                ppms.add(bPPM);
+            }
+        }
+        return ppms;
+    }
+
+    public List<SimData> match(List<Double> query, double tol) {
+        List<SimData> okList = new ArrayList<>();
+        for (SimData simData : simDataMap.values()) {
+            List<Double> ppms = simData.getPPMs();
+            var result = Align.matchPeaks(query, ppms, tol, Align.MatchMode.RECALL);
+
+            if (result.matchedCount() == query.size()) {
+                okList.add(simData);
+            }
+        }
+        return okList;
+    }
+
     public void setJValues(int iBlock, List<Double> values) {
         AtomBlock block = blocks[iBlock];
         for (Double value : values) {
@@ -194,6 +239,42 @@ public class SimData {
             values[i] = block.jValues.get(i) * jScale / Short.MAX_VALUE;
         }
         return values;
+    }
+
+    public PeakList buildPeakList(Dataset dataset) {
+        PeakList peakList = new PeakList(name, 1);
+        SpectralDim spectralDim = peakList.getSpectralDim(0);
+        spectralDim.setSf(dataset.getSf(0));
+        spectralDim.setSw(dataset.getSw(0));
+        spectralDim.setDimName(dataset.getLabel(0));
+        peakList.setDatasetName(dataset.getName());
+        for (AtomBlock atomBlock : blocks) {
+            var ppmIndices = atomBlock.ppmList;
+            int nPPM = ppmIndices.size();
+            for (int i = 0; i < nPPM; i++) {
+                int[] matches = ppmIndices.get(i);
+                double ppm = atomBlock.ppm(i);
+                Peak peak = peakList.getNewPeak();
+                PeakDim peakDim = peak.getPeakDim(0);
+                peakDim.setChemShiftValue((float) ppm);
+                peakDim.setLineWidthHz(1.0f);
+                peakDim.setBoundsHz(2.0f);
+                peak.setIntensity(100.0f);
+                peak.setVolume1(matches.length);
+                List<Double> jValues = atomBlock.j(matches[0]);
+                double[] jArray = new double[jValues.size()];
+                double[] sin2Thetas = new double[jArray.length];
+                int[] n = new int[jArray.length];
+                for (int ij = 0; ij < jArray.length; ij++) {
+                    jArray[ij] = jValues.get(ij);
+                    sin2Thetas[ij] = 1.0;
+                    n[ij] = 2;
+                }
+                Multiplet multiplet = peakDim.getMultiplet();
+                multiplet.setCouplingValues(jArray, n, 1.0, sin2Thetas);
+            }
+        }
+        return peakList;
     }
 
     public void setJPairs(int iBlock, List<Integer> values) {
@@ -221,11 +302,7 @@ public class SimData {
     }
 
     public static List<String> getNames() {
-        List<String> names = new ArrayList<>();
-        for (String name : simDataMap.keySet()) {
-            names.add(name);
-        }
-        return names;
+        return new ArrayList<>(simDataMap.keySet());
     }
 
     public static List<String> getNames(String pattern) {
@@ -274,7 +351,7 @@ public class SimData {
         return dataset;
     }
 
-    public static Vec genVec(String name, SimDataVecPars simDataVecPars, double lb) throws IOException {
+    public static Vec genVec(String name, SimDataVecPars simDataVecPars, double lb) {
         SimData simData = simDataMap.get(name);
         Vec vec = prepareVec(name, simDataVecPars);
         genVec(simData, vec, lb);
@@ -298,7 +375,7 @@ public class SimData {
         return cData;
     }
 
-    static class Region {
+    public static class Region {
 
         double min;
         double max;
@@ -312,9 +389,42 @@ public class SimData {
 
     }
 
+    public static List<SimData> getSimData() {
+        return simDataMap.values().stream().toList();
+    }
+
     public static Optional<SimData> getSimData(String name) {
         SimData data = simDataMap.get(name);
         return Optional.ofNullable(data);
+    }
+
+    public static SimShifts buildSimShifts(SimData data, int iBlock, double sf, double lb, List<double[]> regions) {
+        double[] shifts = data.getPPMs(iBlock);
+        double[] couplings = data.getJValues(iBlock);
+        int[] pairs = data.getJPairs(iBlock);
+        for (int j = 0; j < shifts.length; j++) {
+            double min = shifts[j];
+            double max = shifts[j];
+            for (int k = 0; k < couplings.length; k++) {
+                if ((pairs[k * 2] == j) || (pairs[k * 2 + 1] == j)) {
+                    double delta = Math.abs(couplings[k]) / sf;
+                    min = min - delta / 2;
+                    max = max + delta / 2;
+                }
+            }
+            double[] region = {min - 3 * lb / sf, max + 3 * lb / sf};
+            regions.add(region);
+        }
+        SimShifts simShifts = data.simShifts[iBlock];
+        if (simShifts == null) {
+            simShifts = new SimShifts(shifts, couplings, pairs, sf);
+            data.simShifts[iBlock] = simShifts;
+        }
+        if (!simShifts.isValid(shifts, couplings, sf)) {
+            simShifts.setValues(shifts, couplings, pairs, sf);
+            simShifts.diag();
+        }
+        return simShifts;
     }
 
     public static List<Region> genVec(SimData data, Vec vec, double lb) throws IllegalArgumentException {
@@ -322,45 +432,18 @@ public class SimData {
         int nBlocks = data.blocks.length;
         List<double[]> regions = new ArrayList<>();
         for (int iBlock = 0; iBlock < nBlocks; iBlock++) {
-            double[] shifts = data.getPPMs(iBlock);
-            double[] couplings = data.getJValues(iBlock);
-            int[] pairs = data.getJPairs(iBlock);
-            for (int j = 0; j < shifts.length; j++) {
-                double min = shifts[j];
-                double max = shifts[j];
-                for (int k = 0; k < couplings.length; k++) {
-                    if ((pairs[k * 2] == j) || (pairs[k * 2 + 1] == j)) {
-                        double delta = Math.abs(couplings[k]) / vec.getSF();
-                        min = min - delta / 2;
-                        max = max + delta / 2;
-                    }
-                }
-                double[] region = {min - 3 * lb / vec.getSF(), max + 3 * lb / vec.getSF()};
-                regions.add(region);
-            }
-            SimShifts simShifts = data.simShifts[iBlock];
-            if (simShifts == null) {
-                simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
-                data.simShifts[iBlock] = simShifts;
-            }
-            if (!simShifts.isValid(shifts, couplings, vec.getSF())) {
-                simShifts.setValues(shifts, couplings, pairs, vec.getSF());
-                simShifts.diag();
-            }
+            SimShifts simShifts = buildSimShifts(data, iBlock, vec.getSF(), lb, regions);
             simShifts.makeSpec(vec, lb);
         }
-        regions.sort((a, b) -> Double.compare(a[0], b[0]));
+        regions.sort(Comparator.comparingDouble(a -> a[0]));
         List<Region> filteredRegions = new ArrayList<>();
 
-        for (int i = 0; i < regions.size(); i++) {
-            double[] region = regions.get(i);
+        for (double[] region : regions) {
             double min = region[0];
             double max = region[1];
             boolean overlaps = false;
             for (Region fRegion : filteredRegions) {
-                if ((max < fRegion.min) || (min > fRegion.max)) {
-                    continue;
-                } else {
+                if ((!(max < fRegion.min)) && (!(min > fRegion.max))) {
                     overlaps = true;
                     fRegion.min = Math.min(min, fRegion.min);
                     fRegion.max = Math.max(max, fRegion.max);
@@ -390,7 +473,6 @@ public class SimData {
     public static CompoundData genRegions(String cmpdID, String name, SimDataVecPars pars, double refConc, double cmpdConc, Vec vec, List<Region> regions) {
         double refNProtons = 9.0;
         CompoundData cData = new CompoundData(cmpdID, name, pars.getRef(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, refNProtons);
-        int n = vec.getSize();
 
         for (Region region : regions) {
             int pt1 = vec.refToPt(region.max);

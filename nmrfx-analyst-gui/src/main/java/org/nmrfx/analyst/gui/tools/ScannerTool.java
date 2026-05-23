@@ -21,14 +21,24 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+import org.controlsfx.control.textfield.TextFields;
+import org.nmrfx.analyst.dataops.DBData;
+import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.analyst.gui.TablePlotGUI;
 import org.nmrfx.analyst.gui.peaks.MatrixAnalysisTool;
 import org.nmrfx.datasets.DatasetBase;
@@ -39,10 +49,7 @@ import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
 import org.nmrfx.processor.datasets.peaks.*;
-import org.nmrfx.processor.gui.ChartProcessor;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -56,6 +63,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -82,6 +90,7 @@ public class ScannerTool implements ControllerTool {
 
     ToolBar scannerBar;
     private TableView<FileTableItem> tableView;
+    TabPane tableTabPane;
     Consumer<ScannerTool> closeAction;
     double splitPanePosition = 0.8;
 
@@ -89,6 +98,7 @@ public class ScannerTool implements ControllerTool {
     PolyChart chart;
     Stage stage;
     ScanTable scanTable;
+    CompoundTable compoundTable;
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
@@ -113,7 +123,13 @@ public class ScannerTool implements ControllerTool {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
         tableView = new TableView<>();
-        borderPane.setCenter(tableView);
+        tableTabPane = new TabPane();
+        borderPane.setCenter(tableTabPane);
+        tableTabPane.setSide(Side.LEFT);
+        Tab tableTab = new Tab("Datasets");
+        tableTab.setClosable(false);
+        tableTab.setContent(tableView);
+        tableTabPane.getTabs().add(tableTab);
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
         scannerBar.getItems().add(closeButton);
@@ -137,6 +153,7 @@ public class ScannerTool implements ControllerTool {
         vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
         borderPane.setLeft(vBox);
         loadFromDataset();
+        buildCompoundTool();
     }
 
     public TableSelectionMode tableSelectionMode() {
@@ -170,6 +187,73 @@ public class ScannerTool implements ControllerTool {
 
     public double getSplitPanePosition() {
         return splitPanePosition;
+    }
+
+    private void buildCompoundTool() {
+        Tab libraryTableTab = new Tab("Compounds");
+        TableView<CompoundTable.CompoundItem> libraryTableView = new TableView<>();
+        compoundTable = new CompoundTable(this, libraryTableView);
+        libraryTableView.setMinWidth(400);
+        HBox hBox = new HBox();
+        hBox.getChildren().add(libraryTableView);
+        libraryTableTab.setClosable(false);
+        libraryTableTab.setContent(hBox);
+        tableTabPane.getTabs().add(libraryTableTab);
+        VBox vBox = new VBox();
+        hBox.getChildren().add(vBox);
+        makeCompoundControls(vBox);
+    }
+
+    private void makeCompoundControls(VBox vBox) {
+        ToolBar toolBar = new ToolBar();
+        Button peakButton = new Button("Peaks");
+        peakButton.setOnAction(e -> compoundTable.showPeakList());
+        toolBar.getItems().add(peakButton);
+
+        Label searchLabel = new Label("Compound:");
+        searchLabel.setPrefWidth(60);
+        TextField searchField = new TextField();
+        searchField.setPrefWidth(200);
+        searchField.setOnKeyReleased(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                setMol(searchField.getText());
+            }
+        });
+        HBox hBox2 = new HBox();
+        hBox2.setAlignment(Pos.CENTER_LEFT);
+        hBox2.setSpacing(10);
+        hBox2.getChildren().addAll(searchLabel, searchField);
+
+        vBox.getChildren().addAll(toolBar,  hBox2);
+
+        Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
+        TextFields.bindAutoCompletion(searchField, suggestionProvider);
+
+    }
+
+    List<String> getMatchingNames(String pattern) {
+        ChemicalLibraryController.LIBRARY_MODE mode = ChemicalLibraryController.LIBRARY_MODE.GISSMO;
+
+        if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
+            String dbPath = AnalystPrefs.getSegmentLibraryFile();
+            try {
+                DBData.loadData(Path.of(dbPath));
+            } catch (IOException e) {
+            }
+
+            return DBData.getNames(pattern);
+        } else {
+            if (!SimData.loaded()) {
+                ChemicalLibraryController.loadSimData();
+            }
+            return SimData.getNames(pattern);
+        }
+    }
+
+
+    private void setMol(String name) {
+        compoundTable.select(name);
+
     }
 
     private MenuButton makeFileMenu() {
@@ -900,7 +984,7 @@ public class ScannerTool implements ControllerTool {
     void fitPeakDecay() {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
-       // Optional<String> columNameOpt = textInput.showAndWait();
+        // Optional<String> columNameOpt = textInput.showAndWait();
         if (chart.getPeakListAttributes().isEmpty()) {
             return;
         }
@@ -913,10 +997,10 @@ public class ScannerTool implements ControllerTool {
         for (Peak peak : peakListAttr.getPeakList().peaks()) {
             String label = peak.getPeakDim(0).getLabel();
             if (label.isBlank()) {
-                label = "#"+peak.getIdNum();
+                label = "#" + peak.getIdNum();
             }
-            String rateColumnName = peak.getPeakList().getName() + "_" + label+ "_Rate:" + peak.getIdNum();
-            String intColumnName = peak.getPeakList().getName() + "_" + label+ "_Int:" + peak.getIdNum();
+            String rateColumnName = peak.getPeakList().getName() + "_" + label + "_Rate:" + peak.getIdNum();
+            String intColumnName = peak.getPeakList().getName() + "_" + label + "_Int:" + peak.getIdNum();
             List<Double> rateValues = new ArrayList<>();
             List<Double> intValues = new ArrayList<>();
             for (FileTableItem item : items) {

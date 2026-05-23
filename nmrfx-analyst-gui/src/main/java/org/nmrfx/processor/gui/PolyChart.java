@@ -1510,6 +1510,18 @@ public class PolyChart extends Region {
         peakListAttributesList.clear();
         refresh();
     }
+    public void clearPeaks() {
+        peakListAttributesList.clear();
+        refresh();
+    }
+
+    public void clearSimDatasets() {
+        var simData = datasetAttributesList.stream().filter(d -> d.getDataset().getName().startsWith("SIM")).toList();
+        simData.forEach(d -> {
+            datasetAttributesList.remove(d);
+        });
+        peakListAttributesList.clear();
+    }
 
     public void updateDatasetsByNames(List<String> targets) {
         List<Dataset> datasets = targets.stream().map(s -> Dataset.getDataset(s)).toList();

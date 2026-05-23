@@ -149,7 +149,7 @@ public class SimShifts {
         BMatrixRMaj bmat = CommonOps_DDRM.elementMoreThan(arS.getDDRM(), 1.0e-6, null);
         int nR = arS.getDDRM().getNumRows();
         int nC = arS.getDDRM().getNumCols();
-        Double maxValue = Double.NEGATIVE_INFINITY;
+        double maxValue = Double.NEGATIVE_INFINITY;
         ppms.clear();
         intensities.clear();
 
@@ -170,9 +170,7 @@ public class SimShifts {
         }
         double norm = sum / nSpins;
         if (norm > 0.0) {
-            for (int i = 0; i < intensities.size(); i++) {
-                intensities.set(i, intensities.get(i) / norm);
-            }
+            intensities.replaceAll(aDouble -> aDouble / norm);
         }
     }
 
@@ -199,10 +197,9 @@ public class SimShifts {
     }
 
     int[] sortEig(DMatrixRMaj eValues) {
-        int[] sortedIndices = IntStream.range(0, eValues.getNumElements())
+        return IntStream.range(0, eValues.getNumElements())
                 .boxed().sorted((i, j) -> Double.compare(eValues.get(i), eValues.get(j)))
                 .mapToInt(ele -> ele).toArray();
-        return sortedIndices;
     }
 
     public Matrices getMatrices(DMatrixRMaj shifts, DMatrixRMaj couplings) {

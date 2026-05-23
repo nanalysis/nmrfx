@@ -15,9 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -506,4 +504,57 @@ public class Align {
             }
         }
     }
+
+    public record MatchResult(double score, int matchedCount) {
+    }
+
+    public enum MatchMode {
+        DICE,
+        RECALL
+    }
+    /**
+     * Matches two NMR peak lists using greedy bipartite matching scored with
+     * the Dice coefficient. Score of 1.0 means every peak matched perfectly.
+     *
+     * @param queryPositions chemical shifts from the query spectrum (ppm)
+     * @param dbPositions    chemical shifts from the database entry (ppm)
+     * @param tolerance   max ppm difference to consider two peaks a match
+     */
+    public static MatchResult matchPeaks(List<Double> queryPositions, List<Double> dbPositions, double tolerance, MatchMode matchMode ) {
+        record Candidate(double distance, int queryIndex, int dbIndex) {
+        }
+
+        List<Candidate> candidates = new ArrayList<>();
+        for (int iQuery = 0; iQuery < queryPositions.size(); iQuery++) {
+            for (int iDB = 0; iDB < dbPositions.size(); iDB++) {
+                double dist = Math.abs(queryPositions.get(iQuery) - dbPositions.get(iDB));
+                if (dist <= tolerance) {
+                    candidates.add(new Candidate(dist, iQuery, iDB));
+                }
+            }
+        }
+
+        candidates.sort(Comparator.comparingDouble(c -> c.distance));
+
+        Set<Integer> matchedQuery = new HashSet<>();
+        Set<Integer> matchedDb = new HashSet<>();
+
+        for (Candidate c : candidates) {
+            if (!matchedQuery.contains(c.queryIndex) && !matchedDb.contains(c.dbIndex)) {
+                matchedQuery.add(c.queryIndex);
+                matchedDb.add(c.dbIndex);
+            }
+        }
+
+        int nMatched = matchedQuery.size();
+        if (matchMode == MatchMode.DICE) {
+            double score = (2.0 * nMatched) / (queryPositions.size() + dbPositions.size());
+            return new MatchResult(score, nMatched);
+        } else {
+            double score = (double) nMatched / queryPositions.size();  // recall only
+            return new MatchResult(score, nMatched);
+
+        }
+    }
+
 }
