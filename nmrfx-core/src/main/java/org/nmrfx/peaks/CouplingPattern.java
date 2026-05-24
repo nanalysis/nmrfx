@@ -72,6 +72,23 @@ public class CouplingPattern extends Coupling {
         multiplet.setIntensity(intensity);
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
+    CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity,
+                    final double[] sin2thetas, int[] blocks, int[] indices) {
+        this.multiplet = multiplet;
+
+        couplingItems = new CouplingItem[values.length];
+        for (int i = 0; i < values.length; i++) {
+            double sin2theta = 0.0;
+            if (i < sin2thetas.length) {
+                sin2theta = sin2thetas[i];
+            }
+            couplingItems[i] = new CouplingItem(values[i], sin2theta, 0.0, n[i], blocks[i], indices[i]);
+            System.out.println(i + " " + blocks[i] + " " + indices[i]);
+        }
+        this.intensity = intensity;
+        multiplet.setIntensity(intensity);
+        // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
+    }
 
     public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types, final List<Double> sin2thetas, final double intensity) {
         this.multiplet = multiplet;
@@ -170,6 +187,23 @@ public class CouplingPattern extends Coupling {
         return n;
     }
 
+    public int[] getBlocks() {
+        int[] n = new int[couplingItems.length];
+        int i = 0;
+        for (CouplingItem couplingItem : couplingItems) {
+            n[i++] = couplingItem.block();
+        }
+        return n;
+    }
+    public int[] getIndices() {
+        int[] n = new int[couplingItems.length];
+        int i = 0;
+        for (CouplingItem couplingItem : couplingItems) {
+            n[i++] = couplingItem.index();
+        }
+        return n;
+    }
+
     public double getIntensity() {
         return intensity;
     }
@@ -227,9 +261,18 @@ public class CouplingPattern extends Coupling {
                 }
             }
             CouplingItem oldItem = couplingItems[iCoupling];
-            CouplingItem newItem = new CouplingItem(newValue, oldItem.sin2Theta(), oldItem.nSplits());
+            CouplingItem newItem = new CouplingItem(newValue, oldItem.sin2Theta(), oldItem.freq(),
+                    oldItem.nSplits(), oldItem.block(), oldItem.index());
             couplingItems[iCoupling] = newItem;
         }
+    }
+
+    public int getBlock(int iCoupling) {
+        return couplingItems[iCoupling].block();
+    }
+
+    public int getIndex(int iCoupling) {
+        return couplingItems[iCoupling].index();
     }
 
     @Override
@@ -365,5 +408,28 @@ public class CouplingPattern extends Coupling {
         }
 
         return lines;
+    }
+
+    public void updateCouplings(int mLine) {
+        CouplingItem couplingItem = couplingItems[mLine];
+        int iBlock = couplingItem.block();
+        int index = couplingItem.index();
+        double value = couplingItem.coupling();
+        PeakList peakList = multiplet.getPeakList();
+        for (Peak peak : peakList.peaks()) {
+            PeakDim peakDim = peak.getPeakDim(0);
+            Multiplet aMultiplet = peakDim.getMultiplet();
+            if ((multiplet != aMultiplet) && aMultiplet.isCoupled() && aMultiplet.getCoupling() instanceof  CouplingPattern couplingPattern) {
+                CouplingItem[] couplingItems1 = couplingPattern.couplingItems;
+                int i = 0;
+                for (CouplingItem item : couplingItems1) {
+                    if ((item.index() != -1) && (item.block() == iBlock) && (item.index() == index)) {
+                        System.out.println("adjust " + i + " " + value);
+                        couplingPattern.adjustCouplings(i, value);
+                    }
+                    i++;
+                }
+            }
+        }
     }
 }

@@ -25,15 +25,18 @@ package org.nmrfx.peaks;
 /**
  * @author brucejohnson
  */
-public record CouplingItem(double coupling, double sin2Theta, double freq, int nSplits) implements Comparable {
+public record CouplingItem(double coupling, double sin2Theta, double freq, int nSplits, int block, int index) implements Comparable {
 
 
     public CouplingItem(final double coupling, final double sin2Theta, final int nSplits) {
-        this(coupling, sin2Theta, 0.0, nSplits);
+        this(coupling, sin2Theta, 0.0, nSplits, 0, -1);
+    }
+    public CouplingItem(final double coupling, final double sin2Theta, double freq, final int nSplits) {
+        this(coupling, sin2Theta, freq, nSplits, 0, -1);
     }
 
     public CouplingItem(final double coupling, final int nSplits) {
-        this(coupling, 0.0, 0.0, nSplits);
+        this(coupling, 0.0, 0.0, nSplits, 0, -1);
     }
 
     public double coupling() {

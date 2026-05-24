@@ -21,6 +21,7 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.fxutil.Fx;
@@ -616,6 +617,10 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
                 values[mLine] += deltaHz;
                 cPat.adjustCouplings(mLine, values[mLine]);
+                cPat.updateCouplings(mLine);
+
+
+                //System.out.println(mLine + " " + values[mLine] + " " + multiplet.getPeakDim().getPeak() +  " " +  cPat.getBlock(mLine) + " " + cPat.getIndex(mLine));
             }
         } else if (multiplet.isGenericMultiplet()) {
             Coupling coupling = multiplet.getCoupling();

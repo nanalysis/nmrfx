@@ -26,6 +26,7 @@ import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.utilities.Format;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -120,14 +121,22 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
         max = getMultipletMax();
     }
-
     public void set(double centerPPM, double[] couplingValues, double amplitude, double[] sin2thetas) {
+        int[] blocks = new int[couplingValues.length];
+        int[] indices = new int[couplingValues.length];
+        Arrays.fill(blocks, -1);
+        Arrays.fill(indices, -1);
+        set(centerPPM, couplingValues, amplitude, sin2thetas, blocks, indices);
+    }
+
+    public void set(double centerPPM, double[] couplingValues, double amplitude, double[] sin2thetas,
+                    int[] blocks, int[] indices) {
         if (coupling instanceof Singlet) {
             getOrigin().setIntensity((float) amplitude);
         } else {
             CouplingPattern cPat = (CouplingPattern) coupling;
             int[] nValues = cPat.getNValues();
-            coupling = new CouplingPattern(this, couplingValues, nValues, amplitude, sin2thetas);
+            coupling = new CouplingPattern(this, couplingValues, nValues, amplitude, sin2thetas, blocks, indices);
             intensity = amplitude;
         }
         setCenter(centerPPM);
@@ -348,6 +357,10 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public void setCouplingValues(double[] values, int[] n, double intensity, double[] sin2Thetas) {
         coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
+        myPeakDim.peakDimUpdated();
+    }
+    public void setCouplingValues(double[] values, int[] n, double intensity, double[] sin2Thetas, int[] blocks, int[] indices) {
+        coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas, blocks, indices);
         myPeakDim.peakDimUpdated();
     }
 

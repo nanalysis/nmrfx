@@ -27,6 +27,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -153,7 +154,7 @@ public class ScannerTool implements ControllerTool {
         vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
         borderPane.setLeft(vBox);
         loadFromDataset();
-        buildCompoundTool();
+        compoundTable = new CompoundTable(this, tableTabPane);
     }
 
     public TableSelectionMode tableSelectionMode() {
@@ -189,72 +190,6 @@ public class ScannerTool implements ControllerTool {
         return splitPanePosition;
     }
 
-    private void buildCompoundTool() {
-        Tab libraryTableTab = new Tab("Compounds");
-        TableView<CompoundTable.CompoundItem> libraryTableView = new TableView<>();
-        compoundTable = new CompoundTable(this, libraryTableView);
-        libraryTableView.setMinWidth(400);
-        HBox hBox = new HBox();
-        hBox.getChildren().add(libraryTableView);
-        libraryTableTab.setClosable(false);
-        libraryTableTab.setContent(hBox);
-        tableTabPane.getTabs().add(libraryTableTab);
-        VBox vBox = new VBox();
-        hBox.getChildren().add(vBox);
-        makeCompoundControls(vBox);
-    }
-
-    private void makeCompoundControls(VBox vBox) {
-        ToolBar toolBar = new ToolBar();
-        Button peakButton = new Button("Peaks");
-        peakButton.setOnAction(e -> compoundTable.showPeakList());
-        toolBar.getItems().add(peakButton);
-
-        Label searchLabel = new Label("Compound:");
-        searchLabel.setPrefWidth(60);
-        TextField searchField = new TextField();
-        searchField.setPrefWidth(200);
-        searchField.setOnKeyReleased(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                setMol(searchField.getText());
-            }
-        });
-        HBox hBox2 = new HBox();
-        hBox2.setAlignment(Pos.CENTER_LEFT);
-        hBox2.setSpacing(10);
-        hBox2.getChildren().addAll(searchLabel, searchField);
-
-        vBox.getChildren().addAll(toolBar,  hBox2);
-
-        Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
-        TextFields.bindAutoCompletion(searchField, suggestionProvider);
-
-    }
-
-    List<String> getMatchingNames(String pattern) {
-        ChemicalLibraryController.LIBRARY_MODE mode = ChemicalLibraryController.LIBRARY_MODE.GISSMO;
-
-        if (mode == ChemicalLibraryController.LIBRARY_MODE.SEGMENTS) {
-            String dbPath = AnalystPrefs.getSegmentLibraryFile();
-            try {
-                DBData.loadData(Path.of(dbPath));
-            } catch (IOException e) {
-            }
-
-            return DBData.getNames(pattern);
-        } else {
-            if (!SimData.loaded()) {
-                ChemicalLibraryController.loadSimData();
-            }
-            return SimData.getNames(pattern);
-        }
-    }
-
-
-    private void setMol(String name) {
-        compoundTable.select(name);
-
-    }
 
     private MenuButton makeFileMenu() {
         MenuButton menu = new MenuButton("File");

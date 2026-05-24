@@ -21,10 +21,10 @@ public class SimData {
     static double jScale = 250.0;
     final String name;
     final String id;
-
     AtomBlock[] blocks;
-
     SimShifts[] simShifts;
+    List<PeakLink> peakLinks = new ArrayList<>();
+    boolean modified = false;
 
     public SimData(String name, String id, int nBlocks) {
         this.name = name;
@@ -35,6 +35,8 @@ public class SimData {
         }
         simShifts = new SimShifts[nBlocks];
     }
+
+    record JValue(int i, double value) {}
 
     public static class AtomBlock {
         List<int[]> ppmList = new ArrayList<>();
@@ -52,16 +54,17 @@ public class SimData {
             return sppms.get(j[0]) * ppmScale / Short.MAX_VALUE;
         }
 
-        public List<Double> j(int index) {
-            List<Double> jV = new ArrayList<>();
+        public List<JValue> j(int index) {
+            List<JValue> jValueList = new ArrayList<>();
             for (int k = 0; k < jValues.size(); k++) {
                 int iTest = jPairs.get(k * 2);
                 int jTest = jPairs.get(k * 2 + 1);
                 if (((index == iTest) || (index == jTest))) {
-                    jV.add(jValues.get(k) * jScale / Short.MAX_VALUE);
+                    double jValue = jValues.get(k) * jScale / Short.MAX_VALUE;
+                    jValueList.add(new JValue(k, jValue));
                 }
             }
-            return jV;
+            return jValueList;
         }
 
         public void ppm(int i, double value) {
@@ -84,6 +87,12 @@ public class SimData {
                 }
             }
             return 0.0;
+        }
+
+        public void j(int i, double value) {
+            double f = value / jScale;
+            short jValue = (short) Math.round(f * Short.MAX_VALUE);
+            jValues.set(i, jValue);
         }
 
         public void j(int i, int j, double value) {
@@ -241,6 +250,27 @@ public class SimData {
         return values;
     }
 
+    record PeakLink( int iBlock, int index, int iMatch, List<JValue> jValues, Peak peak) {
+        void updateAtomBlock(SimData simData) {
+            AtomBlock atomBlock = simData.atomBlock(iBlock);
+            atomBlock.ppm(index, peak.getPeakDim(0).getChemShiftValue());
+            for (JValue jValue : jValues) {
+                atomBlock.j(jValue.i(), jValue.value());
+            }
+        }
+    }
+
+    public void updateFromPeakList() {
+        for (PeakLink peakLink : peakLinks) {
+            peakLink.updateAtomBlock(this);
+        }
+        modified = true;
+    }
+
+    record PeakPair(int iBlock,  int index) {}
+
+    record PeakPair2(PeakDim peakDim, int index) {}
+
     public PeakList buildPeakList(Dataset dataset) {
         PeakList peakList = new PeakList(name, 1);
         SpectralDim spectralDim = peakList.getSpectralDim(0);
@@ -248,7 +278,10 @@ public class SimData {
         spectralDim.setSw(dataset.getSw(0));
         spectralDim.setDimName(dataset.getLabel(0));
         peakList.setDatasetName(dataset.getName());
-        for (AtomBlock atomBlock : blocks) {
+        peakLinks.clear();
+        Map<PeakPair, PeakPair2> peakPairMap = new HashMap<>();
+        for (int iBlock = 0;iBlock < blocks.length;iBlock++) {
+            AtomBlock atomBlock = blocks[iBlock];
             var ppmIndices = atomBlock.ppmList;
             int nPPM = ppmIndices.size();
             for (int i = 0; i < nPPM; i++) {
@@ -261,17 +294,31 @@ public class SimData {
                 peakDim.setBoundsHz(2.0f);
                 peak.setIntensity(100.0f);
                 peak.setVolume1(matches.length);
-                List<Double> jValues = atomBlock.j(matches[0]);
+                List<JValue> jValues = atomBlock.j(matches[0]);
+                jValues.sort(Comparator.comparingDouble( a -> ((JValue) a).value()).reversed());
+
                 double[] jArray = new double[jValues.size()];
                 double[] sin2Thetas = new double[jArray.length];
                 int[] n = new int[jArray.length];
+                int[] blocks = new int[jArray.length];
+                int[] indices = new int[jArray.length];
                 for (int ij = 0; ij < jArray.length; ij++) {
-                    jArray[ij] = jValues.get(ij);
+                    jArray[ij] = jValues.get(ij).value();
+                    blocks[ij] = iBlock;
+                    indices[ij] = jValues.get(ij).i();
                     sin2Thetas[ij] = 1.0;
                     n[ij] = 2;
                 }
                 Multiplet multiplet = peakDim.getMultiplet();
-                multiplet.setCouplingValues(jArray, n, 1.0, sin2Thetas);
+                multiplet.setCouplingValues(jArray, n, 1.0, sin2Thetas, blocks, indices);
+                PeakLink peakLink = new PeakLink(iBlock, i, matches[0], jValues, peak);
+                for (JValue jValue : jValues) {
+                    PeakPair peakPair = new PeakPair(iBlock, i);
+                    PeakPair2 peakPair2 = new PeakPair2(peakDim, jValue.i());
+                    peakPairMap.put(peakPair, peakPair2);
+                }
+
+                peakLinks.add(peakLink);
             }
         }
         return peakList;
@@ -291,6 +338,10 @@ public class SimData {
             values[i] = block.jPairs.get(i);
         }
         return values;
+    }
+
+    public boolean modified() {
+        return modified;
     }
 
     public String getName() {
