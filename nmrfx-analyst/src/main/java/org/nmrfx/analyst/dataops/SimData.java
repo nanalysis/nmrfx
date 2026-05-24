@@ -127,6 +127,10 @@ public class SimData {
         }
     }
 
+    public static Map<String, SimData> getData() {
+        return simDataMap;
+    }
+
     public SimData copy() {
         int nBlocks = nBlocks();
         SimData simData = new SimData(name, id, nBlocks);
@@ -220,16 +224,16 @@ public class SimData {
         return ppms;
     }
 
-    public List<SimData> match(List<Double> query, double tol) {
-        List<SimData> okList = new ArrayList<>();
-        for (SimData simData : simDataMap.values()) {
+    public record MatchData(SimData simData, double score) {}
+    public static List<MatchData> match(List<Double> query, double tol, Collection<SimData> data) {
+        List<MatchData> okList = new ArrayList<>();
+        for (SimData simData : data) {
             List<Double> ppms = simData.getPPMs();
             var result = Align.matchPeaks(query, ppms, tol, Align.MatchMode.RECALL);
-
-            if (result.matchedCount() == query.size()) {
-                okList.add(simData);
-            }
+            okList.add(new MatchData(simData, result.score()));
         }
+
+        okList.sort(Comparator.comparingDouble(m -> ((MatchData) m).score()).reversed());
         return okList;
     }
 
@@ -403,7 +407,7 @@ public class SimData {
     }
 
     public static Vec genVec(String name, SimDataVecPars simDataVecPars, double lb) {
-        SimData simData = simDataMap.get(name);
+        SimData simData = simDataMap.get(name.toLowerCase());
         Vec vec = prepareVec(name, simDataVecPars);
         genVec(simData, vec, lb);
         return vec;
@@ -411,7 +415,7 @@ public class SimData {
 
     public static void updateDataset(String name, Dataset dataset, double lb) throws IOException {
         SimDataVecPars simDataVecPars = new SimDataVecPars(dataset);
-        SimData simData = simDataMap.get(name);
+        SimData simData = simDataMap.get(name.toLowerCase());
         Vec vec = prepareVec(dataset.getName(), simDataVecPars);
         genVec(simData, vec, lb);
         dataset.writeVector(vec, 0, 0);
@@ -445,7 +449,7 @@ public class SimData {
     }
 
     public static Optional<SimData> getSimData(String name) {
-        SimData data = simDataMap.get(name);
+        SimData data = simDataMap.get(name.toLowerCase());
         return Optional.ofNullable(data);
     }
 

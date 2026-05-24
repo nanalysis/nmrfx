@@ -505,7 +505,7 @@ public class Align {
         }
     }
 
-    public record MatchResult(double score, int matchedCount) {
+    public record MatchResult(double score, double delta, int matchedCount) {
     }
 
     public enum MatchMode {
@@ -521,39 +521,50 @@ public class Align {
      * @param tolerance   max ppm difference to consider two peaks a match
      */
     public static MatchResult matchPeaks(List<Double> queryPositions, List<Double> dbPositions, double tolerance, MatchMode matchMode ) {
-        record Candidate(double distance, int queryIndex, int dbIndex) {
+        record Candidate(double absDistance, double distance, int queryIndex, int dbIndex) {
         }
 
         List<Candidate> candidates = new ArrayList<>();
         for (int iQuery = 0; iQuery < queryPositions.size(); iQuery++) {
             for (int iDB = 0; iDB < dbPositions.size(); iDB++) {
-                double dist = Math.abs(queryPositions.get(iQuery) - dbPositions.get(iDB));
-                if (dist <= tolerance) {
-                    candidates.add(new Candidate(dist, iQuery, iDB));
+                double dist = queryPositions.get(iQuery) - dbPositions.get(iDB);
+                double absDist = Math.abs(dist);
+                if (absDist <= tolerance) {
+                    candidates.add(new Candidate(absDist, dist, iQuery, iDB));
                 }
             }
         }
 
-        candidates.sort(Comparator.comparingDouble(c -> c.distance));
+        candidates.sort(Comparator.comparingDouble(c -> c.absDistance));
 
         Set<Integer> matchedQuery = new HashSet<>();
         Set<Integer> matchedDb = new HashSet<>();
 
+        List<Candidate> matches = new ArrayList<>();
         for (Candidate c : candidates) {
             if (!matchedQuery.contains(c.queryIndex) && !matchedDb.contains(c.dbIndex)) {
                 matchedQuery.add(c.queryIndex);
                 matchedDb.add(c.dbIndex);
+                matches.add(c);
             }
         }
+        double minDist = tolerance;
+        double maxDist = -tolerance;
+        for (Candidate candidate : matches ) {
+            minDist = Math.min(minDist, candidate.distance);
+            maxDist = Math.max(maxDist, candidate.distance);
+        }
+
+        double deltaDist = 1.0 - Math.abs((maxDist - minDist)) / (2.0 * tolerance);
 
         int nMatched = matchedQuery.size();
         if (matchMode == MatchMode.DICE) {
             double score = (2.0 * nMatched) / (queryPositions.size() + dbPositions.size());
-            return new MatchResult(score, nMatched);
+            return new MatchResult(score, deltaDist, nMatched);
         } else {
             double score = (double) nMatched / queryPositions.size();  // recall only
-            return new MatchResult(score, nMatched);
-
+            score *= deltaDist;
+            return new MatchResult(score, deltaDist, nMatched);
         }
     }
 

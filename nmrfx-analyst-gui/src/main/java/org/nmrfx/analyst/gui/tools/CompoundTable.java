@@ -20,11 +20,16 @@ import org.nmrfx.analyst.dataops.DBData;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
 import org.nmrfx.analyst.gui.AnalystPrefs;
+import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
+import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.ChemicalLibraryController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+import org.nmrfx.processor.math.Vec;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,10 +48,12 @@ public class CompoundTable {
     public static class CompoundItem {
         SimData simData;
         double score;
+
         public CompoundItem(SimData simData, double score) {
             this.simData = simData;
             this.score = score;
         }
+
         public SimData simData() {
             return simData;
         }
@@ -83,7 +90,7 @@ public class CompoundTable {
         var cmpdItems = SimData.getSimData().stream().map(simData -> new CompoundItem(simData, 1.0)).toList();
         ObservableList<CompoundItem> items = FXCollections.observableArrayList(cmpdItems);
         tableView.setItems(items);
-        ListChangeListener<Integer> selectionListener= c -> selectionChanged();
+        ListChangeListener<Integer> selectionListener = c -> selectionChanged();
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
     }
@@ -93,14 +100,14 @@ public class CompoundTable {
         tableView = new TableView<>();
         tableView.setMinWidth(400);
         HBox hBox = new HBox();
-        hBox.getChildren().add(tableView);
         HBox.setHgrow(tableView, Priority.ALWAYS);
         libraryTableTab.setClosable(false);
         libraryTableTab.setContent(hBox);
         tableTabPane.getTabs().add(libraryTableTab);
         VBox vBox = new VBox();
-        vBox.setMinWidth(300);
-        hBox.getChildren().add(vBox);
+        vBox.setMinWidth(400);
+        hBox.getChildren().addAll(vBox, tableView);
+        hBox.setSpacing(15);
         makeCompoundControls(vBox);
     }
 
@@ -111,8 +118,12 @@ public class CompoundTable {
         toolBar.getItems().add(peakButton);
 
         Button updateDataButton = new Button("Update");
-        updateDataButton.setOnAction(e -> currentSimData.get().updateFromPeakList());
+        updateDataButton.setOnAction(e -> updateFromPeakList());
         toolBar.getItems().add(updateDataButton);
+
+        Button matchDataButton = new Button("Match");
+        matchDataButton.setOnAction(e -> matchData());
+        toolBar.getItems().add(matchDataButton);
 
         Label activeCompoundLabel = new Label("Active:");
         currentCompoundName = new Label();
@@ -135,8 +146,8 @@ public class CompoundTable {
         hBox2.setSpacing(10);
         hBox2.getChildren().addAll(searchLabel, searchField);
 
-        vBox.setSpacing(15);
-        vBox.getChildren().addAll(toolBar,  hBox1, hBox2);
+        vBox.setSpacing(5);
+        vBox.getChildren().addAll(toolBar, hBox1, hBox2);
 
 
         Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
@@ -193,12 +204,20 @@ public class CompoundTable {
         if (!items.isEmpty()) {
             for (var item : items) {
                 SimData simData = item.simData();
-                SimData simDataCopy = currentSimMap.computeIfAbsent(simData.getName(), k -> simData.copy());
+                SimData simDataCopy = currentSimMap.computeIfAbsent(simData.getName().toLowerCase(), k -> simData.copy());
                 item.simData = simDataCopy;
                 Dataset dataset = makeDataset(realDataset, simDataCopy, "SIM_" + simDataCopy.getName());
                 var dataAttr = chart.setDataset(dataset, true, true);
-                dataAttr.setLvl(3.0e2);
-                dataAttr.setOffset(offset);
+                Vec vec = null;
+                double max;
+                try {
+                    vec = dataset.readVector(0, 0);
+                    max = vec.maxIndex().getValue();
+                } catch (IOException e) {
+                    max = 300.0;
+                }
+                dataAttr.setLvl(max * 1.1);
+                dataAttr.setOffset(0.5);
                 currentSimData.set(simDataCopy);
                 currentCompoundName.setText(simDataCopy.getName());
             }
@@ -207,8 +226,10 @@ public class CompoundTable {
     }
 
     void updateFromPeakList() {
-        currentSimData.get().updateFromPeakList();
-        tableView.refresh();
+        if (currentSimData.get() != null) {
+            currentSimData.get().updateFromPeakList();
+            tableView.refresh();
+        }
     }
 
     void showPeakList() {
@@ -237,5 +258,91 @@ public class CompoundTable {
         return newDataset;
     }
 
+    private void matchData() {
+        PolyChart chart = scannerTool.getChart();
+        Dataset dataset = (Dataset) chart.getDataset();
+        double[] ppms;
+        if (chart.getCrossHairs().hasRegion()) {
+            CrossHairs crossHairs = chart.getCrossHairs();
+            ppms = crossHairs.getVerticalPositions();
+        } else {
+            ppms = chart.getWorld()[0];
+        }
+        String listName = "TEMP";
+        try {
+            boolean scaleToLargest = true;
+            int nWin = 32;
+            double maxRatio = 100.0;
+            double sdRatio = 30.0;
 
+            double threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+
+            System.out.println("threshold" + threshold);
+            PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode(PeakPickParameters.PickMode.REPLACEIF);
+            peakPickPar.limit(0, ppms[0], ppms[1]);
+            PeakPicker picker = new PeakPicker(peakPickPar);
+            PeakList peakList = picker.peakPick();
+            List<ShiftGroup> peakPositions = new ArrayList<>();
+            for (Peak peak : peakList.peaks()) {
+                ShiftGroup shiftGroup = new ShiftGroup((double) peak.getPeakDim(0).getChemShiftValue(), 1.0);
+                peakPositions.add(shiftGroup);
+            }
+            peakList.remove();
+            peakPositions = clusterGroups(peakPositions, 20.0, dataset.getSf(0));
+            List<Double> groupedPositions = peakPositions.stream().map(p -> p.shift).toList();
+            Map<String, SimData> tempMap = new HashMap<>();
+            tempMap.putAll(SimData.getData());
+            tempMap.putAll(currentSimMap);
+            var results = SimData.match(groupedPositions, 0.1, tempMap.values());
+            ObservableList<CompoundItem> newList = FXCollections.observableArrayList();
+            for (SimData.MatchData matchResult : results) {
+                CompoundItem compoundItem = new CompoundItem(matchResult.simData(), matchResult.score());
+                newList.add(compoundItem);
+            }
+            tableView.setItems(newList);
+        } catch (IOException | IllegalArgumentException ex) {
+            //log.error(ex.getMessage(), ex);
+        }
+
+    }
+
+
+    public record ShiftGroup(double shift, double intensity) {
+    }
+
+    public static List<ShiftGroup> clusterGroups(List<ShiftGroup> peaks, double maxCouplingHz, double fieldMHz) {
+        if (peaks.isEmpty()) return List.of();
+
+        double gapPpm = maxCouplingHz / fieldMHz;
+
+        List<ShiftGroup> sorted = peaks.stream()
+                .sorted(Comparator.comparingDouble(ShiftGroup::shift))
+                .toList();
+
+        List<List<ShiftGroup>> clusters = new ArrayList<>();
+        List<ShiftGroup> current = new ArrayList<>();
+        current.add(sorted.get(0));
+
+        for (int i = 1; i < sorted.size(); i++) {
+            double gap = sorted.get(i).shift() - sorted.get(i - 1).shift();
+            if (gap <= gapPpm) {
+                current.add(sorted.get(i));
+            } else {
+                clusters.add(current);
+                current = new ArrayList<>();
+                current.add(sorted.get(i));
+            }
+        }
+        clusters.add(current);
+
+        return clusters.stream().map(CompoundTable::weightedCentroid).toList();
+    }
+
+    private static ShiftGroup weightedCentroid(List<ShiftGroup> cluster) {
+        double totalIntensity = cluster.stream().mapToDouble(ShiftGroup::intensity).sum();
+        double centroidShift = cluster.stream()
+                .mapToDouble(p -> p.shift() * p.intensity())
+                .sum() / totalIntensity;
+        return new ShiftGroup(centroidShift, totalIntensity);
+    }
 }
