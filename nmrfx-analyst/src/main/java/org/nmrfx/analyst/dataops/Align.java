@@ -550,10 +550,15 @@ public class Align {
         }
         double minDist = tolerance;
         double maxDist = -tolerance;
+        double sumDistance = 0.0;
         for (Candidate candidate : matches ) {
             minDist = Math.min(minDist, candidate.distance);
             maxDist = Math.max(maxDist, candidate.distance);
+            sumDistance += candidate.distance();
         }
+
+        double meanDistance = matches.isEmpty() ? 0.0 : 1.0 - Math.abs(sumDistance / matches.size()) / tolerance;
+
 
         double deltaDist = 1.0 - Math.abs((maxDist - minDist)) / (2.0 * tolerance);
 
@@ -563,7 +568,8 @@ public class Align {
             return new MatchResult(score, deltaDist, nMatched);
         } else {
             double score = (double) nMatched / queryPositions.size();  // recall only
-            score *= deltaDist;
+            score *=  deltaDist / 2.0;
+            score += meanDistance / 10.0;
             return new MatchResult(score, deltaDist, nMatched);
         }
     }
