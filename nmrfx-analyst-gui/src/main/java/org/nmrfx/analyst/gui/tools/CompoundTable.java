@@ -14,6 +14,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.analyst.dataops.DBData;
@@ -27,9 +28,10 @@ import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.ChemicalLibraryController;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.math.Vec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,6 +39,7 @@ import java.util.*;
 
 
 public class CompoundTable {
+    private static final Logger log = LoggerFactory.getLogger(CompoundTable.class);
     TableView<CompoundItem> tableView;
     ScannerTool scannerTool;
     TabPane tableTabPane;
@@ -189,16 +192,37 @@ public class CompoundTable {
     }
 
 
+    double getRegionMax(Vec vec, double[] ppms, int extra) {
+        int first = vec.refToPt(ppms[0]);
+        int last = vec.refToPt(ppms[1]);
+        if (first > last) {
+            int hold = first;
+            first = last;
+            last = hold;
+        }
+        first -= extra;
+        last += extra;
+        System.out.println(first + " " + last);
+        return vec.maxIndex(first, last).getValue();
+    }
+
+    double analyzeRegions(Vec vec, List<SimData.SimDataRegion> regions, int extra) {
+        DescriptiveStatistics dState = new DescriptiveStatistics();
+        for (SimData.SimDataRegion simDataRegion : regions) {
+            double[] ppms = simDataRegion.ppms();
+            double max = getRegionMax(vec, ppms, extra);
+            dState.addValue(max);
+        }
+        double max = vec.maxIndex().getValue();
+        double percentile = dState.getPercentile(70);
+        return Math.max(percentile, max / 10.0);
+    }
+
     void selectionChanged() {
         var items = tableView.getSelectionModel().getSelectedItems();
         PolyChart chart = scannerTool.getChart();
         chart.clearSimDatasets();
 
-        List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
-        double offset = 0.12;
-        if (!datasetAttributes.isEmpty()) {
-            offset = datasetAttributes.getFirst().getOffset();
-        }
         Dataset realDataset = (Dataset) chart.getDataset();
         currentCompoundName.setText("");
         if (!items.isEmpty()) {
@@ -208,16 +232,9 @@ public class CompoundTable {
                 item.simData = simDataCopy;
                 Dataset dataset = makeDataset(realDataset, simDataCopy, "SIM_" + simDataCopy.getName());
                 var dataAttr = chart.setDataset(dataset, true, true);
-                Vec vec = null;
-                double max;
-                try {
-                    vec = dataset.readVector(0, 0);
-                    max = vec.maxIndex().getValue();
-                } catch (IOException e) {
-                    max = 300.0;
-                }
-                dataAttr.setLvl(max * 1.1);
-                dataAttr.setOffset(0.5);
+                double lvl = 250.0 * 9.0 * 1.1;
+                dataAttr.setLvl(lvl);
+                dataAttr.setOffset(0.01);
                 currentSimData.set(simDataCopy);
                 currentCompoundName.setText(simDataCopy.getName());
             }
@@ -258,9 +275,8 @@ public class CompoundTable {
         return newDataset;
     }
 
-    private void matchData() {
+    double[] getLimits() {
         PolyChart chart = scannerTool.getChart();
-        Dataset dataset = (Dataset) chart.getDataset();
         double[] ppms;
         if (chart.getCrossHairs().hasRegion()) {
             CrossHairs crossHairs = chart.getCrossHairs();
@@ -268,6 +284,13 @@ public class CompoundTable {
         } else {
             ppms = chart.getWorld()[0];
         }
+        return ppms;
+    }
+
+    private void matchData() {
+        PolyChart chart = scannerTool.getChart();
+        Dataset dataset = (Dataset) chart.getDataset();
+        double[] ppms = getLimits();
         String listName = "TEMP";
         try {
             boolean scaleToLargest = true;
@@ -277,7 +300,6 @@ public class CompoundTable {
 
             double threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
 
-            System.out.println("threshold" + threshold);
             PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode(PeakPickParameters.PickMode.REPLACEIF);
             peakPickPar.limit(0, ppms[0], ppms[1]);
             PeakPicker picker = new PeakPicker(peakPickPar);
@@ -288,12 +310,12 @@ public class CompoundTable {
                 peakPositions.add(shiftGroup);
             }
             peakList.remove();
-            peakPositions = clusterGroups(peakPositions, 20.0, dataset.getSf(0));
+            peakPositions = clusterGroups(peakPositions, 15.0, dataset.getSf(0));
             List<Double> groupedPositions = peakPositions.stream().map(p -> p.shift).toList();
             Map<String, SimData> tempMap = new HashMap<>();
             tempMap.putAll(SimData.getData());
             tempMap.putAll(currentSimMap);
-            var results = SimData.match(groupedPositions, 0.1, tempMap.values());
+            var results = SimData.match(groupedPositions, 0.075, tempMap.values());
             ObservableList<CompoundItem> newList = FXCollections.observableArrayList();
             for (SimData.MatchData matchResult : results) {
                 CompoundItem compoundItem = new CompoundItem(matchResult.simData(), matchResult.score());
@@ -301,7 +323,7 @@ public class CompoundTable {
             }
             tableView.setItems(newList);
         } catch (IOException | IllegalArgumentException ex) {
-            //log.error(ex.getMessage(), ex);
+            log.error(ex.getMessage(), ex);
         }
 
     }

@@ -120,19 +120,26 @@ public class ScannerTool implements ControllerTool {
         chart = controller.getActiveChart();
     }
 
-    public void initialize(BorderPane borderPane) {
-        this.borderPane = borderPane;
+    public void initialize(TabPane tabPane) {
+        this.borderPane = new BorderPane();
         scannerBar = new ToolBar();
         tableView = new TableView<>();
-        tableTabPane = new TabPane();
-        borderPane.setCenter(tableTabPane);
+        tableTabPane = tabPane;
         tableTabPane.setSide(Side.LEFT);
         Tab tableTab = new Tab("Datasets");
         tableTab.setClosable(false);
-        tableTab.setContent(tableView);
+        tableTab.setContent(borderPane);
+        borderPane.setCenter(tableView);
         tableTabPane.getTabs().add(tableTab);
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
+
+        Button reloadButton = new Button("Reload");
+        reloadButton.setOnAction(e -> loadFromDataset());
+
+        Label label = new Label("Sel. Mode:");
+
+        scannerBar.getItems().addAll(reloadButton, label, tableSelectionChoice);
         scannerBar.getItems().add(closeButton);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
@@ -141,18 +148,14 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
-        Button reloadButton = new Button("Reload");
-        reloadButton.setOnAction(e -> loadFromDataset());
+
+
         scanTable = new ScanTable(this, tableView);
         scannerLoader = new ScannerLoader(scanTable);
 
         tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
         tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
         tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
-        VBox vBox = new VBox();
-        Label label = new Label("Sel. Mode:");
-        vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
-        borderPane.setLeft(vBox);
         loadFromDataset();
         compoundTable = new CompoundTable(this, tableTabPane);
     }
@@ -178,8 +181,8 @@ public class ScannerTool implements ControllerTool {
         closeAction.accept(this);
     }
 
-    public BorderPane getBox() {
-        return borderPane;
+    public TabPane getBox() {
+        return tableTabPane;
     }
 
     public void setSplitPanePosition(double value) {
