@@ -25,6 +25,7 @@ public class SimData {
     SimShifts[] simShifts;
     List<PeakLink> peakLinks = new ArrayList<>();
     boolean modified = false;
+    List<SimDataRegion> simDataRegions = new ArrayList<>();
 
     public SimData(String name, String id, int nBlocks) {
         this.name = name;
@@ -381,6 +382,10 @@ public class SimData {
         return names;
     }
 
+    public List<SimDataRegion> getRegions() {
+        return simDataRegions;
+    }
+
     public static Vec prepareVec(String name, SimDataVecPars pars) {
         Vec vec = new Vec(pars.getN());
         vec.setSF(pars.getSf());
@@ -424,22 +429,26 @@ public class SimData {
     public static CompoundData genCompoundData(String cmpdID, String name, SimData simData, SimDataVecPars pars, double lb,
                                                double refConc, double cmpdConc) {
         Vec vec = prepareVec(name, pars);
-        List<Region> regions = genVec(simData, vec, lb);
+        List<SimDataRegion> regions = genVec(simData, vec, lb);
         CompoundData cData = genRegions(cmpdID, name, pars, refConc, cmpdConc, vec, regions);
         cData.setVec(vec);
         return cData;
     }
 
-    public static class Region {
+    public static class SimDataRegion {
 
         double min;
         double max;
         int nProtons;
 
-        public Region(double min, double max, int nProtons) {
+        public SimDataRegion(double min, double max, int nProtons) {
             this.min = min;
             this.max = max;
             this.nProtons = nProtons;
+        }
+
+        public double[] ppms() {
+            return new double[]{min, max};
         }
 
     }
@@ -482,22 +491,24 @@ public class SimData {
         return simShifts;
     }
 
-    public static List<Region> genVec(SimData data, Vec vec, double lb) throws IllegalArgumentException {
+    public static List<SimDataRegion> genVec(SimData data, Vec vec, double lb) throws IllegalArgumentException {
         vec.zeros();
         int nBlocks = data.blocks.length;
         List<double[]> regions = new ArrayList<>();
         for (int iBlock = 0; iBlock < nBlocks; iBlock++) {
             SimShifts simShifts = buildSimShifts(data, iBlock, vec.getSF(), lb, regions);
-            simShifts.makeSpec(vec, lb);
+            simShifts.makeSpec(vec);
         }
+        vec.convolveLorentzian(lb, 8);
+
         regions.sort(Comparator.comparingDouble(a -> a[0]));
-        List<Region> filteredRegions = new ArrayList<>();
+        List<SimDataRegion> filteredRegions = new ArrayList<>();
 
         for (double[] region : regions) {
             double min = region[0];
             double max = region[1];
             boolean overlaps = false;
-            for (Region fRegion : filteredRegions) {
+            for (SimDataRegion fRegion : filteredRegions) {
                 if ((!(max < fRegion.min)) && (!(min > fRegion.max))) {
                     overlaps = true;
                     fRegion.min = Math.min(min, fRegion.min);
@@ -507,7 +518,7 @@ public class SimData {
                 }
             }
             if (!overlaps) {
-                Region fRegion = new Region(min, max, 1);
+                SimDataRegion fRegion = new SimDataRegion(min, max, 1);
                 filteredRegions.add(fRegion);
             }
         }
@@ -522,14 +533,16 @@ public class SimData {
             vec.phase(45.0, 0.0);
         }
         vec.scale(250.0);
+        data.simDataRegions.clear();
+        data.simDataRegions.addAll(filteredRegions);
         return filteredRegions;
     }
 
-    public static CompoundData genRegions(String cmpdID, String name, SimDataVecPars pars, double refConc, double cmpdConc, Vec vec, List<Region> regions) {
+    public static CompoundData genRegions(String cmpdID, String name, SimDataVecPars pars, double refConc, double cmpdConc, Vec vec, List<SimDataRegion> regions) {
         double refNProtons = 9.0;
         CompoundData cData = new CompoundData(cmpdID, name, pars.getRef(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, refNProtons);
 
-        for (Region region : regions) {
+        for (SimDataRegion region : regions) {
             int pt1 = vec.refToPt(region.max);
             int pt2 = vec.refToPt(region.min);
             double[] intensities = new double[pt2 - pt1 + 1];

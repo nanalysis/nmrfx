@@ -94,11 +94,12 @@ public class SimShifts {
     }
 
     record Matrices(DMatrixRMaj ham, DMatrixRMaj state, DMatrixRMaj obs) {}
+
     public List<Double> getPPMs() {
         return ppms;
     }
 
-    public List<Double> getIntensiteis() {
+    public List<Double> getIntensities() {
         return intensities;
     }
 
@@ -174,7 +175,7 @@ public class SimShifts {
         }
     }
 
-    public void makeSpec(Vec vec, double lw) {
+    public void makeSpec(Vec vec) {
         int n = intensities.size();
         for (int i = 0; i < n; i++) {
             double ppm = ppms.get(i);
@@ -184,7 +185,6 @@ public class SimShifts {
                 vec.add(pt, intensity);
             }
         }
-        vec.convolveLorentzian(lw, 8);
     }
 
     void absThreshold(DMatrixRMaj mat, double threshold) {
