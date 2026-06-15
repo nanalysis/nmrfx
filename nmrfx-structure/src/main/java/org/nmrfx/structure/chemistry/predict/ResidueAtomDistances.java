@@ -123,6 +123,7 @@ public class ResidueAtomDistances {
                 }
                 iAtomList.add(index);
             }
+            distance = (distance - 3.3) / 1.8;
 
             AtomEdge atomEdge = new AtomEdge(iAtomList, distance, pathLen, coupling, couplingPath.couplingName);
             atomGraph.edges.add(atomEdge);

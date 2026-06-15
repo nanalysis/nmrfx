@@ -237,8 +237,7 @@ public class GATV2Predictor {
             if ((edge.indexA() >= nodes.length) && (edge.indexA() >= nodes.length)) {
                 System.out.println("Edge out of range " + edge.indexA() + " " + edge.indexB() + " " + nodes.length);
             }
-            double scaledDistance = (edge.distance() - 3.3) / 1.8;
-            edgeAttr[j][0] = (float) scaledDistance;
+            edgeAttr[j][0] = (float) edge.distance();
             edgeAttr[j][1] = edge.pathLen();
         }
 
@@ -257,11 +256,12 @@ public class GATV2Predictor {
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
-                    if (atomNode.atom().getEntity() == entityToPredict) {
+                    // fixme: atom entity is A:G1 whereas entity to predict is A
+                   // if (atomNode.atom().getEntity() == entityToPredict) {
                         int nodeType = atomNode.property();
                         if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
                             setShift(atomNode, nodeOutputs[i][0], iRef, solventCorr);
-                        }
+                    //    }
                     }
                 }
                 averageMethyls(entityToPredict, iRef);
