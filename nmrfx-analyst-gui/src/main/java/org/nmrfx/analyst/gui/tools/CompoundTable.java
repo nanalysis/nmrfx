@@ -399,7 +399,7 @@ public class CompoundTable {
             PeakList peakList = picker.peakPick();
             List<ShiftGroup> peakPositions = new ArrayList<>();
             for (Peak peak : peakList.peaks()) {
-                ShiftGroup shiftGroup = new ShiftGroup((double) peak.getPeakDim(0).getChemShiftValue(), 1.0);
+                ShiftGroup shiftGroup = new ShiftGroup(peak.getPeakDim(0).getChemShiftValue(), 1.0);
                 peakPositions.add(shiftGroup);
             }
             peakList.remove();
@@ -436,7 +436,7 @@ public class CompoundTable {
 
         List<List<ShiftGroup>> clusters = new ArrayList<>();
         List<ShiftGroup> current = new ArrayList<>();
-        current.add(sorted.get(0));
+        current.add(sorted.getFirst());
 
         for (int i = 1; i < sorted.size(); i++) {
             double gap = sorted.get(i).shift() - sorted.get(i - 1).shift();
