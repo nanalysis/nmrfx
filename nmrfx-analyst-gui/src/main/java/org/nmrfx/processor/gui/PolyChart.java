@@ -822,7 +822,7 @@ public class PolyChart extends Region {
 
         Optional<ScanTable> scanTableOpt = getFXMLController().getScannerTable();
         if (scanTableOpt.isPresent()) {
-            updateThese = scanTableOpt.get().getSelectedDatasetAttributesList();
+            updateThese = scanTableOpt.get().getSelectedDatasetAttributesList().stream().filter(datasetAttributes -> !datasetAttributes.isSim()).toList();
             if (updateThese.isEmpty()) {
                 updateThese = datasetAttributesList;
             }

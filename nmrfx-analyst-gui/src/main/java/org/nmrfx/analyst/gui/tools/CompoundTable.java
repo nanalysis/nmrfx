@@ -13,6 +13,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
@@ -28,8 +29,10 @@ import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.gui.ChemicalLibraryController;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +50,12 @@ public class CompoundTable {
     SimpleObjectProperty<SimData> currentSimData = new SimpleObjectProperty<>();
     TextField searchField;
     Label currentCompoundName;
+    SimpleDoubleProperty scaleProperty = new SimpleDoubleProperty(1.0);
+    SimpleDoubleProperty offsetProperty = new SimpleDoubleProperty(0.01);
+    double scale = 1.0;
+    double offset = 0.01;
+    Color color = Color.RED;
+
 
     public static class CompoundItem {
         SimData simData;
@@ -150,12 +159,78 @@ public class CompoundTable {
         hBox2.getChildren().addAll(searchLabel, searchField);
 
         vBox.setSpacing(5);
-        vBox.getChildren().addAll(toolBar, hBox1, hBox2);
 
+        Label offsetLabel = new Label("Offset:");
+        offsetLabel.setPrefWidth(60);
+
+        Label scaleLabel = new Label("Scale:");
+        scaleLabel.setPrefWidth(60);
+
+        Slider scaleSlider = new Slider(0.1, 20.0, 1.0);
+        TextField scaleField = GUIUtils.getDoubleTextField(scaleProperty, 2);
+        scaleField.setPrefWidth(50);
+        GUIUtils.bindSliderField(scaleSlider, scaleField, "#.##");
+        scaleProperty.set(1.0);
+        scaleSlider.setValue(1.0);
+        scaleSlider.valueProperty().addListener(v -> scaleChanged(scaleSlider.getValue()));
+        scaleSlider.setOnMouseReleased(e -> setScaleSlider(scaleSlider));
+        HBox hBoxScale = new HBox();
+        hBoxScale.setSpacing(10);
+
+        hBoxScale.getChildren().addAll(scaleLabel, scaleSlider, scaleField);
+
+        Slider offsetSlider = new Slider(0.0, 1.0, 0.01);
+        TextField offsetField = GUIUtils.getDoubleTextField(offsetProperty, 2);
+        GUIUtils.bindSliderField(offsetSlider, offsetField, "#.##");
+        offsetProperty.set(0.01);
+        offsetSlider.setValue(0.01);
+        offsetSlider.valueProperty().addListener(v -> offsetChanged(offsetSlider.getValue()));
+        offsetSlider.setOnMouseReleased(e -> setOffsetSlider(offsetSlider));
+        offsetField.setPrefWidth(50);
+        HBox hBoxOffset = new HBox();
+        hBoxOffset.setSpacing(10);
+
+        hBoxOffset.getChildren().addAll(offsetLabel, offsetSlider, offsetField);
+
+
+
+        vBox.getChildren().addAll(toolBar, hBox1, hBox2, hBoxScale, hBoxOffset);
 
         Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
         TextFields.bindAutoCompletion(searchField, suggestionProvider);
 
+    }
+
+    void update() {
+        PolyChart chart = scannerTool.getChart();
+        double lvl = 250.0 * 9.0 * 1.1;
+        var datasetAttrsList = chart.getDatasetAttributes();
+        for (DatasetAttributes datasetAttributes : datasetAttrsList) {
+            if (datasetAttributes.isSim()) {
+                datasetAttributes.setLvl(lvl / scale);
+                datasetAttributes.setOffset(offset);
+                datasetAttributes.setPosColor(color);
+            }
+        }
+        chart.refresh();
+    }
+
+    void offsetChanged(double offset) {
+        this.offset = offset;
+        update();
+    }
+
+    void setOffsetSlider(Slider slider) {
+        offsetChanged(slider.getValue());
+    }
+
+    void scaleChanged(double scale) {
+        this.scale = scale;
+        update();
+    }
+
+    void setScaleSlider(Slider slider) {
+        scaleChanged(slider.getValue());
     }
 
     List<String> getMatchingNames(String pattern) {
@@ -202,7 +277,6 @@ public class CompoundTable {
         }
         first -= extra;
         last += extra;
-        System.out.println(first + " " + last);
         return vec.maxIndex(first, last).getValue();
     }
 
@@ -230,11 +304,15 @@ public class CompoundTable {
                 SimData simData = item.simData();
                 SimData simDataCopy = currentSimMap.computeIfAbsent(simData.getName().toLowerCase(), k -> simData.copy());
                 item.simData = simDataCopy;
-                Dataset dataset = makeDataset(realDataset, simDataCopy, "SIM_" + simDataCopy.getName());
+                String datasetName = "SIM_" + simDataCopy.getName();
+                Dataset dataset = Dataset.getDataset(datasetName);
+                if (dataset == null) {
+                    dataset = makeDataset(realDataset, simDataCopy, datasetName);
+                }
                 var dataAttr = chart.setDataset(dataset, true, true);
                 double lvl = 250.0 * 9.0 * 1.1;
-                dataAttr.setLvl(lvl);
-                dataAttr.setOffset(0.01);
+                dataAttr.setLvl(lvl / scale);
+                dataAttr.setOffset(offset);
                 currentSimData.set(simDataCopy);
                 currentCompoundName.setText(simDataCopy.getName());
             }
