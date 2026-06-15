@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class GATV2Predictor {
     static OrtSession session = null;
@@ -106,7 +107,7 @@ public class GATV2Predictor {
     public static void getOnnxSession() throws OrtException {
         env = OrtEnvironment.getEnvironment();
         String homeDirPath = System.getProperty("user.home");
-        Path path = Path.of(homeDirPath, "nmrfx_models", "jshift_v1.onnx");
+        Path path = Path.of(homeDirPath, "nmrfx_models", "rna_gat.onnx");
         File file = path.toFile();
         if (file.exists()) {
             session = env.createSession(file.toString(), new OrtSession.SessionOptions());
@@ -125,7 +126,7 @@ public class GATV2Predictor {
                 }
                 modelBytes = out.toByteArray();
                 session = env.createSession(modelBytes);
-            } catch (IOException ioException) {
+            } catch (IOException ignored) {
 
             }
 
@@ -212,16 +213,21 @@ public class GATV2Predictor {
     }
     public void predict(List<Entity> entities, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances rad = getRAD(entities);
-        predict(entities.getFirst(), rad, iRef, solventCorr);
+        predict(entities.getFirst(), rad, iRef, solventCorr, false);
     }
 
 
     public void predict(Entity entity, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances rad = getRAD(entity);
-        predict(entity, rad, iRef, solventCorr);
+        predict(entity, rad, iRef, solventCorr, false);
     }
 
-    public void predict(Entity entityToPredict, ResidueAtomDistances rad, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
+    public void predict(Entity entity, int iRef, SolventCorr solventCorr, boolean nodesOnly) throws OrtException, IOException {
+        ResidueAtomDistances rad = getRAD(entity);
+        predict(entity, rad, iRef, solventCorr, nodesOnly);
+    }
+
+    public void predict(Entity entityToPredict, ResidueAtomDistances rad, int iRef, SolventCorr solventCorr, boolean nodesOnly) throws OrtException, IOException {
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
 
         int nNodes = graph.nodes().size();
@@ -247,12 +253,8 @@ public class GATV2Predictor {
             var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
             try (OrtSession.Result result = session.run(inputs)) {
                 Object nodeOut = result.get(0);
-                Object edgeOut = result.get(1);
-
                 OnnxTensor nodeTensor = (OnnxTensor) nodeOut;
-                OnnxTensor edgeTensor = (OnnxTensor) edgeOut;
                 float[][] nodeOutputs = (float[][]) nodeTensor.getValue();
-                float[][] edgeOutputs = (float[][]) edgeTensor.getValue();
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
@@ -265,6 +267,13 @@ public class GATV2Predictor {
                     }
                 }
                 averageMethyls(entityToPredict, iRef);
+                if (nodesOnly) {
+                    return;
+                }
+
+                Object edgeOut = result.get(1);
+                OnnxTensor edgeTensor = (OnnxTensor) edgeOut;
+                float[][] edgeOutputs = (float[][]) edgeTensor.getValue();
                 for (int i = 0; i < nEdges; i++) {
                     float pathLen = edgeAttr[i][1];
                     String cName = graph.edges().get(i).couplingName();

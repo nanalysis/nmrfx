@@ -9,16 +9,18 @@ import org.nmrfx.chemistry.io.SDFile;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GATV2PredictorTest {
     public void printShifts(MoleculeBase mol) {
         for (Atom atom : mol.getAtomList()) {
-            double ppm = atom.getPPM();
-            if (atom.getRefPPM() != null) {
+            if (atom.getRefPPM() != null && atom.getPPM() != null) {
+                double ppm = atom.getPPM();
                 double ref = atom.getRefPPM();
                 double delta = ppm - ref;
-                System.out.println(ppm + " " + ref + " " + delta);
-                System.out.println(atom.getFullName() + " " + ref);
+                System.out.println(atom.getFullName() + " " +ppm + " " + ref + " " + delta);
             }
         }
     }
@@ -43,8 +45,8 @@ public class GATV2PredictorTest {
         }
     }
 
-    public void readShifts() {
-        String fileName = "/Users/ellenkoag/rna/cb1.seg1_nomin.1-100.rdb";
+    public void readShifts(Map<String, Integer> pdbDict) {
+        String fileName = "/Users/ellenkoag/case/cb1.seg1_nomin.1-100.rdb";
         String string;
         String[] header = null;
         boolean row2 = false;
@@ -68,8 +70,11 @@ public class GATV2PredictorTest {
 
                 Atom atom = MoleculeBase.getAtomByName(atomSpec);
                 if (atom != null) {
-                    for (int iStruct = 0; iStruct < values.length - 2; iStruct++) {
-                        double ppm = Double.parseDouble(values[iStruct]);
+                    for (Map.Entry<String, Integer> entry : pdbDict.entrySet()) {
+                        int iStruct = entry.getValue();
+                        int i = Arrays.stream(header).toList().indexOf(entry.getKey());
+
+                        double ppm = Double.parseDouble(values[i]);
                         atom.setPPM(iStruct, ppm);
                     }
                 }
@@ -79,17 +84,19 @@ public class GATV2PredictorTest {
         }
     }
 
+    @Test
     public void predictAllRNA() throws IOException, OrtException {
-        String modelDir = "";
+        String modelDir = "/Users/ellenkoag/case/pdbFiles";
         File file = new File(modelDir);
         PDBFile pdbFile = new PDBFile();
         MoleculeBase mol = null;
+        Map<String, Integer> pdbDict = new HashMap<>();
 
-        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:pdbFiles/*.pdb");
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:cb1.*.pdb");
         try (DirectoryStream<Path> paths = Files.newDirectoryStream(file.toPath()) ){
             int iStruct = 0;
             for (Path path : paths) {
-                if (matcher.matches(path)) {
+                if (matcher.matches(path.getFileName())) {
                     if (iStruct == 0) {
                         mol = pdbFile.read(String.valueOf(path));
                         mol.updateAtomArray();
@@ -97,34 +104,35 @@ public class GATV2PredictorTest {
                     pdbFile.readCoordinates(mol, String.valueOf(path), iStruct, true, false);
                     MoleculeFactory.setActive(mol);
                     mol.updateAtomArray();
+                    String pdbId = path.getFileName().toString().replace(".pdb","");
+                    pdbDict.put(pdbId, iStruct);
                     iStruct++;
                 }
             }
         } catch (MoleculeIOException e) {
             throw new RuntimeException(e);
         }
-        readShifts();
+        readShifts(pdbDict);
         GATV2Predictor gatv2Predictor = new GATV2Predictor();
-        String nodeFile = "/Users/ellenkoag/rna/testnode.csv";
-        String edgeFile = "/Users/ellenkoag/rna/testedge.csv";
-        gatv2Predictor.predict(mol.getEntities().getFirst(), -1, GATV2Predictor.SolventCorr.Chloroform);
+        assert mol != null;
+        gatv2Predictor.predict(mol.getEntities().getFirst(), -1, GATV2Predictor.SolventCorr.Chloroform, true);
         printShifts(mol);
     }
 
     @Test
     public void predictRNA() throws OrtException, MoleculeIOException, IOException {
         GATV2Predictor gatv2Predictor = new GATV2Predictor();
-        String molFile = "/Users/ellenkoag/rna/cb1.1.pdb";
+        String molFile = "/Users/ellenkoag/case/pdbfiles/cb1.1.pdb";
         PDBFile pdbFile = new PDBFile();
         MoleculeBase mol = pdbFile.read(molFile);
         mol.updateAtomArray();
         pdbFile.readCoordinates(mol, molFile, 0, true, false);
         MoleculeFactory.setActive(mol);
         mol.updateAtomArray();
-        readShifts();
-        String nodeFile = "/Users/ellenkoag/rna/testnode.csv";
-        String edgeFile = "/Users/ellenkoag/rna/testedge.csv";
-        gatv2Predictor.predict(mol.getEntities().getFirst(), -1, GATV2Predictor.SolventCorr.Chloroform);
+        Map<String, Integer> pdbDict = new HashMap<>();
+        pdbDict.put("cb1.1", 0);
+        readShifts(pdbDict);
+        gatv2Predictor.predict(mol.getEntities().getFirst(), -1, GATV2Predictor.SolventCorr.Chloroform, true);
         printShifts(mol);
     }
 }
