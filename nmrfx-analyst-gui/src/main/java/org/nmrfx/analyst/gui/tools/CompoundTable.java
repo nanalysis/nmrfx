@@ -193,26 +193,43 @@ public class CompoundTable {
         hBoxOffset.getChildren().addAll(offsetLabel, offsetSlider, offsetField);
 
 
-
         vBox.getChildren().addAll(toolBar, hBox1, hBox2, hBoxScale, hBoxOffset);
 
         Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
         TextFields.bindAutoCompletion(searchField, suggestionProvider);
+        final ColorPicker cp = new ColorPicker();
+        cp.getStyleClass().add("button");
+        cp.setStyle("-fx-color-label-visible:false;");
+        cp.setValue(Color.RED);
+        cp.setOnAction(t -> {
+            color = cp.getValue();
+            update();
+        });
+        HBox hBoxColor = new HBox();
+        hBoxColor.setSpacing(10);
+        Label colorLabel = new Label("Color:");
+        colorLabel.setPrefWidth(60);
+        hBoxColor.getChildren().addAll(colorLabel, cp);
 
+        vBox.getChildren().add(hBoxColor);
     }
 
     void update() {
         PolyChart chart = scannerTool.getChart();
-        double lvl = 250.0 * 9.0 * 1.1;
         var datasetAttrsList = chart.getDatasetAttributes();
         for (DatasetAttributes datasetAttributes : datasetAttrsList) {
             if (datasetAttributes.isSim()) {
-                datasetAttributes.setLvl(lvl / scale);
-                datasetAttributes.setOffset(offset);
-                datasetAttributes.setPosColor(color);
+                update(datasetAttributes);
             }
         }
         chart.refresh();
+    }
+
+    void update(DatasetAttributes dataAttr) {
+        double lvl = 250.0 * 9.0 * 1.1;
+        dataAttr.setLvl(lvl / scale);
+        dataAttr.setOffset(offset);
+        dataAttr.setPosColor(color);
     }
 
     void offsetChanged(double offset) {
@@ -310,9 +327,7 @@ public class CompoundTable {
                     dataset = makeDataset(realDataset, simDataCopy, datasetName);
                 }
                 var dataAttr = chart.setDataset(dataset, true, true);
-                double lvl = 250.0 * 9.0 * 1.1;
-                dataAttr.setLvl(lvl / scale);
-                dataAttr.setOffset(offset);
+                update(dataAttr);
                 currentSimData.set(simDataCopy);
                 currentCompoundName.setText(simDataCopy.getName());
             }
