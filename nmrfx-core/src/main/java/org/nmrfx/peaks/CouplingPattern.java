@@ -72,6 +72,7 @@ public class CouplingPattern extends Coupling {
         multiplet.setIntensity(intensity);
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
+
     CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity,
                     final double[] sin2thetas, int[] blocks, int[] indices) {
         this.multiplet = multiplet;
@@ -195,6 +196,7 @@ public class CouplingPattern extends Coupling {
         }
         return n;
     }
+
     public int[] getIndices() {
         int[] n = new int[couplingItems.length];
         int i = 0;
@@ -246,17 +248,18 @@ public class CouplingPattern extends Coupling {
 
     public void adjustCouplings(final int iCoupling, double newValue) {
         double minValue = 0.1;
+        boolean requireNonOverlap = false;
         if ((iCoupling >= 0) && (couplingItems.length > iCoupling)) {
             if (newValue < minValue) {
                 newValue = minValue;
             }
             if ((iCoupling - 1) >= 0) {
-                if (newValue > (couplingItems[iCoupling - 1].coupling() - minValue)) {
+                if (requireNonOverlap && (newValue > (couplingItems[iCoupling - 1].coupling() - minValue))) {
                     newValue = couplingItems[iCoupling - 1].coupling() - minValue;
                 }
             }
             if ((iCoupling + 1) < couplingItems.length) {
-                if (newValue < (couplingItems[iCoupling + 1].coupling() + minValue)) {
+                if (requireNonOverlap && (newValue < (couplingItems[iCoupling + 1].coupling() + minValue))) {
                     newValue = couplingItems[iCoupling + 1].coupling() + minValue;
                 }
             }
@@ -419,12 +422,11 @@ public class CouplingPattern extends Coupling {
         for (Peak peak : peakList.peaks()) {
             PeakDim peakDim = peak.getPeakDim(0);
             Multiplet aMultiplet = peakDim.getMultiplet();
-            if ((multiplet != aMultiplet) && aMultiplet.isCoupled() && aMultiplet.getCoupling() instanceof  CouplingPattern couplingPattern) {
+            if ((multiplet != aMultiplet) && aMultiplet.isCoupled() && aMultiplet.getCoupling() instanceof CouplingPattern couplingPattern) {
                 CouplingItem[] couplingItems1 = couplingPattern.couplingItems;
                 int i = 0;
                 for (CouplingItem item : couplingItems1) {
                     if ((item.index() != -1) && (item.block() == iBlock) && (item.index() == index)) {
-                        System.out.println("adjust " + i + " " + value);
                         couplingPattern.adjustCouplings(i, value);
                     }
                     i++;
