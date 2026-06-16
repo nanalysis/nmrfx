@@ -89,7 +89,7 @@ public class CompoundTable {
         tableView.getColumns().addAll(nameColumn);
 
         TableColumn<CompoundItem, Number> scoreColumn = new TableColumn<>("Score");
-        scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(e.getValue().score()));
+        scoreColumn.setCellValueFactory(e -> new SimpleDoubleProperty(Math.round(e.getValue().score() * 1000.0)/ 1000.0));
         tableView.getColumns().addAll(scoreColumn);
 
         TableColumn<CompoundItem, Boolean> modifiedColumn = new TableColumn<>("Modified");
@@ -314,31 +314,43 @@ public class CompoundTable {
         PolyChart chart = scannerTool.getChart();
         chart.clearSimDatasets();
 
-        Dataset realDataset = (Dataset) chart.getDataset();
         currentCompoundName.setText("");
         if (!items.isEmpty()) {
             for (var item : items) {
-                SimData simData = item.simData();
-                SimData simDataCopy = currentSimMap.computeIfAbsent(simData.getName().toLowerCase(), k -> simData.copy());
-                item.simData = simDataCopy;
-                String datasetName = "SIM_" + simDataCopy.getName();
-                Dataset dataset = Dataset.getDataset(datasetName);
-                if (dataset == null) {
-                    dataset = makeDataset(realDataset, simDataCopy, datasetName);
-                }
-                var dataAttr = chart.setDataset(dataset, true, true);
-                update(dataAttr);
-                currentSimData.set(simDataCopy);
-                currentCompoundName.setText(simDataCopy.getName());
+                showData(item);
             }
         }
         chart.refresh();
     }
 
+    void showData(CompoundItem item) {
+        SimData simData = item.simData();
+        SimData simDataCopy = currentSimMap.computeIfAbsent(simData.getName().toLowerCase(), k -> simData.copy());
+        item.simData = simDataCopy;
+        showData(simDataCopy, false);
+    }
+
+    void showData(SimData simDataCopy, boolean refresh) {
+        PolyChart chart = scannerTool.getChart();
+        String datasetName = "SIM_" + simDataCopy.getName();
+        Dataset dataset = Dataset.getDataset(datasetName);
+        if ((dataset == null) || refresh) {
+            Dataset realDataset = (Dataset) chart.getDataset();
+            dataset = makeDataset(realDataset, simDataCopy, datasetName);
+        }
+        var dataAttr = chart.setDataset(dataset, true, true);
+        update(dataAttr);
+        currentSimData.set(simDataCopy);
+        currentCompoundName.setText(simDataCopy.getName());
+
+    }
+
     void updateFromPeakList() {
         if (currentSimData.get() != null) {
             currentSimData.get().updateFromPeakList();
+            showData(currentSimData.get(), true);
             tableView.refresh();
+            update();
         }
     }
 
