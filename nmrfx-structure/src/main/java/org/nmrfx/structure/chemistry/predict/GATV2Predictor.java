@@ -248,12 +248,9 @@ public class GATV2Predictor {
             var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
             try (OrtSession.Result result = session.run(inputs)) {
                 Object nodeOut = result.get(0);
-                Object edgeOut = result.get(1);
 
                 OnnxTensor nodeTensor = (OnnxTensor) nodeOut;
-                OnnxTensor edgeTensor = (OnnxTensor) edgeOut;
                 float[][] nodeOutputs = (float[][]) nodeTensor.getValue();
-                float[][] edgeOutputs = (float[][]) edgeTensor.getValue();
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
@@ -264,17 +261,22 @@ public class GATV2Predictor {
                         }
                     }
                 }
-                averageMethyls(entityToPredict, iRef);
-                for (int i = 0; i < nEdges; i++) {
-                    float pathLen = edgeAttr[i][1];
-                    String cName = graph.edges().get(i).couplingName();
-                    if ((pathLen < 5) && !cName.isBlank()) {
-                        int iIndex = (int) edgeIndex[0][i];
-                        int jIndex = (int) edgeIndex[1][i];
-                        Atom atomI = graphNodes.get(iIndex).atom();
-                        Atom atomJ = graphNodes.get(jIndex).atom();
-                        if ((atomI.getEntity() == entityToPredict) && (atomJ.getEntity() == entityToPredict)) {
-                            setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i][0]);
+                if (result.size() > 1) {
+                    Object edgeOut = result.get(1);
+                    OnnxTensor edgeTensor = (OnnxTensor) edgeOut;
+                    float[][] edgeOutputs = (float[][]) edgeTensor.getValue();
+                    averageMethyls(entityToPredict, iRef);
+                    for (int i = 0; i < nEdges; i++) {
+                        float pathLen = edgeAttr[i][1];
+                        String cName = graph.edges().get(i).couplingName();
+                        if ((pathLen < 5) && !cName.isBlank()) {
+                            int iIndex = (int) edgeIndex[0][i];
+                            int jIndex = (int) edgeIndex[1][i];
+                            Atom atomI = graphNodes.get(iIndex).atom();
+                            Atom atomJ = graphNodes.get(jIndex).atom();
+                            if ((atomI.getEntity() == entityToPredict) && (atomJ.getEntity() == entityToPredict)) {
+                                setCoupling(atomI, atomJ, Math.round(pathLen), edgeOutputs[i][0]);
+                            }
                         }
                     }
                 }
