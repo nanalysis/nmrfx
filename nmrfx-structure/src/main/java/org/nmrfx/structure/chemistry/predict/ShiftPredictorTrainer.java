@@ -5,6 +5,8 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tribuo.*;
 import org.tribuo.evaluation.CrossValidation;
 import org.tribuo.evaluation.DescriptiveStats;
@@ -34,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ShiftPredictorTrainer {
+    private static final Logger log = LoggerFactory.getLogger(ShiftPredictorTrainer.class);
 
     Map<String, List<String>> types = Collections.emptyMap();
     Map<String, List<ValuesWithCS>> valueMap = new HashMap<>();
@@ -59,7 +62,7 @@ public class ShiftPredictorTrainer {
     double factorVariance = 0.050;
     double learningRate = 0.1;
 
-    boolean crossValidate = false;
+    int nCrossValidate = 0;
 
     public enum TrainModes {
         TRAIN,
@@ -68,6 +71,7 @@ public class ShiftPredictorTrainer {
     }
 
     public record FitResult(int n, int nSkip, double rmsd, double mae) {
+        @Override
         public String toString() {
             return String.format("n %d nskip %d rmsd %.2f mae %.2f", n, nSkip, rmsd, mae);
         }
@@ -105,8 +109,8 @@ public class ShiftPredictorTrainer {
         useFactorMachine = state;
     }
 
-    public void crossValidate(boolean state) {
-        crossValidate = state;
+    public void crossValidate(int n) {
+        nCrossValidate = n;
     }
 
     public void dumpValueMap() {
@@ -229,7 +233,7 @@ public class ShiftPredictorTrainer {
     DescriptiveStatistics[] getStats(String atomLabel) {
         List<String> propNames = propNameMap.get(atomLabel);
         if (propNames == null) {
-            System.out.println(atomLabel + " " + propNameMap.keySet());
+            return new DescriptiveStatistics[0];
         }
         DescriptiveStatistics[] descriptiveStatistics = new DescriptiveStatistics[propNames.size()];
         for (int i = 0; i < propNames.size(); i++) {
@@ -307,7 +311,7 @@ public class ShiftPredictorTrainer {
             }
             double refCS = valuesWithCS.refCS();
             var features = getFeatures(valuesWithCS, useColumn, atomLabel);
-            if (features.size() ==0) {
+            if (features.isEmpty()) {
                 continue;
             }
             refPPMMap.put(key, refCS);
@@ -350,7 +354,7 @@ public class ShiftPredictorTrainer {
             String outStr = String.format("RMSE %8s %8d %7.4f MAE %7.4f R2 %7.4f", name, trainData.size(), evaluation.rmse(dimension), evaluation.mae(dimension), evaluation.r2(dimension));
             System.out.println(outStr);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error in training", e);
         }
         return model;
     }
@@ -358,21 +362,29 @@ public class ShiftPredictorTrainer {
     public Double doCrossValidation(MutableDataset<Regressor> trainData) {
         var trainer = getTrainer();
         var regressionEvaluator = new RegressionEvaluator();
-        CrossValidation<Regressor, RegressionEvaluation> crossValidation = new CrossValidation<>(trainer, trainData, regressionEvaluator, 10);
-        var results = crossValidation.evaluate();
-        var evAgg = EvaluationAggregator.summarizeCrossValidation(results);
+        int nCross = nCrossValidate;
+        if (trainData.size() < 1000) {
+            nCross = Math.min(5, nCross);
+        }
         Double rmse = null;
-        for (Map.Entry<MetricID<Regressor>, DescriptiveStats> eventry : evAgg.entrySet()) {
-            if (eventry.getKey() instanceof MetricID metricID) {
-                if (metricID.getA() instanceof MetricTarget metricA) {
-                    if (metricID.getB().equals("RMSE") && metricA.getOutputTarget().isPresent()) {
-                        var obj = eventry.getValue();
-                        if (obj instanceof DescriptiveStats stats) {
-                            rmse = stats.getMean();
+        try {
+            CrossValidation<Regressor, RegressionEvaluation> crossValidation = new CrossValidation<>(trainer, trainData, regressionEvaluator, nCross);
+            var results = crossValidation.evaluate();
+            var evAgg = EvaluationAggregator.summarizeCrossValidation(results);
+            for (Map.Entry<MetricID<Regressor>, DescriptiveStats> eventry : evAgg.entrySet()) {
+                if (eventry.getKey() instanceof MetricID metricID) {
+                    if (metricID.getA() instanceof MetricTarget metricA) {
+                        if (metricID.getB().equals("RMSE") && metricA.getOutputTarget().isPresent()) {
+                            var obj = eventry.getValue();
+                            if (obj instanceof DescriptiveStats stats) {
+                                rmse = stats.getMean();
+                            }
                         }
                     }
                 }
             }
+        } catch(Exception e) {
+            log.error("Error in cross validation", e);
         }
 
         return rmse;
@@ -382,7 +394,13 @@ public class ShiftPredictorTrainer {
         Map<String, Double> rmseMap = new HashMap<>();
         for (String type : types) {
             var dataset = getDataset(type, TrainModes.ALL);
-            Double rmse = doCrossValidation(dataset);
+            Double rmse = null;
+            if (dataset.size() > 100) {
+                rmse = doCrossValidation(dataset);
+            }
+            if (rmse == null) {
+                System.out.println("NORMSE " + type);
+            }
             rmseMap.put(type, rmse);
         }
         return rmseMap;
@@ -633,6 +651,7 @@ public class ShiftPredictorTrainer {
         errorMap.clear();
         valueMap.clear();
         pdbMeans.clear();
+        Path resultDirPath = Path.of(resultDir);
         for (var entry : types.entrySet()) {
             for (String type : entry.getValue()) {
                 loadData(valueMapDir, type, entry.getKey());
@@ -665,7 +684,7 @@ public class ShiftPredictorTrainer {
             fileName = fileName.replace("?", "x");
             Path path = Path.of(resultDir, fileName);
             writeCoefficients(entry.getKey(), path.toFile());
-            serializeToFile(Path.of(resultDir), entry.getKey());
+            serializeToFile(resultDirPath, entry.getKey());
         }
         getErrorsByMolecule();
         for (var entry : types.entrySet()) {
@@ -683,17 +702,16 @@ public class ShiftPredictorTrainer {
         Path pdbMeanPath = Path.of(resultDir, "pdboffset.txt");
         writePDBMeans(pdbMeanPath);
 
-        if (crossValidate) {
+        if (nCrossValidate > 1) {
             Path crossValidatePath = Path.of(resultDir, "crossval.txt");
-            Path path = Path.of(resultDir);
             try (FileWriter fileWriter = new FileWriter(crossValidatePath.toFile())) {
                 for (var entry : types.entrySet()) {
                     var rmseMap = doCrossValidation(entry.getValue(), entry.getKey());
                     for (var rmseEntry : rmseMap.entrySet()) {
                         fileWriter.write("CROSSVAL " + rmseEntry.getKey() + " " + rmseEntry.getValue() + "\n");
                     }
-                    writeDeltas(path, entry.getKey());
-                    writeSkips(path, entry.getKey());
+                    writeDeltas(resultDirPath, entry.getKey());
+                    writeSkips(resultDirPath, entry.getKey());
                 }
             }
         } else {
@@ -707,9 +725,8 @@ public class ShiftPredictorTrainer {
                     getSkip(entry.getKey(), fitResult.rmsd * trimRatio);
                     fitResult = getFitResults(entry.getKey());
                     fileWriter.write("FITRESULT " + entry.getKey() + " " + fitResult + "\n");
-                    Path path = Path.of(resultDir);
-                    writeDeltas(path, entry.getKey());
-                    writeSkips(path, entry.getKey());
+                    writeDeltas(resultDirPath, entry.getKey());
+                    writeSkips(resultDirPath, entry.getKey());
                 }
             }
         }

@@ -42,11 +42,16 @@ public class AutoPhase extends Operation {
     private final int winSize;
     private final double ratio;
     private final int mode;
+    private final boolean useRegion;
     private final double ph1Limit;
     private final double negativePenalty;
+    private final Double ppmStart;
+    private final Double ppmEnd;
 
 
-    public AutoPhase(boolean firstOrder, boolean maxMode, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
+    public AutoPhase(boolean firstOrder, boolean maxMode, int winSize, double ratio,
+                     int mode, double ph1Limit, double negativePenalty,
+                     boolean useRegion, Double ppmStart, Double ppmEnd) {
         this.firstOrder = firstOrder;
         this.maxMode = maxMode;
         this.winSize = winSize;
@@ -54,6 +59,9 @@ public class AutoPhase extends Operation {
         this.mode = mode;
         this.ph1Limit = ph1Limit;
         this.negativePenalty = negativePenalty;
+        this.useRegion = useRegion;
+        this.ppmStart = ppmStart;
+        this.ppmEnd = ppmEnd;
     }
 
     @Override
@@ -69,7 +77,7 @@ public class AutoPhase extends Operation {
             vector.phase(phase, 0.0, false, false);
             lastPh0.set(phase);
         } else {
-            double[] phases = vector.autoPhase(firstOrder, winSize, ratio, mode, ph1Limit, negativePenalty);
+            double[] phases = vector.autoPhase(firstOrder, winSize, ratio, mode, ph1Limit, negativePenalty, useRegion,  ppmStart, ppmEnd);
             vector.phase(phases[0], phases[1], false, false);
             lastPh0.set(phases[0]);
             lastPh1.set(phases[1]);

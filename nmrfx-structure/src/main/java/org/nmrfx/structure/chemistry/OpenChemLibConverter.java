@@ -4,14 +4,19 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import com.actelion.research.chem.MolfileCreator;
+import com.actelion.research.chem.MolfileParser;
 import com.actelion.research.chem.SmilesParser;
 import com.actelion.research.chem.StereoMolecule;
+import com.actelion.research.chem.forcefield.mmff.ForceFieldMMFF94;
+import com.actelion.research.gui.editor.FXEditorDialog;
 import org.nmrfx.chemistry.*;
 import org.openmolecules.chem.conf.gen.ConformerGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,8 +133,8 @@ public class OpenChemLibConverter {
             Atom atom = Atom.genAtomWithElement(aName, stereoMolecule.getAtomicNo(i));
             atom.setPointValidity(structureNumber, true);
             double x = stereoMolecule.getAtomX(i);
-            double y = stereoMolecule.getAtomY(i);
-            double z = stereoMolecule.getAtomZ(i);
+            double y = -stereoMolecule.getAtomY(i);
+            double z = -stereoMolecule.getAtomZ(i);
             Point3 pt = new Point3(x, y, z);
             if ((points != null) && (i < points.size())) {
                 atom.setFlatPoint(points.get(i));
@@ -188,7 +193,7 @@ public class OpenChemLibConverter {
         };
     }
 
-    public static StereoMolecule convertToStereoMolecule(AtomContainer molecule) {
+    public static StereoMolecule convertToStereoMolecule(AtomContainer molecule, double yzMul) {
         var stereoMolecule = new StereoMolecule();
         int structureNumber = 0;
         HashMap<Atom, Integer> atomHash = new HashMap<>();
@@ -198,8 +203,8 @@ public class OpenChemLibConverter {
             stereoMolecule.setAtomCustomLabel(iAtom, atom.getName());
             Point3 pt = atom.getPoint(structureNumber);
             stereoMolecule.setAtomX(iAtom, pt.getX());
-            stereoMolecule.setAtomY(iAtom, pt.getY());
-            stereoMolecule.setAtomZ(iAtom, pt.getZ());
+            stereoMolecule.setAtomY(iAtom, yzMul * pt.getY());
+            stereoMolecule.setAtomZ(iAtom, yzMul * pt.getZ());
             atomHash.put(atom, iAtom);
         }
         for (IBond bondI : molecule.bonds()) {
@@ -230,7 +235,7 @@ public class OpenChemLibConverter {
     }
     public static void to3D(Molecule molecule) {
         for (var ligand : molecule.getLigands()) {
-            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand);
+            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand, -1);
             ConformerGenerator.addHydrogenAtoms(sMol);
             List<Point3> points = getCoords(sMol);
             ConformerGenerator cg = new ConformerGenerator();
@@ -242,4 +247,62 @@ public class OpenChemLibConverter {
         molecule.updateAtomArray();
         molecule.updateBondArray();
     }
+
+    public static void minimize(StereoMolecule sMol) {
+        ForceFieldMMFF94.initialize(ForceFieldMMFF94.MMFF94SPLUS);
+        ForceFieldMMFF94 ff = new ForceFieldMMFF94(sMol, ForceFieldMMFF94.MMFF94SPLUS);
+        ff.minimise();
+        double energy = ff.getTotalEnergy();
+        System.out.println(energy);
+    }
+    public static void minimize(Molecule molecule) {
+        for (var ligand : molecule.getLigands()) {
+            StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(ligand, -1);
+            List<Point3> points = getCoords(sMol);
+            minimize(sMol);
+            OpenChemLibConverter.convertFromStereoMolecule(sMol, ligand, points);
+        }
+        molecule.inactivateAtoms();
+        molecule.updateAtomArray();
+        molecule.updateBondArray();
+    }
+
+    public static void writeToMolfile(AtomContainer atomContainer, File file) throws IOException {
+        StereoMolecule sMol = OpenChemLibConverter.convertToStereoMolecule(atomContainer, 1);
+        MolfileCreator molfileCreator = new MolfileCreator(sMol);
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String molString = molfileCreator.getMolfile();
+            String[] lines = molString.split(System.lineSeparator());
+            for (String line : lines) {
+                if (!line.startsWith("M ") || line.startsWith("M  END")) {
+                    fileWriter.write(line + System.lineSeparator());
+                }
+            }
+        }
+    }
+
+    public static void readMolTo3D(String fileName) {
+        StereoMolecule sMol = new StereoMolecule();
+        MolfileParser parser = new MolfileParser();
+        File file = new File(fileName);
+        boolean result = parser.parse(sMol, file);
+        ConformerGenerator.addHydrogenAtoms(sMol);
+        List<Point3> points = getCoords(sMol);
+        ConformerGenerator cg = new ConformerGenerator();
+        var conf = cg.getOneConformer(sMol);
+        var mol3D = conf.toMolecule(sMol);
+        Molecule molecule = new Molecule("testmol");
+        molecule.setActive();
+        Compound compound = new Compound("1","A");
+        molecule.addEntity(compound);
+        OpenChemLibConverter.convertFromStereoMolecule(mol3D, compound, points);
+    }
+
+    public static FXEditorDialog editor() {
+        Molecule molecule = Molecule.getActive();
+        StereoMolecule stereoMolecule = convertToStereoMolecule(molecule.getLigands().getFirst(), -1);
+        FXEditorDialog fxEditorDialog = new FXEditorDialog(null, stereoMolecule);
+        return fxEditorDialog;
+    }
+
 }

@@ -22,21 +22,21 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import jnr.ffi.annotations.In;
 import org.nmrfx.chart.*;
+import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.binding.BindingUtils;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
@@ -61,6 +61,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -71,6 +72,7 @@ public class ZZPlotTool {
 
     private static final Logger log = LoggerFactory.getLogger(ZZPlotTool.class);
     private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
+
 
     enum RxModes {
         AB("A <-> B", "[A]/([A]+[B])"),
@@ -94,17 +96,13 @@ public class ZZPlotTool {
     BorderPane borderPane = new BorderPane();
     TableView<PeakFitPars> tableView;
     Scene stageScene = new Scene(borderPane, 500, 500);
-    List<String> colNamesFullAB;
-    List<String> colNamesRatioAB;
-    List<String> colNamesFullPL;
-    List<String> colNamesRatioPL;
-
     List<String> colNames;
     CheckBox fitRatio;
+    CheckBox constrainR1CheckBox;
+    CheckBox fitIneptCheckBox;
+    CheckBox groupFitCheckBox;
     ChoiceBox<RxModes> rxModesChoiceBox;
-
-    boolean tableInRatioMode = false;
-    boolean tableInBindingMode = false;
+    PeakListTools.ZZFitPars currentTablePars = null;
 
     SimpleDoubleProperty totalProtein = new SimpleDoubleProperty(0.0);
     SimpleDoubleProperty totalLigand = new SimpleDoubleProperty(0.0);
@@ -120,13 +118,51 @@ public class ZZPlotTool {
     TextField pValue;
     TextField lValue;
     TextField kdValue;
+    Label statusField = new Label();
+    CheckBox ignoreBox = new CheckBox("Ignore");
+    Set<PeakListTools.IgnoreValue> ignoreSet = new HashSet<>();
+    PeakListTools.IgnoreValue ignoreLabel = null;
 
     public ZZPlotTool() {
-        colNamesFullAB = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
-        colNamesRatioAB = List.of("Peak", "Label", "KAB", "KAB:Err", "KBA", "KBA:Err", "KK", "KK:Err");
-        colNamesFullPL = List.of("Peak", "Label", "I", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err", "R1A", "R1A:Err", "R1B", "R1B:Err", "P", "P:Err");
-        colNamesRatioPL = List.of("Peak", "Label", "KAB", "KAB:Err", "KA", "KBA", "KBA:Err", "KK", "KK:Err");
-        colNames = colNamesFullPL;
+    }
+
+    public List<String> getColumnNames(PeakListTools.ZZFitPars zzFitPars) {
+        List<String> columnNames = new ArrayList<>(List.of("Peak", "Label"));
+        List<String> kNames = List.of("KAB", "KAB:Err", "KBA", "KBA:Err");
+        List<String> rNames = List.of("R1A", "R1A:Err", "R1B", "R1B:Err");
+        if (fitRatio.isSelected()) {
+            if (zzFitPars.bindingMode()) {
+                columnNames.addAll(List.of("KK", "KK:Err"));
+                columnNames.addAll(kNames);
+                columnNames.add("KA");
+            } else {
+                columnNames.addAll(List.of("KK", "KK:Err"));
+                columnNames.addAll(kNames);
+            }
+        } else {
+            if (zzFitPars.bindingMode()) {
+                columnNames.addAll(kNames);
+                columnNames.add("KA");
+                columnNames.addAll(rNames);
+            } else {
+                columnNames.addAll(kNames);
+                if (zzFitPars.constrainR1()) {
+                    columnNames.add("R1");
+                    columnNames.add("R1:Err");
+                } else {
+                    columnNames.addAll(rNames);
+                }
+                if (zzFitPars.fitInept()) {
+                    columnNames.add("IDelay");
+                    columnNames.add("IDelay:Err");
+                }
+            }
+            columnNames.add("Ia+Ib");
+            columnNames.add("Ia+Ib:Err");
+            columnNames.add("Ia/(Ia+Ib)");
+            columnNames.add("Ia/(Ia+Ib):Err");
+        }
+        return columnNames;
     }
 
     public void show(String xAxisName, String yAxisName) {
@@ -134,6 +170,8 @@ public class ZZPlotTool {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("ZZ Plot Tool");
+            stage.setWidth(1000);
+            stage.setHeight(600);
             MenuButton fileMenu = new MenuButton("File");
             VBox vBox = new VBox();
             ToolBar toolBar = new ToolBar();
@@ -144,14 +182,19 @@ public class ZZPlotTool {
 
             Button fitButton = new Button("Fit ");
             fitRatio = new CheckBox("Fit Ratio");
+            constrainR1CheckBox = new CheckBox("R1A == R1B");
+            fitIneptCheckBox = new CheckBox("Fit Inept");
+            groupFitCheckBox = new CheckBox("Group Fit");
+
 
             rxModesChoiceBox = new ChoiceBox<>();
             rxModesChoiceBox.getItems().addAll(RxModes.values());
 
             Button showPeakButton = new Button("Goto");
             showPeakButton.setOnAction(e -> gotoPeak());
-
-            toolBar.getItems().addAll(fileMenu, new Label("Rxn Mode: "), rxModesChoiceBox, fitRatio, ToolBarUtils.makeFiller(15, 15),
+            toolBar.setStyle("-fx-spacing: 14px;");
+            toolBar.getItems().addAll(fileMenu, new Label("Rxn Mode: "), rxModesChoiceBox, fitRatio,
+                    constrainR1CheckBox, fitIneptCheckBox, groupFitCheckBox, ToolBarUtils.makeFiller(15, 15),
                     fitButton, ToolBarUtils.makeFiller(15), showPeakButton);
 
             rxModesChoiceBox.setValue(RxModes.BINDING);
@@ -190,6 +233,8 @@ public class ZZPlotTool {
             activeChart = chartPane.getChart();
 
             exportSVGButton.setOnAction(e -> activeChart.exportSVG());
+            activeChart.getCanvas().setOnMouseClicked(this::mouseClicked);
+
             exportTableButton.setOnAction(e -> saveTable());
             fitButton.setOnAction(e -> fitPeaks());
 
@@ -198,11 +243,21 @@ public class ZZPlotTool {
             SplitPane sPane = new SplitPane(chartPane, tableView);
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
+            sPane.setDividerPosition(0, 0.7);
             stage.setScene(stageScene);
             updateChart(xAxisName, yAxisName);
             initTable();
             showPeakButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
             updateRxn(rxModesChoiceBox);
+            HBox statusBox = new HBox();
+            Insets insets = new Insets(0, 10, 0, 10);
+            statusBox.setPadding(insets);
+            statusField.setPrefWidth(250);
+            statusBox.getChildren().addAll(ignoreBox, statusField);
+            ignoreBox.setOnAction(e -> updateIgnoreField());
+            statusBox.setSpacing(20);
+            borderPane.setBottom(statusBox);
+
         }
         stage.show();
         stage.toFront();
@@ -250,9 +305,8 @@ public class ZZPlotTool {
         double concLimit = 1.0e-9;
         if ((totalProtein.get() > concLimit) && (totalLigand.get() > concLimit) && (kD.get() > concLimit)) {
             freeLigand.set(totalLigand.get() - BindingUtils.boundLigand(totalProtein.get(), totalLigand.get(), kD.get()));
-            double boundLigand = totalLigand.get() - freeLigand.get();
-            double boundProtein = boundLigand;
-            double freeProtein = totalProtein.get() - boundProtein;
+            double bound = totalLigand.get() - freeLigand.get();
+            double freeProtein = totalProtein.get() - bound;
             popA.set(freeProtein / totalProtein.get());
         }
     }
@@ -262,15 +316,9 @@ public class ZZPlotTool {
     }
 
     void initTable() {
+        currentTablePars = getFitPars();
         RxModes rxMode = rxModesChoiceBox.getValue();
-        if (fitRatio.isSelected()) {
-            tableInRatioMode = true;
-            colNames = rxMode == RxModes.BINDING ? colNamesRatioPL : colNamesRatioAB;
-        } else {
-            tableInRatioMode = false;
-            colNames = rxMode == RxModes.BINDING ? colNamesFullPL : colNamesFullAB;
-        }
-        tableInBindingMode = rxMode == RxModes.BINDING;
+        colNames = getColumnNames(currentTablePars);
         addParNames = rxMode == RxModes.BINDING ? addParNamesPL : addParNamesAB;
 
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -329,7 +377,7 @@ public class ZZPlotTool {
                     }
                 });
                 col.setCellFactory(c
-                        -> new TableCell<PeakFitPars, Number>() {
+                        -> new TableCell<>() {
                     @Override
                     public void updateItem(Number value, boolean empty) {
                         super.updateItem(value, empty);
@@ -375,20 +423,24 @@ public class ZZPlotTool {
         }
     }
 
-    void fitPeaks() {
-        boolean tableOK = fitRatio.isSelected() == tableInRatioMode && (rxModesChoiceBox.getValue() == RxModes.BINDING) == tableInBindingMode;
+    PeakListTools.ZZFitPars getFitPars() {
+        return new PeakListTools.ZZFitPars(rxModesChoiceBox.getValue() == RxModes.BINDING, groupFitCheckBox.isSelected(), constrainR1CheckBox.isSelected(), fitIneptCheckBox.isSelected(), fitRatio.isSelected());
+    }
 
-        if (!tableOK) {
+    void fitPeaks() {
+        PeakListTools.ZZFitPars zzFitPars = getFitPars();
+        if (!zzFitPars.equals(currentTablePars)) {
             initTable();
         }
-        if (fitRatio.isSelected()) {
-            simFitPeaks();
+        if (zzFitPars.groupFit()) {
+            simFitPeaks(zzFitPars);
         } else {
-            fitPeaksFull();
+            fitPeaksFull(zzFitPars);
         }
     }
 
-    void fitPeaksFull() {
+    void fitPeaksFull(PeakListTools.ZZFitPars zzFitPars) {
+        List<Integer> selected = new ArrayList<>(tableView.getSelectionModel().getSelectedIndices());
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         var chart = controller.getActiveChart();
         var peakListOpt = chart.getPeakListAttributes().stream().findFirst();
@@ -401,27 +453,36 @@ public class ZZPlotTool {
                     .filter(g -> g.size() == 4)
                     .forEach(g -> {
                         used.addAll(g);
-                        fitPars.add(fitPeakGroup(peakAttributes, peakList, g));
+                        fitPars.add(fitPeakGroup(peakAttributes, peakList, g, zzFitPars));
                     });
             addDerivedPars(fitPars);
         });
         tableView.setItems(fitPars);
+        if (selected.isEmpty()) {
+            selected.add(0);
+        }
+        if (selected.size() <= fitPars.size()) {
+            tableView.getSelectionModel().clearSelection();
+            for (int i : selected) {
+                tableView.getSelectionModel().select(i);
+            }
+        }
     }
 
-    PeakFitPars fitPeakGroup(PeakListAttributes peakListAttributes, PeakList peakList, Set<Peak> peaks) {
-        Dataset dataset = (Dataset) peakListAttributes.getDatasetAttributes().getDataset();
+    PeakFitPars fitPeakGroup(PeakListAttributes peakListAttributes, PeakList peakList, Set<Peak> peaks, PeakListTools.ZZFitPars zzFitPars) {
+        Dataset dataset = peakListAttributes.getDatasetAttributes().getDataset();
         PeakFitParameters fitPars = new PeakFitParameters();
         fitPars.arrayedFitMode(PeakFitParameters.ARRAYED_FIT_MODE.ZZ_INTENSITY);
         try {
-            List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, peaks);
-            return result.get(0);
+            List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, peaks, zzFitPars, ignoreSet);
+            return result.getFirst();
         } catch (IOException | PeakFitException e) {
             GUIUtils.warn("ZZFit", e.getMessage());
             return null;
         }
     }
 
-    void simFitPeaks() {
+    void simFitPeaks(PeakListTools.ZZFitPars zzFitPars) {
         FXMLController controller = AnalystApp.getFXMLControllerManager().getOrCreateActiveController();
         var chart = controller.getActiveChart();
         var peakListOpt = chart.getPeakListAttributes().stream().findFirst();
@@ -429,7 +490,7 @@ public class ZZPlotTool {
         Set<Peak> used = new HashSet<>();
         List<Set<Peak>> allPeaks = new ArrayList<>();
         peakListOpt.ifPresent(peakAttributes -> {
-            Dataset dataset = (Dataset) peakAttributes.getDatasetAttributes().getDataset();
+            Dataset dataset = peakAttributes.getDatasetAttributes().getDataset();
             PeakList peakList = peakAttributes.getPeakList();
             for (Peak peak : peakList.peaks()) {
                 if (used.contains(peak)) {
@@ -439,19 +500,28 @@ public class ZZPlotTool {
                 if (group.size() == 4) {
                     var groupSet = Collections.singletonList(group);
                     try {
-                        PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false);
-                        fitPars.add(result.peakFitPars());
+                        if (zzFitPars.fitRatios()) {
+                            PeakListTools.FitZZPeakRatioResult result = PeakListTools.fitZZPeakRatios(peakList, dataset, groupSet, false, ignoreSet);
+                            if (result != null) {
+                                fitPars.add(result.peakFitPars());
+                            }
+                        }
                         allPeaks.add(group);
                     } catch (IOException | PeakFitException e) {
-                        throw new RuntimeException(e);
+                        log.warn("Error in sim fit", e);
                     }
 
                 }
                 used.addAll(group);
             }
             try {
-                fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true);
-                fitPars.add(0, fitZZPeakRatioResult.peakFitPars());
+                if (zzFitPars.fitRatios()) {
+                    fitZZPeakRatioResult = PeakListTools.fitZZPeakRatios(peakList, dataset, allPeaks, true, ignoreSet);
+                    fitPars.addFirst(fitZZPeakRatioResult.peakFitPars());
+                } else {
+                    List<PeakFitPars> result = PeakListTools.fitZZPeakIntensities(peakList, dataset, allPeaks, zzFitPars, ignoreSet);
+                    fitPars.addAll(result);
+                }
             } catch (IOException | PeakFitException e) {
                 throw new RuntimeException(e);
             }
@@ -574,14 +644,14 @@ public class ZZPlotTool {
     void gotoPeak() {
         var selPars = getSelected();
         if (!selPars.isEmpty()) {
-            Peak peak = selPars.get(0).peak();
+            Peak peak = selPars.getFirst().peak();
             if (peak != null) {
                 PeakDisplayTool.gotoPeak(peak);
             }
         }
     }
 
-    final protected void selectionChanged() {
+    protected final void selectionChanged() {
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
         activeChart.getData().clear();
         for (Integer index : selected) {
@@ -600,7 +670,7 @@ public class ZZPlotTool {
     }
 
     private void saveTable(File file) {
-        Charset charset = Charset.forName("US-ASCII");
+        Charset charset = StandardCharsets.US_ASCII;
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
             boolean first = true;
             for (TableColumn column : tableView.getColumns()) {
@@ -626,8 +696,6 @@ public class ZZPlotTool {
                         case "Label":
                             if (item.peak() != null) {
                                 sBuilder.append(item.peak().getPeakDim(0).getLabel());
-                            } else {
-                                sBuilder.append("");
                             }
                             break;
                         default:
@@ -640,8 +708,6 @@ public class ZZPlotTool {
                             if (fitPar != null) {
                                 double v = isErr ? fitPar.error() : fitPar.value();
                                 sBuilder.append(String.format("%.4f", v));
-                            } else {
-                                sBuilder.append("");
                             }
                             break;
                     }
@@ -674,10 +740,10 @@ public class ZZPlotTool {
             xValues = currentPeak.getPeakList().getMeasureValues();
         }
         activeChart.getData().clear();
-        activeChart.xAxis.setAutoRanging(true);
-        activeChart.yAxis.setAutoRanging(true);
+        activeChart.getXAxis().setAutoRanging(true);
+        activeChart.getYAxis().setAutoRanging(true);
         Axis yAxis = activeChart.getYAxis();
-        if (tableInRatioMode) {
+        if (currentTablePars.fitRatios()) {
             yAxis.setLabel("Ratio");
             addSeries(peakFitPars, peaks);
         } else {
@@ -695,8 +761,8 @@ public class ZZPlotTool {
         DataSeries series = new DataSeries();
         DataSeries lineSeries = new DataSeries();
         if (!peaks.isEmpty()) {
-            PeakList peakList = peaks.get(0).getPeakList();
-            PeakListTools.XYEValues xyeValues = PeakListTools.getXYErrValues(peakList, peaks);
+            PeakList peakList = peaks.getFirst().getPeakList();
+            PeakListTools.XYEValues xyeValues = PeakListTools.getXYErrValues(peakList, peaks, ignoreSet);
             List<XYValue> xyValues = PeakListTools.calcRatioKK(xyeValues);
             for (XYValue xyValue : xyValues) {
                 series.add(xyValue);
@@ -719,38 +785,53 @@ public class ZZPlotTool {
         addSeries(series, lineSeries, Color.BLACK, "AA");
     }
 
+    record PeakExtraValue(Peak peak, int index) {
+    }
+
     void addSeries(PeakFitPars peakFitPars, List<Peak> peaks, double[] xValues) {
-        double intensity = peakFitPars.fitPars().get("I").value();
-        double r1A = peakFitPars.fitPars().get("R1A").value();
-        double r1B = peakFitPars.fitPars().get("R1B").value();
-        double kAB = peakFitPars.fitPars().get("KAB").value();
-        double kBA = peakFitPars.fitPars().get("KBA").value();
-        double pA = peakFitPars.fitPars().get("P").value();
+        Map<String, FitPar> parMap = peakFitPars.fitPars();
+        double intensity = parMap.get("Ia+Ib").value();
+        double r1A = parMap.containsKey("R1A") ? parMap.get("R1A").value() : parMap.get("R1").value();
+        double r1B = parMap.containsKey("R1B") ? parMap.get("R1B").value() : parMap.get("R1").value();
+        double kAB = parMap.get("KAB").value();
+        double kBA = parMap.get("KBA").value();
+        double fracA = parMap.get("Ia/(Ia+Ib)").value();
+        double d0 = parMap.containsKey("IDelay") ? parMap.get("IDelay").value() : 0.0;
         int iSig = 0;
         String[] peakLabels = {"AA", "BB", "BA", "AB"};
 
         for (Peak peak : peaks) {
             DataSeries series = new DataSeries();
+            DataSeries ignoreSeries = new DataSeries();
             DataSeries lineSeries = new DataSeries();
             Color color = XYCanvasChart.colors[iSig];
             addSeries(series, lineSeries, color, peakLabels[iSig]);
-
+            addSeries(ignoreSeries, null, Color.BLACK, "Ignore");
             peak.getMeasures().ifPresent(measures -> {
                 double[] yValues = measures[0];
                 double[] errs = measures[1];
                 for (int i = 0; i < yValues.length; i++) {
+                    PeakListTools.IgnoreValue ignoreValue = new PeakListTools.IgnoreValue(peak, i);
                     double yValue = yValues[i];
+                    double errValue = errs[i];
                     double xValue = xValues != null ? xValues[i] : 1.0 * i;
-                    XYValue value = new XYValue(xValue, yValue);
-                    series.add(value);
+                    XYEValue value = new XYEValue(xValue, yValue, errValue);
+                    PeakExtraValue peakExtraValue = new PeakExtraValue(peak, i);
+                    value.setExtraValue(peakExtraValue);
+                    if (ignoreSet.contains(ignoreValue)) {
+                        ignoreSeries.add(value);
+                    } else {
+                        series.add(value);
+                    }
                 }
             });
 
-            double xMax = xValues[xValues.length - 1];
+
+            double xMax = series.getMaxX();
             int nPoints = 100;
             for (int i = 0; i < nPoints; i++) {
                 double delay = i * xMax / (nPoints - 1);
-                double y = intensity * LorentzGaussND.zzAmplitude2(r1A, r1B, pA, kAB, kBA, delay, iSig);
+                double y = intensity * LorentzGaussND.zzAmplitude2(r1A, r1B, fracA, kAB, kBA, delay + d0, iSig);
 
                 XYValue value = new XYValue(delay, y);
                 lineSeries.getData().add(value);
@@ -765,14 +846,46 @@ public class ZZPlotTool {
         series.setFill(color);
         series.setName(label);
         activeChart.getData().add(series);
-        lineSeries.drawLine(true);
-        lineSeries.drawSymbol(false);
-        lineSeries.fillSymbol(false);
-        lineSeries.setStroke(color);
-        lineSeries.setFill(color);
-        lineSeries.setName(label);
-        activeChart.getData().add(lineSeries);
-
+        if (lineSeries != null) {
+            lineSeries.drawLine(true);
+            lineSeries.drawSymbol(false);
+            lineSeries.fillSymbol(false);
+            lineSeries.setStroke(color);
+            lineSeries.setFill(color);
+            lineSeries.setName(label);
+            activeChart.getData().add(lineSeries);
+        }
     }
+
+    private void updateIgnoreField() {
+        if (ignoreLabel != null) {
+            if (ignoreBox.isSelected()) {
+                ignoreSet.add(ignoreLabel);
+            } else {
+                ignoreSet.remove(ignoreLabel);
+            }
+            selectionChanged();
+        }
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        Optional<XYCanvasChart.Hit> hitOpt = activeChart.pickChart(e.getX(), e.getY(), 5);
+        if (hitOpt.isPresent()) {
+            XYCanvasChart.Hit hit = hitOpt.get();
+            PeakExtraValue peakExtraValue = (PeakExtraValue) hit.getValue().getExtraValue();
+            double delay = peakExtraValue.peak.getPeakList().getMeasureValues()[peakExtraValue.index];
+            String status = String.format("HIT peak: %d idx %d delay %.3f", peakExtraValue.peak.getIdNum(), peakExtraValue.index, delay);
+            statusField.setText(status);
+            Peak peak = peakExtraValue.peak;
+            ignoreLabel = new PeakListTools.IgnoreValue(peak, peakExtraValue.index);
+            ignoreBox.setDisable(false);
+            ignoreBox.setSelected(ignoreSet.contains(ignoreLabel));
+        } else {
+            statusField.setText("");
+            ignoreBox.setSelected(false);
+            ignoreBox.setDisable(true);
+        }
+    }
+
 
 }

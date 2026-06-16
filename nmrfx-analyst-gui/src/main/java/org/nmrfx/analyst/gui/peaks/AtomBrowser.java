@@ -192,7 +192,6 @@ public class AtomBrowser {
             atomField.setBackground(defaultBackground);
         } else {
             atomField.setBackground(errorBackground);
-            System.out.println("invalid " + current);
         }
         return validAtom;
     }

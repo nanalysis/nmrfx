@@ -68,7 +68,7 @@ public class SSGen {
         return structures;
     }
 
-        private void pairTo() {
+    private void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
     }

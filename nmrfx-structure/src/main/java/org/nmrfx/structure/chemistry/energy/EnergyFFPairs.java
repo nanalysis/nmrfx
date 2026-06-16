@@ -46,36 +46,28 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         }
     }
 
+    public static double calcS(double a1, double b1, double c1, double r2) {
+        final double q = a1 + b1 * r2;
+        final double u = c1 * q;
+        final double v = q * q + r2;
+        return u / v;
+    }
+
+    public static double calcS1(double r2) {
+        final double q = 1.0 + 0.25 * r2;
+        final double u = 2.0 * q;
+        final double v = q * q + r2;
+        return u / v;
+    }
+
     @Override
     public double calcEnergy(boolean calcDeriv, double weight, double eWeight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
         double cutoffScale = -1.0;
-        double rMin = eCoords.forceWeight.getNBMin();
-        double a1 = rMin * 2.0;
-        double b1 = 1.0 / a1 * 0.25;
-        double c1 = 2.01;
-        // 0.25  0.83 0.18
-        // 0.5   1.057 0.1661
-        // 0.75  1.4923 0.1513
-        // 1.00  1.880  0.1413
-        if (rMin < 0.35) {
-            a1 = 0.83;
-            b1 = 0.18;
-        } else if (rMin < 0.65) {
-            a1 = 1.057;
-            b1 = 0.1661;
-        } else if (rMin < 0.85) {
-            a1 = 1.4923;
-            b1 = 0.1513;
-        } else if (rMin < 1.1) {
-            a1 = 1.880;
-            b1 = 0.1413;
-        } else {
-            a1 = 2.5;
-            b1 = 0.068;
-            c1 = 2.03;
-        }
+        double a1 = 1.0;
+        double b1 = 0.25;
+        double c1 = 2.0;
         double a12 = a1 * a1;
         double b12 = b1 * b1;
 
@@ -100,10 +92,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
             disSq[i] = r2;
             derivs[i] = 0.0;
             viol[i] = 0.0;
-            final double q = a1 + b1 * r2;
-            final double u = c1 * q;
-            final double v = q * q + r2;
-            final double s = u / v;
+            double s = calcS(a1, b1, c1, r2);
             final double s3 = s * s * s;
             final double s6 = s3 * s3;
             double e = weight * ((a * s3 - b) * s6 + c * s);
@@ -189,24 +178,21 @@ public class EnergyFFPairs extends EnergyDistancePairs {
     }
 
     double getEnergy(int i, double r2, double weight, double eWeight) {
-        int iAtom = iAtoms[i];
-        int jAtom = jAtoms[i];
         double a = aValues[i];
         double b = bValues[i];
         double c = charge[i]; // fixme
         double rMin = eCoords.forceWeight.getNBMin();
-        double a1 = rMin * 2.0;
-        double b1 = 1.0 / a1 * 0.25;
-        final double q = a1 + b1 * r2;
-        final double u = 2.0 * q;
-        final double v = q * q + r2;
-        final double s = 2.0 * q / (q * q + r2);
+        double a1 = 1.0;
+        double b1 = 0.25;
+        double c1 = 2.0;
+
+        double s = calcS(a1, b1, c1, r2);
+
         final double s3 = s * s * s;
         final double s6 = s3 * s3;
         double eV = weight * ((a * s3 - b) * s6);
         double eE = eWeight < 0.0 ? 0.0 : weight * (c * s);
         return eV + eE;
-
     }
 
     @Override

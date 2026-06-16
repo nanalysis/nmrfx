@@ -620,7 +620,7 @@ public class Analyzer {
         if (scale < 1.0e-6) {
             scale = 1.0;
         }
-        peakList.scale = scale;
+        peakList.setScale(scale);
 
     }
 
@@ -1022,7 +1022,7 @@ public class Analyzer {
             }
             Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
             System.out.println(multiplet.getPeakDim().getPeak().getName() + " "
-                    + multiplet.getPeakDim().getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
+                    + multiplet.getPeakDim().getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.getScale());
 
         }
     }
@@ -1051,7 +1051,7 @@ public class Analyzer {
         } else if (aliphaticValues.size() > 1) {
             norm = calculateNormalization(aliphaticValues);
         }
-        peakList.scale = norm;
+        peakList.setScale(norm);
     }
 
     public double calculateNormalization(List<Double> values) {

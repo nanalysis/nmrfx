@@ -1,5 +1,6 @@
 import math
 import sys
+from org.nmrfx.star import STAR3Base
 def loadResProps(fileName):
     global resProps
     resProps = {}

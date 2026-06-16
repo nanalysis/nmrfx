@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.tools;
 
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -15,13 +16,15 @@ public class SliderLayoutReader {
     public static SliderLayoutGroup loadYaml() throws IOException {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         try (InputStream istream = cl.getResourceAsStream("sliderlayouts.yaml")) {
-            Yaml yaml = new Yaml(new Constructor(SliderLayoutGroup.class));
+            var loaderOptions = new LoaderOptions();
+            Yaml yaml = new Yaml(new Constructor(SliderLayoutGroup.class, loaderOptions));
             return yaml.load(istream);
         }
     }
     public static SliderLayoutGroup loadYaml(File file) throws IOException {
         try (InputStream istream = new FileInputStream(file)) {
-            Yaml yaml = new Yaml(new Constructor(SliderLayoutGroup.class));
+            var loaderOptions = new LoaderOptions();
+            Yaml yaml = new Yaml(new Constructor(SliderLayoutGroup.class, loaderOptions));
             return yaml.load(istream);
         }
     }

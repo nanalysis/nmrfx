@@ -9,6 +9,7 @@ public abstract class FitEquation {
     double[][] xValues;
     double[][] yValues;
     double[][] errValues;
+    boolean[][] mask;
     double[] bestPars;
     double[] parErrs;
 
@@ -32,6 +33,14 @@ public abstract class FitEquation {
         this.xValues = xValues;
         this.yValues = yValues;
         this.errValues = errValues;
+        this.mask = null;
+    }
+
+    public void setXYE(double[][] xValues, double[][] yValues, double[][] errValues, boolean[][] mask) {
+        this.xValues = xValues;
+        this.yValues = yValues;
+        this.errValues = errValues;
+        this.mask = mask;
     }
 
     public double[][] getSimValues(double[] first, double[] last, int n) {
@@ -57,6 +66,7 @@ public abstract class FitEquation {
     public double value(double[] pars, double[][] values) {
         int n = values[0].length;
         double sum = 0.0;
+        int nValues = 0;
         double[] xA = new double[xValues.length];
         for (int i = 0; i < n; i++) {
             for (int iX = 0; iX < xA.length; iX++) {
@@ -64,11 +74,14 @@ public abstract class FitEquation {
             }
             double[] rpY = calcValue(xA, pars);
             for (int j = 0; j < rpY.length; j++) {
-                double delta = rpY[j] - values[1 + j][i];
-                sum += delta * delta;
+                if ((mask == null) || !mask[j][i]) {
+                    double delta = rpY[j] - values[1 + j][i];
+                    sum += delta * delta;
+                    nValues++;
+                }
             }
         }
-        return Math.sqrt(sum / n);
+        return Math.sqrt(sum / nValues);
     }
 
 

@@ -147,6 +147,7 @@ public class PeakNavigator implements PeakListener {
             } else {
                 this.peakListMenuButton = peakListMenuButton;
             }
+            this.peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
             updatePeakListMenu();
         } else {
             parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());
@@ -207,7 +208,6 @@ public class PeakNavigator implements PeakListener {
             }
         });
 
-        this.peakListMenuButton.setOnShowing(e -> updatePeakListMenu());
         // The different control items end up with different heights based on font and icon size,
         // set all the items to use the same height
         this.navigatorToolBar.heightProperty().addListener((observable, oldValue, newValue) -> GUIUtils.toolbarAdjustHeights(List.of(navigatorToolBar)));
@@ -216,12 +216,11 @@ public class PeakNavigator implements PeakListener {
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (PeakList peakList1 : ProjectBase.getActive().getPeakLists()) {
-            String peakListName = peakList1.getName();
+        ProjectBase.getActive().getPeakLists().stream().map(PeakList::getName).sorted().forEach(peakListName -> {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> PeakNavigator.this.setPeakList(peakListName));
             peakListMenuButton.getItems().add(menuItem);
-        }
+        });
     }
 
     public void setPeakList() {

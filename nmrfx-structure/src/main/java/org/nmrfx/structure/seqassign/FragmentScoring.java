@@ -59,8 +59,6 @@ public class FragmentScoring {
                         stream()).map(Residue::getName).
                 toList();
         for (String resName : resNames) {
-            double[] means2 = new double[2];
-            double[][] vars2 = new double[2][2];
             double[] meansCA = new double[1];
             double[][] varsCA = new double[1][1];
             double[] meansCB = new double[1];
@@ -147,8 +145,12 @@ public class FragmentScoring {
             boolean ok = true;
             String key = entry.getKey();
             if (mode.contains("_") && key.endsWith(mode)) {
-                p = entry.getValue().density(ppm1);
-            }  else if (mode.equals("") && !key.contains("_")) {
+                if (mode.equals("_CA") && !key.equals("GLY_CA") && (ppm1[0] < 50.0)) {
+                    p = 0.0;
+                } else {
+                    p = entry.getValue().density(ppm1);
+                }
+            }  else if (mode.isEmpty() && !key.contains("_")) {
                 p = entry.getValue().density(ppms);
             } else {
                 p = 0.0;
@@ -186,7 +188,7 @@ public class FragmentScoring {
 
         if (!atomName.isEmpty() && !(resName.equalsIgnoreCase("gly")
                 && atomName.equalsIgnoreCase("cb"))) {
-            Atom atom = residue.getAtom(atomName);
+            Atom atom = residue.getAtomLoose(atomName);
             if (atom != null) {
                 StandardPPM stdShift = null;
                 PPMv ppmV = atom.spatialSet.getPPM(0);
@@ -226,7 +228,8 @@ public class FragmentScoring {
         double resScore = 0.0;
         int nValues = 0;
         for (AtomShiftValue atomShiftValue : atomShiftValues) {
-            if (residue.getAtom(atomShiftValue.getAName()) == null) { // fail residues like proline without HN
+            String atomName = atomShiftValue.getAName();
+            if (atomName.equalsIgnoreCase("H")  && (residue.getAtom(atomShiftValue.getAName()) == null)) { // fail residues like proline without HN
                 nValues = 0;
                 break;
             }

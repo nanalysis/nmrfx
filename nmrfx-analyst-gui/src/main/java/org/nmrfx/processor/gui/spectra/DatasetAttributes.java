@@ -377,6 +377,10 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
             dim[i] = i;
             chunkSize[i] = 1;
         }
+        setPosColor(Color.valueOf(theFile.getPosColor()));
+        setNegColor(Color.valueOf(theFile.getNegColor()));
+        setNeg(theFile.getNegDrawOn());
+        setPos(theFile.getPosDrawOn());
 
     }
 

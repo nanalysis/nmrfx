@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.tools;
 
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -14,7 +15,7 @@ public class RunAboutYamlReader {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
 
         try (InputStream istream = cl.getResourceAsStream("runabout.yaml")) {
-            Yaml yaml = new Yaml(new Constructor(RunAboutArrangements.class));
+            Yaml yaml = new Yaml(new Constructor(RunAboutArrangements.class, new LoaderOptions()));
             return yaml.load(istream);
         }
     }
@@ -23,7 +24,7 @@ public class RunAboutYamlReader {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
 
         try (InputStream istream = new FileInputStream(file)) {
-            Yaml yaml = new Yaml(new Constructor(RunAboutArrangements.class));
+            Yaml yaml = new Yaml(new Constructor(RunAboutArrangements.class, new LoaderOptions()));
             return yaml.load(istream);
         }
     }

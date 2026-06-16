@@ -1079,11 +1079,10 @@ public class NMRStarWriter {
                 results.add(RexError);
             }
             String outputLine = toStarRelaxationString(idx, expType, listID, entityID, atom, results);
-            if (!prevRes.contains(entityID + "." + atom.getResidueNumber())) {
-                chan.write("      " + outputLine + "\n");
-                prevRes.add(entityID + "." + atom.getResidueNumber());
-                idx++;
-            }
+            chan.write("      " + outputLine + "\n");
+            prevRes.add(entityID + "." + atom.getResidueNumber());
+            idx++;
+
         }
         chan.write("   stop_\n");
         chan.write(STAR3Base.SAVE + "\n\n");

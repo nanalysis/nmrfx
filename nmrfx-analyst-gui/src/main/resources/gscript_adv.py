@@ -39,6 +39,9 @@ class NMRFxWindowAdvScripting(NMRFxWindowScripting):
         with open(fileName,'w') as fOut:
             fOut.write(yamlDump.encode("utf-8"))
 
+    def getScannerData(self):
+        return self.cmd.getScannerTable()
+
 
 def parseArgs(argv):
     nw = NMRFxWindowScripting()

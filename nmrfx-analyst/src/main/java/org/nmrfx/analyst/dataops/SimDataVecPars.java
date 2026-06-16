@@ -37,6 +37,10 @@ public class SimDataVecPars {
         this.vref = sw / sf / 2 + ref;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s %.1f %.1f %d %.3f %.3f", label, sf, sw, n, ref, vref);
+    }
     /**
      * @return the label
      */

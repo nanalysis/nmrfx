@@ -1101,9 +1101,9 @@ public class ChartProcessor {
             log.info("NMRData is null, unable to reload.");
             return;
         }
+        Double pivotPosition = chart.getPivotPosition();
         chart.setPh0(0);
         chart.setPh1(0);
-        chart.setPivot(null);
         int nDim = nmrData.getNDim();
         iVec = 0;
         execScript("", false, false);

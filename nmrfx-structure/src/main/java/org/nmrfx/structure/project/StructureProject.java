@@ -259,7 +259,7 @@ public class StructureProject extends ProjectBase {
 
     public void loadShiftFiles(Path directory, boolean refMode) throws IOException {
         Molecule mol = activeMol();
-        Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
+        Pattern pattern = Pattern.compile("(ppm.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             try (Stream<Path> files = Files.list(directory)) {

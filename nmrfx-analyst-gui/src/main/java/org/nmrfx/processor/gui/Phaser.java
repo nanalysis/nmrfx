@@ -367,10 +367,11 @@ public class Phaser {
 
     void handlePh1Reset(double ph1, boolean updateOp) {
         ph1 = Math.round(ph1 * 10) / 10.0;
-        double start = 90.0 * Math.round(ph1 / 90.0) - 180.0;
-        double end = start + 360.0;
+        double start = 45 * Math.round(ph1 / 45) - 90.0;
+        double end = start + 180;
         sliders[1].setMin(start);
         sliders[1].setMax(end);
+        sliders[1].setBlockIncrement(0.1);
         sliders[1].setValue(ph1);
         if (updateOp) {
             setPhaseOp();
@@ -389,8 +390,8 @@ public class Phaser {
 
     protected void setPH1Slider(double value) {
         value = Math.round(value * 10) / 10.0;
-        double start = 90.0 * Math.round(value / 90.0) - 180.0;
-        double end = start + 360.0;
+        double start = 45 * Math.round(value / 45.0) - 90.0;
+        double end = start + 180.0;
         sliders[1].setMin(start);
         sliders[1].setMax(end);
         sliders[1].setValue(value);
@@ -432,7 +433,7 @@ public class Phaser {
                 List<ProcessingOperationInterface> listItems = controller.getChartProcessor().getOperations(processingSection);
                 if (listItems != null) {
                     for (ProcessingOperationInterface processingOperation : listItems) {
-                        if (processingOperation.getName().equals("AUTOPHASE")) {
+                        if (processingOperation.getName().equals("AUTOPHASE") && !processingOperation.isDisabled()) {
                             double aph0 = AutoPhase.lastPh0.get();
                             double aph1 = AutoPhase.lastPh1.get();
                             ph0 -= aph0;

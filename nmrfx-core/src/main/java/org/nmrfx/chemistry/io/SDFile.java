@@ -24,8 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +33,7 @@ import java.util.regex.Pattern;
  */
 public class SDFile {
     private static final Logger log = LoggerFactory.getLogger(SDFile.class);
+    public static boolean IS_SPECIAL_BUTTS = false;
 
     private static final int MOLECULE = 0;
     private static final int ATOM = 1;
@@ -291,8 +291,8 @@ public class SDFile {
 
                 if (atomList != null) {
                     if ((iBond < atomList.size()) && (jBond < atomList.size())) {
-                        Atom atom1 = (Atom) atomList.get(iBond);
-                        Atom atom2 = (Atom) atomList.get(jBond);
+                        Atom atom1 = atomList.get(iBond);
+                        Atom atom2 = atomList.get(jBond);
 
                         Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
@@ -344,7 +344,7 @@ public class SDFile {
         while ((string = lineReader.readLine()) != null) {
             String valueName;
             string = string.trim();
-            if (string.length() != 0) {
+            if (!string.isBlank()) {
                 if (string.equals("$$$$")) {
                     break;
                 } else if (string.startsWith(">")) {
@@ -358,15 +358,17 @@ public class SDFile {
                                 break;
                             }
                             String value = string.trim();
-                            if (value.length() == 0) {
+                            if (value.isEmpty()) {
                                 break;
                             }
-                            if (sBuilder.length() > 0) {
+                            if (!sBuilder.isEmpty()) {
                                 sBuilder.append("\n");
                             }
 
                             if (value.endsWith("\\")) {
-                                value = value.substring(0, value.length() - 1);
+                                if (!valueName.equals("NMREDATA_ASSIGNMENT") && !valueName.equals("NMREDATA_J")) {
+                                    value = value.substring(0, value.length() - 1);
+                                }
                             }
                             sBuilder.append(value);
                         }
@@ -375,6 +377,55 @@ public class SDFile {
                             molName = molecule.name;
                         } else {
                             molecule.setProperty(valueName, sBuilder.toString());
+                        }
+
+                        if (valueName.equals("NMREDATA_ASSIGNMENT")) {
+                            String[] rows = sBuilder.toString().split("\n");
+                            HashMap<String, Double> shifts = new HashMap<>();
+                            if (IS_SPECIAL_BUTTS) {
+                                Arrays.stream(rows).forEach(row -> {
+                                    String[] values = row.split(",");
+                                    int atomIndex = Integer.parseInt(values[0].trim()) + 1;
+                                    double shift = Double.parseDouble(values[1].trim());
+                                    int atomNum = Integer.parseInt(values[2].trim());
+                                    String atomName = Objects.requireNonNull(AtomProperty.get(atomNum)).name();
+                                    shifts.putIfAbsent(atomName + atomIndex, shift);
+                                });
+                                atomList.forEach(atom -> {
+                                    double shift = shifts.get(atom.getName());
+                                    atom.setPPM(shift);
+                                });
+
+                            } else {
+                                Arrays.stream(rows).forEach(row -> {
+                                    String[] values = row.split(",");
+                                    double shift = Double.parseDouble(values[1].trim());
+                                    for (int i=2;i<values.length;i++) {
+                                        int atomIndex;
+                                        if (StringUtils.isNumeric(values[i].trim())) {
+                                            atomIndex = Integer.parseInt(values[i].trim()) - 1;
+                                            atomList.get(atomIndex).setPPM(shift);
+                                        } else {
+                                            atomIndex = Integer.parseInt(values[i].trim().substring(1)) - 1;
+                                        }
+                                    }
+                                });
+                            }
+                        } else if (valueName.equals("NMREDATA_J")) {
+                            String[] rows = sBuilder.toString().split("\n");
+                            if (IS_SPECIAL_BUTTS) {
+                                Arrays.stream(rows).forEach(row -> {
+                                    String[] values = row.split(",");
+                                    int atomIndexI = Integer.parseInt(values[0].trim());
+                                    int atomINdexJ = Integer.parseInt(values[1].trim());
+                                    double coupling = Double.parseDouble(values[2].trim());
+                                    String couplingName = values[3].trim();
+                                    Atom atomI = compound.getAtom(atomIndexI);
+                                    Atom atomJ = compound.getAtom(atomINdexJ);
+                                    atomI.addAtomCouplingPair(new AtomCouplingPair(atomI, atomJ, coupling, couplingName));
+                                    atomJ.addAtomCouplingPair(new AtomCouplingPair(atomJ, atomI, coupling, couplingName));
+                                });
+                            }
                         }
 
                     }

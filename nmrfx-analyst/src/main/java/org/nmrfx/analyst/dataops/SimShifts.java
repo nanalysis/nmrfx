@@ -176,7 +176,7 @@ public class SimShifts {
         }
     }
 
-    public void makeSpec(Vec vec) {
+    public void makeSpec(Vec vec, double lw) {
         int n = intensities.size();
         for (int i = 0; i < n; i++) {
             double ppm = ppms.get(i);
@@ -186,6 +186,7 @@ public class SimShifts {
                 vec.add(pt, intensity);
             }
         }
+        vec.convolveLorentzian(lw, 8);
     }
 
     void absThreshold(DMatrixRMaj mat, double threshold) {

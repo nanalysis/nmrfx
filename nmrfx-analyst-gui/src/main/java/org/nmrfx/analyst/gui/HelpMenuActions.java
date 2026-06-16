@@ -20,6 +20,9 @@ public class HelpMenuActions extends MenuActions {
         MenuItem docsMenuItem = new MenuItem("Online Documentation");
         docsMenuItem.setOnAction(this::showDocAction);
 
+        MenuItem tutorialsMenuItem = new MenuItem("Video Tutorials");
+        tutorialsMenuItem.setOnAction(this::showTutorialsAction);
+
         MenuItem versionMenuItem = new MenuItem("Check Version");
         versionMenuItem.setOnAction(this::showVersionAction);
 
@@ -32,7 +35,7 @@ public class HelpMenuActions extends MenuActions {
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
         openSourceItem.setOnAction(this::showOpenSourceAction);
 
-        menu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
+        menu.getItems().addAll(docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
     }
 
     private void showWebSiteAction(ActionEvent event) {
@@ -40,11 +43,16 @@ public class HelpMenuActions extends MenuActions {
     }
 
     private void showPublicationAction() {
-        app.getHostServices().showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6");
+        app.getHostServices().showDocument("https://rdcu.be/eVnKQ");
     }
     private void showDocAction(ActionEvent event) {
         app.getHostServices().showDocument("http://docs.nmrfx.org");
     }
+
+    private void showTutorialsAction(ActionEvent event) {
+        app.getHostServices().showDocument("https://nmrfx.org/tutorials/analyst");
+    }
+
 
     private void showVersionAction(ActionEvent event) {
         String onlineVersion = WebConnect.getVersion();

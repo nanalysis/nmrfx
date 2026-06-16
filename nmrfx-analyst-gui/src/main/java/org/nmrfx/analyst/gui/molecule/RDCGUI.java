@@ -424,7 +424,7 @@ public class RDCGUI {
             PDFGraphicsContext pdfGC = new PDFGraphicsContext();
             try {
                 Canvas canvas = activeChart.getCanvas();
-                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), null, null, selectedFile.toString());
                 exportChart(pdfGC);
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {

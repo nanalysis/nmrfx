@@ -88,6 +88,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     CheckBox aspectCheckBox;
     @FXML
+    CheckBox fixedAspectBox;
+    @FXML
     Slider aspectSlider;
     @FXML
     TextField aspectRatioValue;
@@ -334,6 +336,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         slice2ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
 
         aspectCheckBox.selectedProperty().addListener(e -> updateAspectRatio());
+        fixedAspectBox.selectedProperty().addListener(e -> updateAspectRatio());
         aspectSlider.setMin(0.1);
         aspectSlider.setMax(3.0);
         aspectSlider.setValue(1.0);
@@ -477,6 +480,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
         aspectSlider.valueProperty().unbindBidirectional(polyChart.getChartProperties().aspectRatioProperty());
         aspectCheckBox.selectedProperty().unbindBidirectional((polyChart.getChartProperties().aspectProperty()));
+        fixedAspectBox.selectedProperty().unbindBidirectional((polyChart.getChartProperties().fixedAspectProperty()));
         chart.getDatasetAttributes().removeListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
         chart.getPeakListAttributes().removeListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
 
@@ -550,6 +554,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
         aspectSlider.valueProperty().bindBidirectional(polyChart.getChartProperties().aspectRatioProperty());
         aspectCheckBox.selectedProperty().bindBidirectional((polyChart.getChartProperties().aspectProperty()));
+        fixedAspectBox.selectedProperty().bindBidirectional((polyChart.getChartProperties().fixedAspectProperty()));
 
         chart.getDatasetAttributes().addListener((ListChangeListener<? super DatasetAttributes>) e -> datasetsChanged());
         chart.getPeakListAttributes().addListener((ListChangeListener<? super PeakListAttributes>) e -> peakListsChanged());
@@ -1279,6 +1284,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         for (PolyChart applyChart : applyCharts) {
             if (applyChart != null) {
                 applyChart.getChartProperties().setAspect(aspectCheckBox.isSelected());
+                applyChart.getChartProperties().setFixedAspect(fixedAspectBox.isSelected());
                 double aspectRatio = aspectSlider.getValue();
                 applyChart.getChartProperties().setAspectRatio(aspectRatio);
                 applyChart.refresh();

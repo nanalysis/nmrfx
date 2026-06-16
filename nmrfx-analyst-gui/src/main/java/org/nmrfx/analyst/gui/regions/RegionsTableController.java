@@ -244,7 +244,6 @@ public class RegionsTableController implements Initializable, StageBasedControll
         List<DatasetAttributes> datasetAttributes = chart.getDatasetAttributes();
         List<DatasetRegion> allRegions = new ArrayList<>();
         for (DatasetAttributes datasetAttribute : datasetAttributes) {
-            System.out.println(datasetAttribute.getDataset() + " " + datasetAttribute.getDataset().getReadOnlyRegions().size());
             allRegions.addAll(datasetAttribute.getDataset().getReadOnlyRegions());
         }
         setRegions(allRegions);

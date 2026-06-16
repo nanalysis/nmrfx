@@ -260,7 +260,7 @@ public class PeakCluster {
             for (int jP = 0; jP < other.size; jP++) {
                 expPeak = linkedPeaks.get(iE);
                 predPeak = other.linkedPeaks.get(jP);
-                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().scale);
+                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().getScale());
                 matcher.setWeight(iE, jP, weight);
             }
         }
