@@ -1,9 +1,6 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import ai.onnxruntime.OnnxTensor;
-import ai.onnxruntime.OrtEnvironment;
-import ai.onnxruntime.OrtException;
-import ai.onnxruntime.OrtSession;
+import ai.onnxruntime.*;
 import org.jgrapht.alg.shortestpath.DefaultManyToManyShortestPaths;
 import org.jgrapht.graph.DefaultEdge;
 import org.nmrfx.chemistry.*;
@@ -15,10 +12,7 @@ import java.io.ByteArrayOutputStream;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class GATV2Predictor {
     static OrtSession session = null;
@@ -84,7 +78,7 @@ public class GATV2Predictor {
     }
 
 
-    public ResidueAtomDistances getRAD(Entity compound) throws IOException {
+    public ResidueAtomDistances getRAD(Entity compound) {
         compound.molecule.updateAtomArray();
         MoleculeFactory.setActive(compound.molecule);
         DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(compound, 6, -1, -1);
@@ -106,30 +100,32 @@ public class GATV2Predictor {
 
     public static void getOnnxSession() throws OrtException {
         env = OrtEnvironment.getEnvironment();
-        String homeDirPath = System.getProperty("user.home");
-        Path path = Path.of(homeDirPath, "nmrfx_models", "rna_gat.onnx");
-        File file = path.toFile();
-        if (file.exists()) {
-            session = env.createSession(file.toString(), new OrtSession.SessionOptions());
-        } else {
-            InputStream modelStream = ClassLoader.getSystemResourceAsStream("data/jshift_v1.onnx");
-            if (modelStream == null) {
-                throw new IllegalArgumentException("Model file not found in classpath");
-            }
-
-            byte[] modelBytes;
-            try (InputStream in = modelStream; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
+        try (OrtSession.SessionOptions opts = new OrtSession.SessionOptions()) {
+            opts.setSessionLogLevel(OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR); // ignore shape warnings
+            String homeDirPath = System.getProperty("user.home");
+            Path path = Path.of(homeDirPath, "nmrfx_models", "rna_gat.onnx");
+            File file = path.toFile();
+            if (file.exists()) {
+                session = env.createSession(file.toString(), opts);
+            } else {
+                InputStream modelStream = ClassLoader.getSystemResourceAsStream("data/jshift_v1.onnx");
+                if (modelStream == null) {
+                    throw new IllegalArgumentException("Model file not found in classpath");
                 }
-                modelBytes = out.toByteArray();
-                session = env.createSession(modelBytes);
-            } catch (IOException ignored) {
 
+                byte[] modelBytes;
+                try (InputStream in = modelStream; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, bytesRead);
+                    }
+                    modelBytes = out.toByteArray();
+                    session = env.createSession(modelBytes, opts);
+                } catch (IOException ignored) {
+
+                }
             }
-
         }
     }
 
@@ -213,21 +209,16 @@ public class GATV2Predictor {
     }
     public void predict(List<Entity> entities, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances rad = getRAD(entities);
-        predict(entities.getFirst(), rad, iRef, solventCorr, false);
+        predict(entities.getFirst(), rad, iRef, solventCorr);
     }
 
 
     public void predict(Entity entity, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances rad = getRAD(entity);
-        predict(entity, rad, iRef, solventCorr, false);
+        predict(entity, rad, iRef, solventCorr);
     }
 
-    public void predict(Entity entity, int iRef, SolventCorr solventCorr, boolean nodesOnly) throws OrtException, IOException {
-        ResidueAtomDistances rad = getRAD(entity);
-        predict(entity, rad, iRef, solventCorr, nodesOnly);
-    }
-
-    public void predict(Entity entityToPredict, ResidueAtomDistances rad, int iRef, SolventCorr solventCorr, boolean nodesOnly) throws OrtException, IOException {
+    public void predict(Entity entityToPredict, ResidueAtomDistances rad, int iRef, SolventCorr solventCorr) throws OrtException, IOException {
         ResidueAtomDistances.AtomGraph graph = rad.atomGraphs.getFirst();
 
         int nNodes = graph.nodes().size();
@@ -267,6 +258,7 @@ public class GATV2Predictor {
                     }
                 }
                 averageMethyls(entityToPredict, iRef);
+                boolean nodesOnly = true;
                 if (nodesOnly) {
                     return;
                 }

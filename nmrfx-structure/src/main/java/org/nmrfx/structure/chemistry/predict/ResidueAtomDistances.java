@@ -139,8 +139,7 @@ public class ResidueAtomDistances {
         for (int iAtomA = 0; iAtomA < atoms.size(); iAtomA++) {
             Atom atomA = atoms.get(iAtomA);
             int atomicNumber = atomA.getAtomicNumber();
-            //int useNode = atomA.getEntity() == compound0 ? 1 : 0;
-            int useNode = 1;
+            int useNode = atomA.getEntity() == compound0 ? 1 : 0;
             PPMv ppmV = atomA.getPPM(iStruct);
             double ppm;
             if ((ppmV == null) || !ppmV.isValid()) {
