@@ -1,22 +1,18 @@
 package org.nmrfx.processor.math;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SignalCoupler {
     List<Double> positions;
-
-    record Delta(int i, double delta) {}
 
     public class Group {
         List<Integer> ids = new ArrayList<>();
         double center = 0.0;
         boolean active = true;
 
-        Group() {}
+        Group() {
+        }
 
         public List<Integer> ids() {
             return active ? ids : Collections.emptyList();
@@ -36,49 +32,64 @@ public class SignalCoupler {
         }
 
         void merge(Group group) {
-            System.out.println(center + " " + group.center);
-            System.out.println(ids);
-            System.out.println(group.ids);
             ids.addAll(group.ids);
             updateCenter();
             group.active = false;
         }
     }
 
-    public List<Group> couple(List<Double> positions, double tol) {
+    public List<Group>  couple(List<Double> positions, double tol) {
         this.positions = positions;
+
+        int n = positions.size();
         List<Group> groups = new ArrayList<>();
-        for (int i = 0; i < positions.size(); i++) {
+        for (int i = 0; i < n; i++) {
             Group group = new Group();
             group.add(i);
             groups.add(group);
         }
 
-        boolean anyMerged = true;
-        while (anyMerged) {
-            anyMerged = false;
-            List<Group> activeGroups = groups.stream()
-                    .filter(g -> g.active)
-                    .toList();
+        int[] prev = new int[n];
+        int[] next = new int[n];
+        for (int i = 0; i < n; i++) {
+            prev[i] = i - 1;
+            next[i] = i + 1;
+        }
 
-            List<Delta> deltaList = new ArrayList<>();
-            for (int i = 1; i < activeGroups.size(); i++) {
-                double delta = activeGroups.get(i).center - activeGroups.get(i - 1).center;
-                deltaList.add(new Delta(i, delta));
+        PriorityQueue<double[]> heap = new PriorityQueue<>(Comparator.comparingDouble(e -> e[0]));
+        for (int i = 1; i < n; i++) {
+            heap.offer(new double[]{groups.get(i).center - groups.get(i - 1).center, i - 1, i});
+        }
+
+        while (!heap.isEmpty()) {
+            double[] entry = heap.poll();
+            if (entry[0] >= tol) break; // min-heap: all remaining entries also >= tol
+
+            int li = (int) entry[1];
+            int ri = (int) entry[2];
+
+            if (!groups.get(li).active || !groups.get(ri).active) continue;
+
+            if (groups.get(ri).center - groups.get(li).center >= tol) continue;
+
+            // Merge ri into li
+            groups.get(li).merge(groups.get(ri));
+
+            // Splice ri out of the linked list and enqueue new neighbor deltas
+            int nextRi = next[ri];
+            next[li] = nextRi;
+            if (nextRi < n) {
+                prev[nextRi] = li;
+                heap.offer(new double[]{
+                        groups.get(nextRi).center - groups.get(li).center, li, nextRi});
             }
-            deltaList.sort(Comparator.comparingDouble(Delta::delta));
-
-            for (Delta delta : deltaList) {
-                if (delta.delta() < tol) {
-                    Group group0 = activeGroups.get(delta.i() - 1);
-                    Group group1 = activeGroups.get(delta.i());
-                    if (group0.active && group1.active) {
-                        group0.merge(group1);
-                        anyMerged = true;
-                    }
-                }
+            int prevLi = prev[li];
+            if (prevLi >= 0) {
+                heap.offer(new double[]{
+                        groups.get(li).center - groups.get(prevLi).center, prevLi, li});
             }
         }
+
         return groups.stream()
                 .filter(g -> g.active)
                 .collect(Collectors.toList());

@@ -1,5 +1,6 @@
 package org.nmrfx.processor.math;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -27,12 +28,16 @@ public class SignalCouplerTest {
 
         SignalCoupler signalCoupler = new SignalCoupler();
         List<SignalCoupler.Group> groups = signalCoupler.couple(positionsList, 0.03);
+        List<Integer> validSizes = List.of(4, 11, 11, 17, 14, 12, 11);
+        boolean ok = true;
+        int i = 0;
         for (SignalCoupler.Group group : groups) {
-            for (int id : group.ids) {
-                System.out.printf("%.3f ", positionsList.get(id));
-            }
-            System.out.println();
 
+            if (group.ids.size() != validSizes.get(i)) {
+                ok = false;
+            }
+            i++;
         }
+        Assert.assertTrue(ok);
     }
 }
