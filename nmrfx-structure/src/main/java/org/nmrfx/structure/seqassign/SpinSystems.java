@@ -613,9 +613,13 @@ public class SpinSystems {
             if (peakListOpt.isPresent()) {
                 PeakList peakList = peakListOpt.get();
                 Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                int id = spinSystemIDs.get(i);
-                SpinSystem spinSystem = new SpinSystem(peak, this);
-                systemMap.put(id, spinSystem);
+                if (peak != null) {
+                    int id = spinSystemIDs.get(i);
+                    SpinSystem spinSystem = new SpinSystem(peak, this);
+                    systemMap.put(id, spinSystem);
+                } else {
+                    log.warn("Peak not found " + peakList.getName() + "." + peakIDColumn.get(i));
+                }
             }
         }
         for (int i = 0; i < spinSystemIDs.size(); i++) {
