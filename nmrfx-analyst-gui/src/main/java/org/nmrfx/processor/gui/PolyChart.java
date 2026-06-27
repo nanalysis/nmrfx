@@ -36,6 +36,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import javafx.util.Subscription;
 import org.codehaus.commons.nullanalysis.Nullable;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -165,6 +166,7 @@ public class PolyChart extends Region {
     private final List<InsetChart> insetCharts = new ArrayList<>();
 
     InsetChart insetChart = null;
+    private Subscription peakSub;
 
     record IntegralLabelPosition(DatasetAttributes datasetAttributes, DatasetRegion region, BoundingBox boundingBox) {
     }
@@ -355,7 +357,7 @@ public class PolyChart extends Region {
 
         axes.init(this);
         drawingLayers.setCursor(CanvasCursor.SELECTOR.getCursor());
-        GUIProject.getActive().addPeakListSubscription(this::purgeInvalidPeakListAttributes);
+        peakSub = GUIProject.getActive().addPeakListSubscription(this::purgeInvalidPeakListAttributes);
 
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
@@ -389,6 +391,12 @@ public class PolyChart extends Region {
     }
 
     public void close() {
+        if (chartBuffer == this) {
+            chartBuffer = null;
+        }
+        if (peakSub != null) peakSub.unsubscribe();
+
+        drawingLayers.resizesCanvases(0, 0);
         drawingLayers.getTopPane().getChildren().removeAll(crossHairs.getAllGraphicalLines());
 
         removeHighlightRects(highlightRect);

@@ -218,6 +218,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
+        if (contentController != null) {
+            contentController.close();
+        }
+
         chartPane.getChildren().clear();
         chartPane = null;
         charts.clear();
@@ -2176,11 +2180,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void removeRunaboutTool() {
         getRunAboutTool().ifPresent(runAboutGUI -> {
-            RunAbout runAbout = runAboutGUI.getRunAbout();
-            if (runAbout != null) {
-                runAbout.close();
-            }
-            runAboutGUI.clear();
+            runAboutGUI.close();
             removeRunaboutTool(runAboutGUI);
         });
     }

@@ -3,8 +3,8 @@ package org.nmrfx.processor.gui;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.event.EventHandler;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
@@ -152,10 +152,16 @@ public class FXMLControllerManager {
         AnalystApp.registerStage(stage);
 
         stage.focusedProperty().addListener(observable -> focusChanged(controller));
+
         stage.setOnCloseRequest(e -> {
-            closeController(controller);
-            AnalystApp.removeStage(stage);
+            e.consume();
+            Platform.runLater(() -> {
+                stage.close();              // frees GL resources immediately
+                closeController(controller);
+                AnalystApp.removeStage(stage);
+            });
         });
+
         controller.initStageGeometry();
         stage.setTitle(title);
         stage.show();
@@ -202,20 +208,23 @@ public class FXMLControllerManager {
         final FXMLController[] fxmlControllers = new FXMLController[1];
         // KeyFrame event handler
         timeline.getKeyFrames().add(
-                new KeyFrame(Duration.seconds(delay),
-                        (EventHandler) event -> {
-                            timeSeconds[0]--;
-                            if (timeSeconds[0] <= 0) {
-                                timeline.stop();
-                            }
-                            if (fxmlControllers[0] != null) {
-                                Stage stage = fxmlControllers[0].getStage();
-                                closeController(fxmlControllers[0]);
-                                stage.close();
-                                AnalystApp.removeStage(stage);
-                            }
-                            fxmlControllers[0] = newController();
-                        }));
-        timeline.playFromStart();
+                new KeyFrame(Duration.seconds(delay), event -> {
+                    timeSeconds[0]--;
+                    if (timeSeconds[0] <= 0) timeline.stop();
+
+                    if (fxmlControllers[0] != null) {
+                        Stage stage = fxmlControllers[0].getStage();
+                        stage.close();
+                        closeController(fxmlControllers[0]);
+                        AnalystApp.removeStage(stage);
+                        fxmlControllers[0] = null;
+                        System.gc();
+                    }
+
+                    if (timeSeconds[0] > 0) {
+                        Platform.runLater(() -> fxmlControllers[0] = newController());
+                    }
+                }));
+                timeline.playFromStart();
     }
 }
