@@ -2872,7 +2872,7 @@ public class Vec extends VecBase {
         return this;
     }
 
-    static double[] fillVec(double[] x, int vecSize, ArrayList<Signal> signals) {
+    static double[] fillVec(double[] x, int vecSize, List<Signal> signals) {
         for (int j = 0; j < vecSize; j++) {
             x[j] = 0.0;
         }
