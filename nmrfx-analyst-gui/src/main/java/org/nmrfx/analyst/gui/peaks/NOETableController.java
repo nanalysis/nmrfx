@@ -40,6 +40,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import javafx.util.Subscription;
 import org.controlsfx.control.MasterDetailPane;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.tableview2.FilteredTableColumn;
@@ -125,6 +126,7 @@ public class NOETableController implements Initializable, StageBasedController {
     DoubleRangeOperationItem fErrorItem;
     ChoiceOperationItem modeItem;
     FilteredList<Noe> filteredNOEs;
+    Subscription peakSub = null;
 
     private record ColumnFormatter<S, T>(Format format) implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
@@ -170,7 +172,7 @@ public class NOETableController implements Initializable, StageBasedController {
         MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> updateNoeSetMenu();
 
         noeSetMap.addListener(mapChangeListener);
-        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
+        peakSub = GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
 
         updateNoeSetMenu();
         updatePeakListMenu();
