@@ -71,10 +71,10 @@ public class ChartDrawingLayers {
         grid.heightProperty().addListener(heightListener);
 
         base.setManaged(false);
-        base.setCache(true);
+        base.setCache(false);
 
         peaksAndAnnotations.setManaged(false);
-        peaksAndAnnotations.setCache(true);
+        peaksAndAnnotations.setCache(false);
         peaksAndAnnotations.setMouseTransparent(true);
 
         slicesAndDragBoxes.setManaged(false);
@@ -85,6 +85,12 @@ public class ChartDrawingLayers {
 
         stack.getChildren().addAll(base, grid, peaksAndAnnotations, slicesAndDragBoxes, top);
         setupEventHandlers(controller);
+    }
+
+    public void resizesCanvases(int w, int h) {
+        base.resize(w, h);
+        peaksAndAnnotations.resize(w,h);
+        slicesAndDragBoxes.resize(w,h);
     }
 
     private void setupEventHandlers(FXMLController controller) {
