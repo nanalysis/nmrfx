@@ -1,19 +1,27 @@
 package org.nmrfx.processor.gui;
 
 import javafx.animation.PauseTransition;
+import javafx.beans.Observable;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.RangeSlider;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.fxutil.Fx;
@@ -22,6 +30,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
@@ -29,16 +38,15 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
 public class AttributesController implements Initializable, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
+    private static final Background DEFAULT_BACKGROUND = null;
+    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
     static {
         FORMATTER.setMaximumFractionDigits(3);
@@ -93,6 +101,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     Slider aspectSlider;
     @FXML
     TextField aspectRatioValue;
+    @FXML
+    GridPane viewGridPane;
     @FXML
     Slider scaleSlider;
     @FXML
@@ -259,8 +269,14 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     Boolean accordionIn1D = null;
     PolyChart chart;
     PolyChart boundChart = null;
-
     FXMLController fxmlController;
+
+    SimpleDoubleProperty[][] viewLimitProps = new SimpleDoubleProperty[SpectrumStatusBar.DIM_NAMES.length][2];
+    private final Spinner<Integer>[][] planeSpinner = new Spinner[SpectrumStatusBar.DIM_NAMES.length - 2][2];
+    private final ChangeListener<Integer>[][] planeListeners = new ChangeListener[SpectrumStatusBar.DIM_NAMES.length - 2][2];
+    private final CheckBox[] valueModeBox = new CheckBox[SpectrumStatusBar.DIM_NAMES.length - 2];
+    private boolean arrayMode = false;
+    List<List<Node>> gridNodes = new ArrayList<>();
 
     public static AttributesController create(FXMLController fxmlController) {
         Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
@@ -319,9 +335,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralValuesCheckBox.selectedProperty().addListener(e -> refreshLater());
-        integralFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        integralFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 27, 30);
         integralFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
-
 
 
         gridCheckBox.selectedProperty().addListener(e -> updateCharts());
@@ -414,8 +429,9 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
         peakNPlanesComboBox.getItems().addAll(0, 1, 2, 3, 4);
         peakNPlanesComboBox.valueProperty().addListener(peakNPlanesListener);
-        peakFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        peakFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 27, 30);
         peakFontSizeComboBox.valueProperty().addListener(peakFontSizeListener);
+        createViewGrid();
     }
 
     public Pane getPane() {
@@ -578,7 +594,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         }
     }
 
-    private List<DatasetAttributes> getDatasetAttributes() {
+    private List<DatasetAttributes> getDatasetAttributesList() {
         List<DatasetAttributes> result;
         result = new ArrayList<>();
         for (var aChart : getCharts(allCharts())) {
@@ -672,7 +688,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue.doubleValue());
                 }
@@ -731,7 +747,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setLvlSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = dataAttr.getLvl();
@@ -744,7 +760,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setClmSliderValue() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.01;
@@ -756,7 +772,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setOffsetsSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 0.0;
@@ -768,7 +784,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setNlvlSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.0;
@@ -782,7 +798,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setPosWidthSlider(boolean posMode) {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = posMode ? dataAttr.getPosWidth() : dataAttr.getNegWidth();
@@ -807,7 +823,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
@@ -831,7 +847,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     void setContourColorControls(boolean posMode) {
         posColorListener.active = false;
         negColorListener.active = false;
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -856,7 +872,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
@@ -880,7 +896,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     void setDrawOnControls(boolean posMode) {
         posDrawOnListener.active = false;
         negDrawOnListener.active = false;
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -1033,11 +1049,13 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             peakListAttr.setLabelType(value);
         }
     }
+
     class PeakNPlanesListener extends PeakTypeListener<Integer> {
         void update(PeakListAttributes peakListAttr, Integer value) {
             peakListAttr.setNplanes(value);
         }
     }
+
     class PeakFontSizeListener extends PeakTypeListener<Integer> {
         void update(PeakListAttributes peakListAttr, Integer value) {
             peakListAttr.setFontSize(value);
@@ -1113,6 +1131,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
             bindToChart(chart);
             setLimits();
+            updateView(chart);
             setDimControls();
             chart.setChartDisabled(false);
         }
@@ -1215,8 +1234,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         // so it is visible.
         if (bgColorCheckBox.isSelected()) {
             Color color = bgColorPicker.getValue();
-            if (!getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = getDatasetAttributes().get(0);
+            if (!getDatasetAttributesList().isEmpty()) {
+                DatasetAttributes dataAttr = getDatasetAttributesList().get(0);
                 Color posColor = dataAttr.getPosColor();
                 if ((posColor != null) && (color != null)) {
                     double diff = Math.abs(posColor.getRed() - color.getRed());
@@ -1335,6 +1354,414 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             PauseTransition wait = new PauseTransition(Duration.millis(5.0));
             wait.setOnFinished(e -> Fx.runOnFxThread(aChart::refresh));
             wait.play();
+        }
+    }
+
+    private Optional<DatasetAttributes> getDatasetAttributes() {
+        PolyChart chart = fxmlController.getActiveChart();
+        Optional<DatasetAttributes> result;
+        if (!chart.getDatasetAttributes().isEmpty()) {
+            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+            result = Optional.of(dataAttr);
+        } else {
+            result = Optional.empty();
+        }
+        return result;
+    }
+
+    private int findPlane(double value, int axNum) {
+        PolyChart chart = fxmlController.getActiveChart();
+        ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
+        int planeIndex = -1;
+        if (!dataAttrList.isEmpty()) {
+            DatasetAttributes dataAttr = dataAttrList.get(0);
+            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataAttr.getDataset().getValues(axNum);
+                if (values != null) {
+                    double min = Double.MAX_VALUE;
+                    int iMin = -1;
+                    for (int i = 0; i < values.length; i++) {
+                        double delta = Math.abs(value - values[i]);
+                        if (delta < min) {
+                            min = delta;
+                            iMin = i;
+                        }
+                    }
+                    planeIndex = iMin;
+                }
+            }
+        }
+        return planeIndex;
+    }
+
+
+    private class SpinnerConverter extends IntegerStringConverter {
+        final int axNum;
+        final int spinNum;
+        boolean valueMode = false;
+
+        SpinnerConverter(int axNum, int spinNum) {
+            this.axNum = axNum;
+            this.spinNum = spinNum;
+        }
+
+        @Override
+        public Integer fromString(String s) {
+            int result = 1;
+            Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
+            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            if (showValue) {
+                return spinner.getValueFactory().getValue();
+            }
+            try {
+                if (!s.isEmpty()) {
+                    if (s.contains(".")) {
+                        double planePPM = Double.parseDouble(s);
+                        int planeIndex = findPlane(planePPM, axNum);
+                        if (planeIndex == -1) {
+                            var dataAttrOpt = getDatasetAttributes();
+                            if (dataAttrOpt.isPresent()) {
+                                DatasetAttributes dataAttr = dataAttrOpt.get();
+                                planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
+                            }
+                        }
+                        result = planeIndex + 1;
+                    } else {
+                        result = Integer.parseInt(s);
+                    }
+                }
+                spinner.getEditor().setBackground(DEFAULT_BACKGROUND);
+            } catch (NumberFormatException nfE) {
+                spinner.getEditor().setBackground(ERROR_BACKGROUND);
+            }
+            return result;
+        }
+
+        @Override
+        public String toString(Integer iValue) {
+            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            if (showValue) {
+                var doubleOpt = getPlaneValue(axNum, iValue - 1);
+                return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
+            } else {
+                return String.valueOf(iValue);
+            }
+        }
+
+        void setValueMode(boolean mode) {
+            valueMode = mode;
+        }
+    }
+
+    private void setPlaneRanges(int iDim, int max) {
+        for (int j = 0; j < 2; j++) {
+            setPlaneRange(iDim, j, max);
+        }
+    }
+
+    private void setPlaneRange(int iDim, int iSpin, int max) {
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][iSpin].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][iSpin]);
+        planeFactory.setMin(1);
+        planeFactory.setMax(max);
+        planeFactory.valueProperty().addListener(planeListeners[iDim - 2][iSpin]);
+    }
+
+    private void setPlaneRange(int iDim) {
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][0].getValueFactory();
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][1].getValueFactory();
+        int delta = planeFactory1.getValue() - planeFactory0.getValue();
+        int max0;
+        int min0;
+        planeFactory0.valueProperty().removeListener(planeListeners[iDim - 2][0]);
+        if (delta < 0) {
+            min0 = -delta + 1;
+            max0 = planeFactory1.getMax();
+        } else {
+            min0 = 1;
+            max0 = planeFactory1.getMax() - delta;
+        }
+        planeFactory0.setMin(min0);
+        planeFactory0.setMax(max0);
+        planeFactory0.valueProperty().addListener(planeListeners[iDim - 2][0]);
+    }
+
+    private Optional<Double> getPlaneValue(int axNum, int plane) {
+        var dataOpt = getDatasetAttributes();
+        Double value = null;
+        if (dataOpt.isPresent()) {
+            DatasetAttributes dataAttr = dataOpt.get();
+            PolyChart chart = fxmlController.getActiveChart();
+            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataAttr.getDataset().getValues(axNum);
+                if (values != null && values.length > plane) {
+                    value = values[plane];
+                } else {
+                    value = (double) (plane + 1);
+                }
+            } else {
+                value = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
+            }
+        }
+        return Optional.ofNullable(value);
+    }
+
+    public void updatePlaneSpinner(int plane, int axNum, int spinNum) {
+        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 2][spinNum].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[axNum - 2][spinNum]);
+        planeFactory.setValue(plane + 1);
+        planeFactory.valueProperty().addListener(planeListeners[axNum - 2][spinNum]);
+    }
+
+    private void scrollPlane(ScrollEvent e, int iDim, int iSpin) {
+        Spinner<Integer> spinner = planeSpinner[iDim][iSpin];
+
+        double delta = e.getDeltaY();
+        int nPlanes = (int) Math.round(delta / 10.0);
+        if (nPlanes == 0) {
+            nPlanes = delta < 0.0 ? -1 : 1;
+        }
+        nPlanes *= -1;  // scrolling up should increase.  Is this dependent on Mac scrolling settting
+        SpinnerValueFactory<Integer> planeFactory = spinner.getValueFactory();
+        planeFactory.increment(nPlanes);
+    }
+
+    private void updatePlane(int iDim, int iSpin, int plane, boolean shiftDown) {
+        plane--;
+        if (arrayMode) {
+            fxmlController.getActiveChart().setDrawlist(plane);
+            fxmlController.getActiveChart().refresh();
+        } else {
+            PolyChart chart = fxmlController.getActiveChart();
+
+            if (!chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                Axis axis = chart.getAxes().get(iDim);
+                int[] pts = new int[2];
+                pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
+                pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
+                int other = iSpin == 0 ? 1 : 0;
+                int delta = pts[other] - pts[iSpin];
+                pts[iSpin] = plane;
+                if (!shiftDown) {
+                    pts[other] = pts[iSpin] + delta;
+                }
+                double ppm1 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
+                double ppm2 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
+                ChartUndoLimits undo = new ChartUndoLimits(fxmlController.getActiveChart());
+                PolyChart polyChart = fxmlController.getActiveChart();
+                polyChart.getAxes().setMinMax(iDim, ppm1, ppm2);
+                fxmlController.getActiveChart().refresh();
+                ChartUndoLimits redo = new ChartUndoLimits(fxmlController.getActiveChart());
+                fxmlController.getUndoManager().add("plane", undo, redo);
+            }
+        }
+    }
+
+    private void updateSpinner(int iDim) {
+        for (int j = 0; j < 2; j++) {
+            SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim - 2][j].getValueFactory();
+            int value = planeFactory.getValue();
+            String text = planeFactory.getConverter().toString(value);
+            planeSpinner[iDim - 2][j].getEditor().setText(text);
+        }
+    }
+
+    private void initSpinners() {
+        for (int i = 0; i < planeSpinner.length; i++) {
+            final int iDim = i + 2;
+            for (int j = 0; j < 2; j++) {
+                final int iSpin = j;
+                Spinner<Integer> spinner = new Spinner<>(0, 127, 63);
+                planeSpinner[i][j] = spinner;
+                spinner.setEditable(true);
+                spinner.getEditor().setPrefWidth(60);
+                spinner.setPrefWidth(80);
+                spinner.setOnScroll(e -> {
+                    spinner.setUserData(e.isShiftDown());
+                    scrollPlane(e, iDim - 2, iSpin);
+                });
+                spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
+                        e -> spinner.setUserData(e.isShiftDown()));
+                planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
+                    if (newValue != null && !newValue.equals(oldValue)) {
+                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
+                        if (iSpin == 1) {
+                            setPlaneRange(iDim);
+                        }
+                    }
+                };
+                SpinnerValueFactory<Integer> planeFactory = planeSpinner[i][j].getValueFactory();
+                planeFactory.valueProperty().addListener(planeListeners[i][j]);
+                SpinnerConverter converter = new SpinnerConverter(iDim, j);
+                planeFactory.setConverter(converter);
+            }
+            valueModeBox[i] = new CheckBox("V");
+            planeSpinner[i][0].editableProperty().bind(valueModeBox[i].selectedProperty().not());
+            planeSpinner[i][1].editableProperty().bind(valueModeBox[i].selectedProperty().not());
+            valueModeBox[i].setOnAction(e -> updateSpinner(iDim));
+        }
+    }
+
+
+    private void updateXYMenu(MenuButton dimMenu, int iAxis) {
+        PolyChart chart = fxmlController.getActiveChart();
+        dimMenu.getItems().clear();
+        chart.getFirstDatasetAttributes().ifPresent(attr -> {
+            int nDim = attr.nDim;
+            String rowName = SpectrumStatusBar.DIM_NAMES[iAxis];
+            for (int iDim = 0; iDim < nDim; iDim++) {
+                String dimName = attr.getDataset().getLabel(iDim);
+                MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimAction(rowName, dimName));
+                dimMenu.getItems().add(menuItem);
+                if (fxmlController.isPhaseSliderVisible()) {
+                    chart.updatePhaseDim();
+                }
+            }
+        });
+    }
+
+
+    private void dimAction(String rowName, String dimName) {
+        fxmlController.setDim(rowName, dimName);
+    }
+
+    private void dimMenuAction(ActionEvent event, int iAxis) {
+        MenuItem menuItem = (MenuItem) event.getSource();
+        PolyChart chart = fxmlController.getActiveChart();
+        if (menuItem.getText().equals("Full")) {
+            chart.full(iAxis);
+        } else if (menuItem.getText().equals("Center")) {
+            chart.center(iAxis);
+        } else if (menuItem.getText().equals("First")) {
+            chart.firstPlane(iAxis);
+        } else if (menuItem.getText().equals("Last")) {
+            chart.lastPlane(iAxis);
+        } else if (menuItem.getText().equals("Max")) {
+            chart.gotoMaxPlane();
+        }
+        chart.refresh();
+    }
+
+    private void createViewGrid() {
+        initSpinners();
+        viewGridPane.setHgap(10);
+        viewGridPane.setVgap(5);
+        for (int i = 0; i < SpectrumStatusBar.DIM_NAMES.length; i++) {
+            List<Node> rowNodes = new ArrayList<>();
+            gridNodes.add(rowNodes);
+            final int iAxis = i;
+            String dimName = SpectrumStatusBar.DIM_NAMES[i];
+            MenuButton mButton = new MenuButton(dimName);
+            viewGridPane.add(mButton, 0, i);
+            double textWidth = 50.0;
+            double spinnerWidth = 75.0;
+            rowNodes.add(mButton);
+            viewLimitProps[i][0] = new SimpleDoubleProperty(0.0);
+            viewLimitProps[i][1] = new SimpleDoubleProperty(0.0);
+            TextField lowField = GUIUtils.getDoubleTextField(viewLimitProps[i][0], 2);
+            TextField upField = GUIUtils.getDoubleTextField(viewLimitProps[i][1], 2);
+            lowField.setPrefWidth(textWidth);
+            upField.setPrefWidth(textWidth);
+            lowField.setOnKeyReleased(e -> {
+                if (e.getCode() == KeyCode.ENTER) {
+                    keyTyped(iAxis, 0);
+                }
+            });
+            upField.setOnKeyReleased(e -> {
+                if (e.getCode() == KeyCode.ENTER) {
+                    keyTyped(iAxis, 1);
+                }
+            });
+
+            if (i < 2) {
+                mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
+                viewGridPane.add(lowField, 1, i);
+                viewGridPane.add(upField, 2, i);
+                rowNodes.add(lowField);
+                rowNodes.add(upField);
+
+            } else {
+                MenuItem menuItem = new MenuItem("Full");
+                mButton.getItems().add(menuItem);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
+                menuItem = new MenuItem("Center");
+                mButton.getItems().add(menuItem);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
+                menuItem = new MenuItem("First");
+                mButton.getItems().add(menuItem);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
+                menuItem = new MenuItem("Last");
+                mButton.getItems().add(menuItem);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
+                menuItem = new MenuItem("Max");
+                mButton.getItems().add(menuItem);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
+
+                viewGridPane.add(lowField, 1, i);
+                viewGridPane.add(upField, 3, i);
+
+                viewGridPane.add(planeSpinner[i - 2][0], 2, i);
+                viewGridPane.add(planeSpinner[i - 2][1], 4, i);
+                planeSpinner[i - 2][0].setPrefWidth(spinnerWidth);
+                planeSpinner[i - 2][1].setPrefWidth(spinnerWidth);
+                rowNodes.add(lowField);
+                rowNodes.add(upField);
+                rowNodes.add(planeSpinner[i - 2][0]);
+                rowNodes.add(planeSpinner[i - 2][1]);
+            }
+        }
+    }
+
+    void keyTyped(int iAxis, int ij) {
+        double value = viewLimitProps[iAxis][ij].getValue();
+        var axes = chart.getAxes();
+        if (ij == 0) {
+            axes.get(iAxis).setLowerBound(value);
+            if (iAxis > 1) {
+                  axes.get(iAxis).setUpperBound(value);
+            }
+        } else {
+            axes.get(iAxis).setUpperBound(value);
+        }
+        chart.refresh();
+    }
+
+    void updateGridNodes(int n) {
+        for (int i = 0; i < gridNodes.size(); i++) {
+            var nodes = gridNodes.get(i);
+            boolean state = i < n;
+            for (Node node : nodes) {
+                node.setVisible(state);
+                node.setManaged(state);
+            }
+        }
+    }
+
+    void updateView(PolyChart chart) {
+        if (viewLimitProps != null) {
+            var axes = chart.getAxes();
+            int nAxes = axes.count();
+            updateGridNodes(nAxes);
+            for (int i = 0; i < nAxes; i++) {
+                Axis axis = chart.getAxes().get(i);
+                viewLimitProps[i][0].set(axis.getLowerBound());
+                viewLimitProps[i][1].set(axis.getUpperBound());
+            }
+            if (!chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
+                for (int axNum = 2; axNum < axes.count(); axNum++) {
+                    Axis axis = chart.getAxes().get(axNum);
+                    int indexL = chart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
+                    int indexU = chart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
+                    int dDim = dataAttr.dim[axNum];
+                    int size = dataAttr.getDataset().getSizeReal(dDim);
+                    setPlaneRanges(axNum, size);
+                    updatePlaneSpinner(indexL, axNum, 0);
+                    updatePlaneSpinner(indexU, axNum, 1);
+                }
+            }
         }
     }
 }

@@ -951,6 +951,11 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         contentController = ContentController.create(this);
     }
 
+    void updateViewAttributes(PolyChart chart) {
+        if (attributesController != null) {
+            attributesController.updateView(chart);
+        }
+    }
     /**
      * Initialize the toggle buttons Processing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.

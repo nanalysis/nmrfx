@@ -62,7 +62,7 @@ import java.util.*;
 public class SpectrumStatusBar {
     private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
     private static final int MAX_SPINNERS = 4;
-    private static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
+    public static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
     private static final Background DEFAULT_BACKGROUND = null;
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -111,7 +111,6 @@ public class SpectrumStatusBar {
         tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
         initCursorButtonGroup();
         setupTools();
-
         initCrossText();
 
         Pane filler = createHorizontalSpacer();

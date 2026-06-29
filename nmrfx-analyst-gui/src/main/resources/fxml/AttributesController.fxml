@@ -24,7 +24,7 @@
             <Accordion fx:id="attributesAccordion">
                 <panes>
                     <TitledPane text="View">
-                        <VBox>
+                        <VBox spacing="10">
                             <children>
                                 <Separator orientation="horizontal" minHeight="20"/>
                                 <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
@@ -34,6 +34,9 @@
                                     <Slider fx:id="aspectSlider" prefWidth="150"/>
                                     <TextField fx:id="aspectRatioValue" minWidth="50" maxWidth="50"/>
                                 </HBox>
+                                <GridPane fx:id="viewGridPane">
+
+                                </GridPane>
                             </children>
                         </VBox>
                     </TitledPane>

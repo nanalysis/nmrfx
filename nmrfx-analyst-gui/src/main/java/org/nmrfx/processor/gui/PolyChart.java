@@ -2171,6 +2171,7 @@ public class PolyChart extends Region {
             gC.restore();
             highlightChart();
             getFXMLController().updateDatasetAttributeControls();
+            getFXMLController().updateViewAttributes(this);
 
         } catch (GraphicsIOException ioE) {
             log.warn(ioE.getMessage(), ioE);
