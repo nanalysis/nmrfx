@@ -272,9 +272,9 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     FXMLController fxmlController;
 
     SimpleDoubleProperty[][] viewLimitProps = new SimpleDoubleProperty[SpectrumStatusBar.DIM_NAMES.length][2];
-    private final Spinner<Integer>[][] planeSpinner = new Spinner[SpectrumStatusBar.DIM_NAMES.length - 2][2];
-    private final ChangeListener<Integer>[][] planeListeners = new ChangeListener[SpectrumStatusBar.DIM_NAMES.length - 2][2];
-    private final CheckBox[] valueModeBox = new CheckBox[SpectrumStatusBar.DIM_NAMES.length - 2];
+    private final Spinner<Integer>[][] planeSpinner = new Spinner[SpectrumStatusBar.DIM_NAMES.length][2];
+    private final ChangeListener<Integer>[][] planeListeners = new ChangeListener[SpectrumStatusBar.DIM_NAMES.length][2];
+    private final CheckBox[] valueModeBox = new CheckBox[SpectrumStatusBar.DIM_NAMES.length];
     private boolean arrayMode = false;
     List<List<Node>> gridNodes = new ArrayList<>();
 
@@ -1408,8 +1408,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public Integer fromString(String s) {
             int result = 1;
-            Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            Spinner<Integer> spinner = planeSpinner[axNum][spinNum];
+            boolean showValue = valueMode && valueModeBox[axNum].isSelected();
             if (showValue) {
                 return spinner.getValueFactory().getValue();
             }
@@ -1439,7 +1439,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
         @Override
         public String toString(Integer iValue) {
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
+            boolean showValue = valueMode && valueModeBox[axNum].isSelected();
             if (showValue) {
                 var doubleOpt = getPlaneValue(axNum, iValue - 1);
                 return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
@@ -1460,20 +1460,20 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     private void setPlaneRange(int iDim, int iSpin, int max) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][iSpin].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][iSpin]);
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim][iSpin].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[iDim][iSpin]);
         planeFactory.setMin(1);
         planeFactory.setMax(max);
-        planeFactory.valueProperty().addListener(planeListeners[iDim - 2][iSpin]);
+        planeFactory.valueProperty().addListener(planeListeners[iDim][iSpin]);
     }
 
     private void setPlaneRange(int iDim) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][0].getValueFactory();
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][1].getValueFactory();
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim][0].getValueFactory();
+        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim][1].getValueFactory();
         int delta = planeFactory1.getValue() - planeFactory0.getValue();
         int max0;
         int min0;
-        planeFactory0.valueProperty().removeListener(planeListeners[iDim - 2][0]);
+        planeFactory0.valueProperty().removeListener(planeListeners[iDim][0]);
         if (delta < 0) {
             min0 = -delta + 1;
             max0 = planeFactory1.getMax();
@@ -1483,7 +1483,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         }
         planeFactory0.setMin(min0);
         planeFactory0.setMax(max0);
-        planeFactory0.valueProperty().addListener(planeListeners[iDim - 2][0]);
+        planeFactory0.valueProperty().addListener(planeListeners[iDim][0]);
     }
 
     private Optional<Double> getPlaneValue(int axNum, int plane) {
@@ -1507,10 +1507,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     public void updatePlaneSpinner(int plane, int axNum, int spinNum) {
-        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 2][spinNum].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[axNum - 2][spinNum]);
+        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum][spinNum].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[axNum][spinNum]);
         planeFactory.setValue(plane + 1);
-        planeFactory.valueProperty().addListener(planeListeners[axNum - 2][spinNum]);
+        planeFactory.valueProperty().addListener(planeListeners[axNum][spinNum]);
     }
 
     private void scrollPlane(ScrollEvent e, int iDim, int iSpin) {
@@ -1560,16 +1560,16 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     private void updateSpinner(int iDim) {
         for (int j = 0; j < 2; j++) {
-            SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim - 2][j].getValueFactory();
+            SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim][j].getValueFactory();
             int value = planeFactory.getValue();
             String text = planeFactory.getConverter().toString(value);
-            planeSpinner[iDim - 2][j].getEditor().setText(text);
+            planeSpinner[iDim][j].getEditor().setText(text);
         }
     }
 
     private void initSpinners() {
         for (int i = 0; i < planeSpinner.length; i++) {
-            final int iDim = i + 2;
+            final int iDim = i;
             for (int j = 0; j < 2; j++) {
                 final int iSpin = j;
                 Spinner<Integer> spinner = new Spinner<>(0, 127, 63);
@@ -1579,13 +1579,13 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 spinner.setPrefWidth(80);
                 spinner.setOnScroll(e -> {
                     spinner.setUserData(e.isShiftDown());
-                    scrollPlane(e, iDim - 2, iSpin);
+                    scrollPlane(e, iDim, iSpin);
                 });
                 spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
                         e -> spinner.setUserData(e.isShiftDown()));
                 planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
                     if (newValue != null && !newValue.equals(oldValue)) {
-                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
+                        updatePlane(iDim, iSpin, newValue, iSpin == 0);
                         if (iSpin == 1) {
                             setPlaneRange(iDim);
                         }
@@ -1677,11 +1677,6 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
             if (i < 2) {
                 mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
-                viewGridPane.add(lowField, 1, i);
-                viewGridPane.add(upField, 2, i);
-                rowNodes.add(lowField);
-                rowNodes.add(upField);
-
             } else {
                 MenuItem menuItem = new MenuItem("Full");
                 mButton.getItems().add(menuItem);
@@ -1698,19 +1693,18 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 menuItem = new MenuItem("Max");
                 mButton.getItems().add(menuItem);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-
-                viewGridPane.add(lowField, 1, i);
-                viewGridPane.add(upField, 3, i);
-
-                viewGridPane.add(planeSpinner[i - 2][0], 2, i);
-                viewGridPane.add(planeSpinner[i - 2][1], 4, i);
-                planeSpinner[i - 2][0].setPrefWidth(spinnerWidth);
-                planeSpinner[i - 2][1].setPrefWidth(spinnerWidth);
-                rowNodes.add(lowField);
-                rowNodes.add(upField);
-                rowNodes.add(planeSpinner[i - 2][0]);
-                rowNodes.add(planeSpinner[i - 2][1]);
             }
+            viewGridPane.add(lowField, 3, i);
+            viewGridPane.add(upField, 1, i);
+
+            viewGridPane.add(planeSpinner[i][0], 4, i);
+            viewGridPane.add(planeSpinner[i][1], 2, i);
+            planeSpinner[i][0].setPrefWidth(spinnerWidth);
+            planeSpinner[i][1].setPrefWidth(spinnerWidth);
+            rowNodes.add(lowField);
+            rowNodes.add(upField);
+            rowNodes.add(planeSpinner[i][0]);
+            rowNodes.add(planeSpinner[i][1]);
         }
     }
 
@@ -1719,11 +1713,11 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         var axes = chart.getAxes();
         if (ij == 0) {
             axes.get(iAxis).setLowerBound(value);
-            if (iAxis > 1) {
-                  axes.get(iAxis).setUpperBound(value);
-            }
         } else {
             axes.get(iAxis).setUpperBound(value);
+            if (iAxis > 1) {
+                axes.get(iAxis).setLowerBound(value);
+            }
         }
         chart.refresh();
     }
@@ -1751,7 +1745,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             }
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
-                for (int axNum = 2; axNum < axes.count(); axNum++) {
+                for (int axNum = 0; axNum < axes.count(); axNum++) {
                     Axis axis = chart.getAxes().get(axNum);
                     int indexL = chart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
                     int indexU = chart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());

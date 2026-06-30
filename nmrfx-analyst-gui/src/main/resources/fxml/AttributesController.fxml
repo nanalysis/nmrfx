@@ -27,8 +27,10 @@
                         <VBox spacing="10">
                             <children>
                                 <Separator orientation="horizontal" minHeight="20"/>
-                                <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
-                                <CheckBox fx:id="fixedAspectBox" text="Ignore ppm ratios"/>
+                                <HBox spacing="10">
+                                    <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
+                                    <CheckBox fx:id="fixedAspectBox" text="Ignore ppm ratios"/>
+                                </HBox>
                                 <Label text="Aspect ratio:" minWidth="35"/>
                                 <HBox>
                                     <Slider fx:id="aspectSlider" prefWidth="150"/>
