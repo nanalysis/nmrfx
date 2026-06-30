@@ -612,6 +612,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         return result;
     }
 
+
     void setLimits() {
         for (int i = 0; i < chart.getAxes().count(); i++) {
             Axis axis = chart.getAxes().get(i);
@@ -622,8 +623,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 int lowPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, lower);
                 int upPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, upper);
 
-                chart.getFXMLController().getStatusBar().updatePlaneSpinner(lowPt, i, 0);
-                chart.getFXMLController().getStatusBar().updatePlaneSpinner(upPt, i, 1);
+                updatePlaneSpinner(lowPt, i, 0);
+                updatePlaneSpinner(upPt, i, 1);
             }
         }
     }
@@ -1453,6 +1454,25 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         }
     }
 
+    public void updateRowSpinner(int row, int axNum) {
+        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum][0].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[axNum][0]);
+        planeFactory.setValue(row + 1);
+        planeFactory.valueProperty().addListener(planeListeners[axNum][0]);
+    }
+
+
+
+    public void setPlaneRanges() {
+        getDatasetAttributes().ifPresent(dataAttr -> {
+            for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
+                int dDim = dataAttr.dim[axNum];
+                int size = dataAttr.getDataset().getSizeReal(dDim);
+                setPlaneRanges(axNum, size);
+            }
+        });
+    }
+
     private void setPlaneRanges(int iDim, int max) {
         for (int j = 0; j < 2; j++) {
             setPlaneRange(iDim, j, max);
@@ -1726,28 +1746,44 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void updateView(PolyChart chart) {
-        if (viewLimitProps != null) {
+        if ((viewLimitProps != null) && !chart.getDatasetAttributes().isEmpty()) {
+            DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
+            int nFreqDim = dataAttr.getDataset().getNFreqDims();
             var axes = chart.getAxes();
             int nAxes = axes.count();
             updateGridNodes(nAxes);
             for (int i = 0; i < nAxes; i++) {
                 Axis axis = chart.getAxes().get(i);
-                viewLimitProps[i][0].set(axis.getLowerBound());
-                viewLimitProps[i][1].set(axis.getUpperBound());
+                if (i < nFreqDim) {
+                    viewLimitProps[i][0].set(axis.getLowerBound());
+                    viewLimitProps[i][1].set(axis.getUpperBound());
+                }
             }
-            if (!chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
-                for (int axNum = 0; axNum < axes.count(); axNum++) {
-                    Axis axis = chart.getAxes().get(axNum);
-                    int indexL = chart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
-                    int indexU = chart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
-                    int dDim = dataAttr.dim[axNum];
-                    int size = dataAttr.getDataset().getSizeReal(dDim);
-                    setPlaneRanges(axNum, size);
+            for (int axNum = 0; axNum < axes.count(); axNum++) {
+                Axis axis = chart.getAxes().get(axNum);
+                var axMode = chart.getAxes().getMode(axNum);
+                int indexL = axMode.getIndex(dataAttr, axNum, axis.getLowerBound());
+                int indexU = axMode.getIndex(dataAttr, axNum, axis.getUpperBound());
+                int finalAxNum = axNum;
+                if (axNum >= nFreqDim) {
+                    getPlaneValue(axNum, indexL).ifPresent(v -> {
+                        viewLimitProps[finalAxNum][0].set(v);
+                    });
+                    getPlaneValue(axNum, indexU).ifPresent(v -> {
+                        viewLimitProps[finalAxNum][1].set(v);
+                    });
+                }
+                int dDim = dataAttr.dim[axNum];
+                int size = dataAttr.getDataset().getSizeReal(dDim);
+                setPlaneRanges(axNum, size);
+                if (axMode == DatasetAttributes.AXMODE.PTS) {
+                    updatePlaneSpinner(indexL, axNum, 0);
+                    updatePlaneSpinner(indexU, axNum, 1);
+                } else {
                     updatePlaneSpinner(indexL, axNum, 1);
                     updatePlaneSpinner(indexU, axNum, 0);
-                    setPlaneRange(axNum);
                 }
+                setPlaneRange(axNum);
             }
         }
     }

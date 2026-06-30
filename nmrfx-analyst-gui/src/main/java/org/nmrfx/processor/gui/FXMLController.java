@@ -876,7 +876,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void setDim(String rowName, String dimName) {
         getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
             attr.setDim(rowName, dimName);
-            getStatusBar().setPlaneRanges();
+            getAttributesController().ifPresent(attributesController1 -> attributesController1.setPlaneRanges());
             chart.updateProjections();
             chart.updateProjectionBorders();
             chart.updateProjectionScale();
@@ -955,6 +955,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         if (attributesController != null) {
             attributesController.updateView(chart);
         }
+    }
+
+    public Optional<AttributesController> getAttributesController() {
+        return Optional.ofNullable(attributesController);
     }
     /**
      * Initialize the toggle buttons Processing, Attributes and Contents. On mac these buttons will appear right

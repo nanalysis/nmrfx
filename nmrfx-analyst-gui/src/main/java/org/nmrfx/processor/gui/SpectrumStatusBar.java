@@ -23,20 +23,16 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -45,7 +41,6 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.properties.CustomNumberTextField;
@@ -76,8 +71,6 @@ public class SpectrumStatusBar {
     private final StackPane[][] crossTextIcons = new StackPane[2][2];
     private final StackPane[][] limitTextIcons = new StackPane[2][2];
     private final boolean[][] iconStates = new boolean[2][2];
-    private final Spinner<Integer>[][] planeSpinner = new Spinner[MAX_SPINNERS][2];
-    private final ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
     private final CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
     private final MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
@@ -115,9 +108,6 @@ public class SpectrumStatusBar {
 
         Pane filler = createHorizontalSpacer();
         primaryToolbar.getItems().add(filler);
-
-        initSpinners();
-
 
         for (int i = 0; i < dimMenus.length; i++) {
             final int iAxis = i;
@@ -298,42 +288,6 @@ public class SpectrumStatusBar {
         }
     }
 
-    private void initSpinners() {
-        for (int i = 0; i < planeSpinner.length; i++) {
-            final int iDim = i + 2;
-            for (int j = 0; j < 2; j++) {
-                final int iSpin = j;
-                Spinner<Integer> spinner = new Spinner<>(0, 127, 63);
-                planeSpinner[i][j] = spinner;
-                spinner.setEditable(true);
-                spinner.getEditor().setPrefWidth(60);
-                spinner.setPrefWidth(80);
-                spinner.setOnScroll(e -> {
-                    spinner.setUserData(e.isShiftDown());
-                    scrollPlane(e, iDim - 2, iSpin);
-                });
-                spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
-                        e -> spinner.setUserData(e.isShiftDown()));
-                planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
-                    if (newValue != null && !newValue.equals(oldValue)) {
-                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
-                        if (iSpin == 1) {
-                            setPlaneRange(iDim);
-                        }
-                    }
-                };
-                SpinnerValueFactory<Integer> planeFactory = planeSpinner[i][j].getValueFactory();
-                planeFactory.valueProperty().addListener(planeListeners[i][j]);
-                SpinnerConverter converter = new SpinnerConverter(iDim, j);
-                planeFactory.setConverter(converter);
-            }
-            valueModeBox[i] = new CheckBox("V");
-            planeSpinner[i][0].editableProperty().bind(valueModeBox[i].selectedProperty().not());
-            planeSpinner[i][1].editableProperty().bind(valueModeBox[i].selectedProperty().not());
-            valueModeBox[i].setOnAction(e -> updateSpinner(iDim));
-        }
-    }
-
     private void initCursorButtonGroup() {
         Arrays.stream(CanvasCursor.values())
                 .map(SpectrumStatusBar::createCursorToggleButton)
@@ -500,37 +454,9 @@ public class SpectrumStatusBar {
                     int indexU = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
                     int dDim = dataAttr.dim[axNum];
                     int size = dataAttr.getDataset().getSizeReal(dDim);
-                    setPlaneRanges(axNum, size);
-                    updatePlaneSpinner(indexL, axNum, 0);
-                    updatePlaneSpinner(indexU, axNum, 1);
                 }
             }
         }
-    }
-
-    public void setPlaneRanges() {
-        getDatasetAttributes().ifPresent(dataAttr -> {
-            for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                int dDim = dataAttr.dim[axNum];
-                int size = dataAttr.getDataset().getSizeReal(dDim);
-                setPlaneRanges(axNum, size);
-            }
-        });
-    }
-    private void updateSpinner(int iDim) {
-        for (int j = 0; j < 2; j++) {
-            SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim - 2][j].getValueFactory();
-            int value = planeFactory.getValue();
-            String text = planeFactory.getConverter().toString(value);
-            planeSpinner[iDim - 2][j].getEditor().setText(text);
-        }
-    }
-
-    public void updateRowSpinner(int row, int axNum) {
-        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 1][0].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[axNum - 1][0]);
-        planeFactory.setValue(row + 1);
-        planeFactory.valueProperty().addListener(planeListeners[axNum - 1][0]);
     }
 
     private Optional<DatasetAttributes> getDatasetAttributes() {
@@ -543,103 +469,6 @@ public class SpectrumStatusBar {
             result = Optional.empty();
         }
         return result;
-    }
-
-    private int findPlane(double value, int axNum) {
-        PolyChart chart = controller.getActiveChart();
-        ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
-        int planeIndex = -1;
-        if (!dataAttrList.isEmpty()) {
-            DatasetAttributes dataAttr = dataAttrList.get(0);
-            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
-                double[] values = dataAttr.getDataset().getValues(axNum);
-                if (values != null) {
-                    double min = Double.MAX_VALUE;
-                    int iMin = -1;
-                    for (int i = 0; i < values.length; i++) {
-                        double delta = Math.abs(value - values[i]);
-                        if (delta < min) {
-                            min = delta;
-                            iMin = i;
-                        }
-                    }
-                    planeIndex = iMin;
-                }
-            }
-        }
-        return planeIndex;
-    }
-
-    private Optional<Double> getPlaneValue(int axNum, int plane) {
-        var dataOpt = getDatasetAttributes();
-        Double value = null;
-        if (dataOpt.isPresent()) {
-            DatasetAttributes dataAttr = dataOpt.get();
-            PolyChart chart = controller.getActiveChart();
-            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
-                double[] values = dataAttr.getDataset().getValues(axNum);
-                if (values != null && values.length > plane) {
-                    value = values[plane];
-                } else {
-                    value = (double) (plane + 1);
-                }
-            } else {
-                value = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
-            }
-        }
-        return Optional.ofNullable(value);
-    }
-
-    public void updatePlaneSpinner(int plane, int axNum, int spinNum) {
-        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 2][spinNum].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[axNum - 2][spinNum]);
-        planeFactory.setValue(plane + 1);
-        planeFactory.valueProperty().addListener(planeListeners[axNum - 2][spinNum]);
-    }
-
-    private void scrollPlane(ScrollEvent e, int iDim, int iSpin) {
-        Spinner<Integer> spinner = planeSpinner[iDim][iSpin];
-
-        double delta = e.getDeltaY();
-        int nPlanes = (int) Math.round(delta / 10.0);
-        if (nPlanes == 0) {
-            nPlanes = delta < 0.0 ? -1 : 1;
-        }
-        nPlanes *= -1;  // scrolling up should increase.  Is this dependent on Mac scrolling settting
-        SpinnerValueFactory<Integer> planeFactory = spinner.getValueFactory();
-        planeFactory.increment(nPlanes);
-    }
-
-    private void updatePlane(int iDim, int iSpin, int plane, boolean shiftDown) {
-        plane--;
-        if (arrayMode) {
-            controller.getActiveChart().setDrawlist(plane);
-            controller.getActiveChart().refresh();
-        } else {
-            PolyChart chart = controller.getActiveChart();
-
-            if (!chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                Axis axis = chart.getAxes().get(iDim);
-                int[] pts = new int[2];
-                pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
-                pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
-                int other = iSpin == 0 ? 1 : 0;
-                int delta = pts[other] - pts[iSpin];
-                pts[iSpin] = plane;
-                if (!shiftDown) {
-                    pts[other] = pts[iSpin] + delta;
-                }
-                double ppm1 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
-                double ppm2 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
-                ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
-                PolyChart polyChart = controller.getActiveChart();
-                polyChart.getAxes().setMinMax(iDim, ppm1, ppm2);
-                controller.getActiveChart().refresh();
-                ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-                controller.getUndoManager().add("plane", undo, redo);
-            }
-        }
     }
 
     private void complexStatusChanged(ActionEvent event) {
@@ -655,43 +484,9 @@ public class SpectrumStatusBar {
         }
     }
 
-    private void setPlaneRanges(int iDim, int max) {
-        for (int j = 0; j < 2; j++) {
-            setPlaneRange(iDim, j, max);
-        }
-    }
-
-    private void setPlaneRange(int iDim, int iSpin, int max) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][iSpin].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][iSpin]);
-        planeFactory.setMin(1);
-        planeFactory.setMax(max);
-        planeFactory.valueProperty().addListener(planeListeners[iDim - 2][iSpin]);
-    }
-
-    private void setPlaneRange(int iDim) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][0].getValueFactory();
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][1].getValueFactory();
-        int delta = planeFactory1.getValue() - planeFactory0.getValue();
-        int max0;
-        int min0;
-        planeFactory0.valueProperty().removeListener(planeListeners[iDim - 2][0]);
-        if (delta < 0) {
-            min0 = -delta + 1;
-            max0 = planeFactory1.getMax();
-        } else {
-            min0 = 1;
-            max0 = planeFactory1.getMax() - delta;
-        }
-        planeFactory0.setMin(min0);
-        planeFactory0.setMax(max0);
-        planeFactory0.valueProperty().addListener(planeListeners[iDim - 2][0]);
-    }
-
-
     public void set1DArray(int nDim, int nRows) {
         arrayMode = true;
-        setPlaneRanges(2, nRows);
+       // setPlaneRanges(2, nRows);
         updatePrimaryToolbarFor1DArray(nDim);
         updateSecondaryToolbarFor1DArray();
     }
@@ -724,16 +519,6 @@ public class SpectrumStatusBar {
         PolyChart activeChart = controller.getActiveChart();
         List<Integer> drawList;
         for (int i = 1; i < nDim; i++) {
-            ((SpinnerConverter) planeSpinner[i - 1][0].getValueFactory().getConverter()).setValueMode(false);
-            drawList = activeChart.getDrawList();
-            if (!drawList.isEmpty()) {
-                // Use the current drawlist and update the spinner to the first number
-                updateRowSpinner(drawList.get(0), i);
-            }
-            nodes.add(rowMenus[i - 1]);
-            nodes.add(planeSpinner[i - 1][0]);
-            Pane nodeFiller = createHorizontalSpacer();
-            nodes.add(nodeFiller);
         }
         nodes.add(phaserButton);
         primaryToolbar.getItems().setAll(nodes);
@@ -765,7 +550,7 @@ public class SpectrumStatusBar {
         arrayMode = false;
         setupPrimaryToolbarForSelectedMode();
         setupSecondaryToolbarForSelectedMode();
-        setPlaneRanges();
+      //  setPlaneRanges();
     }
 
     private void setupPrimaryToolbarForSelectedMode() {
@@ -806,11 +591,6 @@ public class SpectrumStatusBar {
         // additional dimension spinners
         for (int i = 2; i < currentModeDimensions; i++) {
             nodes.add(dimMenus[i]);
-            nodes.add(planeSpinner[i - 2][0]);
-            nodes.add(planeSpinner[i - 2][1]);
-            ((SpinnerConverter) planeSpinner[i - 2][0].getValueFactory().getConverter()).setValueMode(true);
-            ((SpinnerConverter) planeSpinner[i - 2][1].getValueFactory().getConverter()).setValueMode(true);
-            nodes.add(valueModeBox[i - 2]);
             nodes.add(createHorizontalSpacer());
         }
 
@@ -942,8 +722,8 @@ public class SpectrumStatusBar {
             set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
         } else if (selected == DisplayMode.CONTOURS) {
             chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
-            chart.getDatasetAttributes().get(0).drawList.clear();
-            autoScale = !chart.getDatasetAttributes().get(0).getHasLevel();
+            chart.getDatasetAttributes().getFirst().drawList.clear();
+            autoScale = !chart.getDatasetAttributes().getFirst().getHasLevel();
             chart.updateProjections();
             chart.updateProjectionScale();
             int nDim = maxNDim.getAsInt();
@@ -1027,63 +807,26 @@ public class SpectrumStatusBar {
         }
     }
 
-    private class SpinnerConverter extends IntegerStringConverter {
-        final int axNum;
-        final int spinNum;
-        boolean valueMode = false;
-
-        SpinnerConverter(int axNum, int spinNum) {
-            this.axNum = axNum;
-            this.spinNum = spinNum;
-        }
-
-        @Override
-        public Integer fromString(String s) {
-            int result = 1;
-            Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
-            if (showValue) {
-                return spinner.getValueFactory().getValue();
-            }
-            try {
-                if (!s.isEmpty()) {
-                    if (s.contains(".")) {
-                        double planePPM = Double.parseDouble(s);
-                        int planeIndex = findPlane(planePPM, axNum);
-                        if (planeIndex == -1) {
-                            var dataAttrOpt = getDatasetAttributes();
-                            if (dataAttrOpt.isPresent()) {
-                                DatasetAttributes dataAttr = dataAttrOpt.get();
-                                planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
-                            }
-                        }
-                        result = planeIndex + 1;
-                    } else {
-                        result = Integer.parseInt(s);
-                    }
+    private Optional<Double> getPlaneValue(int axNum, int plane) {
+        var dataOpt = getDatasetAttributes();
+        Double value = null;
+        if (dataOpt.isPresent()) {
+            DatasetAttributes dataAttr = dataOpt.get();
+            PolyChart chart = controller.getActiveChart();
+            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataAttr.getDataset().getValues(axNum);
+                if (values != null && values.length > plane) {
+                    value = values[plane];
+                } else {
+                    value = (double) (plane + 1);
                 }
-                spinner.getEditor().setBackground(DEFAULT_BACKGROUND);
-            } catch (NumberFormatException nfE) {
-                spinner.getEditor().setBackground(ERROR_BACKGROUND);
-            }
-            return result;
-        }
-
-        @Override
-        public String toString(Integer iValue) {
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
-            if (showValue) {
-                var doubleOpt = getPlaneValue(axNum, iValue - 1);
-                return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
             } else {
-                return String.valueOf(iValue);
+                value = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
             }
         }
-
-        void setValueMode(boolean mode) {
-            valueMode = mode;
-        }
+        return Optional.ofNullable(value);
     }
+
     public void updateSlices(boolean saveState) {
         final boolean status = sliceStatusCheckBox.isSelected();
         if (saveState) {

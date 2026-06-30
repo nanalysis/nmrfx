@@ -325,7 +325,8 @@ public class GUIScripter {
                 }
             }
             if (!indices.isEmpty()) {
-                chart.getFXMLController().getStatusBar().updateRowSpinner(indices.getFirst(), 1);
+                chart.getFXMLController().getAttributesController()
+                        .ifPresent(attributesController -> attributesController.updateRowSpinner(indices.getFirst(), 1));
             }
             chart.refresh();
         });
