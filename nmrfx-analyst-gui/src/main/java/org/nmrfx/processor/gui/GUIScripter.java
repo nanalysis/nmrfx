@@ -326,7 +326,7 @@ public class GUIScripter {
             }
             if (!indices.isEmpty()) {
                 chart.getFXMLController().getAttributesController()
-                        .ifPresent(attributesController -> attributesController.updateRowSpinner(indices.getFirst(), 1));
+                        .ifPresent(attributesController -> attributesController.viewController.updateRowSpinner(indices.getFirst(), 1));
             }
             chart.refresh();
         });

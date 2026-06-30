@@ -45,8 +45,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     int indexL = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getLowerBound());
                     int indexU = chart.getAxes().getMode(axisIndex).getIndex(datasetAttributes, axisIndex, axis.getUpperBound());
                     chart.getFXMLController().getAttributesController().ifPresent(attributesController -> {
-                        attributesController.updatePlaneSpinner(indexL, axisIndex, 0);
-                        attributesController.updatePlaneSpinner(indexU, axisIndex, 1);
+                        attributesController.viewController.updatePlaneSpinner(indexL, axisIndex, 0);
+                        attributesController.viewController.updatePlaneSpinner(indexU, axisIndex, 1);
                     });
                 }
 

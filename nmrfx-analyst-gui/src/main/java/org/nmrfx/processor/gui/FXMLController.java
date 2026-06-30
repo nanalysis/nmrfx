@@ -876,7 +876,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void setDim(String rowName, String dimName) {
         getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
             attr.setDim(rowName, dimName);
-            getAttributesController().ifPresent(attributesController1 -> attributesController1.setPlaneRanges());
+            getAttributesController().ifPresent(attributesController1 -> attributesController1.viewController.setPlaneRanges());
             chart.updateProjections();
             chart.updateProjectionBorders();
             chart.updateProjectionScale();

@@ -1791,7 +1791,7 @@ public class PolyChart extends Region {
         }
         int finalValue = value;
         getFXMLController().getAttributesController()
-                .ifPresent(attributesController -> attributesController.updateRowSpinner(finalValue, 1));
+                .ifPresent(attributesController -> attributesController.viewController.updateRowSpinner(finalValue, 1));
         return value;
     }
 
@@ -1806,7 +1806,7 @@ public class PolyChart extends Region {
             datasetAttributes.setDrawList(selected);
         }
         if (!selected.isEmpty()) {
-           controller.getAttributesController().ifPresent(attributesController -> attributesController.updateRowSpinner(selected.get(0), 1));
+           controller.getAttributesController().ifPresent(attributesController -> attributesController.viewController.updateRowSpinner(selected.get(0), 1));
         }
     }
 
