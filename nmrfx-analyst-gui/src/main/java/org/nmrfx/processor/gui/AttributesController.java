@@ -1470,20 +1470,11 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     private void setPlaneRange(int iDim) {
         SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim][0].getValueFactory();
         SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim][1].getValueFactory();
-        int delta = planeFactory1.getValue() - planeFactory0.getValue();
-        int max0;
         int min0;
-        planeFactory0.valueProperty().removeListener(planeListeners[iDim][0]);
-        if (delta < 0) {
-            min0 = -delta + 1;
-            max0 = planeFactory1.getMax();
-        } else {
-            min0 = 1;
-            max0 = planeFactory1.getMax() - delta;
-        }
-        planeFactory0.setMin(min0);
-        planeFactory0.setMax(max0);
-        planeFactory0.valueProperty().addListener(planeListeners[iDim][0]);
+        planeFactory1.valueProperty().removeListener(planeListeners[iDim][1]);
+        min0 = planeFactory0.getValue();
+        planeFactory1.setMin(min0);
+        planeFactory1.valueProperty().addListener(planeListeners[iDim][1]);
     }
 
     private Optional<Double> getPlaneValue(int axNum, int plane) {
@@ -1538,16 +1529,16 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 Axis axis = chart.getAxes().get(iDim);
                 int[] pts = new int[2];
-                pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
-                pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
+                pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
+                pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
                 int other = iSpin == 0 ? 1 : 0;
-                int delta = pts[other] - pts[iSpin];
+                int delta = pts[1] - pts[0];
                 pts[iSpin] = plane;
-                if (!shiftDown) {
+                if ((iSpin == 0) && !shiftDown) {
                     pts[other] = pts[iSpin] + delta;
                 }
-                double ppm1 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
-                double ppm2 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
+                double ppm1 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
+                double ppm2 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
                 ChartUndoLimits undo = new ChartUndoLimits(fxmlController.getActiveChart());
                 PolyChart polyChart = fxmlController.getActiveChart();
                 polyChart.getAxes().setMinMax(iDim, ppm1, ppm2);
@@ -1578,15 +1569,17 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 spinner.getEditor().setPrefWidth(60);
                 spinner.setPrefWidth(80);
                 spinner.setOnScroll(e -> {
-                    spinner.setUserData(e.isShiftDown());
+                    spinner.setUserData(e.isControlDown());
                     scrollPlane(e, iDim, iSpin);
                 });
                 spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
-                        e -> spinner.setUserData(e.isShiftDown()));
+                        e -> spinner.setUserData(e.isControlDown()));
                 planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
                     if (newValue != null && !newValue.equals(oldValue)) {
-                        updatePlane(iDim, iSpin, newValue, iSpin == 0);
-                        if (iSpin == 1) {
+                        Object spinData = spinner.getUserData();
+                        boolean shiftDown = spinData != null ? ((Boolean) spinData).booleanValue() : false;
+                        updatePlane(iDim, iSpin, newValue, shiftDown);
+                        if (iSpin == 0) {
                             setPlaneRange(iDim);
                         }
                     }
@@ -1694,11 +1687,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 mButton.getItems().add(menuItem);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
             }
-            viewGridPane.add(lowField, 3, i);
             viewGridPane.add(upField, 1, i);
-
-            viewGridPane.add(planeSpinner[i][0], 4, i);
-            viewGridPane.add(planeSpinner[i][1], 2, i);
+            viewGridPane.add(planeSpinner[i][0], 2, i);
+            viewGridPane.add(lowField, 3, i);
+            viewGridPane.add(planeSpinner[i][1], 4, i);
             planeSpinner[i][0].setPrefWidth(spinnerWidth);
             planeSpinner[i][1].setPrefWidth(spinnerWidth);
             rowNodes.add(lowField);
@@ -1752,8 +1744,9 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                     int dDim = dataAttr.dim[axNum];
                     int size = dataAttr.getDataset().getSizeReal(dDim);
                     setPlaneRanges(axNum, size);
-                    updatePlaneSpinner(indexL, axNum, 0);
-                    updatePlaneSpinner(indexU, axNum, 1);
+                    updatePlaneSpinner(indexL, axNum, 1);
+                    updatePlaneSpinner(indexU, axNum, 0);
+                    setPlaneRange(axNum);
                 }
             }
         }
