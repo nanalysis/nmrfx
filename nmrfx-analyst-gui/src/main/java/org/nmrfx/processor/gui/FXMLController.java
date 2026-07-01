@@ -206,6 +206,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void setCursor(Cursor cursor) {
+        statusBar.setCursor(cursor);
         cursorProperty.set(cursor);
     }
 

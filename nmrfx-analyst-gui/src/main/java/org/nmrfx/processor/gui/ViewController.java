@@ -37,7 +37,6 @@ public class ViewController {
     List<List<Node>> gridNodes = new ArrayList<>();
     FXMLController fxmlController;
     AttributesController attributesController;
-    PolyChart chart;
     VBox viewBox;
     GridPane viewGridPane;
     private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
@@ -81,15 +80,19 @@ public class ViewController {
         displayModeComboBox.getSelectionModel().selectedItemProperty().addListener(e -> displayModeComboBoxSelectionChanged());
     }
 
+    PolyChart getChart() {
+        return fxmlController.getActiveChart();
+    }
+
     ComboBox<DisplayMode> getDisplayModeComboBox() {
         return displayModeComboBox;
     }
 
     List<PolyChart> getCharts(boolean all) {
         if (all) {
-            return chart.getFXMLController().getCharts();
+            return fxmlController.getCharts();
         } else {
-            return Collections.singletonList(chart);
+            return Collections.singletonList(getChart());
         }
     }
 
@@ -654,6 +657,7 @@ public class ViewController {
 
     void keyTyped(int iAxis, int ij) {
         double value = viewLimitProps[iAxis][ij].getValue();
+        PolyChart chart = getChart();
         var axes = chart.getAxes();
         if (ij == 0) {
             axes.get(iAxis).setLowerBound(value);

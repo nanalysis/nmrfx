@@ -77,7 +77,7 @@ public class SpectrumStatusBar {
     private final boolean[][] iconStates = new boolean[2][2];
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
-    private final SegmentedButton cursorButtons = new SegmentedButton();
+    private final ChoiceBox<CanvasCursor> cursorChoice = new ChoiceBox();
     private final ToggleButton tableButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.TABLE, "Table",
             AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
 
@@ -87,7 +87,6 @@ public class SpectrumStatusBar {
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     private final ToggleButton phaserButton = new ToggleButton("Phasing");
-    private final CheckBox sliceStatusCheckBox = new CheckBox("Slices");
     List<Control> extractControls = new ArrayList<>();
 
 
@@ -136,7 +135,6 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(filler);
         primaryToolbar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatusChanged);
-        primaryToolbar.getItems().add(sliceStatusCheckBox);
         phaserButton.setOnAction(event -> controller.updatePhaser(phaserButton.isSelected()));
         phaserButton.disableProperty().bind(controller.processControllerVisibleProperty());
 
@@ -144,8 +142,6 @@ public class SpectrumStatusBar {
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
-        sliceStatusCheckBox.setOnAction(e -> updateSlices(true));
-        sliceStatusCheckBox.selectedProperty().bindBidirectional(controller.sliceStatusProperty());
     }
 
     private void initCrossText() {
@@ -265,17 +261,15 @@ public class SpectrumStatusBar {
 
     private void initCursorButtonGroup() {
         Arrays.stream(CanvasCursor.values())
-                .map(SpectrumStatusBar::createCursorToggleButton)
-                .forEach(cursorButtons.getButtons()::add);
-        cursorButtons.getButtons().get(CanvasCursor.SELECTOR.ordinal()).setSelected(true);
-        cursorButtons.getToggleGroup().selectedToggleProperty()
-                .addListener((observable, oldValue, newValue) -> cursorButtonToggled(newValue));
+                .forEach(tb -> cursorChoice.getItems().add(tb));
+        cursorChoice.setValue(CanvasCursor.SELECTOR);
+        cursorChoice.valueProperty()
+                .addListener((observable, oldValue, newValue) -> cursorButtonToggled((CanvasCursor) newValue));
     }
 
-    private void cursorButtonToggled(Toggle toggle) {
-        if (toggle != null && toggle.getUserData() instanceof CanvasCursor selected) {
-            controller.setCursor(selected.getCursor());
-        }
+    private void cursorButtonToggled(CanvasCursor canvasCursor) {
+            controller.setCursor(canvasCursor.getCursor());
+            updateSlices(true);
     }
 
     @PluginAPI("parametric")
@@ -288,13 +282,6 @@ public class SpectrumStatusBar {
     }
 
     public void updateCursorBox() {
-        for (var button : cursorButtons.getButtons()) {
-            if (button.getUserData() instanceof CanvasCursor canvasCursor
-                    && canvasCursor.getCursor() == controller.getCurrentCursor()) {
-                button.setSelected(true);
-                break;
-            }
-        }
         if (!CanvasCursor.isCrosshair(controller.getCurrentCursor())) {
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
@@ -450,6 +437,10 @@ public class SpectrumStatusBar {
         controller.getActiveChart().layoutPlotChildren();
     }
 
+    void setCursor(Cursor cursor) {
+        cursorChoice.setValue(CanvasCursor.getCanvasCursor(cursor));
+    }
+
     public void setCrossTextRange(int index, Orientation orientation, double min, double max) {
         if (CanvasCursor.isCrosshair(controller.getCurrentCursor())) {
             crossText[index][orientation.ordinal()].setMin(min);
@@ -478,8 +469,7 @@ public class SpectrumStatusBar {
         nodes.add(createHorizontalSpacer());
 
         nodes.add(new Label("Cursor:"));
-        cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
-        nodes.add(cursorButtons);
+        nodes.add(cursorChoice);
         for (int j = 1; j >= 0; j--) {
             if (j == 1) {
                 nodes.add(new Label("X:"));
@@ -531,11 +521,6 @@ public class SpectrumStatusBar {
     private void setupPrimaryToolbarForSelectedMode() {
        List<Node> nodes = new ArrayList<>();
         nodes.add(tableButton);
-        if (currentMode == DataMode.DATASET_1D) {
-            cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
-        } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(true);
-        }
 
         if (currentMode == DataMode.DATASET_2D) {
             getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.CONTOURS);
@@ -543,7 +528,7 @@ public class SpectrumStatusBar {
 
         nodes.add(createHorizontalSpacer());
         nodes.add(new Label("Cursor:"));
-        nodes.add(cursorButtons);
+        nodes.add(cursorChoice);
 
         //first dimension cross-hair
         if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
@@ -564,9 +549,7 @@ public class SpectrumStatusBar {
         if (currentMode == DataMode.FID) {
             nodes.add(complexStatus);
         }
-        if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(sliceStatusCheckBox);
-        }
+
         nodes.add(phaserButton);
 
         primaryToolbar.getItems().setAll(nodes);
@@ -728,20 +711,8 @@ public class SpectrumStatusBar {
     }
 
     public void updateSlices(boolean saveState) {
-        final boolean status = sliceStatusCheckBox.isSelected();
-        if (saveState) {
-            if (status) {
-                Cursor crosshairCursor = CanvasCursor.CROSSHAIR.getCursor();
-                preSliceCursor = controller.getCurrentCursor();
-                if (preSliceCursor != crosshairCursor) {
-                    controller.setCursor(crosshairCursor);
-                }
-            } else {
-                if (preSliceCursor != null) {
-                    controller.setCursor(preSliceCursor);
-                }
-            }
-        }
+        final boolean status = getController().getCursor() == CanvasCursor.SLICE.getCursor();
+        controller.sliceStatusProperty().set(status);
         controller.getCharts().forEach(c -> c.setSliceStatus(status));
     }
 }
