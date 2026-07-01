@@ -93,7 +93,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     @FXML
     TextField aspectRatioValue;
     @FXML
-    GridPane viewGridPane;
+    VBox viewBox;
     @FXML
     Slider scaleSlider;
     @FXML
@@ -264,11 +264,12 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     ViewController viewController;
 
 
+
     public static AttributesController create(FXMLController fxmlController) {
         Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
         AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
-        controller.viewController = new ViewController(controller, controller.viewGridPane);
+        controller.viewController = new ViewController(controller, controller.viewBox);
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
         controller.itemChoiceState.setValue(SelectionChoice.CHART);
         controller.setChart(fxmlController.getActiveChart());

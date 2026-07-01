@@ -951,6 +951,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         contentController = ContentController.create(this);
     }
 
+    public ViewController getViewController() {
+        return attributesController.viewController;
+    }
+
     void updateViewAttributes(PolyChart chart) {
         if (attributesController != null) {
             attributesController.updateView(chart);

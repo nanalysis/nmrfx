@@ -11,24 +11,22 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.converter.IntegerStringConverter;
 import org.nmrfx.chart.Axis;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.utils.GUIUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ViewController {
+    private static final Logger log = LoggerFactory.getLogger(ViewController.class);
     private static final Background DEFAULT_BACKGROUND = null;
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     SimpleDoubleProperty[][] viewLimitProps = new SimpleDoubleProperty[SpectrumStatusBar.DIM_NAMES.length][2];
@@ -40,13 +38,51 @@ public class ViewController {
     FXMLController fxmlController;
     AttributesController attributesController;
     PolyChart chart;
+    VBox viewBox;
     GridPane viewGridPane;
+    private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
+    private SpectrumStatusBar.DataMode currentMode = SpectrumStatusBar.DataMode.FID;
+    private int currentModeDimensions = 0;
 
-    public ViewController(AttributesController attributesController, GridPane viewGridPane) {
+    public enum DisplayMode {
+        TRACES("Traces (1D)"),
+        STACKPLOT("Stack Plot"),
+        CONTOURS("Contours (2D)");
+        private final String strValue;
+
+        DisplayMode(String strValue) {
+            this.strValue = strValue;
+        }
+
+        @Override
+        public String toString() {
+            return this.strValue;
+        }
+    }
+
+
+    public ViewController(AttributesController attributesController, VBox viewBox) {
         this.attributesController = attributesController;
         this.fxmlController = attributesController.fxmlController;
-        this.viewGridPane = viewGridPane;
+        this.viewBox = viewBox;
+        init();
+    }
+
+    private void init() {
+        this.viewGridPane = new GridPane();
+        HBox displayBox = new HBox();
+        displayBox.setSpacing(10);
+        viewBox.setSpacing(5);
+        displayBox.getChildren().addAll(new Label("Display Mode:"), displayModeComboBox);
+        viewBox.getChildren().add(displayBox);
+        viewBox.getChildren().add(viewGridPane);
         createViewGrid();
+        displayModeComboBox.getItems().setAll(ViewController.DisplayMode.values());
+        displayModeComboBox.getSelectionModel().selectedItemProperty().addListener(e -> displayModeComboBoxSelectionChanged());
+    }
+
+    ComboBox<DisplayMode> getDisplayModeComboBox() {
+        return displayModeComboBox;
     }
 
     List<PolyChart> getCharts(boolean all) {
@@ -54,6 +90,67 @@ public class ViewController {
             return chart.getFXMLController().getCharts();
         } else {
             return Collections.singletonList(chart);
+        }
+    }
+
+    private boolean isStacked() {
+        PolyChart chart = fxmlController.getActiveChart();
+        return chart.getChartProperties().getStackX() > 0.01 ||
+                chart.getChartProperties().getStackY() > 0.01;
+    }
+
+
+    /**
+     * Updates the spectrum status bar and the type of plot displayed in the active chart
+     * based on the selected option.
+     */
+    private void displayModeComboBoxSelectionChanged() {
+        PolyChart chart = fxmlController.getActiveChart();
+        boolean autoScale = true;
+        OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
+        if (maxNDim.isEmpty()) {
+            log.warn("Unable to update display mode. No dimensions set.");
+            return;
+        }
+        DisplayMode selected = displayModeComboBox.getSelectionModel().getSelectedItem();
+        if (selected == DisplayMode.TRACES || selected == DisplayMode.STACKPLOT) {
+            OptionalInt maxRows = chart.getDatasetAttributes().stream().
+                    mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
+            if (maxRows.isEmpty()) {
+                log.warn("Unable to update display mode. No rows set.");
+                return;
+            }
+            chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
+            if (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES) {
+                chart.setDrawlist(0);
+            }
+
+            if (selected == DisplayMode.STACKPLOT) {
+                chart.clearDrawlist();
+                if (!isStacked()) {
+                    chart.getChartProperties().setStackX(0.35);
+                    chart.getChartProperties().setStackY(0.75);
+                }
+            } else {
+                chart.getChartProperties().setStackX(0.0);
+                chart.getChartProperties().setStackY(0.0);
+            }
+            fxmlController.getStatusBar().set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+        } else if (selected == DisplayMode.CONTOURS) {
+            chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
+            chart.getDatasetAttributes().getFirst().drawList.clear();
+            autoScale = !chart.getDatasetAttributes().getFirst().getHasLevel();
+            autoScale = true;
+            chart.updateProjections();
+            chart.updateProjectionScale();
+            int nDim = maxNDim.getAsInt();
+            fxmlController.getStatusBar().setMode(SpectrumStatusBar.DataMode.fromDimensions(nDim), nDim);
+        }
+        attributesController.setDimControls();
+        chart.updateAxisType(true);
+        chart.full();
+        if (autoScale) {
+            chart.autoScale();
         }
     }
 
@@ -86,7 +183,6 @@ public class ViewController {
         }
         return result;
     }
-
 
 
     private int findPlane(double value, int axNum) {
@@ -181,7 +277,6 @@ public class ViewController {
     }
 
 
-
     public void setPlaneRanges() {
         getDatasetAttributes().ifPresent(dataAttr -> {
             for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
@@ -222,8 +317,9 @@ public class ViewController {
         if (dataOpt.isPresent()) {
             DatasetAttributes dataAttr = dataOpt.get();
             PolyChart chart = fxmlController.getActiveChart();
-            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
-                double[] values = dataAttr.getDataset().getValues(axNum);
+            Dataset dataset = dataAttr.getDataset();
+            if (!dataset.getFreqDomain(axNum) || chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataset.getValues(axNum);
                 if (values != null && values.length > plane) {
                     value = values[plane];
                 } else {
@@ -257,15 +353,45 @@ public class ViewController {
     }
 
     private void updatePlane(int iDim, int iSpin, int plane, boolean shiftDown) {
-        plane--;
-        if (arrayMode) {
-            fxmlController.getActiveChart().setDrawlist(plane);
-            fxmlController.getActiveChart().refresh();
-        } else {
-            PolyChart chart = fxmlController.getActiveChart();
+        PolyChart chart = fxmlController.getActiveChart();
+        if (!chart.getDatasetAttributes().isEmpty()) {
+            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+            plane--;
+            MenuMode menuMode = getMenuMode(dataAttr, iDim);
 
-            if (!chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+            if (menuMode == MenuMode.ROW) {
+                List<Integer> drawList = chart.getDrawList();
+                int first = 0;
+                int last = 0;
+                int delta = 0;
+                if ((drawList != null) && !drawList.isEmpty()) {
+                     first = drawList.getFirst();
+                     last = drawList.getLast();
+                     delta = last -first;
+                }
+                if (iSpin == 0) {
+                    if (delta == 0) {
+                        chart.setDrawlist(plane);
+                    } else {
+                        first = plane;
+                        last = first + delta;
+                        drawList = new ArrayList<>();
+                        for (int i=first;i<=last;i++) {
+                            drawList.add(i);
+                            chart.setDrawlist(drawList);
+                        }
+                    }
+                } else {
+                    last = plane;
+                    drawList = new ArrayList<>();
+                    for (int i=first;i<=last;i++) {
+                        drawList.add(i);
+                        chart.setDrawlist(drawList);
+                    }
+                }
+
+                fxmlController.getActiveChart().refresh();
+            } else {
                 Axis axis = chart.getAxes().get(iDim);
                 int[] pts = new int[2];
                 pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
@@ -335,29 +461,134 @@ public class ViewController {
         }
     }
 
+    private void updateDimMenu(PolyChart chart, DatasetAttributes attr, MenuButton dimMenu, int iAxis) {
+        int nDim = attr.nDim;
+        String rowName = SpectrumStatusBar.DIM_NAMES[iAxis];
+        MenuItem menuItem = new MenuItem("Full");
+        dimMenu.getItems().add(menuItem);
+        menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
+
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            String dimName = attr.getDataset().getLabel(iDim);
+            menuItem = new MenuItem(iDim + 1 + ":" + dimName);
+            menuItem.addEventHandler(ActionEvent.ACTION, event -> dimAction(rowName, dimName));
+            dimMenu.getItems().add(menuItem);
+            if (fxmlController.isPhaseSliderVisible()) {
+                chart.updatePhaseDim();
+            }
+        }
+
+    }
+
+    MenuMode getMenuMode(DatasetAttributes attr, int iAxis) {
+        int nDim = attr.getDataset().getNDim();
+        int nFreqDim = attr.getDataset().getNFreqDims();
+        boolean traceMode = displayModeComboBox.getValue() == DisplayMode.TRACES;
+        if (iAxis == 0) {
+            return MenuMode.DIM;
+        } else {
+            if (traceMode) {
+                return MenuMode.ROW;
+            } else {
+                if (iAxis < nFreqDim) {
+                    if (iAxis < nFreqDim - 1) {
+                        return MenuMode.DIM;
+                    } else {
+                        return MenuMode.PLANE;
+                    }
+                } else {
+                    return MenuMode.ROW;
+                }
+            }
+        }
+    }
+
+    enum MenuMode {
+        DIM,
+        PLANE,
+        ROW
+    }
 
     private void updateXYMenu(MenuButton dimMenu, int iAxis) {
         PolyChart chart = fxmlController.getActiveChart();
         dimMenu.getItems().clear();
         chart.getFirstDatasetAttributes().ifPresent(attr -> {
-            int nDim = attr.nDim;
-            String rowName = SpectrumStatusBar.DIM_NAMES[iAxis];
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                String dimName = attr.getDataset().getLabel(iDim);
-                MenuItem menuItem = new MenuItem(iDim + 1 + ":" + dimName);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimAction(rowName, dimName));
-                dimMenu.getItems().add(menuItem);
-                if (fxmlController.isPhaseSliderVisible()) {
-                    chart.updatePhaseDim();
-                }
+            MenuMode menuMode = getMenuMode(attr, iAxis);
+            switch (menuMode) {
+                case MenuMode.DIM -> updateDimMenu(chart, attr, dimMenu, iAxis);
+                case MenuMode.PLANE -> updatePlaneMenu(chart, dimMenu, iAxis);
+                case MenuMode.ROW -> updateRowMenu(chart, dimMenu, iAxis);
             }
         });
+    }
+
+    private void updatePlaneMenu(PolyChart chart, MenuButton mButton, int iAxis) {
+        MenuItem fullItem = new MenuItem("Full");
+        fullItem.setOnAction(e -> {
+            chart.full(iAxis);
+            chart.refresh();
+        });
+        mButton.getItems().add(fullItem);
+
+        MenuItem centerItem = new MenuItem("Center");
+        centerItem.setOnAction(e -> {
+            chart.center(iAxis);
+            chart.refresh();
+        });
+        mButton.getItems().add(centerItem);
+
+        MenuItem firstItem = new MenuItem("First");
+        firstItem.setOnAction(e -> {
+            chart.firstPlane(iAxis);
+            chart.refresh();
+        });
+        mButton.getItems().add(firstItem);
+
+        MenuItem lastItem = new MenuItem("Last");
+        lastItem.setOnAction(e -> {
+            chart.lastPlane(iAxis);
+            chart.refresh();
+        });
+        mButton.getItems().add(lastItem);
+
+        MenuItem maxItem = new MenuItem("Max");
+        maxItem.setOnAction(e -> {
+            chart.gotoMaxPlane();
+            chart.refresh();
+        });
+        mButton.getItems().add(maxItem);
+
+
     }
 
 
     private void dimAction(String rowName, String dimName) {
         fxmlController.setDim(rowName, dimName);
     }
+
+    private void updateRowMenu(PolyChart chart, MenuButton mButton, int iAxis) {
+        MenuItem fullItem = new MenuItem("Full");
+        fullItem.setOnAction(e -> {
+            chart.clearDrawlist();
+            chart.refresh();
+        });
+        mButton.getItems().add(fullItem);
+
+        MenuItem firstItem = new MenuItem("First");
+        firstItem.setOnAction(e -> {
+            chart.setDrawlist(0);
+            chart.refresh();
+        });
+        mButton.getItems().add(firstItem);
+
+        MenuItem lastItem = new MenuItem("Last");
+        lastItem.setOnAction(e -> {
+            chart.setDrawlist(1000);
+            chart.refresh();
+        });
+        mButton.getItems().add(lastItem);
+    }
+
 
     private void dimMenuAction(ActionEvent event, int iAxis) {
         MenuItem menuItem = (MenuItem) event.getSource();
@@ -407,25 +638,7 @@ public class ViewController {
                 }
             });
 
-            if (i < 2) {
-                mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
-            } else {
-                MenuItem menuItem = new MenuItem("Full");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Center");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("First");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Last");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Max");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-            }
+            mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
             viewGridPane.add(upField, 1, i);
             viewGridPane.add(planeSpinner[i][0], 2, i);
             viewGridPane.add(lowField, 3, i);
@@ -466,10 +679,13 @@ public class ViewController {
 
     void updateView(PolyChart chart) {
         if ((viewLimitProps != null) && !chart.getDatasetAttributes().isEmpty()) {
+            DisplayMode displayMode = displayModeComboBox.getValue();
             DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
-            int nFreqDim = dataAttr.getDataset().getNFreqDims();
+            int nFreqDim = displayMode == DisplayMode.TRACES ? 1 : dataAttr.getDataset().getNFreqDims();
+            int nDim = dataAttr.getDataset().getNDim();
             var axes = chart.getAxes();
             int nAxes = axes.count();
+            nAxes = Math.min(nDim, nAxes);
             updateGridNodes(nAxes);
             for (int i = 0; i < nAxes; i++) {
                 Axis axis = chart.getAxes().get(i);
@@ -478,29 +694,37 @@ public class ViewController {
                     viewLimitProps[i][1].set(axis.getUpperBound());
                 }
             }
-            for (int axNum = 0; axNum < axes.count(); axNum++) {
+            for (int axNum = 0; axNum < nAxes; axNum++) {
                 Axis axis = chart.getAxes().get(axNum);
                 var axMode = chart.getAxes().getMode(axNum);
                 int indexL = axMode.getIndex(dataAttr, axNum, axis.getLowerBound());
                 int indexU = axMode.getIndex(dataAttr, axNum, axis.getUpperBound());
                 int finalAxNum = axNum;
+                int dDim = dataAttr.dim[axNum];
+                int size = dataAttr.getDataset().getSizeReal(dDim);
                 if (axNum >= nFreqDim) {
+                    if ((chart.getDrawList() != null) && (!chart.getDrawList().isEmpty())) {
+                        indexL = chart.getDrawList().getFirst();
+                        indexU = chart.getDrawList().getLast();
+                    }
                     getPlaneValue(axNum, indexL).ifPresent(v -> {
                         viewLimitProps[finalAxNum][0].set(v);
                     });
                     getPlaneValue(axNum, indexU).ifPresent(v -> {
                         viewLimitProps[finalAxNum][1].set(v);
                     });
-                }
-                int dDim = dataAttr.dim[axNum];
-                int size = dataAttr.getDataset().getSizeReal(dDim);
-                setPlaneRanges(axNum, size);
-                if (axMode == DatasetAttributes.AXMODE.PTS) {
+                    setPlaneRanges(axNum, size);
                     updatePlaneSpinner(indexL, axNum, 0);
                     updatePlaneSpinner(indexU, axNum, 1);
                 } else {
-                    updatePlaneSpinner(indexL, axNum, 1);
-                    updatePlaneSpinner(indexU, axNum, 0);
+                    setPlaneRanges(axNum, size);
+                    if (axMode == DatasetAttributes.AXMODE.PTS) {
+                        updatePlaneSpinner(indexL, axNum, 0);
+                        updatePlaneSpinner(indexU, axNum, 1);
+                    } else {
+                        updatePlaneSpinner(indexL, axNum, 1);
+                        updatePlaneSpinner(indexU, axNum, 0);
+                    }
                 }
                 setPlaneRange(axNum);
             }

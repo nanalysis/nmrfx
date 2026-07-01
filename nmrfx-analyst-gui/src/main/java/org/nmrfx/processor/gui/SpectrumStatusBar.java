@@ -29,6 +29,9 @@ import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -49,6 +52,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 /**
  * @author Bruce Johnson
@@ -71,10 +75,7 @@ public class SpectrumStatusBar {
     private final StackPane[][] crossTextIcons = new StackPane[2][2];
     private final StackPane[][] limitTextIcons = new StackPane[2][2];
     private final boolean[][] iconStates = new boolean[2][2];
-    private final CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
-    private final MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
-    private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
     private final SegmentedButton cursorButtons = new SegmentedButton();
     private final ToggleButton tableButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.TABLE, "Table",
@@ -99,6 +100,10 @@ public class SpectrumStatusBar {
         this.controller = controller;
     }
 
+    ComboBox<ViewController.DisplayMode> getDisplayModeComboBox() {
+        return controller.getViewController().getDisplayModeComboBox();
+    }
+
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
         tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
@@ -108,36 +113,6 @@ public class SpectrumStatusBar {
 
         Pane filler = createHorizontalSpacer();
         primaryToolbar.getItems().add(filler);
-
-        for (int i = 0; i < dimMenus.length; i++) {
-            final int iAxis = i;
-            String rowName = DIM_NAMES[iAxis];
-
-            MenuButton mButton = new MenuButton(rowName);
-            dimMenus[i] = mButton;
-            if (iAxis < 2) {
-                mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
-            } else {
-                MenuItem menuItem = new MenuItem("Full");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Center");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("First");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Last");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Max");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-            }
-        }
-        displayModeComboBox.getItems().setAll(DisplayMode.values());
-        displayModeComboBox.getSelectionModel().selectedItemProperty().addListener(e -> displayModeComboBoxSelectionChanged());
-
 
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
@@ -331,9 +306,9 @@ public class SpectrumStatusBar {
 
     private void chartDisplayDimensionChanged(ObservableValue<? extends PolyChart.DISDIM> observable, PolyChart.DISDIM oldValue, PolyChart.DISDIM newValue) {
         if (newValue == PolyChart.DISDIM.OneDX) {
-            displayModeComboBox.setValue(DisplayMode.TRACES);
+            getDisplayModeComboBox().setValue(ViewController.DisplayMode.TRACES);
         } else {
-            displayModeComboBox.setValue(DisplayMode.CONTOURS);
+            getDisplayModeComboBox().setValue(ViewController.DisplayMode.CONTOURS);
         }
     }
 
@@ -492,14 +467,14 @@ public class SpectrumStatusBar {
     }
 
     private void updatePrimaryToolbarFor1DArray(int nDim) {
+        System.out.println("update primary");
         List<Node> nodes = new ArrayList<>();
         nodes.add(tableButton);
         if (isStacked()) {
-            displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
+            getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.STACKPLOT);
         } else {
-            displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
+            getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.TRACES);
         }
-        nodes.add(displayModeComboBox);
         nodes.add(createHorizontalSpacer());
 
         nodes.add(new Label("Cursor:"));
@@ -554,7 +529,7 @@ public class SpectrumStatusBar {
     }
 
     private void setupPrimaryToolbarForSelectedMode() {
-        List<Node> nodes = new ArrayList<>();
+       List<Node> nodes = new ArrayList<>();
         nodes.add(tableButton);
         if (currentMode == DataMode.DATASET_1D) {
             cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
@@ -563,8 +538,7 @@ public class SpectrumStatusBar {
         }
 
         if (currentMode == DataMode.DATASET_2D) {
-            displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
-            nodes.add(displayModeComboBox);
+            getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.CONTOURS);
         }
 
         nodes.add(createHorizontalSpacer());
@@ -573,26 +547,18 @@ public class SpectrumStatusBar {
 
         //first dimension cross-hair
         if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(dimMenus[0]);
+            //nodes.add(dimMenus[0]);
         }
+        nodes.add(new Label("X:"));
         nodes.add(crossText[0][1]);
         nodes.add(crossText[1][1]);
 
         //second dimension cross-hair
-        if (currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(dimMenus[1]);
-        } else if (currentMode == DataMode.DATASET_2D) {
-            nodes.add(new Label("Y:"));
-        }
+        nodes.add(new Label("Y:"));
+
         nodes.add(crossText[0][0]);
         nodes.add(crossText[1][0]);
         nodes.add(createHorizontalSpacer());
-
-        // additional dimension spinners
-        for (int i = 2; i < currentModeDimensions; i++) {
-            nodes.add(dimMenus[i]);
-            nodes.add(createHorizontalSpacer());
-        }
 
         // complex checkbox, only for FID
         if (currentMode == DataMode.FID) {
@@ -684,57 +650,6 @@ public class SpectrumStatusBar {
         chart.refresh();
     }
 
-    /**
-     * Updates the spectrum status bar and the type of plot displayed in the active chart
-     * based on the selected option.
-     */
-    private void displayModeComboBoxSelectionChanged() {
-        PolyChart chart = controller.getActiveChart();
-        boolean autoScale = true;
-        OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
-        if (maxNDim.isEmpty()) {
-            log.warn("Unable to update display mode. No dimensions set.");
-            return;
-        }
-        DisplayMode selected = displayModeComboBox.getSelectionModel().getSelectedItem();
-        if (selected == DisplayMode.TRACES || selected == DisplayMode.STACKPLOT) {
-            OptionalInt maxRows = chart.getDatasetAttributes().stream().
-                    mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
-            if (maxRows.isEmpty()) {
-                log.warn("Unable to update display mode. No rows set.");
-                return;
-            }
-            chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
-            if (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES) {
-                chart.setDrawlist(0);
-            }
-
-            if (selected == DisplayMode.STACKPLOT) {
-                chart.clearDrawlist();
-                if (!isStacked()) {
-                    chart.getChartProperties().setStackX(0.35);
-                    chart.getChartProperties().setStackY(0.75);
-                }
-            } else {
-                chart.getChartProperties().setStackX(0.0);
-                chart.getChartProperties().setStackY(0.0);
-            }
-            set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-        } else if (selected == DisplayMode.CONTOURS) {
-            chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
-            chart.getDatasetAttributes().getFirst().drawList.clear();
-            autoScale = !chart.getDatasetAttributes().getFirst().getHasLevel();
-            chart.updateProjections();
-            chart.updateProjectionScale();
-            int nDim = maxNDim.getAsInt();
-            setMode(DataMode.fromDimensions(nDim), nDim);
-        }
-        chart.updateAxisType(true);
-        chart.full();
-        if (autoScale) {
-            chart.autoScale();
-        }
-    }
 
     private boolean isStacked() {
         PolyChart chart = controller.getActiveChart();
@@ -791,21 +706,6 @@ public class SpectrumStatusBar {
         }
     }
 
-    private enum DisplayMode {
-        TRACES("Traces (1D)"),
-        STACKPLOT("Stack Plot"),
-        CONTOURS("Contours (2D)");
-        private final String strValue;
-
-        DisplayMode(String strValue) {
-            this.strValue = strValue;
-        }
-
-        @Override
-        public String toString() {
-            return this.strValue;
-        }
-    }
 
     private Optional<Double> getPlaneValue(int axNum, int plane) {
         var dataOpt = getDatasetAttributes();
