@@ -7,9 +7,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.processor.gui.spectra.SliceAttributes;
 import org.nmrfx.utils.GUIUtils;
 
 import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.*;
@@ -55,13 +57,21 @@ public class PhaserController {
 
             if (!chart.is1D()) {
                 fxmlController.setCursor(CanvasCursor.SLICE.getCursor());
-                chart.getSliceAttributes().setSlice1State(true);
-                chart.getSliceAttributes().setSlice2State(false);
+                SliceAttributes sliceAttributes = chart.getSliceAttributes();
+                sliceAttributes.setSlice1State(true);
+                sliceAttributes.setSlice2State(true);
+                sliceAttributes.setSlice2Color(Color.RED);
+                sliceAttributes.setUseDatasetColor(false);
                 chart.getCrossHairs().refresh();
             }
         } else {
             fxmlController.setCursor(phaser.cursor());
             fxmlController.setCursor();
+            SliceAttributes sliceAttributes = chart.getSliceAttributes();
+            sliceAttributes.setSlice1State(true);
+            sliceAttributes.setSlice2State(false);
+            sliceAttributes.setSlice2Color(Color.RED);
+            sliceAttributes.setUseDatasetColor(true);
             chart.getCrossHairs().refresh();
         }
     }

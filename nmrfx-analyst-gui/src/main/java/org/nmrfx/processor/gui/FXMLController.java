@@ -323,7 +323,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isPhaseSliderVisible() {
-        return borderPane.getRight() == phaserBox || (processControllerVisible.get() && getActiveChart().getProcessorController().isPhaserActive());
+        boolean toolPhaserActive = (toolController != null) &&
+                nmrControlRightSidePane.getContentPane() == toolController.getPane() && toolController.isPhaserActive();
+        return toolPhaserActive || (processControllerVisible.get() && getActiveChart().getProcessorController().isPhaserActive());
     }
 
     public Stage getStage() {

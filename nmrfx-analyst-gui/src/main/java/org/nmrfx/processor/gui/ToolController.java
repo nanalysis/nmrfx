@@ -67,6 +67,10 @@ public class ToolController implements NmrControlRightSideContent {
         return chart;
     }
 
+    boolean isPhaserActive() {
+        return phaserPane.isExpanded();
+    }
+
     private void setChart(PolyChart activeChart) {
         this.chart = activeChart;
     }

@@ -63,6 +63,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
+import org.nmrfx.processor.gui.spectra.SliceAttributes;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
@@ -996,9 +997,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
             if (!chart.is1D()) {
                 fxmlController.sliceStatusProperty().set(true);
-                fxmlController.setCursor(Cursor.CROSSHAIR);
-                chart.getSliceAttributes().setSlice1State(true);
-                chart.getSliceAttributes().setSlice2State(false);
+                fxmlController.setCursor(CanvasCursor.SLICE.getCursor());
+                SliceAttributes sliceAttributes = chart.getSliceAttributes();
+                sliceAttributes.setSlice1State(true);
+                sliceAttributes.setSlice2State(true);
+                sliceAttributes.setSlice2Color(Color.RED);
+                sliceAttributes.setUseDatasetColor(false);
                 chart.getCrossHairs().refresh();
             }
         } else {
@@ -1006,6 +1010,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             fxmlController.sliceStatusProperty().set(phaser.sliceStatus);
             fxmlController.setCursor(phaser.cursor());
             fxmlController.setCursor();
+            SliceAttributes sliceAttributes = chart.getSliceAttributes();
+            sliceAttributes.setSlice1State(true);
+            sliceAttributes.setSlice2State(false);
+            sliceAttributes.setSlice2Color(Color.RED);
+            sliceAttributes.setUseDatasetColor(true);
+
             chart.getCrossHairs().refresh();
         }
     }
