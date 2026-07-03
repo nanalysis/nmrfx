@@ -24,6 +24,8 @@ public class ToolController implements NmrControlRightSideContent {
     @FXML
     Accordion toolAccordion;
     @FXML
+    TitledPane phaserPane;
+    @FXML
     TitledPane annoPane;
     @FXML
     TitledPane peakPickPane;
@@ -31,6 +33,7 @@ public class ToolController implements NmrControlRightSideContent {
     TitledPane libraryPane;
     PolyChart chart;
     FXMLController fxmlController;
+    PhaserController phaserController;
     AnnotationController annotationController;
     ChemicalLibraryController libraryController;
 
@@ -42,12 +45,19 @@ public class ToolController implements NmrControlRightSideContent {
         Fxml.Builder builder = Fxml.load(ToolController.class, "ToolController.fxml");
         ToolController controller = builder.getController();
         controller.fxmlController = fxmlController;
+
+        controller.phaserController = new PhaserController();
+        controller.phaserController.setup(fxmlController, controller.phaserPane);
+
         controller.annotationController = new AnnotationController();
         controller.annotationController.setup(fxmlController, controller.annoPane);
+
         controller.peakPickController = new PeakPickController();
+        controller.peakPickController.setup(fxmlController,controller.peakPickPane);
+
         controller.libraryController = new ChemicalLibraryController();
         controller.libraryController.setup(fxmlController, controller.libraryPane);
-        controller.peakPickController.setup(fxmlController,controller.peakPickPane);
+
         controller.setChart(fxmlController.getActiveChart());
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.RIGHT_TOOLS, controller);
 

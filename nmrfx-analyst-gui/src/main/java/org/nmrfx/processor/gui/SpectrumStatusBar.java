@@ -86,7 +86,6 @@ public class SpectrumStatusBar {
     private final ToolBar secondaryToolbar = new ToolBar();
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
-    private final ToggleButton phaserButton = new ToggleButton("Phasing");
     List<Control> extractControls = new ArrayList<>();
 
 
@@ -135,10 +134,7 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(filler);
         primaryToolbar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatusChanged);
-        phaserButton.setOnAction(event -> controller.updatePhaser(phaserButton.isSelected()));
-        phaserButton.disableProperty().bind(controller.processControllerVisibleProperty());
 
-        primaryToolbar.getItems().add(phaserButton);
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
@@ -481,11 +477,6 @@ public class SpectrumStatusBar {
             }
         }
         nodes.add(createHorizontalSpacer());
-        PolyChart activeChart = controller.getActiveChart();
-        List<Integer> drawList;
-        for (int i = 1; i < nDim; i++) {
-        }
-        nodes.add(phaserButton);
         primaryToolbar.getItems().setAll(nodes);
     }
 
@@ -549,8 +540,6 @@ public class SpectrumStatusBar {
         if (currentMode == DataMode.FID) {
             nodes.add(complexStatus);
         }
-
-        nodes.add(phaserButton);
 
         primaryToolbar.getItems().setAll(nodes);
     }

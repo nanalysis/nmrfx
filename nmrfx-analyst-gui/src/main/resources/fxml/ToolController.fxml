@@ -12,6 +12,7 @@
     <ScrollPane fx:id="toolScrollPane" fitToHeight="true" fitToWidth="true">
         <Accordion fx:id="toolAccordion">
             <panes>
+                <TitledPane fx:id="phaserPane" text="Phaser"/>
                 <TitledPane fx:id="peakPickPane" text="PeakPicker"/>
                 <TitledPane fx:id="libraryPane" text="Chemical Library"/>
                 <TitledPane fx:id="annoPane" text="Annotations"/>
