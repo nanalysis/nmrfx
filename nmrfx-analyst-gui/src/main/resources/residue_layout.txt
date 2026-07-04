@@ -1,0 +1,723 @@
+ala	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB*	0	1.8	c
+ala	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB*	f
+arg	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+HG2	-1.0	2	c
+HG3	1.0	2	c
+CD	0	3	c
+HD3	-1.0	3	c
+HD2	1.0	3	c
+NE	0	4	c
+HE	-1.0	4	c
+CZ	0	5	c
+NH2	-1.0	5.6	c
+NH1	1.0	5.6	c
+HH21	-1.8	5.0	c
+HH22	-1.3	6.4	c
+HH11	1.8	5.0	c
+HH12	1.3	6.4	c
+arg	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG3	u
+CG	HG2	u
+CG	CD	d
+CD	HD2	d
+CD	HD3	d
+CD	NE	u
+NE	HE	f
+NE	CZ	f
+CZ	NH2	f
+NH2	HH21	f
+NH2	HH22	f
+CZ	NH1	f
+NH1	HH11	f
+NH1	HH12	f
+asn	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+OD1	-1.0	2.8	c
+ND2	1.0	2.8	c
+HD22	1.0	3.6	c
+HD21	2.0	2.8	c
+asn	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	OD1	2
+CG	ND2	f
+ND2	HD22	f
+ND2	HD21	f
+asp	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+OD1	-1.0	2.8	c
+OD2	1.0	2.8	c
+HD2	1.0	3.6	c
+asp	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	OD1	2
+CG	OD2	f
+OD2	HD2	f
+cys	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+SG	0	1.8	c
+HG	0.8	2.4	c
+cys	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	SG	u
+SG	HG	f
+gln	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+HG2	-1.0	2	c
+HG3	1.0	2	c
+CD	0	3	c
+OE1	-1.0	3.8	c
+NE2	1.0	3.8	c
+HE22	1.0	4.6	c
+HE21	2.0	3.8	c
+gln	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG3	u
+CG	HG2	u
+CG	CD	d
+CD	OE1	2
+CD	NE2	f
+NE2	HE22	f
+NE2	HE21	f
+glu	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+HG2	-1.0	2	c
+HG3	1.0	2	c
+CD	0	3	c
+OE1	-1.0	3.8	c
+OE2	1.0	3.8	c
+HE2	1.0	4.6	c
+glu	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG3	u
+CG	HG2	u
+CG	CD	d
+CD	OE1	2
+CD	OE2	f
+OE2	HE2	f
+gly	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA2	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+HA3	0	1.0	c
+gly	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA3	d
+CA	HA2	d
+his	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+ND1	-1.0	2.6	c
+HD1	-1.8	2.2	c
+CD2	1.0	2.6	c
+HD2	1.8	2.2	c
+CE1	-0.8	3.4	c
+HE1	-1.4	4.0	c
+NE2	0.8	3.4	c
+HE2	1.4	4.0	c
+his	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	ND1	f
+CG	CD2	2
+CD2	HD2	f
+ND1	CE1	f
+ND1	HD1	f
+CE1	NE2	2
+CE1	HE1	f
+NE2	CD2	f
+NE2	HE2	f
+ile	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+CG2	-1	1.0	c
+HG2*	-2	1.0	c
+HB	1	1.0	c
+CG1	0	2.0	c
+HG12	-1	2.0	c
+HG13	1	2.0	c
+CD1	0.0	3.0	c
+HD1*	0.0	3.8	c
+ile	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	CG2	d
+CB	HB	d
+CB	CG1	u
+CG1	HG12	u
+CG1	HG13	u
+CG1	CD1	d
+CD1	HD1*	f
+leu	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1	1.0	c
+HB2	1	1.0	c
+CG	0	2.0	c
+HG	0	2.8	c
+CD1	-1.0	2.4	c
+CD2	1.0	2.4	c
+HD1*	-2.0	2.4	c
+HD2*	2.0	2.4	c
+leu	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG	d
+CG	CD1	u
+CG	CD2	u
+CD1	HD1*	f
+CD2	HD2*	f
+lys	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+HG2	-1.0	2	c
+HG3	1.0	2	c
+CD	0	3	c
+HD3	-1.0	3	c
+HD2	1.0	3	c
+CE	0	4	c
+HE2	-1.0	4	c
+HE3	1.0	4	c
+NZ	0	5	c
+HZ*	0	5.8	c
+lys	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG3	u
+CG	HG2	u
+CG	CD	d
+CD	HD2	d
+CD	HD3	d
+CD	CE	u
+CE	HE3	u
+CE	HE2	u
+CE	NZ	d
+NZ	HZ*	f
+met	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+HG2	-1.0	2	c
+HG3	1.0	2	c
+SD	0	3	c
+CE	0	3.8	c
+HE*	0	4.4	c
+met	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG3	u
+CG	HG2	u
+CG	SD	d
+SD	HE*	f
+pro	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	1.0	1.0	c
+HB3	0	0.8	c
+HB2	2.0	1.6	c
+CG	-0.5	2	c
+HG2	-0.5	1.2	c
+HG3	-0.5	3.0	c
+CD	-1.8	1.0	c
+HD2	-2.4	1.6	c
+HD3	-0.8	0.8	c
+pro	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	HG3	u
+CG	HG2	u
+CG	CD	d
+CD	HD2	d
+CD	HD3	d
+CD	N	u
+ser	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+OG	0	1.8	c
+HG	0.8	2.4	c
+ser	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	OG	u
+OG	HG	f
+thr	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB	-1.0	1.0	c
+OG1	1.0	1.0	c
+HG1	1.8	1.0	c
+CG2	0	1.8	c
+HG2*	0	2.4	c
+thr	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB	d
+CB	OG1	d
+CB	CG2	u
+OG1	HG1	f
+CG2	HG2*	f
+	
+	
+trp	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+CD1	1.0	2	c
+HD1	1.8	1.5	c
+CD2	0	3	c
+CE2	1.0	3	c
+NE1	1.5	2.5	c
+HE1	2.5	2.5	c
+CE3	-0.5	3.5	c
+HE3	-1.5	3.5	c
+CZ2	1.5	3.5	c
+HZ2	2.5	3.5	c
+CZ3	0	4	c
+HZ3	-0.5	4.7	c
+CH2	1.0	4	c
+HH2	1.5	4.7	c
+
+trp	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	CD1	2
+CG	CD2	f
+CD2	CE2	f
+CD1	NE1	f
+CD1	HD1	f
+CE2	NE1	f
+NE1	HE1	f
+CD2	CE3	f
+CE2	CZ2	f
+CE3	CZ3	2
+CZ3	CH2	f
+CH2	CZ2	2
+CE3	HE3	f
+CZ3	HZ3	f
+CH2	HH2	f
+CZ2	HZ2	f
+phe	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+CD1	-1.0	2.8	c
+CD2	1.0	2.8	c
+HD1	-1.8	2.2	c
+HD2	1.8	2.2	c
+CE1	-1.0	3.8	c
+CE2	1.0	3.8	c
+HE1	-1.8	4.4	c
+HE2	1.8	4.4	c
+CZ	0	4.6	c
+HZ	0	5.6	c
+phe	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	CD1	2
+CG	CD2	f
+CD1	CE1	f
+CD2	CE2	2
+CE1	CZ	2
+CE2	CZ	f
+CD1	HD1	f
+CD2	HD2	f
+CE1	HE1	f
+CE2	HE2	f
+CZ	HZ	f
+tyr	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB3	-1.0	1.0	c
+HB2	1.0	1.0	c
+CG	0	2	c
+CD1	-1.0	2.8	c
+CD2	1.0	2.8	c
+HD1	-1.8	2.2	c
+HD2	1.8	2.2	c
+CE1	-1.0	3.8	c
+CE2	1.0	3.8	c
+HE1	-1.8	4.4	c
+HE2	1.8	4.4	c
+CZ	0	4.6	c
+OH	0	5.6	c
+HH	0.8	6.4	c
+tyr	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB3	d
+CB	HB2	d
+CB	CG	u
+CG	CD1	2
+CG	CD2	f
+CD1	CE1	f
+CD2	CE2	2
+CE1	CZ	2
+CE2	CZ	f
+CD1	HD1	f
+CD2	HD2	f
+CE1	HE1	f
+CE2	HE2	f
+CZ	OH	f
+OH	HH	f
+val	atoms
++	-2.0	0	c
+N	-1.0	0	c
+H	-1.0	-0.8	c
+CA	0	0	c
+HA	0	-1.0	c
+C	1.0	0	c
+O	1.0	-0.8	c
+-	2.0	0	c
+CB	0	1.0	c
+HB	0	1.8	c
+CG2	-1.0	1.0	c
+CG1	1.0	1.0	c
+HG2*	-2.0	1.0	c
+HG1*	2.0	1.0	c
+val	bonds
+N	+	f
+N	H	f
+C	O	2
+C	-	f
+CA	N	u
+CA	C	u
+CA	HA	d
+CA	CB	d
+CB	HB	u
+CB	CG1	d
+CB	CG2	d
+CG1	HG1*	f
+CG2	HG2*	f
