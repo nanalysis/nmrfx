@@ -12,6 +12,7 @@ import org.nmrfx.analyst.gui.MenuActions;
 import org.nmrfx.analyst.gui.molecule3D.MolSceneController;
 import org.nmrfx.analyst.gui.molecule3D.RNASSViewController;
 import org.nmrfx.analyst.gui.peaks.NOETableController;
+import org.nmrfx.analyst.gui.tools.ResidueLayoutTool;
 import org.nmrfx.chemistry.AtomContainer;
 import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.chemistry.Polymer;
@@ -42,6 +43,8 @@ public class MoleculeMenuActions extends MenuActions {
     private RDCGUI rdcGUI = null;
     private RNAPeakGeneratorSceneController rnaPeakGenController;
     private NOETableController noeTableController;
+    private ResidueLayoutTool residueLayoutTool = null;
+
 
     public MoleculeMenuActions(AnalystApp app, Menu menu) {
         super(app, menu);
@@ -118,6 +121,8 @@ public class MoleculeMenuActions extends MenuActions {
         MenuItem rnaMenuItem = new MenuItem("Nucleic Acid Viewer...");
         rnaMenuItem.setOnAction(e -> showRNA());
 
+        MenuItem residuesItem = new MenuItem("Residue Topology...");
+        residuesItem.setOnAction(e -> showResidueLayoutTool());
 
         Menu molConstraintsMenu = new Menu("Constraints");
 
@@ -133,7 +138,7 @@ public class MoleculeMenuActions extends MenuActions {
         rnaPeakGenMenuItem.setOnAction(this::showRNAPeakGenerator);
 
         menu.getItems().addAll(seqGUIMenuItem, atomsMenuItem,
-                sequenceMenuItem, molMenuItem, rnaMenuItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
+                sequenceMenuItem, molMenuItem, rnaMenuItem, residuesItem, renumberItem, molConstraintsMenu, rnaPeakGenMenuItem);
     }
 
     void clearExisting() {
@@ -195,6 +200,15 @@ public class MoleculeMenuActions extends MenuActions {
         }
         rdcGUI.showRDCplot();
     }
+
+    private void showResidueLayoutTool() {
+        if (residueLayoutTool == null) {
+            residueLayoutTool = new ResidueLayoutTool();
+        }
+        residueLayoutTool.showResidues();
+    }
+
+
 
     public void updateRDC(File starFile) {
         if (rdcGUI != null) {
