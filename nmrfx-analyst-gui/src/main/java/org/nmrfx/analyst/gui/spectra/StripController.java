@@ -27,6 +27,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.util.Subscription;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
@@ -93,6 +94,9 @@ public class StripController implements ControllerTool {
     StripsTable stripsTable;
     ObservableList<Peak> sortedPeaks;
     int currentStart = 0;
+    Subscription peakSub = null;
+    Subscription dataSub = null;
+
     public StripController(FXMLController controller, Consumer<StripController> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
@@ -104,6 +108,12 @@ public class StripController implements ControllerTool {
 
     public void close() {
         controller.getMainBox().setRight(null);
+        if (peakSub != null) {
+            peakSub.unsubscribe();
+        }
+        if (dataSub != null) {
+            dataSub.unsubscribe();
+        }
         closeAction.accept(this);
     }
 
@@ -193,7 +203,7 @@ public class StripController implements ControllerTool {
         itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        GUIProject.getActive().addDatasetListSubscription(this::updateDatasetNames);
+        dataSub = GUIProject.getActive().addDatasetListSubscription(this::updateDatasetNames);
 
         Label offsetLabel = new Label("Offset:");
         offsetBox = new ChoiceBox<>();
@@ -212,7 +222,7 @@ public class StripController implements ControllerTool {
                 new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
+        peakSub = GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();

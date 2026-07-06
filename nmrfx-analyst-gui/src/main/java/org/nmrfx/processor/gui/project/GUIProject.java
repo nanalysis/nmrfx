@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,8 +49,8 @@ public class GUIProject extends StructureProject {
 
     private static Timeline timeline = null;
 
-    Subscription peakListSubscriptions = Subscription.EMPTY;
-    Subscription datasetMapSubscriptions = Subscription.EMPTY;
+    private final List<Subscription> datasetMapSubscriptions = new ArrayList<>();
+    private final List<Subscription> peakListSubscriptions = new ArrayList<>();
 
     public GUIProject(String name) {
         super(name);
@@ -143,10 +144,11 @@ public class GUIProject extends StructureProject {
         if (timeline != null) {
             timeline.stop();
         }
-        peakListSubscriptions.unsubscribe();
-        datasetMapSubscriptions.unsubscribe();
-        peakListSubscriptions = Subscription.EMPTY;
-        datasetMapSubscriptions = Subscription.EMPTY;
+        datasetMapSubscriptions.forEach(Subscription::unsubscribe);
+        datasetMapSubscriptions.clear();
+        peakListSubscriptions.forEach(Subscription::unsubscribe);
+        peakListSubscriptions.clear();
+
         clearAllMolecules();
         clearAllPeakLists();
         clearAllDatasets();
@@ -243,14 +245,24 @@ public class GUIProject extends StructureProject {
         WindowIO.saveWindows(dir);
     }
 
-    public void addPeakListSubscription(Runnable runnable) {
-        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
-        peakListSubscriptions = peakListSubscriptions.and(obsMap.subscribe(runnable));
+    public Subscription addDatasetListSubscription(Runnable runnable) {
+        ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
+        Subscription sub = obsMap.subscribe(runnable);
+        datasetMapSubscriptions.add(sub);
+        return () -> {
+            sub.unsubscribe();
+            datasetMapSubscriptions.remove(sub);
+        };
     }
 
-    public void addDatasetListSubscription(Runnable runnable) {
-        ObservableMap<String, DatasetBase> obsMap = (ObservableMap<String, DatasetBase>) datasetMap;
-        datasetMapSubscriptions = datasetMapSubscriptions.and(obsMap.subscribe(runnable));
+    public Subscription addPeakListSubscription(Runnable runnable) {
+        ObservableMap<String, PeakList> obsMap = (ObservableMap<String, PeakList>) peakLists;
+        Subscription sub = obsMap.subscribe(runnable);
+        peakListSubscriptions.add(sub);
+        return () -> {
+            sub.unsubscribe();
+            peakListSubscriptions.remove(sub);
+        };
     }
 
     public void checkSubDirs(Path projectDir) throws IOException {

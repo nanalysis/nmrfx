@@ -10,6 +10,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.util.Subscription;
 import org.controlsfx.control.ListSelectionView;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.peaks.PeakList;
@@ -43,6 +44,8 @@ public class ContentController implements NmrControlRightSideContent {
     PolyChart chart;
     ListChangeListener<String> peakTargetListener;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox<>();
+    private Subscription datasetSub;
+    private Subscription peakSub;
 
     public static ContentController create(FXMLController fxmlController) {
         Fxml.Builder builder = Fxml.load(ContentController.class, "ContentController.fxml");
@@ -65,10 +68,16 @@ public class ContentController implements NmrControlRightSideContent {
 
         peakTargetListener = (ListChangeListener.Change<? extends String> c) -> updateChartPeakLists();
         peakView.getTargetItems().addListener(peakTargetListener);
-        GUIProject.getActive().addDatasetListSubscription(this::update);
-        GUIProject.getActive().addPeakListSubscription(this::update);
+        datasetSub = GUIProject.getActive().addDatasetListSubscription(this::update);
+        peakSub = GUIProject.getActive().addPeakListSubscription(this::update);
         peakTitledPane.expandedProperty().addListener(e -> update());
         datasetTitledPane.expandedProperty().addListener(e -> update());
+    }
+
+    public void close() {
+        if (datasetSub != null) datasetSub.unsubscribe();
+        if (peakSub != null) peakSub.unsubscribe();
+        peakView.getTargetItems().removeListener(peakTargetListener);
     }
 
     public Pane getPane() {
