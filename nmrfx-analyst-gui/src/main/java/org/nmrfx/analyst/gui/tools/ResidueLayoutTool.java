@@ -24,6 +24,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
 
 import java.io.*;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -37,12 +38,13 @@ public class ResidueLayoutTool {
             "H", Color.GREEN,
             "N", Color.BLUE,
             "O", Color.RED,
-            "S", Color.ORANGE);
+            "S", Color.ORANGE,
+            "P", Color.CYAN);
 
 
     BorderPane borderPane = new BorderPane();
     Stage stage = null;
-    Scene stageScene = new Scene(borderPane, 450, 400);
+    Scene stageScene = new Scene(borderPane, 600, 550);
     ToggleGroup toggleGroup = new ToggleGroup();
     ToggleGroup labelGroup = new ToggleGroup();
     Pane pane;
@@ -89,11 +91,14 @@ public class ResidueLayoutTool {
         borderPane.setTop(toolBar);
         VBox vBox = new VBox();
         pane = new Pane();
-        residueAtomMap.keySet().stream().sorted().forEach(resName -> {
-            RadioButton radioButton = new RadioButton(resName);
-            vBox.getChildren().add(radioButton);
-            radioButton.setToggleGroup(toggleGroup);
-        });
+        residueAtomMap.keySet().stream()
+                .sorted(Comparator.comparingInt(String::length)
+                        .thenComparing(Comparator.naturalOrder()))
+                .forEach(resName -> {
+                    RadioButton radioButton = new RadioButton(resName);
+                    vBox.getChildren().add(radioButton);
+                    radioButton.setToggleGroup(toggleGroup);
+                });
         toggleGroup.selectToggle((RadioButton) vBox.getChildren().getFirst());
         borderPane.setLeft(vBox);
         borderPane.setCenter(pane);
@@ -178,7 +183,7 @@ public class ResidueLayoutTool {
         Map<String, AtomRecord> atoms = residueAtomMap.get(resName);
         double scale = 45;
         double centerX = 140.0;
-        double centerY = pane.getHeight() - 75;
+        double centerY = pane.getHeight() - 100;
         BMRBStats.loadAllIfEmpty();
         for (Map.Entry<String, AtomRecord> entry : atoms.entrySet()) {
             String aName = entry.getKey().toUpperCase();
@@ -191,7 +196,7 @@ public class ResidueLayoutTool {
                     String.format(format, ppmVOpt.get().getValue()) : aName;
             String ppmLabel = "";
             if (ppmVOpt.isPresent()) {
-                ppmLabel = String.format(format +  " ± " + format, ppmVOpt.get().getValue(), ppmVOpt.get().getError());
+                ppmLabel = String.format(format + " ± " + format, ppmVOpt.get().getValue(), ppmVOpt.get().getError());
             }
             String toolTipLabel;
             if (ppmMode) {
@@ -281,6 +286,7 @@ public class ResidueLayoutTool {
 
         return triangleArrow;
     }
+
     private Line createOffsetLine(double startX, double startY, double endX, double endY, double arrowWidth) {
         double deltaX = endX - startX;
         double deltaY = endY - startY;
