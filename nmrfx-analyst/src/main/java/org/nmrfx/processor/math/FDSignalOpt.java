@@ -32,6 +32,8 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.nmrfx.annotations.PluginAPI;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @PluginAPI("parametric")
 public class FDSignalOpt implements MultivariateFunction {
@@ -46,7 +48,7 @@ public class FDSignalOpt implements MultivariateFunction {
     private double[][] normBoundaries = null;
     private double[] normValues;
     private boolean absMode = false;
-    ArrayList<Signal> signals;
+    List<Signal> signals;
     public static final RandomGenerator DEFAULT_RANDOMGENERATOR = new MersenneTwister(1);
     double bestValue = Double.MAX_VALUE;
     double[] bestPars;
@@ -57,7 +59,7 @@ public class FDSignalOpt implements MultivariateFunction {
     private double[] weights;
     private final int[] parMap;
 
-    public FDSignalOpt(double[] testVec, int vecSize, ArrayList<? extends Signal> signals, boolean constrainWidth, int leftEdge, int rightEdge) {
+    public FDSignalOpt(double[] testVec, int vecSize, List<? extends Signal> signals, boolean constrainWidth, int leftEdge, int rightEdge) {
         this.testVec = testVec;
         this.values = new double[vecSize];
         this.vecSize = vecSize;
@@ -159,14 +161,12 @@ public class FDSignalOpt implements MultivariateFunction {
 
     public double fromNormalized(double value, int i) {
         double f = (value - normBoundaries[0][i]) / (normBoundaries[1][i] - normBoundaries[0][i]);
-        double normValue = f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
-        return normValue;
+        return f * (boundaries[1][i] - boundaries[0][i]) + boundaries[0][i];
     }
 
     public double toNormalized(double value, int i) {
         double f = (value - boundaries[0][i]) / (boundaries[1][i] - boundaries[0][i]);
-        double normValue = f * (normBoundaries[1][i] - normBoundaries[0][i]) + normBoundaries[0][i];
-        return normValue;
+        return f * (normBoundaries[1][i] - normBoundaries[0][i]) + normBoundaries[0][i];
     }
 
     private void fillVecBySignals() {
@@ -199,19 +199,17 @@ public class FDSignalOpt implements MultivariateFunction {
 
     public final void calcWeights() {
         weights = new double[testVec.length];
-        for (int i = 0; i < weights.length; i++) {
-            weights[i] = 1.0;
-        }
+        Arrays.fill(weights, 1.0);
         int n = leftEdge;
         // Approximate formula for giving width at tenth max equal to n
         double c = 2 * n / 4.29193;
         for (int i = 0; i < n; i++) {
-            double delta = n - i;
+            double delta = (double) n - i;
             weights[i] = Math.exp(-delta * delta / (2.0 * c * c));
         }
         n = rightEdge;
         for (int i = 0; i < n; i++) {
-            double delta = n - i;
+            double delta = (double) n - i;
             weights[testVec.length - i - 1] = Math.exp(-delta * delta / (2.0 * c * c));
         }
     }
@@ -257,7 +255,7 @@ public class FDSignalOpt implements MultivariateFunction {
         return value;
     }
 
-    public ArrayList<Signal> refineBOBYQA(final int nSteps, final double stopTrust) {
+    public List<Signal> refineBOBYQA(final int nSteps, final double stopTrust) {
         setBoundaries(0.3);
         startValue = calcRMS();
 
@@ -275,8 +273,6 @@ public class FDSignalOpt implements MultivariateFunction {
                     new ObjectiveFunction(this), GoalType.MINIMIZE,
                     new SimpleBounds(normBoundaries[0], normBoundaries[1]),
                     new InitialGuess(normValues));
-        } catch (TooManyEvaluationsException e) {
-            result = new PointValuePair(bestPars, bestValue);
         } catch (MathIllegalStateException e) {
             result = new PointValuePair(bestPars, bestValue);
         }

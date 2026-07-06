@@ -27,6 +27,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
+import javafx.util.Subscription;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -164,6 +165,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     Map<SpinSystem, Color> spinSystemColorMap = new HashMap<>();
 
     ResSeqMatcher resSeqMatcher = null;
+    Subscription peakSub = null;
 
     public RunAboutGUI(FXMLController controller, Consumer<RunAboutGUI> closeAction) {
         this.controller = controller;
@@ -209,7 +211,16 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     public void close() {
-        closeAction.accept(this);
+        if (GUIUtils.affirm("Remove RunAbout Tool?")) {
+            closeAction.accept(this);
+            if (runAbout != null) {
+                runAbout.close();
+                if (peakSub != null) {
+                    peakSub.unsubscribe();
+                }
+            }
+            clear();
+        }
     }
 
     public TabPane getTabPane() {
@@ -511,7 +522,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         }
         peakTableView.getItems().addAll(peakListSelectors);
 
-        GUIProject.getActive().addPeakListSubscription(this::updatePeakTableView);
+        peakSub = GUIProject.getActive().addPeakListSubscription(this::updatePeakTableView);
 
         Button configureButton = new Button("Inspector");
         configureButton.setOnAction(e -> inspectPeakList());
