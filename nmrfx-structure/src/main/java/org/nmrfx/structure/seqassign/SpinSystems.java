@@ -197,7 +197,7 @@ public class SpinSystems {
         if (rootPeak != pkB) {
             PeakList peakListB = pkB.getPeakList();
             double[] sumArray = sums.get(peakListB);
-            if (rootPeak.getPeakList() != peakListB) {
+            if ((sumArray != null) && (rootPeak.getPeakList() != peakListB)) {
                 int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
                 double f = comparePeaks(rootPeak, pkB, aMatch);
                 if (f >= 0.0) {
@@ -655,9 +655,13 @@ public class SpinSystems {
             if (peakListOpt.isPresent()) {
                 PeakList peakList = peakListOpt.get();
                 Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                int id = spinSystemIDs.get(i);
-                SpinSystem spinSystem = new SpinSystem(peak, this);
-                systemMap.put(id, spinSystem);
+                if (peak != null) {
+                    int id = spinSystemIDs.get(i);
+                    SpinSystem spinSystem = new SpinSystem(peak, this);
+                    systemMap.put(id, spinSystem);
+                } else {
+                    log.warn("Peak not found " + peakList.getName() + "." + peakIDColumn.get(i));
+                }
             }
         }
         for (int i = 0; i < spinSystemIDs.size(); i++) {
