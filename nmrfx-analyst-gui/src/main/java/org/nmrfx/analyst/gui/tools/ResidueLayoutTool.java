@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -16,6 +17,7 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.processor.gui.PolyChart;
@@ -184,8 +186,21 @@ public class ResidueLayoutTool {
             Optional<PPMv> ppmVOpt = BMRBStats.getValue(resName.toUpperCase(), ppmAtomName);
 
             String format = aName.charAt(0) == 'H' ? "%.2f" : "%.1f";
-            String label = ppmVOpt.isPresent() && ((RadioButton) labelGroup.getSelectedToggle()).getText().equalsIgnoreCase("ppm") ?
+            boolean ppmMode = ((RadioButton) labelGroup.getSelectedToggle()).getText().equalsIgnoreCase("ppm");
+            String label = ppmVOpt.isPresent() && ppmMode ?
                     String.format(format, ppmVOpt.get().getValue()) : aName;
+            String ppmLabel = "";
+            if (ppmVOpt.isPresent()) {
+                ppmLabel = String.format(format +  " ± " + format, ppmVOpt.get().getValue(), ppmVOpt.get().getError());
+            }
+            String toolTipLabel;
+            if (ppmMode) {
+                toolTipLabel = aName;
+            } else {
+                if (ppmVOpt.isPresent()) toolTipLabel = ppmLabel;
+                else toolTipLabel = "";
+            }
+
             Color color = colors.get(aName.toUpperCase().substring(0, 1));
             AtomRecord atomRecord = entry.getValue();
             double x = atomRecord.x * scale + centerX;
@@ -197,6 +212,9 @@ public class ResidueLayoutTool {
             text.setY(y);
             text.setFill(color);
             text.setTextAlignment(TextAlignment.CENTER);
+            Tooltip tooltip = new Tooltip(toolTipLabel);
+            tooltip.setShowDelay(Duration.millis(250));
+            Tooltip.install(text, tooltip);
 
             pane.getChildren().add(text);
         }
