@@ -2377,11 +2377,11 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             return;
         }
         var currentLists = runAbout.getPeakLists();
-        var peakLists = peakTableView.getItems().stream().
+        var newPeakLists = peakTableView.getItems().stream().
                 filter(PeakListSelection::getActive).
                 map(p -> p.peakList).
                 filter(p -> !currentLists.contains(p)).toList();
-        runAbout.addLists(peakLists);
+        runAbout.addLists(newPeakLists);
         clusterStatus.refresh();
         genWin(currentArrangement);
         gotoSpinSystems();
