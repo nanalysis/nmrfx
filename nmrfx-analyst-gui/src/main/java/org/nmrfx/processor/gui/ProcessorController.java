@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.Observable;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
@@ -400,6 +401,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private TitledPane addTitlePane(ProcessingSection section, String title) {
         TitledPane titledPane = new TitledPane();
+        titledPane.getStyleClass().add(Styles.DENSE);
         titledPane.expandedProperty().addListener(c -> setActivePane(section, titledPane));
         titledPane.setText(title);
         addTitleBar(titledPane, title, true);
@@ -1733,6 +1735,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
+        referencePane.getStyleClass().add(Styles.DENSE);
+
         referencePane.setText("PARAMETERS");
         addTitleBar(referencePane, "PARAMETERS", false);
 

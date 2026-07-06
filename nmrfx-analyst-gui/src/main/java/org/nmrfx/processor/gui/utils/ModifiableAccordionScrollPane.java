@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui.utils;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.event.Event;
@@ -95,6 +96,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
+            getStyleClass().add(Styles.DENSE);
         }
 
         public ModifiableTitlePane(ModifiableAccordionScrollPane accordionScrollPane, ProcessorController processorController, ProcessingOperationGroup processingOperation) {
