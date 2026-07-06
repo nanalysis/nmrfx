@@ -218,6 +218,10 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         for (PolyChart chart : tempCharts) {
             chart.close();
         }
+        if (contentController != null) {
+            contentController.close();
+        }
+
         chartPane.getChildren().clear();
         chartPane = null;
         charts.clear();
@@ -732,7 +736,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
             Integer scale = (Integer) GUIUtils.choice(scaleChoices, "Scale image by this amount", 1);
             chartDrawingLayers.getTopPane().setVisible(false);
             GUIUtils.snapNode(chartPane, selectedFile, scale.doubleValue());
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             GUIUtils.warn("Error saving png file", ex.getLocalizedMessage());
         } finally {
             chartDrawingLayers.getTopPane().setVisible(true);
@@ -2176,11 +2180,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
 
     public void removeRunaboutTool() {
         getRunAboutTool().ifPresent(runAboutGUI -> {
-            RunAbout runAbout = runAboutGUI.getRunAbout();
-            if (runAbout != null) {
-                runAbout.close();
-            }
-            runAboutGUI.clear();
+            runAboutGUI.close();
             removeRunaboutTool(runAboutGUI);
         });
     }

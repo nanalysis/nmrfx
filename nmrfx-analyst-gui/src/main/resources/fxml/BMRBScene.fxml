@@ -24,7 +24,7 @@
             </HBox>
         </top>
         <center>
-            <TableView fx:id="BMRBSearchTableView">
+            <TableView fx:id="bmrbSearchResultTableView">
                 <columns>
                 </columns>
             </TableView>

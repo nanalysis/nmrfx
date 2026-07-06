@@ -145,7 +145,7 @@ public class MMcifReader {
             String mapID = asymName + "." + "0";
             Compound ligand = new Compound("0", asymName);
             ligand.molecule = molecule;
-            addCompound(mapID, ligand);
+            ligand.molecule.addCompound(mapID, ligand);
             ligand.setIDNum(id);
             ligand.assemblyID = id;
             entities.put(asymName, ligand);
@@ -198,7 +198,7 @@ public class MMcifReader {
                 Residue residue = new Residue(iRes, resName.toUpperCase(), hetStr);
                 residue.molecule = polymer.molecule;
                 String mapID = asymName + "." + iRes;
-                addCompound(mapID, residue);
+                residue.molecule.addCompound(mapID, residue);
                 polymer.addResidue(residue);
                 Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
                 if (i == 0) {
@@ -321,7 +321,7 @@ public class MMcifReader {
             String hetero = heteroColumn.get(i);
             Residue residue = new Residue(iRes, resName.toUpperCase(), hetero);
             residue.molecule = polymer.molecule;
-            addCompound(mapID, residue);
+            residue.molecule.addCompound(mapID, residue);
             polymer.addResidue(residue);
             Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
             if (i == 0) {
@@ -348,10 +348,6 @@ public class MMcifReader {
             polymer.molecule.setupRotGroups();
         }
         sequence.removeBadBonds();
-    }
-
-    void addCompound(String id, Compound compound) {
-        MoleculeBase.compoundMap().put(id, compound);
     }
 
     MoleculeBase buildConformation(final Saveframe saveframe, MoleculeBase molecule) throws ParseException {
@@ -462,7 +458,7 @@ public class MMcifReader {
 
     void processAtomSites(MoleculeBase molecule, Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_atom_site");
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         if (loop != null) {
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> labelAtomIDColumn = loop.getColumnAsList("label_atom_id");
@@ -568,7 +564,7 @@ public class MMcifReader {
     void processChemCompAtom(Saveframe saveframe, int ppmSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
         Loop loop = saveframe.getLoop("_chem_comp_atom");
         if (loop != null) {
-            var compoundMap = MoleculeBase.compoundMap();
+            var compoundMap = molecule.compoundMap();
 
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> atomIDColumn = loop.getColumnAsList("atom_id");
@@ -633,7 +629,7 @@ public class MMcifReader {
     void processChemCompBond(Saveframe saveframe, int ppmSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
         Loop loop = saveframe.getLoop("_chem_comp_bond");
         if (loop != null) {
-            var compoundMap = MoleculeBase.compoundMap();
+            var compoundMap = molecule.compoundMap();
             List<String> idColumn = loop.getColumnAsList("comp_id");
             List<String> atom1IDColumn = loop.getColumnAsList("atom_id_1");
             List<String> atom2IDColumn = loop.getColumnAsList("atom_id_2");
@@ -723,12 +719,10 @@ public class MMcifReader {
         if ((argv.length != 0) && (argv.length != 5)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        var compoundMap = MoleculeBase.compoundMap();
         MoleculeBase molecule = null;
 
         if (argv.length == 0) {
             hasResonances = false;
-            compoundMap.clear();
             log.debug("process molecule");
             molecule = buildMolecule();
             molecule.setMethylRotationActive(true);

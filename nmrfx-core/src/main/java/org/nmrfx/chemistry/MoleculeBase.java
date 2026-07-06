@@ -342,7 +342,7 @@ public class MoleculeBase implements Serializable, ITree {
     List<SecondaryStructure> secondaryStructure = new ArrayList<>();
     Map<String, RelaxationSet> relaxationSetMap = new HashMap<>();
     Map<String, OrderParSet> orderParSetMap = new HashMap<>();
-
+    Map<String, Compound> compoundMap = new HashMap<>();
     public MoleculeBase(String name) {
         this.name = name;
         coordSets = new LinkedHashMap<>();
@@ -360,21 +360,25 @@ public class MoleculeBase implements Serializable, ITree {
         MoleculeFactory.setActive(null);
     }
 
-    public static final Map<String, Compound> compoundMap() {
-        return ProjectBase.getActive().getCompoundMap();
+    public  final Map<String, Compound> compoundMap() {
+        return compoundMap;
+    }
+
+    public void addCompound(String id, Compound compound) {
+        compoundMap.put(id, compound);
     }
 
     public void buildCompoundMap() {
-        Map<String, Compound> map = compoundMap();
+        compoundMap.clear();
         for (Polymer polymer : getPolymers()) {
             for (Residue residue : polymer.getResidues()) {
                 String mapID = polymer.getIDNum() + "." + polymer.getIDNum() + "." + residue.getIDNum();
-                map.put(mapID, residue);
+                compoundMap.put(mapID, residue);
             }
         }
         for (Compound compound : getLigands()) {
             String mapID = 1 + "." + compound.getIDNum() + "." + compound.getIDNum();
-            map.put(mapID, compound);
+            compoundMap.put(mapID, compound);
         }
     }
 
