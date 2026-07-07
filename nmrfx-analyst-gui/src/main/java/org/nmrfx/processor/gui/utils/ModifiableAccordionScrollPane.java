@@ -179,7 +179,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             checkBox.setOnAction(e -> updateTitle());
             Color fillColor = processingOperation.isDisabled() ? Color.BLUE : Color.GRAY;
             titledPane.setTextFill(fillColor);
-            Label moveIcon = GUIUtils.createIcon(Material2AL.ARROW_UPWARD);
+            Label moveIcon = GUIUtils.createIconLabel(Material2AL.ARROW_UPWARD);
             moveIcon.setOnMouseReleased(Event::consume);
             titleBox.getChildren().addAll(checkBox, moveIcon);
             titledPane.textFillProperty().bind(Bindings.when(checkBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
+import atlantafx.base.theme.Styles;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -42,6 +43,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
@@ -96,7 +98,7 @@ public class ScanTable {
     static final String NEGATIVE_COLUMN_NAME = "Negative";
     static final String LVL_COLUMN_NAME = "Lvl";
     static final String CLM_COLUMN_NAME = "CLM";
-    static final String NLVL_COLUMN_NAME = "NLevels";
+    static final String NLVL_COLUMN_NAME = "NLvl";
     static final String OFFSET_COLUMN_NAME = "Offset";
     static final String SCANNER_ERROR = "Scanner Error";
     public static final Pattern VPAT = Pattern.compile("^(V[0-9]+):.*");
@@ -151,6 +153,8 @@ public class ScanTable {
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
         this.tableView = tableView;
+        tableView.getStyleClass().add(Styles.DENSE);
+        tableView.setId("compact-table");
         currentChart = controller.getChart();
         init();
     }
@@ -1170,7 +1174,7 @@ public class ScanTable {
             scannerTool.getChart().refresh();
         });
 
-        clmCol.setPrefWidth(50);
+        clmCol.setPrefWidth(60);
 
         ContextMenu clmMenu = new ContextMenu();
         MenuItem adjustCLMItem = new MenuItem("Adjust...");
@@ -1205,7 +1209,7 @@ public class ScanTable {
         columnMenus.put(nLevelsCol, nLvlMenu);
         nLvlMenu.getItems().addAll(adjustNLvlItem, unifyNLvlItem);
 
-        nLevelsCol.setPrefWidth(35);
+        nLevelsCol.setPrefWidth(60);
         nLevelsCol.setEditable(true);
         return nLevelsCol;
 
@@ -1231,7 +1235,7 @@ public class ScanTable {
         popOffsetItem.setOnAction(e -> popOffset());
         offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem, popOffsetItem);
         offsetCol.setContextMenu(offsetMenu);
-        offsetCol.setPrefWidth(50);
+        offsetCol.setPrefWidth(70);
         columnMenus.put(offsetCol, offsetMenu);
         return offsetCol;
     }
@@ -1466,8 +1470,8 @@ public class ScanTable {
     }
 
     private void setMenuGraphics(TableColumn<FileTableItem, ?> column, ContextMenu menu) {
-        Label label = GUIUtils.createIcon(Material2MZ.MENU);
-        column.setGraphic(label);
+        FontIcon fontIcon = GUIUtils.createIcon(Material2MZ.MENU);
+        column.setGraphic(fontIcon);
         column.setContextMenu(menu);
     }
 

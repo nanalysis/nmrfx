@@ -365,7 +365,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titleBox.getChildren().add(spacer);
         if (addMenu) {
             MenuButton menuButton = new MenuButton("");
-            menuButton.setGraphic(GUIUtils.createIcon(Material2AL.ADD));
+            menuButton.setGraphic(GUIUtils.createIconLabel(Material2AL.ADD));
             menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             if (name.equals("FULL DATASET")) {
                 menuButton.getItems().addAll(getMenuItemsForDataset());
@@ -1759,7 +1759,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         statusBar.setTooltip(statusBarToolTip);
 
         viewMode.getItems().addAll(DisplayMode.values());
-        Label infoIcon = GUIUtils.createIcon(Material2AL.INFO);
+        Label infoIcon = GUIUtils.createIconLabel(Material2AL.INFO);
         detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         detailButton.setGraphic(infoIcon);
         detailButton.setOnAction(e -> updateAllAccordionTitles());

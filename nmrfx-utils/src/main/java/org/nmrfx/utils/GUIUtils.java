@@ -33,7 +33,6 @@ import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.kordamp.ikonli.Ikon;
-import org.kordamp.ikonli.IkonliIkonProvider;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
 import org.nmrfx.fxutil.Fx;
@@ -591,12 +590,19 @@ public class GUIUtils {
         return button;
     }
 
-    public static Label createIcon(Ikon ikon) {
+    public static Label createIconLabel(Ikon ikon) {
         Label label = new Label();
         final FontIcon fontIcon = new FontIcon();
+        fontIcon.setIconSize(12);
         label.setGraphic(fontIcon);
         fontIcon.setIconCode(ikon);
         return label;
+    }
+    public static FontIcon createIcon(Ikon ikon) {
+        final FontIcon fontIcon = new FontIcon();
+        fontIcon.setIconSize(12);
+        fontIcon.setIconCode(ikon);
+        return fontIcon;
     }
 
     public static Screen getScreenForStage(Stage stage) {
