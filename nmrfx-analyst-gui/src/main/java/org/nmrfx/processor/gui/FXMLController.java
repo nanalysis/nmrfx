@@ -206,6 +206,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void setCursor(Cursor cursor) {
+        statusBar.setCursor(cursor);
         cursorProperty.set(cursor);
     }
 
@@ -322,7 +323,9 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public boolean isPhaseSliderVisible() {
-        return borderPane.getRight() == phaserBox || (processControllerVisible.get() && getActiveChart().getProcessorController().isPhaserActive());
+        boolean toolPhaserActive = (toolController != null) &&
+                nmrControlRightSidePane.getContentPane() == toolController.getPane() && toolController.isPhaserActive();
+        return toolPhaserActive || (processControllerVisible.get() && getActiveChart().getProcessorController().isPhaserActive());
     }
 
     public Stage getStage() {
@@ -876,7 +879,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     public void setDim(String rowName, String dimName) {
         getCharts().forEach(chart -> chart.getFirstDatasetAttributes().ifPresent(attr -> {
             attr.setDim(rowName, dimName);
-            getStatusBar().setPlaneRanges();
+            getAttributesController().ifPresent(attributesController1 -> attributesController1.viewController.setPlaneRanges());
             chart.updateProjections();
             chart.updateProjectionBorders();
             chart.updateProjectionScale();
@@ -951,6 +954,19 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         contentController = ContentController.create(this);
     }
 
+    public ViewController getViewController() {
+        return attributesController.viewController;
+    }
+
+    void updateViewAttributes(PolyChart chart) {
+        if (attributesController != null) {
+            attributesController.updateView(chart);
+        }
+    }
+
+    public Optional<AttributesController> getAttributesController() {
+        return Optional.ofNullable(attributesController);
+    }
     /**
      * Initialize the toggle buttons Processing, Attributes and Contents. On mac these buttons will appear right
      * aligned in a separate top menu in the window, otherwise they will appear right aligned in the file menu.
@@ -1798,40 +1814,6 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         }
     }
 
-    public void updatePhaser(boolean showPhaser) {
-
-        PolyChart chart = getActiveChart();
-        if (showPhaser) {
-            Cursor cursor = getCurrentCursor();
-            if (cursor == null) {
-                cursor = Cursor.MOVE;
-            }
-            phaser.sliceStatus(sliceStatusProperty().get());
-            phaser.cursor(cursor);
-            borderPane.setRight(phaserBox);
-            phaser.getPhaseOp();
-            if (chartProcessor == null) {
-                phaser.setPH1Slider(activeChart.getDataPH1());
-                phaser.setPH0Slider(activeChart.getDataPH0());
-            }
-
-            if (!chart.is1D()) {
-                sliceStatusProperty().set(true);
-                setCursor(Cursor.CROSSHAIR);
-                chart.getSliceAttributes().setSlice1State(true);
-                chart.getSliceAttributes().setSlice2State(false);
-                chart.getCrossHairs().refresh();
-            }
-        } else {
-            sliceStatusProperty().set(phaser.sliceStatus);
-            setCursor(phaser.cursor());
-            setCursor();
-            chart.getCrossHairs().refresh();
-            if (borderPane.getRight() == phaserBox) {
-                borderPane.setRight(null);
-            }
-        }
-    }
 
     private void saveAsFavorite() {
         WindowIO.saveFavorite();

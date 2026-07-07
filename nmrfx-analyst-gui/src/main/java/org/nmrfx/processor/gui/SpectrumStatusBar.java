@@ -21,20 +21,19 @@ package org.nmrfx.processor.gui;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.kordamp.ikonli.material2.Material2MZ;
@@ -43,7 +42,6 @@ import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.utils.GUIUtils;
@@ -53,6 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 /**
  * @author Bruce Johnson
@@ -61,7 +60,7 @@ import java.util.*;
 public class SpectrumStatusBar {
     private static final Logger log = LoggerFactory.getLogger(SpectrumStatusBar.class);
     private static final int MAX_SPINNERS = 4;
-    private static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
+    public static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
     private static final Background DEFAULT_BACKGROUND = null;
     private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
@@ -75,22 +74,17 @@ public class SpectrumStatusBar {
     private final StackPane[][] crossTextIcons = new StackPane[2][2];
     private final StackPane[][] limitTextIcons = new StackPane[2][2];
     private final boolean[][] iconStates = new boolean[2][2];
-    private final Spinner<Integer>[][] planeSpinner = new Spinner[MAX_SPINNERS][2];
-    private final ChangeListener<Integer>[][] planeListeners = new ChangeListener[MAX_SPINNERS][2];
-    private final CheckBox[] valueModeBox = new CheckBox[MAX_SPINNERS];
-    private final MenuButton[] dimMenus = new MenuButton[MAX_SPINNERS + 2];
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
-    private final ComboBox<DisplayMode> displayModeComboBox = new ComboBox<>();
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
-    private final SegmentedButton cursorButtons = new SegmentedButton();
-    private final ToggleButton tableButton = GUIUtils.toggleButton(Material2MZ.TABLE_VIEW,"Table", ContentDisplay.LEFT);
+    private final ChoiceBox<CanvasCursor> cursorChoice = new ChoiceBox();
+    private final ToggleButton tableButton = new RadioButton("Table");
+   // private final ToggleButton tableButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.TABLE, "Table",
+     //       AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
     private final MenuButton toolButton = new MenuButton("Tools");
     private final List<ButtonBase> specialButtons = new ArrayList<>();
-    private final ToggleButton phaserButton = new ToggleButton("Phasing");
-    private final CheckBox sliceStatusCheckBox = new CheckBox("Slices");
     List<Control> extractControls = new ArrayList<>();
 
 
@@ -103,49 +97,19 @@ public class SpectrumStatusBar {
         this.controller = controller;
     }
 
+    ComboBox<ViewController.DisplayMode> getDisplayModeComboBox() {
+        return controller.getViewController().getDisplayModeComboBox();
+    }
+
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
         tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
         initCursorButtonGroup();
         setupTools();
-
         initCrossText();
 
         Pane filler = createHorizontalSpacer();
         primaryToolbar.getItems().add(filler);
-
-        initSpinners();
-
-
-        for (int i = 0; i < dimMenus.length; i++) {
-            final int iAxis = i;
-            String rowName = DIM_NAMES[iAxis];
-
-            MenuButton mButton = new MenuButton(rowName);
-            dimMenus[i] = mButton;
-            if (iAxis < 2) {
-                mButton.showingProperty().addListener(e -> updateXYMenu(mButton, iAxis));
-            } else {
-                MenuItem menuItem = new MenuItem("Full");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Center");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("First");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Last");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-                menuItem = new MenuItem("Max");
-                mButton.getItems().add(menuItem);
-                menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
-            }
-        }
-        displayModeComboBox.getItems().setAll(DisplayMode.values());
-        displayModeComboBox.getSelectionModel().selectedItemProperty().addListener(e -> displayModeComboBoxSelectionChanged());
-
 
         for (int i = 0; i < rowMenus.length; i++) {
             final int iAxis = i + 1;
@@ -169,16 +133,10 @@ public class SpectrumStatusBar {
         primaryToolbar.getItems().add(filler);
         primaryToolbar.getItems().add(complexStatus);
         complexStatus.setOnAction(this::complexStatusChanged);
-        primaryToolbar.getItems().add(sliceStatusCheckBox);
-        phaserButton.setOnAction(event -> controller.updatePhaser(phaserButton.isSelected()));
-        phaserButton.disableProperty().bind(controller.processControllerVisibleProperty());
 
-        primaryToolbar.getItems().add(phaserButton);
 
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
-        sliceStatusCheckBox.setOnAction(e -> updateSlices(true));
-        sliceStatusCheckBox.selectedProperty().bindBidirectional(controller.sliceStatusProperty());
     }
 
     private void initCrossText() {
@@ -296,55 +254,17 @@ public class SpectrumStatusBar {
         }
     }
 
-    private void initSpinners() {
-        for (int i = 0; i < planeSpinner.length; i++) {
-            final int iDim = i + 2;
-            for (int j = 0; j < 2; j++) {
-                final int iSpin = j;
-                Spinner<Integer> spinner = new Spinner<>(0, 127, 63);
-                planeSpinner[i][j] = spinner;
-                spinner.setEditable(true);
-                spinner.getEditor().setPrefWidth(60);
-                spinner.setPrefWidth(80);
-                spinner.setOnScroll(e -> {
-                    spinner.setUserData(e.isShiftDown());
-                    scrollPlane(e, iDim - 2, iSpin);
-                });
-                spinner.addEventFilter(MouseEvent.MOUSE_PRESSED,
-                        e -> spinner.setUserData(e.isShiftDown()));
-                planeListeners[i][j] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
-                    if (newValue != null && !newValue.equals(oldValue)) {
-                        updatePlane(iDim, iSpin, newValue, iSpin == 1);
-                        if (iSpin == 1) {
-                            setPlaneRange(iDim);
-                        }
-                    }
-                };
-                SpinnerValueFactory<Integer> planeFactory = planeSpinner[i][j].getValueFactory();
-                planeFactory.valueProperty().addListener(planeListeners[i][j]);
-                SpinnerConverter converter = new SpinnerConverter(iDim, j);
-                planeFactory.setConverter(converter);
-            }
-            valueModeBox[i] = new CheckBox("V");
-            planeSpinner[i][0].editableProperty().bind(valueModeBox[i].selectedProperty().not());
-            planeSpinner[i][1].editableProperty().bind(valueModeBox[i].selectedProperty().not());
-            valueModeBox[i].setOnAction(e -> updateSpinner(iDim));
-        }
-    }
-
     private void initCursorButtonGroup() {
         Arrays.stream(CanvasCursor.values())
-                .map(SpectrumStatusBar::createCursorToggleButton)
-                .forEach(cursorButtons.getButtons()::add);
-        cursorButtons.getButtons().get(CanvasCursor.SELECTOR.ordinal()).setSelected(true);
-        cursorButtons.getToggleGroup().selectedToggleProperty()
-                .addListener((observable, oldValue, newValue) -> cursorButtonToggled(newValue));
+                .forEach(tb -> cursorChoice.getItems().add(tb));
+        cursorChoice.setValue(CanvasCursor.SELECTOR);
+        cursorChoice.valueProperty()
+                .addListener((observable, oldValue, newValue) -> cursorButtonToggled((CanvasCursor) newValue));
     }
 
-    private void cursorButtonToggled(Toggle toggle) {
-        if (toggle != null && toggle.getUserData() instanceof CanvasCursor selected) {
-            controller.setCursor(selected.getCursor());
-        }
+    private void cursorButtonToggled(CanvasCursor canvasCursor) {
+            controller.setCursor(canvasCursor.getCursor());
+            updateSlices(true);
     }
 
     @PluginAPI("parametric")
@@ -357,13 +277,6 @@ public class SpectrumStatusBar {
     }
 
     public void updateCursorBox() {
-        for (var button : cursorButtons.getButtons()) {
-            if (button.getUserData() instanceof CanvasCursor canvasCursor
-                    && canvasCursor.getCursor() == controller.getCurrentCursor()) {
-                button.setSelected(true);
-                break;
-            }
-        }
         if (!CanvasCursor.isCrosshair(controller.getCurrentCursor())) {
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
@@ -375,9 +288,9 @@ public class SpectrumStatusBar {
 
     private void chartDisplayDimensionChanged(ObservableValue<? extends PolyChart.DISDIM> observable, PolyChart.DISDIM oldValue, PolyChart.DISDIM newValue) {
         if (newValue == PolyChart.DISDIM.OneDX) {
-            displayModeComboBox.setValue(DisplayMode.TRACES);
+            getDisplayModeComboBox().setValue(ViewController.DisplayMode.TRACES);
         } else {
-            displayModeComboBox.setValue(DisplayMode.CONTOURS);
+            getDisplayModeComboBox().setValue(ViewController.DisplayMode.CONTOURS);
         }
     }
 
@@ -498,37 +411,9 @@ public class SpectrumStatusBar {
                     int indexU = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getUpperBound());
                     int dDim = dataAttr.dim[axNum];
                     int size = dataAttr.getDataset().getSizeReal(dDim);
-                    setPlaneRanges(axNum, size);
-                    updatePlaneSpinner(indexL, axNum, 0);
-                    updatePlaneSpinner(indexU, axNum, 1);
                 }
             }
         }
-    }
-
-    public void setPlaneRanges() {
-        getDatasetAttributes().ifPresent(dataAttr -> {
-            for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
-                int dDim = dataAttr.dim[axNum];
-                int size = dataAttr.getDataset().getSizeReal(dDim);
-                setPlaneRanges(axNum, size);
-            }
-        });
-    }
-    private void updateSpinner(int iDim) {
-        for (int j = 0; j < 2; j++) {
-            SpinnerValueFactory<Integer> planeFactory = planeSpinner[iDim - 2][j].getValueFactory();
-            int value = planeFactory.getValue();
-            String text = planeFactory.getConverter().toString(value);
-            planeSpinner[iDim - 2][j].getEditor().setText(text);
-        }
-    }
-
-    public void updateRowSpinner(int row, int axNum) {
-        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 1][0].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[axNum - 1][0]);
-        planeFactory.setValue(row + 1);
-        planeFactory.valueProperty().addListener(planeListeners[axNum - 1][0]);
     }
 
     private Optional<DatasetAttributes> getDatasetAttributes() {
@@ -543,105 +428,12 @@ public class SpectrumStatusBar {
         return result;
     }
 
-    private int findPlane(double value, int axNum) {
-        PolyChart chart = controller.getActiveChart();
-        ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
-        int planeIndex = -1;
-        if (!dataAttrList.isEmpty()) {
-            DatasetAttributes dataAttr = dataAttrList.get(0);
-            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
-                double[] values = dataAttr.getDataset().getValues(axNum);
-                if (values != null) {
-                    double min = Double.MAX_VALUE;
-                    int iMin = -1;
-                    for (int i = 0; i < values.length; i++) {
-                        double delta = Math.abs(value - values[i]);
-                        if (delta < min) {
-                            min = delta;
-                            iMin = i;
-                        }
-                    }
-                    planeIndex = iMin;
-                }
-            }
-        }
-        return planeIndex;
-    }
-
-    private Optional<Double> getPlaneValue(int axNum, int plane) {
-        var dataOpt = getDatasetAttributes();
-        Double value = null;
-        if (dataOpt.isPresent()) {
-            DatasetAttributes dataAttr = dataOpt.get();
-            PolyChart chart = controller.getActiveChart();
-            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
-                double[] values = dataAttr.getDataset().getValues(axNum);
-                if (values != null && values.length > plane) {
-                    value = values[plane];
-                } else {
-                    value = (double) (plane + 1);
-                }
-            } else {
-                value = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
-            }
-        }
-        return Optional.ofNullable(value);
-    }
-
-    public void updatePlaneSpinner(int plane, int axNum, int spinNum) {
-        SpinnerValueFactory<Integer> planeFactory = planeSpinner[axNum - 2][spinNum].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[axNum - 2][spinNum]);
-        planeFactory.setValue(plane + 1);
-        planeFactory.valueProperty().addListener(planeListeners[axNum - 2][spinNum]);
-    }
-
-    private void scrollPlane(ScrollEvent e, int iDim, int iSpin) {
-        Spinner<Integer> spinner = planeSpinner[iDim][iSpin];
-
-        double delta = e.getDeltaY();
-        int nPlanes = (int) Math.round(delta / 10.0);
-        if (nPlanes == 0) {
-            nPlanes = delta < 0.0 ? -1 : 1;
-        }
-        nPlanes *= -1;  // scrolling up should increase.  Is this dependent on Mac scrolling settting
-        SpinnerValueFactory<Integer> planeFactory = spinner.getValueFactory();
-        planeFactory.increment(nPlanes);
-    }
-
-    private void updatePlane(int iDim, int iSpin, int plane, boolean shiftDown) {
-        plane--;
-        if (arrayMode) {
-            controller.getActiveChart().setDrawlist(plane);
-            controller.getActiveChart().refresh();
-        } else {
-            PolyChart chart = controller.getActiveChart();
-
-            if (!chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                Axis axis = chart.getAxes().get(iDim);
-                int[] pts = new int[2];
-                pts[0] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getLowerBound());
-                pts[1] = chart.getAxes().getMode(iDim).getIndex(dataAttr, iDim, axis.getUpperBound());
-                int other = iSpin == 0 ? 1 : 0;
-                int delta = pts[other] - pts[iSpin];
-                pts[iSpin] = plane;
-                if (!shiftDown) {
-                    pts[other] = pts[iSpin] + delta;
-                }
-                double ppm1 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[0]);
-                double ppm2 = chart.getAxes().getMode(iDim).indexToValue(dataAttr, iDim, pts[1]);
-                ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
-                PolyChart polyChart = controller.getActiveChart();
-                polyChart.getAxes().setMinMax(iDim, ppm1, ppm2);
-                controller.getActiveChart().refresh();
-                ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-                controller.getUndoManager().add("plane", undo, redo);
-            }
-        }
-    }
-
     private void complexStatusChanged(ActionEvent event) {
         controller.getActiveChart().layoutPlotChildren();
+    }
+
+    void setCursor(Cursor cursor) {
+        cursorChoice.setValue(CanvasCursor.getCanvasCursor(cursor));
     }
 
     public void setCrossTextRange(int index, Orientation orientation, double min, double max) {
@@ -653,61 +445,26 @@ public class SpectrumStatusBar {
         }
     }
 
-    private void setPlaneRanges(int iDim, int max) {
-        for (int j = 0; j < 2; j++) {
-            setPlaneRange(iDim, j, max);
-        }
-    }
-
-    private void setPlaneRange(int iDim, int iSpin, int max) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][iSpin].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListeners[iDim - 2][iSpin]);
-        planeFactory.setMin(1);
-        planeFactory.setMax(max);
-        planeFactory.valueProperty().addListener(planeListeners[iDim - 2][iSpin]);
-    }
-
-    private void setPlaneRange(int iDim) {
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory0 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][0].getValueFactory();
-        SpinnerValueFactory.IntegerSpinnerValueFactory planeFactory1 = (SpinnerValueFactory.IntegerSpinnerValueFactory) planeSpinner[iDim - 2][1].getValueFactory();
-        int delta = planeFactory1.getValue() - planeFactory0.getValue();
-        int max0;
-        int min0;
-        planeFactory0.valueProperty().removeListener(planeListeners[iDim - 2][0]);
-        if (delta < 0) {
-            min0 = -delta + 1;
-            max0 = planeFactory1.getMax();
-        } else {
-            min0 = 1;
-            max0 = planeFactory1.getMax() - delta;
-        }
-        planeFactory0.setMin(min0);
-        planeFactory0.setMax(max0);
-        planeFactory0.valueProperty().addListener(planeListeners[iDim - 2][0]);
-    }
-
-
     public void set1DArray(int nDim, int nRows) {
         arrayMode = true;
-        setPlaneRanges(2, nRows);
+       // setPlaneRanges(2, nRows);
         updatePrimaryToolbarFor1DArray(nDim);
         updateSecondaryToolbarFor1DArray();
     }
 
     private void updatePrimaryToolbarFor1DArray(int nDim) {
+        System.out.println("update primary");
         List<Node> nodes = new ArrayList<>();
         nodes.add(tableButton);
         if (isStacked()) {
-            displayModeComboBox.getSelectionModel().select(DisplayMode.STACKPLOT);
+            getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.STACKPLOT);
         } else {
-            displayModeComboBox.getSelectionModel().select(DisplayMode.TRACES);
+            getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.TRACES);
         }
-        nodes.add(displayModeComboBox);
         nodes.add(createHorizontalSpacer());
 
         nodes.add(new Label("Cursor:"));
-        cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
-        nodes.add(cursorButtons);
+        nodes.add(cursorChoice);
         for (int j = 1; j >= 0; j--) {
             if (j == 1) {
                 nodes.add(new Label("X:"));
@@ -719,21 +476,6 @@ public class SpectrumStatusBar {
             }
         }
         nodes.add(createHorizontalSpacer());
-        PolyChart activeChart = controller.getActiveChart();
-        List<Integer> drawList;
-        for (int i = 1; i < nDim; i++) {
-            ((SpinnerConverter) planeSpinner[i - 1][0].getValueFactory().getConverter()).setValueMode(false);
-            drawList = activeChart.getDrawList();
-            if (!drawList.isEmpty()) {
-                // Use the current drawlist and update the spinner to the first number
-                updateRowSpinner(drawList.get(0), i);
-            }
-            nodes.add(rowMenus[i - 1]);
-            nodes.add(planeSpinner[i - 1][0]);
-            Pane nodeFiller = createHorizontalSpacer();
-            nodes.add(nodeFiller);
-        }
-        nodes.add(phaserButton);
         primaryToolbar.getItems().setAll(nodes);
     }
 
@@ -763,63 +505,40 @@ public class SpectrumStatusBar {
         arrayMode = false;
         setupPrimaryToolbarForSelectedMode();
         setupSecondaryToolbarForSelectedMode();
-        setPlaneRanges();
+      //  setPlaneRanges();
     }
 
     private void setupPrimaryToolbarForSelectedMode() {
-        List<Node> nodes = new ArrayList<>();
+       List<Node> nodes = new ArrayList<>();
         nodes.add(tableButton);
-        if (currentMode == DataMode.DATASET_1D) {
-            cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(false);
-        } else if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            cursorButtons.getButtons().get(CanvasCursor.REGION.ordinal()).setDisable(true);
-        }
 
         if (currentMode == DataMode.DATASET_2D) {
-            displayModeComboBox.getSelectionModel().select(DisplayMode.CONTOURS);
-            nodes.add(displayModeComboBox);
+            getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.CONTOURS);
         }
 
         nodes.add(createHorizontalSpacer());
         nodes.add(new Label("Cursor:"));
-        nodes.add(cursorButtons);
+        nodes.add(cursorChoice);
 
         //first dimension cross-hair
         if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(dimMenus[0]);
+            //nodes.add(dimMenus[0]);
         }
+        nodes.add(new Label("X:"));
         nodes.add(crossText[0][1]);
         nodes.add(crossText[1][1]);
 
         //second dimension cross-hair
-        if (currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(dimMenus[1]);
-        } else if (currentMode == DataMode.DATASET_2D) {
-            nodes.add(new Label("Y:"));
-        }
+        nodes.add(new Label("Y:"));
+
         nodes.add(crossText[0][0]);
         nodes.add(crossText[1][0]);
         nodes.add(createHorizontalSpacer());
-
-        // additional dimension spinners
-        for (int i = 2; i < currentModeDimensions; i++) {
-            nodes.add(dimMenus[i]);
-            nodes.add(planeSpinner[i - 2][0]);
-            nodes.add(planeSpinner[i - 2][1]);
-            ((SpinnerConverter) planeSpinner[i - 2][0].getValueFactory().getConverter()).setValueMode(true);
-            ((SpinnerConverter) planeSpinner[i - 2][1].getValueFactory().getConverter()).setValueMode(true);
-            nodes.add(valueModeBox[i - 2]);
-            nodes.add(createHorizontalSpacer());
-        }
 
         // complex checkbox, only for FID
         if (currentMode == DataMode.FID) {
             nodes.add(complexStatus);
         }
-        if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            nodes.add(sliceStatusCheckBox);
-        }
-        nodes.add(phaserButton);
 
         primaryToolbar.getItems().setAll(nodes);
     }
@@ -902,57 +621,6 @@ public class SpectrumStatusBar {
         chart.refresh();
     }
 
-    /**
-     * Updates the spectrum status bar and the type of plot displayed in the active chart
-     * based on the selected option.
-     */
-    private void displayModeComboBoxSelectionChanged() {
-        PolyChart chart = controller.getActiveChart();
-        boolean autoScale = true;
-        OptionalInt maxNDim = chart.getDatasetAttributes().stream().mapToInt(d -> d.nDim).max();
-        if (maxNDim.isEmpty()) {
-            log.warn("Unable to update display mode. No dimensions set.");
-            return;
-        }
-        DisplayMode selected = displayModeComboBox.getSelectionModel().getSelectedItem();
-        if (selected == DisplayMode.TRACES || selected == DisplayMode.STACKPLOT) {
-            OptionalInt maxRows = chart.getDatasetAttributes().stream().
-                    mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSizeReal(1)).max();
-            if (maxRows.isEmpty()) {
-                log.warn("Unable to update display mode. No rows set.");
-                return;
-            }
-            chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
-            if (maxRows.getAsInt() > FXMLController.MAX_INITIAL_TRACES) {
-                chart.setDrawlist(0);
-            }
-
-            if (selected == DisplayMode.STACKPLOT) {
-                chart.clearDrawlist();
-                if (!isStacked()) {
-                    chart.getChartProperties().setStackX(0.35);
-                    chart.getChartProperties().setStackY(0.75);
-                }
-            } else {
-                chart.getChartProperties().setStackX(0.0);
-                chart.getChartProperties().setStackY(0.0);
-            }
-            set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
-        } else if (selected == DisplayMode.CONTOURS) {
-            chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
-            chart.getDatasetAttributes().get(0).drawList.clear();
-            autoScale = !chart.getDatasetAttributes().get(0).getHasLevel();
-            chart.updateProjections();
-            chart.updateProjectionScale();
-            int nDim = maxNDim.getAsInt();
-            setMode(DataMode.fromDimensions(nDim), nDim);
-        }
-        chart.updateAxisType(true);
-        chart.full();
-        if (autoScale) {
-            chart.autoScale();
-        }
-    }
 
     private boolean isStacked() {
         PolyChart chart = controller.getActiveChart();
@@ -1008,94 +676,30 @@ public class SpectrumStatusBar {
         }
     }
 
-    private enum DisplayMode {
-        TRACES("Traces (1D)"),
-        STACKPLOT("Stack Plot"),
-        CONTOURS("Contours (2D)");
-        private final String strValue;
 
-        DisplayMode(String strValue) {
-            this.strValue = strValue;
-        }
-
-        @Override
-        public String toString() {
-            return this.strValue;
-        }
-    }
-
-    private class SpinnerConverter extends IntegerStringConverter {
-        final int axNum;
-        final int spinNum;
-        boolean valueMode = false;
-
-        SpinnerConverter(int axNum, int spinNum) {
-            this.axNum = axNum;
-            this.spinNum = spinNum;
-        }
-
-        @Override
-        public Integer fromString(String s) {
-            int result = 1;
-            Spinner<Integer> spinner = planeSpinner[axNum - 2][spinNum];
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
-            if (showValue) {
-                return spinner.getValueFactory().getValue();
-            }
-            try {
-                if (!s.isEmpty()) {
-                    if (s.contains(".")) {
-                        double planePPM = Double.parseDouble(s);
-                        int planeIndex = findPlane(planePPM, axNum);
-                        if (planeIndex == -1) {
-                            var dataAttrOpt = getDatasetAttributes();
-                            if (dataAttrOpt.isPresent()) {
-                                DatasetAttributes dataAttr = dataAttrOpt.get();
-                                planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
-                            }
-                        }
-                        result = planeIndex + 1;
-                    } else {
-                        result = Integer.parseInt(s);
-                    }
+    private Optional<Double> getPlaneValue(int axNum, int plane) {
+        var dataOpt = getDatasetAttributes();
+        Double value = null;
+        if (dataOpt.isPresent()) {
+            DatasetAttributes dataAttr = dataOpt.get();
+            PolyChart chart = controller.getActiveChart();
+            if (chart.getAxes().getMode(axNum) == DatasetAttributes.AXMODE.PTS) {
+                double[] values = dataAttr.getDataset().getValues(axNum);
+                if (values != null && values.length > plane) {
+                    value = values[plane];
+                } else {
+                    value = (double) (plane + 1);
                 }
-                spinner.getEditor().setBackground(DEFAULT_BACKGROUND);
-            } catch (NumberFormatException nfE) {
-                spinner.getEditor().setBackground(ERROR_BACKGROUND);
-            }
-            return result;
-        }
-
-        @Override
-        public String toString(Integer iValue) {
-            boolean showValue = valueMode && valueModeBox[axNum - 2].isSelected();
-            if (showValue) {
-                var doubleOpt = getPlaneValue(axNum, iValue - 1);
-                return doubleOpt.isPresent() ? String.format("%.2f", doubleOpt.get()) : "";
             } else {
-                return String.valueOf(iValue);
+                value = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
             }
         }
-
-        void setValueMode(boolean mode) {
-            valueMode = mode;
-        }
+        return Optional.ofNullable(value);
     }
+
     public void updateSlices(boolean saveState) {
-        final boolean status = sliceStatusCheckBox.isSelected();
-        if (saveState) {
-            if (status) {
-                Cursor crosshairCursor = CanvasCursor.CROSSHAIR.getCursor();
-                preSliceCursor = controller.getCurrentCursor();
-                if (preSliceCursor != crosshairCursor) {
-                    controller.setCursor(crosshairCursor);
-                }
-            } else {
-                if (preSliceCursor != null) {
-                    controller.setCursor(preSliceCursor);
-                }
-            }
-        }
+        final boolean status = getController().getCursor() == CanvasCursor.SLICE.getCursor();
+        controller.sliceStatusProperty().set(status);
         controller.getCharts().forEach(c -> c.setSliceStatus(status));
     }
 }

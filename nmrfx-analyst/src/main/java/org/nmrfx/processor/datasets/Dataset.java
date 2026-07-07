@@ -2588,6 +2588,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (!isWritable()) {
             changeWriteMode(true);
         }
+        double origPh0 = getPh0(iDim);
+        double origPh1 = getPh1(iDim);
         while (vecIter.hasNext()) {
             Vec vec = vecIter.next();
             if (vec.isReal()) {
@@ -2596,8 +2598,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             vec.phase(ph0, ph1, false, true);
             writeVector(vec);
         }
-        double dph0 = Util.phaseMin(getPh0(iDim) + ph0);
-        double dph1 = Util.phaseMin(getPh1(iDim) + ph1);
+        double dph0 = Util.phaseMin(origPh0 + ph0);
+        double dph1 = Util.phaseMin(origPh1 + ph1);
         setPh0(iDim, dph0);
         setPh0_r(iDim, dph0);
         setPh1(iDim, dph1);

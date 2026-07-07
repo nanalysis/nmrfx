@@ -24,16 +24,19 @@
             <Accordion fx:id="attributesAccordion">
                 <panes>
                     <TitledPane text="View">
-                        <VBox>
+                        <VBox spacing="10">
                             <children>
                                 <Separator orientation="horizontal" minHeight="20"/>
-                                <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
-                                <CheckBox fx:id="fixedAspectBox" text="Ignore ppm ratios"/>
-                                <Label text="Aspect ratio:" minWidth="35"/>
-                                <HBox>
-                                    <Slider fx:id="aspectSlider" prefWidth="200"/>
+                                <HBox spacing="10">
+                                    <CheckBox fx:id="aspectCheckBox" text="Constrain aspect ratio"/>
+                                    <CheckBox fx:id="fixedAspectBox" text="Ignore ppm ratios"/>
+                                </HBox>
+                                <HBox spacing="10">
+                                    <Label text="Aspect ratio:" minWidth="35"/>
+                                    <Slider fx:id="aspectSlider" prefWidth="150"/>
                                     <TextField fx:id="aspectRatioValue" minWidth="50" maxWidth="50"/>
                                 </HBox>
+                                <VBox fx:id="viewBox"/>
                             </children>
                         </VBox>
                     </TitledPane>
