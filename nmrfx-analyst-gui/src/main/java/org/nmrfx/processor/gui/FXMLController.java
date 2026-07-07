@@ -1864,14 +1864,14 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         // Set the initial status of the favorite button
         enableFavoriteButton();
         buttons.add(favoriteButton);
-        buttons.add(new Separator(Orientation.VERTICAL));
+        //buttons.add(new Separator(Orientation.VERTICAL));
 
         bButton = GUIUtils.iconButton(MaterialDesignR.REFRESH, "Refresh");
         bButton.setOnAction(e -> getActiveChart().refresh());
         buttons.add(bButton);
         buttons.add(haltButton);
 
-        buttons.add(new Separator(Orientation.VERTICAL));
+        //buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GUIUtils.iconButton(MaterialDesignU.UNDO, "Undo");
         bButton.setOnAction(e -> undo());
         buttons.add(bButton);
@@ -1912,7 +1912,7 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         });
         buttons.add(bButton);
 
-        buttons.add(new Separator(Orientation.VERTICAL));
+       // buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GUIUtils.iconButton(MaterialDesignA.ARROW_UP_DOWN, "Auto");
         bButton.setOnMouseClicked(e -> doScale(e, 0.0));
         buttons.add(bButton);

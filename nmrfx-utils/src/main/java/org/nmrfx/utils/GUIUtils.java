@@ -12,6 +12,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.PixelFormat;
@@ -27,6 +28,7 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Transform;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
@@ -42,6 +44,7 @@ import java.util.*;
 import java.util.function.DoubleConsumer;
 import java.util.function.UnaryOperator;
 import static atlantafx.base.theme.Styles.TEXT_SMALL;
+import atlantafx.base.theme.Styles;
 import static org.kordamp.ikonli.material2.Material2AL.*;
 import static org.kordamp.ikonli.material2.Material2MZ.*;
 
@@ -537,20 +540,31 @@ public class GUIUtils {
         return iconButton(icon, text, ContentDisplay.TOP);
     }
 
+    public static void applyTheme(Scene scene) {
+        scene.getStylesheets().add(GUIUtils.class.getResource("/styles/my-overrides.css").toExternalForm());
+    }
+
     public static Button iconButton(Ikon icon, String text, ContentDisplay contentDisplay) {
         final FontIcon fontIcon = new FontIcon();
         Button button;
         if (text == null) {
             button = new Button();
         } else {
-            button = new Button(text);
-
+         //   button = new Button(text);
+            button = new Button();
+            Tooltip tooltip = new Tooltip();
+            tooltip.setText(text);
+            tooltip.setShowDelay(Duration.millis(50));
+            tooltip.setFont(Font.font(16));
+            button.setTooltip(tooltip);
         }
         fontIcon.setIconSize(16);
         button.setContentDisplay(contentDisplay);
         button.setGraphic(fontIcon);
-        button.setGraphicTextGap(2);
-        button.getStyleClass().addAll("icon-label", TEXT_SMALL);
+       // button.setGraphicTextGap(2);
+        button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
+        button.setStyle("-fx-padding: 2 6 2 6;");
+        button.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
         fontIcon.setIconCode(icon);
         return button;
     }

@@ -28,6 +28,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.control.RangeSlider;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.*;
 import java.util.*;
@@ -237,6 +238,7 @@ public class ColorSchemes {
             gridPane.getColumnConstraints().add(new ColumnConstraints(gridWidth)); // column 1 is 200 wide
 
             Scene scene = new Scene(borderPane);
+            GUIUtils.applyTheme(scene);
             stage.setScene(scene);
             stage.setWidth(gridWidth + buttonWidth + 20);
 

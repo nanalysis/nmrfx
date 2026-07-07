@@ -59,6 +59,7 @@ public class GraphMatcherGUI {
         stage = new Stage();
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
         ToolBar toolBar = new ToolBar();
         Button matchButton = new Button("Match");

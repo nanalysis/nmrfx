@@ -64,6 +64,7 @@ import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.ColumnMath;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -664,6 +665,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             BorderPane borderPane = new BorderPane();
             borderPane.setPrefWidth(225);
             Scene scene = new Scene(borderPane);
+            GUIUtils.applyTheme(scene);
             valueStage.setScene(scene);
             valueStage.setTitle("DatasetBase Values");
             valueStage.show();

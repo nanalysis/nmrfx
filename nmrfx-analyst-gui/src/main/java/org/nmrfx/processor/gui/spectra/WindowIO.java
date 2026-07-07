@@ -231,6 +231,7 @@ public class WindowIO implements FileWatchListener {
         stage = new Stage(StageStyle.DECORATED);
         borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
         stage.setTitle("Favorites");
         ToolBar toolBar = new ToolBar();

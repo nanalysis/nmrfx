@@ -32,6 +32,7 @@ import org.nmrfx.chart.*;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.structure.tools.LACSCalculator;
 import org.nmrfx.utilities.Util;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +84,7 @@ public class LACSPlotGui {
             borderPane.setCenter(chartPane);
             resultsField = new TextField();
             borderPane.setBottom(resultsField);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
         }
         stage.show();
