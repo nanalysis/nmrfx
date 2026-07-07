@@ -244,6 +244,7 @@ public class ZZPlotTool {
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
             sPane.setDividerPosition(0, 0.7);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             updateChart(xAxisName, yAxisName);
             initTable();

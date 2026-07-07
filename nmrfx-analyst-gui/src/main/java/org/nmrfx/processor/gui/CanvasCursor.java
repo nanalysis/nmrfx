@@ -1,20 +1,22 @@
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Cursor;
 import org.apache.commons.lang3.SystemUtils;
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.material2.Material2AL;
+import org.kordamp.ikonli.material2.Material2MZ;
 
 public enum CanvasCursor {
-    SELECTOR(SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE, "Selector", FontAwesomeIcon.MOUSE_POINTER),
-    CROSSHAIR(Cursor.CROSSHAIR, "Crosshair", FontAwesomeIcon.PLUS),
-    PEAK(Cursor.N_RESIZE, "Peak", FontAwesomeIcon.ARROWS_V),
-    REGION(Cursor.E_RESIZE, "Region", FontAwesomeIcon.ARROWS_H);
+    SELECTOR(SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE, "Selector", Material2MZ.NORTH_WEST),
+    CROSSHAIR(Cursor.CROSSHAIR, "Crosshair", Material2MZ.PLUS),
+    PEAK(Cursor.N_RESIZE, "Peak", Material2AL.ARROW_UPWARD),
+    REGION(Cursor.E_RESIZE, "Region", Material2AL.HORIZONTAL_DISTRIBUTE);
 
     private final Cursor cursor;
     private final String label;
-    private final FontAwesomeIcon icon;
+    private final Ikon icon;
 
-    CanvasCursor(Cursor cursor, String label, FontAwesomeIcon icon) {
+    CanvasCursor(Cursor cursor, String label, Ikon icon) {
         this.cursor = cursor;
         this.label = label;
         this.icon = icon;
@@ -24,7 +26,7 @@ public enum CanvasCursor {
         return cursor;
     }
 
-    public FontAwesomeIcon getIcon() {
+    public Ikon getIcon() {
         return icon;
     }
 

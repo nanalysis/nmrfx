@@ -15,6 +15,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -33,6 +34,7 @@ public class VendorParsGUI {
             stage = new Stage();
             stage.setTitle("Vendor Pars");
             stage.setWidth(500);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             borderPane.setCenter(fidParTableView);
             initTable();

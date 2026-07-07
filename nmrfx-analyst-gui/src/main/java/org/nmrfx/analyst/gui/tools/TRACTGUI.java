@@ -40,6 +40,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.math.TRACTSimFit;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.nmrfx.utilities.Util;
@@ -144,6 +145,7 @@ public class TRACTGUI {
             borderPane.setCenter(chartPane);
             resultsField = new TextField();
             borderPane.setBottom(resultsField);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
         }
         updateMCPlotChoices();

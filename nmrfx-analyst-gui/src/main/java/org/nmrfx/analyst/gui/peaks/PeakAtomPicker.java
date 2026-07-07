@@ -22,6 +22,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,8 +49,8 @@ public class PeakAtomPicker {
         stage = new Stage(StageStyle.DECORATED);
         borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle("Peak Assigner");
         stage.setAlwaysOnTop(true);
 

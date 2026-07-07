@@ -81,6 +81,7 @@ public class SequenceGUI {
         borderPane.setTop(toolBar);
         textArea.setPromptText("Enter a single character sequence (spaces and digits will be ignored");
         borderPane.setCenter(textArea);
+        GUIUtils.applyTheme(stageScene);
         stage.setScene(stageScene);
     }
 

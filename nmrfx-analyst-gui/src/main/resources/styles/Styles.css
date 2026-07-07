@@ -76,3 +76,7 @@
 .comment {
 	-fx-fill: cadetblue;
 }
+
+.custom-text-field {
+    -fx-prompt-text-fill: #6b7280; /* pick a shade that matches your theme */
+}

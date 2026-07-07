@@ -17,8 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.Observable;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
@@ -54,7 +53,7 @@ import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.greenrobot.eventbus.EventBus;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
@@ -365,7 +364,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titleBox.getChildren().add(spacer);
         if (addMenu) {
             MenuButton menuButton = new MenuButton("");
-            menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
+            menuButton.setGraphic(GUIUtils.createIcon(Material2AL.ADD));
             menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             if (name.equals("FULL DATASET")) {
                 menuButton.getItems().addAll(getMenuItemsForDataset());
@@ -402,6 +401,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     private TitledPane addTitlePane(ProcessingSection section, String title) {
         TitledPane titledPane = new TitledPane();
+        titledPane.getStyleClass().add(Styles.DENSE);
         titledPane.expandedProperty().addListener(c -> setActivePane(section, titledPane));
         titledPane.setText(title);
         addTitleBar(titledPane, title, true);
@@ -1735,6 +1735,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
+        referencePane.getStyleClass().add(Styles.DENSE);
+
         referencePane.setText("PARAMETERS");
         addTitleBar(referencePane, "PARAMETERS", false);
 
@@ -1747,10 +1749,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         statusBar.setTooltip(statusBarToolTip);
 
         viewMode.getItems().addAll(DisplayMode.values());
-        Text detailIcon = GlyphsDude.createIcon(FontAwesomeIcon.INFO,
-                AnalystApp.ICON_SIZE_STR);
+        Label infoIcon = GUIUtils.createIcon(Material2AL.INFO);
         detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        detailButton.setGraphic(detailIcon);
+        detailButton.setGraphic(infoIcon);
         detailButton.setOnAction(e -> updateAllAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 

@@ -7,6 +7,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.IOException;
 
@@ -45,7 +46,7 @@ public class Fxml {
         private Scene getOrCreateScene() {
             if (scene == null) {
                 this.scene = new Scene(node);
-                scene.getStylesheets().add(DEFAULT_CSS);
+                GUIUtils.applyTheme(scene);
             }
             return scene;
         }

@@ -5,6 +5,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.utils.GUIUtils;
 
 public class ScriptGUI {
     Stage stage = null;
@@ -19,6 +20,7 @@ public class ScriptGUI {
             stage = new Stage();
             stage.setTitle("Processing Script");
             stage.setWidth(500);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             borderPane.setCenter(textArea);
             codeAreaUtil = new ProcessingCodeAreaUtil(textArea);

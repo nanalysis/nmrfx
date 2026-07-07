@@ -31,7 +31,7 @@
                                 <CheckBox fx:id="fixedAspectBox" text="Ignore ppm ratios"/>
                                 <Label text="Aspect ratio:" minWidth="35"/>
                                 <HBox>
-                                    <Slider fx:id="aspectSlider" prefWidth="150"/>
+                                    <Slider fx:id="aspectSlider" prefWidth="200"/>
                                     <TextField fx:id="aspectRatioValue" minWidth="50" maxWidth="50"/>
                                 </HBox>
                             </children>
@@ -46,7 +46,7 @@
                                         <Label text="Contour Level"
                                                GridPane.columnIndex="0" GridPane.rowIndex="0"
                                         />
-                                        <Slider fx:id="lvlSlider" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="lvlSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="lvlField" text="" prefWidth="60"
@@ -55,7 +55,7 @@
                                         <Label text="Contour Level Multiplier"
                                                GridPane.columnIndex="0" GridPane.rowIndex="2"
                                         />
-                                        <Slider fx:id="clmSlider" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="clmSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="clmField" text="" prefWidth="60"
@@ -64,7 +64,7 @@
                                         <Label text="Number of Contour Levels"
                                                GridPane.columnIndex="0" GridPane.rowIndex="4"
                                         />
-                                        <Slider fx:id="nlvlsSlider" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="nlvlsSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="nlvlsField" text="" prefWidth="60"
@@ -93,7 +93,7 @@
                                         <Label text="Vertical Scale"
                                                GridPane.columnIndex="0" GridPane.rowIndex="2"
                                         />
-                                        <Slider fx:id="lvlSlider1D" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="lvlSlider1D" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="lvlField1D" text="" prefWidth="60"
@@ -102,7 +102,7 @@
                                         <Label text="Vertical Offset"
                                                GridPane.columnIndex="0" GridPane.rowIndex="4"
                                         />
-                                        <Slider fx:id="offsetSlider" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="offsetSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="offsetField" text="" prefWidth="60"
@@ -111,7 +111,7 @@
                                         <Label text="Stack X Value"
                                                GridPane.columnIndex="0" GridPane.rowIndex="6"
                                         />
-                                        <Slider fx:id="stackXSlider" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="stackXSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="stackXField" text="" prefWidth="50"
@@ -120,7 +120,7 @@
                                         <Label text="Stack Y Value"
                                                GridPane.columnIndex="0" GridPane.rowIndex="8"
                                         />
-                                        <Slider fx:id="stackYSlider" min="1" max="20" prefWidth="150"
+                                        <Slider fx:id="stackYSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="9" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="stackYField" text="" prefWidth="50"
@@ -129,7 +129,7 @@
                                         <Label text="Line Width:"
                                                GridPane.columnIndex="0" GridPane.rowIndex="10" GridPane.columnSpan="2"
                                         />
-                                        <Slider fx:id="posWidthSlider1D" prefWidth="150"
+                                        <Slider fx:id="posWidthSlider1D" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="11" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="posWidthField1D" text="" prefWidth="35"
@@ -159,7 +159,7 @@
                                         <Label text="Line Width:"
                                                GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2"
                                         />
-                                        <Slider fx:id="posWidthSlider" prefWidth="150"
+                                        <Slider fx:id="posWidthSlider" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="posWidthField" text="" prefWidth="35"
@@ -184,7 +184,7 @@
                                         <Label text="Line Width:"
                                                GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2"
                                         />
-                                        <Slider fx:id="negWidthSlider" prefWidth="150"
+                                        <Slider fx:id="negWidthSlider" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
                                         <TextField fx:id="negWidthField" text="" prefWidth="35"
@@ -249,16 +249,18 @@
                                           GridPane.columnIndex="1" GridPane.columnSpan="1">
                                     <children>
                                         <Label text="Color peaks by "
+                                               prefWidth="90.0"
                                                GridPane.columnIndex="0" GridPane.rowIndex="0"
                                         />
                                         <ComboBox fx:id="peakColorModeComboBox" editable="false"
-                                                  prefWidth="75.0"
+                                                  prefWidth="120.0"
                                                   GridPane.columnIndex="1" GridPane.rowIndex="0"
                                         />
                                         <Label text="On Color "
                                                GridPane.columnIndex="0" GridPane.rowIndex="1"
                                         />
                                         <ColorPicker fx:id="peakOnColorPicker" promptText=" Color" styleClass="button"
+                                                     prefWidth="120.0"
                                                      GridPane.columnIndex="1" GridPane.rowIndex="1"
                                                      GridPane.columnSpan="1"
                                         />
@@ -266,6 +268,7 @@
                                                GridPane.columnIndex="0" GridPane.rowIndex="2"
                                         />
                                         <ColorPicker fx:id="peakOffColorPicker" promptText=" Color" styleClass="button"
+                                                     prefWidth="120.0"
                                                      GridPane.columnIndex="1" GridPane.rowIndex="2"
                                                      GridPane.columnSpan="1"
                                         />
@@ -273,21 +276,21 @@
                                                GridPane.columnIndex="0" GridPane.rowIndex="3"
                                         />
                                         <ComboBox fx:id="peakDisplayModeComboBox" editable="false"
-                                                  prefWidth="75.0"
+                                                  prefWidth="120.0"
                                                   GridPane.columnIndex="1" GridPane.rowIndex="3"
                                         />
                                         <Label text="Label peaks with "
                                                GridPane.columnIndex="0" GridPane.rowIndex="4"
                                         />
                                         <ComboBox fx:id="peakLabelModeComboBox" editable="false"
-                                                  prefWidth="75.0"
+                                                  prefWidth="120.0"
                                                   GridPane.columnIndex="1" GridPane.rowIndex="4"
                                                   GridPane.columnSpan="1"/>
                                         <Label text="Number of planes "
                                                GridPane.columnIndex="0" GridPane.rowIndex="5"
                                         />
                                         <ComboBox fx:id="peakNPlanesComboBox" editable="false"
-                                                  prefWidth="75.0"
+                                                  prefWidth="120.0"
                                                   GridPane.columnIndex="1" GridPane.rowIndex="5"
                                                   GridPane.columnSpan="1"/>
                                         <Label text="Peak label font size" GridPane.columnIndex="0"

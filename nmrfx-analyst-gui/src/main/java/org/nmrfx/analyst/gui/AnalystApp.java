@@ -17,6 +17,10 @@
  */
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.CupertinoDark;
+import atlantafx.base.theme.CupertinoLight;
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
@@ -98,6 +102,7 @@ public class AnalystApp extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         Log.setupMemoryAppender();
 
         //necessary to avoid "," as a decimal separator in output files or python scripts

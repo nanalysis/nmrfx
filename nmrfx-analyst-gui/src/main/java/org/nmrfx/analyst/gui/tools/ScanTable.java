@@ -17,8 +17,6 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -37,7 +35,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.converter.IntegerStringConverter;
@@ -45,6 +42,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.kordamp.ikonli.material2.Material2MZ;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
@@ -1468,9 +1466,8 @@ public class ScanTable {
     }
 
     private void setMenuGraphics(TableColumn<FileTableItem, ?> column, ContextMenu menu) {
-        Text text = GlyphsDude.createIcon(FontAwesomeIcon.BARS);
-        text.setMouseTransparent(true);
-        column.setGraphic(text);
+        Label label = GUIUtils.createIcon(Material2MZ.MENU);
+        column.setGraphic(label);
         column.setContextMenu(menu);
     }
 

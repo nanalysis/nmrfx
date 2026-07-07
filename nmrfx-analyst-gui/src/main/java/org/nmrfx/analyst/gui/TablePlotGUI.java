@@ -181,6 +181,7 @@ public class TablePlotGUI {
             borderPane.setTop(toolBar);
             borderPane.setCenter(chartPane);
             borderPane.setRight(null);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             activeChart.getCanvas().setOnMouseClicked(this::mouseClicked);
         }
