@@ -258,6 +258,7 @@ public class SpectrumStatusBar {
         Arrays.stream(CanvasCursor.values())
                 .forEach(tb -> cursorChoice.getItems().add(tb));
         cursorChoice.setValue(CanvasCursor.SELECTOR);
+        cursorChoice.setPrefWidth(100);
         cursorChoice.valueProperty()
                 .addListener((observable, oldValue, newValue) -> cursorButtonToggled((CanvasCursor) newValue));
     }
