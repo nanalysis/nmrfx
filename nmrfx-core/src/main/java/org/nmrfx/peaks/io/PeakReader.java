@@ -38,6 +38,11 @@ import java.util.regex.Pattern;
  */
 @PythonAPI("pscript")
 public class PeakReader {
+    static final String BRACE_0 = "\\{[^{}]*\\}";
+    static final String BRACE_1 = "\\{(?:[^{}]|" + BRACE_0 + ")*\\}";
+    static final String QUOTED = "\"(?:[^\"\\\\]|\\\\.)*\"";
+
+    static final Pattern FIELD_PATTERN = Pattern.compile(QUOTED + "|" + BRACE_1 + "|\\S+");
 
     private static final String DATASET = "dataset";
     private static final String CONDITION = "condition";
@@ -494,46 +499,35 @@ public class PeakReader {
 
     }
 
-    /**
-     * Converts a String into a list of Strings based on white space or tab characters.
-     * Quotes are removed from the string. If there is an inner quote, that will be kept. Example {123.h5'} -> 123.h5'
-     * and {123.h5''} -> 123.h5''
-     * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
-     * as an empty string in the list.
-     *
-     * @param line The String to parse.
-     * @return The parsed String as a list.
-     */
     public static List<String> parseXPKLine(String line) {
-        List<String> store = new ArrayList<>();
-        StringBuilder curVal = new StringBuilder();
-        boolean inquotes = false;
-        char quoteChar = '\'';
-        for (int i = 0; i < line.length(); i++) {
-            char ch = line.charAt(i);
-            if (inquotes) {
-                if (ch == quoteChar) {
-                    inquotes = false;
-                    store.add(curVal.toString().trim());
-                    curVal = new StringBuilder();
-                } else {
-                    curVal.append(ch);
-                }
-            } else if ((ch == '\"') || (ch == '\'') || (ch == '{')) {
-                inquotes = true;
-                quoteChar = ch == '{' ? '}' : ch;
+        List<String> fields = new ArrayList<>();
+        Matcher m = FIELD_PATTERN.matcher(line);
+        while (m.find()) {
+            fields.add(stripResDescriptor(strip(m.group())));
+        }
+        return fields;
+    }
 
-            } else if ((ch == ' ') || (ch == '\t')) {
-                if (!curVal.isEmpty()) {
-                    store.add(curVal.toString().trim());
-                    curVal = new StringBuilder();
-                }
-            } else {
-                curVal.append(ch);
+    private static String strip(String field) {
+        if (field.length() >= 2) {
+            char first = field.charAt(0);
+            char last = field.charAt(field.length() - 1);
+            if ((first == '"' && last == '"') || (first == '{' && last == '}')) {
+                return field.substring(1, field.length() - 1);
             }
         }
-        store.add(curVal.toString().trim());
-        return store;
+        return field;
+    }
+
+    private static String stripResDescriptor(String field) {
+        if (field.length() >= 2) {
+            int firstBrace = field.indexOf('{');
+            int lastBrace = field.lastIndexOf('}');
+            if ((firstBrace != -1) && (lastBrace != -1) && (firstBrace != lastBrace)) {
+                return field.substring(0, firstBrace) + field.substring(lastBrace+1, field.length());
+            }
+        }
+        return field;
     }
 
     public static PeakList readSparkySaveFile(String fileName, Map<String, Object> pMap) {
