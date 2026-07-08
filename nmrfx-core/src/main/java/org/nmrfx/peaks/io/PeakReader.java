@@ -38,10 +38,10 @@ import java.util.regex.Pattern;
  */
 @PythonAPI("pscript")
 public class PeakReader {
-    static final String BRACE_0 = "\\{[^{}]*\\}";
-    static final String BRACE_1 = "\\{(?:[^{}]|" + BRACE_0 + ")*\\}";
-    static final String QUOTED = "\"(?:[^\"\\\\]|\\\\.)*\"";
+    static final String BRACE_0 = "\\{[^{}]*+\\}";
+    static final String BRACE_1 = "\\{[^{}]*+(?:" + BRACE_0 + "[^{}]*+)*+\\}";
 
+    static final String QUOTED = "\"[^\"\\\\]*+(?:\\\\.[^\"\\\\]*+)*+\"";
     static final Pattern FIELD_PATTERN = Pattern.compile(QUOTED + "|" + BRACE_1 + "|\\S+");
 
     private static final String DATASET = "dataset";
