@@ -93,10 +93,11 @@ public class WindowIO implements FileWatchListener {
             try (Stream<Path> filePaths = Files.list(directory)) {
                 files = filePaths.sequential().
                         map(path -> path.getFileName().toString()).
-                        filter(fileName -> predicate.test(fileName)).
+                        filter(predicate::test).
                         sorted().
                         map(fileName -> {
                             Matcher matcher = pattern.matcher(fileName);
+                            matcher.matches();
                             return matcher.group(1);
                         }).
                         collect(Collectors.toList());

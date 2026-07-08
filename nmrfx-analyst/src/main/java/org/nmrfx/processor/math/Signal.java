@@ -33,6 +33,7 @@ public class Signal implements Comparable<Signal> {
         this.frequency = frequency;
         this.decayRate = decayRate;
     }
+
     public Signal(double amplitude, double frequency, double decayRate) {
         this.amplitude = amplitude;
         this.phase = 0.0;
@@ -42,6 +43,14 @@ public class Signal implements Comparable<Signal> {
 
     public double lw() {
         return decayRate / Math.PI;
+    }
+
+    public double height() {
+        return amplitude / Math.PI / decayRate * 2.0;
+    }
+
+    public double amplitude() {
+        return amplitude;
     }
 
     public double getFrequencyHz(double sf, double ref) {

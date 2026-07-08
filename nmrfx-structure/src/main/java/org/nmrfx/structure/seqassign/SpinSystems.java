@@ -197,7 +197,7 @@ public class SpinSystems {
         if (rootPeak != pkB) {
             PeakList peakListB = pkB.getPeakList();
             double[] sumArray = sums.get(peakListB);
-            if (rootPeak.getPeakList() != peakListB) {
+            if ((sumArray != null) && (rootPeak.getPeakList() != peakListB)) {
                 int[] aMatch = matchDims(rootPeak.getPeakList(), peakListB);
                 double f = comparePeaks(rootPeak, pkB, aMatch);
                 if (f >= 0.0) {
@@ -238,6 +238,7 @@ public class SpinSystems {
         List<PeakList> allLists = new ArrayList<>();
         allLists.addAll(runAbout.getPeakLists());
         allLists.addAll(newPeakLists);
+        setupSearchDims(refList, allLists);
         runAbout.setPeakLists(allLists);
         sums = calcNormalization(refList, allLists);
         var searchDims = refList.getSearchDims();
@@ -281,15 +282,7 @@ public class SpinSystems {
         }
     }
 
-    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) throws IllegalStateException {
-        sums = calcNormalization(refList, peakLists);
-        PeakList.clusterOrigin = refList;
-        for (PeakList peakList : peakLists) {
-            peakList.unLinkPeaks();
-            if ((peakList != refList) && !sums.containsKey(peakList)) {
-                throw new IllegalStateException("Peaklist " + peakList.getName() + " not setup");
-            }
-        }
+    public void setupSearchDims(PeakList refList, List<PeakList> peakLists) {
         boolean[] useDim = getUseDims(refList, peakLists);
         for (PeakList peakList : peakLists) {
             peakList.clearSearchDims();
@@ -301,9 +294,58 @@ public class SpinSystems {
                 }
             }
         }
+    }
+    public void assembleWithClustering(PeakList refList, List<PeakList> peakLists) throws IllegalStateException {
+        sums = calcNormalization(refList, peakLists);
+        PeakList.clusterOrigin = refList;
+        for (PeakList peakList : peakLists) {
+            peakList.unLinkPeaks();
+            if ((peakList != refList) && !sums.containsKey(peakList)) {
+                throw new IllegalStateException("Peaklist " + peakList.getName() + " not setup");
+            }
+        }
+        setupSearchDims(refList, peakLists);
 
         systems.clear();
         PeakList.clusterPeaks(peakLists, refList);
+        var searchDim = refList.getSearchDims().get(0);
+        for (Peak pkA : refList.peaks()) {
+            SpinSystem spinSys = new SpinSystem(pkA, this);
+            systems.add(spinSys);
+            var linkedPeaks = PeakList.getLinks(pkA, searchDim.getDim());
+            for (Peak pkB : linkedPeaks) {
+                if (pkA != pkB) {
+                    PeakList peakListB = pkB.getPeakList();
+                    double[] sumArray = sums.get(peakListB);
+                    if (refList != peakListB) {
+                        int[] aMatch = matchDims(refList, peakListB);
+                        double f = comparePeaks(pkA, pkB, aMatch);
+                        if (f >= 0.0) {
+                            double p = f / sumArray[pkA.getIndex()];
+                            spinSys.addPeak(pkB, p);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void assembleLinkedPeaks(PeakList refList, Map<String, PeakList> peakListMap, List<PeakList> peakLists) throws IllegalStateException {
+        sums = calcNormalization(refList, peakLists);
+        PeakList.clusterOrigin = refList;
+        for (PeakList peakList : peakLists) {
+            if ((peakList != refList) && !sums.containsKey(peakList)) {
+                throw new IllegalStateException("Peaklist " + peakList.getName() + " not setup");
+            }
+        }
+        setupSearchDims(refList, peakLists);
+
+        systems.clear();
+        PeakList hncacoPeaklist = peakListMap.get("HNCACO");
+        if (hncacoPeaklist != null) {
+          //  PeakList.clusterPeaks(List.of(hncacoPeaklist), refList, false);
+        }
+
         var searchDim = refList.getSearchDims().get(0);
         for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA, this);
@@ -613,9 +655,13 @@ public class SpinSystems {
             if (peakListOpt.isPresent()) {
                 PeakList peakList = peakListOpt.get();
                 Peak peak = peakList.getPeakByID(peakIDColumn.get(i));
-                int id = spinSystemIDs.get(i);
-                SpinSystem spinSystem = new SpinSystem(peak, this);
-                systemMap.put(id, spinSystem);
+                if (peak != null) {
+                    int id = spinSystemIDs.get(i);
+                    SpinSystem spinSystem = new SpinSystem(peak, this);
+                    systemMap.put(id, spinSystem);
+                } else {
+                    log.warn("Peak not found " + peakList.getName() + "." + peakIDColumn.get(i));
+                }
             }
         }
         for (int i = 0; i < spinSystemIDs.size(); i++) {
