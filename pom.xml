@@ -8,8 +8,8 @@
     <packaging>pom</packaging>
 
     <properties>
-        <maven.compiler.source>24</maven.compiler.source>
-        <maven.compiler.target>24</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sonar.organization>nanalysis</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
