@@ -18,13 +18,8 @@
 package org.nmrfx.processor.gui.controls;
 
 import javafx.concurrent.Task;
-import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.LineNumberFactory;
-import org.fxmisc.richtext.model.StyleSpans;
-import org.fxmisc.richtext.model.StyleSpansBuilder;
 import org.nmrfx.processor.gui.OperationInfo;
 import org.nmrfx.processor.gui.RefManager;
-import org.reactfx.EventStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +31,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jfx.incubator.scene.control.richtext.CodeArea;
+import jfx.incubator.scene.control.richtext.model.CodeTextModel;
+
+
 
 public class ProcessingCodeAreaUtil {
 
@@ -82,70 +81,7 @@ public class ProcessingCodeAreaUtil {
     }
 
     public void init() {
-        executor = Executors.newSingleThreadExecutor();
-        codeArea.setParagraphGraphicFactory(LineNumberFactory.get(codeArea));
-        EventStream<?> richChanges = codeArea.richChanges();
-        richChanges
-                .successionEnds(Duration.ofMillis(500))
-                .supplyTask(this::computeHighlightingAsync)
-                .awaitLatest(richChanges)
-                .filterMap(t -> {
-                    if (t.isSuccess()) {
-                        return Optional.of(t.get());
-                    } else {
-                        log.warn(t.getFailure().getMessage(), t.getFailure());
-                        return Optional.empty();
-                    }
-                })
-                .subscribe(this::applyHighlighting);
-        codeArea.setParagraphGraphicFactory(null);
+
     }
 
-    public void stop() {
-        executor.shutdown();
-    }
-
-    private Task<StyleSpans<Collection<String>>> computeHighlightingAsync() {
-        String text = codeArea.getText();
-        Task<StyleSpans<Collection<String>>> task = new Task<StyleSpans<Collection<String>>>() {
-            @Override
-            protected StyleSpans<Collection<String>> call() throws Exception {
-                return computeHighlighting(text);
-            }
-        };
-        executor.execute(task);
-        return task;
-    }
-
-    private void applyHighlighting(StyleSpans<Collection<String>> highlighting) {
-        codeArea.setStyleSpans(0, highlighting);
-    }
-
-    private static StyleSpans<Collection<String>> computeHighlighting(String text) {
-        Matcher matcher = PATTERN.matcher(text);
-        int lastKwEnd = 0;
-        StyleSpansBuilder<Collection<String>> spansBuilder
-                = new StyleSpansBuilder<>();
-        while (matcher.find()) {
-            String styleClass
-                    = matcher.group("KEYWORD") != null ? "keyword"
-                    : matcher.group("OPS") != null ? "ops"
-                    : matcher.group("PROPS") != null ? "props"
-                    : matcher.group("PAREN") != null ? "paren"
-                    : matcher.group("BRACE") != null ? "brace"
-                    : matcher.group("BRACKET") != null ? "bracket"
-                    : matcher.group("SEMICOLON") != null ? "semicolon"
-                    : matcher.group("STRING") != null ? "string"
-                    : matcher.group("SNGLSTRING") != null ? "string"
-                    : matcher.group("COMMENT") != null ? "comment"
-                    : null;
-            /* never happens */
-            assert styleClass != null;
-            spansBuilder.add(Collections.emptyList(), matcher.start() - lastKwEnd);
-            spansBuilder.add(Collections.singleton(styleClass), matcher.end() - matcher.start());
-            lastKwEnd = matcher.end();
-        }
-        spansBuilder.add(Collections.emptyList(), text.length() - lastKwEnd);
-        return spansBuilder.create();
-    }
 }
