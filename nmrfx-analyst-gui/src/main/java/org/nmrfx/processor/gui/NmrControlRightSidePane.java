@@ -13,6 +13,7 @@ public class NmrControlRightSidePane extends StackPane {
     private static final double MINIMUM_WIDTH_OF_CHILDREN = 400;
 
     public NmrControlRightSidePane() {
+        setMaxWidth(400);
         // Adjust sizing and visibility when contents of the pane change
         getChildren().addListener((ListChangeListener<Node>) c -> {
             while(c.next()) {
