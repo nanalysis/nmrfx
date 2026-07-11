@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -101,6 +102,8 @@ public class Phaser {
             final int phMode = iPh;
             Label label = new Label("PH" + iPh);
             Slider slider = new Slider();
+            slider.getStyleClass().addAll(Styles.SMALL);
+
             slider.setBlockIncrement(scales[iPh]);
             slider.setMajorTickUnit(15.0 * scales[iPh]);
             slider.setMin(-45.0 * scales[iPh]);
@@ -137,7 +140,13 @@ public class Phaser {
             xyPhaseChoice.setValue("X");
             xyPhaseChoice.valueProperty().bindBidirectional(phaseChoice);
             xyPhaseChoice.valueProperty().addListener(e -> setChartPhaseDim());
+            xyPhaseChoice.setPrefWidth(50);
+            xyPhaseChoice.getStyleClass().addAll(Styles.SMALL);
+
+
             Label xyLabel = new Label("Axis");
+            xyLabel.getStyleClass().addAll(Styles.SMALL);
+
             HBox xyBox = new HBox();
             xyBox.setAlignment(Pos.CENTER);
             xyBox.setSpacing(10);
@@ -147,6 +156,8 @@ public class Phaser {
         SplitMenuButton splitMenuButton = new SplitMenuButton();
         splitMenuButton.setText("Pivot");
         splitMenuButton.setOnAction(e -> setPhasePivotToMax());
+        splitMenuButton.getStyleClass().addAll(Styles.SMALL);
+
 
         MenuItem setPivotToMaxItem = new MenuItem("Set toMax");
         setPivotToMaxItem.setOnAction(e -> setPhasePivotToMax());
@@ -159,6 +170,7 @@ public class Phaser {
         SplitMenuButton phaseSplitMenuButton = new SplitMenuButton();
         phaseSplitMenuButton.setText("Set");
         phaseSplitMenuButton.setOnAction(e -> setPhases());
+        phaseSplitMenuButton.getStyleClass().addAll(Styles.SMALL);
 
         MenuItem setPhasesToDataValuesItem = new MenuItem("To Data Values");
         setPhasesToDataValuesItem.setOnAction(e -> setPhases());
@@ -180,6 +192,7 @@ public class Phaser {
         SplitMenuButton autoPhaseMenuButton = new SplitMenuButton();
         autoPhaseMenuButton.setText("Auto");
         autoPhaseMenuButton.setOnAction(e -> autoPhase01());
+        autoPhaseMenuButton.getStyleClass().addAll(Styles.SMALL);
 
         MenuItem autoPhase01Item = new MenuItem("AutoPhase 0+1");
         autoPhase01Item.setOnAction(e -> autoPhase01());
@@ -194,6 +207,7 @@ public class Phaser {
         hbox.getChildren().addAll(splitMenuButton, phaseSplitMenuButton, autoPhaseMenuButton);
         if (!processOpMode) {
             Button button = new Button("Apply");
+            button.getStyleClass().addAll(Styles.SMALL);
             button.setOnAction(e -> applyPhase());
             hbox.getChildren().add(button);
         }

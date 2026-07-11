@@ -31,12 +31,10 @@ public class PhaserController {
         phaser = new Phaser(fxmlController, vBox, Orientation.HORIZONTAL);
         phaserPane.expandedProperty().addListener((observable, wasExpanded, isNowExpanded) -> {
             if (isNowExpanded) {
-                System.out.println("TitledPane opened");
                 updatePhaser(true);
                 // Add your open/expand logic here
             } else {
                 updatePhaser(false);
-                System.out.println("TitledPane closed");
                 // Add your close/collapse logic here
             }
         });    }
