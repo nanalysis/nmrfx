@@ -13,7 +13,6 @@ public class ScriptGUI {
     Stage stage = null;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 500, 500);
-    ProcessingCodeAreaUtil codeAreaUtil;
 
     CodeTextModel model = new CodeTextModel();
     CodeArea codeArea = new CodeArea(model);
@@ -24,15 +23,14 @@ public class ScriptGUI {
             stage = new Stage();
             stage.setTitle("Processing Script");
             stage.setWidth(500);
+            stageScene.getStylesheets().add(ScriptGUI.class.getResource("/styles/python.css").toExternalForm());
+
             GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             borderPane.setCenter(codeArea);
-            codeAreaUtil = new ProcessingCodeAreaUtil(codeArea);
-            codeArea.setText("Hello");
-
-            //codeArea.setEditable(false);
-            //codeArea.setWrapText(true);
-
+            codeArea.setSyntaxDecorator(new PythonSyntaxDecorator());
+            codeArea.setEditable(false);
+            codeArea.setWrapText(true);
         }
         stage.show();
         stage.toFront();
