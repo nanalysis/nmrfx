@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
+import atlantafx.base.theme.Styles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
@@ -109,6 +110,8 @@ public class ScannerTool implements ControllerTool {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
         tableView = new TableView<>();
+        tableView.getStyleClass().addAll(Styles.DENSE);
+
         borderPane.setCenter(tableView);
         Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());

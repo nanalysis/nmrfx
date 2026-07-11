@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
@@ -671,6 +672,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             valueStage.show();
 
             valueTableView = new TableView<>();
+            valueTableView.getStyleClass().add(Styles.DENSE);
             valueTableView.setEditable(true);
             Button mathButton = new Button("Calculate");
             mathButton.setOnAction(e -> doMath());

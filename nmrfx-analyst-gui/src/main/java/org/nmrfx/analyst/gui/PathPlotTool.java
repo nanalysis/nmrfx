@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -101,6 +102,7 @@ public class PathPlotTool {
 
             borderPane.setTop(toolBar);
             tableView = new TableView<PeakPath>();
+            tableView.getStyleClass().addAll(Styles.DENSE);
             SplitPane sPane = new SplitPane(chartPane, tableView);
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
