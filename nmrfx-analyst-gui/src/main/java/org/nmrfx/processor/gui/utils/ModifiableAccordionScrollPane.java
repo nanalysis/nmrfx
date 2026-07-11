@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.ContextMenuEvent;
@@ -36,6 +35,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
         this.setFitToHeight(true);
         this.setFitToWidth(true);
         this.setHbarPolicy(ScrollBarPolicy.NEVER);
+        this.setMaxWidth(400);
         this.setContent(accordion);
     }
 
@@ -92,7 +92,6 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             // title in the default way
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             setGraphic(titleBox);
-            setSkin(new ButtonTitlePaneSkin(this));
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
@@ -112,7 +111,6 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             // title in the default way
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             setGraphic(titleBox);
-            setSkin(new ButtonTitlePaneSkin(this));
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
@@ -305,24 +303,5 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             this.getPanes().add(titledPane);
         }
 
-    }
-
-    private static class ButtonTitlePaneSkin extends TitledPaneSkin {
-        final Region arrow;
-
-        ButtonTitlePaneSkin(final TitledPane titledPane) {
-            super(titledPane);
-            arrow = (Region) getSkinnable().lookup(".arrow-button");
-
-        }
-
-        @Override
-        protected void layoutChildren(final double x, final double y, final double w, final double h) {
-            super.layoutChildren(x, y, w, h);
-            double arrowWidth = arrow.getLayoutBounds().getWidth();
-            double arrowPadding = arrow.getPadding().getLeft() + arrow.getPadding().getRight();
-
-            ((Region) getSkinnable().getGraphic()).setMinWidth(w - (arrowWidth + arrowPadding));
-        }
     }
 }
