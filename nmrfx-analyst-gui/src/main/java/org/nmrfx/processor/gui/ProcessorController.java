@@ -39,7 +39,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -349,8 +348,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private void addTitleBar(TitledPane titledPane, String name, boolean addMenu) {
         titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         titledPane.setGraphicTextGap(0);
-        titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
-
         HBox titleBox = new HBox();
         titleBox.setPadding(new Insets(0, 5, 0, 5));
         HBox.setHgrow(titleBox, Priority.ALWAYS);
@@ -381,27 +378,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setGraphic(titleBox);
     }
 
-    private static class ButtonTitlePaneSkin extends TitledPaneSkin {
-        final Region arrow;
-
-        ButtonTitlePaneSkin(final TitledPane titledPane) {
-            super(titledPane);
-            arrow = (Region) getSkinnable().lookup(".arrow-button");
-
-        }
-
-        @Override
-        protected void layoutChildren(final double x, final double y, final double w, final double h) {
-            super.layoutChildren(x, y, w, h);
-            double arrowWidth = arrow.getLayoutBounds().getWidth();
-            double arrowPadding = arrow.getPadding().getLeft() + arrow.getPadding().getRight();
-
-            ((Region) getSkinnable().getGraphic()).setMinWidth(w - (arrowWidth + arrowPadding));
-        }
-    }
-
     private TitledPane addTitlePane(ProcessingSection section, String title) {
         TitledPane titledPane = new TitledPane();
+        titledPane.setMaxWidth(400);
         titledPane.expandedProperty().addListener(c -> setActivePane(section, titledPane));
         titledPane.setText(title);
         addTitleBar(titledPane, title, true);
