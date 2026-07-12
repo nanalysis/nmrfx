@@ -570,7 +570,11 @@ public class GUIUtils {
 
 
     public static ToggleButton toggleButton(Ikon icon, String text) {
-        return toggleButton(icon, text, ContentDisplay.TOP);
+        ToggleButton button =  toggleButton(icon, text, ContentDisplay.TOP);
+        button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
+        button.setStyle("-fx-padding: 2 6 2 6;");
+        button.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+        return button;
     }
 
     public static ToggleButton toggleButton(Ikon icon, String text, ContentDisplay contentDisplay) {
