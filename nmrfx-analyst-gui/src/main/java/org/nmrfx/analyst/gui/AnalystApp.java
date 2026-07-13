@@ -102,7 +102,7 @@ public class AnalystApp extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+        AnalystPrefs.setTheme();
         Log.setupMemoryAppender();
 
         //necessary to avoid "," as a decimal separator in output files or python scripts

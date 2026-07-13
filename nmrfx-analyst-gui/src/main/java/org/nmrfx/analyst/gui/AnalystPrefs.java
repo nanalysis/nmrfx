@@ -5,10 +5,12 @@
  */
 package org.nmrfx.analyst.gui;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.StringProperty;
+import atlantafx.base.theme.CupertinoDark;
+import atlantafx.base.theme.CupertinoLight;
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
+import javafx.application.Application;
+import javafx.beans.property.*;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -16,11 +18,15 @@ import org.nmrfx.utils.properties.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author brucejohnson
  */
 public class AnalystPrefs {
+    private static final String GUI_THEME = "GUI_THEME";
+    private static final String GUI_LIGHTDARK = "GUI_LIGHTDARK";
     private static final String REMOTE_HOST_STR = "REMOTE_HOST";
     private static final String REMOTE_USER_STR = "REMOTE_USER_NAME";
     private static IntegerProperty libraryVectorSize = null;
@@ -29,6 +35,8 @@ public class AnalystPrefs {
     private static DoubleProperty libraryVectorLB = null;
     private static DoubleProperty libraryVectorREF = null;
 
+    private static StringProperty themeProp = null;
+    private static StringProperty lightDarkModeProp = null;
     private static StringProperty segmentLibraryFile = null;
     private static BooleanProperty useRemotePassword = null;
     private static StringProperty remoteUserName = null;
@@ -38,8 +46,51 @@ public class AnalystPrefs {
     private static StringProperty localResidueDirectory = null;
     private static StringProperty gissmoFileProp = null;
 
+    public enum LightDarkModes {
+        LIGHT,
+        DARK,
+        AUTO
+    }
+
     private AnalystPrefs() {
         throw new IllegalAccessError("Utility class shouldn't be instantiated!");
+    }
+
+    public static void setTheme() {
+        String name = getTheme();
+        if (getLightDarkMode() == LightDarkModes.LIGHT) {
+            switch (name) {
+                case "Primer" -> Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+                case "Cupertino" -> Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+            }
+        } else {
+            switch (name) {
+                case "Primer" -> Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+                case "Cupertino" -> Application.setUserAgentStylesheet(new CupertinoDark().getUserAgentStylesheet());
+            }
+        }
+    }
+
+    public static void setTheme(String name) {
+        themeProp.setValue(name);
+        PreferencesController.setString(GUI_THEME, name);
+        setTheme();
+    }
+
+    public static String getTheme() {
+        themeProp = PreferencesController.getString(themeProp, GUI_THEME, "Primer");
+        return themeProp.getValue();
+    }
+
+    public static void setLightDarkMode(String lightDarkModeStr) {
+        lightDarkModeProp.setValue(lightDarkModeStr);
+        PreferencesController.setString(GUI_LIGHTDARK, lightDarkModeStr);
+        setTheme();
+    }
+
+    public static LightDarkModes getLightDarkMode() {
+        lightDarkModeProp = PreferencesController.getString(lightDarkModeProp, GUI_LIGHTDARK, "LIGHT");
+        return LightDarkModes.valueOf(lightDarkModeProp.get());
     }
 
 
@@ -148,6 +199,23 @@ public class AnalystPrefs {
 
     public static void addPrefs(PreferencesController preferencesController) {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
+
+        List defaultThemeNames = List.of("Primer", "Cupertino");
+
+        ChoiceOperationItem themeItem = new ChoiceOperationItem(prefSheet, (a, b, c) -> {
+            setTheme((String) c);
+        }, getTheme(), defaultThemeNames, "GUI",
+                "theme", "GUI Theme");
+
+
+        List<String> lightDarkModes = Arrays.stream(LightDarkModes.values()).map(ld -> ld.name()).toList();
+
+        ChoiceOperationItem lightDarkItem = new ChoiceOperationItem(prefSheet, (a, b, c) -> {
+            setLightDarkMode((String) c);
+        }, getLightDarkMode().name(), lightDarkModes, "GUI",
+                "lightdark", "GUI  light or dark theme mode");
+
+
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(prefSheet,
                 (a, b, c) -> {
                     libraryVectorSize.setValue((Integer) c);
@@ -227,9 +295,10 @@ public class AnalystPrefs {
                 libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem, segmentLibraryFileItem,
                 localDirectoryItem,
                 remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem,
-                localResidueDirectoryItem);
+                localResidueDirectoryItem, themeItem, lightDarkItem);
 
     }
+
     public static String getGissmoFile() {
         gissmoFileProp = PreferencesController.getString(gissmoFileProp, "GISSMO-FILE", "");
         return gissmoFileProp.getValue();
