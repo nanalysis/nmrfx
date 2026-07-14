@@ -39,6 +39,7 @@ ATOM   N6     N2    1.36  118.10  -180.0  -0.9019
 ATOM   H61    H     1.01  120.00  0.0     0.4115
 ATOM   H62    H     1.01  120.00  -180.0  0.4115
 ATOM   O3'    OS    1.41  112.21  78.2    -0.5246
+ATOM   HO3'   HO    0.96  108.50  -132.0  0.4186 end
 FAMILY  -    P    O5'  OP1  OP2 Pc start|middle|end
 FAMILY  P    O5'  C5' middle|end
 FAMILY  -    O5'  C5' HO5' nop
@@ -59,7 +60,8 @@ FAMILY  C2   N1   =C6 N1c
 FAMILY  N1   C6   N6 C6p -C5
 FAMILY  C6   N6   H61 H62
 FAMILY  C1'  O4'  -C4'
-FAMILY  C3'  O3'   +
+FAMILY  C3'  O3'   + start|middle
+FAMILY  C3'  O3'   HO3' end
 ANGLE     P      ZETA 2 start|middle|end
 ANGLE     O5'      ALPHA 2
 ANGLE     C5'     BETA 2

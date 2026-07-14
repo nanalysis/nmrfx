@@ -377,7 +377,7 @@ public class DrawPeaks {
 
                 label = labels.toString().trim();
 
-                if (label.length() == 0) {
+                if (label.isEmpty() && (nPeakDim > 1)) {
                     label = "#" + (String.valueOf(peak.getIdNum()));
                 }
 
@@ -409,8 +409,8 @@ public class DrawPeaks {
                 // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
                 if (multipletMode && peak.peakDims[0].hasMultiplet()) {
                     String couplings = peak.peakDims[0].getMultiplet().getCouplingsAsSimpleString();
-                    if (peak.peakList.scale > 0.0) {
-                        normVal = peak.peakDims[0].getMultiplet().getVolume() / peak.peakList.scale;
+                    if (peak.peakList.getScale() > 0.0) {
+                        normVal = peak.peakDims[0].getMultiplet().getVolume() / peak.peakList.getScale();
                     }
                     label = Format.format2(normVal) + " " + peak.peakDims[0].getMultiplet().getMultiplicity() + " " + couplings
                             + "\n" + Format.format4(peak.peakDims[0].getMultiplet().getCenter());
@@ -516,8 +516,8 @@ public class DrawPeaks {
 
                 // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
                 String couplings = multiplet.getCouplingsAsSimpleString();
-                if (peak.peakList.scale > 0.0) {
-                    normVal = multiplet.getVolume() / peak.peakList.scale;
+                if (peak.peakList.getScale() > 0.0) {
+                    normVal = multiplet.getVolume() / peak.peakList.getScale();
                 }
                 StringBuilder sBuilder = new StringBuilder();
                 sBuilder.append(Format.format2(normVal)).append(' ').
@@ -1300,6 +1300,9 @@ public class DrawPeaks {
     }
 
     public static Bounds measureText(String s, Font font, double angle, double x, double y) {
+        if (s.isBlank()) {
+            s = " ";
+        }
         Text text = new Text(s);
         text.setFont(font);
         text.setTextAlignment(TextAlignment.CENTER);
@@ -1319,9 +1322,9 @@ public class DrawPeaks {
             ab = new BoundingBox(trBds.getMinX() - xOffset, trBds.getMinY() + yOffset, trBds.getWidth(), trBds.getHeight());
         } else {
             ab = new BoundingBox(x + useBounds.getMinX() - xOffset,
-                    y + useBounds.getMinY() - useBounds.getHeight() + yOffset,
+                    y + useBounds.getMinY() - useBounds.getHeight() + yOffset - 10,
                     useBounds.getWidth(),
-                    useBounds.getHeight());
+                    useBounds.getHeight() + 10);
         }
 
         return ab;

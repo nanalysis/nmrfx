@@ -23,28 +23,27 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.ReferenceCalculator;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
+import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -422,6 +421,9 @@ public class RefManager {
         String acqOrderValue = acqOrderCombo.getValue();
         boolean ok = processorController.chartProcessor.setAcqOrder(acqOrderValue);
         if (ok) {
+            if (acqOrderValue.equals("a2,p1,d1")) {
+                acqArrayChoice.setValue(2);
+            }
             invalidateScript();
         }
     }
@@ -438,27 +440,33 @@ public class RefManager {
 
     }
 
+    private void addAcqDimChoice(NMRData nmrData, List<Integer> permDims, List<String> choices) {
+        StringBuilder sBuilder = new StringBuilder();
+        if ((nmrData instanceof BrukerData) || (nmrData instanceof RS2DData)) {
+            sBuilder.append(nmrData.getNDim());
+        }
+        for (Integer iVal : permDims) {
+            sBuilder.append(iVal);
+        }
+        choices.add(sBuilder.toString());
+
+    }
+
     private ComboBox<String> setupAcqOrder(NMRData nmrData) {
         acqOrderCombo = new ComboBox();
         if (nmrData != null) {
-            ArrayList<String> choices = new ArrayList<>();
             if (nmrData.getNDim() > 1) {
-                ArrayList<Integer> dimList = new ArrayList<>();
+                List<String> choices = new ArrayList<>();
+                List<Integer> dimList = new ArrayList<>();
                 for (int i = 1; i <= (nmrData.getNDim() - 1); i++) {
                     dimList.add(i);
                 }
-                PermutationIterator permIter = new PermutationIterator(dimList);
-                StringBuilder sBuilder = new StringBuilder();
+                PermutationIterator<Integer> permIter = new PermutationIterator<>(dimList);
                 while (permIter.hasNext()) {
-                    ArrayList<Integer> permDims = (ArrayList<Integer>) permIter.next();
-                    sBuilder.setLength(0);
-                    if (nmrData.getVendor().equals("bruker") || nmrData.getVendor().equals("rs2d")) {
-                        sBuilder.append(nmrData.getNDim());
-                    }
-                    for (Integer iVal : permDims) {
-                        sBuilder.append(iVal);
-                    }
-                    choices.add(sBuilder.toString());
+                    addAcqDimChoice(nmrData, permIter.next(), choices);
+                }
+                if ((nmrData instanceof BrukerData) && (nmrData.getNDim() == 2)) {
+                    choices.add("a2,p1,d1");
                 }
                 acqOrderCombo.getItems().addAll(choices);
                 acqOrderCombo.setEditable(true);
@@ -518,6 +526,10 @@ public class RefManager {
                 case "Date" -> textField.setText(nmrData.getZonedDate().toString());
             }
         }
+    }
+
+    public void clearObjectPropertyMap() {
+        objectPropertyMap.clear();
     }
 
     public void updateReferencePane(NMRData nmrData, int nDim) {
@@ -587,7 +599,7 @@ public class RefManager {
 
         vBox.getChildren().add(zfBox);
 
-        if ((nmrData != null) && nmrData.getVendor().equals("bruker")) {
+        if ((nmrData != null) && (nmrData instanceof BrukerData)) {
             CheckBox checkBox = new CheckBox("Fix DSP");
             checkBox.setSelected(processorController.chartProcessor.getFixDSP());
             vBox.getChildren().add(checkBox);
@@ -614,7 +626,7 @@ public class RefManager {
             Insets insets = new Insets(5, 5, 5, 10);
             label.setPadding(insets);
             gridPane.add(label, 1, row);
-            ToggleButton toggleButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.LOCK, "", "12", ContentDisplay.GRAPHIC_ONLY);
+            ToggleButton toggleButton = GUIUtils.toggleButton(Material2AL.LOCK,null);
             gridPane.add(toggleButton, 0, row);
             toggleButton.setSelected(dataProp.locked);
             toggleButton.setOnAction(e -> updateEditable(toggleButton, dataProp, nmrData, nDim));

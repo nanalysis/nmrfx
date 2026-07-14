@@ -62,4 +62,9 @@ public class CoordSet {
         entities.put(entity.getName(), entity);
         entity.coordSet = this;
     }
+
+    public int removeEntity(Entity entity) {
+        entities.remove(entity.getName());
+        return entities.size();
+    }
 }

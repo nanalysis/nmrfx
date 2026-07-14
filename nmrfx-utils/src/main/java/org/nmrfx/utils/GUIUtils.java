@@ -8,12 +8,15 @@ package org.nmrfx.utils;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.embed.swing.SwingFXUtils;
+import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -22,16 +25,27 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Transform;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.FormatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
+import org.nmrfx.fxutil.Fx;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.DoubleConsumer;
 import java.util.function.UnaryOperator;
+import static atlantafx.base.theme.Styles.TEXT_SMALL;
+import atlantafx.base.theme.Styles;
+import static org.kordamp.ikonli.material2.Material2AL.*;
+import static org.kordamp.ikonli.material2.Material2MZ.*;
 
 /**
  * @author brucejohnson
@@ -44,10 +58,12 @@ public class GUIUtils {
         NO,
         CANCEL,
         DELETE,
-        APPEND;
+        APPEND
     }
+
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
     static final Background DEFAULT_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, null, null));
+
     public static class FixedDecimalFilter implements UnaryOperator<TextFormatter.Change> {
 
         @Override
@@ -58,6 +74,7 @@ public class GUIUtils {
             return null;
         }
     }
+
     public static class FixedDecimalConverter extends DoubleStringConverter {
 
         private final int decimalPlaces;
@@ -100,6 +117,7 @@ public class GUIUtils {
         }
         return result;
     }
+
     public static void acknowledge(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
         alert.showAndWait();
@@ -119,11 +137,46 @@ public class GUIUtils {
         return result;
     }
 
+    public static int getResponse(String message, String[] choices) {
+        ButtonType[] buttons = new ButtonType[choices.length + 1];
+        buttons[0] = ButtonType.CANCEL;
+        int i = 1;
+        for (String choice : choices) {
+            buttons[i++] = new ButtonType(choice);
+        }
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, buttons);
+        Optional<ButtonType> response = alert.showAndWait();
+        int result = 0;
+        if (response.isPresent()) {
+            i = 0;
+            for (ButtonType buttonType : buttons) {
+                if (buttonType == response.get()) {
+                    result = i;
+                    break;
+                }
+                i++;
+            }
+        }
+        return result;
+    }
+
     public static void warn(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    public static Object choice(Collection choices, String message) {
+        return choice(choices, message, null);
+    }
+
+    public static Object choice(Collection choices, String message, Object defaultChoice) {
+        ChoiceDialog choiceDialog = new ChoiceDialog(defaultChoice, choices);
+        choiceDialog.setHeaderText(message);
+        choiceDialog.setContentText("Value:");
+        Optional result = choiceDialog.showAndWait();
+        return result.orElse(null);
     }
 
     public static String input(String message) {
@@ -336,18 +389,6 @@ public class GUIUtils {
         return pw;
     }
 
-    public static void snapNode(Node node, File file) throws IOException {
-        double scale = 4.0;
-        final Bounds bounds = node.getLayoutBounds();
-        final WritableImage image = new WritableImage(
-                (int) Math.round(bounds.getWidth() * scale),
-                (int) Math.round(bounds.getHeight() * scale));
-        final SnapshotParameters spa = new SnapshotParameters();
-        spa.setTransform(javafx.scene.transform.Transform.scale(scale, scale));
-        node.snapshot(spa, image);
-        javax.imageio.ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
-    }
-
     public static void bindSliderField(Slider slider, TextField field) {
         DecimalFormat numberFormat = new DecimalFormat();
         numberFormat.setMaximumFractionDigits(2);
@@ -364,6 +405,7 @@ public class GUIUtils {
         field.setTextFormatter(formatter);
         slider.valueProperty().bindBidirectional(formatter.valueProperty());
     }
+
     public static void bindSliderField(Slider slider, TextField field, String pattern, double range) {
         DecimalFormat numberFormat = new DecimalFormat(pattern);
         FormatStringConverter<Number> converter = new FormatStringConverter<>(numberFormat);
@@ -389,12 +431,17 @@ public class GUIUtils {
     }
 
     public static TextField getDoubleTextField(SimpleDoubleProperty prop) {
+        return getDoubleTextField(prop, 2);
+    }
+
+    public static TextField getDoubleTextField(SimpleDoubleProperty prop, int decimalPlaces) {
         TextField textField = new TextField();
-        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(2), 0.0, new FixedDecimalFilter());
+        TextFormatter<Double> textFormatter = new TextFormatter<>(new FixedDecimalConverter(decimalPlaces), 0.0, new FixedDecimalFilter());
         textFormatter.valueProperty().bindBidirectional((Property) prop);
         textField.setTextFormatter(textFormatter);
         return textField;
     }
+
     public static TextField getIntegerTextField(SimpleIntegerProperty prop) {
         TextField textField = new TextField();
         TextFormatter<Integer> textFormatter = new TextFormatter<>(new IntegerStringConverter());
@@ -402,12 +449,13 @@ public class GUIUtils {
         textField.setTextFormatter(textFormatter);
         return textField;
     }
+
     public static Color getColor(String colorString) {
         Color color = null;
         if (colorString != null && !colorString.isBlank()) {
             try {
                 color = Color.web(colorString);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 color = Color.web("black");
             }
         }
@@ -415,9 +463,10 @@ public class GUIUtils {
 
     }
 
-    public record SliderRange(double min, double value, double max, double incrValue) {}
+    public record SliderRange(double min, double value, double max, double incrValue) {
+    }
 
-    public static Optional<Double> getSliderValue(String name, double x, double y, SliderRange sliderRange,  DoubleConsumer applyValue) {
+    public static Optional<Double> getSliderValue(String name, double x, double y, SliderRange sliderRange, DoubleConsumer applyValue) {
         Dialog<Double> dialog = new Dialog<>();
         dialog.setX(x);
         dialog.setY(y);
@@ -430,16 +479,14 @@ public class GUIUtils {
         Label valueLabel = new Label();
         slider.setMinWidth(200);
         valueLabel.setMinWidth(80);
-        int nDigits = Math.max(1, (int) Math.ceil(Math.log10(1.0/sliderRange.max))) + 1;
+        int nDigits = Math.max(1, (int) Math.ceil(Math.log10(1.0 / sliderRange.max))) + 1;
         String format = "%." + nDigits + "f";
         valueLabel.setText(String.format(format, sliderRange.value));
 
         if (applyValue != null) {
-            slider.valueProperty().addListener((a,b,c) -> applyValue.accept(c.doubleValue()));
+            slider.valueProperty().addListener((a, b, c) -> applyValue.accept(c.doubleValue()));
         }
-        slider.valueProperty().addListener((a,b,c) -> {
-            valueLabel.setText(String.format(format, c));
-        });
+        slider.valueProperty().addListener((a, b, c) -> valueLabel.setText(String.format(format, c)));
 
         HBox content = new HBox();
         content.setAlignment(Pos.CENTER_LEFT);
@@ -453,5 +500,217 @@ public class GUIUtils {
             return null;
         });
         return dialog.showAndWait();
+    }
+
+    public static Button addItemButton() {
+        return GUIUtils.iconButton(ADD, null);
+    }
+    public static Button removeItemButton() {
+        return GUIUtils.iconButton(REMOVE, null);
+    }
+
+    public static Button folderOpenButton() {
+        return GUIUtils.iconButton(FOLDER_OPEN, "Open...");
+    }
+    public static Button firstItemButton() {
+        return GUIUtils.iconButton(FIRST_PAGE, null);
+    }
+    public static Button previousItemButton() {
+        return GUIUtils.iconButton(NAVIGATE_BEFORE, null);
+    }
+    public static Button nextItemButton() {
+        return GUIUtils.iconButton(NAVIGATE_NEXT, null);
+    }
+    public static Button lastItemButton() {
+        return GUIUtils.iconButton(LAST_PAGE, null);
+    }
+
+    public static Button closeButton() {
+        return GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close");
+    }
+
+    public static Button closeButton(ContentDisplay contentDisplay) {
+        return GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close", contentDisplay);
+    }
+
+    public static Button iconButton(Ikon icon, String text) {
+        return iconButton(icon, text, ContentDisplay.TOP);
+    }
+
+    public static void applyTheme(Scene scene) {
+        scene.getStylesheets().add(GUIUtils.class.getResource("/styles/my-overrides.css").toExternalForm());
+    }
+
+    public static Button iconButton(Ikon icon, String text, ContentDisplay contentDisplay) {
+        final FontIcon fontIcon = new FontIcon();
+        Button button;
+        if (text == null) {
+            button = new Button();
+        } else {
+            button = new Button();
+            Tooltip tooltip = new Tooltip();
+            tooltip.setText(text);
+            tooltip.setShowDelay(Duration.millis(50));
+            tooltip.setFont(Font.font(16));
+            button.setTooltip(tooltip);
+        }
+        fontIcon.setIconSize(16);
+        button.setContentDisplay(contentDisplay);
+        button.setGraphic(fontIcon);
+        button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
+        button.setStyle("-fx-padding: 2 6 2 6;");
+        button.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+        fontIcon.setIconCode(icon);
+        return button;
+    }
+
+
+    public static ToggleButton toggleButton(Ikon icon, String text) {
+        ToggleButton button =  toggleButton(icon, text, ContentDisplay.TOP);
+        button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
+        button.setStyle("-fx-padding: 2 6 2 6;");
+        button.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+        return button;
+    }
+
+    public static ToggleButton toggleButton(Ikon icon, String text, ContentDisplay contentDisplay) {
+        final FontIcon fontIcon = new FontIcon();
+        ToggleButton button;
+        if (text == null) {
+            button = new ToggleButton();
+        } else {
+            button = new ToggleButton(text);
+
+        }
+        button.setContentDisplay(contentDisplay);
+        button.setGraphic(fontIcon);
+        button.setGraphicTextGap(4);
+        button.getStyleClass().addAll("icon-label", TEXT_SMALL);
+        fontIcon.setIconCode(icon);
+        return button;
+    }
+
+    public static Label createIconLabel(Ikon ikon) {
+        Label label = new Label();
+        final FontIcon fontIcon = new FontIcon();
+        fontIcon.setIconSize(12);
+        label.setGraphic(fontIcon);
+        fontIcon.setIconCode(ikon);
+        return label;
+    }
+    public static FontIcon createIcon(Ikon ikon) {
+        final FontIcon fontIcon = new FontIcon();
+        fontIcon.setIconSize(12);
+        fontIcon.setIconCode(ikon);
+        return fontIcon;
+    }
+
+    public static Screen getScreenForStage(Stage stage) {
+        // Get the bounds of the stage
+        double x = stage.getX();
+        double y = stage.getY();
+        ObservableList<Screen> screens = Screen.getScreensForRectangle(x, y, 1.0, 1.0);
+
+        if (!screens.isEmpty()) {
+            return screens.getFirst();
+        } else {
+            return null;
+        }
+    }
+
+    public static double getDPI(Stage stage) {
+        Screen screen = getScreenForStage(stage);
+        return screen == null ? 96 : screen.getDpi();
+    }
+
+
+    public static void snapNode(Node node, File file, double scale) {
+        final Bounds bounds = node.getLayoutBounds();
+        final WritableImage fxImage = new WritableImage(
+                (int) Math.round(bounds.getWidth() * scale),
+                (int) Math.round(bounds.getHeight() * scale));
+        final SnapshotParameters spa = new SnapshotParameters();
+        spa.setTransform(Transform.scale(scale, scale));
+        node.snapshot(spa, fxImage);
+
+        new Thread(() -> {
+            try {
+                writePng(fxImage, file);
+            } catch (Exception e) {
+                Fx.runOnFxThread(() -> GUIUtils.warn("Error writing file", e.getMessage()));
+            }
+        }).start();
+    }
+
+    private static void writePng(WritableImage img, File file) throws Exception {
+        int w = (int) img.getWidth();
+        int h = (int) img.getHeight();
+        PixelReader pr = img.getPixelReader();
+
+        int[] pixels = new int[w * h];
+        pr.getPixels(0, 0, w, h, PixelFormat.getIntArgbInstance(), pixels, 0, w);
+
+        byte[] raw = new byte[h * (1 + w * 4)];
+        for (int y = 0; y < h; y++) {
+            int rowBase = y * (1 + w * 4);
+            raw[rowBase] = 0; // filter type None
+            for (int x = 0; x < w; x++) {
+                int argb = pixels[y * w + x];
+                int i = rowBase + 1 + x * 4;
+                raw[i] = (byte) ((argb >> 16) & 0xFF); // R
+                raw[i + 1] = (byte) ((argb >> 8) & 0xFF); // G
+                raw[i + 2] = (byte) (argb & 0xFF); // B
+                raw[i + 3] = (byte) ((argb >> 24) & 0xFF); // A
+            }
+        }
+
+        try (var out = new java.io.FileOutputStream(file)) {
+            out.write(new byte[]{(byte) 137, 80, 78, 71, 13, 10, 26, 10});
+            writeChunk(out, "IHDR", ihdr(w, h));
+            writeChunk(out, "IDAT", idat(raw));
+            writeChunk(out, "IEND", new byte[0]);
+        }
+    }
+
+    private static byte[] ihdr(int w, int h) {
+        byte[] b = new byte[13];
+        setInt(b, 0, w);
+        setInt(b, 4, h);
+        b[8] = 8;  // bit depth
+        b[9] = 6;  // color type RGBA
+        return b;
+    }
+
+    private static byte[] idat(byte[] raw) throws Exception {
+        var baos = new java.io.ByteArrayOutputStream();
+        try (var def = new java.util.zip.DeflaterOutputStream(baos,
+                new java.util.zip.Deflater(java.util.zip.Deflater.BEST_SPEED))) {
+            def.write(raw);
+        }
+        return baos.toByteArray();
+    }
+
+    private static void writeChunk(java.io.OutputStream out, String type, byte[] data) throws Exception {
+        var crc = new java.util.zip.CRC32();
+        byte[] typeBytes = type.getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+
+        byte[] lenBytes = new byte[4];
+        setInt(lenBytes, 0, data.length);
+        out.write(lenBytes);
+        out.write(typeBytes);
+        out.write(data);
+
+        crc.update(typeBytes);
+        crc.update(data);
+        byte[] crcBytes = new byte[4];
+        setInt(crcBytes, 0, (int) crc.getValue());
+        out.write(crcBytes);
+    }
+
+    private static void setInt(byte[] b, int off, int val) {
+        b[off] = (byte) (val >> 24);
+        b[off + 1] = (byte) (val >> 16);
+        b[off + 2] = (byte) (val >> 8);
+        b[off + 3] = (byte) val;
     }
 }

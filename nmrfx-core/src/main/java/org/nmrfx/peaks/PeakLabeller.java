@@ -40,6 +40,22 @@ public class PeakLabeller {
     private static final Pattern R_PAT_4 = Pattern.compile("^(.+:)?([a-zA-Z]+)?([0-9\\-]+)\\.(['a-zA-Z0-9u]+)$");
 
     public record ChainResAtomSpecifier(String chain, String resName, int resNum, String atomName) {
+        public ChainResAtomSpecifier offset(int deltaRes) {
+            return new ChainResAtomSpecifier(chain, resName, resNum + deltaRes, atomName);
+        }
+
+        public String toString() {
+            String result = "";
+            if ((chain != null) && !chain.isEmpty()) {
+                result += chain + ":";
+            }
+
+            if ((resName != null) && !resName.isEmpty()) {
+                result += resName;
+            }
+            result +=  resNum + "." + atomName;
+            return result;
+        }
     }
 
 
@@ -48,6 +64,9 @@ public class PeakLabeller {
         ChainResAtomSpecifier chainResAtomSpecifier = null;
         if (matcher.matches()) {
             String chain = matcher.group(1);
+            if ((chain != null) && chain.endsWith(":")) {
+                chain = chain.substring(0, chain.length() - 1);
+            }
             String resName = matcher.group(2);
             int resNum = Integer.parseInt(matcher.group(3));
             String aName = matcher.group(4);
@@ -57,7 +76,7 @@ public class PeakLabeller {
     }
 
     public static void labelWithSingleResidueChar(PeakList peakList) {
-        peakList.peaks().stream().forEach(pk -> {
+        peakList.peaks().forEach(pk -> {
             for (PeakDim peakDim : pk.getPeakDims()) {
                 String label = peakDim.getLabel();
                 Matcher matcher1 = R_PAT.matcher(label);
@@ -88,7 +107,7 @@ public class PeakLabeller {
     }
 
     public static void removeSingleResidueChar(PeakList peakList) {
-        peakList.peaks().stream().forEach(pk -> {
+        peakList.peaks().forEach(pk -> {
                     for (PeakDim peakDim : pk.getPeakDims()) {
                         String label = peakDim.getLabel();
                         Matcher matcher1 = R_PAT_3.matcher(label);

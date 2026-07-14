@@ -66,6 +66,12 @@ public class PDBAtomParser extends AtomParser {
         elemName = atomName.substring(0, 2).trim();
         if (Character.isDigit(elemName.charAt(0)) || ((elemName.charAt(0) == 'H') && (atomName.trim().length() == 4))) {
             elemName = "H";
+        } else if ((elemName.charAt(0) == 'C') && (atomName.trim().length() == 4)) {
+            elemName = "C";
+        } else if ((elemName.charAt(0) == 'O') && (atomName.trim().length() == 4)) {
+            elemName = "O";
+        } else if ((elemName.charAt(0) == 'N') && (atomName.trim().length() == 4)) {
+            elemName = "N";
         }
 
 

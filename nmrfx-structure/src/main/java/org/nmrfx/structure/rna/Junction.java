@@ -20,6 +20,7 @@ package org.nmrfx.structure.rna;
 import org.nmrfx.chemistry.Residue;
 import org.nmrfx.chemistry.SecondaryStructure;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,10 +31,27 @@ public class Junction extends SecondaryStructure {
     public static int localCounter = 0;
     public static String name = "Junction";
 
+    public Junction() {
+
+    }
     public Junction(List<Residue> residues) {
         localIndex = localCounter++;
         globalIndex = globalCounter++;
         secResidues = residues;
+    }
+    public List<Integer> getLoopSizes() {
+        List<Integer> sizes = new ArrayList<>();
+        int last = 0;
+        for (int i=1;i< secResidues.size();i++) {
+            Residue res1 = secResidues.get(i-1);
+            Residue res2 = secResidues.get(i);
+            if (res2.getPrevious() != res1) {
+                sizes.add(i - last);
+                last = i;
+            }
+        }
+        sizes.add(secResidues.size() - last);
+        return sizes;
     }
 
     @Override

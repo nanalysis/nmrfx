@@ -19,6 +19,7 @@
 package org.nmrfx.chemistry.io;
 
 import org.nmrfx.chemistry.*;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -35,7 +36,7 @@ public class CoordinateSTARWriter {
         String saveFrameName = "ensemble_of_conformers";
         String saveFrameCategory = "conformer_family_coord_set";
         String thisCategory = "_Conformer_family_coord_set";
-        chan.write("save_" + saveFrameName + "\n");
+        chan.write(STAR3Base.SAVE + saveFrameName + "\n");
 
         chan.write(thisCategory + ".Sf_category    ");
         chan.write(saveFrameCategory + "\n");
@@ -70,16 +71,11 @@ public class CoordinateSTARWriter {
                 continue;
             }
 
-            Iterator e = molecule.coordSets.values().iterator();
-            CoordSet coordSet;
 
-            while (e.hasNext()) {
-                coordSet = (CoordSet) e.next();
-
-                Iterator entIterator = coordSet.getEntities().values().iterator();
-
-                while (entIterator.hasNext()) {
-                    Entity entity = (Entity) entIterator.next();
+            for (var entry : molecule.coordSets.entrySet()) {
+               CoordSet coordSet = entry.getValue();
+               for (var entry2 : coordSet.entities.entrySet()) {
+                    Entity entity = entry2.getValue();
                     for (Atom atom : entity.getAtoms()) {
                         if (atom.getAtomicNumber() != 0) {
                             SpatialSet spatialSet = atom.spatialSet;
@@ -112,6 +108,6 @@ public class CoordinateSTARWriter {
         chan.write("stop_\n");
         chan.write("\n");
 
-        chan.write("save_\n\n");
+        chan.write(STAR3Base.SAVE + "\n\n");
     }
 }

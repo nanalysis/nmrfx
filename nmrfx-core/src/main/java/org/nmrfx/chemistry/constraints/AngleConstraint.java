@@ -297,11 +297,11 @@ public class AngleConstraint implements Constraint {
     }
 
     @Override
-    public String toSTARString() {
+    public String toSTARString(int id, int memberId) {
         StringBuilder result = new StringBuilder();
         char sep = ' ';
 //     _Torsion_angle_constraint.ID
-        result.append(AngleConstraintSet.id++);
+        result.append(id);
         result.append(sep);
         //      _Torsion_angle_constraint.Torsion_angle_name
         result.append(getName());

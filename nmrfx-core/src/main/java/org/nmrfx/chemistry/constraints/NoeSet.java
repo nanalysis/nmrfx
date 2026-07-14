@@ -22,8 +22,12 @@ import org.nmrfx.chemistry.MolFilter;
 import org.nmrfx.chemistry.MoleculeBase;
 import org.nmrfx.chemistry.SpatialSetGroup;
 import org.nmrfx.chemistry.io.NMRStarReader;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.Peak;
+import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
+import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.star.ParseException;
 
 import java.io.File;
@@ -72,11 +76,7 @@ public class NoeSet implements ConstraintSet, Iterable {
             "_Gen_dist_constraint.Entry_ID",
             "_Gen_dist_constraint.Gen_dist_constraint_list_ID",};
 
-    public static Peak lastPeakWritten = null;
-    public static int memberId = 0;
-    public static int id = 0;
     boolean containsBonds = false;
-
     private final MolecularConstraints molecularConstraints;
 
     private final List<Noe> constraints = new ArrayList<>(64);
@@ -94,9 +94,7 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public static NoeSet newSet(MolecularConstraints molecularConstraints,
                                 String name) {
-        NoeSet noeSet = new NoeSet(molecularConstraints,
-                name);
-        return noeSet;
+        return new NoeSet(molecularConstraints, name);
     }
 
     @Override
@@ -130,16 +128,20 @@ public class NoeSet implements ConstraintSet, Iterable {
         peakMap.clear();
     }
 
+    public PeakList getPeakList() {
+        return peakList;
+    }
+
     private Peak getPeak() {
         try {
-             peakList = NMRStarReader.getPeakList(getName(), ".", peakList);
+            peakList = NMRStarReader.getPeakList(getName(), ".", peakList);
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
-        Peak peak = peakList.getNewPeak();
-        return peak;
+        return peakList.getNewPeak();
 
     }
+
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
                                       final double rUp, boolean isBond) throws IllegalArgumentException {
         addDistanceConstraint(getPeak(), List.of(filterString1), List.of(filterString2), rLow, rUp, isBond, 1.0, null, null);
@@ -239,12 +241,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public List<Noe> getConstraintsForPeak(Peak peak) {
-        List<Noe> noeList = peakMap.get(peak);
-        if (noeList == null) {
-            noeList = new ArrayList<>();
-            peakMap.put(peak, noeList);
-        }
-        return noeList;
+        return peakMap.computeIfAbsent(peak, k -> new ArrayList<>());
     }
 
     public Set<Entry<Peak, List<Noe>>> getPeakMapEntries() {
@@ -286,20 +283,13 @@ public class NoeSet implements ConstraintSet, Iterable {
         return noeLoopStrings;
     }
 
-    @Override
-    public void resetWriting() {
-        memberId = -1;
-        lastPeakWritten = null;
-        id = 0;
-    }
-
     public void writeNMRFxFile(File file) throws IOException {
-        Map<Peak, Integer> peakMap = new HashMap<>();
+        Map<Peak, Integer> myPeakMap = new HashMap<>();
         try (FileWriter fileWriter = new FileWriter(file)) {
             int i = 0;
             for (Noe noe : constraints) {
                 if (noe.isActive()) {
-                    Integer iGroup = peakMap.computeIfAbsent(noe.getPeak(), peak -> peakMap.size());
+                    Integer iGroup = myPeakMap.computeIfAbsent(noe.getPeak(), peak -> myPeakMap.size());
                     double lower = noe.getLower();
                     double upper = noe.getUpper();
                     SpatialSetGroup spg1 = noe.getSpg1();
@@ -314,10 +304,109 @@ public class NoeSet implements ConstraintSet, Iterable {
         }
     }
 
+    private void addPeak(Noe noe, List<Atom> atoms, List<Integer> iDims) {
+        List<Double> ppms = new ArrayList<>();
+        for (Atom atom : atoms) {
+            ppms.add(atom.getPPM());
+        }
+        boolean ok = ppms.size() == peakList.getNDim() && !ppms.stream().anyMatch(ppm -> ppm == null);
+
+        if (ok) {
+            Peak peak = peakList.getNewPeak();
+            if (noe != null) {
+                noe.peak(peak);
+                double upper = noe.getUpper();
+                double intensity = Math.pow(upper, -1.0 / 6.0);
+                peak.setIntensity((float) intensity);
+            } else {
+                peak.setIntensity(1.0f);
+            }
+            for (int j = 0; j < ppms.size(); j++) {
+                PeakDim peakDim = peak.getPeakDim(iDims.get(j));
+                peakDim.setLabel(atoms.get(j).getShortName());
+                peakDim.setChemShiftValue(ppms.get(j).floatValue());
+                float width = j == 0 ? 20.0f : 50.0f;
+                peakDim.setLineWidthHz(width);
+                peakDim.setBoundsHz(width * 2.0f);
+            }
+        }
+    }
+
+    private void addPeak(Noe noe, Atom atom1, Atom atom2, Set<Atom> diagAtoms, List<Integer> dataDims) {
+        final int idDimAtom;
+        List<Atom> atoms = new ArrayList<>();
+        if ((atom1 != null) && (atom2 != null) && atom1.getName().equalsIgnoreCase("H")) {
+            atoms.add(atom1);
+            atoms.add(atom2);
+            idDimAtom = 0;
+        } else if ((atom1 != null) && (atom2 != null) && atom2.getName().equalsIgnoreCase("H")) {
+            atoms.add(atom2);
+            atoms.add(atom1);
+            idDimAtom = 1;
+        } else {
+            idDimAtom = -1;
+        }
+        if (!atoms.isEmpty()) {
+            diagAtoms.add(atoms.getFirst());
+            for (int i = 2; i < peakList.getNDim(); i++) {
+                Atom idAtom = idDimAtom == 0 ? atom1.getParent() : atom2.getParent();
+                if (idAtom.getAtomicNumber() == 7) {
+                    atoms.add(idAtom);
+                    dataDims.add(i);
+                }
+            }
+        }
+        addPeak(noe, atoms, dataDims);
+    }
+    public void genPeakList(DatasetBase dataset) {
+        String peakListName = PeakList.getNameForDataset(dataset.getName());
+        PeakList peakList1 = PeakList.get(peakListName);
+        List<Integer> dataDims = new ArrayList<>();
+        if (peakList1 == null) {
+            peakList1 = new PeakList(peakListName, dataset.getNDim());
+            peakList1.setDatasetName(dataset.getName());
+            boolean firstProton = true;
+            for (int i = 0; i < dataset.getNDim(); i++) {
+                SpectralDim dim = peakList1.getSpectralDim(i);
+                dim.setSf(dataset.getSf(i));
+                dim.setSw(dataset.getSw(i));
+                dim.setDimName(dataset.getLabel(i));
+                Nuclei nuclei = dataset.getNucleus(i);
+                if (nuclei.getNumberAsInt() == 1) {
+                    dataDims.add(i);
+                    if (firstProton) {
+                        dim.setPattern("i.h*");
+                        firstProton = false;
+                    } else {
+                        dim.setPattern("j.h*");
+                    }
+                }
+                dim.setNucleus(dataset.getNucleus(i).getNumberName());
+            }
+        }
+        peakList = peakList1;
+        Set<Atom> diagAtoms = new HashSet<>();
+        constraints.stream().filter(Noe::isActive).forEach(noe -> {
+            SpatialSetGroup spg1 = noe.getSpg1();
+            SpatialSetGroup spg2 = noe.getSpg2();
+            String aName1 = spg1.getFullName();
+            String aName2 = spg2.getFullName();
+            Atom atom1 = MoleculeBase.getAtomByName(aName1);
+            Atom atom2 = MoleculeBase.getAtomByName(aName2);
+            addPeak(noe, atom1, atom2, diagAtoms, dataDims);
+
+        });
+        diagAtoms.forEach(atom -> {
+            List<Atom> atoms = List.of(atom, atom, atom.getParent());
+            addPeak(null, atoms, new ArrayList<>(dataDims));
+        });
+
+    }
+
     public void updateNPossible(PeakList whichList) {
         for (Map.Entry<Peak, List<Noe>> entry : getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().getPeakList();
-            if ((whichList != null) && (whichList != peakList)) {
+            PeakList entryPeakList = entry.getKey().getPeakList();
+            if ((whichList != null) && (whichList != entryPeakList)) {
                 continue;
             }
             List<Noe> noeList = entry.getValue();
@@ -326,6 +415,4 @@ public class NoeSet implements ConstraintSet, Iterable {
             }
         }
     }
-
-
 }

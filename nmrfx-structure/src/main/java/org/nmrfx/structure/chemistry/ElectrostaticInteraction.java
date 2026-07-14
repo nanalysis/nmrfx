@@ -57,7 +57,7 @@ public class ElectrostaticInteraction {
             if ((sourceParent.entity != donor.entity) && (!adjacent || hasLigand)) {
                 Point3 donorPt = donor.getPoint(structureNum);
                 Point3 targetPt = target.atom.getPoint(structureNum);
-                if (donorPt != null) {
+                if ((donorPt != null) && (targetPt != null)) {
                     Point3 sourcePt = source.getPoint(structureNum);
                     if (sourcePt != null) {
                         double distance = Atom.calcDistance(targetPt, sourcePt);

@@ -142,7 +142,7 @@ public class Analyzer {
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
         double level = threshold;
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("replaceif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode(PeakPickParameters.PickMode.REPLACEIF);
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         PeakPicker picker = new PeakPicker(peakPickPar);
@@ -189,7 +189,7 @@ public class Analyzer {
         }
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode(PeakPickParameters.PickMode.APPENDIF);
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         peakPickPar.limit(0, ppm1, ppm2);
@@ -246,7 +246,7 @@ public class Analyzer {
         } else {
             listName = PeakList.getNameForDataset(datasetName);
         }
-        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode(PeakPickParameters.PickMode.APPENDIF);
         peakPickPar.region("point").fixed(true);
         for (double ppm : ppms) {
             peakPickPar.limit(0, ppm, ppm);
@@ -573,6 +573,12 @@ public class Analyzer {
             region.measure(dataset);
         }
     }
+    public void integrate(Dataset integrateDataset) throws IOException {
+        List<DatasetRegion> regions = integrateDataset.getReadOnlyRegions();
+        for (DatasetRegion region : regions) {
+            region.measure(integrateDataset);
+        }
+    }
 
     public void setVolumesFromIntegrals() {
         int[] dim = new int[peakList.nDim];
@@ -614,7 +620,7 @@ public class Analyzer {
         if (scale < 1.0e-6) {
             scale = 1.0;
         }
-        peakList.scale = scale;
+        peakList.setScale(scale);
 
     }
 
@@ -1016,7 +1022,7 @@ public class Analyzer {
             }
             Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
             System.out.println(multiplet.getPeakDim().getPeak().getName() + " "
-                    + multiplet.getPeakDim().getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
+                    + multiplet.getPeakDim().getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.getScale());
 
         }
     }
@@ -1045,7 +1051,7 @@ public class Analyzer {
         } else if (aliphaticValues.size() > 1) {
             norm = calculateNormalization(aliphaticValues);
         }
-        peakList.scale = norm;
+        peakList.setScale(norm);
     }
 
     public double calculateNormalization(List<Double> values) {
@@ -1148,14 +1154,6 @@ public class Analyzer {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
         }
-    }
-
-    public void findRegions() throws IOException {
-        calculateThreshold();
-        getThreshold();
-        autoSetRegions();
-        integrate();
-
     }
 
     public void analyze() throws IOException {

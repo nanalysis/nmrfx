@@ -139,7 +139,7 @@ public class Saveframe {
                 }
                 throw new ParseException("File exhausted before all tokens found in \"" + name + "\"");
             }
-            if (token.equals("save_")) {
+            if (token.equals(STAR3Base.SAVE)) {
                 if (saveframeCategory == null) {
                     throw new ParseException("No category for saveframe \"" + name + "\"");
                 }
@@ -148,7 +148,7 @@ public class Saveframe {
                     tokenMap.clear();
                 }
                 break;
-            } else if (token.equals("loop_")) {
+            } else if (token.equals(STAR3Base.LOOP)) {
                 if (saveframeCategory == null) {
                     throw new ParseException("No category for saveframe \"" + name + "\"");
                 }
@@ -388,12 +388,12 @@ public class Saveframe {
         return loop;
     }
 
-    public Map getLoopRowMap(String tagCategory, int iRow) throws ParseException {
+    public Map<String, String> getLoopRowMap(String tagCategory, int iRow) throws ParseException {
         Loop loop = (Loop) loops.get(tagCategory);
         if (loop == null) {
             throw new ParseException("Can't find loop \"" + tagCategory + "\"");
         }
-        return loop.getRowMap(tagCategory, iRow);
+        return loop.getRowMap(iRow);
     }
 
     public int loopCount(String tagCategory) throws ParseException {

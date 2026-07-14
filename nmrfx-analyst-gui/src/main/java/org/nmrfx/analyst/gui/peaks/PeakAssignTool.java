@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui.peaks;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -73,7 +71,7 @@ public class PeakAssignTool implements ControllerTool {
                 nDim = dataset.getNDim();
             }
         }
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
         toolBar.getItems().add(pickButton);
@@ -244,7 +242,6 @@ public class PeakAssignTool implements ControllerTool {
                         }
                         SpectralDim sDim = selPeak.getPeakList().getSpectralDim(peakDim);
                         List<AtomDelta> atoms1 = AtomBrowser.getMatchingAtomNames(dataset, sDim, shift, tol);
-                        System.out.println(atoms1.toString());
                         atomDeltaMaps[i].clear();
                         for (AtomDelta atomDelta : atoms1) {
                             atomChoices[i].getItems().add(atomDelta.toString());
@@ -287,7 +284,6 @@ public class PeakAssignTool implements ControllerTool {
                 value = atomChoices[iField].getValue();
             }
             if (value != null) {
-                System.out.println("val " + value + " " + i);
                 PeakDim peakDim0 = selPeak.getPeakDim(peakDims[i]);
 
                 if (value.length() > 0) {
@@ -297,7 +293,6 @@ public class PeakAssignTool implements ControllerTool {
                         if (mode == ASSIGN_MODE.SIMPLE) {
                             assignDim(iField);
                         } else {
-                            System.out.println(atomSpecifier);
                             AtomDelta atomDelta = atomDeltaMaps[i].get(atomSpecifier);
                             peakDim0.setLabel(atomSpecifier);
                             if ((atomDelta != null) && (atomDelta.getPeakDim() != null)) {

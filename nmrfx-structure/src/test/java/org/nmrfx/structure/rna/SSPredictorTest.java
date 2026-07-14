@@ -14,12 +14,12 @@ public class SSPredictorTest {
         List<Integer> rows = new ArrayList<>();
         List<Integer> columns = new ArrayList<>();
         List<Double> values = new ArrayList<>();
+        List<SSPredictor.BasePairProbability> bps = new ArrayList<>();
         for (int i=0;i<n;i++) {
-            rows.add(r+i);
-            columns.add(c-i);
-            values.add(p);
+            SSPredictor.BasePairProbability bp = new SSPredictor.BasePairProbability(r+i, c-i, p);
+            bps.add(bp);
         }
-        return new SSPredictor.Extent(rows, columns, values);
+        return new SSPredictor.Extent(bps);
     }
     @Test
     public void testOverlap() {

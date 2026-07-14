@@ -1,16 +1,13 @@
 package org.nmrfx.processor.gui.utils;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
-import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.ContextMenuEvent;
@@ -20,11 +17,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.processing.ProcessingOperationGroup;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.List;
 
@@ -37,6 +35,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
         this.setFitToHeight(true);
         this.setFitToWidth(true);
         this.setHbarPolicy(ScrollBarPolicy.NEVER);
+        this.setMaxWidth(400);
         this.setContent(accordion);
     }
 
@@ -93,10 +92,10 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             // title in the default way
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             setGraphic(titleBox);
-            setSkin(new ButtonTitlePaneSkin(this));
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
+            getStyleClass().add(Styles.DENSE);
         }
 
         public ModifiableTitlePane(ModifiableAccordionScrollPane accordionScrollPane, ProcessorController processorController, ProcessingOperationGroup processingOperation) {
@@ -112,7 +111,6 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             // title in the default way
             setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
             setGraphic(titleBox);
-            setSkin(new ButtonTitlePaneSkin(this));
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
@@ -179,7 +177,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             checkBox.setOnAction(e -> updateTitle());
             Color fillColor = processingOperation.isDisabled() ? Color.BLUE : Color.GRAY;
             titledPane.setTextFill(fillColor);
-            Text moveIcon = GlyphsDude.createIcon(FontAwesomeIcon.ARROWS_V, "14");
+            Label moveIcon = GUIUtils.createIconLabel(Material2AL.ARROW_UPWARD);
             moveIcon.setOnMouseReleased(Event::consume);
             titleBox.getChildren().addAll(checkBox, moveIcon);
             titledPane.textFillProperty().bind(Bindings.when(checkBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));
@@ -305,24 +303,5 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             this.getPanes().add(titledPane);
         }
 
-    }
-
-    private static class ButtonTitlePaneSkin extends TitledPaneSkin {
-        final Region arrow;
-
-        ButtonTitlePaneSkin(final TitledPane titledPane) {
-            super(titledPane);
-            arrow = (Region) getSkinnable().lookup(".arrow-button");
-
-        }
-
-        @Override
-        protected void layoutChildren(final double x, final double y, final double w, final double h) {
-            super.layoutChildren(x, y, w, h);
-            double arrowWidth = arrow.getLayoutBounds().getWidth();
-            double arrowPadding = arrow.getPadding().getLeft() + arrow.getPadding().getRight();
-
-            ((Region) getSkinnable().getGraphic()).setMinWidth(w - (arrowWidth + arrowPadding));
-        }
     }
 }

@@ -25,10 +25,7 @@ import org.nmrfx.star.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Bruce Johnson
@@ -51,9 +48,10 @@ public class AtomResonance {
         this.id = id;
     }
 
-    public AtomResonance copy() {
+    public AtomResonance copy(PeakDim peakDim) {
         AtomResonance copy = new AtomResonance(getID());
-        copy.getPeakDims().addAll(getPeakDims());
+        //copy.getPeakDims().addAll(getPeakDims());
+        copy.getPeakDims().add(peakDim);
         if (getNames() != null) {
             copy.setName(getNames());
             copy.setName(getName());
@@ -88,6 +86,9 @@ public class AtomResonance {
         boolean result = true;
         if (!name.isBlank() && (molBase != null)) {
             Atom testAtom = molBase.findAtom(name);
+            if (testAtom == null) {
+                testAtom = molBase.findAtom(name + "1");
+            }
             result = testAtom != null;
         }
         return result;

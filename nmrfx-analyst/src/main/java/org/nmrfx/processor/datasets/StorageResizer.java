@@ -61,7 +61,7 @@ public class StorageResizer {
         int nDim = sourceLayout.nDim;
         int[] counterSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            counterSizes[i] = sourceLayout.getSize(i);
+            counterSizes[i] = Math.min(target.getSize(i), sourceLayout.getSize(i));
         }
         DimCounter counter = new DimCounter(counterSizes);
         for (int[] counts : counter) {

@@ -142,16 +142,8 @@ class MolPeakGen:
             self.vienna = mol.getDotBracket()
             self.mol.activateAtoms()
 
-    def setVienna(self,vienna):
-        self.vienna = vienna
-
     def setWidths(self,widths):
         self.widths = widths
-
-    def setEditSchemes(self, schemes):
-        if schemes == "":
-            schemes = ["aa"]
-        self.editSchemes = schemes
 
     def setLabelScheme(self, scheme):
         self.labelScheme = scheme
@@ -177,7 +169,7 @@ class MolPeakGen:
         rnaLabels = RNALabels()
         rnaLabels.parseSelGroups(self.mol, self.labelScheme)
 
-    def addProtonPairPeak(self, peakList, aAtom, bAtom, intensity=None, d1Edited=None, d2Edited=None):
+    def addProtonPairPeak(self, peakList, aAtom, bAtom, requireActive=False, intensity=None, d1Edited=None, d2Edited=None):
         if intensity==None:
             intensity = self.intensity
             widthScale = 2.0
@@ -207,7 +199,7 @@ class MolPeakGen:
         widths = []
         bounds = []
         for atom,dEdit in zip(atoms, dEdited):
-            if not atom.isActive():
+            if (not atom.isActive()) and requireActive:
                 ok = False
                 break
             ppmV = atom.getPPM(0)
@@ -232,17 +224,17 @@ class MolPeakGen:
         if ok:
             peak = peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
 
-    def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None, useN=True):
+    def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None, useN=True, requireActive=False):
         if (atomDistList is None) or (not atomDistList): # none or empty
             return None
         scaleConst = 100.0/math.pow(2.0,-6)
         for aAtom, bAtom, distance in atomDistList:
             intensity = math.pow(distance, -6)*scaleConst
             if (useN or aAtom.getParent().getAtomicNumber() != 7) and (useN or bAtom.getParent().getAtomicNumber() != 7):
-                self.addProtonPairPeak(peakList, bAtom, aAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
-                self.addProtonPairPeak(peakList, aAtom, bAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
+                self.addProtonPairPeak(peakList, bAtom, aAtom, requireActive, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
+                self.addProtonPairPeak(peakList, aAtom, bAtom, requireActive, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
 
-    def addPeak(self, peakList, atoms, intensity=None, ppmSet=0):
+    def addPeak(self, peakList, atoms, requireActive, intensity=None, ppmSet=0):
         if intensity == None:
             intensity = self.intensity
         ok = True
@@ -252,7 +244,7 @@ class MolPeakGen:
         bounds = []
         widths = []
         for atom in atoms:
-            if not atom.isActive():
+            if not atom.isActive() and requireActive:
                 ok = False
                 break 
             ppmV = atom.getPPM(ppmSet)
@@ -274,180 +266,6 @@ class MolPeakGen:
             bounds.append(bound)
         if ok:
             peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
-
-
-    def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
-        self.setWidths([self.widthH, self.widthH])
-        if dataset != None and dataset != "":
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            labelScheme = dataset.getProperty("labelScheme")
-            self.setLabelScheme(labelScheme)
-            if scheme == "":
-                scheme = dataset.getProperty("editScheme")
-        if scheme == "":
-            scheme = "aa"
-        
-        (d1Edited, d2Edited) = editingModes[scheme]
-        peakList = self.getPeakList(dataset, listName)
-        self.mol.selectAtoms("*.H*")
-        protonPairs = self.mol.getDistancePairs(tol, False)
-        for protonPair in protonPairs:
-            dis = protonPair.getDistance()
-            if dis > 4.0:
-                volume = 0.2
-            elif dis > 3.0:
-                volume = 0.5
-            else:
-                volume = 1.0
-            intensity = volume
-            self.addProtonPairPeak(peakList, protonPair.getAtom1(), protonPair.getAtom2(), intensity, d1Edited, d2Edited)
-            self.addProtonPairPeak(peakList, protonPair.getAtom2(), protonPair.getAtom1(), intensity, d1Edited, d2Edited)
-        return peakList
-
-    def getResiduesAndCompounds(self, mol):
-        polymers = mol.getPolymers()
-        compounds = mol.getLigands()
-        entities = []
-        for polymer in polymers:
-            residues = polymer.getResidues()
-            for residue in residues:
-                entities.append(residue)
-
-        for compound in compounds:
-            entities.append(compound)
-        return entities
-   
-
-    def genTOCSYPeaks(self, dataset, listName="", condition="sim", transfers=2):
-        self.setWidths([self.widthH, self.widthH])
-        if dataset != None and dataset != "":
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            labelScheme = dataset.getProperty("labelScheme")
-            self.setLabelScheme(labelScheme)
-        peakList = self.getPeakList(dataset, listName)
-        peakList.setSampleConditionLabel(condition)
-  
-        entities = self.getResiduesAndCompounds(self.mol)
-        for entity in entities:
-            cList = CouplingList()
-            cList.generateCouplings(entity,3,2, transfers, 2)
-            tLinks = cList.getTocsyLinks()
-            for link in tLinks:
-                a0 = link.getAtom(0)
-                a1 = link.getAtom(1)
-                shell = link.getShell()
-                self.addPeak(peakList, [a0, a1])
-        return peakList
-
-    def genHMBCPeaks(self, dataset, listName="", condition="sim", transfers=2):
-        self.setWidths([self.widthH, self.widthH])
-        if dataset != None and dataset != "":
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            labelScheme = dataset.getProperty("labelScheme")
-            self.setLabelScheme(labelScheme)
-        peakList = self.getPeakList(dataset, listName)
-        peakList.setSampleConditionLabel(condition)
-
-        entities = self.getResiduesAndCompounds(self.mol)
-        for entity in entities:
-            cList = CouplingList()
-            cList.generateCouplings(entity, transfers, 2, 2, transfers)
-            tLinks = cList.getHMBCLinks()
-            for link in tLinks:
-                nAtoms = link.getNAtoms()
-                a0 = link.getAtom(0)
-                a1 = link.getAtom(nAtoms-1)
-                shell = link.getShell()
-                self.addPeak(peakList, [a0, a1])
-        return peakList
-
-
-    def genHSQCPeaks(self, pType, dataset, listName="", condition="sim"):
-        self.setWidths([self.widthH*2, self.widthC])
-        if dataset != None and dataset != "":
-            if not isinstance(dataset,DatasetBase):
-                dataset = DatasetBase.getDataset(dataset)
-            labelScheme = dataset.getProperty("labelScheme")
-            self.setLabelScheme(labelScheme)
-        peakList = self.getPeakList(dataset, listName)
-        peakList.setSampleConditionLabel(condition)
-        atoms = self.mol.getAtoms("*.H*")
-        for atom in atoms:
-            sym = atom.getElementName()
-            if sym == "H":
-                if atom.isMethyl() and not atom.isFirstInMethyl():
-                    continue
-                parent = atom.getParent()
-                if parent != None:
-                    pSym = parent.getElementName()
-                    if pType == pSym:
-                        self.addPeak(peakList, [atom, parent])
-
-        return peakList
-
-    def genProteinPeaks(self, expType, dataset, listName="", condition="sim"):
-        expType = expType.lower()
-        anames = {}
-        anames['hsqc'] =  [['H',0,'N',0]]
-        anames['hncaco'] =   [['H',0,'N',0,'C',0],['H',0,'N',0,'C',-1]]
-        anames['hnco'] =     [['H',0,'N',0,'C',-1]]
-        anames['hncoca'] =   [['H',0,'N',0,'CA',-1]]
-        anames['hncocacb'] = [['H',0,'N',0,'CB',-1],['H',0,'N',0,'CA',-1]]
-        anames['hnca'] =     [['H',0,'N',0,'CA',0],['H',0,'N',0,'CA',-1]]
-        anames['hncacb'] =   [['H',0,'N',0,'CB',0],['H',0,'N',0,'CB',-1],['H',0,'N',0,'CA',0],['H',0,'N',0,'CA',-1]]
-
-        self.refMode = False
-        expValues = anames[expType] 
-        nPeakDim = len(expValues[0]) / 2
-        if not isinstance(dataset,DatasetBase):
-            dataset = DatasetBase.getDataset(dataset)
-
-        peakList = self.getPeakList(dataset, listName, nPeakDim)
-        peakList.setSampleConditionLabel(condition)
-        nDim = peakList.getNDim()
-        nucNames = []
-        for i in range(nDim):
-             if dataset == None:
-                 nucName = peakList.getSpectralDim(i).getDimName()[0]
-             else:
-                 nucName = dataset.getNucleus(i).getName()
-             nucNames.append(nucName)
-
-        polymers = self.mol.getPolymers()
-        for polymer in polymers:
-            residues = polymer.getResidues()
-            for iRes,aResidue in enumerate(residues):
-                for expSet in expValues:
-                    nAtoms = len(expSet) / 2
-                    atoms = [None] * nAtoms
-                    ok = True
-                    for aName,dRes in zip(expSet[0::2], expSet[1::2]):
-                         if not aName[0] in nucNames:
-                             ok = False
-                             break
-                         if dRes == 0:
-                             res = aResidue
-                         elif dRes == -1:
-                             res = aResidue.getPrevious()
-                         elif dRes == 1:
-                             res = aResidue.getNext()
-                         else:
-                             raise ValueError("dRes ("+str(dRes) + " is invalid")
-                         if res == None:
-                             ok = False
-                             break
-                         atom = res.getAtom(aName)
-                         if atom == None:
-                             ok = False
-                             break
-                         index = nucNames.index(aName[0])
-                         atoms[index] = atom
-                    if ok:
-                         self.addPeak(peakList, atoms)
-        return peakList
 
     @classmethod
     def getResidueInterMap(cls):
@@ -549,7 +367,7 @@ class MolPeakGen:
             retList.append((aSelected, bSelected, dist))
         return retList
 
-    def addRNASecStrPeaks(self, peakList, editScheme, useN):
+    def addRNASecStrPeaks(self, peakList, editScheme, useN, requireActive):
         (d1Edited, d2Edited) = editingModes[editScheme]
         residueInterTable = self.getResidueInterMap()
         rnaResidues = [residue for polymer in self.mol.getPolymers() if polymer.isRNA()
@@ -568,7 +386,7 @@ class MolPeakGen:
             if atomPairMap is None: continue
             atomDistList = atomPairMap.items() 
             stringified = self.stringifyAtomPairs(aPolyName,aResNum,bPolyName,bResNum,atomDistList)
-            self.addPeaks(peakList, d1Edited, d2Edited, stringified, useN)
+            self.addPeaks(peakList, d1Edited, d2Edited, stringified, useN, requireActive)
 
     def getPeakList(self, dataset, listName, nPeakDim=0):
         if listName != "":
@@ -584,7 +402,7 @@ class MolPeakGen:
                 peakList = peakgen.makePeakListFromDataset(listName, dataset, nPeakDim)
         return peakList
 
-    def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme="", useN=False):
+    def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme="", useN=False, requireActive=False):
         self.setWidths([self.widthH, self.widthH])
         peakList = self.getPeakList(dataset, listName)
         
@@ -598,12 +416,10 @@ class MolPeakGen:
             scheme = "aa"
              
 	#print(self.vienna)
-        ss = SSGen(self.mol, self.vienna)
-        ss.genRNAResidues()
-        ss.pairTo()
-        ss.secondaryStructGen()
+        ssGen = SSGen(self.mol, self.vienna)
+        ssGen.analyze()
 
         peakList.setSampleConditionLabel(condition)
-        self.addRNASecStrPeaks(peakList, scheme, useN)
+        self.addRNASecStrPeaks(peakList, scheme, useN, requireActive)
         return peakList
 

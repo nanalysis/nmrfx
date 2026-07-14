@@ -2,19 +2,26 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.geometry.Orientation;
 import javafx.scene.input.MouseEvent;
+import org.nmrfx.processor.gui.CanvasCursor;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CrossHairMouseHandler extends MouseHandler {
     // Some computers (mac, laptops) have only left & right click.
     // Toggle to true the first time the middle button (or mouse wheel) is clicked.
-    private boolean hasMiddleButton = false;
+    private static AtomicBoolean hasMiddleButton = new AtomicBoolean(false);
 
     private int selectedHorizontalIndex = 0;
     private int selectedVerticalIndex = 0;
 
     public CrossHairMouseHandler(MouseBindings mouseBindings) {
         super(mouseBindings);
+    }
+
+    public static void setMiddleButtonMode(boolean state) {
+        hasMiddleButton.set(state);
     }
 
     @Override
@@ -40,9 +47,9 @@ public class CrossHairMouseHandler extends MouseHandler {
 
     private void selectClosest(MouseEvent event) {
         boolean isMiddleButtonDown = event.isMiddleButtonDown();
-        hasMiddleButton = hasMiddleButton || isMiddleButtonDown;
+        hasMiddleButton.set(hasMiddleButton.get() || isMiddleButtonDown);
 
-        int[] crossNums = getCrossHairs().findAtPosition(event.getX(), event.getY(), hasMiddleButton, isMiddleButtonDown);
+        int[] crossNums = getCrossHairs().findAtPosition(event.getX(), event.getY(), hasMiddleButton.get(), isMiddleButtonDown);
         selectedHorizontalIndex = crossNums[0];
         selectedVerticalIndex = crossNums[1];
     }
@@ -52,7 +59,7 @@ public class CrossHairMouseHandler extends MouseHandler {
         selectedVerticalIndex = -1;
 
         PolyChart chart = mouseBindings.getChart();
-        if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
+        if (!CanvasCursor.isCrosshair(chart.getCanvasCursor())) {
             chart.getCrossHairs().setAllStates(false);
         }
     }

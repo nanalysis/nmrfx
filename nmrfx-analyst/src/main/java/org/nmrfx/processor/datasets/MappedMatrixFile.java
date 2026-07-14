@@ -86,7 +86,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
             } else {
                 strides[i] = strides[i - 1] * layout.sizes[i - 1];
             }
-            log.info("mapped {} {} {}", i, dataset.getSizeTotal(i), strides[i]);
+            log.info("mapped {} {} {} {}", i, dataset.getSizeTotal(i), strides[i], dataset.getName());
         }
         totalSize = size;
         try {
@@ -188,7 +188,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
                 mappedBuffer.putInt(p, (int) d);
             }
         } catch (Exception e) {
-            log.warn("map range error {} {}", p, totalSize);
+            log.warn("map range error {} {} {}", p, totalSize, dataset.getName());
         }
     }
 

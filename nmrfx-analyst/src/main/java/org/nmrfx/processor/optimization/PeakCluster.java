@@ -6,6 +6,7 @@
 package org.nmrfx.processor.optimization;
 
 import org.apache.commons.math3.special.Erf;
+import org.nmrfx.math.BipartiteMatcher;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 
@@ -259,7 +260,7 @@ public class PeakCluster {
             for (int jP = 0; jP < other.size; jP++) {
                 expPeak = linkedPeaks.get(iE);
                 predPeak = other.linkedPeaks.get(jP);
-                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().scale);
+                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().getScale());
                 matcher.setWeight(iE, jP, weight);
             }
         }
@@ -270,7 +271,7 @@ public class PeakCluster {
         BipartiteMatcher matcher = this.compareTo(other);
         double score = Double.NEGATIVE_INFINITY;
         if (matcher != null) {
-            double minWeight = matcher.minWeight;
+            double minWeight = matcher.getMinWeight();
             int[] matchings = matcher.getMatching();
             score = matcher.getMaxWtSum(matchings, minWeight);
         }

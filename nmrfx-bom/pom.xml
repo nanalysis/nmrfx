@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>11.4.10-SNAPSHOT</version>
+        <version>12.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <javafx.version>17.0.2</javafx.version>
+        <javafx.version>24.0.1</javafx.version>
     </properties>
 
     <dependencyManagement>
@@ -39,13 +39,25 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.2.6</version>
+                <version>1.2.13</version>
                 <!-- license: Eclipse Public License 1.0 / LGPLv2.1 -->
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
                 <version>3.6</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-simple</artifactId>
+                <version>1.6</version>
+                <!-- license: Apache License, Version 2.0 -->
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-sampling</artifactId>
+                <version>1.6</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -74,7 +86,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.9</version>
+                <version>3.18.0</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -128,17 +140,27 @@
             <dependency>
                 <groupId>org.kordamp.ikonli</groupId>
                 <artifactId>ikonli-javafx</artifactId>
-                <version>12.3.1</version>
+                <version>12.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.kordamp.ikonli</groupId>
                 <artifactId>ikonli-materialdesign2-pack</artifactId>
-                <version>12.3.1</version>
+                <version>12.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.kordamp.ikonli</groupId>
                 <artifactId>ikonli-material2-pack</artifactId>
-                <version>12.3.1</version>
+                <version>12.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-material2al-pack</artifactId>
+                <version>12.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kordamp.ikonli</groupId>
+                <artifactId>ikonli-material2mz-pack</artifactId>
+                <version>12.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.pdfbox</groupId>
@@ -248,7 +270,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.25</version>
+                <version>2.5</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -284,7 +306,7 @@
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-core</artifactId>
-                <version>6.0.3</version>
+                <version>7.2.2</version>
                 <exclusions>
                     <!-- avoid log4j implementation of slf4j -->
                     <exclusion>
@@ -297,7 +319,7 @@
             <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava-alignment</artifactId>
-                <version>6.0.2</version>
+                <version>7.2.2</version>
                 <exclusions>
                     <!-- avoid log4j implementation of slf4j -->
                     <exclusion>
@@ -310,7 +332,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.9</version>
+                <version>1.14.0</version>
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
             <dependency>
@@ -328,13 +350,13 @@
             <dependency>
                 <groupId>org.fxmisc.richtext</groupId>
                 <artifactId>richtextfx</artifactId>
-                <version>0.10.5</version>
+                <version>0.11.7</version>
                 <!-- license: BSD (2 clause) / GPLv2 with ClassPath exception -->
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
-                <version>6.4.0.202211300538-r</version>
+                <version>7.3.0.202506031305-r</version>
                 <exclusions>
                     <!-- nmrfx includes a more recent version of slf4j-api -->
                     <exclusion>
@@ -357,15 +379,40 @@
                 <!-- license: Apache License, Version 2.0 -->
             </dependency>
         <dependency>
-            <groupId>org.ojalgo</groupId>
-            <artifactId>ojalgo</artifactId>
-            <version>47.2.0</version>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-core</artifactId>
+            <version>4.3.2</version>
         </dependency>
         <dependency>
-            <groupId>com.actelion.research</groupId>
-            <artifactId>openchemlib</artifactId>
-            <version>2023.3.3</version>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-slm</artifactId>
+            <version>4.3.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-regression-sgd</artifactId>
+            <version>4.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.tribuo</groupId>
+            <artifactId>tribuo-data</artifactId>
+            <version>4.3.2</version>
+        </dependency>
+            <dependency>
+                <groupId>org.ojalgo</groupId>
+                <artifactId>ojalgo</artifactId>
+                <version>47.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.actelion.research</groupId>
+                <artifactId>openchemlib</artifactId>
+                <version>2025.7.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jenetics</groupId>
+                <artifactId>jenetics</artifactId>
+                <version>7.2.0</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
@@ -375,6 +422,16 @@
                 <groupId>berlin.yuna</groupId>
                 <artifactId>type-map</artifactId>
                 <version>2.1.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jgrapht</groupId>
+                <artifactId>jgrapht-core</artifactId>
+                <version>1.5.2</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.mkpaz</groupId>
+                <artifactId>atlantafx-base</artifactId>
+                <version>2.1.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

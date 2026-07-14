@@ -14,7 +14,7 @@ public class SimDataVecPars {
 
     private final String label;
     private final int n;
-    private final double sf;
+    private double sf;
     private final double sw;
     private final double ref;
     private final double vref;
@@ -32,11 +32,15 @@ public class SimDataVecPars {
         this.label = currData.getLabel(0);
         this.sf = currData.getSf(0);
         this.sw = currData.getSw(0);
-        this.n = currData.getSizeTotal(0);
+        this.n = currData.getSizeReal(0);
         this.ref = currData.pointToPPM(0, n / 2);
         this.vref = sw / sf / 2 + ref;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s %.1f %.1f %d %.3f %.3f", label, sf, sw, n, ref, vref);
+    }
     /**
      * @return the label
      */
@@ -56,6 +60,10 @@ public class SimDataVecPars {
      */
     public double getSf() {
         return sf;
+    }
+
+    public void setSF(double value) {
+        sf = value;
     }
 
     /**

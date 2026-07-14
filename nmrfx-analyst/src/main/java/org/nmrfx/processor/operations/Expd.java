@@ -18,6 +18,8 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -42,32 +44,53 @@ public class Expd extends Apodization implements Invertible {
         this.invertOp = inverse;
     }
 
-    /**
-     * Exponential Decay.
-     *
-     * @param vector
-     * @throws ProcessingException
-     */
-    private void expd(Vec vector) throws ProcessingException {
-        if (apodVec == null || apodVec.length != vector.getSize()) {
-            resize(vector.getSize());
+    private void setupApod(int size, int vStart, double dwellTime) {
+        if (apodVec == null || apodVec.length != size) {
+            resize(size);
 
             double decay = Math.PI * lb;
-            int vStart = vector.getStart();
             initApod(vStart);
-            for (int i = vStart; i < vector.getSize(); i++) {
-                double x = (i - vStart) * decay * vector.dwellTime;
+            for (int i = vStart; i < size; i++) {
+                double x = (i - vStart) * decay * dwellTime;
                 apodVec[i] = Math.exp(-x);
             }
-
             apodVec[vStart] *= fPoint;
 
         }
+    }
+        /**
+         * Exponential Decay.
+         *
+         * @param vector
+         * @throws ProcessingException
+         */
+    private void expd(Vec vector) throws ProcessingException {
+        setupApod(vector.getSize(), vector.getStart(), vector.dwellTime);
 
         if (invertOp) {
             invertApod(vector);
         } else {
             applyApod(vector);
         }
+    }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (matrix instanceof MatrixND matrixND) {
+            int[] vSizes = matrixND.getVSizes();
+            int dim = -1;
+            if (dim == -1) {
+                for (int iDim = 0; iDim < matrixND.getNDim(); iDim++) {
+                    apply(matrixND, iDim, vSizes[iDim] / 2, matrixND.getDwellTime(iDim));
+                }
+            } else {
+                apply(matrixND, dim, vSizes[dim] / 2, matrixND.getDwellTime(dim));
+            }
+        }
+        return this;
+    }
+    private void apply(MatrixND matrix, int axis, int mApodSize, double dwellTime) {
+        setupApod(mApodSize, 0, dwellTime);
+        matrix.applyApod(axis, apodVec);
     }
 }

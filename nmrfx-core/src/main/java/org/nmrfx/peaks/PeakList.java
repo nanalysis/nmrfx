@@ -11,6 +11,7 @@ import org.nmrfx.math.Clusters;
 import org.nmrfx.peaks.events.*;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 import org.nmrfx.utilities.Updater;
 import org.nmrfx.utilities.Util;
 
@@ -52,7 +53,7 @@ public class PeakList {
     boolean slideable = false;
     boolean requireSliderCondition = false;
     protected List<SearchDim> searchDims = new ArrayList<>();
-    Optional<Measures> measures = Optional.empty();
+    Measures measures = null;
     Map<String, String> properties = new HashMap<>();
     List<PeakListener> peakChangeListeners = new ArrayList<>();
     List<PeakListener> peakListChangeListeners = new ArrayList<>();
@@ -147,7 +148,7 @@ public class PeakList {
     /**
      *
      */
-    public double scale = 1.0;
+    private double scale = 1.0;
     protected SpectralDim[] spectralDims = null;
 
     /**
@@ -341,13 +342,28 @@ public class PeakList {
      * @return
      * @throws IllegalArgumentException
      */
-    public static int clusterPeaks(List<PeakList> peakLists)
+    public static int clusterPeaks(List<PeakList> peakLists) {
+        return clusterPeaks(peakLists, null);
+    }
+
+    public static int clusterPeaks(List<PeakList> peakLists, PeakList refList)
             throws IllegalArgumentException {
         Clusters clusters = new Clusters();
         List<Peak> clustPeaks = new ArrayList<>();
         double[] tol = null;
+        List<PeakList> useLists = new ArrayList<>();
+        if (refList != null) {
+            useLists.add(refList);
+            for (var pList : peakLists) {
+                if (pList != refList) {
+                    useLists.add(pList);
+                }
+            }
+        } else {
+            useLists.addAll(peakLists);
+        }
 
-        for (PeakList peakList : peakLists) {
+        for (PeakList peakList : useLists) {
             // fixme  should remove unlink and properly support links below
             peakList.unLinkPeaks();
             peakList.peaks.stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
@@ -361,7 +377,7 @@ public class PeakList {
         int ii = 0;
         int fDim = 0;
         int iList = 0;
-        for (PeakList peakList : peakLists) {
+        for (PeakList peakList : useLists) {
 
             if (firstList) {
                 fDim = peakList.searchDims.size();
@@ -419,8 +435,8 @@ public class PeakList {
                     Peak jPeak = (Peak) objs.get(iObj);
                     PeakList.unLinkPeak(jPeak);
                     for (int iDim = 0; iDim < fDim; iDim++) {
-                        SearchDim iSDim = ((PeakList) iPeak.getPeakList()).searchDims.get(iDim);
-                        SearchDim jSDim = ((PeakList) jPeak.getPeakList()).searchDims.get(iDim);
+                        SearchDim iSDim = iPeak.getPeakList().searchDims.get(iDim);
+                        SearchDim jSDim = jPeak.getPeakList().searchDims.get(iDim);
                         linkPeaks(iPeak, iSDim.getDim(), jPeak, jSDim.getDim());
                     }
                 }
@@ -724,6 +740,11 @@ public class PeakList {
         return specDim;
     }
 
+    public SpectralDim getFoldedDim() {
+        List<SpectralDim> foldedDim = Arrays.stream(spectralDims).filter((spectralDim) -> spectralDim.getFoldMode() != 'n').toList();
+        return foldedDim.isEmpty() ? null : foldedDim.getFirst();
+    }
+
     public List<SpectralDim> getSpectralDims() {
         return Arrays.asList(spectralDims);
     }
@@ -886,6 +907,15 @@ public class PeakList {
             indexMap.put(peak.getIdNum(), peak);
         }
         peakListUpdated(this);
+    }
+
+    public void reassignResonanceFactoryMap() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim : peak.getPeakDims()) {
+                AtomResonance resonance = peakDim.getResonance();
+                ProjectBase.activeResonanceFactory().reassignResonanceFactoryMap(resonance);
+            }
+        }
     }
 
     /**
@@ -1276,14 +1306,21 @@ public class PeakList {
      * @return
      */
     public boolean hasMeasures() {
-        return measures.isPresent();
+        return measures != null;
+    }
+
+    /**
+     * @return
+     */
+    public Optional<Measures> getMeasures() {
+        return Optional.ofNullable(measures);
     }
 
     /**
      * @param measure
      */
-    public void setMeasures(Measures measure) {
-        measures = Optional.of(measure);
+    public void setMeasures(Measures measures) {
+        this.measures = measures;
     }
 
     /**
@@ -1292,7 +1329,7 @@ public class PeakList {
     public double[] getMeasureValues() {
         double[] values = null;
         if (hasMeasures()) {
-            values = measures.get().getValues();
+            values = measures.getValues();
         }
         return values;
     }
@@ -1875,7 +1912,7 @@ public class PeakList {
      * @return
      */
     public DoubleSummaryStatistics widthStatsPPM(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).filter(d -> Double.isFinite(d)).summaryStatistics();
         return stats;
     }
 
@@ -1909,7 +1946,7 @@ public class PeakList {
     }
 
     public void writeSTAR3Header(Writer chan) throws IOException {
-        chan.write("save_" + getName() + "\n");
+        chan.write(STAR3Base.SAVE + getName() + "\n");
         chan.write("_Spectral_peak_list.Sf_category                 ");
         chan.write("spectral_peak_list\n");
         chan.write("_Spectral_peak_list.Sf_framecode                 ");
@@ -1980,7 +2017,7 @@ public class PeakList {
      */
     public DescriptiveStatistics shiftDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShiftValue()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShiftValue()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
@@ -1989,7 +2026,7 @@ public class PeakList {
      * @return
      */
     public DoubleSummaryStatistics shiftStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShift()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getChemShift()).filter(d -> Double.isFinite(d)).summaryStatistics();
         return stats;
     }
 
@@ -1999,7 +2036,7 @@ public class PeakList {
      */
     public DescriptiveStatistics widthDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
@@ -2009,7 +2046,7 @@ public class PeakList {
      */
     public DescriptiveStatistics widthDStatsPPM(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidth()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidth()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 
@@ -2018,13 +2055,13 @@ public class PeakList {
      * @return
      */
     public DoubleSummaryStatistics widthStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.peakDims[iDim].getLineWidthHz()).filter(d -> Double.isFinite(d)).summaryStatistics();
         return stats;
     }
 
     public DescriptiveStatistics intensityDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
-        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.getPeakDim(iDim).getPeak().getIntensity()).forEach((v) -> stats.addValue(v));
+        peaks.stream().filter((p) -> p.getStatus() >= 0).mapToDouble((p) -> p.getPeakDim(iDim).getPeak().getIntensity()).filter(d -> Double.isFinite(d)).forEach((v) -> stats.addValue(v));
         return stats;
     }
 

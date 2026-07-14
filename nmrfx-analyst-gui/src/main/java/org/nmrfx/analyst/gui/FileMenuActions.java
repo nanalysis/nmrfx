@@ -56,7 +56,9 @@ public class FileMenuActions extends MenuActions {
     protected void advanced() {
         MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
         addMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().addNoDrawAction(e));
-        menu.getItems().addAll(addMenuItem);
+        MenuItem exportMenuItem = new MenuItem("Export Dataset ...");
+        exportMenuItem.setOnAction(e -> AnalystApp.getFXMLControllerManager().getOrCreateActiveController().exportDataset());
+        menu.getItems().addAll(addMenuItem, exportMenuItem);
 
     }
 

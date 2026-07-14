@@ -20,7 +20,16 @@ set dir=%~dp0
 
 set javaexe=java
 set cp="%dir%/lib/nmrfx-analyst-gui-%nvjver%.jar;%dir%lib/*;%dir%plugins/*"
-set JAVA_OPTS="--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED"
+
+set JAVA_OPTS="-Dprism.maxvram=2G"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.base/com.sun.javafx.event=ALL-UNNAMED"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.base/com.sun.javafx.collections=ALL-UNNAMED"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.base/com.sun.javafx.runtime=ALL-UNNAMED"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.graphics/com.sun.javafx.scene.traversal=ALL-UNNAMED"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED"
+set JAVA_OPTS="%JAVA_OPTS% --add-opens=javafx.controls/javafx.scene.control.skin=ALL-UNNAMED"
+
 
 set testjava="%dir%jre\bin\java.exe"
 

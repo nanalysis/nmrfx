@@ -320,6 +320,7 @@ public class SpatialSet {
         }
         refPPMV.setValid(true, atom);
         refPPMVs.set(structureNum, refPPMV);
+        getAtom().getEntity().molecule.setPPMSetActive("REF", structureNum);
         atom.changed();
     }
 
@@ -436,6 +437,7 @@ public class SpatialSet {
                 spSet.atom.changed();
             }
         });
+        getAtom().getEntity().molecule.setPPMSetActive("PPM", ppmSet);
     }
 
     public void setPPMValidity(int ppmSet, boolean validity) {
@@ -535,11 +537,7 @@ public class SpatialSet {
         }
         String aname = atom.name;
         if (eName.length() == 1) {
-            if (eName.equals("H")) {
-                if (aname.length() <= 3) {
-                    aname = ' ' + aname;
-                }
-            } else {
+            if (aname.length() <= 3) {
                 aname = ' ' + aname;
             }
         }

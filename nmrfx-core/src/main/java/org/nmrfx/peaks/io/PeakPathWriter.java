@@ -7,6 +7,7 @@ package org.nmrfx.peaks.io;
 
 import org.nmrfx.peaks.*;
 import org.nmrfx.star.STAR3;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -22,7 +23,7 @@ public class PeakPathWriter {
         List<PeakList> peakLists = peakPath.getPeakLists();
         PeakList firstList = peakLists.get(0);
 
-        chan.write("save_" + peakPath.getName() + "\n");
+        chan.write(STAR3Base.SAVE + peakPath.getName() + "\n");
         chan.write("_NMRFx_peak_path.Sf_category                 ");
         chan.write("nmrfx_peak_path\n");
         chan.write("_NMRFx_peak_path.Sf_framecode                 ");

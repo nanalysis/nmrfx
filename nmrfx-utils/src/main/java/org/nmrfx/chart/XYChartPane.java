@@ -43,10 +43,17 @@ public class XYChartPane extends Pane {
     }
 
     public XYCanvasChart getXYChart() {
-        if ((chart instanceof XYCanvasBoxChart)) {
+        if ((chart instanceof XYCanvasBoxChart) || (chart instanceof XYCanvasBarChart)) {
             chart = XYCanvasChart.buildChart(canvas);
         }
-        return (XYCanvasChart) chart;
+        return chart;
+    }
+
+    public XYCanvasBarChart getBarChart() {
+        if (!(chart instanceof  XYCanvasBarChart)) {
+            chart = XYCanvasBarChart.buildChart(canvas);
+        }
+        return (XYCanvasBarChart) chart;
     }
 
     public void updateChart() {

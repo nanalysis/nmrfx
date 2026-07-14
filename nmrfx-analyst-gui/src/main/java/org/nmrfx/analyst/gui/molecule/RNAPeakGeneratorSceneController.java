@@ -18,6 +18,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.nmrfx.chemistry.MoleculeFactory;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.processor.datasets.Dataset;
@@ -77,7 +78,9 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     @FXML
     Button loadSelGroupButton;
     @FXML
-    Button applySelGroupButton;
+    Button applySelGroupDataButton;
+    @FXML
+    Button applySelGroupMolButton;
     @FXML
     Button replaceSelGroupButton;
     @FXML
@@ -195,7 +198,7 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
         clearSelGroupButton.disableProperty().bind(selGroupListView.getSelectionModel().selectedItemProperty().isNull());
         replaceSelGroupButton.disableProperty().bind(selGroupListView.getSelectionModel().selectedItemProperty().isNull());
         showSelGroupButton.disableProperty().bind(selGroupListView.getSelectionModel().selectedItemProperty().isNull());
-        applySelGroupButton.disableProperty().bind(genDatasetNameField.valueProperty().isNull());
+        applySelGroupDataButton.disableProperty().bind(genDatasetNameField.valueProperty().isNull());
         loadSelGroupButton.disableProperty().bind(genDatasetNameField.valueProperty().isNull());
         genDatasetNameField.setOnShowing(e -> updateGenDatasetNames());
         entityChoiceBox.setOnShowing(e -> updateMolecule());
@@ -209,7 +212,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     }
 
     void doQuickCode(KeyEvent e, String code) {
-        System.out.println("quick " + code);
         if (defaultBackground == null) {
             defaultBackground = quickCodeField.getBackground();
         }
@@ -232,7 +234,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
         StringBuilder sBuilder = new StringBuilder();
         boolean ok = false;
         while (matcher.find()) {
-            System.out.println(matcher.group(1));
             Matcher matcher2 = quickPat2.matcher(matcher.group(1));
             String base = matcher.group(1).substring(0, 1);
             sBuilder.append("*:").append(base).append("*.");
@@ -245,7 +246,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
                     first = false;
                 }
                 String atomType = matcher2.group(1);
-                System.out.println(atomType);
                 if (atomType.equals("r")) {
                     sBuilder.append("Hr");
                 } else if (atomType.equals("n")) {
@@ -280,7 +280,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
             }
             sBuilder.append(" ");
         }
-        System.out.println(sBuilder.toString());
         if (ok) {
             if (e.getCode() == KeyCode.ENTER) {
                 updateButtons(sBuilder.toString());
@@ -400,7 +399,7 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
     }
 
     @FXML
-    void applySelGroup() {
+    void applySelGroupToData() {
         Dataset dataset = Dataset.getDataset(genDatasetNameField.getValue());
         if (dataset != null) {
             StringBuilder sBuilder = new StringBuilder();
@@ -411,6 +410,21 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
                 sBuilder.append(selGroup.trim());
             }
             dataset.addProperty("labelScheme", sBuilder.toString());
+        }
+    }
+    @FXML
+    void applySelGroupToMolecule() {
+        Molecule molecule = (Molecule) MoleculeFactory.getActive();
+        if (molecule != null) {
+            StringBuilder sBuilder = new StringBuilder();
+            for (String selGroup : selGroupList) {
+                if (sBuilder.length() != 0) {
+                    sBuilder.append(';');
+                }
+                sBuilder.append(selGroup.trim());
+            }
+            RNALabels rnaLabels = new RNALabels();
+            rnaLabels.parseSelGroups(molecule, sBuilder.toString());
         }
     }
 
@@ -550,7 +564,6 @@ public class RNAPeakGeneratorSceneController implements Initializable, StageBase
                 result.append(suffix[0]);
             }
         }
-        System.out.println("selAtoms: " + result.toString());
         return result.toString().trim();
     }
 

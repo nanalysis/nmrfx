@@ -93,6 +93,10 @@ public class DataSeries {
         this.fill = color;
     }
 
+    public void setRadius(double value) {
+        radius = value;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -101,12 +105,30 @@ public class DataSeries {
         return name;
     }
 
+    public void autoScale() {
+        minX = Double.MAX_VALUE;
+        maxX = Double.NEGATIVE_INFINITY;
+        minY = Double.MAX_VALUE;
+        maxY = Double.NEGATIVE_INFINITY;
+        for (XYValue value : values) {
+            if (value.isDisabled()) {
+                continue;
+            }
+            minX = Math.min(minX, value.getXValue());
+            maxX = Math.max(maxX, value.getXValue());
+            minY = Math.min(minY, value.getMinYValue());
+            maxY = Math.max(maxY, value.getMaxYValue());
+        }
+    }
+
     public void add(XYValue value) {
         values.add(value);
-        minX = Math.min(minX, value.getXValue());
-        maxX = Math.max(maxX, value.getXValue());
-        minY = Math.min(minY, value.getMinYValue());
-        maxY = Math.max(maxY, value.getMaxYValue());
+        if (!value.isDisabled()) {
+            minX = Math.min(minX, value.getXValue());
+            maxX = Math.max(maxX, value.getXValue());
+            minY = Math.min(minY, value.getMinYValue());
+            maxY = Math.max(maxY, value.getMaxYValue());
+        }
     }
 
     public double getMinX() {

@@ -5,53 +5,34 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
-import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-import org.eclipse.jgit.treewalk.TreeWalk;
 import org.nmrfx.chemistry.io.MoleculeIOException;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.processor.gui.project.GUIProject;
+import org.nmrfx.project.GitBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class GitManager {
+public class GitManager extends GitBase {
     private static final Logger log = LoggerFactory.getLogger(GitManager.class);
     public static GitConflictController conflictController = null;
     public static GitDiffController diffController = null;
     protected static GitHistoryController historyController = null;
-    private static boolean commitActive = false;
-    GUIProject guiProject;
-    Path projectDir;
-    Git git;
 
     public GitManager(GUIProject guiProject) throws IllegalArgumentException {
-        projectDir = guiProject.getProjectDir();
-        try {
-            git = Git.open(projectDir.toFile());
-        } catch (IOException ioE) {
-            GUIProject.checkUserHomePath();
-            git = createAndInitializeGitObject(projectDir.toFile());
-            if (git == null) {
-                throw new IllegalArgumentException("Can't create git");
-            }
-            guiProject.writeIgnore();
-        }
+        super(guiProject);
     }
 
     public static GitConflictController getConflictController() {
@@ -62,7 +43,7 @@ public class GitManager {
         return diffController;
     }
 
-    public static boolean isCommitting() {
+    public boolean isCommitting() {
         return commitActive;
     }
 
@@ -70,6 +51,7 @@ public class GitManager {
         if (git != null) {
             git.close();
         }
+        commitActive = false;
         if (historyController != null) {
             historyController.close();
             historyController = null;
@@ -90,7 +72,7 @@ public class GitManager {
             historyController = GitHistoryController.create(this);
         }
         if (historyController != null) {
-            guiProject = GUIProject.getActive();
+            GUIProject guiProject = GUIProject.getActive();
             historyController.setProject(guiProject);
             if (guiProject.getProjectDir() != null) {
                 historyController.getStage().setTitle("Git History (Project = " + guiProject.getName() + ", Current Branch = " + guiProject.getGitManager().gitCurrentBranch() + ")");
@@ -137,46 +119,11 @@ public class GitManager {
     }
 
     public void setProject(GUIProject guiProject) {
-        this.guiProject = guiProject;
-        Path currentDir = projectDir;
-        this.projectDir = guiProject.getProjectDir();
-        if ((git == null) || (currentDir == null) || !currentDir.equals(this.projectDir)) {
-            if (git != null) {
-                git.close();
-            }
-            git = null;
-            gitOpen();
-        }
+        super.setProject(guiProject);
         if (historyController != null) {
             historyController.setProject(guiProject);
             historyController.updateHistory();
         }
-    }
-
-    public Git createAndInitializeGitObject(File gitDirectory) {
-        try {
-            git = Git.init().setDirectory(gitDirectory).call();
-            return git;
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        }
-        return null;
-    }
-
-    public boolean gitOpen() {
-        if (git == null) {
-            try {
-                git = Git.open(projectDir.toFile());
-            } catch (IOException ioE) {
-                GUIProject.checkUserHomePath();
-                git = createAndInitializeGitObject(projectDir.toFile());
-                if (git == null) {
-                    return false;
-                }
-                guiProject.writeIgnore();
-            }
-        }
-        return true;
     }
 
     public void gitCommitOnThread() {
@@ -189,51 +136,17 @@ public class GitManager {
         gitCommit(msg);
     }
 
+    @Override
     public boolean gitCommit(String msg) {
-        boolean didSomething = false;
         commitActive = true;
         if (git == null) {
             if (!gitOpen()) {
+                commitActive = false;
                 return false;
             }
         }
-        try {
-
-            DirCache index = git.add().addFilepattern(".").call();
-            Status status = git.status().call();
-            StringBuilder sBuilder = new StringBuilder();
-            Set<String> actionMap = new HashSet<>();
-            if (!status.isClean() || status.hasUncommittedChanges()) {
-                Set<String> addedFiles = status.getAdded();
-                for (String addedFile : addedFiles) {
-                    String action = "add:" + Paths.get(addedFile).getName(0);
-                    actionMap.add(action);
-                }
-                Set<String> changedFiles = status.getChanged();
-                for (String changedFile : changedFiles) {
-                    String action = "change:" + Paths.get(changedFile).getName(0);
-                    actionMap.add(action);
-                }
-                Set<String> removedFiles = status.getRemoved();
-                for (String removedFile : removedFiles) {
-                    String action = "remove:" + Paths.get(removedFile).getName(0);
-                    actionMap.add(action);
-                    git.rm().addFilepattern(removedFile).call();
-                }
-                Set<String> missingFiles = status.getMissing();
-                for (String missingFile : missingFiles) {
-                    String action = "missing:" + Paths.get(missingFile).getName(0);
-                    actionMap.add(action);
-                    git.rm().addFilepattern(missingFile).call();
-                }
-                actionMap.forEach(action -> sBuilder.append(action).append(","));
-                git.commit().setMessage(msg + " " + sBuilder).call();
-                didSomething = true;
-
-            }
-        } catch (GitAPIException ex) {
-            log.error(ex.getMessage(), ex);
-        } finally {
+        boolean didSomething = super.gitCommit(msg);
+        if (didSomething) {
             // fixme, should we do this after each commit, or leave git open
             git.close();
             git = null;
@@ -245,109 +158,6 @@ public class GitManager {
             });
         }
         return didSomething;
-    }
-
-    /**
-     * Get the current git status.
-     *
-     * @return Status. The git status.
-     */
-    public Status gitStatus() {
-        Status status = null;
-        try {
-            if (git == null) {
-                gitOpen();
-            }
-            status = git.status().call();
-        } catch (GitAPIException ex) {
-            log.error("Error getting status", ex);
-        }
-        return status;
-    }
-
-    /**
-     * Get the git log, a list of commits, for the given branch.
-     *
-     * @param branchName String. The name of the branch to get the log of.
-     * @return List<RevCommit>. The git log: a list of commits for the branch.
-     */
-    public List<RevCommit> gitLog(String branchName) {
-        List<RevCommit> gitLog = new ArrayList<>();
-        try {
-            if (git == null) {
-                gitOpen();
-            }
-            ObjectId branch = git.getRepository().resolve(branchName);
-            if (branch != null) {
-                Iterable<RevCommit> iterable = git.log().add(branch).call();
-                iterable.forEach(gitLog::add);
-            }
-        } catch (IOException | GitAPIException | RevisionSyntaxException ex) {
-            log.error("Error getting log", ex);
-        }
-        return gitLog;
-    }
-
-    /**
-     * List the branches in the current git repository.
-     *
-     * @return List<Ref>. List of the git branches.
-     */
-    public List<Ref> gitBranches() {
-        List<Ref> branchList = new ArrayList<>();
-        try {
-            if (git == null) {
-                gitOpen();
-            } else {
-                branchList = git.branchList().call();
-            }
-        } catch (GitAPIException ex) {
-            log.error("Error getting branches", ex);
-        }
-        return branchList;
-    }
-
-    /**
-     * Get the full name (filepath) of the current branch.
-     *
-     * @return String. Full name of the current branch.
-     */
-    public String gitCurrentBranch() {
-        String branch = "";
-        try {
-            if (git == null) {
-                gitOpen();
-            } else {
-                branch = git.getRepository().getBranch();
-            }
-        } catch (IOException ex) {
-            log.error("Error getting current branch", ex);
-        }
-        return branch;
-    }
-
-    /**
-     * Get the short name of the given branch, not the full filepath.
-     *
-     * @param branch String. The full name (filepath) of the branch.
-     * @return String. The branch name.
-     */
-    public String gitShortBranch(String branch) {
-        String[] branchSplit = branch.split(File.separator);
-        String shortBranch = branchSplit[branchSplit.length - 1];
-        return shortBranch;
-    }
-
-    private ObjectLoader gitFindFile(String branch, String fileName) throws IOException {
-        ObjectLoader fileObject = null;
-        Repository repository = git.getRepository();
-        ObjectId treeId = repository.resolve(String.join(File.separator, "refs", "heads", branch + "^{tree}"));
-        TreeWalk treeWalk = TreeWalk.forPath(repository, fileName, treeId);
-        if (treeWalk != null) {
-            ObjectId blobID = treeWalk.getObjectId(0);
-            fileObject = repository.open(blobID);
-        }
-        return fileObject;
     }
 
     private void resolveFileConflicts(String branchName, String message) {
@@ -365,24 +175,18 @@ public class GitManager {
             GitConflictController conflictInterface = getConflictController();
             if (conflictInterface != null) {
                 conflictInterface.getFileMenu().setItems(FXCollections.observableList(files));
-                conflictInterface.getFileMenu().setValue(files.get(0));
-                conflictInterface.viewFile(files.get(0));
+                conflictInterface.getFileMenu().setValue(files.getFirst());
+                conflictInterface.viewFile(files.getFirst());
             }
         } else if (response.isPresent() && (response.get() == ButtonType.CANCEL)) {
             try {
-                git.checkout().setForced(true).setName(branchName).call();
+                super.gitForcedCheckout(branchName);
             } catch (GitAPIException ex1) {
                 log.error("Error resolving conflicts", ex1);
             }
         }
     }
 
-    private void gitDeleteFile(String fileName) throws GitAPIException, IOException {
-        git.rm().addFilepattern(fileName).call();
-        String filePath = String.join(File.separator, projectDir.toString(), fileName);
-        File file = new File(filePath);
-        Files.deleteIfExists(file.toPath());
-    }
 
     /**
      * Reset to the specified commit. All subsequent commits will be deleted.
@@ -392,6 +196,7 @@ public class GitManager {
      * @param branch String. The name of the branch of the commit to reset to.
      * @return boolean. Confirmation of the reset.
      */
+    @Override
     public boolean gitResetToCommit(int idx, RevCommit commit, String branch) {
         boolean reset = false;
         String shortBranch = gitShortBranch(branch);
@@ -400,14 +205,9 @@ public class GitManager {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.CANCEL, ButtonType.YES);
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && (response.get() == ButtonType.YES)) {
-            try {
-                for (int i = idx + 1; i < gitLog(branch).size() + 1; i++) {
-                    String file = String.join(File.separator, "windows", "commit_" + shortBranch + "_" + i + ".yaml");
-                    gitDeleteFile(file);
-                }
-                Ref resetRef = git.reset().setRef(commit.getName()).call();
-                reset = true;
-            } catch (GitAPIException | IOException ex) {
+            try{
+            reset = super.gitResetToCommit(idx, commit, branch);}
+            catch (GitAPIException | IOException ex) {
                 log.error("Error reseting to commit", ex);
             }
         }
@@ -431,8 +231,9 @@ public class GitManager {
             try {
                 GitHistoryController hold = historyController;
                 Path oldProjectDir = projectDir;
+                GUIProject guiProject = GUIProject.getActive();
                 guiProject.close();
-                git.revert().include(commit).call();
+                super.gitRevertCommit(commit);
                 guiProject.loadGUIProject(oldProjectDir);
                 if (hold != null) {
                     historyController = hold;
@@ -464,8 +265,9 @@ public class GitManager {
                 gitOpen();
             }
             Path oldProjectDir = projectDir;
+            GUIProject guiProject = GUIProject.getActive();
             guiProject.close();
-            git.checkout().setCreateBranch(true).setName(newBranch).setStartPoint(commitID).call();
+            super.gitCreateBranch(newBranch, commitID);
             guiProject.loadGUIProject(oldProjectDir);
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
             log.error("Creating branch", ex);
@@ -492,7 +294,7 @@ public class GitManager {
                     if (git == null) {
                         gitOpen();
                     }
-                    git.branchDelete().setBranchNames(branchName).call();
+                    super.gitDeleteBranch(branchName);
                 } catch (GitAPIException ex) {
                     log.error("Deleting branch", ex);
                     String exMessage = ex.getMessage();
@@ -502,7 +304,7 @@ public class GitManager {
                         Optional<ButtonType> mergeResponse = mergeAlert.showAndWait();
                         if (mergeResponse.isPresent() && (mergeResponse.get() == ButtonType.OK)) {
                             try {
-                                git.branchDelete().setBranchNames(branchName).setForce(true).call();
+                                super.gitForceDeleteBranch(branchName);
                             } catch (GitAPIException ex1) {
                                 log.error("Deleting branch", ex1);
                             }
@@ -553,8 +355,8 @@ public class GitManager {
                 List<DiffEntry> entries = formatter.scan(oldTreeIter, newTreeIter);
                 if (!entries.isEmpty()) {
                     diffInterface.getEntryMenu().setItems(FXCollections.observableList(entries));
-                    diffInterface.getEntryMenu().setValue(entries.get(0));
-                    diffInterface.viewEntry(entries.get(0));
+                    diffInterface.getEntryMenu().setValue(entries.getFirst());
+                    diffInterface.viewEntry(entries.getFirst());
                 }
             }
         } catch (IOException | RevisionSyntaxException ex) {
@@ -573,9 +375,10 @@ public class GitManager {
                 gitOpen();
             }
             Path oldProjectDir = projectDir;
+            GUIProject guiProject = GUIProject.getActive();
             String projectName = guiProject.getName();
             guiProject.close();
-            git.checkout().setName(name).call();
+            super.gitCheckout(name);
             GUIProject project = new GUIProject(projectName);
             guiProject.loadGUIProject(oldProjectDir);
         } catch (GitAPIException | IOException | MoleculeIOException ex) {
@@ -606,7 +409,7 @@ public class GitManager {
             if (response.isPresent() && (response.get() == ButtonType.OK)) {
                 gitCheckout(mergeDestBranch);
                 if (gitCurrentBranch().equals(mergeDestBranch)) {
-                    git.merge().include(commitToMerge).call();
+                    super.gitMerge(commitToMerge);
                     gitCommit("Merged branch " + origBranch + " into " + mergeDestBranch);
                 }
             }

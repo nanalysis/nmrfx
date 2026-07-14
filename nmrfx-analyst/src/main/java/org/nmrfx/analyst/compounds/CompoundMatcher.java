@@ -48,6 +48,7 @@ public class CompoundMatcher {
     public void updateVec(Vec vec) {
         vec.zeros();
         for (CompoundMatch cMatch : matches.values()) {
+            System.out.println(cMatch.cData.getName());
             cMatch.cData.addToVec(vec, cMatch.shifts, cMatch.scale);
         }
     }

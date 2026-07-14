@@ -98,7 +98,8 @@
                         <ComboBox fx:id="genDatasetNameField" editable="false" HBox.hgrow="ALWAYS" minWidth="200"/>
                         <Pane minWidth="50"/>
                         <Button text="Load" fx:id="loadSelGroupButton" onAction="#loadSelGroup"/>
-                        <Button text="Apply" fx:id="applySelGroupButton" onAction="#applySelGroup"/>
+                        <Button text="Apply To Data" fx:id="applySelGroupDataButton" onAction="#applySelGroupToData"/>
+                        <Button text="Apply To Mol" fx:id="applySelGroupMolButton" onAction="#applySelGroupToMolecule"/>
                     </children>
                 </HBox>
             </children>

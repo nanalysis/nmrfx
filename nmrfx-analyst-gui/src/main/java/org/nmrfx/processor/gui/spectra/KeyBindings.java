@@ -28,6 +28,7 @@ import org.nmrfx.processor.gui.KeyMonitor;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
+import org.nmrfx.processor.gui.spectra.mousehandlers.CrossHairMouseHandler;
 
 import java.util.HashMap;
 import java.util.List;
@@ -185,8 +186,14 @@ public class KeyBindings {
             }
             case "c" -> {
             }
-            case "c1" -> keyMonitor.clear();
-            case "c3" -> keyMonitor.clear();
+            case "c1" -> {
+                CrossHairMouseHandler.setMiddleButtonMode(false);
+                keyMonitor.clear();
+            }
+            case "c3" -> {
+                CrossHairMouseHandler.setMiddleButtonMode(true);
+                keyMonitor.clear();
+            }
             case "cc" -> {
                 chart.getFXMLController().setCursor(CanvasCursor.CROSSHAIR.getCursor());
                 keyMonitor.clear();
@@ -201,6 +208,10 @@ public class KeyBindings {
             }
             case "cr" -> {
                 chart.getFXMLController().setCursor(CanvasCursor.REGION.getCursor());
+                keyMonitor.clear();
+            }
+            case "cl" -> {
+                chart.getFXMLController().setCursor(CanvasCursor.SLICE.getCursor());
                 keyMonitor.clear();
             }
             case "p" -> {
@@ -237,6 +248,12 @@ public class KeyBindings {
                 chart.getFXMLController().exportGraphics();
                 keyMonitor.clear();
             }
+            case "si" -> {
+                chart.getFXMLController().addInsetChartTo(chart);
+                chart.getFXMLController().refresh();
+                keyMonitor.clear();
+            }
+
             case "sn" -> {
                 Stage stage = new Stage(StageStyle.DECORATED);
                 AnalystApp.getFXMLControllerManager().newController(stage);
@@ -258,6 +275,14 @@ public class KeyBindings {
             }
             case "vc" -> {
                 chart.center();
+                keyMonitor.clear();
+            }
+            case "vd" -> {
+                chart.copyChartLimits();
+                keyMonitor.clear();
+            }
+            case "vv" -> {
+                chart.pasteChartLimits();
                 keyMonitor.clear();
             }
             case "ve" -> {

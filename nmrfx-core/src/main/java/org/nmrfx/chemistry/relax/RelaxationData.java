@@ -77,7 +77,7 @@ public class RelaxationData implements RelaxationValues {
         return key;
     }
 
-    public static void add(RelaxationSet relaxationSet, ResonanceSource resSource,  double value, double error) {
+    public static void add(RelaxationSet relaxationSet, ResonanceSource resSource, double value, double error) {
         RelaxationData rData = new RelaxationData(relaxationSet, resSource,
                 value, error);
         resSource.getAtom().addRelaxationData(relaxationSet, rData);
@@ -149,16 +149,17 @@ public class RelaxationData implements RelaxationValues {
         return dataMap;
     }
 
-    private static String toFileString(Map<RelaxTypes, RelaxationData> values, List<RelaxTypes> types) {
+    private static String toFileString(Map<RelaxTypes, RelaxationData> values, List<RelaxTypes> types, String sepChar) {
         StringBuilder sBuilder = new StringBuilder();
         for (var type : types) {
             var data = values.get(type);
             if ((sBuilder.length() == 0) && (data != null)) {
                 sBuilder.append(String.format("%.2f", data.getRelaxationSet().field()));
             }
+            sBuilder.append(sepChar);
             Double value = data != null ? data.getValue() : null;
             Double error = data != null ? data.getError() : null;
-            RelaxationValues.appendValueError(sBuilder, value, error, "%.3f",",");
+            RelaxationValues.appendValueError(sBuilder, value, error, "%.3f", ",", sepChar);
         }
         return sBuilder.toString();
     }
@@ -168,6 +169,7 @@ public class RelaxationData implements RelaxationValues {
         MoleculeBase moleculeBase = MoleculeFactory.getActive();
         List<Atom> atoms = moleculeBase.getAtomArray();
         Set<RelaxTypes> typesUsed = EnumSet.noneOf(RelaxTypes.class);
+        String sepChar = "\t";
 
 
         // figure out what relaxtypes are used so header can be setup
@@ -183,9 +185,9 @@ public class RelaxationData implements RelaxationValues {
                 .filter(typesUsed::contains).collect(Collectors.toList());
 
         try (FileWriter fileWriter = new FileWriter(file)) {
-            fileWriter.write("Chain\tResidue\tAtom\tfield");
+            fileWriter.write("Chain" + sepChar + "Residue" + sepChar + "Atom" + sepChar + "field");
             for (var type : typeList) {
-                fileWriter.write("\t" + type.getName() + "\t" + type.getName() + "_err");
+                fileWriter.write(sepChar + type.getName() + sepChar + type.getName() + "_err");
             }
             fileWriter.write("\n");
             for (Atom atom : atoms) {
@@ -195,8 +197,8 @@ public class RelaxationData implements RelaxationValues {
                         String polymer = atom.getTopEntity().getName();
                         polymer = polymer == null ? "A" : polymer;
                         String resNum = String.valueOf(atom.getResidueNumber());
-                        fileWriter.write(polymer + "\t" + resNum + "\t" + atom.getName() + "\t");
-                        fileWriter.write(toFileString(r1R1NOE, typeList));
+                        fileWriter.write(polymer + sepChar + resNum + sepChar + atom.getName() + sepChar);
+                        fileWriter.write(toFileString(r1R1NOE, typeList, sepChar));
                         fileWriter.write("\n");
                     }
                 }

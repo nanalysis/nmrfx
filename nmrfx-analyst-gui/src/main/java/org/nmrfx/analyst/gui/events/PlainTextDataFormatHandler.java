@@ -101,7 +101,7 @@ public class PlainTextDataFormatHandler implements DataFormatEventHandler {
                     } else {
                         List<String> datasetNames = chart.getDatasetAttributes().stream().map(attr -> (Dataset) attr.getDataset()).map(Dataset::getName).collect(Collectors.toList());
                         datasetNames.addAll(Arrays.asList(items));
-                        chart.updateDatasets(datasetNames);
+                        chart.updateDatasetsByNames(datasetNames);
                         chart.updateProjections();
                         chart.updateProjectionBorders();
                     }

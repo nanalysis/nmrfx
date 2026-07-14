@@ -11,9 +11,13 @@ import org.nmrfx.processor.gui.annotations.AnnoText;
  */
 public class AnnoJournalFormat extends AnnoText {
 
-    String peakListName = null;
+    String peakListName = "";
     String journalName = "JMedCh";
     JournalFormat format = null;
+
+    public AnnoJournalFormat() {
+
+    }
 
     public AnnoJournalFormat(double x1, double y1, double width,
                              POSTYPE xPosType, POSTYPE yPosType, String peakListName) {
@@ -28,9 +32,21 @@ public class AnnoJournalFormat extends AnnoText {
         updateText();
     }
 
+    public String getJournalName() {
+        return journalName;
+    }
+    public void setPeakListName(String peakListName) {
+        this.peakListName = peakListName;
+        updateText();
+    }
+
+    public String getPeakListName() {
+        return peakListName;
+    }
+
     void updateText() {
         text = "";
-        if (peakListName != null) {
+        if ((peakListName != null) && !peakListName.isBlank()) {
             PeakList peakList = PeakList.get(peakListName);
             if (peakList != null) {
                 if ((format == null) || !format.getName().equals(journalName)) {
@@ -45,7 +61,7 @@ public class AnnoJournalFormat extends AnnoText {
     @Override
     public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world) {
         updateText();
-        if (text.length() > 0) {
+        if (!text.isEmpty()) {
             super.draw(gC, bounds, world);
         }
 

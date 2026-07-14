@@ -5,10 +5,15 @@
  */
 package org.nmrfx.analyst.gui;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.StringProperty;
+import atlantafx.base.theme.CupertinoDark;
+import atlantafx.base.theme.CupertinoLight;
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
+import javafx.application.Application;
+import javafx.application.ColorScheme;
+import javafx.application.Platform;
+import javafx.beans.property.*;
+import javafx.scene.paint.Color;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -16,27 +21,110 @@ import org.nmrfx.utils.properties.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author brucejohnson
  */
 public class AnalystPrefs {
+    private static final String GUI_THEME = "GUI_THEME";
+    private static final String GUI_LIGHTDARK = "GUI_LIGHTDARK";
     private static final String REMOTE_HOST_STR = "REMOTE_HOST";
     private static final String REMOTE_USER_STR = "REMOTE_USER_NAME";
     private static IntegerProperty libraryVectorSize = null;
     private static DoubleProperty libraryVectorSF = null;
-    private static DoubleProperty libraryVectorSW = null;
+    private static DoubleProperty libraryVectorSWPPM = null;
     private static DoubleProperty libraryVectorLB = null;
     private static DoubleProperty libraryVectorREF = null;
+
+    private static StringProperty themeProp = null;
+    private static StringProperty lightDarkModeProp = null;
+    private static StringProperty segmentLibraryFile = null;
     private static BooleanProperty useRemotePassword = null;
     private static StringProperty remoteUserName = null;
     private static StringProperty remoteHostName = null;
     private static StringProperty remoteDirectory = null;
     private static StringProperty localDirectory = null;
     private static StringProperty localResidueDirectory = null;
+    private static StringProperty gissmoFileProp = null;
+    private static Color backGround = Color.WHITE;
+
+    public enum LightDarkModes {
+        LIGHT,
+        DARK,
+        AUTO
+    }
 
     private AnalystPrefs() {
         throw new IllegalAccessError("Utility class shouldn't be instantiated!");
+    }
+
+    public static void setTheme() {
+        String name = getTheme();
+
+        LightDarkModes lightDarkMode = getLightDarkMode();
+        if (lightDarkMode == LightDarkModes.AUTO) {
+            Platform.Preferences preferences = Platform.getPreferences();
+            ColorScheme colorScheme = preferences.getColorScheme();
+            lightDarkMode = colorScheme == ColorScheme.LIGHT ? LightDarkModes.LIGHT : LightDarkModes.DARK;
+        }
+
+        if (lightDarkMode == LightDarkModes.LIGHT) {
+            backGround = Color.WHITE;
+            if (name.equals("Primer")) {
+                Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+            } else if (name.equals("Cupertino")) {
+                Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+            }
+        } else {
+            backGround = Color.BLACK;
+            if (name.equals("Primer")) {
+                Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+            } else if (name.equals("Cupertino")) {
+                Application.setUserAgentStylesheet(new CupertinoDark().getUserAgentStylesheet());
+            }
+        }
+    }
+
+    public static Color getBackground() {
+        return backGround;
+    }
+
+    public static Color getPosColor() {
+        return backGround == Color.BLACK ? Color.WHITE : Color.BLACK;
+    }
+
+    public static Color getNegColor() {
+        return Color.RED;
+    }
+
+    public static void setTheme(String name) {
+        themeProp.setValue(name);
+        PreferencesController.setString(GUI_THEME, name);
+        setTheme();
+    }
+
+    public static String getTheme() {
+        themeProp = PreferencesController.getString(themeProp, GUI_THEME, "Primer");
+        return themeProp.getValue();
+    }
+
+    public static void setLightDarkMode(String lightDarkModeStr) {
+        lightDarkModeProp.setValue(lightDarkModeStr);
+        PreferencesController.setString(GUI_LIGHTDARK, lightDarkModeStr);
+        setTheme();
+    }
+
+    public static LightDarkModes getLightDarkMode() {
+        lightDarkModeProp = PreferencesController.getString(lightDarkModeProp, GUI_LIGHTDARK, "LIGHT");
+        return LightDarkModes.valueOf(lightDarkModeProp.get());
+    }
+
+
+    public static String getSegmentLibraryFile() {
+        segmentLibraryFile = PreferencesController.getString(segmentLibraryFile, "SEGMENT_LBRARY_FILE", "/Users/brucejohnson/metabo/save/all.json");
+        return segmentLibraryFile.getValue();
     }
 
     public static Integer getLibraryVectorSize() {
@@ -49,9 +137,9 @@ public class AnalystPrefs {
         return libraryVectorSF.getValue();
     }
 
-    public static Double getLibraryVectorSW() {
-        libraryVectorSW = PreferencesController.getDouble(libraryVectorSW, "LIBRARY_VECTOR_SW", 10000.0);
-        return libraryVectorSW.getValue();
+    public static Double getLibraryVectorSWPPM() {
+        libraryVectorSWPPM = PreferencesController.getDouble(libraryVectorSWPPM, "LIBRARY_VECTOR_SW_PPM", 15.0);
+        return libraryVectorSWPPM.getValue();
     }
 
     public static Double getLibraryVectorLB() {
@@ -139,77 +227,98 @@ public class AnalystPrefs {
 
     public static void addPrefs(PreferencesController preferencesController) {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
+
+        List<String> defaultThemeNames = List.of("Primer", "Cupertino");
+
+        ChoiceOperationItem themeItem = new ChoiceOperationItem(prefSheet,
+                (a, b, c) -> setTheme((String) c), getTheme(), defaultThemeNames, "GUI",
+                "theme", "GUI Theme");
+
+
+        List<String> lightDarkModes = Arrays.stream(LightDarkModes.values()).map(Enum::name).toList();
+
+        ChoiceOperationItem lightDarkItem = new ChoiceOperationItem(prefSheet,
+                (a, b, c) -> setLightDarkMode((String) c), getLightDarkMode().name(), lightDarkModes, "GUI",
+                "lightdark", "GUI  light or dark theme mode");
+
+
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorSize.setValue((Integer) c);
-                },
+                (a, b, c) -> libraryVectorSize.setValue((Integer) c),
                 getLibraryVectorSize(), 8, 17, "Spectrum Library", "VectorSize",
                 "Log2 of size of simulated spectra, 8 -> 256, 9-> 512 etc.");
         DoubleRangeOperationItem libraryVectorLBItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorLB.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorLB.setValue((Double) c),
                 getLibraryVectorLB(), 0, 10.0, "Spectrum Library", "VectorLW",
                 "Line broadening (Hz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSFItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorSF.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorSF.setValue((Double) c),
                 getLibraryVectorSF(), 40, 1200, "Spectrum Library", "VectorSF",
                 "Spectrometer frequency (MHz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSWItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorSW.setValue((Double) c);
-                },
-                getLibraryVectorSW(), 1000, 16000, "Spectrum Library", "VectorSW",
-                "Sweep Width (Hz) for simulated spectra");
+                (a, b, c) -> libraryVectorSWPPM.setValue((Double) c),
+                getLibraryVectorSWPPM(), 2.0, 20.0, "Spectrum Library", "VectorSW",
+                "Sweep Width (PPM) for simulated spectra");
         DoubleRangeOperationItem libraryVectorREFItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorREF.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorREF.setValue((Double) c),
                 getLibraryVectorREF(), 0, 10.0, "Spectrum Library", "VectorREF",
                 "Center reference (PPM) for simulated spectra");
 
-        TextOperationItem remoteUserItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setRemoteUserName((String) c);
-        }, getRemoteUserName(), "Remote Data",
+        FileOperationItem segmentLibraryFileItem = new FileOperationItem(prefSheet,
+                (a, b, c) -> segmentLibraryFile.setValue(c.toString()), getSegmentLibraryFile(), "Spectrum Library", "Segment Library", "File containing segment library");
+
+        TextOperationItem remoteUserItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setRemoteUserName((String) c), getRemoteUserName(), "Remote Data",
                 "UserName",
                 "User name on remote host");
 
-        TextOperationItem remoteHostItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setRemoteHostName((String) c);
-        }, getRemoteHostName(), "Remote Data",
+        TextOperationItem remoteHostItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setRemoteHostName((String) c), getRemoteHostName(), "Remote Data",
                 "HostName",
                 "Name of remote host (server)");
 
-        TextOperationItem remoteDirectoryItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setRemoteDirectory((String) c);
-        }, getRemoteDirectory(), "Remote Data",
+        TextOperationItem remoteDirectoryItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setRemoteDirectory((String) c), getRemoteDirectory(), "Remote Data",
                 "Directory",
                 "Directory on remote host that stores data");
 
-        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem(prefSheet, (a, b, c) -> {
-            setUseRemotePassword((Boolean) c);
-        }, getUseRemotePassword(), "Remote Data", "UsePassword", "Prompt for password when connecting");
+        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> setUseRemotePassword((Boolean) c), getUseRemotePassword(), "Remote Data", "UsePassword", "Prompt for password when connecting");
 
-        TextOperationItem localDirectoryItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setLocalDirectory((String) c);
-        }, getLocalDirectory(), "Local Data",
+        TextOperationItem localDirectoryItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setLocalDirectory((String) c), getLocalDirectory(), "Local Data",
                 "Directory",
                 "Directory on local host that stores data");
 
-        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem(prefSheet, (a, b, c) -> {
-            setLocaResiduelDirectory((String) c);
-        }, getLocalResidueDirectory(), "Structure",
+        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem(prefSheet,
+                (a, b, c) -> setLocaResiduelDirectory((String) c), getLocalResidueDirectory(), "Structure",
                 "Local Residue Directory",
                 "Directory for custom residues");
 
-        prefSheet.getItems().addAll(libraryVectorSizeItem, libraryVectorLBItem,
-                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem,
+        FileOperationItem gissmoFileItem = new FileOperationItem(prefSheet,
+                (a, b, c) -> {
+                    PreferencesController.setString("GISSMO-FILE", (String) c);
+                    gissmoFileProp.setValue((String) c);
+                }
+                , getGissmoFile(), "Spectrum Library", "User File", "File for GISSMO data");
+
+
+        prefSheet.getItems().addAll(gissmoFileItem, libraryVectorSizeItem, libraryVectorLBItem,
+                libraryVectorSFItem, libraryVectorSWItem, libraryVectorREFItem, segmentLibraryFileItem,
                 localDirectoryItem,
                 remoteHostItem, remoteDirectoryItem, remoteUserItem, remoteUsePasswordItem,
-                localResidueDirectoryItem);
+                localResidueDirectoryItem, themeItem, lightDarkItem);
 
     }
+
+    public static String getGissmoFile() {
+        gissmoFileProp = PreferencesController.getString(gissmoFileProp, "GISSMO-FILE", "");
+        return gissmoFileProp.getValue();
+    }
+
+    public static void setGissmoFile(String fileName) {
+        gissmoFileProp.setValue(fileName);
+        PreferencesController.setString("GISSMO-FILE", fileName);
+    }
+
 
 }

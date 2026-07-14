@@ -1,0 +1,6 @@
+" .lvimrc
+" Simon Hulse
+" simonhulse@protonmail.com
+" Last Edited: Wed 11 Sep 2024 16:24:00 EDT
+
+let g:add_stamp=0

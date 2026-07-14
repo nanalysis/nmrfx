@@ -110,7 +110,7 @@ public class PropertyGenerator {
                 shift = hBond.getShift(structureNum, power);
             }
         }
-        return 100.0 * shift;
+        return shift;
     }
 
     public double calcHBondDistance(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, int structureNum) {
@@ -579,8 +579,11 @@ public class PropertyGenerator {
         atomName = atomName.toUpperCase();
         String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
         Atom atom = molecule.findAtom(atomSpec);
+        if (atom == null) {
+            log.error("atom not found in getAtomProperties " + atomSpec);
+            return false;
+        }
         return getAtomProperties(atom, structureNum);
-
     }
 
     public boolean getAtomProperties(Atom atom, int structureNum) {

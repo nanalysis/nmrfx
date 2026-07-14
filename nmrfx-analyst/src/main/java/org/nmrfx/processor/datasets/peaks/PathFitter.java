@@ -111,6 +111,7 @@ public class PathFitter {
     }
 
     public void setup(PeakPaths peakPath, PeakPath path) {
+        nDims = peakPath.getNDim();
         pathMode = peakPath.getPathMode();
         currentPaths.clear();
         currentPaths.add(path);
@@ -126,7 +127,12 @@ public class PathFitter {
                     double[] row = {iVars[0][i], iVars[1][i], peakDist.getDistance(), errValue};
                     values.add(row);
                 } else {
-                    double[] row = {iVars[0][i], peakDist.getDelta(0), peakDist.getDelta(1), errValue};
+                    double[] row = new double[2 + nDims];
+                    row[0] = iVars[0][i];
+                    for (int j=0;j<nDims;j++) {
+                        row[j + 1] = peakDist.getDelta(j);
+                    }
+                    row[row.length - 1] =errValue;
                     values.add(row);
                 }
             }
@@ -138,7 +144,7 @@ public class PathFitter {
             yValues = new double[1][n];
         } else {
             xValues = new double[nX][n];
-            yValues = new double[2][n];
+            yValues = new double[nDims][n];
         }
         errValues = new double[n];
         i = 0;
@@ -150,8 +156,9 @@ public class PathFitter {
                 yValues[0][i] = v[2];
             } else {
                 xValues[0][i] = v[0];
-                yValues[0][i] = v[1];
-                yValues[1][i] = v[2];
+                for (int j=0;j<nDims;j++) {
+                    yValues[j][i] = v[1 + j];
+                }
             }
             errValues[i] = v[3];
             i++;

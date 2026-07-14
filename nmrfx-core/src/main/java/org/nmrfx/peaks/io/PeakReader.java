@@ -18,6 +18,8 @@
 package org.nmrfx.peaks.io;
 
 import org.nmrfx.annotations.PythonAPI;
+import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.peaks.*;
 import org.python.util.PythonInterpreter;
 
@@ -36,6 +38,11 @@ import java.util.regex.Pattern;
  */
 @PythonAPI("pscript")
 public class PeakReader {
+    static final String BRACE_0 = "\\{[^{}]*+\\}";
+    static final String BRACE_1 = "\\{[^{}]*+(?:" + BRACE_0 + "[^{}]*+)*+\\}";
+
+    static final String QUOTED = "\"[^\"\\\\]*+(?:\\\\.[^\"\\\\]*+)*+\"";
+    static final Pattern FIELD_PATTERN = Pattern.compile(QUOTED + "|" + BRACE_1 + "|\\S+");
 
     private static final String DATASET = "dataset";
     private static final String CONDITION = "condition";
@@ -59,7 +66,7 @@ public class PeakReader {
     public void linkResonances() {
         for (var entry : resMap.entrySet()) {
             List<PeakDim> peakDims = entry.getValue();
-            PeakDim firstPeakDim = peakDims.get(0);
+            PeakDim firstPeakDim = peakDims.getFirst();
             if (peakDims.size() > 1) {
 
                 for (PeakDim peakDim : peakDims) {
@@ -73,20 +80,29 @@ public class PeakReader {
     }
 
     public PeakList readPeakList(String fileName) throws IOException {
-        return readPeakList(fileName, null);
+        return readPeakList(fileName, null, null);
     }
 
-    public PeakList readPeakList(String fileName, Map<String, Object> pMap) throws IOException {
-        Path path = Paths.get(fileName);
+    public PeakList readPeakList(String fileName, DatasetBase dataset) throws IOException {
+        return readPeakList(fileName, dataset, null);
+    }
+
+    public String getType(Path path) throws IOException {
         PeakFileDetector detector = new PeakFileDetector();
-        String type = detector.probeContentType(path);
+        return detector.probeContentType(path);
+    }
+
+    public PeakList readPeakList(String fileName, DatasetBase dataset, Map<String, Object> pMap) throws IOException {
+        Path path = Paths.get(fileName);
+        String type = getType(path);
         return switch (type) {
             case "xpk2" -> readXPK2Peaks(fileName);
             case "xpk" -> readXPKPeaks(fileName);
             case "sparky_save" -> readSparkySaveFile(fileName, pMap);
             case "sparky_assign" -> readSparkyAssignmentFile(fileName);
             case "nmrpipe" -> readNMRPipePeaks(fileName);
-            case "xeasy" -> readXEASYPeaks(fileName);
+            case "xeasy" -> readXEASYPeaks(fileName, dataset);
+            case "ccpn" -> readCCPNPeaks(fileName, dataset);
             default -> throw new IllegalArgumentException("Invalid file type " + fileName);
         };
     }
@@ -188,12 +204,30 @@ public class PeakReader {
         return peakList;
     }
 
+    void setDefaultWidths(Peak peak) {
+        PeakList peakList = peak.getPeakList();
+        for (int i =0 ;i<peakList.getNDim();i++) {
+            SpectralDim spectralDim = peakList.getSpectralDim(i);
+            peak.getPeakDim(i).setLineWidthHz(10.0f);
+            peak.getPeakDim(i).setBoundsHz(20.0f);
+        }
+    }
     public void processLine(PeakList peakList, String[] dataHeader, Map<String, Integer> dataMap, String[] data) {
         Peak peak = peakList.getNewPeak();
+        setDefaultWidths(peak);
+        boolean getID = false;
+        if (data.length > dataHeader.length) {
+            getID = true;
+            peak.setIdNum(Integer.parseInt(data[0]));
+        }
+
         for (String field : dataHeader) {
             int dotIndex = field.indexOf('.');
             if (dotIndex != -1) {
                 Integer dataIndex = dataMap.get(field);
+                if (getID) {
+                    dataIndex += 1;
+                }
                 String dimLabel = field.substring(0, dotIndex);
                 field = field.substring(dotIndex + 1);
                 PeakDim peakDim = peak.getPeakDim(dimLabel);
@@ -234,9 +268,9 @@ public class PeakReader {
                 }
             } else {
                 Integer dataIndex = dataMap.get(field);
-                //   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U
-                // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
-                // volume  intensity       status  comment flags
+                if (getID) {
+                    dataIndex += 1;
+                }
                 if (dataIndex != null) {
                     String value = null;
                     try {
@@ -348,6 +382,17 @@ public class PeakReader {
         return map;
     }
 
+    List<String> getLabels(List<String> listFields) {
+        List<String> labels = new ArrayList<>();
+        for (String field : listFields) {
+            if (field.endsWith(".P")) {
+                int dot = field.indexOf(".");
+                String label = field.substring(0, dot);
+                labels.add(label);
+            }
+        }
+        return labels;
+    }
     public PeakList readXPKPeaks(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
@@ -355,37 +400,69 @@ public class PeakReader {
         String listName = fileTail;
         String[] dataHeader = null;
         Map<String, Integer> dataMap = null;
+        PeakList peakList;
+        String[] data = null;
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             String line = fileReader.readLine();
             List<String> listFields = parseXPKLine(line);
-            Map<String, List<String>> listMap = new HashMap<>();
+            boolean useStandardHeader = true;
             for (String field : listFields) {
-                line = fileReader.readLine();
-                List<String> values = parseXPKLine(line);
-                listMap.put(field, values);
+                if (field.contains(".")) {
+                    useStandardHeader = false;
+                }
             }
-            int nDim = listMap.get("label").size();
-            PeakList peakList = new PeakList(listName, nDim);
-            for (String field : listFields) {
-                if (!field.equals(DATASET) && !field.equals(CONDITION)) {
-                    for (int iDim = 0; iDim < nDim; iDim++) {
-                        SpectralDim sDim = peakList.getSpectralDim(iDim);
-                        String value = listMap.get(field).get(iDim);
-                        switch (field) {
-                            case "label" -> sDim.setDimName(value);
-                            case "sf" -> sDim.setSf(Double.parseDouble(value));
-                            case "sw" -> sDim.setSw(Double.parseDouble(value));
+            Map<String, List<String>> listMap = new HashMap<>();
+            if (useStandardHeader) {
+                for (String field : listFields) {
+                    line = fileReader.readLine();
+                    List<String> values = parseXPKLine(line);
+                    listMap.put(field, values);
+                }
+                int nDim = listMap.get("label").size();
+                peakList = new PeakList(listName, nDim);
+                for (String field : listFields) {
+                    if (!field.equals(DATASET) && !field.equals(CONDITION)) {
+                        for (int iDim = 0; iDim < nDim; iDim++) {
+                            SpectralDim sDim = peakList.getSpectralDim(iDim);
+                            String value = listMap.get(field).get(iDim);
+                            switch (field) {
+                                case "label" -> sDim.setDimName(value);
+                                case "sf" -> sDim.setSf(Double.parseDouble(value));
+                                case "sw" -> sDim.setSw(Double.parseDouble(value));
+                            }
                         }
                     }
                 }
+                if (listMap.containsKey(DATASET)) {
+                    peakList.setDatasetName(listMap.get(DATASET).getFirst());
+                }
+                if (listMap.containsKey(CONDITION)) {
+                    peakList.setSampleConditionLabel(listMap.get(CONDITION).getFirst());
+                }
+            } else {
+                List<String> labels = getLabels(listFields);
+
+                peakList = new PeakList(listName, labels.size());
+                int i = 0;
+                for (String label : labels) {
+                    SpectralDim spectralDim = peakList.getSpectralDim(i++);
+                    spectralDim.setDimName(label);
+                    if (label.contains("H")) {
+                        spectralDim.setNucleus("1H");
+                        spectralDim.setSf(600.0);
+                    } else if (label.contains("N")) {
+                        spectralDim.setNucleus("15N");
+                        spectralDim.setSf(600.0 * Nuclei.N15.getFreqRatio());
+                    } else if (label.contains("C")) {
+                        spectralDim.setNucleus("13C");
+                        spectralDim.setSf(600.0 * Nuclei.C13.getFreqRatio());
+                    }
+                }
+                dataHeader = new String[listFields.size()];
+                listFields.toArray(dataHeader);
+                data = new String[listFields.size()];
+
             }
-            if (listMap.containsKey(DATASET)) {
-                peakList.setDatasetName(listMap.get(DATASET).get(0));
-            }
-            if (listMap.containsKey(CONDITION)) {
-                peakList.setSampleConditionLabel(listMap.get(CONDITION).get(0));
-            }
-            String[] data = null;
             while (true) {
                 line = fileReader.readLine();
                 if (line == null) {
@@ -402,10 +479,9 @@ public class PeakReader {
                 try {
 
                     if (dataHeader == null) {
-                        fields.add(0, "id");
                         dataHeader = new String[fields.size()];
                         fields.toArray(dataHeader);
-                        data = new String[fields.size()];
+                        data = new String[fields.size() + 1];
                     } else {
                         if (dataMap == null) {
                             dataMap = headerMap(dataHeader);
@@ -423,46 +499,35 @@ public class PeakReader {
 
     }
 
-    /**
-     * Converts a String into a list of Strings based on white space or tab characters.
-     * Quotes are removed from the string. If there is an inner quote, that will be kept. Example {123.h5'} -> 123.h5'
-     * and {123.h5''} -> 123.h5''
-     * In this method, quote characters are any of the following four characters: ", ', {, }, Empty quotes are returned
-     * as an empty string in the list.
-     *
-     * @param line The String to parse.
-     * @return The parsed String as a list.
-     */
     public static List<String> parseXPKLine(String line) {
-        List<String> store = new ArrayList<>();
-        StringBuilder curVal = new StringBuilder();
-        boolean inquotes = false;
-        char quoteChar = '\'';
-        for (int i = 0; i < line.length(); i++) {
-            char ch = line.charAt(i);
-            if (inquotes) {
-                if (ch == quoteChar) {
-                    inquotes = false;
-                    store.add(curVal.toString().trim());
-                    curVal = new StringBuilder();
-                } else {
-                    curVal.append(ch);
-                }
-            } else if ((ch == '\"') || (ch == '\'') || (ch == '{')) {
-                inquotes = true;
-                quoteChar = ch == '{' ? '}' : ch;
+        List<String> fields = new ArrayList<>();
+        Matcher m = FIELD_PATTERN.matcher(line);
+        while (m.find()) {
+            fields.add(stripResDescriptor(strip(m.group())));
+        }
+        return fields;
+    }
 
-            } else if ((ch == ' ') || (ch == '\t')) {
-                if (!curVal.isEmpty()) {
-                    store.add(curVal.toString().trim());
-                    curVal = new StringBuilder();
-                }
-            } else {
-                curVal.append(ch);
+    private static String strip(String field) {
+        if (field.length() >= 2) {
+            char first = field.charAt(0);
+            char last = field.charAt(field.length() - 1);
+            if ((first == '"' && last == '"') || (first == '{' && last == '}')) {
+                return field.substring(1, field.length() - 1);
             }
         }
-        store.add(curVal.toString().trim());
-        return store;
+        return field;
+    }
+
+    private static String stripResDescriptor(String field) {
+        if (field.length() >= 2) {
+            int firstBrace = field.indexOf('{');
+            int lastBrace = field.lastIndexOf('}');
+            if ((firstBrace != -1) && (lastBrace != -1) && (firstBrace != lastBrace)) {
+                return field.substring(0, firstBrace) + field.substring(lastBrace+1, field.length());
+            }
+        }
+        return field;
     }
 
     public static PeakList readSparkySaveFile(String fileName, Map<String, Object> pMap) {
@@ -531,13 +596,15 @@ public class PeakReader {
                         peak.setIntensity(1.0f);
                     }
 
+                    HashMap<String, Integer> atomDim = new HashMap<>();
+                    atomDim.put("H", 0);
+                    atomDim.put("N", 0);
+                    atomDim.put("C", 0);
+
                     for (int i = 0; i < nDim; i++) {
                         float ppm = Float.parseFloat(fields[i + 1]);
                         PeakDim peakDim = peak.getPeakDim(i);
                         peakDim.setChemShift(ppm);
-                        float widthHz = 20.0f;
-                        double sf = 600.0;
-                        double sw = 2000.0;
                         String resName = "";
                         String atomName = "";
                         if (assignFields.length == nDim) {
@@ -555,31 +622,8 @@ public class PeakReader {
                             }
                         }
 
-                        if (!atomName.isBlank()) {
-                            String label = resName + "." + atomName;
-                            peakDim.setLabel(label);
-                            if (atomName.startsWith("H")) {
-                                widthHz = 15.0f;
-                                sf = 600.0;
-                                sw = 5000.0;
+                        setFakeParameters(resName, atomName, i, peakDim, atomDim);
 
-                                peakList.getSpectralDim(i).setDimName("1H");
-                            } else if (atomName.startsWith("N")) {
-                                sf = 60.0;
-                                sw = 2000.0;
-                                widthHz = 30.0f;
-                                peakList.getSpectralDim(i).setDimName("15N");
-                            } else if (atomName.startsWith("C")) {
-                                widthHz = 30.0f;
-                                sf = 150.0;
-                                sw = 4000.0;
-                                peakList.getSpectralDim(i).setDimName("13C");
-                            }
-                            peakList.getSpectralDim(i).setSf(sf);
-                            peakList.getSpectralDim(i).setSw(sw);
-                        }
-                        peakDim.setLineWidthHz(widthHz);
-                        peakDim.setBoundsHz(widthHz * 3.0f);
                     }
                 }
             }
@@ -587,14 +631,100 @@ public class PeakReader {
         return peakList;
     }
 
-    public PeakList readXEASYPeaks(String fileName) throws IOException {
-        XEASYPeakReader xeasyPeakReader = new XEASYPeakReader();
+    static void setFakeParameters(String resName, String atomName, int i, PeakDim peakDim, HashMap<String, Integer> atomDim) {
+        float widthHz = 20.0f;
+        double sf = 600.0;
+        double sw = 2000.0;
+        PeakList peakList = peakDim.getPeakList();
+        if (!atomName.isBlank()) {
+            String label;
+            if (resName.isBlank()) {
+                label = atomName;
+            } else {
+                label = resName + "." + atomName;
+            }
+            peakDim.setLabel(label);
+            if (atomName.startsWith("H")) {
+                widthHz = 15.0f;
+                sf = 600.0;
+                sw = 5000.0;
+
+                peakList.getSpectralDim(i).setDimName("1H" + "_" + atomDim.merge("H", 1, Integer::sum));
+                peakList.getSpectralDim(i).setNucleus("1H");
+            } else if (atomName.startsWith("N")) {
+                sf = 600.0 * Nuclei.N15.getFreqRatio();
+                sw = 2000.0;
+                widthHz = 30.0f;
+                peakList.getSpectralDim(i).setDimName("15N" + "_" + atomDim.merge("N", 1, Integer::sum));
+                peakList.getSpectralDim(i).setNucleus("15N");
+            } else if (atomName.startsWith("C")) {
+                widthHz = 30.0f;
+                sf = 600.0 * Nuclei.C13.getFreqRatio();
+                sw = 4000.0;
+                peakList.getSpectralDim(i).setDimName("13C" + "_" + atomDim.merge("C", 1, Integer::sum));
+                peakList.getSpectralDim(i).setNucleus("13C");
+            }
+            peakList.getSpectralDim(i).setSf(sf);
+            peakList.getSpectralDim(i).setSw(sw);
+        }
+        peakDim.setLineWidthHz(widthHz);
+        peakDim.setBoundsHz(widthHz * 3.0f);
+    }
+
+    String stripExtension(String s) {
+        int dot = s.lastIndexOf(".");
+        if (dot != -1) {
+            s = s.substring(0, dot);
+        }
+        return s;
+    }
+
+    Optional<DatasetBase> findDataset(PeakList peakList) {
+        String listName = peakList.getName();
+        return DatasetBase.datasets().stream().filter(d -> listName.contains(stripExtension(d.getName()))).filter(d -> d.getNDim() == peakList.getNDim()).findFirst();
+    }
+
+    void setPeakListDims(PeakList peakList, DatasetBase dataset) {
+        peakList.setDatasetName(dataset.getName());
+        for (int i=0;i<dataset.getNDim();i++) {
+            setPeakListDims(peakList, dataset, i);
+        }
+    }
+
+    void setPeakListDims(PeakList peakList, DatasetBase dataset, String dimLabel) {
+        int iDim = dataset.getDim(dimLabel);
+        SpectralDim spectralDim = peakList.getSpectralDim(dimLabel);
+        if ((iDim >= 0) && (spectralDim != null)) {
+            spectralDim.setSf(dataset.getSf(iDim));
+            spectralDim.setSw(dataset.getSw(iDim));
+            spectralDim.setNucleus(dataset.getNucleus(iDim).getNumberName());
+        }
+    }
+
+    void setPeakListDims(PeakList peakList, DatasetBase dataset, int iDim) {
+        SpectralDim spectralDim = peakList.getSpectralDim(iDim);
+        if ((iDim >= 0) && (spectralDim != null)) {
+            spectralDim.setDimName(dataset.getLabel(iDim));
+            spectralDim.setSf(dataset.getSf(iDim));
+            spectralDim.setSw(dataset.getSw(iDim));
+            spectralDim.setNucleus(dataset.getNucleus(iDim).getNumberName());
+        }
+    }
+
+
+    public PeakList readXEASYPeaks(String fileName, DatasetBase dataset) throws IOException {
+        XEASYPeakReader xeasyPeakReader = new XEASYPeakReader(dataset);
         return xeasyPeakReader.readPeaks(fileName);
     }
 
     class XEASYPeakReader {
         String fileTail;
         PeakList peakList;
+        DatasetBase dataset;
+
+        XEASYPeakReader(DatasetBase dataset) {
+            this.dataset = dataset;
+        }
 
         PeakList readPeaks(String fileName) throws IOException {
             Path path = Paths.get(fileName);
@@ -635,25 +765,54 @@ public class PeakReader {
                 String[] fields = line.split(" +", -1);
                 int nDim = Integer.parseInt(fields[fields.length - 1]);
                 peakList = new PeakList(fileTail, nDim);
-            } else if (line.startsWith("INAME")) {
+                if (dataset != null) {
+                    setPeakListDims(peakList, dataset);
+                }
+            } else if (line.startsWith("INAME") && (dataset == null)) {
                 String[] fields = line.split(" +", -1);
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 String dimName = fields[2];
                 var sDim = peakList.getSpectralDim(iDim);
                 sDim.setDimName(dimName);
+            } else if (line.startsWith("SPECTRUM") && (dataset == null)) {
+                String[] fields = line.split(" +", -1);
+                var datasetOpt = findDataset(peakList);
+                datasetOpt.ifPresent(dataset -> {
+                    for (int iDim = 2; iDim < fields.length; iDim++) {
+                        setPeakListDims(peakList, dataset, fields[iDim]);
+                    }
+                });
             }
         }
 
         void processXEASYLine(String[] data) {
             int nDim = peakList.getNDim();
-            int iPeak = Integer.parseInt(data[0]);
             Peak peak = peakList.getNewPeak();
             float intensity = Float.parseFloat(data[nDim + 3]);
             peak.setIntensity(intensity);
-            for (int iDim = 0; iDim < peakList.getNDim(); iDim++) {
+            HashMap<String, Integer> atomDim = new HashMap<>();
+            atomDim.put("H", 0);
+            atomDim.put("N", 0);
+            atomDim.put("C", 0);
+            for (int iDim = 0; iDim < nDim; iDim++) {
                 float shift = Float.parseFloat(data[1 + iDim]);
-                peak.getPeakDim(iDim).setChemShift(shift);
+                PeakDim peakDim = peak.getPeakDim(iDim);
+                peakDim.setChemShift(shift);
+                String label = "";
+                if (data.length > nDim + 7) {
+                    label = data[nDim + 7 + iDim];
+                }
+                String[] labelFields = label.split("\\.");
+                if (labelFields.length == 2) {
+                    label = labelFields[1] + "." + labelFields[0];
+                }
+                peakDim.setLabel(label);
+                float widthHz = peakList.getSpectralDim(iDim).getNucleus().endsWith("H") ? 15.0f : 30.0f;
+                peakDim.setLineWidthHz(widthHz);
+                peakDim.setBoundsHz(widthHz * 3.0f);
             }
+            float volume = Float.parseFloat(data[nDim + 3]);
+            peak.setVolume1(volume);
         }
     }
 
@@ -743,6 +902,14 @@ public class PeakReader {
         }
         return result;
     }
+    private String getPipeStrValue(Map<String, Integer> dataMap, String[] data, String varName) {
+        Integer index = dataMap.get(varName);
+        String result = "";
+        if (index != null) {
+             result = data[index];
+        }
+        return result;
+    }
 
     private void setSfSw(PeakList peakList, Map<String, Integer> dataMap, String[] data, List<double[]> ppmStarts) {
 
@@ -806,4 +973,93 @@ public class PeakReader {
         }
     }
 
+    PeakList readCCPNPeaks(String fileName, DatasetBase dataset) throws IOException {
+        Path path = Paths.get(fileName);
+        boolean gotHeader = false;
+        PeakList peakList = null;
+        Map<String, Integer> dataMap = new HashMap<>();
+        String fileTail = path.getFileName().toString();
+        fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
+        String listName = fileTail;
+
+        try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
+            while (true) {
+                String line = fileReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line = line.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                if (!gotHeader) {
+                    peakList =  processCCPNHeader(listName, line, dataMap);
+                    if (dataset != null) {
+                        setPeakListDims(peakList, dataset);
+                    }
+                    gotHeader = true;
+                } else {
+                    String[] data = line.split(",");
+                    if (peakList != null) {
+                        processCCPNLine(peakList, dataMap, data);
+                    }
+                }
+            }
+        }
+        return peakList;
+    }
+
+    public PeakList processCCPNHeader(String listName, String line, Map<String, Integer> dataMap) {
+        String[] fields = line.split(",");
+        int i = 0;
+        int nDim = 0;
+        for (String field : fields) {
+            field = field.strip().toUpperCase();
+            dataMap.put(field, i++);
+            int len = field.length();
+
+            if ((len > 4) && field.substring(len - 3, len-1).equalsIgnoreCase(" F") ) {
+                String digit = field.substring(len-1);
+                int iDim = Integer.parseInt(digit);
+                nDim = Math.max(nDim, iDim);
+            }
+        }
+        return new PeakList(listName, nDim);
+    }
+
+    public void processCCPNLine(PeakList peakList, Map<String, Integer> dataMap, String[]
+            data) {
+        Peak peak = peakList.getNewPeak();
+        Double intensity = getPipeValue(dataMap, data, "HEIGHT");
+        if (intensity != null) {
+            peak.setIntensity(intensity.floatValue());
+        }
+        Double volume = getPipeValue(dataMap, data, "VOLUME");
+        if (volume != null) {
+            peak.setVolume1(volume.floatValue());
+        }
+        int nDim = peakList.getNDim();
+
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            PeakDim peakDim = peak.getPeakDim(iDim);
+            String axis = "F" + (iDim+1);
+            Double shift = getPipeValue(dataMap, data, "POSITION " + axis);
+            if (shift != null) {
+                peakDim.setChemShiftValue(shift.floatValue());
+            }
+
+            Double wHz = getPipeValue(dataMap, data, "LINE WIDTH " + axis + " (HZ)");
+            if (wHz != null) {
+                peakDim.setLineWidthHz(wHz.floatValue());
+                peakDim.setBoundsHz((float) (wHz * 2.0));
+            }
+            String label = getPipeStrValue(dataMap, data, "ASSIGN " + axis);
+            if (label != null) {
+                if (label.equalsIgnoreCase("None")) {
+                    label = "";
+                }
+                peakDim.setLabel(label);
+            }
+        }
+    }
 }

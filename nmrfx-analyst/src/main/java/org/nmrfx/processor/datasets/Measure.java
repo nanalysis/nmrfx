@@ -41,7 +41,8 @@ public class Measure {
     final MeasureTypes measureType;
 
     public enum MeasureTypes {
-        V("V", "Volume"), M("M", "Maximum"), m("m", "Minimum"), E("E", "Extreme");
+        V("V", "Volume"), M("M", "Maximum"), m("m", "Minimum"),
+        E("E", "Extreme"), R("R", "RMS");
 
         final String name;
         final String symbol;
@@ -212,6 +213,10 @@ public class Measure {
                 case E: {
                     value = region.getExtreme();
                     value -= iCorr;
+                    break;
+                }
+                case R: {
+                    value = region.getRMS();
                     break;
                 }
                 default: {

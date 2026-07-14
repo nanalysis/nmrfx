@@ -1,11 +1,8 @@
 package org.nmrfx.analyst.gui.datasetbrowser;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.concurrent.Task;
 import javafx.scene.control.Button;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.Stage;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.AnalystPrefs;
 import org.nmrfx.fxutil.Fx;
@@ -35,11 +32,10 @@ public class LocalDatasetBrowserTabController extends DatasetBrowserTabControlle
         directoryTextField.setText(AnalystPrefs.getLocalDirectory());
 
         // Add extra button to open file browser to select directory
-        Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
+        Button button = GUIUtils.folderOpenButton();
         button.setOnAction(e -> {
-                    datasetBrowserController.getStage().setAlwaysOnTop(false);
                     browseDirectory();
-                    datasetBrowserController.getStage().setAlwaysOnTop(true);
+                    datasetBrowserController.getStage().toFront();
                 }
         );
         hBox.getChildren().add(button);

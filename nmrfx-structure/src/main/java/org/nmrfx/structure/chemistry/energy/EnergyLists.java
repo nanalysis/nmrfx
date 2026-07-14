@@ -57,6 +57,7 @@ public class EnergyLists {
     private double shrinkHValue = 0.0;
     private ForceWeight forceWeight = new ForceWeight();
     private RingCurrentShift ringShifts = new RingCurrentShift();
+    RDCEnergy rdcEnergy = null;
     private Predictor predictor = null;
     AtomBranch[] branches = null;
     static final double toDeg = 180.0 / Math.PI;
@@ -256,6 +257,13 @@ public class EnergyLists {
         }
         for (Polymer polymer : molecule.getPolymers()) {
             predictor.predictRNAWithDistances(polymer, 0, 0, true);
+        }
+    }
+
+    public void setRDCSet(String name) {
+        RDCConstraintSet rdcConstraintSet = molecule.getMolecularConstraints().getRDCSet(name);
+        if (rdcConstraintSet != null) {
+            rdcEnergy = new RDCEnergy(rdcConstraintSet);
         }
     }
 
@@ -509,6 +517,7 @@ public class EnergyLists {
         int nStack = 0;
         double maxDis = 0.0;
         double irpEnergy = 0.0;
+        double rdcEnergyValue = 0.0;
         int nIrp = 0;
         double shiftTotEnergy = 0.0;
         int nShift = 0;
@@ -647,11 +656,15 @@ public class EnergyLists {
 
             }
 
-            double energySum = dihEnergy + cffnbEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
+            if ((forceWeight.getRDC() > 0.0) && (rdcEnergy != null)) {
+                rdcEnergyValue = rdcEnergy.calcEnergy() * forceWeight.getRDC();
+            }
+
+            double energySum = dihEnergy + cffnbEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih + rdcEnergyValue;
             writer.format(
-                    "Irp %5d %8.3f Dih %5d %8.3f CFF %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Stack %5d %8.3f Total %8.3f\n",
+                    "Irp %5d %8.3f Dih %5d %8.3f CFF %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Stack %5d %8.3f RDC %8.3f Total %8.3f\n",
                     nIrp, irpEnergy, nDih, dihEnergy, nCFF, cffnbEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
-                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
+                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, rdcEnergyValue, energySum);
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         }
@@ -1123,6 +1136,10 @@ public class EnergyLists {
                     }
                 }
             }
+            if ((forceWeight.getRDC() > 0.0) && (rdcEnergy != null)) {
+                energyTotal += rdcEnergy.calcEnergy() * forceWeight.getRDC();
+            }
+
             if (calcDeriv) {
                 for (int i = 0; i < branches.length; i++) {
                     if (REPORTBAD && (Math.abs(gradient[i]) > 100000.0)) {

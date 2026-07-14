@@ -117,7 +117,7 @@ public class DatasetView {
     private void updateChartDatasets() {
         ObservableList<String> datasetTargets = datasetSelectionView.getTargetItems();
         PolyChart chart = fxmlController.getActiveChart();
-        chart.updateDatasets(datasetTargets);
+        chart.updateDatasetsByNames(datasetTargets);
         if (datasetTargets.isEmpty()) {
             chart.removeProjections();
             chart.getCrossHairs().hideAll();

@@ -30,7 +30,7 @@ public abstract class GaussianWt implements Existence {
     // constructor is vendor dependent, e.g.
     //   GaussianWt(int dim) { }
     public boolean exists() {
-        if (gf != 0.0) {
+        if (gf > 1.0e-6) {
             return true;
         } else {
             return false;

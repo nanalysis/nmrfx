@@ -19,17 +19,18 @@ package org.nmrfx.chemistry;
 
 import org.nmrfx.annotations.PluginAPI;
 
-import java.io.Serializable;
 import java.util.*;
 
 @PluginAPI("ring")
-public class Entity implements AtomContainer, Serializable, ITree {
+public class Entity implements AtomContainer, ITree {
     public String name = null;
     public String label = null;
+    String entityAssemblyName = null;
     String pdbChain = "";
     public MoleculeBase molecule = null;
-    public List<Atom> atoms = new ArrayList<Atom>();
-    public List<Bond> bonds = new ArrayList<Bond>();
+    public List<Atom> atoms = new ArrayList<>();
+    public List<Bond> bonds = new ArrayList<>();
+    private Atom startAtom = null;
     boolean hasEquivalentAtoms = false;
     public CoordSet coordSet = null;
     public int entityID = 0;
@@ -44,6 +45,9 @@ public class Entity implements AtomContainer, Serializable, ITree {
     Map<String, Object> propertyObjectMap = new HashMap<>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
+    public String getEntityAssemblyName() {
+        return entityAssemblyName != null ? entityAssemblyName : label;
+    }
     @Override
     public int getAtomCount() {
         return atoms.size();
@@ -74,9 +78,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     @Override
     public List<IAtom> atoms() {
-        List<IAtom> result = new ArrayList<>();
-        result.addAll(atoms);
-        return result;
+        return new ArrayList<>(atoms);
     }
 
     @Override
@@ -86,9 +88,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     @Override
     public List<IBond> bonds() {
-        List<IBond> result = new ArrayList<>();
-        result.addAll(bonds);
-        return result;
+        return new ArrayList<>(bonds);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
         List<IBond> ibonds = atom.getBonds();
         List<IAtom> result = new ArrayList<>();
 
-        ibonds.forEach((ibond) -> {
+        ibonds.forEach(ibond -> {
             if (ibond.getAtom(0) == atom) {
                 result.add(ibond.getAtom(1));
             } else if (ibond.getAtom(1) == atom) {
@@ -108,8 +108,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     @Override
     public List<IBond> getConnectedBondsList(IAtom atom) {
-        List<IBond> result = atom.getBonds();
-        return result;
+        return atom.getBonds();
     }
 
     @Override
@@ -134,15 +133,15 @@ public class Entity implements AtomContainer, Serializable, ITree {
             }
         }
         if (index == -1) {
-            System.out.println("Bond not present " + ((Bond) bond).toString());
+            System.out.println("Bond not present " + bond.toString());
         }
         return index;
     }
 
     public static class EntityCommonName {
 
-        String name = "";
-        String type = "?";
+        String name;
+        String type;
 
         EntityCommonName(String name, String type) {
             this.name = name;
@@ -204,9 +203,8 @@ public class Entity implements AtomContainer, Serializable, ITree {
         commonNames.add(new EntityCommonName(name, type));
     }
 
-    public ArrayList<EntityCommonName> getCommonNames() {
-        ArrayList<EntityCommonName> copyList = new ArrayList<>(commonNames);
-        return copyList;
+    public List<EntityCommonName> getCommonNames() {
+        return new ArrayList<>(commonNames);
     }
 
     public List<Atom> getAtoms() {
@@ -276,7 +274,15 @@ public class Entity implements AtomContainer, Serializable, ITree {
     }
 
     public void sortByIndex() {
-        Collections.sort(atoms, Atom::compareByIndex);
+        atoms.sort(Atom::compareByIndex);
+    }
+
+    public void startAtom(Atom atom) {
+        startAtom = atom;
+    }
+
+    public Optional<Atom> startAtom() {
+        return Optional.ofNullable(startAtom);
     }
 
 }

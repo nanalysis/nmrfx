@@ -331,6 +331,8 @@ public interface NMRData {
         } else {
             if (string.equalsIgnoreCase("H2O")) {
                 value = ReferenceCalculator.getH2ORefPPM(getTempK());
+            } else if (string.equalsIgnoreCase("AUTOZERO")) {
+                value = NMRDataUtil.autoRef(this, 0.0);
             } else if ("NCPDH".contains(string)) {
                 double refZero = getZeroFreq();
                 Nuclei nuclei = Nuclei.findNuclei(string);
@@ -505,6 +507,15 @@ public interface NMRData {
      */
     default String getUser() {
         return "";
+    }
+
+     /**
+     * Returns true if both the zero and first order phases for a specific dimension are not 0.0 before any conversions
+      * are applied
+     * @return
+     */
+    public default boolean arePhasesSet(int dim) {
+        return false;
     }
 
     /**

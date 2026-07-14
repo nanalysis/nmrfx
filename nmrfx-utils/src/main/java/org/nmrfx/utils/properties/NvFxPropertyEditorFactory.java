@@ -18,8 +18,7 @@
 
 package org.nmrfx.utils.properties;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -35,6 +34,7 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 import org.controlsfx.property.editor.DefaultPropertyEditorFactory;
 import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +77,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMin(dItem.getMin());
             slider.setMax(dItem.getMax());
             slider.setShowTickLabels(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
             slider.setShowTickMarks(true);
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
@@ -113,6 +114,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMax(iItem.getMax());
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(false);
+            slider.getStyleClass().addAll(Styles.SMALL);
             slider.setBlockIncrement(1);
             int delta = iItem.getMax() - iItem.getMin();
             if (delta < 6) {
@@ -227,7 +229,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     public static final PropertyEditor<?> createFileEditor(Item property, final boolean directoryMode) {
         CustomTextField textField = new CustomTextField();
-        Button button = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN);
+        Button button = GUIUtils.folderOpenButton();
         textField.setRight(button);
         AbstractPropertyEditor<String, CustomTextField> editor = new AbstractPropertyEditor<String, CustomTextField>(property, textField) {
             @Override

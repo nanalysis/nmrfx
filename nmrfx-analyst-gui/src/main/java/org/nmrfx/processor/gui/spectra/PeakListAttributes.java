@@ -79,6 +79,8 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     Axis yAxis = null;
     double[][] foldLimits = null;
 
+    double[] foldAmount = null;
+
     public IntegerProperty nplanesProperty() {
         return nplanes;
     }
@@ -252,9 +254,12 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
     void updateFoldingLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         foldLimits = new double[nDataDim][2];
+        foldAmount = new double[nDataDim];
         for (int i = 0; i < nDataDim; i++) {
             DatasetBase dataset = dataAttr.getDataset();
-            foldLimits[i] = dataset.getLimits(dataAttr.getDim(i));
+            int iDim = dataAttr.getDim(i);
+            foldLimits[i] = dataset.getLimits(iDim);
+            foldAmount[i] = dataset.getSw(iDim) / dataset.getSf(iDim);
         }
     }
 
@@ -361,7 +366,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, foldAmount, peakDim))
                     .collect(Collectors.toList());
             peaksInRegion = Optional.of(peaks);
         }
@@ -382,7 +387,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, foldAmount, peakDim))
                     .collect(Collectors.toList());
             peaksInRegion = Optional.of(peaks);
         }
@@ -402,7 +407,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, foldAmount, peakDim))
                     .collect(Collectors.toList());
             selectedPeaks.addAll(peaks);
             return (peaks);
@@ -412,7 +417,7 @@ public class PeakListAttributes implements PeakListener, PublicPropertyContainer
 
     public double foldShift(int iDim, double shift) {
         if (foldLimits != null) {
-            shift = Dataset.foldPPM(shift, foldLimits[iDim]);
+            shift = Dataset.foldPPM(shift, foldLimits[iDim], foldAmount[iDim]);
         }
         return shift;
     }

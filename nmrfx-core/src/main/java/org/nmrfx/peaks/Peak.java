@@ -35,6 +35,13 @@ public class Peak implements Comparable, PeakOrMulti {
             "_Peak_general_char.Intensity_val",
             "_Peak_general_char.Intensity_val_err",
             "_Peak_general_char.Measurement_method",};
+    private static final String[] peakMeasuresCharStrings = {
+            "_Peak_measure.ID",
+            "_Peak_measure.Peak_ID",
+            "_Peak_measure.Spectral_measure_ID",
+            "_Peak_measure.Intensity_val",
+            "_Peak_measure.Intensity_val_err"
+           };
     private static final String[] peakCharStrings = {
             "_Peak_char.Peak_ID",
             "_Peak_char.Peak_contribution_ID",
@@ -147,6 +154,8 @@ public class Peak implements Comparable, PeakOrMulti {
     protected float intensityErr;
     protected float volume2;
     protected float volume2Err;
+    protected float rate;
+    protected float rateErr;
     protected int type = COMPOUND;
     protected int status;
     protected String comment;
@@ -307,6 +316,9 @@ public class Peak implements Comparable, PeakOrMulti {
         return Peak.peakGeneralCharStrings;
     }
 
+    public static String[] getSTAR3MeasureCharStrings() {
+        return Peak.peakMeasuresCharStrings;
+    }
     public static String[] getSTAR3CharStrings() {
         return Peak.peakCharStrings;
     }
@@ -431,12 +443,15 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.intensity = intensity;
         newPeak.volume2 = volume2;
         newPeak.volume1Err = volume1Err;
+        newPeak.rate = rate;
+        newPeak.rateErr = rateErr;
         newPeak.intensityErr = intensityErr;
         newPeak.volume2Err = volume2Err;
         newPeak.type = type;
         newPeak.status = status;
         newPeak.comment = comment;
         newPeak.flag = flag.clone();
+        newPeak.idNum = idNum;
         newPeak.corner = new Corner(corner.getCornerChars());
         for (int i = 0; i < peakDims.length; i++) {
             peakDims[i].copyTo(newPeak.peakDims[i]);
@@ -475,6 +490,8 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.volume1Err = volume1Err;
         newPeak.intensityErr = intensityErr;
         newPeak.volume2Err = volume2Err;
+        newPeak.rate = rate;
+        newPeak.rateErr = rateErr;
         newPeak.type = type;
         newPeak.status = status;
         newPeak.comment = comment;
@@ -762,6 +779,24 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString().trim());
     }
 
+    public String toMeasureSTARString(int peakIndex) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        String formatString = "%.5f";
+
+        if (measures.isPresent()) {
+            double[][] values = measures.get();
+            int id = peakIndex * values[0].length;
+            for (int i = 0; i < values[0].length; i++) {
+                result.append(String.format("%-4d ",id++));
+                result.append(String.format("%4d %3d ", getIdNum(), i));
+                result.append(String.format(formatString, values[0][i])).append(sep);
+                result.append(String.format(formatString, values[1][i]));
+                result.append("\n");
+            }
+        }
+        return result.toString();
+    }
     public String toMeasureString(int index) {
         StringBuilder result = new StringBuilder();
         String sep = "\t";
@@ -863,7 +898,11 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getName() {
-        return peakList.getName() + "." + getIdNum();
+        if (peakList != null) {
+            return peakList.getName() + "." + getIdNum();
+        } else {
+            return "." + idNum;
+        }
     }
 
     public int getIdNum() {
@@ -934,6 +973,14 @@ public class Peak implements Comparable, PeakOrMulti {
     public void setVolume2(float volume2) {
         this.volume2 = volume2;
         peakUpdated(this);
+    }
+
+    public void setRate(float rate) {
+        this.rate = rate;
+    }
+
+    public float getRate() {
+        return rate;
     }
 
     public void setType(int type) {
@@ -1276,6 +1323,16 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    public boolean isFrozen() {
+        boolean frozen = true;
+        for (PeakDim peakDim : peakDims) {
+            if (!peakDim.isFrozen()) {
+                frozen = false;
+                break;
+            }
+        }
+        return frozen;
+    }
     public void tweak(DatasetBase dataset, int[] pdim, int[] planes) throws IOException {
         RegionData regionData = Peak.analyzePeakRegion(this, dataset, planes, pdim);
         double[] maxPoint = regionData.getMaxDPoint();
@@ -1436,7 +1493,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return 0;
     }
 
-    public boolean inRegion(double[][] limits, double[][] foldLimits, int[] dim) {
+    public boolean inRegion(double[][] limits, double[][] foldLimits, double[] foldAmount, int[] dim) {
         int nSearchDim = limits.length;
         boolean ok = true;
         for (int j = 0; j < nSearchDim; j++) {
@@ -1445,8 +1502,7 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             double ctr = peakDims[dim[j]].getChemShiftValue();
             if ((foldLimits != null) && (foldLimits[j] != null)) {
-                double fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
-                ctr = peakList.foldPPM(ctr, fDelta, foldLimits[j][0], foldLimits[j][1]);
+                ctr = peakList.foldPPM(ctr, foldAmount[j], foldLimits[j][0], foldLimits[j][1]);
             }
 
             if ((ctr < limits[j][0]) || (ctr > limits[j][1])) {

@@ -17,8 +17,7 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -37,7 +36,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.converter.IntegerStringConverter;
@@ -45,6 +43,8 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.kordamp.ikonli.javafx.FontIcon;
+import org.kordamp.ikonli.material2.Material2MZ;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.Dataset;
@@ -76,6 +76,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.DoubleConsumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -91,16 +92,18 @@ public class ScanTable {
     static final String NDIM_COLUMN_NAME = "ndim";
     static final String DATASET_COLUMN_NAME = "dataset";
     static final String GROUP_COLUMN_NAME = "group";
+    static final String ACTIVE_COLUMN_NAME = "active";
     static final String COLOR_COLUMN_NAME = "Color";
     static final String POSITIVE_COLUMN_NAME = "Positive";
     static final String NEGATIVE_COLUMN_NAME = "Negative";
     static final String LVL_COLUMN_NAME = "Lvl";
     static final String CLM_COLUMN_NAME = "CLM";
-    static final String NLVL_COLUMN_NAME = "NLevels";
+    static final String NLVL_COLUMN_NAME = "NLvl";
     static final String OFFSET_COLUMN_NAME = "Offset";
     static final String SCANNER_ERROR = "Scanner Error";
+    public static final Pattern VPAT = Pattern.compile("^(V[0-9]+):.*");
 
-    static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME);
+    static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME, ACTIVE_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
     static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
 
@@ -143,13 +146,15 @@ public class ScanTable {
 
     ListChangeListener<Integer> selectionListener;
     PolyChart currentChart;
-    Map<TableColumn, ContextMenu> columnMenus = new HashMap<>();
-    Set<TableColumn> columnsToCheckForMulti = new HashSet<>();
+    Map<TableColumn<FileTableItem, ?>, ContextMenu> columnMenus = new HashMap<>();
+    Set<TableColumn<FileTableItem,?>> columnsToCheckForMulti = new HashSet<>();
 
 
     public ScanTable(ScannerTool controller, TableView<FileTableItem> tableView) {
         this.scannerTool = controller;
         this.tableView = tableView;
+        tableView.getStyleClass().add(Styles.DENSE);
+        tableView.setId("compact-table");
         currentChart = controller.getChart();
         init();
     }
@@ -177,6 +182,7 @@ public class ScanTable {
         columnTypes.put(DATASET_COLUMN_NAME, "S");
         columnTypes.put(ETIME_COLUMN_NAME, "I");
         columnTypes.put(GROUP_COLUMN_NAME, "I");
+        columnTypes.put(ACTIVE_COLUMN_NAME, "B");
         if (currentChart != null) {
             currentChart.getDatasetAttributes().addListener(datasetListener);
         }
@@ -204,15 +210,25 @@ public class ScanTable {
             File file = new File(datasetPath);
             String datasetName = file.getName();
             if (!datasetNames.contains(datasetName)) {
-                datasetNames.add(datasetName);
                 Dataset dataset = Dataset.getDataset(datasetName);
                 if (dataset == null) {
                     File datasetFile = new File(scanDir, datasetPath);
-                    AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(datasetFile, false, true);
+                    if (datasetFile.exists()) {
+                        dataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(datasetFile, false, true);
+                    }
+                }
+                if (dataset != null) {
+                    datasetNames.add(datasetName);
                 }
             }
         }
-        chart.updateDatasets(datasetNames);
+        chart.updateDatasetsByNames(datasetNames);
+    }
+
+    public void ensureDatasetAttributes() {
+        if (getItems().stream().filter(item -> item.getDatasetAttributes() == null).findAny().isPresent()) {
+            setDatasetAttributes();
+        }
     }
 
     private void setDatasetAttributes() {
@@ -234,6 +250,12 @@ public class ScanTable {
         }
     }
 
+    boolean arrayed(DatasetAttributes datasetAttributes) {
+        Dataset dataset = datasetAttributes.getDataset();
+        int nFreqDim = dataset.getNFreqDims();
+        int nDim = dataset.getNDim();
+        return (nFreqDim != 0) && (nFreqDim < nDim);
+    }
     private void setDatasetVisibility(List<FileTableItem> showRows, Double curLvl) {
         if (activeDatasetAttributes.isEmpty()) {
             ensureAllDatasetsAdded();
@@ -247,12 +269,16 @@ public class ScanTable {
         datasetAttributesList.forEach(d -> d.setPos(false));
         boolean singleData = datasetAttributesList.size() == 1;
         if (singleData) {
-            DatasetAttributes dataAttr = datasetAttributesList.get(0);
-            dataAttr.setMapColor(0, dataAttr.getMapColor(0)); // ensure colorMap is not empty
+            DatasetAttributes dataAttr = datasetAttributesList.getFirst();
+            if (arrayed(dataAttr)) {
+                dataAttr.setMapColor(0, dataAttr.getMapColor(0)); // ensure colorMap is not empty
+            } else {
+                dataAttr.clearColors();
+            }
         }
         showRows.forEach(fileTableItem -> {
                     var dataAttr = fileTableItem.getDatasetAttributes();
-                    if (dataAttr != null) {
+                    if ((dataAttr != null) && fileTableItem.getActive()) {
                         dataAttr.setPos(true);
                         if (curLvl != null) {
                             dataAttr.setLvl(curLvl);
@@ -272,7 +298,7 @@ public class ScanTable {
         );
 
         if (singleData) {
-            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            DatasetAttributes dataAttr = datasetAttributesList.getFirst();
             int nDim = dataAttr.nDim;
             chart.full(nDim - 1);
             if ((nDim - dataAttr.getDataset().getNFreqDims()) == 1) {
@@ -333,7 +359,6 @@ public class ScanTable {
             } else {
                 showRows.addAll(selected);
             }
-            Double curLvl = null;
 
             boolean hasDataset = false;
             for (var item : showRows) {
@@ -344,7 +369,7 @@ public class ScanTable {
             }
 
             if (hasDataset) {
-                setDatasetVisibility(showRows, curLvl);
+                setDatasetVisibility(showRows, null);
                 refresh();
                 chart.refresh();
             } else {
@@ -369,7 +394,7 @@ public class ScanTable {
             success = true;
 
             // Only get the first file from the list
-            final File file = db.getFiles().get(0);
+            final File file = db.getFiles().getFirst();
             if (file.isDirectory()) {
                 scanDir = file;
                 Platform.runLater(() -> {
@@ -391,7 +416,7 @@ public class ScanTable {
 
         List<File> files = db.getFiles();
         if (db.hasFiles()) {
-            if (!files.isEmpty() && (files.get(0).isDirectory() || files.get(0).toString().endsWith(".txt"))) {
+            if (!files.isEmpty() && (files.getFirst().isDirectory() || files.getFirst().toString().endsWith(".txt"))) {
                 tableView.setStyle("-fx-border-color: green;"
                         + "-fx-border-width: 1;");
                 e.acceptTransferModes(TransferMode.COPY);
@@ -418,6 +443,7 @@ public class ScanTable {
             initTable();
             fileListItems.clear();
             loadScanFiles(nmrFiles);
+            checkColumnsForMultiple();
         } catch (Exception e) {
             log.warn(e.getMessage(), e);
         } finally {
@@ -431,7 +457,7 @@ public class ScanTable {
             return;
         }
 
-        if ((scanDir == null) || scanDir.toString().equals("")) {
+        if ((scanDir == null) || scanDir.toString().isEmpty()) {
             GUIUtils.warn(SCANNER_ERROR, "No scan directory");
             return;
         }
@@ -474,12 +500,17 @@ public class ScanTable {
             String initScript = ChartProcessor.buildInitScript();
             processInterp.exec(initScript);
 
-            int nDim = fileTableItems.get(0).getNDim();
+            int nDim = fileTableItems.getFirst().getNDim();
             String processScript = chartProcessor.buildScript(nDim);
             Processor processor = Processor.getProcessor();
             processor.keepDatasetOpen(false);
 
             int rowNum = 1;
+            for (FileTableItem fileTableItem : fileTableItems) {
+                fileTableItem.setDatasetName(null);
+                fileTableItem.setDatasetAttributes(null);
+            }
+            activeDatasetAttributes.clear();
             for (FileTableItem fileTableItem : fileTableItems) {
                 File fidFile = new File(scanDir, fileTableItem.getFileName());
                 String fidFilePath = fidFile.getAbsolutePath();
@@ -547,7 +578,7 @@ public class ScanTable {
     }
 
     public void combineDatasets() {
-        List<Dataset> datasets = getDatasetAttributesList().stream().map(dAttr -> (Dataset) dAttr.getDataset()).toList();
+        List<Dataset> datasets = getDatasetAttributesList().stream().map(DatasetAttributes::getDataset).toList();
         if (currentChart.getDatasetAttributes().size() < 2) {
             GUIUtils.warn("Combine", "Need more than one dataset to combine");
         } else {
@@ -640,8 +671,8 @@ public class ScanTable {
         tableView.getSelectionModel().getSelectedIndices().removeListener(selectionListener);
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
-        for (var datasetAttributes: datasetAttributesList) {
-            Dataset dataset = (Dataset) datasetAttributes.getDataset();
+        for (var datasetAttributes : datasetAttributesList) {
+            Dataset dataset = datasetAttributes.getDataset();
             long eTime = 0;
             FileTableItem fileTableItem = new FileTableItem(dataset.getName(), "", dataset.getNDim(),
                     eTime, iRow + 1, dataset.getName(), fieldMap);
@@ -658,6 +689,7 @@ public class ScanTable {
         columnTypes.put(DATASET_COLUMN_NAME, "S");
         columnTypes.put(ETIME_COLUMN_NAME, "I");
         columnTypes.put(GROUP_COLUMN_NAME, "I");
+        columnTypes.put(ACTIVE_COLUMN_NAME, "B");
         initTable(false);
         updateFilter();
         tableView.refresh();
@@ -668,9 +700,9 @@ public class ScanTable {
         if (chart.getDatasetAttributes().size() > 1) {
             loadMultipleDatasets();
             return;
-        } else if (!chart.getDatasetAttributes().isEmpty()){
+        } else if (!chart.getDatasetAttributes().isEmpty()) {
             Dataset dataset = (Dataset) chart.getDataset();
-            if (!chart.is1D()  && ((dataset.getNDim() > 1) && (dataset.getNDim() == dataset.getNFreqDims()))) {
+            if (!chart.is1D() && ((dataset.getNDim() > 1) && (dataset.getNDim() == dataset.getNFreqDims()))) {
                 loadMultipleDatasets();
                 return;
             }
@@ -692,7 +724,8 @@ public class ScanTable {
         tableView.getItems().removeListener(filterItemListener);
         fileListItems.clear();
         int nDim = dataset.getNDim();
-        int nRows = dataset.getSizeTotal(nDim - 1);
+        int nDataRows = dataset.getSizeTotal(nDim - 1);
+        int nRows = (dataset.getNFreqDims() == 0) || (dataset.getNFreqDims() == dataset.getNDim()) ? 1 : nDataRows;
         HashMap<String, String> fieldMap = new HashMap<>();
         double[] values = dataset.getValues(nDim - 1);
         for (int iRow = 0; iRow < nRows; iRow++) {
@@ -700,9 +733,13 @@ public class ScanTable {
             if ((values != null) && (iRow < values.length)) {
                 value = values[iRow];
             }
-            long eTime = (long) (value * 1000);
-            fileListItems.add(new FileTableItem(dataset.getName(), "", 1, eTime, iRow + 1, dataset.getName(), fieldMap));
+            FileTableItem fileTableItem = new FileTableItem(dataset.getName(), "", 1, 0, iRow + 1, dataset.getName(), fieldMap);
+            if (values != null) {
+                fileTableItem.setExtra("value", value);
+            }
+            fileListItems.add(fileTableItem);
         }
+
 
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         tableView.getItems().addListener(filterItemListener);
@@ -713,24 +750,27 @@ public class ScanTable {
         columnTypes.put(DATASET_COLUMN_NAME, "S");
         columnTypes.put(ETIME_COLUMN_NAME, "I");
         columnTypes.put(GROUP_COLUMN_NAME, "I");
+        columnTypes.put(ACTIVE_COLUMN_NAME, "B");
         Long firstDate = 0L;
         for (FileTableItem item : fileListItems) {
             item.setDate(item.getDate() - firstDate);
         }
         initTable();
+        if (values != null) {
+            addTableColumn("value", "D");
+        }
         updateFilter();
         List<Integer> rows = new ArrayList<>();
         rows.add(0);
         // Load from Dataset assumes an arrayed dataset
-        dataset.setNFreqDims(dataset.getNDim() - 1);
-        if (dataset.getNDim() > 2) {
+        if ((dataset.getNFreqDims() > 2) || (dataset.getNFreqDims() == 0) && (dataset.getNDim() > 1)) {
             chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
         } else {
             chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
+            chart.setDrawlist(rows);
         }
-        chart.setDrawlist(rows);
-        chart.full();
-        chart.autoScale();
+
+        setDatasetAttributes();
     }
 
     private void loadScanTable(File file) {
@@ -777,34 +817,33 @@ public class ScanTable {
                         long eTime = 0;
                         String sequence = "";
                         int row = 0;
+                        boolean active = true;
+                        String fileName = "";
                         for (String standardHeader : standardHeaders) {
                             if (!fieldMap.containsKey(standardHeader)) {
                                 hasAll = false;
                             } else {
                                 switch (standardHeader) {
+                                    case PATH_COLUMN_NAME -> fileName = fieldMap.get(standardHeader);
                                     case NDIM_COLUMN_NAME -> nDim = Integer.parseInt(fieldMap.get(standardHeader));
                                     case ROW_COLUMN_NAME -> row = Integer.parseInt(fieldMap.get(standardHeader));
                                     case ETIME_COLUMN_NAME -> eTime = Long.parseLong(fieldMap.get(standardHeader));
                                     case SEQUENCE_COLUMN_NAME -> sequence = fieldMap.get(standardHeader);
+                                    case ACTIVE_COLUMN_NAME -> active = fieldMap.get(standardHeader).equals("1");
                                 }
                             }
                         }
-                        String fileName = fieldMap.get(PATH_COLUMN_NAME);
                         String datasetName = "";
                         if (fieldMap.containsKey(DATASET_COLUMN_NAME)) {
                             datasetName = fieldMap.get(DATASET_COLUMN_NAME);
-                            if (firstDatasetName.equals("")) {
+                            if (firstDatasetName.isEmpty()) {
                                 firstDatasetName = datasetName;
                             } else if (!firstDatasetName.equals(datasetName)) {
                                 combineFileMode = false;
                             }
                         }
-
-                        if (!hasAll) {
-                            if ((fileName == null) || fileName.isBlank()) {
-                                GUIUtils.warn("Load scan table", "No value in path field");
-                                return;
-                            }
+                        boolean noPath = (fileName == null) || fileName.isBlank();
+                        if (!hasAll && !noPath) {
                             if ((scanDir == null) || scanDir.toString().isBlank()) {
                                 GUIUtils.warn("Load scan table", "No scan directory");
                                 return;
@@ -833,6 +872,7 @@ public class ScanTable {
                             firstDate = eTime;
                         }
                         var item = new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap);
+                        item.setActive(active);
                         fileListItems.add(item);
                     }
 
@@ -841,47 +881,7 @@ public class ScanTable {
             } catch (IOException ioE) {
                 log.warn(ioE.getMessage(), ioE);
             }
-            for (int i = 0; i < headers.length; i++) {
-                if (!notInteger[i]) {
-                    columnTypes.put(headers[i], "I");
-                } else if (!notDouble[i]) {
-                    columnTypes.put(headers[i], "D");
-                } else {
-                    columnTypes.put(headers[i], "S");
-                }
-            }
-            columnTypes.put(PATH_COLUMN_NAME, "S");
-            columnTypes.put(SEQUENCE_COLUMN_NAME, "S");
-            columnTypes.put(NDIM_COLUMN_NAME, "I");
-            columnTypes.put(ROW_COLUMN_NAME, "I");
-            columnTypes.put(DATASET_COLUMN_NAME, "S");
-            columnTypes.put(ETIME_COLUMN_NAME, "I");
-
-            for (FileTableItem item : fileListItems) {
-                item.setDate(item.getDate() - firstDate);
-                item.setTypes(headers, notDouble, notInteger);
-            }
-            initTable();
-            addHeaders(headers);
-            fileTableFilter.resetFilter();
-            if (firstDatasetName.length() > 0) {
-                File parentDir = file.getParentFile();
-                Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
-                if (path.toFile().exists()) {
-                    Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
-                    // If there is only one unique dataset name, assume an arrayed experiment
-                    List<String> uniqueDatasetNames = new ArrayList<>(fileListItems.stream().map(FileTableItem::getDatasetName).collect(Collectors.toSet()));
-                    if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.get(0) != null && !uniqueDatasetNames.get(0).equals("")) {
-                        firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
-                    }
-                    PolyChart chart = scannerTool.getChart();
-                    List<Integer> rows = new ArrayList<>();
-                    rows.add(0);
-                    chart.setDrawlist(rows);
-                    chart.full();
-                    chart.autoScale();
-                }
-            }
+            processColumns(file, headers, notInteger, notDouble, firstDate, firstDatasetName);
             addGroupColumn();
             scannerTool.miner.setDisableSubMenus(!combineFileMode);
 
@@ -889,6 +889,51 @@ public class ScanTable {
             log.warn(e.getMessage(), e);
         } finally {
             processingTable = false;
+        }
+    }
+
+    private void processColumns(File file, String[] headers, boolean[] notInteger, boolean[] notDouble, long firstDate, String firstDatasetName) {
+        for (int i = 0; i < headers.length; i++) {
+            if (!notInteger[i]) {
+                columnTypes.put(headers[i], "I");
+            } else if (!notDouble[i]) {
+                columnTypes.put(headers[i], "D");
+            } else {
+                columnTypes.put(headers[i], "S");
+            }
+        }
+        columnTypes.put(PATH_COLUMN_NAME, "S");
+        columnTypes.put(SEQUENCE_COLUMN_NAME, "S");
+        columnTypes.put(NDIM_COLUMN_NAME, "I");
+        columnTypes.put(ROW_COLUMN_NAME, "I");
+        columnTypes.put(DATASET_COLUMN_NAME, "S");
+        columnTypes.put(ETIME_COLUMN_NAME, "I");
+
+        for (FileTableItem item : fileListItems) {
+            item.setDate(item.getDate() - firstDate);
+            item.setTypes(headers, notDouble, notInteger);
+        }
+        initTable();
+        addHeaders(headers);
+
+        fileTableFilter.resetFilter();
+        if (!firstDatasetName.isEmpty()) {
+            File parentDir = file.getParentFile();
+            Path path = FileSystems.getDefault().getPath(parentDir.toString(), firstDatasetName);
+            if (path.toFile().exists()) {
+                Dataset firstDataset = AnalystApp.getFXMLControllerManager().getOrCreateActiveController().openDataset(path.toFile(), false, true);
+                // If there is only one unique dataset name, assume an arrayed experiment
+                List<String> uniqueDatasetNames = fileListItems.stream().map(FileTableItem::getDatasetName).distinct().toList();
+                if (uniqueDatasetNames.size() == 1 && uniqueDatasetNames.getFirst() != null && !uniqueDatasetNames.getFirst().isEmpty()) {
+                    firstDataset.setNFreqDims(firstDataset.getNDim() - 1);
+                }
+                PolyChart chart = scannerTool.getChart();
+                List<Integer> rows = new ArrayList<>();
+                rows.add(0);
+                chart.setDrawlist(rows);
+                chart.full();
+                chart.autoScale();
+            }
         }
     }
 
@@ -946,15 +991,15 @@ public class ScanTable {
         String columnName = columnDescriptors.get(columnDescriptor);
         int maxColumn = -1;
         if (columnName == null) {
-            if (!name.equals("")) {
+            if (!name.isEmpty()) {
                 columnName = name;
             } else {
                 for (String columnType : columnTypes.keySet()) {
                     int columnNum;
-                    if (columnType.startsWith("V.")) {
+                    if (VPAT.matcher(columnType).matches()) {
                         try {
                             int colonPos = columnType.indexOf(":");
-                            columnNum = Integer.parseInt(columnType.substring(2, colonPos));
+                            columnNum = Integer.parseInt(columnType.substring(1, colonPos));
                             if (columnNum > maxColumn) {
                                 maxColumn = columnNum;
                             }
@@ -963,7 +1008,7 @@ public class ScanTable {
                         }
                     }
                 }
-                columnName = "V." + (maxColumn + 1);
+                columnName = "V" + (maxColumn + 1);
             }
             columnDescriptors.put(columnDescriptor, columnName);
         }
@@ -1000,22 +1045,29 @@ public class ScanTable {
     public void addTableColumn(String newName, String type) {
         if (headerAbsent(newName)) {
             columnTypes.put(newName, type);
-            addColumn(newName);
+            TableColumn column = createColumn(newName);
+            if (column != null) {
+                tableView.getColumns().add(column);
+                setColumnGraphic(column);
+                column.graphicProperty().addListener(e -> graphicChanged(column));
+                updateFilter();
+            }
         }
     }
+
     private void initTable() {
         initTable(true);
 
     }
 
-    private boolean columnHasMultiple(TableColumn column) {
+    private boolean columnHasMultiple(TableColumn<FileTableItem, ?> column) {
         int nRows = tableView.getItems().size();
         if (nRows < 2) {
             return false;
         }
         String firstRow = column.getCellData(0) == null ? "" : column.getCellData(0).toString();
         boolean hasMulti = false;
-        for (int i=1;i<nRows;i++) {
+        for (int i = 1; i < nRows; i++) {
             String thisRow = column.getCellData(i) == null ? "" : column.getCellData(i).toString();
             if (!firstRow.equals(thisRow)) {
                 hasMulti = true;
@@ -1032,7 +1084,6 @@ public class ScanTable {
     }
 
     private void initTable(boolean arrayDataset) {
-        IntegerStringConverter isConverter = new IntegerStringConverter();
         tableView.setEditable(true);
         tableView.getColumns().clear();
         TableColumn<FileTableItem, String> datasetColumn = new TableColumn<>(DATASET_COLUMN_NAME);
@@ -1040,6 +1091,7 @@ public class ScanTable {
         tableView.getColumns().add(datasetColumn);
 
         TableColumn<FileTableItem, String> fileColumn = new TableColumn<>(PATH_COLUMN_NAME);
+        tableView.getColumns().add(fileColumn);
         TableColumn<FileTableItem, String> seqColumn = new TableColumn<>(SEQUENCE_COLUMN_NAME);
         TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>(NDIM_COLUMN_NAME);
         TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>(ETIME_COLUMN_NAME);
@@ -1057,6 +1109,138 @@ public class ScanTable {
         columnsToCheckForMulti.add(nDimColumn);
         columnsToCheckForMulti.add(dateColumn);
 
+        TableColumn<FileTableItem, Double> levelCol = makeLvlColumn(scannerTool);
+        TableColumn<FileTableItem, Double> offsetCol = makeOffsetColumn(scannerTool);
+        TableColumn<FileTableItem, Integer> nLevelsCol = makeNLvlsColumn();
+        TableColumn<FileTableItem, Double> clmCol = makeCLMColumn(scannerTool);
+
+        tableView.getColumns().addAll(levelCol, offsetCol, nLevelsCol, clmCol);
+
+        TableColumn<FileTableItem, Color> posColorCol = makeColorColumns(scannerTool, true);
+        TableColumn<FileTableItem, Color> negColorCol = makeColorColumns(scannerTool, false);
+
+        TableColumn<FileTableItem, Boolean> negDrawOnCol = makePosDrawColumn(scannerTool, false);
+
+
+        TableColumn<FileTableItem, TableColumn> posColumn = new TableColumn<>(POSITIVE_COLUMN_NAME);
+        TableColumn<FileTableItem, TableColumn> negColumn = new TableColumn<>(NEGATIVE_COLUMN_NAME);
+        posColumn.getColumns().addAll(posColorCol);
+        negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
+
+        TableColumn<FileTableItem, Boolean> activeColumn = makeActiveColumn(scannerTool);
+        TableColumn<FileTableItem, Number> groupColumn = makeGroupColumn();
+
+        tableView.getColumns().addAll(posColumn, negColumn, activeColumn, groupColumn);
+
+        updateFilter();
+
+        for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
+            String columnText = column.getText();
+            if (!isAttributeColumn(columnText) && setColumnGraphic(column)) {
+                column.graphicProperty().addListener(e -> graphicChanged(column));
+            }
+
+        }
+    }
+
+    private TableColumn<FileTableItem, Color> makeColorColumns(ScannerTool scannerTool, boolean posMode) {
+        TableColumn<FileTableItem, Color> colorCol = new TableColumn<>(COLOR_COLUMN_NAME);
+        colorCol.setEditable(true);
+        colorCol.setSortable(false);
+        if (posMode) {
+            colorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getPosColor()));
+            TableUtils.addColorColumnEditor(colorCol, (item, color) -> {
+                item.setPosColor(color);
+                scannerTool.getChart().refresh();
+            });
+        } else {
+            colorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getNegColor()));
+            TableUtils.addColorColumnEditor(colorCol, (item, color) -> {
+                item.setNegColor(color);
+                scannerTool.getChart().refresh();
+            });
+        }
+        ContextMenu columnMenu = createColorContextMenu(posMode);
+        columnMenus.put(colorCol, columnMenu);
+        return colorCol;
+    }
+
+    private TableColumn<FileTableItem, Double> makeCLMColumn(ScannerTool scannerTool) {
+        TableColumn<FileTableItem, Double> clmCol = new TableColumn<>(CLM_COLUMN_NAME);
+        clmCol.setSortable(false);
+        clmCol.setCellValueFactory(new PropertyValueFactory<>("clm"));
+        TableUtils.addDatasetTextEditor(clmCol, TableUtils.getDoubleColumnFormatter(2), (item, value) -> {
+            item.setClm(value);
+            scannerTool.getChart().refresh();
+        });
+
+        clmCol.setPrefWidth(60);
+
+        ContextMenu clmMenu = new ContextMenu();
+        MenuItem adjustCLMItem = new MenuItem("Adjust...");
+        adjustCLMItem.setOnAction(e -> adjust(ATTR_COLUMNS.CLM, clmMenu, this::adjustCLM));
+        MenuItem unifyCLMItem = new MenuItem("unify");
+        unifyCLMItem.setOnAction(e -> unifyCLM());
+        clmCol.setContextMenu(clmMenu);
+        clmMenu.getItems().addAll(adjustCLMItem, unifyCLMItem);
+        columnMenus.put(clmCol, clmMenu);
+        return clmCol;
+    }
+
+    private TableColumn<FileTableItem, Integer> makeNLvlsColumn() {
+        IntegerStringConverter isConverter = new IntegerStringConverter();
+        TableColumn<FileTableItem, Integer> nLevelsCol = new TableColumn<>(NLVL_COLUMN_NAME);
+        nLevelsCol.setSortable(false);
+        nLevelsCol.setCellValueFactory(new PropertyValueFactory<>("nlvls"));
+        nLevelsCol.setCellFactory(tc -> new TextFieldTableCell<>(isConverter));
+        nLevelsCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<FileTableItem, Integer> t) -> {
+                    Integer value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setNlvls(value);
+                    }
+                });
+        ContextMenu nLvlMenu = new ContextMenu();
+        MenuItem adjustNLvlItem = new MenuItem("Adjust...");
+        adjustNLvlItem.setOnAction(e -> adjust(ATTR_COLUMNS.NLVL, nLvlMenu, this::adjustNLevels));
+        MenuItem unifyNLvlItem = new MenuItem("unify");
+        unifyNLvlItem.setOnAction(e -> unifyNLvl());
+        nLevelsCol.setContextMenu(nLvlMenu);
+        columnMenus.put(nLevelsCol, nLvlMenu);
+        nLvlMenu.getItems().addAll(adjustNLvlItem, unifyNLvlItem);
+
+        nLevelsCol.setPrefWidth(60);
+        nLevelsCol.setEditable(true);
+        return nLevelsCol;
+
+    }
+
+    private TableColumn<FileTableItem, Double> makeOffsetColumn(ScannerTool scannerTool) {
+        TableColumn<FileTableItem, Double> offsetCol = new TableColumn<>(OFFSET_COLUMN_NAME);
+        offsetCol.setSortable(false);
+        offsetCol.setCellValueFactory(new PropertyValueFactory<>("offset"));
+        TableUtils.addDatasetTextEditor(offsetCol, TableUtils.getDoubleColumnFormatter(2), (item, value) -> {
+            item.setOffset(value);
+            scannerTool.getChart().refresh();
+        });
+
+        ContextMenu offsetMenu = new ContextMenu();
+        MenuItem adjustOffsetItem = new MenuItem("Adjust...");
+        adjustOffsetItem.setOnAction(e -> adjust(ATTR_COLUMNS.OFFSET, offsetMenu, this::adjustOffset));
+        MenuItem unifyOffsetItem = new MenuItem("unify");
+        unifyOffsetItem.setOnAction(e -> unifyOffset());
+        MenuItem rampOffsetItem = new MenuItem("ramp");
+        rampOffsetItem.setOnAction(e -> rampOffset());
+        MenuItem popOffsetItem = new MenuItem("pop");
+        popOffsetItem.setOnAction(e -> popOffset());
+        offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem, popOffsetItem);
+        offsetCol.setContextMenu(offsetMenu);
+        offsetCol.setPrefWidth(70);
+        columnMenus.put(offsetCol, offsetMenu);
+        return offsetCol;
+    }
+
+    private TableColumn<FileTableItem, Double> makeLvlColumn(ScannerTool scannerTool) {
         TableColumn<FileTableItem, Double> levelCol = new TableColumn<>(LVL_COLUMN_NAME);
         levelCol.setSortable(false);
         levelCol.setCellValueFactory(new PropertyValueFactory<>("lvl"));
@@ -1073,172 +1257,108 @@ public class ScanTable {
         levelCol.setContextMenu(levelMenu);
         levelMenu.getItems().addAll(adjustLevelItem, unifyLevelItem);
         columnMenus.put(levelCol, levelMenu);
+        return levelCol;
+    }
 
-        TableColumn<FileTableItem, Double> offsetCol = new TableColumn<>(OFFSET_COLUMN_NAME);
-        offsetCol.setSortable(false);
-        offsetCol.setCellValueFactory(new PropertyValueFactory<>("offset"));
-        TableUtils.addDatasetTextEditor(offsetCol, TableUtils.getDoubleColumnFormatter(2), (item, value) -> {
-            item.setOffset(value);
-            scannerTool.getChart().refresh();
-        });
+    private static TableColumn<FileTableItem, Boolean> makePosDrawColumn(ScannerTool scannerTool, boolean posMode) {
 
-        ContextMenu offsetMenu = new ContextMenu();
-        MenuItem adjustOffsetItem = new MenuItem("Adjust...");
-        adjustOffsetItem.setOnAction(e -> adjust(ATTR_COLUMNS.OFFSET, offsetMenu, this::adjustOffset));
-        MenuItem unifyOffsetItem = new MenuItem("unify");
-        unifyOffsetItem.setOnAction(e -> unifyOffset());
-        MenuItem rampOffsetItem = new MenuItem("ramp");
-        rampOffsetItem.setOnAction(e -> rampOffset());
-        offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem);
-        offsetCol.setContextMenu(offsetMenu);
-        offsetCol.setPrefWidth(50);
-        columnMenus.put(offsetCol, offsetMenu);
+        TableColumn<FileTableItem, Boolean> drawOnCol = new TableColumn<>("on");
+        drawOnCol.setSortable(false);
+        drawOnCol.setEditable(true);
+        if (posMode) {
+            drawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getPos()));
+            TableUtils.addCheckBoxEditor(drawOnCol, (item, b) -> {
+                item.setPos(b);
+                scannerTool.getChart().refresh();
+            });
+        } else {
+            drawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getNeg()));
+            TableUtils.addCheckBoxEditor(drawOnCol, (item, b) -> {
+                item.setNeg(b);
+                scannerTool.getChart().refresh();
+            });
 
-        TableColumn<FileTableItem, Integer> nLevelsCol = new TableColumn<>(NLVL_COLUMN_NAME);
-        nLevelsCol.setSortable(false);
-        nLevelsCol.setCellValueFactory(new PropertyValueFactory<>("nlvls"));
-        nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
-        nLevelsCol.setOnEditCommit(
-                (TableColumn.CellEditEvent<FileTableItem, Integer> t) -> {
-                    Integer value = t.getNewValue();
-                    if (value != null) {
-                        t.getRowValue().setNlvls(value);
-                    }
-                });
+        }
 
-        nLevelsCol.setPrefWidth(35);
-        nLevelsCol.setEditable(true);
+        drawOnCol.setPrefWidth(25);
+        drawOnCol.setMaxWidth(25);
+        drawOnCol.setResizable(false);
+        return drawOnCol;
+    }
 
-        ContextMenu nLvlMenu = new ContextMenu();
-        MenuItem adjustNLvlItem = new MenuItem("Adjust...");
-        adjustNLvlItem.setOnAction(e -> adjust(ATTR_COLUMNS.NLVL, nLvlMenu, this::adjustNLevels));
-        MenuItem unifyNLvlItem = new MenuItem("unify");
-        unifyNLvlItem.setOnAction(e -> unifyNLvl());
-        nLevelsCol.setContextMenu(nLvlMenu);
-        nLvlMenu.getItems().addAll(adjustNLvlItem, unifyNLvlItem);
-        columnMenus.put(nLevelsCol, nLvlMenu);
+    private static TableColumn<FileTableItem, Boolean> makeActiveColumn (ScannerTool scannerTool) {
 
-        TableColumn<FileTableItem, Double> clmCol = new TableColumn<>(CLM_COLUMN_NAME);
-        clmCol.setSortable(false);
-        clmCol.setCellValueFactory(new PropertyValueFactory<>("clm"));
-        TableUtils.addDatasetTextEditor(clmCol, TableUtils.getDoubleColumnFormatter(2), (item, value) -> {
-            item.setClm(value);
-            scannerTool.getChart().refresh();
-        });
+        TableColumn<FileTableItem, Boolean> activeCol = new TableColumn<>(ACTIVE_COLUMN_NAME);
+        activeCol.setSortable(false);
+        activeCol.setEditable(true);
+        activeCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getActive()));
+            TableUtils.addCheckBoxEditor(activeCol, (item, b) -> {
+                item.setActive(b);
+                scannerTool.scanTable.selectionChanged();
+            });
 
-        clmCol.setPrefWidth(50);
-
-        ContextMenu clmMenu = new ContextMenu();
-        MenuItem adjustCLMItem = new MenuItem("Adjust...");
-        adjustCLMItem.setOnAction(e -> adjust(ATTR_COLUMNS.CLM, clmMenu, this::adjustCLM));
-        MenuItem unifyCLMItem = new MenuItem("unify");
-        unifyCLMItem.setOnAction(e -> unifyCLM());
-        clmCol.setContextMenu(clmMenu);
-        clmMenu.getItems().addAll(adjustCLMItem, unifyCLMItem);
-        columnMenus.put(clmCol, clmMenu);
-
-        tableView.getColumns().addAll(levelCol, offsetCol, nLevelsCol, clmCol);
-
-        TableColumn<FileTableItem, Color> posColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
-        TableColumn<FileTableItem, Color> negColorCol = new TableColumn<>(COLOR_COLUMN_NAME);
-        TableColumn<FileTableItem, Boolean> posDrawOnCol;
-        TableColumn<FileTableItem, Boolean> negDrawOnCol;
-
-        posColorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getPosColor()));
-        posColorCol.setEditable(true);
-        posColorCol.setSortable(false);
-        TableUtils.addColorColumnEditor(posColorCol, (item, color) -> {
-            item.setPosColor(color);
-            scannerTool.getChart().refresh();
-        });
-        ContextMenu posColumnMenu = createColorContextMenu(true);
-        columnMenus.put(posColorCol, posColumnMenu);
-
-        negColorCol.setCellValueFactory(e -> new SimpleObjectProperty<>(e.getValue().getNegColor()));
-        negColorCol.setEditable(true);
-        TableUtils.addColorColumnEditor(negColorCol, (item, color) -> {
-            item.setNegColor(color);
-            scannerTool.getChart().refresh();
-        });
-        negColorCol.setSortable(false);
-        ContextMenu negColumnMenu = createColorContextMenu(false);
-        columnMenus.put(negColorCol, negColumnMenu);
-
-        posDrawOnCol = new TableColumn<>("on");
-        posDrawOnCol.setSortable(false);
-        posDrawOnCol.setEditable(true);
-        posDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getPos()));
-        TableUtils.addCheckBoxEditor(posDrawOnCol, (item, b) -> {
-            System.out.println("set item " + b);
-            item.setPos(b);
-            scannerTool.getChart().refresh();
-        });
-
-        posDrawOnCol.setPrefWidth(25);
-        posDrawOnCol.setMaxWidth(25);
-        posDrawOnCol.setResizable(false);
-
-        negDrawOnCol = new TableColumn<>("on");
-        negDrawOnCol.setSortable(false);
-        negDrawOnCol.setEditable(true);
-        negDrawOnCol.setCellValueFactory(e -> new SimpleBooleanProperty(e.getValue().getNeg()));
-        TableUtils.addCheckBoxEditor(negDrawOnCol, (item, b) -> {
-            item.setNeg(b);
-            scannerTool.getChart().refresh();
-        });
-        negDrawOnCol.setPrefWidth(25);
-        negDrawOnCol.setMaxWidth(25);
-        negDrawOnCol.setResizable(false);
-
-
+        activeCol.setPrefWidth(50);
+        activeCol.setMaxWidth(50);
+        activeCol.setResizable(false);
+        return activeCol;
+    }
+    private static TableColumn<FileTableItem, Number> makeGroupColumn() {
         TableColumn<FileTableItem, Number> groupColumn = new TableColumn<>(GROUP_COLUMN_NAME);
         groupColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getGroup()));
 
-        groupColumn.setCellFactory(column -> {
-            return new TableCell<>() {
-                @Override
-                protected void updateItem(Number group, boolean empty) {
-                    super.updateItem(group, empty);
-                    if (group == null || empty) {
-                        setText(null);
-                        setStyle("");
-                    } else {
-                        // Format date.
-                        setText(String.valueOf(group));
-                        setTextFill(getGroupColor(group.intValue()));
-                    }
-                }
-            };
-        });
-
-        TableColumn<FileTableItem, TableColumn> posColumn = new TableColumn<>(POSITIVE_COLUMN_NAME);
-        TableColumn<FileTableItem, TableColumn> negColumn = new TableColumn<>(NEGATIVE_COLUMN_NAME);
-        posColumn.getColumns().addAll(posDrawOnCol, posColorCol);
-        negColumn.getColumns().addAll(negDrawOnCol, negColorCol);
-        tableView.getColumns().addAll(posColumn, negColumn, groupColumn);
-        updateFilter();
-
-        for (TableColumn<FileTableItem, ?> column : tableView.getColumns()) {
-            String columnText = column.getText();
-            if (!isAttributeColumn(columnText)) {
-                if (setColumnGraphic(column)) {
-                    column.graphicProperty().addListener(e -> graphicChanged(column));
+        groupColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Number group, boolean empty) {
+                super.updateItem(group, empty);
+                if (group == null || empty) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    // Format date.
+                    setText(String.valueOf(group));
+                    setTextFill(getGroupColor(group.intValue()));
                 }
             }
-        }
+        });
+        return groupColumn;
     }
 
     private void addHeaders(String[] headers) {
         var missingHeaders = headersMissing(headers);
+        List<TableColumn<FileTableItem, ?>> columns = new ArrayList<>();
         for (var header : missingHeaders) {
-            addColumn(header);
+            TableColumn<FileTableItem, ?> column = createColumn(header);
+            if (column != null) {
+                columns.add(column);
+            }
         }
+        tableView.getColumns().addAll(columns);
+
+        for (TableColumn column : columns) {
+            setColumnGraphic(column);
+            column.graphicProperty().addListener(e -> graphicChanged(column));
+        }
+        updateFilter();
     }
 
-    private void addColumn(String header) {
+    public double[][] getData(List<FileTableItem> items) {
+        var columns = tableView.getColumns().stream().filter(column -> isData(column.getText())).toList();
+        int nRows = items.size();
+        int nColumns = columns.size();
+        double[][] data = new double[nRows][nColumns];
+        for (int iCol = 0; iCol < nColumns; iCol++) {
+            for (int iRow = 0; iRow < nRows; iRow++) {
+                data[iRow][iCol] = items.get(iRow).getDoubleExtra(columns.get(iCol).getText());
+            }
+        }
+
+        return data;
+    }
+
+    private TableColumn<FileTableItem, ?> createColumn(String header) {
+        final TableColumn<FileTableItem, ?> newColumn;
         if (headerAbsent(header)) {
             String type = columnTypes.get(header);
-            final TableColumn<FileTableItem, ?> newColumn;
             if (type == null) {
                 type = "S";
                 log.info("No type for {}", header);
@@ -1260,26 +1380,23 @@ public class ScanTable {
                             }
                         }
                     });
-                    tableView.getColumns().add(doubleExtraColumn);
                     break;
                 case "I":
                     TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
                     newColumn = intExtraColumn;
                     intExtraColumn.setCellValueFactory(e -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
-                    tableView.getColumns().add(intExtraColumn);
                     break;
                 default:
                     TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
                     newColumn = extraColumn;
                     extraColumn.setCellValueFactory(e -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
-                    tableView.getColumns().add(extraColumn);
                     break;
             }
 
-            updateFilter();
-            setColumnGraphic(newColumn);
-            newColumn.graphicProperty().addListener(e -> graphicChanged(newColumn));
+        } else {
+            newColumn = null;
         }
+        return newColumn;
     }
 
     private void graphicChanged(TableColumn<FileTableItem, ?> column) {
@@ -1302,11 +1419,16 @@ public class ScanTable {
         return colorMenu;
     }
 
+    public int getSelectedIndex() {
+        int index = tableView.getSelectionModel().getSelectedIndex();
+        return index == -1 ? 0 : index;
+    }
+
     private void unifyColors(boolean posColorMode) {
         if (!getItems().isEmpty()) {
             var selectedItem = tableView.getSelectionModel().getSelectedItem();
             if (selectedItem == null) {
-                selectedItem = getItems().get(0);
+                selectedItem = getItems().getFirst();
             }
             TableColors.unifyColor(getItems(), selectedItem.getColor(posColorMode), (item, color) -> item.setColor(color, posColorMode));
             scannerTool.getChart().refresh();
@@ -1317,7 +1439,7 @@ public class ScanTable {
     private void interpolateColors(boolean posColorMode) {
         int size = getItems().size();
         if (size > 1) {
-            Color color1 = getItems().get(0).getColor(posColorMode);
+            Color color1 = getItems().getFirst().getColor(posColorMode);
             Color color2 = getItems().get(size - 1).getColor(posColorMode);
             TableColors.interpolateColors(getItems(), color1, color2,
                     (item, color) -> item.setColor(color, posColorMode));
@@ -1348,9 +1470,8 @@ public class ScanTable {
     }
 
     private void setMenuGraphics(TableColumn<FileTableItem, ?> column, ContextMenu menu) {
-        Text text = GlyphsDude.createIcon(FontAwesomeIcon.BARS);
-        text.setMouseTransparent(true);
-        column.setGraphic(text);
+        FontIcon fontIcon = GUIUtils.createIcon(Material2MZ.MENU);
+        column.setGraphic(fontIcon);
         column.setContextMenu(menu);
     }
 
@@ -1360,7 +1481,10 @@ public class ScanTable {
             return false;
         }
         String type = columnTypes.get(column.getText());
-        if (!"D".equals(type) && isGroupable(text) && !text.equalsIgnoreCase(COLOR_COLUMN_NAME)) {
+        if (!"D".equals(type) && isGroupable(text)
+                && !text.equalsIgnoreCase(COLOR_COLUMN_NAME)
+                && !text.equalsIgnoreCase(ACTIVE_COLUMN_NAME)
+        ) {
             boolean isGrouped = groupNames.contains(text);
             boolean isFiltered = isFiltered(column);
             StackPane stackPane = new StackPane();
@@ -1408,6 +1532,7 @@ public class ScanTable {
                 columnText.equalsIgnoreCase(CLM_COLUMN_NAME) || columnText.equalsIgnoreCase(NLVL_COLUMN_NAME)
                 || columnText.equalsIgnoreCase(OFFSET_COLUMN_NAME);
     }
+
     private boolean isFiltered(TableColumn column) {
         boolean filtered = false;
         Optional<ColumnFilter<FileTableItem, ?>> opt = fileTableFilter.getColumnFilter(column);
@@ -1423,9 +1548,16 @@ public class ScanTable {
                 !isAttributeColumn(text);
     }
 
+    public boolean isNumeric(String text) {
+        return "D".equals(columnTypes.get(text)) || "I".equals(columnTypes.get(text));
+    }
     public boolean isData(String text) {
         return !standardHeaders.contains(text) && !text.equals(GROUP_COLUMN_NAME)
                 && text.contains(":") && !text.equals(DATASET_COLUMN_NAME) && !isAttributeColumn(text);
+    }
+
+    public List<String> getDataColumns() {
+        return getHeaders().stream().filter(header -> isNumeric(header)).toList();
     }
 
     private void hitDataDelete(TableColumn<FileTableItem, ?> column) {
@@ -1453,15 +1585,16 @@ public class ScanTable {
         selectionChanged();
         tableView.refresh();
     }
+
     public void setChart() {
         PolyChart chart = scannerTool.getChart();
         if (currentChart != chart) {
-           if  (currentChart != null) {
-               currentChart.getDatasetAttributes().removeListener(datasetListener);
-           }
-           chart.getDatasetAttributes().addListener(datasetListener);
-           currentChart = chart;
-           loadFromDataset();
+            if (currentChart != null) {
+                currentChart.getDatasetAttributes().removeListener(datasetListener);
+            }
+            chart.getDatasetAttributes().addListener(datasetListener);
+            currentChart = chart;
+            loadFromDataset();
         }
         updateFilter();
     }
@@ -1476,7 +1609,7 @@ public class ScanTable {
         fileTableFilter.resetFilter();
         tableView.getItems().addListener(filterItemListener);
         getGroups();
-        for (var entry: columnMenus.entrySet()) {
+        for (var entry : columnMenus.entrySet()) {
             setMenuGraphics(entry.getKey(), entry.getValue());
         }
     }
@@ -1484,10 +1617,13 @@ public class ScanTable {
     public ObservableList<FileTableItem> getItems() {
         return fileListItems;
     }
+    public ObservableList<FileTableItem> getActiveItems() {
+        return tableView.getItems();
+    }
 
     public List<DatasetAttributes> getDatasetAttributesList() {
-        return fileListItems.stream().filter(item -> item.getDatasetAttributes() != null).
-                map(item -> item.getDatasetAttributes()).collect(Collectors.toList());
+        return fileListItems.stream().map(FileTableItem::getDatasetAttributes).
+                filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public List<DatasetAttributes> getSelectedDatasetAttributesList() {
@@ -1495,8 +1631,8 @@ public class ScanTable {
         if (selectedItems.isEmpty()) {
             selectedItems = tableView.getItems();
         }
-        return selectedItems.stream().filter(item -> item.getDatasetAttributes() != null).
-                map(item -> item.getDatasetAttributes()).collect(Collectors.toList());
+        return selectedItems.stream().map(FileTableItem::getDatasetAttributes).
+                filter(Objects::nonNull).toList();
     }
 
     public void makeGroupMap() {
@@ -1545,13 +1681,13 @@ public class ScanTable {
         groupSize = maxValue + 1;
     }
 
-     Optional<DatasetAttributes> getSelectedAttributes() {
+    Optional<DatasetAttributes> getSelectedAttributes() {
         List<org.nmrfx.processor.gui.spectra.DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
-         DatasetAttributes dataAttr0 = null;
+        DatasetAttributes dataAttr0 = null;
         if (!datasetAttributesList.isEmpty()) {
-             FileTableItem item0 = tableView.getSelectionModel().getSelectedItem();
+            FileTableItem item0 = tableView.getSelectionModel().getSelectedItem();
             if (item0 == null) {
-                item0 = getItems().get(0);
+                item0 = getItems().getFirst();
             }
             if (item0 != null) {
                 dataAttr0 = item0.getDatasetAttributes();
@@ -1574,7 +1710,7 @@ public class ScanTable {
         });
     }
 
-    void adjust(ATTR_COLUMNS columnType, ContextMenu menu,  DoubleConsumer consumer) {
+    void adjust(ATTR_COLUMNS columnType, ContextMenu menu, DoubleConsumer consumer) {
         double x = menu.getX();
         double y = menu.getY();
         double width = menu.getWidth();
@@ -1591,7 +1727,7 @@ public class ScanTable {
         Double value = null;
         List<DatasetAttributes> datasetAttributesList = getSelectedDatasetAttributesList();
         if (!datasetAttributesList.isEmpty()) {
-            value = attrColumn.getValue(datasetAttributesList.get(0)).doubleValue();
+            value = attrColumn.getValue(datasetAttributesList.getFirst()).doubleValue();
         }
         return value;
     }
@@ -1599,9 +1735,7 @@ public class ScanTable {
     void setValue(ATTR_COLUMNS attrColumn, Double value) {
         List<DatasetAttributes> datasetAttributesList = getSelectedDatasetAttributesList();
         if (value != null) {
-            datasetAttributesList.forEach(datasetAttributes -> {
-                attrColumn.setValue(datasetAttributes, value);
-            });
+            datasetAttributesList.forEach(datasetAttributes -> attrColumn.setValue(datasetAttributes, value));
             PolyChart chart = scannerTool.getChart();
             chart.refresh();
         }
@@ -1612,12 +1746,9 @@ public class ScanTable {
     }
 
     void unifyLevel() {
-        System.out.println("unify");
         List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
         getSelectedAttributes().ifPresent(dataAttr0 -> {
-            datasetAttributesList.forEach(datasetAttributes -> {
-                datasetAttributes.setLvl(dataAttr0.getLvl());
-            });
+            datasetAttributesList.forEach(datasetAttributes -> datasetAttributes.setLvl(dataAttr0.getLvl()));
             tableView.refresh();
             PolyChart chart = scannerTool.getChart();
             chart.refresh();
@@ -1631,9 +1762,7 @@ public class ScanTable {
     void unifyCLM() {
         List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
         getSelectedAttributes().ifPresent(dataAttr0 -> {
-            datasetAttributesList.forEach(datasetAttributes -> {
-                datasetAttributes.setClm(dataAttr0.getClm());
-            });
+            datasetAttributesList.forEach(datasetAttributes -> datasetAttributes.setClm(dataAttr0.getClm()));
             tableView.refresh();
             PolyChart chart = scannerTool.getChart();
             chart.refresh();
@@ -1647,9 +1776,7 @@ public class ScanTable {
     void unifyNLvl() {
         List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
         getSelectedAttributes().ifPresent(dataAttr0 -> {
-            datasetAttributesList.forEach(datasetAttributes -> {
-                datasetAttributes.setNlvls(dataAttr0.getNlvls());
-            });
+            datasetAttributesList.forEach(datasetAttributes -> datasetAttributes.setNlvls(dataAttr0.getNlvls()));
             tableView.refresh();
             PolyChart chart = scannerTool.getChart();
             chart.refresh();
@@ -1663,9 +1790,7 @@ public class ScanTable {
     void unifyOffset() {
         List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
         getSelectedAttributes().ifPresent(dataAttr0 -> {
-            datasetAttributesList.forEach(datasetAttributes -> {
-                datasetAttributes.setOffset(dataAttr0.getOffset());
-            });
+            datasetAttributesList.forEach(datasetAttributes -> datasetAttributes.setOffset(dataAttr0.getOffset()));
             tableView.refresh();
             PolyChart chart = scannerTool.getChart();
             chart.refresh();
@@ -1693,14 +1818,34 @@ public class ScanTable {
         });
     }
 
+    void popOffset() {
+        List<DatasetAttributes> datasetAttributesList = getDatasetAttributesList();
+        getSelectedAttributes().ifPresent(dataAttr0 -> {
+            int nItems = datasetAttributesList.size();
+            if (nItems > 0) {
+                double min = datasetAttributesList.stream().mapToDouble(DatasetAttributes::getOffset).min().orElse(0.0);
+                for (DatasetAttributes dataAttr : datasetAttributesList) {
+                    dataAttr.setOffset(min);
+                }
+                double offset = (1.0 - min) / 2.0 + min;
+                dataAttr0.setOffset(offset);
+            }
+            tableView.refresh();
+            PolyChart chart = scannerTool.getChart();
+            chart.refresh();
+        });
+    }
+
     enum ATTR_COLUMNS {
         LVL(LVL_COLUMN_NAME, "Level") {
             GUIUtils.SliderRange getSliderRange(double value) {
                 return new GUIUtils.SliderRange(value / 10.0, value, value * 10.0, value / 100.0);
             }
+
             Number getValue(DatasetAttributes datasetAttributes) {
                 return datasetAttributes.getLvl();
             }
+
             void setValue(DatasetAttributes datasetAttributes, Number value) {
                 datasetAttributes.setLvl(value.doubleValue());
             }
@@ -1710,20 +1855,24 @@ public class ScanTable {
             GUIUtils.SliderRange getSliderRange(double value) {
                 return new GUIUtils.SliderRange(0.0, value, 1.0, 0.01);
             }
+
             Number getValue(DatasetAttributes datasetAttributes) {
                 return datasetAttributes.getOffset();
             }
+
             void setValue(DatasetAttributes datasetAttributes, Number value) {
                 datasetAttributes.setOffset(value.doubleValue());
             }
         },
-        CLM(OFFSET_COLUMN_NAME,"Contour Level Multiplier") {
+        CLM(CLM_COLUMN_NAME, "Contour Level Multiplier") {
             GUIUtils.SliderRange getSliderRange(double value) {
                 return new GUIUtils.SliderRange(1.01, value, 4.0, 0.01);
             }
+
             Number getValue(DatasetAttributes datasetAttributes) {
                 return datasetAttributes.getClm();
             }
+
             void setValue(DatasetAttributes datasetAttributes, Number value) {
                 datasetAttributes.setClm(value.doubleValue());
             }
@@ -1732,9 +1881,11 @@ public class ScanTable {
             GUIUtils.SliderRange getSliderRange(double value) {
                 return new GUIUtils.SliderRange(1.0, value, 50.0, 1.0);
             }
+
             Number getValue(DatasetAttributes datasetAttributes) {
                 return datasetAttributes.getNlvls();
             }
+
             void setValue(DatasetAttributes datasetAttributes, Number value) {
                 datasetAttributes.setNlvls(value.intValue());
             }

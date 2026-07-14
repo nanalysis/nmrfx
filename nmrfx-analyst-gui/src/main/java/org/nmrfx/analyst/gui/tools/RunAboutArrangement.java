@@ -51,7 +51,6 @@ public class RunAboutArrangement {
     }
 
     public List<RunAboutDim> getColumnArrangement() {
-        System.out.println("getxdims " + xdims);
         List<RunAboutDim> result = new ArrayList<>();
         for (String column : columns) {
             int iColumn = result.size();

@@ -23,12 +23,11 @@
  */
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.IntegerBinding;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -40,29 +39,40 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.util.converter.DoubleStringConverter;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
+import org.nmrfx.plugin.api.EntryPoint;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.ColumnMath;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
@@ -74,6 +84,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     private static final Logger log = LoggerFactory.getLogger(DatasetsController.class);
     private static final Map<String, double[]> savedValues = new HashMap<>();
+    private static final String SCALE = "scale";
     private Stage stage;
     @FXML
     private ToolBar toolBar;
@@ -81,9 +92,10 @@ public class DatasetsController implements Initializable, StageBasedController, 
     private TableView<DatasetBase> tableView;
 
     private int dimNumber = 0;
-    TableColumn dim1Column;
+    TableColumn<DatasetBase, Void> dim1Column;
     Button valueButton;
     Button saveParButton;
+    Button saveDatasetButton;
     Button closeButton;
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
@@ -104,6 +116,14 @@ public class DatasetsController implements Initializable, StageBasedController, 
         return stage;
     }
 
+    public ToolBar getToolBar() {
+        return toolBar;
+    }
+
+    public List<Dataset> getSelectedDatasets() {
+        return tableView.getSelectionModel().getSelectedItems().stream().map(Dataset.class::cast).toList();
+    }
+
     public static DatasetsController create() {
         DatasetsController controller = Fxml.load(DatasetsController.class, "DatasetsScene.fxml")
                 .withNewStage("Datasets")
@@ -120,6 +140,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
         buttons.add(saveParButton);
         saveParButton.setOnAction(e -> savePars());
         saveParButton.setDisable(true);
+
+        saveDatasetButton = new Button("Save Dataset");
+        buttons.add(saveDatasetButton);
+        saveDatasetButton.setOnAction(e -> saveDataset());
+        saveDatasetButton.setDisable(true);
 
         closeButton = new Button("Close");
         buttons.add(closeButton);
@@ -159,6 +184,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
             }
         }
         toolBar.getItems().addAll(buttons);
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.DATASET_MENU, this);
     }
 
     @Override
@@ -167,6 +193,47 @@ public class DatasetsController implements Initializable, StageBasedController, 
             List<DatasetBase> datasetList = ProjectBase.getActive().getDatasets();
             if (datasetList instanceof ObservableList) {
                 setDatasetList((ObservableList<DatasetBase>) datasetList);
+            }
+        }
+    }
+
+    public class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Number> {
+
+        public ValueItemDoubleFieldTableCell() {
+            super(new StringConverter<>() {
+                @Override
+                public String toString(Number number) {
+                    return number == null ? "" : String.format("%.5f", number.doubleValue());
+                }
+
+                @Override
+                public Number fromString(String string) {
+                    try {
+                        return Double.parseDouble(string.trim());
+                    } catch (NumberFormatException e) {
+                        return 0.0;
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void commitEdit(Number newValue) {
+            super.commitEdit(newValue);
+            getTableRow().getItem().setValue(newValue.doubleValue());
+
+            TableColumn<ValueItem, Number> column = getTableColumn();
+            if ("Value".equals(column.getText())) {
+                saveValueTable();
+            }
+
+            int nextRow = getIndex() + 1;
+            TableView<ValueItem> table = getTableView();
+            if (nextRow < table.getItems().size()) {
+                Platform.runLater(() -> {
+                    table.getSelectionModel().select(nextRow, column);
+                    table.edit(nextRow, column);
+                });
             }
         }
     }
@@ -184,11 +251,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
             super.commitEdit(newValue);
             switch (column) {
                 case "level" -> dataset.setLvl(newValue);
-                case "scale" -> dataset.setScale(newValue);
+                case SCALE -> dataset.setScale(newValue);
                 case "ref" -> dataset.setRefValue(getDimNum(), newValue);
+                default -> log.warn("Wrong column type {}", column);
             }
         }
-
     }
 
     class DatasetStringFieldTableCell extends TextFieldTableCell<DatasetBase, String> {
@@ -211,7 +278,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
-        StringConverter<String> sConverter = new DefaultStringConverter();
         tableView.setEditable(true);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -223,8 +289,8 @@ public class DatasetsController implements Initializable, StageBasedController, 
         levelCol.setCellValueFactory(new PropertyValueFactory<>("lvl"));
         levelCol.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
 
-        TableColumn<DatasetBase, Double> scaleCol = new TableColumn<>("scale");
-        scaleCol.setCellValueFactory(new PropertyValueFactory<>("scale"));
+        TableColumn<DatasetBase, Double> scaleCol = new TableColumn<>(SCALE);
+        scaleCol.setCellValueFactory(new PropertyValueFactory<>(SCALE));
         scaleCol.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
 
         TableColumn<DatasetBase, Double> noiseCol = new TableColumn<>("noise");
@@ -242,93 +308,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
         nFreqDimCol.setPrefWidth(30);
         nFreqDimCol.setOnEditCommit(this::nFreqDimsChanged);
 
-
-        TableColumn<DatasetBase, Boolean> posDrawOnCol = new TableColumn<>("on");
-        posDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
-        posDrawOnCol.setCellFactory(col -> new CheckBoxTableCell<>(index -> {
-            BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getPosDrawOn());
-            active.addListener((obs, wasActive, isNowActive) -> {
-                DatasetBase item = tableView.getItems().get(index);
-                item.setPosDrawOn(isNowActive);
-            });
-            return active;
-        }));
-        posDrawOnCol.setPrefWidth(25);
-        posDrawOnCol.setMaxWidth(25);
-        posDrawOnCol.setResizable(false);
-
-        TableColumn<DatasetBase, Color> posColorCol = new TableColumn<>("color");
-        posColorCol.setPrefWidth(50);
-        posColorCol.setCellValueFactory((CellDataFeatures<DatasetBase, Color> p) -> new ReadOnlyObjectWrapper<>(Color.web(p.getValue().getPosColor())));
-        posColorCol.setCellFactory((TableColumn<DatasetBase, Color> column) -> new TableCell<>() {
-            @Override
-            protected void updateItem(Color item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(null);
-                if (empty || (item == null)) {
-                    setGraphic(null);
-                } else {
-                    final ColorPicker cp = new ColorPicker();
-                    cp.setValue(item);
-                    setGraphic(cp);
-                    cp.setOnAction((javafx.event.ActionEvent t) -> {
-                        getTableView().edit(getTableRow().getIndex(), column);
-                        commitEdit(cp.getValue());
-                    });
-                }
-            }
-
-            @Override
-            public void commitEdit(Color item) {
-                super.commitEdit(item);
-                DatasetBase dataset = getTableRow().getItem();
-                dataset.setPosColor(item.toString());
-            }
-        });
-
-        TableColumn<DatasetBase, Boolean> negDrawOnCol = new TableColumn<>("on");
-        negDrawOnCol.setCellValueFactory(new PropertyValueFactory<>("negDrawOn"));
-        negDrawOnCol.setCellFactory(col -> new CheckBoxTableCell<>(index -> {
-            BooleanProperty active = new SimpleBooleanProperty(tableView.getItems().get(index).getNegDrawOn());
-            active.addListener((obs, wasActive, isNowActive) -> {
-                DatasetBase item = tableView.getItems().get(index);
-                item.setNegDrawOn(isNowActive);
-            });
-            return active;
-        }));
-        negDrawOnCol.setPrefWidth(25);
-        negDrawOnCol.setMaxWidth(25);
-        negDrawOnCol.setResizable(false);
-
-        TableColumn<DatasetBase, Color> negColorCol = new TableColumn<>("color");
-        negColorCol.setPrefWidth(50);
-        negColorCol.setCellValueFactory((CellDataFeatures<DatasetBase, Color> p) -> new ReadOnlyObjectWrapper<>(Color.web(p.getValue().getNegColor())));
-        negColorCol.setCellFactory((TableColumn<DatasetBase, Color> column) -> new TableCell<>() {
-            @Override
-            protected void updateItem(Color item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(null);
-                if (empty || (item == null)) {
-                    setGraphic(null);
-                } else {
-                    final ColorPicker cp = new ColorPicker();
-                    cp.setValue(item);
-                    setGraphic(cp);
-                    cp.setOnAction((javafx.event.ActionEvent t) -> {
-                        getTableView().edit(getTableRow().getIndex(), column);
-                        commitEdit(cp.getValue());
-                    });
-                }
-            }
-
-            @Override
-            public void commitEdit(Color item) {
-                super.commitEdit(item);
-                DatasetBase dataset = getTableRow().getItem();
-                dataset.setNegColor(item.toString());
-            }
-        });
-
         TableColumn<DatasetBase, Integer> sizeCol = new TableColumn<>("size");
         sizeCol.setCellValueFactory((CellDataFeatures<DatasetBase, Integer> p) -> {
             DatasetBase dataset = p.getValue();
@@ -341,19 +320,8 @@ public class DatasetsController implements Initializable, StageBasedController, 
         });
         sizeCol.setPrefWidth(50);
 
-        TableColumn<DatasetBase, String> labelCol = new TableColumn<>("label");
-        labelCol.setCellFactory(tc -> new DatasetStringFieldTableCell(sConverter));
-        labelCol.setCellValueFactory((CellDataFeatures<DatasetBase, String> p) -> {
-            DatasetBase dataset = p.getValue();
-            String label = "";
-            int iDim = getDimNum();
-            if (dataset.getNDim() > iDim) {
-                label = dataset.getLabel(iDim);
-            }
-            return new ReadOnlyObjectWrapper<>(label);
-        });
+        TableColumn<DatasetBase, String> labelCol = buildlabelColumn();
 
-        labelCol.setPrefWidth(50);
 
         TableColumn<DatasetBase, Double> sfCol = new TableColumn<>("sf");
         sfCol.setCellValueFactory((CellDataFeatures<DatasetBase, Double> p) -> {
@@ -395,9 +363,30 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
         refCol.setPrefWidth(75);
 
-        var positiveColumn = new TableColumn("Positive");
-        var negativeColumn = new TableColumn("Negative");
-        dim1Column = new TableColumn("Dim1");
+        TableColumn<DatasetBase, Nuclei> nucleusCol = new TableColumn<>("nucleus");
+        Nuclei[] nuclei = Arrays.stream(Nuclei.getNuclei()).sorted(Comparator.comparing(Nuclei::getNumberAsInt)).toArray(Nuclei[]::new);
+        nucleusCol.setCellFactory(ComboBoxTableCell.forTableColumn(nuclei));
+        nucleusCol.setCellValueFactory(p -> {
+            DatasetBase dataset = p.getValue();
+            int iDim = getDimNum();
+            Nuclei nuc = null;
+            if (dataset.getNDim() > iDim) {
+                nuc = dataset.getNucleus(iDim);
+            }
+            return new SimpleObjectProperty<>(nuc);
+        });
+        nucleusCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<DatasetBase, Nuclei> t) -> {
+                    int iDim = getDimNum();
+                    Nuclei nuc = t.getNewValue();
+                    t.getRowValue().setNucleus(iDim, nuc);
+                });
+
+        nucleusCol.setPrefWidth(75);
+
+        TableColumn<DatasetBase, Void> positiveColumn = new TableColumn<>("Positive");
+        TableColumn<DatasetBase, Void> negativeColumn = new TableColumn<>("Negative");
+        dim1Column = new TableColumn<>("Dim1");
 
         Polygon polygon = new Polygon();
         polygon.getPoints().addAll(2.0, 2.0, 12.0, 2.0, 7.0, 10.0);
@@ -407,9 +396,11 @@ public class DatasetsController implements Initializable, StageBasedController, 
 
         dim1Column.setGraphic(polygon);
         dim1Column.setPrefWidth(400);
-        positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol);
-        negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol);
-        dim1Column.getColumns().setAll(labelCol, sizeCol, sfCol, swCol, refCol);
+        var posCol = buildPosNegCol(true);
+        var negCol = buildPosNegCol(false);
+        positiveColumn.getColumns().setAll(List.of(posCol.onColumn, posCol.colorColumn));
+        negativeColumn.getColumns().setAll(List.of(negCol.onColumn, negCol.colorColumn));
+        dim1Column.getColumns().setAll(List.of(labelCol, sizeCol, sfCol, swCol, refCol, nucleusCol));
         ContextMenu menu = new ContextMenu();
         int maxDim = 6;
         for (int i = 0; i < maxDim; i++) {
@@ -419,17 +410,100 @@ public class DatasetsController implements Initializable, StageBasedController, 
             menu.getItems().add(dimItem);
         }
         dim1Column.setContextMenu(menu);
-        tableView.getColumns().setAll(fileNameCol, nDimCol, nFreqDimCol, levelCol, scaleCol, noiseCol, positiveColumn, negativeColumn, dim1Column);
+        tableView.getColumns().setAll(List.of(fileNameCol, nDimCol, nFreqDimCol, levelCol, scaleCol, noiseCol, positiveColumn, negativeColumn, dim1Column));
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         setDatasetList((ObservableList<DatasetBase>) ProjectBase.getActive().getDatasets());
     }
 
+    record PosNegCol(TableColumn<DatasetBase, Boolean> onColumn, TableColumn<DatasetBase, Color> colorColumn) {}
+
+    PosNegCol buildPosNegCol(boolean posMode) {
+        String columPropName = posMode ? "posDrawOn" : "negDrawOn";
+        TableColumn<DatasetBase, Boolean> drawOnCol = new TableColumn<>("on");
+        drawOnCol.setCellValueFactory(new PropertyValueFactory<>(columPropName));
+        drawOnCol.setCellFactory(col -> new CheckBoxTableCell<>(index -> {
+            DatasetBase datasetBase = tableView.getItems().get(index);
+            boolean onOff = posMode ? datasetBase.getPosDrawOn() : datasetBase.getNegDrawOn();
+            BooleanProperty active = new SimpleBooleanProperty(onOff);
+            active.addListener((obs, wasActive, isNowActive) -> {
+                DatasetBase item = tableView.getItems().get(index);
+                if (posMode) {
+                    item.setPosDrawOn(isNowActive);
+                } else {
+                    item.setNegDrawOn(isNowActive);
+                }
+            });
+            return active;
+        }));
+        drawOnCol.setPrefWidth(25);
+        drawOnCol.setMaxWidth(25);
+        drawOnCol.setResizable(false);
+
+        TableColumn<DatasetBase, Color> colorColumn = new TableColumn<>("color");
+        colorColumn.setPrefWidth(50);
+        colorColumn.setCellValueFactory((CellDataFeatures<DatasetBase, Color> p) -> {
+            String colorString = posMode ? p.getValue().getPosColor() : p.getValue().getNegColor();
+            return new ReadOnlyObjectWrapper<>(Color.web(colorString));
+        });
+        colorColumn.setCellFactory((TableColumn<DatasetBase, Color> column) -> new TableCell<>() {
+            @Override
+            protected void updateItem(Color item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
+                    final ColorPicker cp = new ColorPicker();
+                    cp.setValue(item);
+                    setGraphic(cp);
+                    cp.setOnAction((ActionEvent t) -> {
+                        getTableView().edit(getTableRow().getIndex(), column);
+                        commitEdit(cp.getValue());
+                    });
+                }
+            }
+
+            @Override
+            public void commitEdit(Color item) {
+                super.commitEdit(item);
+                DatasetBase dataset = getTableRow().getItem();
+                if (posMode) {
+                    dataset.setPosColor(item.toString());
+                } else {
+                    dataset.setNegColor(item.toString());
+                }
+                tableView.refresh();
+            }
+        });
+
+        return new PosNegCol(drawOnCol, colorColumn);
+
+    }
+
+    public TableColumn<DatasetBase, String> buildlabelColumn() {
+        StringConverter<String> sConverter = new DefaultStringConverter();
+        TableColumn<DatasetBase, String>  labelCol = new TableColumn<>("label");
+        labelCol.setCellFactory(tc -> new DatasetStringFieldTableCell(sConverter));
+        labelCol.setCellValueFactory((CellDataFeatures<DatasetBase, String> p) -> {
+            DatasetBase dataset = p.getValue();
+            String label = "";
+            int iDim = getDimNum();
+            if (dataset.getNDim() > iDim) {
+                label = dataset.getLabel(iDim);
+            }
+            return new ReadOnlyObjectWrapper<>(label);
+        });
+
+        labelCol.setPrefWidth(50);
+        return labelCol;
+    }
+
+    @SuppressWarnings("unused")
     private void nFreqDimsChanged(TableColumn.CellEditEvent<DatasetBase, Integer> event) {
-        int newFreqDim = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
+        int rawFreqDim = event.getNewValue() != null ? event.getNewValue() : event.getOldValue();
         DatasetBase dataset = event.getRowValue();
-        // freq dim must be between 0 and the max number of dimensions
-        newFreqDim = newFreqDim < 0 ? 0 : Math.min(newFreqDim, dataset.getNDim());
-        dataset.setNFreqDims(newFreqDim);
+        int clampedFreqDim = Math.clamp(rawFreqDim, 0, dataset.getNDim());
+        dataset.setNFreqDims(clampedFreqDim);
         tableView.refresh();
     }
 
@@ -455,6 +529,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = AnalystApp.getFXMLControllerManager().newController();
+            chart = controller.getActiveChart();
         }
         boolean appendFile = false;
         for (DatasetBase dataset : datasets) {
@@ -483,19 +558,22 @@ public class DatasetsController implements Initializable, StageBasedController, 
     public static class ValueItem {
 
         int index;
-        double value;
+        private final DoubleProperty value = new SimpleDoubleProperty();
 
         public ValueItem(int index, double value) {
             this.index = index;
-            this.value = value;
+            this.value.setValue(value);
         }
 
-        public double getValue() {
+        private DoubleProperty valueProperty() {
             return value;
+        }
+        public double getValue() {
+            return value.getValue();
         }
 
         public void setValue(double value) {
-            this.value = value;
+            this.value.setValue(value);
         }
 
         public int getIndex() {
@@ -505,25 +583,6 @@ public class DatasetsController implements Initializable, StageBasedController, 
         public void setIndex(int index) {
             this.index = index;
         }
-    }
-
-    class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Double> {
-
-        ValueItemDoubleFieldTableCell(StringConverter<Double> converter) {
-            super(converter);
-        }
-
-        @Override
-        public void commitEdit(Double newValue) {
-            String column = getTableColumn().getText();
-            ValueItem value = getTableRow().getItem();
-            super.commitEdit(newValue);
-            if ("Value".equals(column)) {
-                value.setValue(newValue);
-                saveValueTable();
-            }
-        }
-
     }
 
     private void saveValueTable() {
@@ -547,7 +606,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         ObservableList<ValueItem> valueList = FXCollections.observableArrayList();
         valueDataset = null;
         if (datasets.size() == 1) {
-            valueDataset = datasets.get(0);
+            valueDataset = datasets.getFirst();
             int nDim = valueDataset.getNDim();
 
             for (int i = 0; i < nDim; i++) {
@@ -566,7 +625,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
                 }
             }
             if (!savedValues.containsKey(valueDataset.getName())) {
-                double[] saveValues = valueList.stream().mapToDouble(v -> v.value).toArray();
+                double[] saveValues = valueList.stream().mapToDouble(v -> v.valueProperty().getValue()).toArray();
                 savedValues.put(valueDataset.getName(), saveValues);
             }
         }
@@ -589,7 +648,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
         valueDataset = null;
         if (datasets.size() == 1) {
-            valueDataset = datasets.get(0);
+            valueDataset = datasets.getFirst();
             if (savedValues.containsKey(valueDataset.getName())) {
                 valueTableView.setItems(toItems(savedValues.get(valueDataset.getName())));
                 saveValueTable();
@@ -603,16 +662,17 @@ public class DatasetsController implements Initializable, StageBasedController, 
             Node node = (Node) event.getSource();
             Bounds buttonBounds = node.localToScreen(node.getBoundsInLocal());
 
-            DoubleStringConverter dsConverter = new DoubleStringConverter();
             valueStage = new Stage(StageStyle.DECORATED);
             BorderPane borderPane = new BorderPane();
             borderPane.setPrefWidth(225);
             Scene scene = new Scene(borderPane);
+            GUIUtils.applyTheme(scene);
             valueStage.setScene(scene);
             valueStage.setTitle("DatasetBase Values");
             valueStage.show();
 
             valueTableView = new TableView<>();
+            valueTableView.getStyleClass().add(Styles.DENSE);
             valueTableView.setEditable(true);
             Button mathButton = new Button("Calculate");
             mathButton.setOnAction(e -> doMath());
@@ -626,14 +686,17 @@ public class DatasetsController implements Initializable, StageBasedController, 
             borderPane.setCenter(valueTableView);
             TableColumn<ValueItem, Integer> indexColumn = new TableColumn<>("Index");
             indexColumn.setEditable(false);
-            TableColumn<ValueItem, Double> valueColumn = new TableColumn<>("Value");
+            TableColumn<ValueItem, Number> valueColumn = new TableColumn<>("Value");
             valueColumn.setEditable(true);
 
             indexColumn.setCellValueFactory(new PropertyValueFactory<>("index"));
-            valueColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
-            valueColumn.setCellFactory(tc -> new ValueItemDoubleFieldTableCell(dsConverter));
+            valueColumn.setCellValueFactory(cell -> cell.getValue().valueProperty());
+            valueColumn.setCellFactory(col -> new ValueItemDoubleFieldTableCell());
+            valueColumn.setOnEditCommit(editEvent ->
+                    editEvent.getRowValue().setValue(editEvent.getNewValue().doubleValue())
+            );
 
-            valueTableView.getColumns().addAll(indexColumn, valueColumn);
+            valueTableView.getColumns().addAll(List.of(indexColumn, valueColumn));
             valueTableView.setPrefWidth(225);
             valueTableView.setPrefHeight(400);
             valueStage.setWidth(225);
@@ -657,12 +720,27 @@ public class DatasetsController implements Initializable, StageBasedController, 
         for (DatasetBase dataset : datasets) {
             dataset.writeParFile();
         }
+    }
 
+    void saveDataset() {
+        Dataset dataset = (Dataset) tableView.getSelectionModel().getSelectedItems().getFirst();
+        if (dataset != null) {
+            FileChooser fileChooser = new FileChooser();
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                try {
+                    dataset.copyDataset(file.toString(), file.getName());
+                } catch (IOException | DatasetException e) {
+                    ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                    exceptionDialog.showAndWait();
+                }
+            }
+        }
     }
 
     void doValues(DoubleUnaryOperator function) {
         for (var item : valueTableView.getItems()) {
-            item.setValue(function.applyAsDouble(item.value));
+            item.setValue(function.applyAsDouble(item.value.getValue()));
         }
         saveValueTable();
         valueTableView.refresh();
@@ -672,7 +750,7 @@ public class DatasetsController implements Initializable, StageBasedController, 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Close selected datasets");
         Optional<ButtonType> response = alert.showAndWait();
         if (response.isPresent() && response.get().getText().equals("OK")) {
-            ObservableList<DatasetBase> datasets = tableView.getSelectionModel().getSelectedItems();
+            List<DatasetBase> datasets = new ArrayList<>(tableView.getSelectionModel().getSelectedItems());
             for (DatasetBase dataset : datasets) {
                 dataset.close();
             }

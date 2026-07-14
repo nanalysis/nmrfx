@@ -20,9 +20,8 @@ public class TubeNode {
 
     TubeNode(double x, double y, double z, double nx, double ny, double nz) {
         pt = new Point3D(x, y, z);
-        double length;
-        length = Math.sqrt((nx * nx) + (ny * ny) + (nz * nz));
-        norm = new Point3D(nx / length, ny / length, nz / length);
+        Point3D n = new Point3D(nx, ny, nz);
+        norm = n.subtract(pt).normalize().add(pt);
         a = 0.5;
         b = 0.5;
         rectWidth = 1.0;

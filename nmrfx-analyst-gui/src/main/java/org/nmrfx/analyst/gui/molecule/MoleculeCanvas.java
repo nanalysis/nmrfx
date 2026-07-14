@@ -27,6 +27,7 @@ public class MoleculeCanvas extends Canvas {
     public void setupMolecules() {
         Molecule molecule = (Molecule) MoleculeFactory.getActive();
         if (molecule != null) {
+            molecule.clearSelected();
             CanvasMolecule canvasMol = new CanvasMolecule();
             canvasMol.setMolName(molecule.getName());
             molecule.label = Molecule.LABEL_NAME;
@@ -44,7 +45,7 @@ public class MoleculeCanvas extends Canvas {
         double[][] world = {{0, 1.0}, {0, 1.0}};
 
         GraphicsContext gC = getGraphicsContext2D();
-        gC.setFill(Color.LIGHTGRAY);
+        gC.setFill(Color.WHITE);
         gC.fillRect(0, 0, getWidth(), getHeight());
         GraphicsContextProxy gCProxy = new GraphicsContextProxy(gC);
         for (CanvasMolecule canvasMol : canvasMolecules) {

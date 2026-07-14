@@ -3,7 +3,9 @@ package org.nmrfx.chemistry;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chemistry.constraints.MolecularConstraints;
 import org.nmrfx.chemistry.io.Sequence;
+import org.nmrfx.chemistry.relax.OrderPar;
 import org.nmrfx.chemistry.relax.OrderParSet;
+import org.nmrfx.chemistry.relax.RelaxationData;
 import org.nmrfx.chemistry.relax.RelaxationSet;
 import org.nmrfx.chemistry.search.MNode;
 import org.nmrfx.chemistry.search.MTree;
@@ -14,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @PluginAPI("ring")
@@ -52,6 +56,7 @@ public class MoleculeBase implements Serializable, ITree {
     public AtomicBoolean atomUpdated = new AtomicBoolean(false);
     Updater atomUpdater = null;
     MoleculeListener atomChangeListener;
+    Set<String> activePPMSets = new HashSet<>();
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, MoleculeBase molecule) {
         ArrayList<Atom> selected = new ArrayList<>(32);
@@ -144,11 +149,7 @@ public class MoleculeBase implements Serializable, ITree {
                                 if (isInverse) {
                                     if (!nameMatches) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
+                                        validAtom = spatialSet != null;
                                     } else {
                                         validAtom = false;
                                         break;
@@ -269,6 +270,12 @@ public class MoleculeBase implements Serializable, ITree {
                                     continue;
                                 }
                                 boolean nameMatches = Util.nefMatch(atom, atomName);
+                                if (!nameMatches && (compound.number.equals("1")) && atom.getName().equals("H1")
+                                        && atomName.equalsIgnoreCase("H")) {
+                                    nameMatches = Util.nefMatch(atom, "h1");
+
+                                }
+
                                 if (isInverse) {
                                     if (!nameMatches) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
@@ -315,7 +322,7 @@ public class MoleculeBase implements Serializable, ITree {
 
     public final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     protected final List<Bond> bselected = new ArrayList<>(1024);
-    public Set<Integer> structures = new TreeSet();
+    public Set<Integer> structures = new ConcurrentSkipListSet<>();
     public String name;
 
     public String title = null;
@@ -325,7 +332,7 @@ public class MoleculeBase implements Serializable, ITree {
     public LinkedHashMap<String, Entity> entities;
     public LinkedHashMap<String, Entity> chains;
     public LinkedHashMap<String, Entity> entityLabels = null;
-    protected List<Integer> activeStructures = null;
+    protected List<Integer> activeStructures = new CopyOnWriteArrayList<>();
     Map<String, Atom> atomMap = new HashMap<>();
     protected List<Atom> atoms = new ArrayList<>();
     protected List<Bond> bonds = new ArrayList<Bond>();
@@ -335,7 +342,7 @@ public class MoleculeBase implements Serializable, ITree {
     List<SecondaryStructure> secondaryStructure = new ArrayList<>();
     Map<String, RelaxationSet> relaxationSetMap = new HashMap<>();
     Map<String, OrderParSet> orderParSetMap = new HashMap<>();
-
+    Map<String, Compound> compoundMap = new HashMap<>();
     public MoleculeBase(String name) {
         this.name = name;
         coordSets = new LinkedHashMap<>();
@@ -353,21 +360,25 @@ public class MoleculeBase implements Serializable, ITree {
         MoleculeFactory.setActive(null);
     }
 
-    public static final Map<String, Compound> compoundMap() {
-        return ProjectBase.getActive().getCompoundMap();
+    public  final Map<String, Compound> compoundMap() {
+        return compoundMap;
+    }
+
+    public void addCompound(String id, Compound compound) {
+        compoundMap.put(id, compound);
     }
 
     public void buildCompoundMap() {
-        Map<String, Compound> map = compoundMap();
+        compoundMap.clear();
         for (Polymer polymer : getPolymers()) {
             for (Residue residue : polymer.getResidues()) {
                 String mapID = polymer.getIDNum() + "." + polymer.getIDNum() + "." + residue.getIDNum();
-                map.put(mapID, residue);
+                compoundMap.put(mapID, residue);
             }
         }
         for (Compound compound : getLigands()) {
             String mapID = 1 + "." + compound.getIDNum() + "." + compound.getIDNum();
-            map.put(mapID, compound);
+            compoundMap.put(mapID, compound);
         }
     }
 
@@ -524,8 +535,10 @@ public class MoleculeBase implements Serializable, ITree {
                         Atom atomTest = nodeTest.getAtom();
 
                         if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
-                            shell = kGroup.shells.get(jj);
-                            break;
+                            if (jj < kGroup.shells.size()) {
+                                shell = kGroup.shells.get(jj);
+                                break;
+                            }
                         }
                     }
 
@@ -579,6 +592,7 @@ public class MoleculeBase implements Serializable, ITree {
     public List<SpatialSet> selectedSpatialSets() {
         return globalSelected;
     }
+
     public static Atom getAtomByName(String name) throws IllegalArgumentException {
         MoleculeBase molecule = MoleculeFactory.getActive();
 
@@ -586,7 +600,12 @@ public class MoleculeBase implements Serializable, ITree {
             throw new IllegalArgumentException("No active molecule");
         }
 
-        return molecule.findAtom(name);
+        Atom testAtom = molecule.findAtom(name);
+        if (testAtom == null) {
+            testAtom = molecule.findAtom(name + "1");
+        }
+        return testAtom;
+
 
     }
 
@@ -632,21 +651,20 @@ public class MoleculeBase implements Serializable, ITree {
                 if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
-                if (entity instanceof Polymer) {
-                    Polymer polymer = (Polymer) entity;
+                if (entity instanceof Polymer polymer) {
                     if (molFilter.firstRes.equals("*")) {
                         firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
+                        firstResidue = polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
                         lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
+                        lastResidue = polymer.getResidue(molFilter.lastRes);
                     }
 
-                    compound = (Compound) firstResidue;
+                    compound = firstResidue;
                 } else {
                     compound = (Compound) entity;
                 }
@@ -685,11 +703,7 @@ public class MoleculeBase implements Serializable, ITree {
                                     if (!Util.stringMatch(atom.name.toLowerCase(), atomName.substring(1))) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
 
-                                        if (spatialSet != null) {
-                                            validAtom = true;
-                                        } else {
-                                            validAtom = false;
-                                        }
+                                        validAtom = spatialSet != null;
                                     } else {
                                         validAtom = false;
 
@@ -735,7 +749,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public static Atom getAtom(MolFilter molFilter) throws InvalidMoleculeException {
-        ArrayList spatialSets = new ArrayList();
+        ArrayList<Atom> spatialSets = new ArrayList<>();
         MoleculeBase.selectAtomsForTable(molFilter, spatialSets);
         SpatialSet spSet = MoleculeBase.getSpatialSet(molFilter);
         Atom atom = null;
@@ -913,17 +927,16 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public List<Integer> getActiveStructureList() {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();
+        if (activeStructures.isEmpty()) {
             for (int i = 0; i < structures.size(); i++) {
                 activeStructures.add(i);
             }
         }
         return activeStructures;
     }
+
     public int[] getActiveStructures() {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();
+        if (activeStructures.isEmpty()) {
             for (int i = 0; i < structures.size(); i++) {
                 activeStructures.add(i);
             }
@@ -1068,6 +1081,7 @@ public class MoleculeBase implements Serializable, ITree {
 
     public void writeXYZToPDB(String fileName, int whichStruct) throws IOException {
         int i;
+        ArrayList<Atom> bondList = new ArrayList<>();
         try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))) {
 
             updateAtomArray();
@@ -1077,61 +1091,72 @@ public class MoleculeBase implements Serializable, ITree {
                 structureList = new int[1];
                 structureList[0] = 0;
             }
-            ArrayList<Atom> bondList = new ArrayList<>();
             StringBuilder outString = new StringBuilder();
-            ArrayList<Integer> iAtoms = new ArrayList<>();
-            Atom lastAtom = null;
+            int nStructures = whichStruct < 0 ? structureList.length : 1;
             for (int iStruct : structureList) {
+                if (nStructures > 1) {
+                    String modelString = String.format("MODEL    %5d", iStruct);
+                    out.println(modelString);
+                }
                 if ((whichStruct >= 0) && (iStruct != whichStruct)) {
                     continue;
                 }
                 bondList.clear();
                 i = 0;
-                for (int j = 0, n = atoms.size(); j < n; j++) {
-                    Atom atom = atoms.get(j);
-                    SpatialSet spSet = atom.spatialSet;
-                    if (atom.isCoarse()) {
-                        continue;
-                    }
-                    atom.iAtom = i;
-                    String result = spSet.toPDBString(i + 1, iStruct);
-                    if (result != null) {
-                        if ((lastAtom != null) && (atom.getTopEntity() != lastAtom.getTopEntity())) {
-                            out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
-                            i++;
-                            result = spSet.toPDBString(i + 1, iStruct);
+                for (Entity entity : entities.values()) {
+                    Atom lastAtom = null;
+                    for (Atom atom : entity.atoms) {
+                        SpatialSet spSet = atom.spatialSet;
+                        if (atom.isCoarse() || atom.isConnector() || atom.isPlanarity() || atom.isLinker()) {
+                            continue;
                         }
-                        if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
-                            bondList.add(spSet.atom);
-                        }
-                        out.print(result + "\n");
-                        i++;
-                        lastAtom = atom;
-                    }
-                }
-                if (lastAtom != null) {
-                    out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
-                }
-                bondList.forEach(bAtom -> {
-                    List<Atom> bondedAtoms = bAtom.getConnected();
-                    if (!bondedAtoms.isEmpty()) {
-                        outString.setLength(0);
-                        outString.append("CONECT");
-                        outString.append(String.format("%5d", bAtom.iAtom + 1));
-                        iAtoms.clear();
-                        for (Atom bAtom2 : bondedAtoms) {
-                            if (bAtom2.getElementName() != null) {
-                                iAtoms.add(bAtom2.iAtom);
+                        atom.iAtom = i;
+                        String result = spSet.toPDBString(i + 1, iStruct);
+                        if (result != null) {
+//                            if ((lastAtom != null) && (atom.getTopEntity() != lastAtom.getTopEntity())) {
+//                                out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
+//                                i++;
+//                                atom.iAtom = i;
+//                                result = spSet.toPDBString(i + 1, iStruct);
+//                            }
+                            if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
+                                bondList.add(spSet.atom);
                             }
+                            out.print(result + "\n");
+                            i++;
+                            lastAtom = atom;
                         }
-                        Collections.sort(iAtoms);
-                        iAtoms.forEach((iAtom) -> {
-                            outString.append(String.format("%5d", iAtom + 1));
-                        });
-                        out.print(outString.toString() + "\n");
                     }
-                });
+                    if ((entity instanceof Polymer) && (lastAtom != null)) {
+                        out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
+                        i++;
+                    }
+                }
+                if (nStructures > 1) {
+                    out.println("ENDMDL        ");
+                }
             }
+            ArrayList<Integer> iAtoms = new ArrayList<>();
+
+            bondList.forEach(bAtom -> {
+                List<Atom> bondedAtoms = bAtom.getConnected();
+                if (!bondedAtoms.isEmpty()) {
+                    outString.setLength(0);
+                    outString.append("CONECT");
+                    outString.append(String.format("%5d", bAtom.iAtom + 1));
+                    iAtoms.clear();
+                    for (Atom bAtom2 : bondedAtoms) {
+                        if (!bAtom2.isConnector() && !bAtom2.isLinker() && (bAtom2.getElementName() != null)) {
+                            iAtoms.add(bAtom2.iAtom);
+                        }
+                    }
+                    Collections.sort(iAtoms);
+                    iAtoms.forEach((iAtom) -> {
+                        outString.append(String.format("%5d", iAtom + 1));
+                    });
+                    out.print(outString.toString() + "\n");
+                }
+            });
         }
     }
 
@@ -1267,10 +1292,12 @@ public class MoleculeBase implements Serializable, ITree {
             atomUpdater.update(atom);
         }
     }
+
     public void registerUpdater(Updater atomUpdater) {
         this.atomUpdater = atomUpdater;
     }
-    public void registerAtomChangeListener(MoleculeListener newListener){
+
+    public void registerAtomChangeListener(MoleculeListener newListener) {
         this.atomChangeListener = newListener;
     }
 
@@ -1292,7 +1319,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void addCoordSet(String setName, int id, Entity entity) {
-        CoordSet coordSet = (CoordSet) coordSets.get(setName);
+        CoordSet coordSet = coordSets.get(setName);
 
         if (coordSet == null) {
             coordSet = new CoordSet(setName, id, entity);
@@ -1347,6 +1374,21 @@ public class MoleculeBase implements Serializable, ITree {
         entity.molecule = this;
         addCoordSet(coordSetName, entity);
         chains.put(entity.getPDBChain(), entity);
+    }
+
+    public void removeEntity(Entity entity) {
+        entityLabels.remove(entity.label);
+        entities.remove(entity.name);
+        List<CoordSet> removeList = new ArrayList<>();
+        for (CoordSet coordSet : coordSets.values()) {
+            int n = coordSet.removeEntity(entity);
+            if (n == 0) {
+                removeList.add(coordSet);
+            }
+        }
+        for (CoordSet coordSet : removeList) {
+            coordSets.remove(coordSet.getName());
+        }
     }
 
     public Entity getEntity(String name) {
@@ -1582,11 +1624,11 @@ public class MoleculeBase implements Serializable, ITree {
 
     public void clearStructures() {
         structures.clear();
-        activeStructures = null;
+        activeStructures.clear();
     }
 
     public void resetActiveStructures() {
-        activeStructures = null;
+        activeStructures.clear();
     }
 
     public void clearActiveStructure(int iStruct) {
@@ -1594,9 +1636,6 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void setActiveStructures(TreeSet selSet) {
-        if (activeStructures == null) {
-            activeStructures = new ArrayList<>();
-        }
         activeStructures.clear();
         for (Object obj : selSet) {
             activeStructures.add((Integer) obj);
@@ -1604,7 +1643,7 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public void setActiveStructures() {
-        activeStructures = new ArrayList<>();
+        activeStructures.clear();
         structures.forEach((istruct) -> {
             activeStructures.add(istruct);
         });
@@ -1713,9 +1752,41 @@ public class MoleculeBase implements Serializable, ITree {
     }
 
     public Map<String, RelaxationSet> relaxationSetMap() {
+        if (relaxationSetMap.isEmpty()) {
+            updateRelaxationMap();
+        }
         return relaxationSetMap;
     }
+
+    public void updateRelaxationMap() {
+        var molRelaxData = RelaxationData.getRelaxationData(getAtomArray());
+        for (var entry : molRelaxData.entrySet()) {
+            relaxationSetMap.put(entry.getKey().name(), entry.getKey());
+        }
+    }
+    
     public Map<String, OrderParSet> orderParSetMap() {
+        if (orderParSetMap.isEmpty()) {
+            updateOrderParMap();
+        }
         return orderParSetMap;
+    }
+
+    public void setPPMSetActive(String refMode, int i) {
+        String ppmSet = refMode + i;
+        if (!activePPMSets.contains(ppmSet)) {
+            activePPMSets.add(ppmSet);
+        }
+    }
+
+    public Set<String> getActivePPMSets() {
+        return activePPMSets;
+    }
+
+    public void updateOrderParMap() {
+        var orderParData = OrderPar.getOrderParameters(getAtomArray());
+        for (var entry : orderParData.entrySet()) {
+            orderParSetMap.put(entry.getKey().name(), entry.getKey());
+        }
     }
 }

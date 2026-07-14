@@ -74,7 +74,7 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
                     strNum = nSeed+startStructure
                     fOutName = os.path.join(outDir,'cmdout_'+str(strNum)+'.txt')
                     fOut[i] = open(fOutName,'w')
-                    processes[i] = subprocess.Popen([cmd,"gen","-d",dir,"-s",str(strNum),calcScript,],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
+                    processes[i] = subprocess.Popen([cmd,"gen","-d",dir,"-s",str(strNum), "-Y", yamlFile, calcScript,],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
                     startTimes[i] = time.time()
                     seedNums[i] = strNum
                     pid = processes[i].pid
@@ -185,6 +185,7 @@ def parseArgs():
     global homeDir
     global outDir
     global finDir
+    global yamlFile
     homeDir = os.getcwd()
 
     nProcesses = Runtime.getRuntime().availableProcessors()
@@ -200,6 +201,7 @@ def parseArgs():
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-c", "--clean", action="store_true", dest="clean", default=False, help="Clean Directories (False)")
     parser.add_option("-m", "--memory", dest="heapMemory",default='512', help="Amount of heap memory to use in MBytes")
+    parser.add_option("-y", "--yaml", dest="readYaml",default="", help="Read yaml file")
 
     (options, args) = parser.parse_args()
     print 'args',args
@@ -208,6 +210,7 @@ def parseArgs():
     finDir = os.path.join(homeDir,'final')
     nStructures = int(options.nStructures)
     clean = options.clean
+    yamlFile = options.readYaml
 
     if clean:
         cleanDirs()

@@ -166,15 +166,17 @@ public class XYCanvasBoxChart extends XYCanvasChart {
             int iValue = 0;
             for (XYValue value : series.getValues()) {
                 var fiveNum = (BoxPlotData) value.getExtraValue();
-                double x = value.getXValue();
-                if (pickPt != null) {
-                    if (boxMark.hit(xPos, barThickness, fiveNum, pickPt, xAxis, xAxis)) {
-                        Hit hit = new Hit(series, iValue, value);
-                        hitOpt = Optional.of(hit);
-                        break;
+                if (fiveNum != null) {
+                    double x = value.getXValue();
+                    if (pickPt != null) {
+                        if (boxMark.hit(xPos, barThickness, fiveNum, pickPt, xAxis, xAxis)) {
+                            Hit hit = new Hit(series, iValue, value);
+                            hitOpt = Optional.of(hit);
+                            break;
+                        }
+                    } else {
+                        boxMark.draw(gC, x, barThickness, fiveNum, xAxis, yAxis);
                     }
-                } else {
-                    boxMark.draw(gC, x, barThickness, fiveNum, xAxis, yAxis);
                 }
                 iValue++;
             }

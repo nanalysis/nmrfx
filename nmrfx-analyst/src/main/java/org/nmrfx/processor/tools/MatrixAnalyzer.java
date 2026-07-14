@@ -1,25 +1,14 @@
 package org.nmrfx.processor.tools;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.ejml.simple.SimpleMatrix;
+import org.ejml.simple.SimpleSVD;
 import org.nmrfx.datasets.RegionData;
-import org.nmrfx.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.Dataset;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author brucejohnson
@@ -34,58 +23,47 @@ public class MatrixAnalyzer {
     int[] nElems;
     double[][] ppms;
     int[] deltas;
-    RealMatrix A;
-    SingularValueDecomposition svd = null;
+    SimpleMatrix dataMatrix;
     double[][] pcValues = null;
+    List<int[]> indices = new ArrayList<>();
+    boolean centerData = true;
+    boolean standardizeData = false;
+    boolean transposeData = false;
 
-    public MatrixAnalyzer() {
-
+    public void setScannerRows(List<LigandScannerInfo> scannerRows) {
+        this.scannerRows = scannerRows;
+    }
+    public void setCenterData(boolean mode) {
+        centerData = mode;
     }
 
-    public void setDatasets(List<Dataset> datasets) {
-        this.scannerRows = new ArrayList<>();
-        for (Dataset dataset : datasets) {
-            int nIncr = getNIncr(dataset);
-            for (int i = 0; i < nIncr; i++) {
-                LigandScannerInfo scannerInfo = new LigandScannerInfo(dataset, i, "", "", 0.0);
-                scannerRows.add(scannerInfo);
-            }
-
-        }
+    public boolean getCenterData() {
+        return centerData;
     }
 
-    public void setup(String[] dimNames, double[][] ppms, int[] deltas) {
+    public void setStandardizeData(boolean mode) {
+        standardizeData = mode;
+    }
+
+    public boolean getStandardizeData() {
+        return standardizeData;
+    }
+
+    public void setTransposeData(boolean value) {
+        transposeData = value;
+    }
+
+    public boolean getTransposeData() {
+        return transposeData;
+    }
+
+
+    public void setup(Dataset dataset, String[] dimNames, double[][] ppms, int[] deltas) {
         this.dimNames = dimNames;
         this.ppms = ppms;
         this.deltas = deltas;
-        getLimits(scannerRows.get(0).getDataset());
+        getLimits(dataset);
 
-    }
-
-    // proc ::nv::spectrum::scanner3d::bucket {datasets ppmx1 ppmy1 ppmx2 ppmy2 dx dy threshold} {
-    int getNIncr(Dataset dataset) {
-        int nIncr = 1;
-        int nDim = dataset.getNDim();
-        if (nDim > dimNames.length + 1) {
-            throw new IllegalArgumentException("dataset has too many dimensions");
-        }
-        if (nDim > dimNames.length) {
-            for (int i = 0; i < nDim; i++) {
-                boolean match = false;
-                for (String dimName : dimNames) {
-                    if (dataset.getLabel(i).equals(dimName)) {
-                        match = true;
-                        break;
-                    }
-                }
-                if (!match) {
-                    nIncr = dataset.getSizeTotal(i);
-                }
-            }
-
-        }
-
-        return nIncr;
     }
 
     private void getLimits(Dataset dataset) {
@@ -108,115 +86,236 @@ public class MatrixAnalyzer {
             }
             int npt = pt[j][1] - pt[j][0] + 1;
             nElems[j] = npt / deltas[j];
-            System.out.println(j + " " + npt + " " + deltas[j] + " " + nElems[j]);
             if (nElems[j] * deltas[j] < npt) {
                 nElems[j]++;
             }
             j++;
         }
+        dims[dims.length - 1] = dims.length -1 ;
+        dims[1] = 1;
     }
 
-    public void bucket(double threshold) throws IOException {
+    public void bucket2(double threshold) throws IOException {
+
         MultidimensionalCounter counter = new MultidimensionalCounter(nElems);
         MultidimensionalCounter.Iterator iter = counter.iterator();
         int[][] bpt = new int[nDim][2];
-        int nCols = scannerRows.size();
-        List<double[]> rows = new ArrayList<>();
-        List<int[]> indices = new ArrayList<>();
+        List<double[]> columnData = new ArrayList<>();
+        indices.clear();
+        int nSamples = scannerRows.size();
+
+
         while (iter.hasNext()) {
-            int kk = iter.next();
+            iter.next();
             int[] elems = iter.getCounts();
-            for (int k = 0; k < dims.length; k++) {
+            for (int k = 0; k < elems.length; k++) {
                 bpt[k][0] = pt[k][0] + deltas[k] * elems[k];
                 bpt[k][1] = bpt[k][0] + deltas[k];
             }
             double[] width = new double[nDim];
             double max = Double.NEGATIVE_INFINITY;
-            double[] values = new double[nCols];
-            int iCol = 0;
+            double[] values = new double[nSamples];
+            int iRow = 0;
             for (LigandScannerInfo scannerInfo : scannerRows) {
                 Dataset dataset = scannerInfo.getDataset();
-                int nIncr = getNIncr(dataset);
-                if (nIncr > 1) {
+                if (nDim > dimNames.length) {
                     bpt[nDim - 1][0] = scannerInfo.getIndex();
                     bpt[nDim - 1][1] = scannerInfo.getIndex();
                 }
                 RegionData region = dataset.analyzeRegion(bpt, dims, width, dims);
                 max = Math.max(max, region.getMax());
                 double vol = region.getVolume_r();
-                values[iCol++] = vol;
+                values[iRow++] = vol;
 
             }
             if (max > threshold) {
-                rows.add(values);
-                int[] corners = new int[dimNames.length];
-                for (int k = 0; k < dims.length; k++) {
+                columnData.add(values);
+                int[] corners = new int[bpt.length];
+                for (int k = 0; k < bpt.length; k++) {
                     corners[k] = bpt[k][0];
                 }
                 indices.add(corners);
             }
         }
-        System.out.println("elems " + counter.getSize() + " active " + rows.size() + " cols " + nCols);
 
-        double[][] matrix = new double[rows.size()][nCols];
-        int iRow = 0;
-        for (double[] rowData : rows) {
-            matrix[iRow++] = rowData;
+        int nFeatures = columnData.size();
+        dataMatrix = new SimpleMatrix(nSamples, nFeatures);
+
+        int iCol= 0;
+        for (double[] column : columnData) {
+            dataMatrix.setColumn(iCol++, 0, column);
         }
-        A = new Array2DRowRealMatrix(matrix);
     }
 
-    public void subtractMean() {
-        int nRows = A.getRowDimension();
-        for (int iRow = 0; iRow < nRows; iRow++) {
-            RealVector vec = A.getRowVector(iRow);
-            DescriptiveStatistics dStat = new DescriptiveStatistics(vec.toArray());
-            double mean = dStat.getMean();
-            vec.mapSubtractToSelf(mean);
-            A.setRowVector(iRow, vec);
-        }
-
+    public void setDataMatrix(double[][] data) {
+        dataMatrix = new SimpleMatrix(data);
     }
 
-    public void svd() {
-        svd = new SingularValueDecomposition(A);
-    }
+    private static SimpleMatrix centerColumns(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xc = new SimpleMatrix(nRows, nCols);
 
-    public double[][] doPCA(int nPC) {
-        subtractMean();
-        svd();
-        RealMatrix V = svd.getV();
-        double[] sVals = svd.getSingularValues();
-        double s0 = sVals[0];
-        int nCols = A.getColumnDimension();
-        pcValues = new double[nPC][nCols];
-
-        for (int iPC = 0; iPC < nPC; iPC++) {
-            RealVector vec = V.getColumnVector(iPC);
-            double s = sVals[iPC];
-            for (int iCol = 0; iCol < nCols; iCol++) {
-                double v = vec.getEntry(iCol);
-                double pcV = v * s / s0;
-                pcValues[iPC][iCol] = pcV;
-                System.out.printf("%7.4f ", pcV);
+        for (int j = 0; j < nCols; j++) {
+            double mean = 0;
+            for (int i = 0; i < nRows; i++) {
+                mean += X.get(i, j);
             }
-            System.out.println("");
+            mean /= nRows;
+            for (int i = 0; i < nRows; i++) {
+                Xc.set(i, j, X.get(i, j) - mean);
+            }
+        }
+        return Xc;
+    }
+    private static SimpleMatrix centerRows(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xc = new SimpleMatrix(nRows, nCols);
+
+        for (int j = 0; j < nRows; j++) {
+            double mean = 0;
+            for (int i = 0; i < nCols; i++) {
+                mean += X.get(j, i);
+            }
+            mean /= nCols;
+            for (int i = 0; i < nCols; i++) {
+                Xc.set(j, i, X.get(j, i) - mean);
+            }
+        }
+        return Xc;
+    }
+
+    /**
+     * Standardizes columns: subtract mean and divide by standard deviation.
+     * Returns a new matrix with standardized columns.
+     */
+    private static SimpleMatrix standardizeColumns(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xs = new SimpleMatrix(nRows, nCols);
+
+        for (int j = 0; j < nCols; j++) {
+            double mean = 0;
+            for (int i = 0; i < nRows; i++) {
+                mean += X.get(i, j);
+            }
+            mean /= nRows;
+
+            // compute standard deviation
+            double var = 0;
+            for (int i = 0; i < nRows; i++) {
+                double diff = X.get(i, j) - mean;
+                var += diff * diff;
+            }
+            double std = Math.sqrt(var / (nRows - 1));
+
+            // avoid divide by zero
+            if (std < 1.0e-6) {
+                std = 1e-12;
+            }
+
+            // standardize column j
+            for (int i = 0; i < nRows; i++) {
+                double value = (X.get(i, j) - mean) / std;
+                Xs.set(i, j, value);
+            }
+        }
+        return Xs;
+    }
+
+    /**
+     * Standardizes columns: subtract mean and divide by standard deviation.
+     * Returns a new matrix with standardized columns.
+     */
+    private static SimpleMatrix standardizeRows(SimpleMatrix X) {
+        int nRows = X.numRows();
+        int nCols = X.numCols();
+        SimpleMatrix Xs = new SimpleMatrix(nRows, nCols);
+
+        for (int j = 0; j < nRows; j++) {
+            double mean = 0;
+            for (int i = 0; i < nCols; i++) {
+                mean += X.get(j, i);
+            }
+            mean /= nCols;
+
+            // compute standard deviation
+            double variance = 0;
+            for (int i = 0; i < nCols; i++) {
+                double diff = X.get(j, i) - mean;
+                variance += diff * diff;
+            }
+            double std = Math.sqrt(variance / (nCols - 1));
+
+            // avoid divide by zero
+            if (std < 1.0e-6) {
+                std = 1e-12;
+            }
+
+            // standardize column j
+            for (int i = 0; i < nCols; i++) {
+                double value = (X.get(j, i) - mean) / std;
+                Xs.set(j, i, value);
+            }
+        }
+        return Xs;
+    }
+    public List<int[]> getIndices() {
+        return indices;
+    }
+
+    public double[][] doPCA2(int nPC) {
+        SimpleMatrix adjustedData;
+        boolean transpose = getTransposeData();
+        if (transpose) {
+            if (centerData && !standardizeData) {
+                adjustedData = centerRows(dataMatrix.transpose());
+            } else if (standardizeData) {
+                adjustedData = standardizeRows(dataMatrix.transpose());
+            } else {
+                adjustedData = dataMatrix.transpose();
+            }
+        } else {
+            if (centerData && !standardizeData) {
+                adjustedData = centerColumns(dataMatrix);
+            } else if (standardizeData) {
+                adjustedData = standardizeColumns(dataMatrix);
+            } else {
+                adjustedData = dataMatrix;
+            }
+
+        }
+
+        SimpleSVD<SimpleMatrix> svd = adjustedData.svd();
+
+        SimpleMatrix U = svd.getU();
+        SimpleMatrix W = svd.getW(); // singular values (diag matrix)
+        SimpleMatrix scores;
+        SimpleMatrix Vt = svd.getV().transpose();
+        if (transpose) {
+            scores = W.mult(Vt);
+        } else {
+            scores = U.mult(W);
+        }
+
+        int nSamples = dataMatrix.numRows();
+        pcValues = new double[nPC][nSamples];
+
+        int n = Math.min(nPC, scores.numRows());
+        for (int iPC = 0; iPC < n; iPC++) {
+            for (int iSample = 0; iSample < nSamples; iSample++) {
+                pcValues[iPC][iSample] = transpose ? scores.get(iPC, iSample) : scores.get(iSample, iPC);
+            }
         }
         return pcValues;
     }
 
-    public SingularValueDecomposition getSVD() {
-        if (svd == null) {
-            svd();
-        }
-        return svd;
-    }
-
     public double[] getPCADelta(int ref, int nPC) {
-        int nRows = pcValues.length;
-        int nCols = pcValues[0].length;
-        double[] result = new double[nCols];
-        for (int i = 0; i < nCols; i++) {
+        int nRows = Math.min(nPC, pcValues.length);
+        int nSamples = pcValues[0].length;
+        double[] result = new double[nSamples];
+        for (int i = 0; i < nSamples; i++) {
             double sum = 0.0;
             for (int j = 0; j < nRows; j++) {
                 double delta = pcValues[j][i] - pcValues[j][ref];
@@ -225,83 +324,5 @@ public class MatrixAnalyzer {
             result[i] = Math.sqrt(sum);
         }
         return result;
-    }
-
-    public List<LigandScannerInfo> getScannerRows() {
-        return scannerRows;
-    }
-
-    static String getStringValue(String[] fields, Map<String, Integer> headerMap, String colName, String defaultValue) {
-        String value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = fields[index];
-        }
-        return value;
-    }
-
-    static Double getDoubleValue(String[] fields, Map<String, Integer> headerMap, String colName, Double defaultValue) {
-        Double value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = Double.parseDouble(fields[index]);
-        }
-        return value;
-    }
-
-    static Integer getIntegerValue(String[] fields, Map<String, Integer> headerMap, String colName, Integer defaultValue) {
-        Integer value = defaultValue;
-        Integer index = headerMap.get(colName);
-        if (index != null) {
-            value = Integer.parseInt(fields[index]);
-        }
-        return value;
-    }
-
-    public void readScannerFile(String fileName) throws IOException {
-        Path path = Paths.get(fileName);
-        FileSystem fileSystem = path.getFileSystem();
-        String dir = path.toAbsolutePath().getParent().toString();
-        Map<String, Integer> headerMap = null;
-        scannerRows = new ArrayList<>();
-        try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
-            while (true) {
-                String line = fileReader.readLine();
-                if (line == null) {
-                    break;
-                }
-                String sline = line.trim();
-                if (sline.length() == 0) {
-                    continue;
-                }
-                if (sline.charAt(0) == '#') {
-                    continue;
-                }
-                String[] data = line.split("\t", -1);
-                if (headerMap == null) {
-                    headerMap = PeakReader.headerMap(data);
-                } else {
-                    String datasetName = getStringValue(data, headerMap, "dataset", null);
-                    if (datasetName == null) {
-                        throw new IllegalArgumentException("No dataset column");
-                    }
-                    File datasetFile = fileSystem.getPath(dir, datasetName).toFile();
-                    datasetName = datasetFile.getName();
-                    Dataset dataset = Dataset.getDataset(datasetName);
-                    if (dataset == null) {
-                        dataset = new Dataset(datasetFile.toString(), datasetName, false, false, false);
-                    }
-                    Integer index = getIntegerValue(data, headerMap, "index", null);
-                    if (index == null) {
-                        throw new IllegalArgumentException("No dataset index");
-                    }
-                    String groupName = getStringValue(data, headerMap, "group", "");
-                    String sampleName = getStringValue(data, headerMap, "sample", "");
-                    double conc = getDoubleValue(data, headerMap, "conc", 0.0);
-                    LigandScannerInfo scannerInfo = new LigandScannerInfo(dataset, index, groupName, sampleName, conc);
-                    scannerRows.add(scannerInfo);
-                }
-            }
-        }
     }
 }

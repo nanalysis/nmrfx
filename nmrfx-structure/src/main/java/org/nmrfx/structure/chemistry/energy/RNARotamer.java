@@ -540,16 +540,18 @@ public class RNARotamer {
         Map<Integer, Double> derivMap = new HashMap<>();
         double eRotEnergy = Math.exp(rotEnergy);
         for (i = 0; i < 7; i++) {
-            double sum = 0;
-            for (int j = 0; j < scores.length; j++) {
-                sum += (scores[j].prob * scores[j].normDeltas[i] * (1.0 / scores[j].rotamer.sdev[i]));
+            if (atoms[i] != null) {
+                double sum = 0;
+                for (int j = 0; j < scores.length; j++) {
+                    sum += (scores[j].prob * scores[j].normDeltas[i] * (1.0 / scores[j].rotamer.sdev[i]));
+                }
+                double deriv = eRotEnergy * sum;
+                if ((i == 0) || (i == 6)) {
+                    deriv /= 2;  // avoid double counting delta
+                }
+                int angleIndex = atoms[i].aAtom;
+                derivMap.put(angleIndex, deriv);
             }
-            double deriv = eRotEnergy * sum;
-            if ((i == 0) || (i == 6)) {
-                deriv /= 2;  // avoid double counting delta
-            }
-            int angleIndex = atoms[i].aAtom;
-            derivMap.put(angleIndex, deriv);
         }
 
         return derivMap;
@@ -699,7 +701,7 @@ public class RNARotamer {
                     angleAtoms[j] = atom;
                     if (j == 2) {
                         if (!atom.rotActive) {
-                            return null;
+                            atom = null;
                         }
                         atoms[i] = atom;
                     }

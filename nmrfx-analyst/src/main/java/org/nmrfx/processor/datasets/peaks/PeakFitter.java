@@ -434,7 +434,14 @@ public class PeakFitter {
             } else {
                 guesses[0] = guessList.get(0);
                 lower[0] = -0.2;
+                if (guesses[0] < (lower[0] + 0.1)) {
+                    lower[0] = guesses[0] - 0.2;
+                }
                 upper[0] = 1.3;
+                if (guesses[0] > (upper[0] - 0.1)) {
+                    upper[0] = guesses[0] + 0.2;
+                }
+
             }
         }
 
@@ -519,8 +526,10 @@ public class PeakFitter {
                     peakFit.optimizeCMAES(nSteps);
                 } catch (TooManyEvaluationsException tmE) {
                     log.warn(tmE.getMessage(), tmE);
+                    return Double.MAX_VALUE;
                 } catch (Exception ex) {
                     log.error(ex.getMessage(), ex);
+                    return Double.MAX_VALUE;
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 rms = peakFit.getBestValue();
@@ -588,7 +597,7 @@ public class PeakFitter {
                 for (int iCoup = 0; iCoup < couplings.length; iCoup++) {
                     couplings[iCoup] = theFile.ptWidthToHz(0, cplItems2[iCoup].coupling());
                     sin2Thetas[iCoup] = cplItems2[iCoup].sin2Theta();
-                    nComp *= cplItems2[iCoup].nSplits();
+                    nComp *= Math.pow(2, cplItems2[iCoup].nSplits() - 1);
                 }
                 double amp = signal.getAmplitude();
                 double volume = nComp * amp * sigWidthPPM * (Math.PI / 2.0) / 1.05;

@@ -16,7 +16,7 @@ class NMRFxDatasetScripting:
 
     def open(self, fileName,writable=False):
         fileName = os.path.join(os.getcwd(), fileName)
-        dataset = Dataset(fileName, "", writable, False, False)
+        dataset = Dataset(fileName, "", writable, False, True)
         return dataset
 
     def names(self):
@@ -29,8 +29,10 @@ class NMRFxDatasetScripting:
         dataset = Dataset.getDataset(datasetName)
         return dataset
 
-    def create(self, fileName, sizes, srcDataset=None, title=""):
-        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, True, True)
+    def create(self, fileName, sizes=None, srcDataset=None, title=""):
+        if (not sizes) and srcDataset:
+            sizes = srcDataset.getSizes()
+        Dataset.createDataset(fileName, os.path.basename(fileName), "", sizes, False, True)
         dataset = self.open(fileName, True)
         if srcDataset:
             nDim = len(sizes)

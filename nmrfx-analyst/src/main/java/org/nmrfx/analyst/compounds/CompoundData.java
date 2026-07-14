@@ -19,6 +19,8 @@ import java.util.Map;
 public class CompoundData {
 
     private static final Map<String, CompoundData> cmpdMap = new HashMap<String, CompoundData>();
+
+    Vec compoundVec = null;
     private final String id;
     private final double ref;
     private final double sf;
@@ -43,6 +45,13 @@ public class CompoundData {
         this.refNProtons = refNProtons;
     }
 
+    public void setVec(Vec vec) {
+        compoundVec = vec;
+    }
+
+    public Vec getVec() {
+        return compoundVec;
+    }
     public static void put(CompoundData cData, String id) {
         cmpdMap.put(id, cData);
     }

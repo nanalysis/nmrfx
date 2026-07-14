@@ -92,7 +92,7 @@ public class HydrogenBond {
                 }
                 Point3 donorPt = donor.getPoint(structureNum);
                 Point3 hydrogenPt = hydrogen.atom.getPoint(structureNum);
-                if (donorPt != null) {
+                if ((donorPt != null) && (hydrogenPt != null)) {
                     Point3 acceptorPt = acceptor.getPoint(structureNum);
                     if (acceptorPt != null) {
                         double distance = Atom.calcDistance(hydrogenPt, acceptorPt);
@@ -117,12 +117,16 @@ public class HydrogenBond {
         SpatialSet acceptorParent = acceptor.atom.getParent().spatialSet;
         Point3 hydrogenParentPt = hydrogenParent.getPoint(structureNum);
         Point3 acceptorParentPt = acceptorParent.getPoint(structureNum);
-        double dx = acceptorParentPt.getX() - hydrogenParentPt.getX();
-        double dy = acceptorParentPt.getY() - hydrogenParentPt.getY();
-        double dz = acceptorParentPt.getZ() - hydrogenParentPt.getZ();
-        Point3 acceptorOffsetPt = new Point3(acceptorPt.getX() - dx, acceptorPt.getY() - dy, acceptorPt.getZ() - dz);
-        double angle = Atom.calcAngle(hydrogenPt, hydrogenParentPt, acceptorOffsetPt);
-        return angle;
+        if ((hydrogenPt != null) && (acceptorPt != null) && (acceptorParentPt != null) && (hydrogenParentPt != null)) {
+            double dx = acceptorParentPt.getX() - hydrogenParentPt.getX();
+            double dy = acceptorParentPt.getY() - hydrogenParentPt.getY();
+            double dz = acceptorParentPt.getZ() - hydrogenParentPt.getZ();
+            Point3 acceptorOffsetPt = new Point3(acceptorPt.getX() - dx, acceptorPt.getY() - dy, acceptorPt.getZ() - dz);
+            double angle = Atom.calcAngle(hydrogenPt, hydrogenParentPt, acceptorOffsetPt);
+            return angle;
+        } else {
+            return 0.0;
+        }
 
     }
 
@@ -207,11 +211,15 @@ public class HydrogenBond {
         Atom donorAtom = hydrogen.atom.getParent();
         double distance = getHADistance(hydrogen, acceptor, structureNum);
         double angle = getAngle(hydrogen, acceptor, structureNum);
+        return getHShift(distance, angle, donorAtom.getAtomicNumber(), power);
+    }
+
+    public static double getHShift(double distance, double angle, int atomicNumber, double power) {
         double shift = 0.0;
         double tolerance;
         double maxDistance;
         double minDistance;
-        if (donorAtom.getAtomicNumber() == 7) {
+        if (atomicNumber == 7) {
             tolerance = toleranceHN;
             maxDistance = toleranceHN;
             minDistance = 1.5;
@@ -232,7 +240,7 @@ public class HydrogenBond {
             double maxP = Math.pow(maxDistance, power);
             shift = 1.0 / disP - 1.0 / maxP;
             double cos = Math.abs(Math.cos(angle));
-            shift = shift * (1.0 + 1.0 * (cos * cos - 1.0));
+            shift = shift * (1.0 + (cos * cos - 1.0));
         }
         return shift;
     }

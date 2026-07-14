@@ -104,7 +104,7 @@ public class FilesDataFormatHandler implements DataFormatEventHandler {
             if (dimensions.size() == 1) {
                 unaddedDatasets.forEach(datasetToAdd -> controller.addDataset(chart, datasetToAdd, true, false));
             } else {
-                chart.updateDatasets(datasetNames);
+                chart.updateDatasetsByNames(datasetNames);
                 chart.updateProjections();
                 chart.updateProjectionBorders();
                 chart.updateProjectionScale();

@@ -220,7 +220,7 @@ public class RNALabels {
         final boolean exchangable;
 
         public NucleicAcidAtomType(Atom atom) {
-            if ((atom.parent != null) && (atom.getParent().getElementName().equals("O"))) {
+            if ((atom.getAtomicNumber() == 1) && (atom.parent != null) && (atom.getParent().getElementName().equals("O"))) {
                 hydroxyl = true;
             } else {
                 hydroxyl = false;

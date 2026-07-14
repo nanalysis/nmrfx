@@ -27,6 +27,7 @@ import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import org.nmrfx.datasets.DatasetBase;
+import org.nmrfx.star.STAR3Base;
 
 import static org.nmrfx.peaks.io.PeakWriter.PIPEDIMS.D;
 
@@ -224,7 +225,7 @@ public class PeakWriter {
     }
 
     public void writePeaksNEF(Writer chan, PeakList peakList) throws IOException, InvalidPeakException {
-        chan.write("save_nef_nmr_spectrum_" + peakList.getName() + "\n");
+        chan.write(STAR3Base.SAVE + "nef_nmr_spectrum_" + peakList.getName() + "\n");
         chan.write("_nef_nmr_spectrum.Sf_category                 ");
         chan.write("nef_nmr_spectrum\n");
         chan.write("_nef_nmr_spectrum.Sf_framecode                 ");
@@ -295,8 +296,28 @@ public class PeakWriter {
             }
             chan.write(peak.toSTAR3LoopPeakString() + "\n");
         }
-        chan.write("stop_\n");
+        chan.write(STAR3Base.STOP + "\n");
         chan.write("\n");
+
+        if (peakList.hasMeasures()) {
+            peakList.getMeasures().get().writeMeasures(chan);
+
+            loopStrings = Peak.getSTAR3MeasureCharStrings();
+            chan.write("loop_\n");
+            for (String loopString : loopStrings) {
+                chan.write(loopString + "\n");
+            }
+
+            chan.write("\n");
+
+            for (int i = 0; i < nPeaks; i++) {
+                Peak peak = peakList.getPeak(i);
+                chan.write(peak.toMeasureSTARString(i));
+            }
+            chan.write(STAR3Base.STOP + "\n");
+            chan.write("\n");
+        }
+
         loopStrings = Peak.getSTAR3GeneralCharStrings();
         chan.write("loop_\n");
         for (String loopString : loopStrings) {

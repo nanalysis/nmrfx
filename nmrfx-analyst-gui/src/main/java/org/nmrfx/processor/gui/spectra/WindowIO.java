@@ -57,8 +57,8 @@ import java.util.stream.Stream;
 public class WindowIO implements FileWatchListener {
 
     private static final Logger log = LoggerFactory.getLogger(WindowIO.class);
-    final private static Pattern STAGE_PATTERN1 = Pattern.compile("([0-9]+_stage)\\.(yaml)");
-    final private static Pattern STAGE_PATTERN2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)");
+    final private static Pattern STAGE_PATTERN1 = Pattern.compile("([0-9]+_stage)\\.(yaml)$");
+    final private static Pattern STAGE_PATTERN2 = Pattern.compile("(stage_[0-9]+)\\.(yaml)$");
 
     Stage stage;
     BorderPane borderPane;
@@ -93,11 +93,11 @@ public class WindowIO implements FileWatchListener {
             try (Stream<Path> filePaths = Files.list(directory)) {
                 files = filePaths.sequential().
                         map(path -> path.getFileName().toString()).
-                        filter(fileName -> predicate.test(fileName)).
+                        filter(predicate::test).
                         sorted().
                         map(fileName -> {
                             Matcher matcher = pattern.matcher(fileName);
-                            System.out.println("match " + fileName + " " + matcher.matches());
+                            matcher.matches();
                             return matcher.group(1);
                         }).
                         collect(Collectors.toList());
@@ -231,8 +231,8 @@ public class WindowIO implements FileWatchListener {
         stage = new Stage(StageStyle.DECORATED);
         borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle("Favorites");
         ToolBar toolBar = new ToolBar();
         borderPane.setTop(toolBar);

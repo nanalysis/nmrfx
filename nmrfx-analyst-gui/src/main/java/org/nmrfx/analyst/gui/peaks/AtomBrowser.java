@@ -5,8 +5,6 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,7 +12,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Compound;
 import org.nmrfx.chemistry.Util;
@@ -31,6 +28,7 @@ import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.controls.GridPaneCanvas;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +84,7 @@ public class AtomBrowser {
         this.browserToolBar = toolBar;
         toolBar.setPrefWidth(900.0);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GUIUtils.closeButton();
         closeButton.setOnAction(e -> close());
 
         toolBar.getItems().add(closeButton);
@@ -194,7 +192,6 @@ public class AtomBrowser {
             atomField.setBackground(defaultBackground);
         } else {
             atomField.setBackground(errorBackground);
-            System.out.println("invalid " + current);
         }
         return validAtom;
     }
@@ -234,8 +231,8 @@ public class AtomBrowser {
                 datasetList.add(item.dataset.getName());
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
-                chart.updateDatasets(datasetList);
-                chart.updatePeakLists(peakListList);
+                chart.updateDatasetsByNames(datasetList);
+                chart.updatePeakListsByName(peakListList);
 
                 Double ppm = item.getShift();
                 double delta = 0.1;

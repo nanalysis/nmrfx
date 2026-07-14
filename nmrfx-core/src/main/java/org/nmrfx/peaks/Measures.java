@@ -17,6 +17,10 @@
  */
 package org.nmrfx.peaks;
 
+import org.nmrfx.star.STAR3;
+
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 /**
@@ -41,4 +45,21 @@ public class Measures {
         return values;
     }
 
+    public void writeMeasures(Writer chan) throws IOException {
+        if ((values == null) || (values.length == 0)) {
+            return;
+        }
+        String[] loopStrings = {"_Spectral_measure.ID", "_Spectral_measure.value"};
+        chan.write("loop_\n");
+
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
+        }
+        chan.write("\n");
+        for (int i = 0;i < values.length;i++) {
+            String outStr = String.format("%3d %f\n", i, values[i]);
+            chan.write(outStr);
+        }
+        chan.write(STAR3.STOP + "\n\n");
+    }
 }

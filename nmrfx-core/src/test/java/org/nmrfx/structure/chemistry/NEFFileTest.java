@@ -14,6 +14,7 @@ import org.nmrfx.chemistry.io.NMRNEFReader;
 import org.nmrfx.chemistry.io.NMRNEFWriter;
 import org.nmrfx.peaks.InvalidPeakException;
 import org.nmrfx.star.ParseException;
+import org.nmrfx.star.STAR3Base;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -171,7 +172,7 @@ public class NEFFileTest {
                             values.add(line.get(i));
                         }
                         seqMap.put(key, values);
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -203,7 +204,7 @@ public class NEFFileTest {
                         } else {
                             shiftMap.put(key, values);
                         }
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -247,7 +248,7 @@ public class NEFFileTest {
                         }
                         key = keys.get(restraintID);
                         distMap.put(key, values);
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }
@@ -280,7 +281,7 @@ public class NEFFileTest {
                             values.add(line.get(i));
                         }
                         dihedralMap.put(key, values);
-                    } else if (line.contains("stop_")) {
+                    } else if (line.contains(STAR3Base.STOP)) {
                         break;
                     }
                 }

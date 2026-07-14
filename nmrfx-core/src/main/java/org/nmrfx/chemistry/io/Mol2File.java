@@ -179,6 +179,7 @@ public class Mol2File {
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
+            atom.setFlatPoint(pt);
             atom.setFlag(Atom.AROMATIC, aromatic);
 
             if (fields.length > 8) {

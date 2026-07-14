@@ -18,6 +18,8 @@
 
 package org.nmrfx.chemistry.constraints;
 
+import org.nmrfx.peaks.Peak;
+
 /**
  * @author brucejohnson
  */
@@ -50,13 +52,17 @@ public interface Constraint {
         }
     }
 
-    public int getID();
+    int getID();
 
-    public boolean isUserActive();
+    boolean isUserActive();
 
-    public DistanceStat getStat();
+    DistanceStat getStat();
 
-    public double getValue();
+    double getValue();
 
-    public String toSTARString();
+    String toSTARString(int id, int memberId);
+
+    default Peak getPeak() {
+        return null;
+    }
 }

@@ -34,7 +34,7 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
     double height;
     int[] widthLim;
 
-    MatrixPeak(double[][] intensities, int[][] offsets, int[][] pts, double scale, int[] widthLim) {
+    MatrixPeak(double[][] intensities, int[][] offsets, int[][] pts, double scale, int[] widthLim, int[] halfWidths) {
         int nDim = intensities.length;
         this.intensities = new double[nDim][3];
         this.offsets = new int[nDim][3];
@@ -46,6 +46,7 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
             System.arraycopy(intensities[i], 0, this.intensities[i], 0, 3);
             System.arraycopy(offsets[i], 0, this.offsets[i], 0, 3);
             System.arraycopy(pts[i], 0, this.pts[i], 0, 3);
+            widths[i] = 2.0 * halfWidths[i];
         }
         estimatePeakValues(scale);
     }
@@ -83,8 +84,10 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
             // vertex = (-b/2a,-D/4a) D = b2-4ac
             double xOff = -b / (2.0 * a);
             double yOff = -(b * b - 4.0 * a * c) / (4.0 * a);
-            widths[i] = 2.0 * FastMath.sqrt(FastMath.abs(0.5 * yOff / a));
-            widths[i] *= scale;  // fixme scale from polynomial to Lorenztian.  What should value be?
+            double f = 0.1;
+            double polyHalfWidth = FastMath.sqrt(FastMath.abs(f * c / a));
+            widths[i] = polyHalfWidth / 3.74 * 20.0 * scale;  // approximate conversion from parabola half width at 90% height to
+                                                          // Generalized lorenztian full width at half height
             if (widths[i] < 0.5) {
                 widths[i] = 0.5;
                 xOff = 0.0;

@@ -34,8 +34,8 @@ public class AlignmentMatrix {
     static final double PREFACTOR = -(MU0 * HBAR) / (4 * (Math.PI * Math.PI));
     static final HashMap<String, Double> disDict = new HashMap<>();
     static final HashMap<String, Double> maxRDCDict = new HashMap<>();
-    static final HashMap<String, Double> gammaIDict = new HashMap();
-    static final HashMap<String, Double> gammaSDict = new HashMap();
+    static final HashMap<String, Double> gammaIDict = new HashMap<>();
+    static final HashMap<String, Double> gammaSDict = new HashMap<>();
 
     static {
         disDict.put("HN", 1.04);
@@ -96,14 +96,12 @@ public class AlignmentMatrix {
     public static AlignmentMatrix getValidMatrix(double sXX, double sYY, double sZZ, double sXY, double sXZ, double sYZ) {
         AlignmentMatrix aMat = new AlignmentMatrix(sXX, sYY, sZZ, sXY, sXZ, sYZ);
         if (aMat.validate()) {
-            System.out.println("valid 1");
             aMat.eig = new EigenDecomposition(aMat.saupeMat);
             aMat.Sdiag = aMat.eig.getD();
             double Sxx = aMat.Sdiag.getEntry(0, 0);
             double Syy = aMat.Sdiag.getEntry(1, 1);
             double Szz = aMat.Sdiag.getEntry(2, 2);
             if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
-                System.out.println("valid 2");
                 aMat.sortEigen(aMat.eig);
                 return aMat;
             }
@@ -250,8 +248,7 @@ public class AlignmentMatrix {
      */
     public double calcSAxial() {
 //        double axial = 0.333*(getSzz() - (getSxx() + getSyy())/2); //from J. Am. Chem. Soc., Vol. 121, No. 39, 1999
-        double axial = 0.5 * (getSzz()); //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
-        return axial;
+        return 0.5 * (getSzz());
     }
 
     /**
@@ -260,8 +257,7 @@ public class AlignmentMatrix {
      * @return double rhombic component = (1/3)*(Sx'x' - Sy'y')
      */
     public double calcSRhombic() {
-        double rhombic = 0.333 * (getSxx() - getSyy());
-        return rhombic;
+        return 0.333 * (getSxx() - getSyy());
     }
 
     /**
@@ -297,9 +293,7 @@ public class AlignmentMatrix {
         double beta2 = Math.acos(-Rzz);
         double gamma = Math.atan(Rzy / -Rzx);
 
-        double[][] euler = {{alpha, beta, gamma}, {alpha2, beta2, gamma}};
-
-        return euler;
+        return new double[][]{{alpha, beta, gamma}, {alpha2, beta2, gamma}};
     }
 
     /**
@@ -314,7 +308,7 @@ public class AlignmentMatrix {
     public void calcAlignment() {
 
         double[][] rotMat = eig.getVT().getData();
-        Rotation rot = null;
+        Rotation rot;
 
         try {
             rot = new Rotation(rotMat, 1e-6);
@@ -325,7 +319,6 @@ public class AlignmentMatrix {
             try {
                 rot = new Rotation(rotMat, 1e-6);
             } catch (NotARotationMatrixException nE2) {
-                System.out.println("Can't create rot mat 2nd try:" + nE.getMessage());
                 rot = null;
             }
 
@@ -357,13 +350,13 @@ public class AlignmentMatrix {
         }
     }
 
-    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs) {
+    public static RealMatrix setupDirectionMatrix(List<RDC> rdcs, int iStructure) {
         int nVectors = rdcs.size();
         double[][] A = new double[nVectors][5];
         int iRow = 0;
         // calculate the direction cosines and construct the matrix A. Based on orderten_svd_dipole.c
         for (RDC rdcVec : rdcs) {
-            rdcVec.updateVector();
+            rdcVec.updateVector(iStructure);
             Vector3D normVec = rdcVec.getVector().normalize();
             double dcosX = normVec.getX();
             double dcosY = normVec.getY();
@@ -378,8 +371,7 @@ public class AlignmentMatrix {
             A[iRow][4] = 2 * dcosY * dcosZ;
             iRow++;
         }
-        RealMatrix directionMatrix = new Array2DRowRealMatrix(A);
-        return directionMatrix;
+        return new Array2DRowRealMatrix(A);
     }
 
     public void calcRDC(RealMatrix directionMatrix, List<RDC> vectors) {

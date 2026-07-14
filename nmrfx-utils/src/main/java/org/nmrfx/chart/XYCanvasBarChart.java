@@ -24,7 +24,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
-import org.nmrfx.graphicsio.GraphicsIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +37,13 @@ import java.util.Optional;
 public class XYCanvasBarChart extends XYCanvasChart {
 
     private static final Logger log = LoggerFactory.getLogger(XYCanvasBarChart.class);
+
+    public static XYCanvasBarChart buildChart(Canvas canvas) {
+        Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
+        Axis yAxis = new Axis(Orientation.VERTICAL, 0, 1.0, 100, 400);
+        yAxis.setZeroIncluded(true);
+        return new XYCanvasBarChart(canvas, xAxis, yAxis);
+    }
 
     public XYCanvasBarChart(Canvas canvas, final Axis... AXIS) {
         super(canvas, AXIS);
@@ -128,8 +134,8 @@ public class XYCanvasBarChart extends XYCanvasChart {
                 double y = yAxis.getDisplayPosition(value.getYValue());
                 boolean drawError = false;
                 double errValue = 0.0;
-                if (value instanceof XYEValue) {
-                    errValue = Math.abs(((XYEValue) value).getError());
+                if (value instanceof XYEValue xyeValue) {
+                    errValue = Math.abs(xyeValue.getError());
                     if (errValue > 1.0e-30) {
                         drawError = true;
                     }
@@ -153,9 +159,9 @@ public class XYCanvasBarChart extends XYCanvasChart {
                     }
                 } else {
                     if (drawError) {
-                        barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high);
+                        barMark.draw(gC, xC, yC, barThickness, barLength, true, low, high, value.isDisabled());
                     } else {
-                        barMark.draw(gC, xC, yC, barThickness, barLength);
+                        barMark.draw(gC, xC, yC, barThickness, barLength, value.isDisabled());
                     }
                 }
                 iValue++;

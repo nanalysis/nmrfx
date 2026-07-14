@@ -47,6 +47,10 @@ public class RDCFitQuality {
         return chiSq;
     }
 
+    public double getRChiSq() {
+        return chiSq / n;
+    }
+
     public double getSlope() {
         return slope;
     }

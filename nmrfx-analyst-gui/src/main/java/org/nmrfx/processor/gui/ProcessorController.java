@@ -17,13 +17,9 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.Observable;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -42,7 +38,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -57,7 +52,7 @@ import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.greenrobot.eventbus.EventBus;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
@@ -66,6 +61,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
+import org.nmrfx.processor.gui.spectra.SliceAttributes;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
@@ -214,6 +210,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     ScriptParser scriptParser;
 
+    List<IndirectDimOpPar> indirectDimOpPars = new ArrayList<>();
+
 
     public static ProcessorController create(FXMLController fxmlController, NmrControlRightSidePane nmrControlRightSidePane, PolyChart chart) {
         Fxml.Builder builder = Fxml.load(ProcessorController.class, "ProcessorScene.fxml");
@@ -316,10 +314,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     }
 
     private void setActivePane(ProcessingSection section, TitledPane titledPane) {
-        System.out.println(titledPane.getText() + " " + titledPane.isExpanded() + " " + currentSection + " " + section);
-
         if (titledPane.isExpanded() && (currentSection == null || (currentSection != section))) {
-            System.out.println("Update");
             currentSection = section;
             if (section.isRef()) {
                 currentSection = processingSection1;
@@ -353,8 +348,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private void addTitleBar(TitledPane titledPane, String name, boolean addMenu) {
         titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         titledPane.setGraphicTextGap(0);
-        titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
-
         HBox titleBox = new HBox();
         titleBox.setPadding(new Insets(0, 5, 0, 5));
         HBox.setHgrow(titleBox, Priority.ALWAYS);
@@ -369,8 +362,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titleBox.getChildren().add(spacer);
         if (addMenu) {
             MenuButton menuButton = new MenuButton("");
-            menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
+            menuButton.setGraphic(GUIUtils.createIconLabel(Material2AL.ADD));
             menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            menuButton.getStyleClass().add(Styles.SMALL);
+            menuButton.setMinHeight(20);
+            menuButton.setMaxHeight(20);
             if (name.equals("FULL DATASET")) {
                 menuButton.getItems().addAll(getMenuItemsForDataset());
             } else if (name.startsWith("POLISHING")) {
@@ -385,32 +381,16 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setGraphic(titleBox);
     }
 
-    private static class ButtonTitlePaneSkin extends TitledPaneSkin {
-        final Region arrow;
-
-        ButtonTitlePaneSkin(final TitledPane titledPane) {
-            super(titledPane);
-            arrow = (Region) getSkinnable().lookup(".arrow-button");
-
-        }
-
-        @Override
-        protected void layoutChildren(final double x, final double y, final double w, final double h) {
-            super.layoutChildren(x, y, w, h);
-            double arrowWidth = arrow.getLayoutBounds().getWidth();
-            double arrowPadding = arrow.getPadding().getLeft() + arrow.getPadding().getRight();
-
-            ((Region) getSkinnable().getGraphic()).setMinWidth(w - (arrowWidth + arrowPadding));
-        }
-    }
-
     private TitledPane addTitlePane(ProcessingSection section, String title) {
         TitledPane titledPane = new TitledPane();
+        titledPane.getStyleClass().add(Styles.DENSE);
+        titledPane.setMaxWidth(400);
         titledPane.expandedProperty().addListener(c -> setActivePane(section, titledPane));
         titledPane.setText(title);
         addTitleBar(titledPane, title, true);
         ModifiableAccordionScrollPane accordion1 = new ModifiableAccordionScrollPane();
         titledPane.setContent(accordion1);
+        titledPane.setPadding(new Insets(5,5,5,5));
         dimensionPanes.put(section, titledPane);
         dimAccordion.getPanes().add(titledPane);
         return titledPane;
@@ -769,6 +749,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setProcessingOperation(op);
         titledPane.setDetailedTitle(detailButton.isSelected());
         PropertySheet opPropertySheet = (PropertySheet) titledPane.getProperties().get("PropSheet");
+        if (op.getName().equals("PHASE_ID")) {
+            updateIndirectPane(op);
+        }
         if (opPropertySheet != null) {
             opPropertySheet.setPropertyEditorFactory(new NvFxPropertyEditorFactory(this));
             opPropertySheet.setMode(PropertySheet.Mode.NAME);
@@ -795,6 +778,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             if (op.getName().equals("PHASE")) {
                 Pane phaserPane = makePhaserPane(titledPane, processingOperation);
                 vBox.getChildren().add(phaserPane);
+            } else if (op.getName().equals("PHASE_ID")) {
+                Pane pane = makeIndirectPane(titledPane, processingOperation);
+                vBox.getChildren().add(pane);
             } else {
                 hBox.setSpacing(10);
                 PropertySheet opPropertySheet = new PropertySheet();
@@ -804,9 +790,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     makeRegionButtons(opPropertySheet, hBox, processingOperation);
                 }
                 vBox.getChildren().addAll(hBox, opPropertySheet);
+                VBox.setVgrow(opPropertySheet, Priority.ALWAYS);
                 titledPane.getProperties().put("PropSheet", opPropertySheet);
                 opPropertySheet.getProperties().put("Op", processingOperation);
+                opPropertySheet.setPadding(new Insets(5,5,5,5));
             }
+
             titledPane.setContent(vBox);
             updateTitledPane(titledPane, processingOperation);
             opAccordion.add(titledPane);
@@ -870,6 +859,106 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         return phaserBox;
     }
 
+    record IndirectDimOpPar(SimpleDoubleProperty ph0, SimpleDoubleProperty ph1,
+                            SimpleBooleanProperty negImag, SimpleBooleanProperty negPairs) {
+
+    }
+
+    private void updateIndirectPane(ProcessingOperation processingOperation) {
+        processingOperation.getParameterMap();
+        for (ProcessingOperation.OperationParameter parameter : processingOperation.getParameters()) {
+            String value = parameter.value();
+            int len = value.length();
+            String[] fields = value.substring(1, len - 1).split(",");
+            for (int i = 0; i < fields.length; i++) {
+                switch (parameter.name()) {
+                    case "ph0" -> {System.out.println("set ph0 ");indirectDimOpPars.get(i).ph0.set(Double.parseDouble(fields[i]));}
+                    case "ph1" -> indirectDimOpPars.get(i).ph1.set(Double.parseDouble(fields[i]));
+                    case "negateImag" -> indirectDimOpPars.get(i).negImag.set(fields[i].equals("True"));
+                    case "negatePairs" -> indirectDimOpPars.get(i).negPairs.set(fields[i].equals("True"));
+                }
+            }
+        }
+     }
+    private Pane makeIndirectPane(ModifiableAccordionScrollPane.ModifiableTitlePane phaserPane, ProcessingOperation processingOperation) {
+        GridPane gridPane = new GridPane();
+        String[] titles = {"Dim", "Ph0", "Ph1", "Imag", "Pairs"};
+        for (int i =0;i<titles.length;i++) {
+            gridPane.add(new Label(titles[i]), i, 1);
+        }
+        gridPane.add(new Label("Negate"),3,0, 2,1);
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+
+        String[] dimLabels = {"Y","Z","A"};
+        indirectDimOpPars.clear();
+        for (int i=0;i<dimLabels.length;i++) {
+            Label label = new Label(dimLabels[i]);
+            label.setPrefWidth(70);
+            gridPane.add(new Label(dimLabels[i]), 0, i + 2);
+            SimpleDoubleProperty ph0Prop = new SimpleDoubleProperty();
+            TextField ph0TextField = GUIUtils.getDoubleTextField(ph0Prop, 2);
+
+            SimpleDoubleProperty ph1Prop = new SimpleDoubleProperty();
+            TextField ph1TextField = GUIUtils.getDoubleTextField(ph1Prop, 2);
+
+            ph0TextField.setPrefWidth(70);
+            ph1TextField.setPrefWidth(70);
+
+            CheckBox negImagCheckBox = new CheckBox();
+            CheckBox negPairsCheckBox = new CheckBox();
+            gridPane.add(ph0TextField, 1, i + 2);
+            gridPane.add(ph1TextField, 2, i + 2);
+            gridPane.add(negImagCheckBox, 3, i + 2);
+            gridPane.add(negPairsCheckBox, 4, i + 2);
+            SimpleBooleanProperty negImagProp = new SimpleBooleanProperty();
+            negImagProp.bindBidirectional(negImagCheckBox.selectedProperty());
+            SimpleBooleanProperty negPairProp = new SimpleBooleanProperty();
+            negPairProp.bindBidirectional(negPairsCheckBox.selectedProperty());
+            IndirectDimOpPar indirectDimOpPar = new IndirectDimOpPar(ph0Prop, ph1Prop, negImagProp, negPairProp);
+            indirectDimOpPars.add(indirectDimOpPar);
+        }
+        updateIndirectPane(processingOperation);
+        for (IndirectDimOpPar idPar : indirectDimOpPars) {
+            idPar.ph0.addListener(e -> getIndirectOpString(processingOperation));
+            idPar.ph1.addListener(e -> getIndirectOpString(processingOperation));
+            idPar.negImag.addListener(e -> getIndirectOpString(processingOperation));
+            idPar.negPairs.addListener(e -> getIndirectOpString(processingOperation));
+        }
+
+        return gridPane;
+    }
+
+    String getIndirectOpString(ProcessingOperation processingOperation) {
+        List<String> ph0s  = new ArrayList<>();
+        List<String> ph1s  = new ArrayList<>();
+        List<String> negImags  = new ArrayList<>();
+        List<String> negPairs  = new ArrayList<>();
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            int nDim = getNMRData().getNDim() - 1;
+            for (int i = 0; i < nDim; i++) {
+                var indirectDimOpPar = indirectDimOpPars.get(i);
+                ph0s.add(String.format("%.2f", indirectDimOpPar.ph0.get()));
+                ph1s.add(String.format("%.2f", indirectDimOpPar.ph1.get()));
+                negImags.add(indirectDimOpPar.negImag.get() ? "True" : "False");
+                negPairs.add(indirectDimOpPar.negPairs.get() ? "True" : "False");
+            }
+        }
+        String ph0String = String.join(",", ph0s);
+        String ph1String = String.join(",", ph1s);
+        String negImagString = String.join(",", negImags);
+        String negPairString = String.join(",", negPairs);
+        String opString = String.format("PHASE_ID(ph0=[%s],ph1=[%s],negateImag=[%s],negatePairs=[%s])",
+                ph0String,ph1String, negImagString, negPairString);
+        if (processingOperation != null) {
+            processingOperation.update(opString);
+            chartProcessor.updateOpList();
+        }
+        return opString;
+
+    }
+
     void updatePhaser() {
         PhaserAndPane phaserAndPane = phasersPanes.get(currentSection);
         if (phaserAndPane != null) {
@@ -894,9 +983,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
             if (!chart.is1D()) {
                 fxmlController.sliceStatusProperty().set(true);
-                fxmlController.setCursor(Cursor.CROSSHAIR);
-                chart.getSliceAttributes().setSlice1State(true);
-                chart.getSliceAttributes().setSlice2State(false);
+                fxmlController.setCursor(CanvasCursor.SLICE.getCursor());
+                SliceAttributes sliceAttributes = chart.getSliceAttributes();
+                sliceAttributes.setSlice1State(true);
+                sliceAttributes.setSlice2State(true);
+                sliceAttributes.setSlice2Color(Color.RED);
+                sliceAttributes.setUseDatasetColor(false);
                 chart.getCrossHairs().refresh();
             }
         } else {
@@ -904,6 +996,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             fxmlController.sliceStatusProperty().set(phaser.sliceStatus);
             fxmlController.setCursor(phaser.cursor());
             fxmlController.setCursor();
+            SliceAttributes sliceAttributes = chart.getSliceAttributes();
+            sliceAttributes.setSlice1State(true);
+            sliceAttributes.setSlice2State(false);
+            sliceAttributes.setSlice2Color(Color.RED);
+            sliceAttributes.setUseDatasetColor(true);
+
             chart.getCrossHairs().refresh();
         }
     }
@@ -1027,6 +1125,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
 
     void setPropSheet(ModifiableAccordionScrollPane.ModifiableTitlePane titledPane, PropertySheet opPropertySheet, ProcessingOperation op) {
+        if (op.getName().equals("PHASE_ID")) {
+            return;
+        }
         opPropertySheet.getItems().clear();
         ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
         propertyManager.setupItem(opPropertySheet, op.getName());
@@ -1590,7 +1691,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             processingThrowable = null;
         } else {
             statusCircle.setFill(Color.RED);
-            log.warn("error: {}", s);
             processingThrowable = throwable;
         }
         statusBar.setProgress(0.0);
@@ -1631,6 +1731,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
+        referencePane.getStyleClass().add(Styles.DENSE);
+
         referencePane.setText("PARAMETERS");
         addTitleBar(referencePane, "PARAMETERS", false);
 
@@ -1643,10 +1745,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         statusBar.setTooltip(statusBarToolTip);
 
         viewMode.getItems().addAll(DisplayMode.values());
-        Text detailIcon = GlyphsDude.createIcon(FontAwesomeIcon.INFO,
-                AnalystApp.ICON_SIZE_STR);
+        Label infoIcon = GUIUtils.createIconLabel(Material2AL.INFO);
         detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        detailButton.setGraphic(detailIcon);
+        detailButton.setGraphic(infoIcon);
         detailButton.setOnAction(e -> updateAllAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 

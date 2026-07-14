@@ -4,7 +4,6 @@ import os
 from org.nmrfx.structure.chemistry import InteractionType
 from org.nmrfx.structure.chemistry import SecondaryStructure
 from org.nmrfx.structure.chemistry import SSGen
-#from molpeakgen import determineType
 from collections import OrderedDict
 import itertools as itools
 
@@ -130,10 +129,8 @@ def mainFunc():
         print "PDB file path: ", pdbFilePath
         pdbFile = fetchPDBFile(pdbFilePath)
         mol = molio.readPDB(pdbFile)
-        ss = SSGen(mol, viennaSeq)
-        ss.genRNAResidues()
-        ss.pairTo()
-        ss.secondaryStructGen()
+        ssGen = SSGen(mol, viennaSeq)
+        ssGen.analyze()
  	rnaResidues = [residue for polymer in mol.getPolymers() if polymer.isRNA() for residue in polymer.getResidues()]
         
         for resCombination in itools.combinations_with_replacement(rnaResidues, 2):

@@ -23,11 +23,11 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -46,6 +46,7 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.nmrfx.analyst.gui.AnalystApp;
+import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.fxutil.StageBasedController;
 import org.nmrfx.peaks.Multiplet;
@@ -54,12 +55,15 @@ import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.events.PeakEvent;
 import org.nmrfx.peaks.events.PeakListener;
+import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PeakMenuBar;
 import org.nmrfx.processor.gui.PeakMenuTarget;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.TableUtils;
 
+import javax.tools.Tool;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -119,11 +123,12 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         updatePeakListMenu();
         peakMenuBar = new PeakMenuBar(this);
         peakMenuBar.initMenuBar(toolBar, false);
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
+        GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
+        PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.PEAK_MENU, this);
+    }
 
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+    public ToolBar getToolBar() {
+        return toolBar;
     }
 
     public void updatePeakListMenu() {
@@ -131,9 +136,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
         for (String peakListName : ProjectBase.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                setPeakList(PeakList.get(peakListName));
-            });
+            menuItem.setOnAction(e -> setPeakList(PeakList.get(peakListName)));
             peakListMenuButton.getItems().add(menuItem);
         }
     }
@@ -182,7 +185,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         refreshPeakView();
     }
 
-    private class DimTableColumn<S, T> extends TableColumn<S, T> {
+    private static class DimTableColumn<S, T> extends TableColumn<S, T> {
 
         int peakDim;
 
@@ -203,7 +206,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
         @Override
         public TableCell<S, T> call(TableColumn<S, T> arg0) {
-            return new TableCell<S, T>() {
+            return new TableCell<>() {
                 @Override
                 protected void updateItem(T item, boolean empty) {
                     super.updateItem(item, empty);
@@ -233,6 +236,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     void initTable() {
         tableView.setEditable(true);
+        tableView.getStyleClass().add(Styles.DENSE);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns(0);
         tableView.setOnMouseClicked(e -> {
@@ -243,9 +247,9 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 }
             }
         });
-        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         tableView.setOnKeyPressed(this::keyPressed);
-        tableView.setRowFactory(tv -> new TableRow<Peak>() {
+        tableView.setRowFactory(tv -> new TableRow<>() {
             @Override
             public void updateItem(Peak item, boolean empty) {
                 super.updateItem(item, empty);
@@ -287,51 +291,26 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         if (nDim == currentDims) {
             return;
         }
-        tableView.getItems().clear();
+        tableView.setItems(FXCollections.emptyObservableList());
         tableView.getColumns().clear();
         currentDims = nDim;
 
         TableColumn<Peak, Integer> idNumCol = new TableColumn<>("id");
         idNumCol.setCellValueFactory(new PropertyValueFactory("IdNum"));
         idNumCol.setEditable(false);
+        idNumCol.setMinWidth(60);
         idNumCol.setPrefWidth(50);
 
         TableColumn<Peak, Float> intensityCol = new TableColumn<>("intensity");
         intensityCol.setCellValueFactory(new PropertyValueFactory("Intensity"));
+        intensityCol.setMinWidth(60);
         intensityCol.setPrefWidth(75);
 
         TableColumn<Peak, Float> volumeCol = new TableColumn<>("volume");
         volumeCol.setCellValueFactory(new PropertyValueFactory("Volume1"));
+        volumeCol.setMinWidth(60);
         volumeCol.setPrefWidth(75);
 
-        TableColumn<Peak, Color> posColorCol = new TableColumn<>("color");
-        posColorCol.setPrefWidth(50);
-        posColorCol.setCellValueFactory((CellDataFeatures<Peak, Color> p) -> new ReadOnlyObjectWrapper(p.getValue().getColor()));
-        posColorCol.setCellFactory((TableColumn<Peak, Color> column) -> new TableCell<Peak, Color>() {
-            @Override
-            protected void updateItem(Color item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(null);
-                if (empty || (item == null)) {
-                    setGraphic(null);
-                } else {
-                    final ColorPicker cp = new ColorPicker();
-                    cp.setValue(item);
-                    setGraphic(cp);
-                    cp.setOnAction((javafx.event.ActionEvent t) -> {
-                        getTableView().edit(getTableRow().getIndex(), column);
-                        commitEdit(cp.getValue());
-                    });
-                }
-            }
-
-            @Override
-            public void commitEdit(Color item) {
-                super.commitEdit(item);
-                Peak peak = (Peak) getTableRow().getItem();
-                peak.setColor(item.toString());
-            }
-        });
         tableView.getColumns().addAll(idNumCol, intensityCol, volumeCol);
 
         for (int i = 0; i < nDim; i++) {
@@ -343,7 +322,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 return new ReadOnlyObjectWrapper(label);
             });
 
-            labelCol.setCellFactory((TableColumn<Peak, String> column) -> new TableCell<Peak, String>() {
+            labelCol.setCellFactory((TableColumn<Peak, String> column) -> new TableCell<>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -359,13 +338,14 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                                 setBackground(Background.EMPTY);
                             }
                             if (item != null) {
-                                setText(String.valueOf(item));
+                                setText(item);
                             }
                         }
                     }
                 }
             });
 
+            labelCol.setMinWidth(75);
             labelCol.setPrefWidth(75);
             tableView.getColumns().add(labelCol);
         }
@@ -386,6 +366,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             });
             shiftCol.setCellFactory(new ColumnFormatter<>(new DecimalFormat(".000")));
 
+            shiftCol.setMinWidth(60);
             shiftCol.setPrefWidth(75);
             tableView.getColumns().addAll(shiftCol);
         }
@@ -398,8 +379,8 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
                 String couplingString = multiplet.getCouplingsAsSimpleString();
                 double normVal = 0.0;
-                if (peak.peakList.scale > 0.0) {
-                    normVal = multiplet.getVolume() / peak.peakList.scale;
+                if (peak.peakList.getScale() > 0.0) {
+                    normVal = multiplet.getVolume() / peak.peakList.getScale();
                 }
                 String label = String.format("%.2f", normVal) + " " + multiplet.getMultiplicity() + " " + couplingString;
 
@@ -414,19 +395,19 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
     @Override
     public void setPeakList(PeakList peakList) {
         if (this.peakList != null) {
-            peakList.removePeakChangeListener(this);
+            this.peakList.removePeakChangeListener(this);
         }
         this.peakList = peakList;
-        if (tableView == null) {
-            System.out.println("null table");
-        } else {
+        if (tableView != null) {
             if (peakList == null) {
-                tableView.getItems().clear();
+                tableView.setItems(FXCollections.emptyObservableList());
                 stage.setTitle("Peaks: ");
             } else {
                 ObservableList<Peak> peaks = FXCollections.observableList(peakList.peaks());
+                SortedList<Peak> sorted = new SortedList<>(peaks);
+                sorted.comparatorProperty().bind(tableView.comparatorProperty());
                 updateColumns(peakList.getNDim());
-                tableView.setItems(peaks);
+                tableView.setItems(sorted);
                 stage.setTitle("Peaks: " + peakList.getName());
                 peakList.registerPeakChangeListener(this);
             }

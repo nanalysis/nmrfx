@@ -43,7 +43,7 @@ public class MMcifReader {
     final MMCIF mmcif;
     final File cifFile;
 
-    Map entities = new HashMap();
+    Map<String, Entity> entities = new HashMap<>();
     boolean hasResonances = false;
     Map<String, Character> chainCodeMap = new HashMap<>();
     Map<Integer, MMCIFEntity> entityMap = new HashMap<>();
@@ -108,7 +108,7 @@ public class MMcifReader {
 
     }
 
-    void buildChains(final Saveframe saveframe, final String nomenclature, MMCIFPolymerEntity entity) throws ParseException {
+    void buildChains(final Saveframe saveframe, MMCIFPolymerEntity entity) throws ParseException {
         Loop loop = saveframe.getLoop("_entity_poly_seq");
         if (loop == null) {
             throw new ParseException("No \"_entity_poly_seq\" loop");
@@ -118,7 +118,6 @@ public class MMcifReader {
             List<String> resNameColumn = loop.getColumnAsList("mon_id");
             List<String> heteroColumn = loop.getColumnAsListIfExists("hetero");
 
-            List<Integer> startAndEnds = new ArrayList<>();
             for (int i = 0; i < numColumn.size(); i++) {
                 if (entityIDColumn.get(i) == entity.id) {
                     entity.add(numColumn.get(i), resNameColumn.get(i), heteroColumn.get(i).equals("y"));
@@ -146,7 +145,7 @@ public class MMcifReader {
             String mapID = asymName + "." + "0";
             Compound ligand = new Compound("0", asymName);
             ligand.molecule = molecule;
-            addCompound(mapID, ligand);
+            ligand.molecule.addCompound(mapID, ligand);
             ligand.setIDNum(id);
             ligand.assemblyID = id;
             entities.put(asymName, ligand);
@@ -199,7 +198,7 @@ public class MMcifReader {
                 Residue residue = new Residue(iRes, resName.toUpperCase(), hetStr);
                 residue.molecule = polymer.molecule;
                 String mapID = asymName + "." + iRes;
-                addCompound(mapID, residue);
+                residue.molecule.addCompound(mapID, residue);
                 polymer.addResidue(residue);
                 Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
                 if (i == 0) {
@@ -220,14 +219,7 @@ public class MMcifReader {
                     throw new ParseException(psE.getMessage());
                 }
             }
-            for (Atom atom : molecule.getAtomArray()) {
-                if (atom.getAtomicNumber() == 0) {
-                    atom.setAtomicNumber(atom.getElementNumber());
-                }
-            }
-
         }
-
     }
 
     void buildEntities(final Saveframe saveframe) throws ParseException {
@@ -235,11 +227,11 @@ public class MMcifReader {
 
         if (loop == null) {
             String type = saveframe.getValue("_entity", "type");
-            Integer entityID = saveframe.getIntegerValue("_entity", "id");
+            int entityID = saveframe.getIntegerValue("_entity", "id");
             MMCIFEntity entity;
             if (type.equals("polymer")) {
                 entity = new MMCIFPolymerEntity(entityID, type);
-                buildChains(saveframe, type, (MMCIFPolymerEntity) entity);
+                buildChains(saveframe, (MMCIFPolymerEntity) entity);
             } else {
                 entity = new MMCIFEntity(entityID, type);
             }
@@ -254,7 +246,7 @@ public class MMcifReader {
                 MMCIFEntity entity;
                 if (type.equals("polymer")) {
                     entity = new MMCIFPolymerEntity(entityID, type);
-                    buildChains(saveframe, type, (MMCIFPolymerEntity) entity);
+                    buildChains(saveframe, (MMCIFPolymerEntity) entity);
                 } else {
                     entity = new MMCIFEntity(entityID, type);
                 }
@@ -283,8 +275,7 @@ public class MMcifReader {
             String asymID = asymIDColumn.get(i);
             int entityID = entityIDColumn.get(i);
             MMCIFEntity entity = entityMap.get(entityID);
-            if (entity instanceof MMCIFPolymerEntity) {
-                MMCIFPolymerEntity polymerEntity = (MMCIFPolymerEntity) entity;
+            if (entity instanceof MMCIFPolymerEntity polymerEntity) {
                 polymerEntity.build(molecule, asymID);
             } else {
                 entity.build(molecule, asymID);
@@ -303,7 +294,7 @@ public class MMcifReader {
         double valAngle = 90.0;
         double dihAngle = 135.0;
         for (int i = 0; i < entityIDColumn.size(); i++) {
-            String chainCode = (String) String.valueOf(chainCodeMap.get(entityIDColumn.get(i)));
+            String chainCode = String.valueOf(chainCodeMap.get(entityIDColumn.get(i)));
             if (chainCode.equals(".")) {
                 chainCode = "A";
             }
@@ -324,13 +315,13 @@ public class MMcifReader {
                 molecule.addEntity(polymer, chainCode, chainID);
 
             }
-            String resName = (String) monIDColumn.get(i);
-            String iRes = (String) numColumn.get(i);
+            String resName = monIDColumn.get(i);
+            String iRes = numColumn.get(i);
             String mapID = chainCode + "." + iRes;
             String hetero = heteroColumn.get(i);
             Residue residue = new Residue(iRes, resName.toUpperCase(), hetero);
             residue.molecule = polymer.molecule;
-            addCompound(mapID, residue);
+            residue.molecule.addCompound(mapID, residue);
             polymer.addResidue(residue);
             Residue.RES_POSITION resPos = Residue.RES_POSITION.MIDDLE;
             if (i == 0) {
@@ -359,10 +350,6 @@ public class MMcifReader {
         sequence.removeBadBonds();
     }
 
-    void addCompound(String id, Compound compound) {
-        MoleculeBase.compoundMap().put(id, compound);
-    }
-
     MoleculeBase buildConformation(final Saveframe saveframe, MoleculeBase molecule) throws ParseException {
         Loop loop = saveframe.getLoop("_struct_conf");
         if (loop != null) {
@@ -370,7 +357,6 @@ public class MMcifReader {
             List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
             List<Integer> begSeqIDColumn = loop.getColumnAsIntegerList("beg_label_seq_id", 1);
             List<Integer> endSeqIDColumn = loop.getColumnAsIntegerList("end_label_seq_id", 1);
-            List<Polymer> polymers = molecule.getPolymers();
             for (int i = 0; i < idColumn.size(); i++) {
                 int iFirstRes = begSeqIDColumn.get(i) - 1;
                 int iLastRes = endSeqIDColumn.get(i) - 1;
@@ -391,7 +377,6 @@ public class MMcifReader {
             List<String> begAsymIDColumn = loop.getColumnAsList("beg_label_asym_id");
             List<Integer> begSeqIDColumn = loop.getColumnAsIntegerList("beg_label_seq_id", 1);
             List<Integer> endSeqIDColumn = loop.getColumnAsIntegerList("end_label_seq_id", 1);
-            List<Polymer> polymers = molecule.getPolymers();
             for (int i = 0; i < idColumn.size(); i++) {
                 int iFirstRes = begSeqIDColumn.get(i) - 1;
                 int iLastRes = endSeqIDColumn.get(i) - 1;
@@ -405,10 +390,10 @@ public class MMcifReader {
     }
 
     void buildAtomSites(MoleculeBase molecule, int fromSet, final int toSet) throws ParseException {
-        Iterator iter = mmcif.getSaveFrames().values().iterator();
+        Iterator<Saveframe> iter = mmcif.getSaveFrames().values().iterator();
         int iSet = 0;
         while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+            Saveframe saveframe = iter.next();
             log.debug("process atom sites {}", saveframe.getName());
             if (fromSet < 0) {
                 molecule.nullCoords(iSet);
@@ -432,7 +417,6 @@ public class MMcifReader {
             buildEntities(saveframe);
             buildAsym(saveframe, molecule);
             molecule = buildConformation(saveframe, molecule);
-//            buildChemComp(saveframe, molecule);
             buildSheetRange(saveframe, molecule);
             molecule.updateSpatialSets();
             molecule.genCoords(false);
@@ -441,16 +425,14 @@ public class MMcifReader {
     }
 
     void buildChemCompAtom(int fromSet, final int toSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
-        Iterator iter = mmcif.getSaveFrames().values().iterator();
+        Iterator<Saveframe> iter = mmcif.getSaveFrames().values().iterator();
         int iSet = 0;
         while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+            Saveframe saveframe = iter.next();
             log.debug("process chem comp atom {}", saveframe.getName());
             if (fromSet < 0) {
-                molecule.nullCoords(iSet);
                 processChemCompAtom(saveframe, iSet, molecule, chainCode, sequenceCode);
             } else if (fromSet == iSet) {
-                molecule.nullCoords(toSet);
                 processChemCompAtom(saveframe, toSet, molecule, chainCode, sequenceCode);
                 break;
             }
@@ -459,16 +441,14 @@ public class MMcifReader {
     }
 
     void buildChemCompBond(int fromSet, final int toSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
-        Iterator iter = mmcif.getSaveFrames().values().iterator();
+        Iterator<Saveframe> iter = mmcif.getSaveFrames().values().iterator();
         int iSet = 0;
         while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+            Saveframe saveframe = iter.next();
             log.debug("process chem comp bond {}", saveframe.getName());
             if (fromSet < 0) {
-                molecule.nullCoords(iSet);
                 processChemCompBond(saveframe, iSet, molecule, chainCode, sequenceCode);
             } else if (fromSet == iSet) {
-                molecule.nullCoords(toSet);
                 processChemCompBond(saveframe, toSet, molecule, chainCode, sequenceCode);
                 break;
             }
@@ -478,16 +458,16 @@ public class MMcifReader {
 
     void processAtomSites(MoleculeBase molecule, Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_atom_site");
-        var compoundMap = MoleculeBase.compoundMap();
+        var compoundMap = molecule.compoundMap();
         if (loop != null) {
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> labelAtomIDColumn = loop.getColumnAsList("label_atom_id");
-            List<String> labelAltIDColumn = loop.getColumnAsList("label_alt_id");
+            List<String> labelAltIDColumn = loop.getColumnAsList("label_alt_id",".");
             List<String> labelCompIDColumn = loop.getColumnAsList("label_comp_id");
             List<String> labelAsymIDColumn = loop.getColumnAsList("label_asym_id");
             List<String> labelEntityIDColumn = loop.getColumnAsList("label_entity_id");
             List<String> labelSeqIDColumn = loop.getColumnAsList("label_seq_id");
-            List<String> pdbInsCodeColumn = loop.getColumnAsList("pdbx_PDB_ins_code");
+            List<String> pdbInsCodeColumn = loop.getColumnAsList("pdbx_PDB_ins_code", "?");
             List<String> cartnXColumn = loop.getColumnAsList("Cartn_x");
             List<String> cartnYColumn = loop.getColumnAsList("Cartn_y");
             List<String> cartnZColumn = loop.getColumnAsList("Cartn_z");
@@ -495,31 +475,31 @@ public class MMcifReader {
             List<String> bIsoColumn = loop.getColumnAsList("B_iso_or_equiv");
             List<Double> pdbFormalChargeColumn = loop.getColumnAsDoubleList("pdbx_formal_charge", 0.0);
             List<Integer> authSeqIDColumn = loop.getColumnAsIntegerList("auth_seq_id", 0);
-            List<String> authCompIDColumn = loop.getColumnAsList("auth_comp_id");
-            List<String> authAsymIDColumn = loop.getColumnAsList("auth_asym_id");
-            List<String> authAtomIDColumn = loop.getColumnAsList("auth_atom_id");
+            List<String> authCompIDColumn = loop.getColumnAsList("auth_comp_id", null);
+            List<String> authAsymIDColumn = loop.getColumnAsList("auth_asym_id", null);
+            List<String> authAtomIDColumn = loop.getColumnAsList("auth_atom_id",null);
             List<Integer> pdbModelNumColumn = loop.getColumnAsIntegerList("pdbx_PDB_model_num", 0);
 
             for (int i = 0; i < typeSymbolColumn.size(); i++) {
-                String atomType = (String) typeSymbolColumn.get(i);
-                String atomName = (String) labelAtomIDColumn.get(i);
-                String atomAltName = (String) labelAltIDColumn.get(i);
+                String atomType = typeSymbolColumn.get(i);
+                String atomName = labelAtomIDColumn.get(i);
+                String atomAltName = labelAltIDColumn.get(i);
                 String resIDStr = ".";
                 if (labelCompIDColumn != null) {
-                    resIDStr = (String) labelCompIDColumn.get(i);
+                    resIDStr = labelCompIDColumn.get(i);
                 }
-                String chainCode = (String) labelAsymIDColumn.get(i);
-                String entityID = (String) labelEntityIDColumn.get(i);
-                String sequenceCode = (String) labelSeqIDColumn.get(i);
+                String chainCode = labelAsymIDColumn.get(i);
+                String entityID = labelEntityIDColumn.get(i);
+                String sequenceCode = labelSeqIDColumn.get(i);
                 if (sequenceCode.equals(".")) {
                     sequenceCode = "0";
                 }
                 int pdbModelNum = pdbModelNumColumn.get(i);
-                float xCoord = Float.parseFloat((String) cartnXColumn.get(i));
-                float yCoord = Float.parseFloat((String) cartnYColumn.get(i));
-                float zCoord = Float.parseFloat((String) cartnZColumn.get(i));
-                float occupancy = Float.parseFloat((String) occupancyColumn.get(i));
-                float bFactor = Float.parseFloat((String) bIsoColumn.get(i));
+                float xCoord = Float.parseFloat(cartnXColumn.get(i));
+                float yCoord = Float.parseFloat(cartnYColumn.get(i));
+                float zCoord = Float.parseFloat(cartnZColumn.get(i));
+                float occupancy = Float.parseFloat(occupancyColumn.get(i));
+                float bFactor = Float.parseFloat(bIsoColumn.get(i));
                 String mapID = chainCode + "." + sequenceCode;
                 Compound compound = compoundMap.get(mapID);
                 if (compound == null) {
@@ -538,8 +518,11 @@ public class MMcifReader {
                 String pdbInsCode = pdbInsCodeColumn.get(i);
                 int authSeq = authSeqIDColumn.get(i);
                 String authComp = authCompIDColumn.get(i);
+                authComp = authComp == null ? resIDStr : authComp;
                 String authAsym = authAsymIDColumn.get(i);
+                authAsym = authAsym == null ? chainCode : authAsym;
                 String authAtom = authAtomIDColumn.get(i);
+                authAtom = authAtom == null ? atomName : authAtom;
 
                 if (atom == null) {
                     atom = Atom.genAtomWithElement(atomName, atomType);
@@ -549,10 +532,6 @@ public class MMcifReader {
                     compound.addAtom(atom);
                     compound.updateNames();
                     atom.setAtomicNumber(atomType);
-                }
-
-                if (atom == null) {
-                    log.warn("invalid atom in assignments saveframe \"{}.{}\"", mapID, atomName);
                 }
 
                 Entity entity = atom.getEntity();
@@ -585,7 +564,7 @@ public class MMcifReader {
     void processChemCompAtom(Saveframe saveframe, int ppmSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
         Loop loop = saveframe.getLoop("_chem_comp_atom");
         if (loop != null) {
-            var compoundMap = MoleculeBase.compoundMap();
+            var compoundMap = molecule.compoundMap();
 
             List<String> typeSymbolColumn = loop.getColumnAsList("type_symbol");
             List<String> atomIDColumn = loop.getColumnAsList("atom_id");
@@ -599,17 +578,17 @@ public class MMcifReader {
             List<String> cartnZIdealColumn = loop.getColumnAsList("pdbx_model_Cartn_z_ideal");
 
             for (int i = 0; i < typeSymbolColumn.size(); i++) {
-                String atomType = (String) typeSymbolColumn.get(i);
-                String atomName = (String) atomIDColumn.get(i);
-                String atomAltName = (String) labelAltIDColumn.get(i);
+                String atomType = typeSymbolColumn.get(i);
+                String atomName = atomIDColumn.get(i);
+                String atomAltName = labelAltIDColumn.get(i);
                 String resIDStr = ".";
                 if (compIDColumn != null) {
-                    resIDStr = (String) compIDColumn.get(i);
+                    resIDStr = compIDColumn.get(i);
                 }
 
-                float xCoord = Float.parseFloat((String) cartnXColumn.get(i));
-                float yCoord = Float.parseFloat((String) cartnYColumn.get(i));
-                float zCoord = Float.parseFloat((String) cartnZColumn.get(i));
+                float xCoord = Float.parseFloat(cartnXColumn.get(i));
+                float yCoord = Float.parseFloat(cartnYColumn.get(i));
+                float zCoord = Float.parseFloat(cartnZColumn.get(i));
                 float occupancy = Float.parseFloat("1.0");
                 float bFactor = Float.parseFloat("0.0");
                 String mapID = chainCode + "." + sequenceCode;
@@ -627,10 +606,6 @@ public class MMcifReader {
                     atom.setAtomicNumber(atomType);
                     compound.addAtom(atom);
                     molecule.updateAtomArray();
-                }
-
-                if (atom == null) {
-                    log.warn(INVALID_ATOM_WARN_MSG_TEMPLATE, mapID, atomName);
                 }
 
                 SpatialSet spSet = atom.getSpatialSet();
@@ -654,7 +629,7 @@ public class MMcifReader {
     void processChemCompBond(Saveframe saveframe, int ppmSet, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException {
         Loop loop = saveframe.getLoop("_chem_comp_bond");
         if (loop != null) {
-            var compoundMap = MoleculeBase.compoundMap();
+            var compoundMap = molecule.compoundMap();
             List<String> idColumn = loop.getColumnAsList("comp_id");
             List<String> atom1IDColumn = loop.getColumnAsList("atom_id_1");
             List<String> atom2IDColumn = loop.getColumnAsList("atom_id_2");
@@ -663,12 +638,12 @@ public class MMcifReader {
             List<String> stereoConfigColumn = loop.getColumnAsList("pdbx_stereo_config");
 
             for (int i = 0; i < atom1IDColumn.size(); i++) {
-                String idCode = (String) idColumn.get(i);
-                String atom1Name = (String) atom1IDColumn.get(i);
-                String atom2Name = (String) atom2IDColumn.get(i);
-                String bondOrder = (String) bondOrderColumn.get(i);
-                String aromaticFlag = (String) aromaticFlagColumn.get(i);
-                String stereoConfig = (String) stereoConfigColumn.get(i);
+                String idCode = idColumn.get(i);
+                String atom1Name = atom1IDColumn.get(i);
+                String atom2Name = atom2IDColumn.get(i);
+                String bondOrder = bondOrderColumn.get(i);
+                String aromaticFlag = aromaticFlagColumn.get(i);
+                String stereoConfig = stereoConfigColumn.get(i);
 
                 String mapID = chainCode + "." + sequenceCode;
                 Compound compound = compoundMap.get(mapID);
@@ -690,22 +665,12 @@ public class MMcifReader {
                 }
 
                 if (parent != null && refAtom != null) {
-                    Order order = Order.SINGLE;
+                    final Order order;
                     switch (bondOrder) {
-                        case "SING":
-                            order = Order.SINGLE;
-                            break;
-                        case "DOUB":
-                            order = Order.DOUBLE;
-                            break;
-                        case "TRIP":
-                            order = Order.TRIPLE;
-                            break;
-                        case "QUAD":
-                            order = Order.QUAD;
-                            break;
-                        default:
-                            break;
+                        case "DOUB" -> order = Order.DOUBLE;
+                        case "TRIP" -> order = Order.TRIPLE;
+                        case "QUAD" -> order = Order.QUAD;
+                        default -> order = Order.SINGLE;
                     }
                     Bond bond = new Bond(refAtom, parent, order);
                     refAtom.parent = parent;
@@ -725,7 +690,7 @@ public class MMcifReader {
     }
 
     public void processChemComp(String[] argv, MoleculeBase molecule, String chainCode, String sequenceCode) throws ParseException, IllegalArgumentException {
-        if ((argv.length != 0) && (argv.length != 3)) {
+        if ((argv.length != 0) && (argv.length != 5)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
 
@@ -743,7 +708,6 @@ public class MMcifReader {
             buildChemCompAtom(fromSet, toSet, molecule, chainCode, sequenceCode);
             buildChemCompBond(fromSet, toSet, molecule, chainCode, sequenceCode);
         }
-
     }
 
     MoleculeBase process() throws ParseException, IllegalArgumentException {
@@ -752,15 +716,13 @@ public class MMcifReader {
     }
 
     public MoleculeBase process(String[] argv) throws ParseException, IllegalArgumentException {
-        if ((argv.length != 0) && (argv.length != 3)) {
+        if ((argv.length != 0) && (argv.length != 5)) {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
-        var compoundMap = MoleculeBase.compoundMap();
         MoleculeBase molecule = null;
 
         if (argv.length == 0) {
             hasResonances = false;
-            compoundMap.clear();
             log.debug("process molecule");
             molecule = buildMolecule();
             molecule.setMethylRotationActive(true);
@@ -769,9 +731,6 @@ public class MMcifReader {
             buildAtomSites(molecule, -1, 0);
             molecule.fillEntityCoords();
 
-            log.debug("process distances");
-//            buildDistanceRestraints(energyList);
-            log.debug("process torsion angles");
             ProjectBase.getActive().putMolecule(molecule);
 
         } else if ("shifts".startsWith(argv[2])) {

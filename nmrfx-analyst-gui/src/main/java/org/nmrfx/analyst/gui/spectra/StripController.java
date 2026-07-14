@@ -17,28 +17,26 @@
  */
 package org.nmrfx.analyst.gui.spectra;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.WeakMapChangeListener;
 import javafx.geometry.Orientation;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
-import org.nmrfx.analyst.gui.AnalystApp;
+import javafx.scene.text.Font;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
+import javafx.util.Subscription;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakDim;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.PolyChartManager;
+import org.nmrfx.processor.gui.*;
+import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -56,6 +54,7 @@ import java.util.function.Consumer;
  * @author brucejohnson
  */
 public class StripController implements ControllerTool {
+   static Font font = Font.font(12.0);
 
     static final int X = 0;
     static final int Z = 1;
@@ -93,6 +92,9 @@ public class StripController implements ControllerTool {
     double xWidth = 0.2;
     StripsTable stripsTable;
     ObservableList<Peak> sortedPeaks;
+    int currentStart = 0;
+    Subscription peakSub = null;
+    Subscription dataSub = null;
 
     public StripController(FXMLController controller, Consumer<StripController> closeAction) {
         this.controller = controller;
@@ -105,6 +107,12 @@ public class StripController implements ControllerTool {
 
     public void close() {
         controller.getMainBox().setRight(null);
+        if (peakSub != null) {
+            peakSub.unsubscribe();
+        }
+        if (dataSub != null) {
+            dataSub.unsubscribe();
+        }
         closeAction.accept(this);
     }
 
@@ -114,7 +122,7 @@ public class StripController implements ControllerTool {
         this.setupToolBar = new ToolBar();
         this.vBox.getChildren().addAll(toolBar, setupToolBar);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close");
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 
@@ -159,6 +167,8 @@ public class StripController implements ControllerTool {
         posSlider.setMinWidth(250);
         posSlider.setShowTickMarks(true);
         posSlider.setShowTickLabels(true);
+        posSlider.getStyleClass().addAll(Styles.SMALL);
+
         posField.setMinWidth(50);
         posField.setMaxWidth(50);
         posField.textProperty().addListener(e -> fieldChanged(posField));
@@ -172,19 +182,18 @@ public class StripController implements ControllerTool {
         nSlider.setMinWidth(120);
         nSlider.setShowTickMarks(true);
         nSlider.setShowTickLabels(true);
+        nSlider.getStyleClass().addAll(Styles.SMALL);
         nField.setMinWidth(50);
         nField.setMaxWidth(50);
         nField.textProperty().addListener(e -> fieldChanged(nField));
 
         toolBar.getItems().addAll(nSlider, nField);
 
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> updatePeakListMenu();
-
         limitListener = (observable, oldValue, newValue) -> updateView(false);
 
-        Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
+        Button addButton = GUIUtils.addItemButton();
         addButton.setOnAction(e -> addItem());
-        Button removeButton = GlyphsDude.createIconButton(FontAwesomeIcon.REMOVE);
+        Button removeButton = GUIUtils.removeItemButton();
         removeButton.setOnAction(e -> removeItem());
 
         itemPeakListChoiceBox = new ChoiceBox<>();
@@ -196,7 +205,7 @@ public class StripController implements ControllerTool {
         itemSpinner = new Spinner<>(0, 0, 0);
         itemSpinner.setMaxWidth(75);
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
-        ProjectBase.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
+        dataSub = GUIProject.getActive().addDatasetListSubscription(this::updateDatasetNames);
 
         Label offsetLabel = new Label("Offset:");
         offsetBox = new ChoiceBox<>();
@@ -215,7 +224,7 @@ public class StripController implements ControllerTool {
                 new Label("Dataset:"), itemDatasetChoiceBox,
                 offsetLabel, offsetBox, rowLabel, rowBox, refresh);
 
-        ProjectBase.getActive().addPeakListListener(new WeakMapChangeListener<>(mapChangeListener));
+        peakSub = GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -474,7 +483,8 @@ public class StripController implements ControllerTool {
         }
         int posMax = nPeaks - nView;
         posSlider.setMax(Math.max(0, posMax));
-        posSlider.setValue(0);
+        currentStart = Math.min(currentStart, Math.max(0, posMax));
+        posSlider.setValue(currentStart);
 
         if (nPeaks < 10) {
             posSlider.setMajorTickUnit(1);
@@ -541,13 +551,19 @@ public class StripController implements ControllerTool {
         Peak peak;
         double[] positions;
 
-        public Cell(Dataset dataset, Peak peak) {
-
-        }
+        AnnoText annoText;
 
         public Cell(Peak peak, double[] positions) {
             this.peak = peak;
             this.positions = positions;
+            double x = 100.0;
+            String text = peak.getPeakDim(0).getLabel();
+            if (text.isEmpty()) {
+                text = String.valueOf(peak.getIdNum());
+            }
+            double textWidth = GUIUtils.getTextWidth(text, font);
+            double delta = textWidth + 5.0;
+            annoText = new AnnoText(x, -4, delta, text, font.getSize(), CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
         }
 
         void updateCell() {
@@ -561,6 +577,8 @@ public class StripController implements ControllerTool {
                     controller.addDataset(chart, item.dataset, false, false);
                     chart.getCrossHairs().setState(0, Orientation.HORIZONTAL, true);
                 }
+                var chartProps = chart.getChartProperties();
+                chartProps.setTopBorderSize(Math.max(20, chartProps.getTopBorderSize()));
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 int[] dims = getDims(dataAttr.getDataset());
@@ -576,6 +594,8 @@ public class StripController implements ControllerTool {
                 for (int i = 1; i < positions.length; i++) {
                     chart.getAxes().setMinMax(1 + i, positions[i], positions[i]);
                 }
+                chart.clearAnnoType(AnnoText.class);
+                chart.addAnnotation(annoText);
             }
             chart.useImmediateMode(true);
         }
@@ -583,15 +603,15 @@ public class StripController implements ControllerTool {
 
     public void setCenter(int index) {
         int nActive = (int) nSlider.getValue();
-        int start = index - nActive / 2;
-        posSlider.setValue(start);
+        currentStart = index - nActive / 2;
+        posSlider.setValue(currentStart);
     }
 
     private void fieldChanged(TextField field) {
         try {
             Integer.parseInt(field.getText().trim());
             field.setBackground(GUIUtils.getDefaultBackground());
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException _) {
             field.setBackground(GUIUtils.getErrorBackground());
         }
     }
@@ -604,7 +624,7 @@ public class StripController implements ControllerTool {
             nSlider.setValue(n);
             posField.setBackground(GUIUtils.getDefaultBackground());
             updateView(false);
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException _) {
             posField.setBackground(GUIUtils.getErrorBackground());
         }
     }

@@ -21,13 +21,40 @@ import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Point3;
 import org.nmrfx.chemistry.SpatialSet;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * @author brucejohnson
  */
 public class JCoupling {
+
+    public enum CouplingName {
+        HCH,
+        HCCH,
+        HCCCH,
+        HC,
+        HCC,
+        HCCC,
+        HCCCC,
+        HCN,
+        HNC,
+        HNCC,
+        CC,
+        CCC,
+        HF;
+
+        public static Optional<CouplingName> getCoupling(List<Atom> atoms) {
+            StringBuilder atomSeq = new StringBuilder();
+            for (Atom atom : atoms) {
+                atomSeq.append(atom.getElementName());
+            }
+            try {
+                return Optional.of(CouplingName.valueOf(atomSeq.toString()));
+            } catch (IllegalArgumentException illegalArgumentException) {
+                return Optional.empty();
+            }
+        }
+    }
 
     final ArrayList<SpatialSet> spatialSets;
     Double dihedral = null;

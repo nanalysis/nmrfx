@@ -913,7 +913,7 @@ public class SeqDisplayController implements Initializable, StageBasedController
         if (fileName != null) {
             try {
                 PDFGraphicsContext pdfGC = new PDFGraphicsContext();
-                pdfGC.create(true, seqCanvas.getWidth(), seqCanvas.getHeight(), fileName);
+                pdfGC.create(true, seqCanvas.getWidth(), seqCanvas.getHeight(), null, null,  fileName);
                 drawCanvas(pdfGC, CANVAS_MODE.DRAW);
                 pdfGC.saveFile();
             } catch (GraphicsIOException ex) {

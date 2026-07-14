@@ -105,7 +105,7 @@ public class PeakDim {
             newMultiplet.myPeakDim = targetPeakDim;
             targetPeakDim.multiplet = newMultiplet;
         }
-        targetPeakDim.resonance = resonance.copy();
+        targetPeakDim.resonance = resonance.copy(targetPeakDim);
     }
 
     public void restoreFrom(PeakDim peakDim) {
@@ -177,8 +177,8 @@ public class PeakDim {
     public String getSummary() {
         double normVal = 0;
         // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
-        if (myPeak.peakList.scale > 0.0) {
-            normVal = myPeak.getVolume1() / myPeak.peakList.scale;
+        if (myPeak.peakList.getScale() > 0.0) {
+            normVal = myPeak.getVolume1() / myPeak.peakList.getScale();
         }
 
         return Format.format3(getChemShiftValue()) + " " + Format.format2(normVal);
@@ -695,6 +695,9 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public List<String> getLabels() {
+        return resonance.getNames();
+    }
     public String getLabel() {
         return resonance.getName();
     }
@@ -704,8 +707,11 @@ public class PeakDim {
     }
 
     public void setLabel(String label) {
+        String[] labels = label.split(" +");
         List<String> labelArgs = new ArrayList<>();
-        labelArgs.add(label);
+        for (String newLabel : labels) {
+            labelArgs.add(newLabel);
+        }
         setLabel(labelArgs);
     }
 
