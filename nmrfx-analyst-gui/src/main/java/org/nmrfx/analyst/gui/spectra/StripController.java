@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui.spectra;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -167,6 +168,8 @@ public class StripController implements ControllerTool {
         posSlider.setMinWidth(250);
         posSlider.setShowTickMarks(true);
         posSlider.setShowTickLabels(true);
+        posSlider.getStyleClass().addAll(Styles.SMALL);
+
         posField.setMinWidth(50);
         posField.setMaxWidth(50);
         posField.textProperty().addListener(e -> fieldChanged(posField));
@@ -180,6 +183,7 @@ public class StripController implements ControllerTool {
         nSlider.setMinWidth(120);
         nSlider.setShowTickMarks(true);
         nSlider.setShowTickLabels(true);
+        nSlider.getStyleClass().addAll(Styles.SMALL);
         nField.setMinWidth(50);
         nField.setMaxWidth(50);
         nField.textProperty().addListener(e -> fieldChanged(nField));

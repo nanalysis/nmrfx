@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -224,6 +225,8 @@ public class PeakGeneratorGUI {
         distanceSlider.setMajorTickUnit(1.0);
         distanceSlider.setMinorTickCount(9);
         distanceSlider.setMinWidth(250.0);
+        distanceSlider.getStyleClass().addAll(Styles.SMALL);
+
 
     }
 

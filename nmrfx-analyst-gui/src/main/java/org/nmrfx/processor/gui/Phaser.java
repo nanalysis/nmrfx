@@ -111,6 +111,8 @@ public class Phaser {
             slider.setMinorTickCount(3);
             slider.setShowTickMarks(true);
             slider.setShowTickLabels(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
+
             slider.setOrientation(orientation);
             sliders[iPh] = slider;
             if (orientation == Orientation.VERTICAL) {

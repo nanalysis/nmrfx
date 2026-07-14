@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.animation.PauseTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -308,6 +309,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         integralPosSlider.setMax(1.0);
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
+        integralPosSlider.getStyleClass().addAll(Styles.SMALL);
+
 
         ticFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
         labelFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
@@ -335,6 +338,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         xOffsetSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
         yOffsetSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
         scaleSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
+        xOffsetSlider.getStyleClass().addAll(Styles.SMALL);
+        yOffsetSlider.getStyleClass().addAll(Styles.SMALL);
+        scaleSlider.getStyleClass().addAll(Styles.SMALL);
+
         slice1ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
         slice2ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
 
@@ -346,12 +353,16 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
         aspectSlider.disableProperty().bind(aspectCheckBox.selectedProperty().not());
+        aspectSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(aspectSlider, aspectRatioValue, "##0.00");
 
         stackXSlider.setMin(0.0);
         stackXSlider.setMax(1.00);
         stackXSlider.setValue(0.0);
         stackXSlider.setBlockIncrement(0.01);
+        stackXSlider.getStyleClass().addAll(Styles.SMALL);
+
         stackXSlider.valueProperty().addListener(stackXListener);
         stackXSlider.setOnMouseReleased(e -> setStackXSlider());
         GUIUtils.bindSliderField(stackXSlider, stackXField);
@@ -361,6 +372,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         stackYSlider.setMax(1.0);
         stackYSlider.setValue(0.0);
         stackYSlider.setBlockIncrement(0.01);
+        stackYSlider.getStyleClass().addAll(Styles.SMALL);
+
         stackYSlider.valueProperty().addListener(stackYListener);
         stackYSlider.setOnMouseReleased(e -> setStackYSlider());
         GUIUtils.bindSliderField(stackYSlider, stackYField);
@@ -372,16 +385,26 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         lvlSlider1D.valueProperty().addListener(lvlSliderListener);
         lvlSlider1D.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider1D, lvlField1D, "0.##E0");
+        lvlSlider.getStyleClass().addAll(Styles.SMALL);
+        lvlSlider1D.getStyleClass().addAll(Styles.SMALL);
+
+
 
         clmSlider.valueProperty().addListener(clmSliderListener);
         clmSlider.setOnMouseReleased(e -> setClmSliderValue());
+        clmSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(clmSlider, clmField);
 
         nlvlsSlider.valueProperty().addListener(nlvlsSliderListener);
         nlvlsSlider.setOnMouseReleased(e -> setNlvlSlider());
+        nlvlsSlider.getStyleClass().addAll(Styles.SMALL);
+
 
         offsetSlider.valueProperty().addListener(offsetSliderListener);
         offsetSlider.setOnMouseReleased(e -> setOffsetsSlider());
+        offsetSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(offsetSlider, offsetField);
 
         posColorPicker.valueProperty().addListener(posColorListener);
@@ -390,14 +413,20 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
         posWidthSlider.valueProperty().addListener(posWidthSliderListener);
         posWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(true));
+        posWidthSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(posWidthSlider, posWidthField);
 
         posWidthSlider1D.valueProperty().addListener(posWidthSliderListener);
         posWidthSlider1D.setOnMouseReleased(e -> setPosWidthSlider(true));
+        posWidthSlider1D.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(posWidthSlider1D, posWidthField1D);
 
         negWidthSlider.valueProperty().addListener(negWidthSliderListener);
         negWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(false));
+        negWidthSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(negWidthSlider, negWidthField);
 
         posOnCheckbox.selectedProperty().addListener(posDrawOnListener);

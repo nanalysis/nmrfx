@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -107,6 +108,8 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMax(dItem.getMax());
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
+
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
             ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
@@ -122,6 +125,8 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMax(dItem.getMax());
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
+
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
             ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
@@ -172,6 +177,8 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(false);
             slider.setBlockIncrement(1);
+            slider.getStyleClass().addAll(Styles.SMALL);
+
             int delta = iItem.getMax() - iItem.getMin();
             if (delta < 6) {
                 slider.setMajorTickUnit(1);

@@ -18,6 +18,7 @@
 
 package org.nmrfx.utils.properties;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -76,6 +77,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMin(dItem.getMin());
             slider.setMax(dItem.getMax());
             slider.setShowTickLabels(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
             slider.setShowTickMarks(true);
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
@@ -112,6 +114,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMax(iItem.getMax());
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(false);
+            slider.getStyleClass().addAll(Styles.SMALL);
             slider.setBlockIncrement(1);
             int delta = iItem.getMax() - iItem.getMin();
             if (delta < 6) {
