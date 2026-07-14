@@ -72,15 +72,17 @@ public class AnalystPrefs {
 
         if (lightDarkMode == LightDarkModes.LIGHT) {
             backGround = Color.WHITE;
-            switch (name) {
-                case "Primer" -> Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-                case "Cupertino" -> Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+            if (name.equals("Primer")) {
+                Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+            } else if (name.equals("Cupertino")) {
+                Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
             }
         } else {
             backGround = Color.BLACK;
-            switch (name) {
-                case "Primer" -> Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
-                case "Cupertino" -> Application.setUserAgentStylesheet(new CupertinoDark().getUserAgentStylesheet());
+            if (name.equals("Primer")) {
+                Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+            } else if (name.equals("Cupertino")) {
+                Application.setUserAgentStylesheet(new CupertinoDark().getUserAgentStylesheet());
             }
         }
     }
@@ -94,7 +96,7 @@ public class AnalystPrefs {
     }
 
     public static Color getNegColor() {
-        return backGround == Color.BLACK ? Color.RED : Color.RED;
+        return Color.RED;
     }
 
     public static void setTheme(String name) {
@@ -226,86 +228,69 @@ public class AnalystPrefs {
     public static void addPrefs(PreferencesController preferencesController) {
         PropertySheet prefSheet = preferencesController.getPrefSheet();
 
-        List defaultThemeNames = List.of("Primer", "Cupertino");
+        List<String> defaultThemeNames = List.of("Primer", "Cupertino");
 
-        ChoiceOperationItem themeItem = new ChoiceOperationItem(prefSheet, (a, b, c) -> {
-            setTheme((String) c);
-        }, getTheme(), defaultThemeNames, "GUI",
+        ChoiceOperationItem themeItem = new ChoiceOperationItem(prefSheet,
+                (a, b, c) -> setTheme((String) c), getTheme(), defaultThemeNames, "GUI",
                 "theme", "GUI Theme");
 
 
-        List<String> lightDarkModes = Arrays.stream(LightDarkModes.values()).map(ld -> ld.name()).toList();
+        List<String> lightDarkModes = Arrays.stream(LightDarkModes.values()).map(Enum::name).toList();
 
-        ChoiceOperationItem lightDarkItem = new ChoiceOperationItem(prefSheet, (a, b, c) -> {
-            setLightDarkMode((String) c);
-        }, getLightDarkMode().name(), lightDarkModes, "GUI",
+        ChoiceOperationItem lightDarkItem = new ChoiceOperationItem(prefSheet,
+                (a, b, c) -> setLightDarkMode((String) c), getLightDarkMode().name(), lightDarkModes, "GUI",
                 "lightdark", "GUI  light or dark theme mode");
 
 
         IntRangeOperationItem libraryVectorSizeItem = new IntRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorSize.setValue((Integer) c);
-                },
+                (a, b, c) -> libraryVectorSize.setValue((Integer) c),
                 getLibraryVectorSize(), 8, 17, "Spectrum Library", "VectorSize",
                 "Log2 of size of simulated spectra, 8 -> 256, 9-> 512 etc.");
         DoubleRangeOperationItem libraryVectorLBItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorLB.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorLB.setValue((Double) c),
                 getLibraryVectorLB(), 0, 10.0, "Spectrum Library", "VectorLW",
                 "Line broadening (Hz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSFItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorSF.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorSF.setValue((Double) c),
                 getLibraryVectorSF(), 40, 1200, "Spectrum Library", "VectorSF",
                 "Spectrometer frequency (MHz) for simulated spectra");
         DoubleRangeOperationItem libraryVectorSWItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorSWPPM.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorSWPPM.setValue((Double) c),
                 getLibraryVectorSWPPM(), 2.0, 20.0, "Spectrum Library", "VectorSW",
                 "Sweep Width (PPM) for simulated spectra");
         DoubleRangeOperationItem libraryVectorREFItem = new DoubleRangeOperationItem(prefSheet,
-                (a, b, c) -> {
-                    libraryVectorREF.setValue((Double) c);
-                },
+                (a, b, c) -> libraryVectorREF.setValue((Double) c),
                 getLibraryVectorREF(), 0, 10.0, "Spectrum Library", "VectorREF",
                 "Center reference (PPM) for simulated spectra");
 
-        FileOperationItem segmentLibraryFileItem = new FileOperationItem(prefSheet, (a, b, c) -> segmentLibraryFile.setValue(c.toString()), getSegmentLibraryFile(), "Spectrum Library", "Segment Library", "File containing segment library");
+        FileOperationItem segmentLibraryFileItem = new FileOperationItem(prefSheet,
+                (a, b, c) -> segmentLibraryFile.setValue(c.toString()), getSegmentLibraryFile(), "Spectrum Library", "Segment Library", "File containing segment library");
 
-        TextOperationItem remoteUserItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setRemoteUserName((String) c);
-        }, getRemoteUserName(), "Remote Data",
+        TextOperationItem remoteUserItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setRemoteUserName((String) c), getRemoteUserName(), "Remote Data",
                 "UserName",
                 "User name on remote host");
 
-        TextOperationItem remoteHostItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setRemoteHostName((String) c);
-        }, getRemoteHostName(), "Remote Data",
+        TextOperationItem remoteHostItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setRemoteHostName((String) c), getRemoteHostName(), "Remote Data",
                 "HostName",
                 "Name of remote host (server)");
 
-        TextOperationItem remoteDirectoryItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setRemoteDirectory((String) c);
-        }, getRemoteDirectory(), "Remote Data",
+        TextOperationItem remoteDirectoryItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setRemoteDirectory((String) c), getRemoteDirectory(), "Remote Data",
                 "Directory",
                 "Directory on remote host that stores data");
 
-        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem(prefSheet, (a, b, c) -> {
-            setUseRemotePassword((Boolean) c);
-        }, getUseRemotePassword(), "Remote Data", "UsePassword", "Prompt for password when connecting");
+        BooleanOperationItem remoteUsePasswordItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> setUseRemotePassword((Boolean) c), getUseRemotePassword(), "Remote Data", "UsePassword", "Prompt for password when connecting");
 
-        TextOperationItem localDirectoryItem = new TextOperationItem(prefSheet, (a, b, c) -> {
-            setLocalDirectory((String) c);
-        }, getLocalDirectory(), "Local Data",
+        TextOperationItem localDirectoryItem = new TextOperationItem(prefSheet,
+                (a, b, c) -> setLocalDirectory((String) c), getLocalDirectory(), "Local Data",
                 "Directory",
                 "Directory on local host that stores data");
 
-        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem(prefSheet, (a, b, c) -> {
-            setLocaResiduelDirectory((String) c);
-        }, getLocalResidueDirectory(), "Structure",
+        DirectoryOperationItem localResidueDirectoryItem = new DirectoryOperationItem(prefSheet,
+                (a, b, c) -> setLocaResiduelDirectory((String) c), getLocalResidueDirectory(), "Structure",
                 "Local Residue Directory",
                 "Directory for custom residues");
 

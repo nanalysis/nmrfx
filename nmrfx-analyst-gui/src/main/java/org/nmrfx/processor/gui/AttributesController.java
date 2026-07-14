@@ -37,8 +37,6 @@ import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 public class AttributesController implements Initializable, NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(AttributesController.class);
     static final DecimalFormat FORMATTER = new DecimalFormat();
-    private static final Background DEFAULT_BACKGROUND = null;
-    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
 
     static {
         FORMATTER.setMaximumFractionDigits(3);

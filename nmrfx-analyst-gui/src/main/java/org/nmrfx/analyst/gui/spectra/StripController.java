@@ -28,7 +28,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
 import javafx.util.Subscription;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -612,7 +611,7 @@ public class StripController implements ControllerTool {
         try {
             Integer.parseInt(field.getText().trim());
             field.setBackground(GUIUtils.getDefaultBackground());
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException _) {
             field.setBackground(GUIUtils.getErrorBackground());
         }
     }
@@ -625,7 +624,7 @@ public class StripController implements ControllerTool {
             nSlider.setValue(n);
             posField.setBackground(GUIUtils.getDefaultBackground());
             updateView(false);
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException _) {
             posField.setBackground(GUIUtils.getErrorBackground());
         }
     }

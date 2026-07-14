@@ -1,20 +1,11 @@
 package org.nmrfx.processor.gui;
 
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import org.nmrfx.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
-import org.nmrfx.processor.gui.project.GUIProject;
 import org.nmrfx.processor.gui.spectra.SliceAttributes;
-import org.nmrfx.utils.GUIUtils;
-
-import static org.nmrfx.processor.datasets.peaks.PeakPickParameters.PickMode.*;
 
 public class PhaserController {
     FXMLController fxmlController;
@@ -29,15 +20,9 @@ public class PhaserController {
         vBox.setSpacing(10);
         phaserPane.setContent(vBox);
         phaser = new Phaser(fxmlController, vBox, Orientation.HORIZONTAL);
-        phaserPane.expandedProperty().addListener((observable, wasExpanded, isNowExpanded) -> {
-            if (isNowExpanded) {
-                updatePhaser(true);
-                // Add your open/expand logic here
-            } else {
-                updatePhaser(false);
-                // Add your close/collapse logic here
-            }
-        });    }
+        phaserPane.expandedProperty().addListener((observable, wasExpanded, isNowExpanded)
+                -> updatePhaser(isNowExpanded));
+    }
 
     public void updatePhaser(boolean showPhaser) {
 
@@ -49,8 +34,8 @@ public class PhaserController {
             }
             phaser.cursor(cursor);
             phaser.getPhaseOp();
-                phaser.setPH1Slider(chart.getDataPH1());
-                phaser.setPH0Slider(chart.getDataPH0());
+            phaser.setPH1Slider(chart.getDataPH1());
+            phaser.setPH0Slider(chart.getDataPH0());
 
 
             if (!chart.is1D()) {
@@ -73,6 +58,4 @@ public class PhaserController {
             chart.getCrossHairs().refresh();
         }
     }
-//        phaserButton.disableProperty().bind(controller.processControllerVisibleProperty());
-
 }
