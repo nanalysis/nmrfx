@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui.molecule3D;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -17,7 +15,6 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.molecule.MoleculeCanvas;
 import org.nmrfx.analyst.gui.plugin.PluginLoader;
 import org.nmrfx.chemistry.*;
@@ -162,16 +159,16 @@ public class MolSceneController implements Initializable, StageBasedController, 
         allButton.getStyleClass().add("toolButton");
         dataButtons.add(allButton);
         Button bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.firstItemButton();
         bButton.setOnAction(this::firstStructure);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.previousItemButton();
         bButton.setOnAction(this::previousStructure);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.nextItemButton();
         bButton.setOnAction(this::nextStructure);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.lastItemButton();
         bButton.setOnAction(this::lastStructure);
         dataButtons.add(bButton);
 

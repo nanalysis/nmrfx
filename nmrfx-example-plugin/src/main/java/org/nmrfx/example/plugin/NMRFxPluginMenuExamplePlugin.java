@@ -8,6 +8,7 @@ import javafx.stage.StageStyle;
 import org.nmrfx.plugin.api.EntryPoint;
 import org.nmrfx.plugin.api.NMRFxPlugin;
 import org.nmrfx.plugin.api.PluginFunction;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.Set;
 import java.util.function.Function;
@@ -66,6 +67,7 @@ public class NMRFxPluginMenuExamplePlugin implements NMRFxPlugin {
         ToolBar toolBar = new ToolBar();
         borderPane.setTop(toolBar);
         toolBar.getItems().add(button);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
     }
 

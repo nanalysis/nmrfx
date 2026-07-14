@@ -23,6 +23,7 @@
  */
 package org.nmrfx.analyst.gui.peaks;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -235,6 +236,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
 
     void initTable() {
         tableView.setEditable(true);
+        tableView.getStyleClass().add(Styles.DENSE);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         updateColumns(0);
         tableView.setOnMouseClicked(e -> {

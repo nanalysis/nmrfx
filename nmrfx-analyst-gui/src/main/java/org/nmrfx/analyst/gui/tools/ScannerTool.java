@@ -17,8 +17,7 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
@@ -28,7 +27,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.TablePlotGUI;
 import org.nmrfx.analyst.gui.peaks.MatrixAnalysisTool;
 import org.nmrfx.datasets.DatasetBase;
@@ -112,8 +110,10 @@ public class ScannerTool implements ControllerTool {
         this.borderPane = borderPane;
         scannerBar = new ToolBar();
         tableView = new TableView<>();
+        tableView.getStyleClass().addAll(Styles.DENSE);
+
         borderPane.setCenter(tableView);
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
         scannerBar.getItems().add(closeButton);
         scannerBar.getItems().add(makeFileMenu());

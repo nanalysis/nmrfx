@@ -23,22 +23,18 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.util.converter.DoubleStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.apache.commons.collections4.iterators.PermutationIterator;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.processor.datasets.AcquisitionType;
 import org.nmrfx.processor.datasets.DatasetType;
@@ -47,6 +43,7 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.bruker.BrukerData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -629,7 +626,7 @@ public class RefManager {
             Insets insets = new Insets(5, 5, 5, 10);
             label.setPadding(insets);
             gridPane.add(label, 1, row);
-            ToggleButton toggleButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.LOCK, "", "12", ContentDisplay.GRAPHIC_ONLY);
+            ToggleButton toggleButton = GUIUtils.toggleButton(Material2AL.LOCK,null);
             gridPane.add(toggleButton, 0, row);
             toggleButton.setSelected(dataProp.locked);
             toggleButton.setOnAction(e -> updateEditable(toggleButton, dataProp, nmrData, nDim));

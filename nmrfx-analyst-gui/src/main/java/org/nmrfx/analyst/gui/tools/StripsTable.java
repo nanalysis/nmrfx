@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.tools;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -63,6 +64,7 @@ public class StripsTable {
         filteredPeaks.predicateProperty().bind(tableView.predicateProperty());
         sortedPeaks = new SortedList<>(filteredPeaks);
         sortedPeaks.comparatorProperty().bind(tableView.comparatorProperty());
+        tableView.getStyleClass().add(Styles.DENSE);
         tableView.setItems(sortedPeaks);
 
         SortedList<StripController.PeakMatchResult> sortTableSortedPeaks = new SortedList<>(sortTablePeaks);

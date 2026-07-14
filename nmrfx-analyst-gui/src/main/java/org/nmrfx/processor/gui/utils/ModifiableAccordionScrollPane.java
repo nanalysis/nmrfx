@@ -1,7 +1,6 @@
 package org.nmrfx.processor.gui.utils;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.event.Event;
@@ -18,11 +17,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.processor.processing.ProcessingOperation;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.processing.ProcessingOperationGroup;
 import org.nmrfx.processor.processing.ProcessingOperationInterface;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.List;
 
@@ -95,6 +95,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
+            getStyleClass().add(Styles.DENSE);
         }
 
         public ModifiableTitlePane(ModifiableAccordionScrollPane accordionScrollPane, ProcessorController processorController, ProcessingOperationGroup processingOperation) {
@@ -176,7 +177,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             checkBox.setOnAction(e -> updateTitle());
             Color fillColor = processingOperation.isDisabled() ? Color.BLUE : Color.GRAY;
             titledPane.setTextFill(fillColor);
-            Text moveIcon = GlyphsDude.createIcon(FontAwesomeIcon.ARROWS_V, "14");
+            Label moveIcon = GUIUtils.createIconLabel(Material2AL.ARROW_UPWARD);
             moveIcon.setOnMouseReleased(Event::consume);
             titleBox.getChildren().addAll(checkBox, moveIcon);
             titledPane.textFillProperty().bind(Bindings.when(checkBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));

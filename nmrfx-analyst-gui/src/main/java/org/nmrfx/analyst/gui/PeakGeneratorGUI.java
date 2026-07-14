@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -21,6 +22,7 @@ import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.rna.RNALabels;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,8 +63,8 @@ public class PeakGeneratorGUI {
         stage = new Stage(StageStyle.DECORATED);
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle("Peak Generator");
         ToolBar toolBar = new ToolBar();
         ToolBar toolBar2 = new ToolBar();
@@ -223,6 +225,8 @@ public class PeakGeneratorGUI {
         distanceSlider.setMajorTickUnit(1.0);
         distanceSlider.setMinorTickCount(9);
         distanceSlider.setMinWidth(250.0);
+        distanceSlider.getStyleClass().addAll(Styles.SMALL);
+
 
     }
 

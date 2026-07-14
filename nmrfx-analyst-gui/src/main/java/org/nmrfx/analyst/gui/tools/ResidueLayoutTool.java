@@ -22,6 +22,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.PPMv;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.*;
 import java.util.Comparator;
@@ -73,6 +74,7 @@ public class ResidueLayoutTool {
             stage = new Stage();
             stage.setResizable(false);
             stage.setTitle("Residue Topology and Standard Shifts");
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             init();
         }

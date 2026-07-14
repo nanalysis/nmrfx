@@ -5,8 +5,6 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -19,7 +17,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.MoleculeBase;
@@ -110,7 +107,8 @@ public class PeakSlider implements ControllerTool {
         vBox.getChildren().add(sliderToolBar);
 
         ArrayList<Button> buttons = new ArrayList<>();
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
+
         closeButton.setOnAction(e -> close());
 
         shiftFreezeButton = new Button("Shift+Freeze");

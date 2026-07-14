@@ -13,6 +13,7 @@ import org.nmrfx.peaks.PeakList;
 import org.nmrfx.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.peaks.PeakPPMGetter;
 import org.nmrfx.project.ProjectBase;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.*;
 
@@ -40,6 +41,7 @@ public class PeakPPMGetterGUI {
             stage.setMinHeight(200);
             BorderPane borderPane = new BorderPane();
             Scene scene = new Scene(borderPane);
+            GUIUtils.applyTheme(scene);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
             stage.setTitle("Peak Generator");

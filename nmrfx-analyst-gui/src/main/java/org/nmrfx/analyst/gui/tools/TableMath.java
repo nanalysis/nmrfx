@@ -206,7 +206,7 @@ public class TableMath {
 
             grid.add(new Label("Result"), 0, iRow);
             grid.add(resultField, 1, iRow);
-
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
 
             Button mathButton = new Button("Evaluate");

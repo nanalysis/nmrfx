@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Orientation;
@@ -178,6 +179,8 @@ public class AnnotationController {
         fontSizeSlider.setMinorTickCount(1);
         fontSizeSlider.setShowTickMarks(true);
         fontSizeSlider.setShowTickLabels(true);
+        fontSizeSlider.getStyleClass().addAll(Styles.SMALL);
+
         fontSizeSlider.setDisable(true);
 
         lineWidthSlider.valueProperty().addListener(e -> updateLineWidth());
@@ -188,6 +191,8 @@ public class AnnotationController {
         lineWidthSlider.setShowTickMarks(true);
         lineWidthSlider.setShowTickLabels(true);
         lineWidthSlider.setDisable(true);
+        lineWidthSlider.getStyleClass().addAll(Styles.SMALL);
+
     }
 
     public PolyChart getChart() {

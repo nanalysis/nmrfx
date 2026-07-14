@@ -2,6 +2,7 @@ package org.nmrfx.processor.gui.spectra.mousehandlers;
 
 import javafx.geometry.Orientation;
 import javafx.scene.input.MouseEvent;
+import org.nmrfx.processor.gui.CanvasCursor;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
 
@@ -58,7 +59,7 @@ public class CrossHairMouseHandler extends MouseHandler {
         selectedVerticalIndex = -1;
 
         PolyChart chart = mouseBindings.getChart();
-        if (!chart.getCanvasCursor().toString().equals("CROSSHAIR")) {
+        if (!CanvasCursor.isCrosshair(chart.getCanvasCursor())) {
             chart.getCrossHairs().setAllStates(false);
         }
     }

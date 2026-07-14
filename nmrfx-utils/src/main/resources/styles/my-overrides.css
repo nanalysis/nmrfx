@@ -1,0 +1,40 @@
+.root {
+    -fx-background-color: -color-bg-default;
+    -fx-control-inner-background: -color-bg-default;
+    -fx-text-box-border:          -color-border-default;
+    -fx-text-inner-color:         -color-fg-default;
+    -fx-accent:                   -color-accent-emphasis;
+    -fx-focus-color:              -color-accent-emphasis;
+    -fx-faint-focus-color:        -color-accent-muted;
+
+    -fx-inner-border:             -color-border-muted;
+    -fx-body-color:               -color-bg-default;
+    -fx-color:                    -color-bg-default;
+    -fx-hover-base:                -color-base-2;
+    -fx-pressed-base:             -color-base-3;
+    -fx-shadow-highlight-color:   -color-bg-subtle;
+    -fx-text-background-color:    -color-fg-default;
+}
+
+/* 
+ * 1. Override the surrounding scroll pane background warning 
+ */
+.property-sheet .scroll-pane {
+    -fx-background-color: -color-bg-default !important;
+}
+
+/* 
+ * 2. Keep the inner property pane background in sync
+ */
+.property-sheet .scroll-pane .property-pane {
+    -fx-background-color: -color-bg-default !important;
+}
+
+/* 
+ * 3. Clean up the default scroll-pane viewport background 
+ *    to prevent any odd light/dark flashing during theme shifts
+ */
+.property-sheet .scroll-pane > .viewport {
+    -fx-background-color: transparent !important;
+}
+

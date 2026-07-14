@@ -28,6 +28,7 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +65,7 @@ public class GitConflictController implements Initializable {
 
         try {
             Scene scene = new Scene(loader.load());
+            GUIUtils.applyTheme(scene);
             stage.setScene(scene);
 
             controller = loader.getController();
