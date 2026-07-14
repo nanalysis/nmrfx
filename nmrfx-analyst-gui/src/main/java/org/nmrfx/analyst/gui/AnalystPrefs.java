@@ -10,7 +10,10 @@ import atlantafx.base.theme.CupertinoLight;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
+import javafx.application.ColorScheme;
+import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.scene.paint.Color;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.chemistry.io.PDBFile;
 import org.nmrfx.processor.gui.PreferencesController;
@@ -45,6 +48,7 @@ public class AnalystPrefs {
     private static StringProperty localDirectory = null;
     private static StringProperty localResidueDirectory = null;
     private static StringProperty gissmoFileProp = null;
+    private static Color backGround = Color.WHITE;
 
     public enum LightDarkModes {
         LIGHT,
@@ -58,17 +62,39 @@ public class AnalystPrefs {
 
     public static void setTheme() {
         String name = getTheme();
-        if (getLightDarkMode() == LightDarkModes.LIGHT) {
+
+        LightDarkModes lightDarkMode = getLightDarkMode();
+        if (lightDarkMode == LightDarkModes.AUTO) {
+            Platform.Preferences preferences = Platform.getPreferences();
+            ColorScheme colorScheme = preferences.getColorScheme();
+            lightDarkMode = colorScheme == ColorScheme.LIGHT ? LightDarkModes.LIGHT : LightDarkModes.DARK;
+        }
+
+        if (lightDarkMode == LightDarkModes.LIGHT) {
+            backGround = Color.WHITE;
             switch (name) {
                 case "Primer" -> Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
                 case "Cupertino" -> Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
             }
         } else {
+            backGround = Color.BLACK;
             switch (name) {
                 case "Primer" -> Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
                 case "Cupertino" -> Application.setUserAgentStylesheet(new CupertinoDark().getUserAgentStylesheet());
             }
         }
+    }
+
+    public static Color getBackground() {
+        return backGround;
+    }
+
+    public static Color getPosColor() {
+        return backGround == Color.BLACK ? Color.WHITE : Color.BLACK;
+    }
+
+    public static Color getNegColor() {
+        return backGround == Color.BLACK ? Color.RED : Color.RED;
     }
 
     public static void setTheme(String name) {
