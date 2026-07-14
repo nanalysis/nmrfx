@@ -15,3 +15,26 @@
     -fx-shadow-highlight-color:   -color-bg-subtle;
     -fx-text-background-color:    -color-fg-default;
 }
+
+/* 
+ * 1. Override the surrounding scroll pane background warning 
+ */
+.property-sheet .scroll-pane {
+    -fx-background-color: -color-bg-default !important;
+}
+
+/* 
+ * 2. Keep the inner property pane background in sync
+ */
+.property-sheet .scroll-pane .property-pane {
+    -fx-background-color: -color-bg-default !important;
+}
+
+/* 
+ * 3. Clean up the default scroll-pane viewport background 
+ *    to prevent any odd light/dark flashing during theme shifts
+ */
+.property-sheet .scroll-pane > .viewport {
+    -fx-background-color: transparent !important;
+}
+
