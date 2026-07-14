@@ -1024,7 +1024,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         boolean firstStage = AnalystApp.getFXMLControllerManager().getControllers().size() == 1;
         var bounds = Screen.getPrimary().getBounds();
         double scale = 0.8;
-        double width = bounds.getWidth() - 500.0;  // allow for expanded right pane
+        double width = bounds.getWidth() - 500.0; // allow for expanded right pane
+        width = Math.min(width, 1500);
         double height = bounds.getHeight() * scale;
         double xPos = 20.0;
         double yPos = 50.0;
