@@ -49,65 +49,8 @@
             <artifactId>org.eclipse.jgit</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-        </dependency>
-        <dependency>
             <groupId>de.jangassen</groupId>
             <artifactId>nsmenufx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <classifier>mac</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <classifier>win</classifier>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -273,29 +216,26 @@
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>3.0.0</version>
             </plugin>
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-dependency-plugin</artifactId>
-    <executions>
-        <execution>
-            <id>copy-dependencies</id>
-            <phase>prepare-package</phase>
-            <goals>
-                <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-                <outputDirectory>target/classpath-jars</outputDirectory>
-                <includeScope>runtime</includeScope>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+                            <excludeClassifiers>ios-arm64,ios-x86_64,android-arm64,android-arm,android-x86,android-x86_64,windows-x86,linux-x86,linux-ppc64le,linux-arm64,linux-armhf</excludeClassifiers>
+                            <excludeArtifactIds>*ios-x86_64*,*android*,*ios-arm64*</excludeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-                <!-- Exclude JavaFX because we'll get that from JMODs if we need to. -->
-                <excludeGroupIds>org.openjfx</excludeGroupIds>
-
-                <!-- Exclude anything else here where the artifacts are machine specific. We'll add them back later. -->
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
         </plugins>
     </build>
-
 </project>
