@@ -17,10 +17,6 @@
  */
 package org.nmrfx.analyst.gui;
 
-import atlantafx.base.theme.CupertinoDark;
-import atlantafx.base.theme.CupertinoLight;
-import atlantafx.base.theme.PrimerDark;
-import atlantafx.base.theme.PrimerLight;
 import de.jangassen.MenuToolkit;
 import de.jangassen.dialogs.about.AboutStageBuilder;
 import javafx.application.Application;
@@ -102,7 +98,12 @@ public class AnalystApp extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+
+        AnalystPrefs.setTheme();
+
+        Platform.Preferences preferences = Platform.getPreferences();
+        preferences.colorSchemeProperty().addListener((observable, oldScheme, newScheme) -> AnalystPrefs.setTheme());
+
         Log.setupMemoryAppender();
 
         //necessary to avoid "," as a decimal separator in output files or python scripts
@@ -374,6 +375,7 @@ public class AnalystApp extends Application {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
+                    log.warn("Git commit ", ex);
                     break;
                 }
                 iTry++;

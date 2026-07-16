@@ -89,3 +89,12 @@
     -fx-padding: 0 0.25em 0 0.25em;   /* was 0.5em */
     -fx-graphic-text-gap: 2;          /* was default 4 */
 }
+
+.property-sheet .property-pane > .label {
+    -fx-min-width: 60px;
+    -fx-pref-width: 60px;
+}
+
+.property-sheet .property-pane {
+    -fx-padding: 5 5 5 5;   /* shrink just the left inset */
+}

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.utils;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.*;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -266,6 +267,7 @@ public class ColorSchemes {
             reverseBox.setOnAction(e -> updateColors(gridWidth, selectedColorClass.get()));
             slider.setShowTickMarks(true);
             slider.setShowTickLabels(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
             slider.setBlockIncrement(5);
             slider.setPrefWidth(gridWidth);
             slider.lowValueProperty().addListener(e -> updateColors(gridWidth, selectedColorClass.get()));

@@ -23,6 +23,7 @@
  */
 package org.nmrfx.utils.properties;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -213,8 +214,8 @@ public class ZoomSlider extends GridPane {
         if (zoomable) {
             downButton = new Button("-");
             upButton = new Button("+");
-            upButton.getStyleClass().add("toolButton");
-            downButton.getStyleClass().add("toolButton");
+            upButton.getStyleClass().add(Styles.SMALL);
+            downButton.getStyleClass().add(Styles.SMALL);
         }
 
         textField.setFont(new Font(11));

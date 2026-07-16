@@ -58,7 +58,7 @@ public class GUIUtils {
         NO,
         CANCEL,
         DELETE,
-        APPEND;
+        APPEND
     }
 
     static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.YELLOW, null, null));
@@ -486,9 +486,7 @@ public class GUIUtils {
         if (applyValue != null) {
             slider.valueProperty().addListener((a, b, c) -> applyValue.accept(c.doubleValue()));
         }
-        slider.valueProperty().addListener((a, b, c) -> {
-            valueLabel.setText(String.format(format, c));
-        });
+        slider.valueProperty().addListener((a, b, c) -> valueLabel.setText(String.format(format, c)));
 
         HBox content = new HBox();
         content.setAlignment(Pos.CENTER_LEFT);
@@ -549,7 +547,6 @@ public class GUIUtils {
         if (text == null) {
             button = new Button();
         } else {
-         //   button = new Button(text);
             button = new Button();
             Tooltip tooltip = new Tooltip();
             tooltip.setText(text);
@@ -560,7 +557,6 @@ public class GUIUtils {
         fontIcon.setIconSize(16);
         button.setContentDisplay(contentDisplay);
         button.setGraphic(fontIcon);
-       // button.setGraphicTextGap(2);
         button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
         button.setStyle("-fx-padding: 2 6 2 6;");
         button.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
@@ -570,7 +566,11 @@ public class GUIUtils {
 
 
     public static ToggleButton toggleButton(Ikon icon, String text) {
-        return toggleButton(icon, text, ContentDisplay.TOP);
+        ToggleButton button =  toggleButton(icon, text, ContentDisplay.TOP);
+        button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
+        button.setStyle("-fx-padding: 2 6 2 6;");
+        button.setMinSize(Button.USE_PREF_SIZE, Button.USE_PREF_SIZE);
+        return button;
     }
 
     public static ToggleButton toggleButton(Ikon icon, String text, ContentDisplay contentDisplay) {
@@ -612,7 +612,7 @@ public class GUIUtils {
         ObservableList<Screen> screens = Screen.getScreensForRectangle(x, y, 1.0, 1.0);
 
         if (!screens.isEmpty()) {
-            return screens.get(0);
+            return screens.getFirst();
         } else {
             return null;
         }

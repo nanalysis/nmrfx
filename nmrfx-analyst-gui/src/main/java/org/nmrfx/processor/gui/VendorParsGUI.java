@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -66,6 +67,7 @@ public class VendorParsGUI {
         valueCol.setCellValueFactory(new PropertyValueFactory<>("Value"));
         valueCol.setEditable(false);
         valueCol.setPrefWidth(260);
+        fidParTableView.getStyleClass().add(Styles.DENSE);
         fidParTableView.getColumns().setAll(nameCol, valueCol);
 
     }

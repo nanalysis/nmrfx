@@ -364,6 +364,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             MenuButton menuButton = new MenuButton("");
             menuButton.setGraphic(GUIUtils.createIconLabel(Material2AL.ADD));
             menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            menuButton.getStyleClass().add(Styles.SMALL);
+            menuButton.setMinHeight(20);
+            menuButton.setMaxHeight(20);
             if (name.equals("FULL DATASET")) {
                 menuButton.getItems().addAll(getMenuItemsForDataset());
             } else if (name.startsWith("POLISHING")) {
@@ -387,6 +390,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         addTitleBar(titledPane, title, true);
         ModifiableAccordionScrollPane accordion1 = new ModifiableAccordionScrollPane();
         titledPane.setContent(accordion1);
+        titledPane.setPadding(new Insets(5,5,5,5));
         dimensionPanes.put(section, titledPane);
         dimAccordion.getPanes().add(titledPane);
         return titledPane;
@@ -786,9 +790,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     makeRegionButtons(opPropertySheet, hBox, processingOperation);
                 }
                 vBox.getChildren().addAll(hBox, opPropertySheet);
+                VBox.setVgrow(opPropertySheet, Priority.ALWAYS);
                 titledPane.getProperties().put("PropSheet", opPropertySheet);
                 opPropertySheet.getProperties().put("Op", processingOperation);
+                opPropertySheet.setPadding(new Insets(5,5,5,5));
             }
+
             titledPane.setContent(vBox);
             updateTitledPane(titledPane, processingOperation);
             opAccordion.add(titledPane);

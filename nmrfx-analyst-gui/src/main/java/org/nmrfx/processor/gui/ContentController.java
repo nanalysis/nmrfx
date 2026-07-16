@@ -4,10 +4,8 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Accordion;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TitledPane;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.util.Subscription;
@@ -72,6 +70,27 @@ public class ContentController implements NmrControlRightSideContent {
         peakSub = GUIProject.getActive().addPeakListSubscription(this::update);
         peakTitledPane.expandedProperty().addListener(e -> update());
         datasetTitledPane.expandedProperty().addListener(e -> update());
+
+        datasetSelectionView.skinProperty().addListener((obs, oldSkin, newSkin) -> {
+            if (newSkin != null) {
+                Node centerContent = newSkin.getNode();
+                if (centerContent != null) {
+                    centerContent.lookupAll(".button").forEach(node -> {
+                        if (node instanceof Button btn) {
+                            btn.getStyleClass().setAll("button", "button-outlined");
+                            Node glyphNode = btn.getGraphic();
+
+                            // ControlsFX Glyphs act as Labeled text nodes under the hood
+                            if (glyphNode instanceof javafx.scene.control.Labeled glyphLabel) {
+                                glyphLabel.setStyle("");
+                                glyphLabel.textFillProperty().bind(btn.textFillProperty());
+                            }
+                        }
+                    });
+                }
+            }
+        });
+
     }
 
     public void close() {

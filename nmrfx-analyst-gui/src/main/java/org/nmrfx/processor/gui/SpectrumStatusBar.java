@@ -34,9 +34,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import org.controlsfx.control.SegmentedButton;
 import org.controlsfx.dialog.ExceptionDialog;
-import org.kordamp.ikonli.material2.Material2MZ;
 import org.nmrfx.analyst.gui.tools.SliderLayout;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
@@ -62,9 +60,6 @@ public class SpectrumStatusBar {
     private static final int MAX_SPINNERS = 4;
     public static final String[] DIM_NAMES = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     private static final String[] ROW_NAMES = {"X", "Row", "Plane", "A", "B", "C", "D", "E"};
-    private static final Background DEFAULT_BACKGROUND = null;
-    private static final Background ERROR_BACKGROUND = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
-
     private final FXMLController controller;
 
     // cursor, measure spinners, etc
@@ -78,8 +73,6 @@ public class SpectrumStatusBar {
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
     private final ChoiceBox<CanvasCursor> cursorChoice = new ChoiceBox();
     private final ToggleButton tableButton = new RadioButton("Table");
-   // private final ToggleButton tableButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.TABLE, "Table",
-     //       AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.LEFT);
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
@@ -87,12 +80,9 @@ public class SpectrumStatusBar {
     private final List<ButtonBase> specialButtons = new ArrayList<>();
     List<Control> extractControls = new ArrayList<>();
 
-
-    private boolean arrayMode = false;
     private DataMode currentMode = DataMode.FID;
     private int currentModeDimensions = 0;
 
-    private Cursor preSliceCursor = null;
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
     }
@@ -405,7 +395,7 @@ public class SpectrumStatusBar {
             newChart.getDisDimProperty().removeListener(displayedDimensionsListener);
             newChart.getDisDimProperty().addListener(displayedDimensionsListener);
             if (!newChart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = newChart.getDatasetAttributes().get(0);
+                DatasetAttributes dataAttr = newChart.getDatasetAttributes().getFirst();
                 for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
                     Axis axis = newChart.getAxes().get(axNum);
                     int indexL = newChart.getAxes().getMode(axNum).getIndex(dataAttr, axNum, axis.getLowerBound());
@@ -421,7 +411,7 @@ public class SpectrumStatusBar {
         PolyChart chart = controller.getActiveChart();
         Optional<DatasetAttributes> result;
         if (!chart.getDatasetAttributes().isEmpty()) {
-            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+            DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
             result = Optional.of(dataAttr);
         } else {
             result = Optional.empty();
@@ -447,14 +437,12 @@ public class SpectrumStatusBar {
     }
 
     public void set1DArray(int nDim, int nRows) {
-        arrayMode = true;
        // setPlaneRanges(2, nRows);
         updatePrimaryToolbarFor1DArray(nDim);
         updateSecondaryToolbarFor1DArray();
     }
 
     private void updatePrimaryToolbarFor1DArray(int nDim) {
-        System.out.println("update primary");
         List<Node> nodes = new ArrayList<>();
         nodes.add(tableButton);
         if (isStacked()) {
@@ -503,10 +491,8 @@ public class SpectrumStatusBar {
     public void setMode(DataMode mode, int dimensions) {
         currentMode = mode;
         currentModeDimensions = dimensions;
-        arrayMode = false;
         setupPrimaryToolbarForSelectedMode();
         setupSecondaryToolbarForSelectedMode();
-      //  setPlaneRanges();
     }
 
     private void setupPrimaryToolbarForSelectedMode() {
@@ -521,10 +507,6 @@ public class SpectrumStatusBar {
         nodes.add(new Label("Cursor:"));
         nodes.add(cursorChoice);
 
-        //first dimension cross-hair
-        if (currentMode == DataMode.DATASET_2D || currentMode == DataMode.DATASET_ND_PLUS) {
-            //nodes.add(dimMenus[0]);
-        }
         nodes.add(new Label("X:"));
         nodes.add(crossText[0][1]);
         nodes.add(crossText[1][1]);
