@@ -15,9 +15,9 @@ public class PythonSyntaxDecorator implements SyntaxDecorator {
     private static final String COMMENT_PATTERN = "#[^\n]*";
     private static final String STRING_PATTERN = "\"([^\"\\\\]|\\\\.)*\"|'([^'\\\\]|\\\\.)*'";
     private static final String NUMBER_PATTERN = "\\b\\d+(\\.\\d+)?\\b";
-    private static final String DECORATOR_PATTERN = "@[a-zA-Z_][a-zA-Z0-9_]*";
+    private static final String DECORATOR_PATTERN = "@[a-zA-Z_]\\w*";
     // Matches any word followed by '(' but doesn't style the parenthesis itself
-    private static final String METHOD_PATTERN = "[a-zA-Z_][a-zA-Z0-9_]*(?=\\s*\\()";
+    private static final String METHOD_PATTERN = "[a-zA-Z_]\\w*(?=\\s*\\()";
 
 
     private static final Pattern PYTHON_PATTERN = Pattern.compile(
@@ -78,5 +78,6 @@ public class PythonSyntaxDecorator implements SyntaxDecorator {
 
     @Override
     public void handleChange(CodeTextModel m, TextPos start, TextPos end, int charsTop, int linesAdded, int charsBottom) {
+        // no need to handle this as syntax can be determined from a single paragraph
     }
 }

@@ -3,7 +3,6 @@ package org.nmrfx.processor.gui;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.utils.GUIUtils;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.model.CodeTextModel;
