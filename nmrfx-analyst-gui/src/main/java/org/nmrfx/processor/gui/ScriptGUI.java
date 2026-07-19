@@ -3,16 +3,18 @@ package org.nmrfx.processor.gui;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import org.fxmisc.richtext.CodeArea;
-import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.utils.GUIUtils;
+import jfx.incubator.scene.control.richtext.CodeArea;
+import jfx.incubator.scene.control.richtext.model.CodeTextModel;
+
 
 public class ScriptGUI {
     Stage stage = null;
     BorderPane borderPane = new BorderPane();
     Scene stageScene = new Scene(borderPane, 500, 500);
-    CodeArea textArea = new CodeArea();
-    ProcessingCodeAreaUtil codeAreaUtil;
+
+    CodeTextModel model = new CodeTextModel();
+    CodeArea codeArea = new CodeArea(model);
 
     void showStage() {
         //Create new Stage for popup window
@@ -20,23 +22,24 @@ public class ScriptGUI {
             stage = new Stage();
             stage.setTitle("Processing Script");
             stage.setWidth(500);
+            stageScene.getStylesheets().add(ScriptGUI.class.getResource("/styles/python.css").toExternalForm());
+
             GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
-            borderPane.setCenter(textArea);
-            codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
-            textArea.setEditable(false);
-            textArea.setWrapText(true);
-
+            borderPane.setCenter(codeArea);
+            codeArea.setSyntaxDecorator(new PythonSyntaxDecorator());
+            codeArea.setEditable(false);
+            codeArea.setWrapText(true);
         }
         stage.show();
         stage.toFront();
     }
 
     public void replaceText(String text) {
-        textArea.replaceText(text);
+        codeArea.setText(text);
     }
 
     public String getText() {
-        return textArea.getText();
+        return codeArea.getText();
     }
 }

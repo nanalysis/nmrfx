@@ -1,0 +1,48 @@
+/* Base container style for a clean light background */
+.code-area {
+    -fx-background-color: #ffffff;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+/* Default unstyled code text */
+.py-default {
+    -fx-fill: #24292e; /* Dark charcoal/almost black */
+}
+
+/* Python Keywords (def, class, if, return) */
+.py-keyword {
+    -fx-fill: #d73a49; /* Deep red/crimson */
+    -fx-font-weight: bold;
+}
+
+/* Python Builtins (print, len, range) */
+.py-builtin {
+    -fx-fill: #6f42c1; /* Deep royal purple */
+}
+
+/* Inline Comments (# comment) */
+.py-comment {
+    -fx-fill: #6a737d; /* Soft slate gray */
+    -fx-font-style: italic;
+}
+
+/* String Literals ("string" or 'string') */
+.py-string {
+    -fx-fill: #032f62; /* Midnight blue */
+}
+
+/* Numeric Literals (numbers, floats) */
+.py-number {
+    -fx-fill: #005cc5; /* Vibrant ocean blue */
+}
+
+/* Decorators (@classmethod) */
+.py-decorator {
+    -fx-fill: #e36209; /* Warm burnt orange */
+}
+
+.py-method {
+    -fx-fill: #005cc5; /* Bold blue */
+    -fx-font-weight: bold; /* Optional: makes declarations stand out */
+}

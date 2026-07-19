@@ -1915,5 +1915,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     public void showScriptGUI() {
         scriptGUI.showStage();
+        updateScriptDisplay();
     }
 }
