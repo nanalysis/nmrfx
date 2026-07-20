@@ -35,7 +35,6 @@ public class ToolController implements NmrControlRightSideContent {
     FXMLController fxmlController;
     PhaserController phaserController;
     AnnotationController annotationController;
-    ChemicalLibraryController libraryController;
 
     PeakPickController peakPickController;
     @FXML
@@ -54,9 +53,6 @@ public class ToolController implements NmrControlRightSideContent {
 
         controller.peakPickController = new PeakPickController();
         controller.peakPickController.setup(fxmlController,controller.peakPickPane);
-
-        controller.libraryController = new ChemicalLibraryController();
-        controller.libraryController.setup(fxmlController, controller.libraryPane);
 
         controller.setChart(fxmlController.getActiveChart());
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.RIGHT_TOOLS, controller);
@@ -85,8 +81,4 @@ public class ToolController implements NmrControlRightSideContent {
     public AnnotationController getAnnotationController(){
         return annotationController;
     }
-    public ChemicalLibraryController getLibraryController(){
-        return libraryController;
-    }
-
 }

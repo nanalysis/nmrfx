@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui.tools;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -167,6 +168,7 @@ public class CompoundTable {
         scaleLabel.setPrefWidth(60);
 
         Slider scaleSlider = new Slider(0.1, 20.0, 1.0);
+        scaleSlider.getStyleClass().add(Styles.SMALL);
         TextField scaleField = GUIUtils.getDoubleTextField(scaleProperty, 2);
         scaleField.setPrefWidth(50);
         GUIUtils.bindSliderField(scaleSlider, scaleField, "#.##");
@@ -180,6 +182,8 @@ public class CompoundTable {
         hBoxScale.getChildren().addAll(scaleLabel, scaleSlider, scaleField);
 
         Slider offsetSlider = new Slider(0.0, 1.0, 0.01);
+        offsetSlider.getStyleClass().add(Styles.SMALL);
+
         TextField offsetField = GUIUtils.getDoubleTextField(offsetProperty, 2);
         GUIUtils.bindSliderField(offsetSlider, offsetField, "#.##");
         offsetProperty.set(0.01);
