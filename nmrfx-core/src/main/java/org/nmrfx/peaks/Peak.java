@@ -143,7 +143,6 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
-
     public PeakDim[] peakDims;
     protected float figureOfMerit = 1.0f;
     protected boolean valid = true;

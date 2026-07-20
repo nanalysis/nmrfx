@@ -601,8 +601,18 @@ public class PeakFitter {
                 }
                 double amp = signal.getAmplitude();
                 double volume = nComp * amp * sigWidthPPM * (Math.PI / 2.0) / 1.05;
+                Coupling coupling = multiplet.getCoupling();
                 multiplet.getOrigin().setVolume1((float) volume);
-                multiplet.set(centerPPM, couplings, amp, sin2Thetas);
+                if (coupling instanceof CouplingPattern couplingPattern) {
+                    int[] blocks = couplingPattern.getBlocks();
+                    int[] indices = couplingPattern.getIndices();
+                    multiplet.set(centerPPM, couplings, amp, sin2Thetas, blocks, indices);
+                    for (int i = 0; i < blocks.length; i++) {
+                        couplingPattern.updateCouplings(i);
+                    }
+                } else {
+                    multiplet.set(centerPPM, couplings, amp, sin2Thetas);
+                }
                 peaks[iPeak].peakDims[0].setLineWidthValue((float) sigWidthPPM);
                 peaks[iPeak].peakDims[0].setBoundsValue((float) sigWidthPPM * 3);
             }

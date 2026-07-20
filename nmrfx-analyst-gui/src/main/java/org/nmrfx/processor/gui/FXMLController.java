@@ -2082,6 +2082,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         scannerTool.showMenus();
     }
 
+    public void showCompoundTool() {
+        showScannerTool();
+        scannerTool.showMenus();
+        scannerTool.showCompoundTable();
+    }
+
     public void hideScannerMenus() {
         if (scannerTool != null) {
             scannerTool.hideMenus();
@@ -2104,17 +2110,17 @@ public class FXMLController implements Initializable, StageBasedController, Publ
     }
 
     public void showScannerTool() {
-        BorderPane vBox;
+        TabPane tabPane;
         if (scannerTool != null) {
-            vBox = scannerTool.getBox();
+            tabPane = scannerTool.getBox();
         } else {
-            vBox = new BorderPane();
+            tabPane = new TabPane();
             scannerTool = new ScannerTool(this);
-            scannerTool.initialize(vBox);
+            scannerTool.initialize(tabPane);
         }
-        if (!getBottomBox().getChildren().contains(vBox)) {
+        if (!getBottomBox().getChildren().contains(tabPane)) {
             splitPane.setDividerPosition(0, scannerTool.getSplitPanePosition());
-            getBottomBox().getChildren().add(vBox);
+            getBottomBox().getChildren().add(tabPane);
             addTool(scannerTool);
         }
     }

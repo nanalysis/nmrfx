@@ -1,6 +1,7 @@
 package org.nmrfx.math;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.datasets.DatasetLayout;
@@ -3196,6 +3197,23 @@ public class VecBase extends PySequence implements MatrixType, DatasetStorageInt
         }
 
         return new IndexValue(iMin, minValue);
+    }
+
+    public double medianPeakIntensity(int window, double threshold) {
+        DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics();
+        int nWindows = size / window;
+        for (int i = 0; i < nWindows; i++) {
+            double max = 0.0;
+            for (int j = 0; j < window; j++) {
+                double v = Math.abs(getReal(i * window + j));
+                max = Math.max(v, max);
+            }
+            if (max > threshold) {
+                descriptiveStatistics.addValue(max);
+            }
+
+        }
+        return descriptiveStatistics.getPercentile(50);
     }
 
     @Override

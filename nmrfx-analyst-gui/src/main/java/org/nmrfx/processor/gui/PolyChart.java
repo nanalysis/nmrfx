@@ -830,7 +830,7 @@ public class PolyChart extends Region {
 
         Optional<ScanTable> scanTableOpt = getFXMLController().getScannerTable();
         if (scanTableOpt.isPresent()) {
-            updateThese = scanTableOpt.get().getSelectedDatasetAttributesList();
+            updateThese = scanTableOpt.get().getSelectedDatasetAttributesList().stream().filter(datasetAttributes -> !datasetAttributes.isSim()).toList();
             if (updateThese.isEmpty()) {
                 updateThese = datasetAttributesList;
             }
@@ -1517,6 +1517,18 @@ public class PolyChart extends Region {
         datasetAttributesList.clear();
         peakListAttributesList.clear();
         refresh();
+    }
+    public void clearPeaks() {
+        peakListAttributesList.clear();
+        refresh();
+    }
+
+    public void clearSimDatasets() {
+        var simData = datasetAttributesList.stream().filter(d -> d.getDataset().getName().startsWith("SIM")).toList();
+        simData.forEach(d -> {
+            datasetAttributesList.remove(d);
+        });
+        peakListAttributesList.clear();
     }
 
     public void updateDatasetsByNames(List<String> targets) {
@@ -2247,6 +2259,23 @@ public class PolyChart extends Region {
         return finished;
     }
 
+    Optional<DatasetAttributes> getFirst1D() {
+        List<DatasetAttributes> compatibleAttributes = new ArrayList<>(datasetAttributesList);
+        removeIncompatibleDatasetAttributes(compatibleAttributes);
+        int n1D = 0;
+        if (disDimProp.get() != DISDIM.TwoD) {
+            n1D = compatibleAttributes.stream().filter(d -> !d.isProjection() && d.getPos())
+                    .mapToInt(d -> d.getLastChunk(0) + 1).sum();
+        }
+        int i1D = 0;
+        var firstOpt = compatibleAttributes.stream()
+                .filter(d -> d.getDataset() != null)
+                .filter(d -> d.getDataset().getSizeReal(0) > 0)
+                .filter(d -> !d.isProjection())
+                .filter(d -> d.getPos()).findFirst();
+        return firstOpt;
+    }
+
     void drawDatasetsTrace(GraphicsContextInterface gC) {
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
@@ -2277,6 +2306,7 @@ public class PolyChart extends Region {
             firstLvl = firstAttr.getLvl();
             firstOffset = firstAttr.getOffset();
             updateAxisType(false);
+            getAxes().setYAxisByLevel(firstAttr);
             if (chartProps.getRegions()) {
                 try {
                     drawRegions(firstAttr, gC);

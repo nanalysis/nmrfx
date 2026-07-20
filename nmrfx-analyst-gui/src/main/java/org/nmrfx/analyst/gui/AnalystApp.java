@@ -421,6 +421,10 @@ public class AnalystApp extends Application {
         statusBar.addToToolMenu(scannerToolItem);
         scannerToolItem.setOnAction(e -> showScannerTool());
 
+        MenuItem compoundToolItem = new MenuItem("Show Compounds");
+        statusBar.addToToolMenu(compoundToolItem);
+        compoundToolItem.setOnAction(e -> controller.showCompoundTool());
+
         Menu proteinMenu = new Menu("Protein Tools");
         statusBar.addToToolMenu(proteinMenu);
 

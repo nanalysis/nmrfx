@@ -20,9 +20,9 @@ package org.nmrfx.analyst.gui.tools;
 import atlantafx.base.theme.Styles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -37,10 +37,7 @@ import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
 import org.nmrfx.processor.datasets.peaks.*;
-import org.nmrfx.processor.gui.ChartProcessor;
-import org.nmrfx.processor.gui.ControllerTool;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.*;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -80,6 +77,7 @@ public class ScannerTool implements ControllerTool {
 
     ToolBar scannerBar;
     private TableView<FileTableItem> tableView;
+    TabPane tableTabPane;
     Consumer<ScannerTool> closeAction;
     double splitPanePosition = 0.8;
 
@@ -87,6 +85,7 @@ public class ScannerTool implements ControllerTool {
     PolyChart chart;
     Stage stage;
     ScanTable scanTable;
+    CompoundTable compoundTable = null;
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
@@ -100,21 +99,34 @@ public class ScannerTool implements ControllerTool {
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE][NR])?$");
     static final Pattern[] PATS = {WPAT, RPAT};
+    ScannerLoader scannerLoader;
 
     public ScannerTool(FXMLController controller) {
         this.controller = controller;
         chart = controller.getActiveChart();
     }
 
-    public void initialize(BorderPane borderPane) {
-        this.borderPane = borderPane;
+    public void initialize(TabPane tabPane) {
+        this.borderPane = new BorderPane();
         scannerBar = new ToolBar();
         tableView = new TableView<>();
-        tableView.getStyleClass().addAll(Styles.DENSE);
-
+        tableTabPane = tabPane;
+        tableTabPane.setSide(Side.LEFT);
+        Tab tableTab = new Tab("Datasets");
+        tableTab.setClosable(false);
+        tableTab.setContent(borderPane);
         borderPane.setCenter(tableView);
+        tableTabPane.getTabs().add(tableTab);
+        tableView.getStyleClass().addAll(Styles.DENSE);
         Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
+
+        Button reloadButton = new Button("Reload");
+        reloadButton.setOnAction(e -> loadFromDataset());
+
+        Label label = new Label("Sel. Mode:");
+
+        scannerBar.getItems().addAll(reloadButton, label, tableSelectionChoice);
         scannerBar.getItems().add(closeButton);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
@@ -123,17 +135,29 @@ public class ScannerTool implements ControllerTool {
         scannerBar.getItems().add(makeMatrixAnalysisMenu());
         scannerBar.getItems().add(makeToolMenu());
         miner = new MinerController(this);
-        Button reloadButton = new Button("Reload");
-        reloadButton.setOnAction(e -> loadFromDataset());
+
+
         scanTable = new ScanTable(this, tableView);
+        scannerLoader = new ScannerLoader(scanTable);
+
         tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
         tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
         tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
-        VBox vBox = new VBox();
-        Label label = new Label("Sel. Mode:");
-        vBox.getChildren().addAll(reloadButton, label, tableSelectionChoice);
-        borderPane.setLeft(vBox);
         loadFromDataset();
+    }
+
+    public void showCompoundTable() {
+        if (compoundTable == null) {
+            compoundTable = new CompoundTable(this, tableTabPane);
+            double height = controller.getStage().getHeight();
+            double currentSpace = height * (1.0 - getSplitPanePosition());
+            double minSize = 200;
+            if (currentSpace < minSize) {
+                double f = 1.0 - (minSize / height);
+                controller.setSplitPaneDivider(f);
+            }
+        }
+        compoundTable.showCompoundTab();
     }
 
     public TableSelectionMode tableSelectionMode() {
@@ -157,8 +181,8 @@ public class ScannerTool implements ControllerTool {
         closeAction.accept(this);
     }
 
-    public BorderPane getBox() {
-        return borderPane;
+    public TabPane getBox() {
+        return tableTabPane;
     }
 
     public void setSplitPanePosition(double value) {
@@ -168,6 +192,7 @@ public class ScannerTool implements ControllerTool {
     public double getSplitPanePosition() {
         return splitPanePosition;
     }
+
 
     private MenuButton makeFileMenu() {
         MenuButton menu = new MenuButton("File");
@@ -290,28 +315,28 @@ public class ScannerTool implements ControllerTool {
 
     private void processScanDirAndCombine() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
-        scanTable.processScanDir(chartProcessor, true);
+        scanTable.scannerLoader.processScanDir(chartProcessor, true, scanTable);
     }
 
     private void processScanDir() {
         ChartProcessor chartProcessor = controller.getChartProcessor();
-        scanTable.processScanDir(chartProcessor, false);
+        scanTable.scannerLoader.processScanDir(chartProcessor, false, scanTable);
     }
 
     private void combineDatasets() {
-        scanTable.combineDatasets();
+        scanTable.scannerLoader.combineDatasets(scanTable);
     }
 
     private void scanDirAction() {
-        scanTable.loadScanFiles();
+        scanTable.scannerLoader.loadScanFiles(scanTable);
     }
 
     private void loadTableAction() {
-        scanTable.loadScanTable();
+        scannerLoader.loadScanTable();
     }
 
     private void saveTableAction() {
-        scanTable.saveScanTable();
+        scannerLoader.saveScanTable(scanTable);
     }
 
     private void purgeInactive() {
@@ -322,7 +347,7 @@ public class ScannerTool implements ControllerTool {
 
     private void loadFromDataset() {
         chart = controller.getActiveChart();
-        scanTable.loadFromDataset();
+        scannerLoader.loadFromDataset(scanTable);
         scanTable.setChart();
     }
 
@@ -349,6 +374,10 @@ public class ScannerTool implements ControllerTool {
 
     public ScanTable getScanTable() {
         return scanTable;
+    }
+
+    public File getScanDir() {
+        return scannerLoader.getScanDir();
     }
 
     private boolean hasColumnName(String columnName) {
@@ -400,7 +429,7 @@ public class ScannerTool implements ControllerTool {
                 String datasetName = item.getDatasetName();
                 Dataset itemDataset = Dataset.getDataset(datasetName);
                 if (itemDataset == null) {
-                    File datasetFile = new File(scanTable.getScanDir(), datasetName);
+                    File datasetFile = new File(scannerLoader.getScanDir(), datasetName);
                     try {
                         itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                     } catch (IOException ioE) {
@@ -454,7 +483,7 @@ public class ScannerTool implements ControllerTool {
             }
 
             if (itemDataset == null) {
-                File datasetFile = new File(scanTable.getScanDir(), datasetName);
+                File datasetFile = new File(scannerLoader.getScanDir(), datasetName);
                 try {
                     itemDataset = new Dataset(datasetFile.getPath(), datasetFile.getPath(), true, false, true);
                 } catch (IOException ioE) {
@@ -893,7 +922,7 @@ public class ScannerTool implements ControllerTool {
     void fitPeakDecay() {
         TextInputDialog textInput = new TextInputDialog();
         textInput.setHeaderText("New column name");
-       // Optional<String> columNameOpt = textInput.showAndWait();
+        // Optional<String> columNameOpt = textInput.showAndWait();
         if (chart.getPeakListAttributes().isEmpty()) {
             return;
         }
@@ -906,10 +935,10 @@ public class ScannerTool implements ControllerTool {
         for (Peak peak : peakListAttr.getPeakList().peaks()) {
             String label = peak.getPeakDim(0).getLabel();
             if (label.isBlank()) {
-                label = "#"+peak.getIdNum();
+                label = "#" + peak.getIdNum();
             }
-            String rateColumnName = peak.getPeakList().getName() + "_" + label+ "_Rate:" + peak.getIdNum();
-            String intColumnName = peak.getPeakList().getName() + "_" + label+ "_Int:" + peak.getIdNum();
+            String rateColumnName = peak.getPeakList().getName() + "_" + label + "_Rate:" + peak.getIdNum();
+            String intColumnName = peak.getPeakList().getName() + "_" + label + "_Int:" + peak.getIdNum();
             List<Double> rateValues = new ArrayList<>();
             List<Double> intValues = new ArrayList<>();
             for (FileTableItem item : items) {

@@ -80,7 +80,7 @@ public class ChemicalLibraryController {
     boolean useFieldSlider = false;
 
     ChangeListener propChangeListener;
-    enum LIBRARY_MODE {
+    public enum LIBRARY_MODE {
         GISSMO,
         SEGMENTS
     }
@@ -92,6 +92,17 @@ public class ChemicalLibraryController {
         vBox = new VBox();
         vBox.setSpacing(10);
         annoPane.setContent(vBox);
+        setup();
+    }
+
+    public void setup(FXMLController fxmlController, VBox vBox) {
+        this.fxmlController = fxmlController;
+        this.chart = fxmlController.getActiveChart();
+        this.vBox = vBox;
+        setup();
+    }
+
+    private void setup() {
 
         Label label = new Label("Mode:");
         label.setPrefWidth(70);
@@ -281,10 +292,11 @@ public class ChemicalLibraryController {
         return currentSimData;
     }
 
-    SimDataVecPars defaultPars() {
+    public static SimDataVecPars defaultPars() {
         return defaultPars(null);
     }
-    SimDataVecPars defaultPars(Double sfValue) {
+
+   static SimDataVecPars defaultPars(Double sfValue) {
         String label = "1H";
         double sf = sfValue == null ? AnalystPrefs.getLibraryVectorSF() : sfValue;
         double swPPM = AnalystPrefs.getLibraryVectorSWPPM();
@@ -330,7 +342,7 @@ public class ChemicalLibraryController {
         }
     }
 
-    void loadSimData() {
+    public static void loadSimData() {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         InputStream istream = cl.getResourceAsStream("data/bmse.yaml");
         try {
@@ -351,7 +363,6 @@ public class ChemicalLibraryController {
                 }
             }
         }
-
     }
 
  //   void sliderChanged() {
@@ -457,9 +468,7 @@ public class ChemicalLibraryController {
         if (!SimData.loaded()) {
             loadSimData();
         }
-
         return cmpdMatcher.getNames(pattern);
-
     }
 
 //    void setScale() {

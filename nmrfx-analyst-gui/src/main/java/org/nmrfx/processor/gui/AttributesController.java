@@ -718,7 +718,9 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     public class LvlSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setLvl(value);
+            if (!dataAttr.isSim()) {
+                dataAttr.setLvl(value);
+            }
         }
     }
 
@@ -730,7 +732,9 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
     public class OffsetSliderListener extends ParSliderListener {
         void update(DatasetAttributes dataAttr, double value) {
-            dataAttr.setOffset(value);
+            if (!dataAttr.isSim()) {
+                dataAttr.setOffset(value);
+            }
         }
     }
 

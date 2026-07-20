@@ -2045,4 +2045,8 @@ public class DatasetAttributes extends DataGenerator implements PublicPropertyCo
 
     }
 
+    public boolean isSim() {
+        return getDataset().getName().startsWith("SIM_");
+    }
+
 }

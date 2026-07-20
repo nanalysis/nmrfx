@@ -285,8 +285,14 @@ public class PolyChartAxes {
     }
 
     public void setYAxisByLevel() {
-        if (!datasetAttributesList.isEmpty()) {
-            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+        setYAxisByLevel(null);
+    }
+
+    public void setYAxisByLevel(DatasetAttributes dataAttr) {
+        if ((dataAttr == null) && !datasetAttributesList.isEmpty()) {
+            dataAttr = datasetAttributesList.getFirst();
+        }
+        if (dataAttr != null) {
             double delta = dataAttr.getLvl();
             double fOffset = dataAttr.getOffset();
             double min = -fOffset * delta;

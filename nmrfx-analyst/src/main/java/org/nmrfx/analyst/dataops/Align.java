@@ -15,9 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -506,4 +504,74 @@ public class Align {
             }
         }
     }
+
+    public record MatchResult(double score, double delta, int matchedCount) {
+    }
+
+    public enum MatchMode {
+        DICE,
+        RECALL
+    }
+    /**
+     * Matches two NMR peak lists using greedy bipartite matching scored with
+     * the Dice coefficient. Score of 1.0 means every peak matched perfectly.
+     *
+     * @param queryPositions chemical shifts from the query spectrum (ppm)
+     * @param dbPositions    chemical shifts from the database entry (ppm)
+     * @param tolerance   max ppm difference to consider two peaks a match
+     */
+    public static MatchResult matchPeaks(List<Double> queryPositions, List<Double> dbPositions, double tolerance, MatchMode matchMode ) {
+        record Candidate(double absDistance, double distance, int queryIndex, int dbIndex) {
+        }
+
+        List<Candidate> candidates = new ArrayList<>();
+        for (int iQuery = 0; iQuery < queryPositions.size(); iQuery++) {
+            for (int iDB = 0; iDB < dbPositions.size(); iDB++) {
+                double dist = queryPositions.get(iQuery) - dbPositions.get(iDB);
+                double absDist = Math.abs(dist);
+                if (absDist <= tolerance) {
+                    candidates.add(new Candidate(absDist, dist, iQuery, iDB));
+                }
+            }
+        }
+
+        candidates.sort(Comparator.comparingDouble(c -> c.absDistance));
+
+        Set<Integer> matchedQuery = new HashSet<>();
+        Set<Integer> matchedDb = new HashSet<>();
+
+        List<Candidate> matches = new ArrayList<>();
+        for (Candidate c : candidates) {
+            if (!matchedQuery.contains(c.queryIndex) && !matchedDb.contains(c.dbIndex)) {
+                matchedQuery.add(c.queryIndex);
+                matchedDb.add(c.dbIndex);
+                matches.add(c);
+            }
+        }
+        double minDist = tolerance;
+        double maxDist = -tolerance;
+        double sumDistance = 0.0;
+        for (Candidate candidate : matches ) {
+            minDist = Math.min(minDist, candidate.distance);
+            maxDist = Math.max(maxDist, candidate.distance);
+            sumDistance += candidate.distance();
+        }
+
+        double meanDistance = matches.isEmpty() ? 0.0 : 1.0 - Math.abs(sumDistance / matches.size()) / tolerance;
+
+
+        double deltaDist = 1.0 - Math.abs((maxDist - minDist)) / (2.0 * tolerance);
+
+        int nMatched = matchedQuery.size();
+        if (matchMode == MatchMode.DICE) {
+            double score = (2.0 * nMatched) / (queryPositions.size() + dbPositions.size());
+            return new MatchResult(score, deltaDist, nMatched);
+        } else {
+            double score = (double) nMatched / queryPositions.size();  // recall only
+            score *=  deltaDist / 2.0;
+            score += meanDistance / 10.0;
+            return new MatchResult(score, deltaDist, nMatched);
+        }
+    }
+
 }
