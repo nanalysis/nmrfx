@@ -1801,7 +1801,9 @@ public class PolyChart extends Region {
         } else {
             value = 0;
         }
-        controller.getStatusBar().updateRowSpinner(value, 1);
+        int finalValue = value;
+        getFXMLController().getAttributesController()
+                .ifPresent(attributesController -> attributesController.viewController.updateRowSpinner(finalValue, 1));
         return value;
     }
 
@@ -1816,7 +1818,7 @@ public class PolyChart extends Region {
             datasetAttributes.setDrawList(selected);
         }
         if (!selected.isEmpty()) {
-            controller.getStatusBar().updateRowSpinner(selected.get(0), 1);
+           controller.getAttributesController().ifPresent(attributesController -> attributesController.viewController.updateRowSpinner(selected.get(0), 1));
         }
     }
 
@@ -2183,6 +2185,7 @@ public class PolyChart extends Region {
             gC.restore();
             highlightChart();
             getFXMLController().updateDatasetAttributeControls();
+            getFXMLController().updateViewAttributes(this);
 
         } catch (GraphicsIOException ioE) {
             log.warn(ioE.getMessage(), ioE);
@@ -4224,10 +4227,21 @@ public class PolyChart extends Region {
                 double dispPos = axes.getX().getDisplayPosition(pivotPosition[dataDim]);
                 if ((dispPos > 1) && (dispPos < borders.getLeft() + axes.get(0).getWidth())) {
                     gC.setStroke(Color.GREEN);
-                    gC.strokeLine(dispPos - 10, borders.getTop(), dispPos, borders.getTop() + 20);
-                    gC.strokeLine(dispPos + 10, borders.getTop(), dispPos, borders.getTop() + 20);
-                    gC.strokeLine(dispPos, borders.getTop() + axes.getY().getHeight() - 20, dispPos - 10, borders.getTop() + axes.getY().getHeight());
-                    gC.strokeLine(dispPos, borders.getTop() + axes.getY().getHeight() - 20, dispPos + 10, borders.getTop() + axes.getY().getHeight());
+                    double x1 = dispPos - 10.0;
+                    double x2 = dispPos;
+                    double x3 = dispPos + 10.0;
+                    double yt1 = borders.getTop();
+                    double yt2 = borders.getTop() + 20;
+                    double yt3 = yt1;
+                    double yb1 = borders.getTop() + axes.getY().getHeight();
+                    double yb2 = borders.getTop() + axes.getY().getHeight() - 20;
+                    double yb3 = yb1;
+
+                    gC.strokeLine(x1, yt1, x2, yt2);
+                    gC.strokeLine(x3, yt3, x2, yt2);
+                    gC.strokeLine(x1, yb1, x2, yb2);
+                    gC.strokeLine(x3, yb3, x2, yb2);
+                    gC.strokeLine(x2, yt2, x2, yb2);
                 }
             }
 
@@ -4237,10 +4251,23 @@ public class PolyChart extends Region {
                 double dispPos = axes.getY().getDisplayPosition(pivotPosition[dataDim]);
                 if ((dispPos > 1) && (dispPos < borders.getTop() + axes.getY().getHeight())) {
                     gC.setStroke(Color.GREEN);
-                    gC.strokeLine(borders.getLeft(), dispPos - 10, borders.getLeft() + 20, dispPos);
-                    gC.strokeLine(borders.getLeft(), dispPos + 10, borders.getLeft() + 20, dispPos);
-                    gC.strokeLine(borders.getLeft() + axes.getX().getWidth(), dispPos + 10, borders.getLeft() + axes.getX().getWidth() - 20, dispPos);
-                    gC.strokeLine(borders.getLeft() + axes.getX().getWidth(), dispPos - 10, borders.getLeft() + axes.getX().getWidth() - 20, dispPos);
+
+                    double xl1 = borders.getLeft();
+                    double xl2 = borders.getLeft() + 20.0;
+                    double xl3 = xl1;
+                    double xr1 = borders.getLeft() + axes.getX().getWidth();
+                    double xr2 = xr1 - 20.0;
+                    double xr3 = xr1;
+                    double y1 = dispPos - 10.0;
+                    double y2 = dispPos;
+                    double y3 = dispPos + 10.0;
+
+                    gC.strokeLine(xl1, y1, xl2, y2);
+                    gC.strokeLine(xl1, y3, xl2, y2);
+                    gC.strokeLine(xl2, y2, xr2, y2);
+                    gC.strokeLine(xr1, y1, xr2, y2);
+                    gC.strokeLine(xr3, y3, xr2, y2);
+
                 }
             }
         }

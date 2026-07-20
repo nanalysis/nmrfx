@@ -189,6 +189,7 @@ public class RDCGUI {
             bottomBox.getChildren().addAll(statusBox, rdcResultBox);
 
             borderPane.setBottom(bottomBox);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
         }
         updateRDCPlotChoices();

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.utils;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.*;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -28,6 +29,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import org.controlsfx.control.RangeSlider;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.*;
 import java.util.*;
@@ -237,6 +239,7 @@ public class ColorSchemes {
             gridPane.getColumnConstraints().add(new ColumnConstraints(gridWidth)); // column 1 is 200 wide
 
             Scene scene = new Scene(borderPane);
+            GUIUtils.applyTheme(scene);
             stage.setScene(scene);
             stage.setWidth(gridWidth + buttonWidth + 20);
 
@@ -264,6 +267,7 @@ public class ColorSchemes {
             reverseBox.setOnAction(e -> updateColors(gridWidth, selectedColorClass.get()));
             slider.setShowTickMarks(true);
             slider.setShowTickLabels(true);
+            slider.getStyleClass().addAll(Styles.SMALL);
             slider.setBlockIncrement(5);
             slider.setPrefWidth(gridWidth);
             slider.lowValueProperty().addListener(e -> updateColors(gridWidth, selectedColorClass.get()));

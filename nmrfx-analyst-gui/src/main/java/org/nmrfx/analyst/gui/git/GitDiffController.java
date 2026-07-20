@@ -29,6 +29,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -66,6 +67,7 @@ public class GitDiffController implements Initializable {
 
         try {
             Scene scene = new Scene(loader.load());
+            GUIUtils.applyTheme(scene);
             stage.setScene(scene);
 
             controller = loader.getController();

@@ -17,8 +17,7 @@
  */
 package org.nmrfx.analyst.gui.spectra;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,8 +26,8 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
 import javafx.util.Subscription;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.analyst.gui.tools.StripsTable;
 import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.peaks.Peak;
@@ -123,7 +122,7 @@ public class StripController implements ControllerTool {
         this.setupToolBar = new ToolBar();
         this.vBox.getChildren().addAll(toolBar, setupToolBar);
 
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.TOP);
+        Button closeButton = GUIUtils.iconButton(MaterialDesignC.CLOSE, "Close");
         closeButton.setOnAction(e -> close());
         toolBar.getItems().add(closeButton);
 
@@ -168,6 +167,8 @@ public class StripController implements ControllerTool {
         posSlider.setMinWidth(250);
         posSlider.setShowTickMarks(true);
         posSlider.setShowTickLabels(true);
+        posSlider.getStyleClass().addAll(Styles.SMALL);
+
         posField.setMinWidth(50);
         posField.setMaxWidth(50);
         posField.textProperty().addListener(e -> fieldChanged(posField));
@@ -181,6 +182,7 @@ public class StripController implements ControllerTool {
         nSlider.setMinWidth(120);
         nSlider.setShowTickMarks(true);
         nSlider.setShowTickLabels(true);
+        nSlider.getStyleClass().addAll(Styles.SMALL);
         nField.setMinWidth(50);
         nField.setMaxWidth(50);
         nField.textProperty().addListener(e -> fieldChanged(nField));
@@ -189,9 +191,9 @@ public class StripController implements ControllerTool {
 
         limitListener = (observable, oldValue, newValue) -> updateView(false);
 
-        Button addButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS);
+        Button addButton = GUIUtils.addItemButton();
         addButton.setOnAction(e -> addItem());
-        Button removeButton = GlyphsDude.createIconButton(FontAwesomeIcon.REMOVE);
+        Button removeButton = GUIUtils.removeItemButton();
         removeButton.setOnAction(e -> removeItem());
 
         itemPeakListChoiceBox = new ChoiceBox<>();
@@ -609,7 +611,7 @@ public class StripController implements ControllerTool {
         try {
             Integer.parseInt(field.getText().trim());
             field.setBackground(GUIUtils.getDefaultBackground());
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException _) {
             field.setBackground(GUIUtils.getErrorBackground());
         }
     }
@@ -622,7 +624,7 @@ public class StripController implements ControllerTool {
             nSlider.setValue(n);
             posField.setBackground(GUIUtils.getDefaultBackground());
             updateView(false);
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException _) {
             posField.setBackground(GUIUtils.getErrorBackground());
         }
     }

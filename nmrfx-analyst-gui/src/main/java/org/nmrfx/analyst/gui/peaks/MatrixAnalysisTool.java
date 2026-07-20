@@ -44,6 +44,7 @@ import org.nmrfx.processor.tools.LigandScannerInfo;
 import org.nmrfx.processor.tools.MatrixAnalyzer;
 import org.nmrfx.structure.tools.MCSAnalysis;
 import org.nmrfx.structure.tools.MCSAnalysis.Hit;
+import org.nmrfx.utils.GUIUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -374,6 +375,8 @@ public class MatrixAnalysisTool {
             bucketChoice.disableProperty().bind(tableModeCheckBox.selectedProperty());
             borderPane.setCenter(grid);
             stageScene.setRoot(borderPane);
+            GUIUtils.applyTheme(stageScene);
+
 
             stage.setScene(stageScene);
 

@@ -1,14 +1,11 @@
 package org.nmrfx.processor.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import org.nmrfx.analyst.gui.AnalystApp;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -57,22 +54,22 @@ public class SpectrumComparator {
 
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> close());
 
         ArrayList<Button> dataset1Buttons = new ArrayList<>();
         ArrayList<Button> dataset2Buttons = new ArrayList<>();
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.firstItemButton();
         bButton.setOnAction(e -> firstDataset(0));
         dataset1Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.previousItemButton();
         bButton.setOnAction(e -> previousDataset(0));
         dataset1Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.nextItemButton();
         bButton.setOnAction(e -> nextDataset(0));
         dataset1Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.lastItemButton();
         bButton.setOnAction(e -> lastDataset(0));
         dataset1Buttons.add(bButton);
 
@@ -91,16 +88,16 @@ public class SpectrumComparator {
             datasetColorPickers[i].valueProperty().addListener(c -> setDatasetState());
         }
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.firstItemButton();
         bButton.setOnAction(e -> firstDataset(1));
         dataset2Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.previousItemButton();
         bButton.setOnAction(e -> previousDataset(1));
         dataset2Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.nextItemButton();
         bButton.setOnAction(e -> nextDataset(1));
         dataset2Buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.lastItemButton();
         bButton.setOnAction(e -> lastDataset(1));
         dataset2Buttons.add(bButton);
 

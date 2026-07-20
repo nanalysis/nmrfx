@@ -102,6 +102,7 @@ public class GitHistoryController implements Initializable {
 
         try {
             Scene scene = new Scene(loader.load());
+            GUIUtils.applyTheme(scene);
             stage.setScene(scene);
             controller = loader.getController();
             controller.stage = stage;

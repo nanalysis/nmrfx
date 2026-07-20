@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -39,6 +40,7 @@ import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.chart.XYChartPane;
 import org.nmrfx.peaks.PeakPath;
 import org.nmrfx.peaks.PeakPaths;
+import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,9 +102,11 @@ public class PathPlotTool {
 
             borderPane.setTop(toolBar);
             tableView = new TableView<PeakPath>();
+            tableView.getStyleClass().addAll(Styles.DENSE);
             SplitPane sPane = new SplitPane(chartPane, tableView);
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             updateChart(xAxisName, yAxisName);
             initTable();

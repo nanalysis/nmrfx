@@ -210,6 +210,10 @@ public class KeyBindings {
                 chart.getFXMLController().setCursor(CanvasCursor.REGION.getCursor());
                 keyMonitor.clear();
             }
+            case "cl" -> {
+                chart.getFXMLController().setCursor(CanvasCursor.SLICE.getCursor());
+                keyMonitor.clear();
+            }
             case "p" -> {
             }
             case "pf" -> {

@@ -28,6 +28,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.PolyChartManager;
 import org.nmrfx.processor.gui.spectra.crosshair.CrossHairs;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.*;
 
@@ -49,6 +50,7 @@ public class SpectrumAdjuster {
         Stage stage = new Stage(StageStyle.UNDECORATED);
         GridPane grid = new GridPane();
         Scene scene = new Scene(grid);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
         String[] labels = {"X", "Y"};
         List<TextField> textFields = new ArrayList<>();

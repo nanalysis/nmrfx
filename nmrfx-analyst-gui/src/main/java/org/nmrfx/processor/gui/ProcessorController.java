@@ -17,8 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.beans.Observable;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
@@ -39,7 +38,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.skin.TitledPaneSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -54,7 +52,7 @@ import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.greenrobot.eventbus.EventBus;
-import org.nmrfx.analyst.gui.AnalystApp;
+import org.kordamp.ikonli.material2.Material2AL;
 import org.nmrfx.fxutil.Fx;
 import org.nmrfx.fxutil.Fxml;
 import org.nmrfx.processor.datasets.Dataset;
@@ -63,6 +61,7 @@ import org.nmrfx.processor.datasets.DatasetType;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.rs2d.RS2DData;
 import org.nmrfx.processor.events.DatasetSavedEvent;
+import org.nmrfx.processor.gui.spectra.SliceAttributes;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
@@ -349,8 +348,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     private void addTitleBar(TitledPane titledPane, String name, boolean addMenu) {
         titledPane.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         titledPane.setGraphicTextGap(0);
-        titledPane.setSkin(new ButtonTitlePaneSkin(titledPane));
-
         HBox titleBox = new HBox();
         titleBox.setPadding(new Insets(0, 5, 0, 5));
         HBox.setHgrow(titleBox, Priority.ALWAYS);
@@ -365,8 +362,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titleBox.getChildren().add(spacer);
         if (addMenu) {
             MenuButton menuButton = new MenuButton("");
-            menuButton.setGraphic(GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "10"));
+            menuButton.setGraphic(GUIUtils.createIconLabel(Material2AL.ADD));
             menuButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            menuButton.getStyleClass().add(Styles.SMALL);
+            menuButton.setMinHeight(20);
+            menuButton.setMaxHeight(20);
             if (name.equals("FULL DATASET")) {
                 menuButton.getItems().addAll(getMenuItemsForDataset());
             } else if (name.startsWith("POLISHING")) {
@@ -381,32 +381,16 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setGraphic(titleBox);
     }
 
-    private static class ButtonTitlePaneSkin extends TitledPaneSkin {
-        final Region arrow;
-
-        ButtonTitlePaneSkin(final TitledPane titledPane) {
-            super(titledPane);
-            arrow = (Region) getSkinnable().lookup(".arrow-button");
-
-        }
-
-        @Override
-        protected void layoutChildren(final double x, final double y, final double w, final double h) {
-            super.layoutChildren(x, y, w, h);
-            double arrowWidth = arrow.getLayoutBounds().getWidth();
-            double arrowPadding = arrow.getPadding().getLeft() + arrow.getPadding().getRight();
-
-            ((Region) getSkinnable().getGraphic()).setMinWidth(w - (arrowWidth + arrowPadding));
-        }
-    }
-
     private TitledPane addTitlePane(ProcessingSection section, String title) {
         TitledPane titledPane = new TitledPane();
+        titledPane.getStyleClass().add(Styles.DENSE);
+        titledPane.setMaxWidth(400);
         titledPane.expandedProperty().addListener(c -> setActivePane(section, titledPane));
         titledPane.setText(title);
         addTitleBar(titledPane, title, true);
         ModifiableAccordionScrollPane accordion1 = new ModifiableAccordionScrollPane();
         titledPane.setContent(accordion1);
+        titledPane.setPadding(new Insets(5,5,5,5));
         dimensionPanes.put(section, titledPane);
         dimAccordion.getPanes().add(titledPane);
         return titledPane;
@@ -806,9 +790,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     makeRegionButtons(opPropertySheet, hBox, processingOperation);
                 }
                 vBox.getChildren().addAll(hBox, opPropertySheet);
+                VBox.setVgrow(opPropertySheet, Priority.ALWAYS);
                 titledPane.getProperties().put("PropSheet", opPropertySheet);
                 opPropertySheet.getProperties().put("Op", processingOperation);
+                opPropertySheet.setPadding(new Insets(5,5,5,5));
             }
+
             titledPane.setContent(vBox);
             updateTitledPane(titledPane, processingOperation);
             opAccordion.add(titledPane);
@@ -996,9 +983,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
             if (!chart.is1D()) {
                 fxmlController.sliceStatusProperty().set(true);
-                fxmlController.setCursor(Cursor.CROSSHAIR);
-                chart.getSliceAttributes().setSlice1State(true);
-                chart.getSliceAttributes().setSlice2State(false);
+                fxmlController.setCursor(CanvasCursor.SLICE.getCursor());
+                SliceAttributes sliceAttributes = chart.getSliceAttributes();
+                sliceAttributes.setSlice1State(true);
+                sliceAttributes.setSlice2State(true);
+                sliceAttributes.setSlice2Color(Color.RED);
+                sliceAttributes.setUseDatasetColor(false);
                 chart.getCrossHairs().refresh();
             }
         } else {
@@ -1006,6 +996,12 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             fxmlController.sliceStatusProperty().set(phaser.sliceStatus);
             fxmlController.setCursor(phaser.cursor());
             fxmlController.setCursor();
+            SliceAttributes sliceAttributes = chart.getSliceAttributes();
+            sliceAttributes.setSlice1State(true);
+            sliceAttributes.setSlice2State(false);
+            sliceAttributes.setSlice2Color(Color.RED);
+            sliceAttributes.setUseDatasetColor(true);
+
             chart.getCrossHairs().refresh();
         }
     }
@@ -1735,6 +1731,8 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
+        referencePane.getStyleClass().add(Styles.DENSE);
+
         referencePane.setText("PARAMETERS");
         addTitleBar(referencePane, "PARAMETERS", false);
 
@@ -1747,10 +1745,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         statusBar.setTooltip(statusBarToolTip);
 
         viewMode.getItems().addAll(DisplayMode.values());
-        Text detailIcon = GlyphsDude.createIcon(FontAwesomeIcon.INFO,
-                AnalystApp.ICON_SIZE_STR);
+        Label infoIcon = GUIUtils.createIconLabel(Material2AL.INFO);
         detailButton.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        detailButton.setGraphic(detailIcon);
+        detailButton.setGraphic(infoIcon);
         detailButton.setOnAction(e -> updateAllAccordionTitles());
         dimChoice.disableProperty().bind(viewMode.valueProperty().isEqualTo(DisplayMode.SPECTRUM));
 
@@ -1918,5 +1915,6 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
 
     public void showScriptGUI() {
         scriptGUI.showStage();
+        updateScriptDisplay();
     }
 }

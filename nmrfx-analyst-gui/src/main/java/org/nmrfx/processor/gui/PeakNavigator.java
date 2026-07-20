@@ -1,7 +1,5 @@
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -27,6 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static org.kordamp.ikonli.material2.Material2AL.*;
+import static org.kordamp.ikonli.material2.Material2MZ.NAVIGATE_BEFORE;
+import static org.kordamp.ikonli.material2.Material2MZ.NAVIGATE_NEXT;
 
 /**
  * @author Bruce Johnson
@@ -112,22 +114,23 @@ public class PeakNavigator implements PeakListener {
 
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        Button closeButton = GUIUtils.closeButton();
         closeButton.setOnAction(e -> close());
 
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.iconButton(FIRST_PAGE, null);
         bButton.setOnAction(navigator::firstPeak);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.iconButton(NAVIGATE_BEFORE, null);
+
         bButton.setOnAction(navigator::previousPeak);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.iconButton(NAVIGATE_NEXT, null);
         bButton.setOnAction(navigator::nextPeak);
         buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.iconButton(LAST_PAGE, null);
         bButton.setOnAction(navigator::lastPeak);
         buttons.add(bButton);
-        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        deleteButton = GUIUtils.toggleButton(DELETE, null);
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(Event::consume);

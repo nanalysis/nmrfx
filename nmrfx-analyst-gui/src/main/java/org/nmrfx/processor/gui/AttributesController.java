@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.animation.PauseTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -8,10 +9,10 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.controlsfx.control.RangeSlider;
@@ -29,10 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static org.nmrfx.processor.gui.utils.GUIColorUtils.toBlackOrWhite;
 
@@ -93,6 +91,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     Slider aspectSlider;
     @FXML
     TextField aspectRatioValue;
+    @FXML
+    VBox viewBox;
     @FXML
     Slider scaleSlider;
     @FXML
@@ -259,13 +259,16 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     Boolean accordionIn1D = null;
     PolyChart chart;
     PolyChart boundChart = null;
-
     FXMLController fxmlController;
+    ViewController viewController;
+
+
 
     public static AttributesController create(FXMLController fxmlController) {
         Fxml.Builder builder = Fxml.load(AttributesController.class, "AttributesController.fxml");
         AttributesController controller = builder.getController();
         controller.fxmlController = fxmlController;
+        controller.viewController = new ViewController(controller, controller.viewBox);
         controller.itemChoiceState.getItems().addAll(SelectionChoice.values());
         controller.itemChoiceState.setValue(SelectionChoice.CHART);
         controller.setChart(fxmlController.getActiveChart());
@@ -304,6 +307,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         integralPosSlider.setMax(1.0);
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
+        integralPosSlider.getStyleClass().addAll(Styles.SMALL);
+
 
         ticFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
         labelFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
@@ -319,9 +324,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         regionCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralCheckBox.selectedProperty().addListener(e -> refreshLater());
         integralValuesCheckBox.selectedProperty().addListener(e -> refreshLater());
-        integralFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        integralFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 27, 30);
         integralFontSizeComboBox.valueProperty().addListener(e -> refreshLater());
-
 
 
         gridCheckBox.selectedProperty().addListener(e -> updateCharts());
@@ -332,6 +336,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         xOffsetSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
         yOffsetSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
         scaleSlider.valueProperty().addListener(e -> updateSlicesAndRefresh());
+        xOffsetSlider.getStyleClass().addAll(Styles.SMALL);
+        yOffsetSlider.getStyleClass().addAll(Styles.SMALL);
+        scaleSlider.getStyleClass().addAll(Styles.SMALL);
+
         slice1ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
         slice2ColorPicker.valueProperty().addListener(e -> updateSlicesAndRefresh());
 
@@ -343,12 +351,16 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         aspectSlider.setBlockIncrement(0.01);
         aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
         aspectSlider.disableProperty().bind(aspectCheckBox.selectedProperty().not());
+        aspectSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(aspectSlider, aspectRatioValue, "##0.00");
 
         stackXSlider.setMin(0.0);
         stackXSlider.setMax(1.00);
         stackXSlider.setValue(0.0);
         stackXSlider.setBlockIncrement(0.01);
+        stackXSlider.getStyleClass().addAll(Styles.SMALL);
+
         stackXSlider.valueProperty().addListener(stackXListener);
         stackXSlider.setOnMouseReleased(e -> setStackXSlider());
         GUIUtils.bindSliderField(stackXSlider, stackXField);
@@ -358,6 +370,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         stackYSlider.setMax(1.0);
         stackYSlider.setValue(0.0);
         stackYSlider.setBlockIncrement(0.01);
+        stackYSlider.getStyleClass().addAll(Styles.SMALL);
+
         stackYSlider.valueProperty().addListener(stackYListener);
         stackYSlider.setOnMouseReleased(e -> setStackYSlider());
         GUIUtils.bindSliderField(stackYSlider, stackYField);
@@ -369,16 +383,26 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         lvlSlider1D.valueProperty().addListener(lvlSliderListener);
         lvlSlider1D.setOnMouseReleased(e -> setLvlSlider());
         GUIUtils.bindSliderField(lvlSlider1D, lvlField1D, "0.##E0");
+        lvlSlider.getStyleClass().addAll(Styles.SMALL);
+        lvlSlider1D.getStyleClass().addAll(Styles.SMALL);
+
+
 
         clmSlider.valueProperty().addListener(clmSliderListener);
         clmSlider.setOnMouseReleased(e -> setClmSliderValue());
+        clmSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(clmSlider, clmField);
 
         nlvlsSlider.valueProperty().addListener(nlvlsSliderListener);
         nlvlsSlider.setOnMouseReleased(e -> setNlvlSlider());
+        nlvlsSlider.getStyleClass().addAll(Styles.SMALL);
+
 
         offsetSlider.valueProperty().addListener(offsetSliderListener);
         offsetSlider.setOnMouseReleased(e -> setOffsetsSlider());
+        offsetSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(offsetSlider, offsetField);
 
         posColorPicker.valueProperty().addListener(posColorListener);
@@ -387,14 +411,20 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
         posWidthSlider.valueProperty().addListener(posWidthSliderListener);
         posWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(true));
+        posWidthSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(posWidthSlider, posWidthField);
 
         posWidthSlider1D.valueProperty().addListener(posWidthSliderListener);
         posWidthSlider1D.setOnMouseReleased(e -> setPosWidthSlider(true));
+        posWidthSlider1D.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(posWidthSlider1D, posWidthField1D);
 
         negWidthSlider.valueProperty().addListener(negWidthSliderListener);
         negWidthSlider.setOnMouseReleased(e -> setPosWidthSlider(false));
+        negWidthSlider.getStyleClass().addAll(Styles.SMALL);
+
         GUIUtils.bindSliderField(negWidthSlider, negWidthField);
 
         posOnCheckbox.selectedProperty().addListener(posDrawOnListener);
@@ -414,7 +444,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         peakOffColorPicker.valueProperty().addListener(peakOffColorListener);
         peakNPlanesComboBox.getItems().addAll(0, 1, 2, 3, 4);
         peakNPlanesComboBox.valueProperty().addListener(peakNPlanesListener);
-        peakFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18 ,19, 20, 22, 24, 27, 30);
+        peakFontSizeComboBox.getItems().addAll(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 27, 30);
         peakFontSizeComboBox.valueProperty().addListener(peakFontSizeListener);
     }
 
@@ -440,6 +470,10 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 dataset.writeParFile();
             }
         }
+    }
+
+    public void updateView(PolyChart chart) {
+        viewController.updateView(chart);
     }
 
     private void unBindChart(PolyChart polyChart) {
@@ -578,7 +612,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         }
     }
 
-    private List<DatasetAttributes> getDatasetAttributes() {
+    private List<DatasetAttributes> getDatasetAttributesList() {
         List<DatasetAttributes> result;
         result = new ArrayList<>();
         for (var aChart : getCharts(allCharts())) {
@@ -596,6 +630,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         return result;
     }
 
+
     void setLimits() {
         for (int i = 0; i < chart.getAxes().count(); i++) {
             Axis axis = chart.getAxes().get(i);
@@ -606,8 +641,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
                 int lowPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, lower);
                 int upPt = chart.getAxes().getMode(i).getIndex(dataAttr, i, upper);
 
-                chart.getFXMLController().getStatusBar().updatePlaneSpinner(lowPt, i, 0);
-                chart.getFXMLController().getStatusBar().updatePlaneSpinner(upPt, i, 1);
+                viewController.updatePlaneSpinner(lowPt, i, 0);
+                viewController.updatePlaneSpinner(upPt, i, 1);
             }
         }
     }
@@ -672,7 +707,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue.doubleValue());
                 }
@@ -735,7 +770,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setLvlSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = dataAttr.getLvl();
@@ -748,7 +783,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setClmSliderValue() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.01;
@@ -760,7 +795,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setOffsetsSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 0.0;
@@ -772,7 +807,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setNlvlSlider() {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double min = 1.0;
@@ -786,7 +821,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     }
 
     void setPosWidthSlider(boolean posMode) {
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             double value = posMode ? dataAttr.getPosWidth() : dataAttr.getNegWidth();
@@ -811,7 +846,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public void changed(ObservableValue<? extends Color> observable, Color oldValue, Color newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
@@ -835,7 +870,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     void setContourColorControls(boolean posMode) {
         posColorListener.active = false;
         negColorListener.active = false;
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -860,7 +895,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (active) {
-                List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+                List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
                 for (DatasetAttributes dataAttr : dataAttrs) {
                     update(dataAttr, newValue);
                 }
@@ -884,7 +919,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     void setDrawOnControls(boolean posMode) {
         posDrawOnListener.active = false;
         negDrawOnListener.active = false;
-        List<DatasetAttributes> dataAttrs = getDatasetAttributes();
+        List<DatasetAttributes> dataAttrs = getDatasetAttributesList();
         if (!dataAttrs.isEmpty()) {
             DatasetAttributes dataAttr = dataAttrs.get(0);
             if (posMode) {
@@ -1037,11 +1072,13 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             peakListAttr.setLabelType(value);
         }
     }
+
     class PeakNPlanesListener extends PeakTypeListener<Integer> {
         void update(PeakListAttributes peakListAttr, Integer value) {
             peakListAttr.setNplanes(value);
         }
     }
+
     class PeakFontSizeListener extends PeakTypeListener<Integer> {
         void update(PeakListAttributes peakListAttr, Integer value) {
             peakListAttr.setFontSize(value);
@@ -1117,6 +1154,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
 
             bindToChart(chart);
             setLimits();
+            viewController.updateView(chart);
             setDimControls();
             chart.setChartDisabled(false);
         }
@@ -1219,8 +1257,8 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         // so it is visible.
         if (bgColorCheckBox.isSelected()) {
             Color color = bgColorPicker.getValue();
-            if (!getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = getDatasetAttributes().get(0);
+            if (!getDatasetAttributesList().isEmpty()) {
+                DatasetAttributes dataAttr = getDatasetAttributesList().get(0);
                 Color posColor = dataAttr.getPosColor();
                 if ((posColor != null) && (color != null)) {
                     double diff = Math.abs(posColor.getRed() - color.getRed());
@@ -1271,7 +1309,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         refreshLater();
     }
 
-    boolean allCharts() {
+    public boolean allCharts() {
         return itemChoiceState.getValue() == SelectionChoice.WINDOW;
     }
 
@@ -1341,4 +1379,5 @@ public class AttributesController implements Initializable, NmrControlRightSideC
             wait.play();
         }
     }
+
 }

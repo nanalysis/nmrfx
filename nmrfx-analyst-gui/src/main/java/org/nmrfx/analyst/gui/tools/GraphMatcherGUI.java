@@ -59,8 +59,8 @@ public class GraphMatcherGUI {
         stage = new Stage();
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
+        GUIUtils.applyTheme(scene);
         stage.setScene(scene);
-        scene.getStylesheets().add("/styles/Styles.css");
         ToolBar toolBar = new ToolBar();
         Button matchButton = new Button("Match");
         matchButton.setOnAction(e -> bipartiteAnalyze());

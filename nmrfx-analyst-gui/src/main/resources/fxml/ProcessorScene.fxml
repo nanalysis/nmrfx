@@ -5,7 +5,6 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.PropertySheet?>
 <?import org.controlsfx.control.StatusBar?>
-<?import org.fxmisc.richtext.CodeArea?>
 <?import java.net.URL?>
 <?import org.nmrfx.processor.gui.utils.ModifiableAccordionScrollPane?>
 <BorderPane fx:id="mainBox" minWidth="400" styleClass="mainFxmlClass" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"

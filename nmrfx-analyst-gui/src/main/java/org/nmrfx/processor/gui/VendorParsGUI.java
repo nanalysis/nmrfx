@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -15,6 +16,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.VendorPar;
+import org.nmrfx.utils.GUIUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -33,6 +35,7 @@ public class VendorParsGUI {
             stage = new Stage();
             stage.setTitle("Vendor Pars");
             stage.setWidth(500);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             borderPane.setCenter(fidParTableView);
             initTable();
@@ -64,6 +67,7 @@ public class VendorParsGUI {
         valueCol.setCellValueFactory(new PropertyValueFactory<>("Value"));
         valueCol.setEditable(false);
         valueCol.setPrefWidth(260);
+        fidParTableView.getStyleClass().add(Styles.DENSE);
         fidParTableView.getColumns().setAll(nameCol, valueCol);
 
     }

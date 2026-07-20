@@ -17,6 +17,7 @@
  */
 package org.nmrfx.analyst.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -68,6 +69,7 @@ public class TablePlotGUI {
     List<DataSeries> fitLineSeries = new ArrayList<>();
     ChoiceBox<String> equationChoice = new ChoiceBox<>();
     TableView<ParItem> parTable = new TableView<>();
+
     VBox extraBox = new VBox();
     SimpleBooleanProperty xZeroIncludedProp = new SimpleBooleanProperty(true);
     SimpleBooleanProperty yZeroIncludedProp = new SimpleBooleanProperty(true);
@@ -97,6 +99,7 @@ public class TablePlotGUI {
         this.tableView = (TableView<TableItem>) tableView;
         this.extraMode = extraMode;
         this.fitMode = fitMode;
+        this.tableView.getStyleClass().add(Styles.DENSE);
     }
 
     public record ParItem(String columnName, int group, String parName, double value, double error) {
@@ -181,6 +184,7 @@ public class TablePlotGUI {
             borderPane.setTop(toolBar);
             borderPane.setCenter(chartPane);
             borderPane.setRight(null);
+            GUIUtils.applyTheme(stageScene);
             stage.setScene(stageScene);
             activeChart.getCanvas().setOnMouseClicked(this::mouseClicked);
         }

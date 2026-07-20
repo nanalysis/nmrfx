@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
@@ -96,6 +97,8 @@ public class PeakPickController {
         GUIUtils.bindSliderField(noiseRatioSlider, noiseField,"0.#");
         noiseRatioSlider.setShowTickLabels(true);
         noiseRatioLabel.setPrefWidth(labelWidth);
+        noiseRatioSlider.getStyleClass().addAll(Styles.SMALL);
+
         noiseBox.getChildren().addAll(noiseRatioLabel, noiseCheckBox, noiseRatioSlider, noiseField);
         noiseBox.setAlignment(Pos.CENTER_LEFT);
         noiseBox.setSpacing(10);

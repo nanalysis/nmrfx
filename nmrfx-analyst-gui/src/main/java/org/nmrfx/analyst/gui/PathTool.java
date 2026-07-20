@@ -1,7 +1,5 @@
 package org.nmrfx.analyst.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -103,24 +101,24 @@ public class PathTool implements PeakNavigable, ControllerTool {
         allButton.setOnAction(e -> allDatasets());
         allButton.getStyleClass().add("toolButton");
         dataButtons.add(allButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.firstItemButton();
         bButton.setOnAction(this::firstDataset);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.previousItemButton();
         bButton.setOnAction(this::previousDataset);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.nextItemButton();
         bButton.setOnAction(this::nextDataset);
         dataButtons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        bButton = GUIUtils.lastItemButton();
         bButton.setOnAction(this::lastDataset);
         dataButtons.add(bButton);
 
-        Button plusButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        Button plusButton = GUIUtils.addItemButton();
         plusButton.setOnAction(e -> addPeakToPath());
         dataButtons.add(plusButton);
 
-        Button minusButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", AnalystApp.ICON_SIZE_STR, AnalystApp.ICON_FONT_SIZE_STR, ContentDisplay.GRAPHIC_ONLY);
+        Button minusButton = GUIUtils.removeItemButton();
         minusButton.setOnAction(e -> removePeakFromPath());
         dataButtons.add(minusButton);
 

@@ -17,8 +17,7 @@
  */
 package org.nmrfx.analyst.gui.tools;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import atlantafx.base.theme.Styles;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
@@ -131,7 +130,8 @@ public class ScannerTool implements ControllerTool {
         tableTab.setContent(borderPane);
         borderPane.setCenter(tableView);
         tableTabPane.getTabs().add(tableTab);
-        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", AnalystApp.ICON_SIZE_STR, AnalystApp.REG_FONT_SIZE_STR, ContentDisplay.LEFT);
+        tableView.getStyleClass().addAll(Styles.DENSE);
+        Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
 
         Button reloadButton = new Button("Reload");
