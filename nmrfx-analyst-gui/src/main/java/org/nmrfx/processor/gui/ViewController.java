@@ -1,5 +1,6 @@
 package org.nmrfx.processor.gui;
 
+import atlantafx.base.theme.Styles;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -436,6 +437,7 @@ public class ViewController {
                 spinner.setEditable(true);
                 spinner.getEditor().setPrefWidth(60);
                 spinner.setPrefWidth(80);
+                spinner.getStyleClass().add(Styles.SMALL);
                 spinner.setOnScroll(e -> {
                     spinner.setUserData(e.isControlDown());
                     scrollPlane(e, iDim, iSpin);
@@ -612,7 +614,7 @@ public class ViewController {
 
     private void createViewGrid() {
         initSpinners();
-        viewGridPane.setHgap(10);
+        viewGridPane.setHgap(5);
         viewGridPane.setVgap(5);
         for (int i = 0; i < SpectrumStatusBar.DIM_NAMES.length; i++) {
             List<Node> rowNodes = new ArrayList<>();
@@ -620,9 +622,10 @@ public class ViewController {
             final int iAxis = i;
             String dimName = SpectrumStatusBar.DIM_NAMES[i];
             MenuButton mButton = new MenuButton(dimName);
+            mButton.getStyleClass().add(Styles.SMALL);
             viewGridPane.add(mButton, 0, i);
-            double textWidth = 50.0;
-            double spinnerWidth = 75.0;
+            double textWidth = 70;
+            double spinnerWidth = 75;
             rowNodes.add(mButton);
             viewLimitProps[i][0] = new SimpleDoubleProperty(0.0);
             viewLimitProps[i][1] = new SimpleDoubleProperty(0.0);
@@ -648,6 +651,8 @@ public class ViewController {
             viewGridPane.add(planeSpinner[i][1], 4, i);
             planeSpinner[i][0].setPrefWidth(spinnerWidth);
             planeSpinner[i][1].setPrefWidth(spinnerWidth);
+            planeSpinner[i][0].getStyleClass().add(Styles.SMALL);
+            planeSpinner[i][1].getStyleClass().add(Styles.SMALL);
             rowNodes.add(lowField);
             rowNodes.add(upField);
             rowNodes.add(planeSpinner[i][0]);
