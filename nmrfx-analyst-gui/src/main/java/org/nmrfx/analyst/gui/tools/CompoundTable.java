@@ -8,6 +8,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -108,6 +109,10 @@ public class CompoundTable {
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
     }
 
+    public void showCompoundTab() {
+        tableTabPane.getSelectionModel().select(1);
+    }
+
     void buildCompoundTool() {
         Tab libraryTableTab = new Tab("Compounds");
         tableView = new TableView<>();
@@ -117,26 +122,40 @@ public class CompoundTable {
         libraryTableTab.setClosable(false);
         libraryTableTab.setContent(hBox);
         tableTabPane.getTabs().add(libraryTableTab);
-        VBox vBox = new VBox();
-        vBox.setMinWidth(400);
-        hBox.getChildren().addAll(vBox, tableView);
+        TabPane tabPane = new TabPane();
+        tabPane.setMinWidth(300);
+        hBox.getChildren().addAll(tabPane, tableView);
         hBox.setSpacing(15);
-        makeCompoundControls(vBox);
+
+        makeCompoundControls(tabPane);
     }
 
-    private void makeCompoundControls(VBox vBox) {
-        ToolBar toolBar = new ToolBar();
+    private void makeCompoundControls(TabPane tabPane) {
+
+        Tab peakTab = new Tab("Peaks");
+        ToolBar peakToolBar = new ToolBar();
         Button peakButton = new Button("Peaks");
         peakButton.setOnAction(e -> showPeakList());
-        toolBar.getItems().add(peakButton);
+        peakToolBar.getItems().add(peakButton);
 
         Button updateDataButton = new Button("Update");
         updateDataButton.setOnAction(e -> updateFromPeakList());
-        toolBar.getItems().add(updateDataButton);
+        peakToolBar.getItems().add(updateDataButton);
+        VBox peakBox = new VBox();
+        peakBox.setPadding(new Insets(5, 5, 5, 5));
+        peakTab.setContent(peakBox);
+        peakBox.getChildren().add(peakToolBar);
+
+        Tab searchTab = new Tab("Search");
+        VBox vBox = new VBox();
+        vBox.setPadding(new Insets(5, 5, 5, 5));
+
+        searchTab.setContent(vBox);
+        ToolBar searchToolBar = new ToolBar();
 
         Button matchDataButton = new Button("Match");
         matchDataButton.setOnAction(e -> matchData());
-        toolBar.getItems().add(matchDataButton);
+        searchToolBar.getItems().add(matchDataButton);
 
         Label activeCompoundLabel = new Label("Active:");
         currentCompoundName = new Label();
@@ -158,8 +177,24 @@ public class CompoundTable {
         hBox2.setAlignment(Pos.CENTER_LEFT);
         hBox2.setSpacing(10);
         hBox2.getChildren().addAll(searchLabel, searchField);
+        searchLabel.getStyleClass().add(Styles.SMALL);
+        searchField.getStyleClass().add(Styles.SMALL);
 
         vBox.setSpacing(5);
+        Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
+        TextFields.bindAutoCompletion(searchField, suggestionProvider);
+        final ColorPicker cp = new ColorPicker();
+        cp.getStyleClass().add("button");
+        cp.setStyle("-fx-color-label-visible:false;");
+        cp.setValue(Color.RED);
+        cp.setOnAction(t -> {
+            color = cp.getValue();
+            update();
+        });
+        vBox.getChildren().addAll(searchToolBar, hBox1, hBox2);
+
+
+
 
         Label offsetLabel = new Label("Offset:");
         offsetLabel.setPrefWidth(60);
@@ -168,7 +203,6 @@ public class CompoundTable {
         scaleLabel.setPrefWidth(60);
 
         Slider scaleSlider = new Slider(0.1, 20.0, 1.0);
-        scaleSlider.getStyleClass().add(Styles.SMALL);
         TextField scaleField = GUIUtils.getDoubleTextField(scaleProperty, 2);
         scaleField.setPrefWidth(50);
         GUIUtils.bindSliderField(scaleSlider, scaleField, "#.##");
@@ -180,9 +214,10 @@ public class CompoundTable {
         hBoxScale.setSpacing(10);
 
         hBoxScale.getChildren().addAll(scaleLabel, scaleSlider, scaleField);
-
+        scaleSlider.getStyleClass().add(Styles.SMALL);
+        searchLabel.getStyleClass().add(Styles.SMALL);
+        scaleField.getStyleClass().add(Styles.SMALL);
         Slider offsetSlider = new Slider(0.0, 1.0, 0.01);
-        offsetSlider.getStyleClass().add(Styles.SMALL);
 
         TextField offsetField = GUIUtils.getDoubleTextField(offsetProperty, 2);
         GUIUtils.bindSliderField(offsetSlider, offsetField, "#.##");
@@ -193,29 +228,26 @@ public class CompoundTable {
         offsetField.setPrefWidth(50);
         HBox hBoxOffset = new HBox();
         hBoxOffset.setSpacing(10);
+        offsetSlider.getStyleClass().add(Styles.SMALL);
+        offsetLabel.getStyleClass().add(Styles.SMALL);
+        offsetField.getStyleClass().add(Styles.SMALL);
 
         hBoxOffset.getChildren().addAll(offsetLabel, offsetSlider, offsetField);
 
-
-        vBox.getChildren().addAll(toolBar, hBox1, hBox2, hBoxScale, hBoxOffset);
-
-        Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = param -> getMatchingNames(param.getUserText());
-        TextFields.bindAutoCompletion(searchField, suggestionProvider);
-        final ColorPicker cp = new ColorPicker();
-        cp.getStyleClass().add("button");
-        cp.setStyle("-fx-color-label-visible:false;");
-        cp.setValue(Color.RED);
-        cp.setOnAction(t -> {
-            color = cp.getValue();
-            update();
-        });
         HBox hBoxColor = new HBox();
         hBoxColor.setSpacing(10);
         Label colorLabel = new Label("Color:");
         colorLabel.setPrefWidth(60);
         hBoxColor.getChildren().addAll(colorLabel, cp);
 
-        vBox.getChildren().add(hBoxColor);
+        Tab viewTab = new Tab("View");
+        VBox viewBox = new VBox();
+        viewBox.setPadding(new Insets(5, 5, 5, 5));
+
+        viewTab.setContent(viewBox);
+        viewBox.setSpacing(10);
+        viewBox.getChildren().addAll(hBoxScale, hBoxOffset, hBoxColor );
+        tabPane.getTabs().addAll(searchTab, viewTab, peakTab);
     }
 
     void update() {

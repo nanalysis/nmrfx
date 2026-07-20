@@ -98,7 +98,7 @@ public class ScannerTool implements ControllerTool {
     PolyChart chart;
     Stage stage;
     ScanTable scanTable;
-    CompoundTable compoundTable;
+    CompoundTable compoundTable = null;
     ToggleGroup measureTypeGroup = new ToggleGroup();
     ToggleGroup offsetTypeGroup = new ToggleGroup();
 
@@ -157,7 +157,20 @@ public class ScannerTool implements ControllerTool {
         tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
         tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
         loadFromDataset();
-        compoundTable = new CompoundTable(this, tableTabPane);
+    }
+
+    public void showCompoundTable() {
+        if (compoundTable == null) {
+            compoundTable = new CompoundTable(this, tableTabPane);
+            double height = controller.getStage().getHeight();
+            double currentSpace = height * (1.0 - getSplitPanePosition());
+            double minSize = 200;
+            if (currentSpace < minSize) {
+                double f = 1.0 - (minSize / height);
+                controller.setSplitPaneDivider(f);
+            }
+        }
+        compoundTable.showCompoundTab();
     }
 
     public TableSelectionMode tableSelectionMode() {

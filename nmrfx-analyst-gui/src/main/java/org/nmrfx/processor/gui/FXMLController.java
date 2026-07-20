@@ -2082,6 +2082,12 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         scannerTool.showMenus();
     }
 
+    public void showCompoundTool() {
+        showScannerTool();
+        scannerTool.showMenus();
+        scannerTool.showCompoundTable();
+    }
+
     public void hideScannerMenus() {
         if (scannerTool != null) {
             scannerTool.hideMenus();
