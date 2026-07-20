@@ -52,7 +52,7 @@
                                         <Slider fx:id="lvlSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="lvlField" text="" prefWidth="60"
+                                        <TextField fx:id="lvlField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="1"
                                         />
                                         <Label text="Contour Level Multiplier"
@@ -61,7 +61,7 @@
                                         <Slider fx:id="clmSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="clmField" text="" prefWidth="60"
+                                        <TextField fx:id="clmField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="3"
                                         />
                                         <Label text="Number of Contour Levels"
@@ -70,7 +70,7 @@
                                         <Slider fx:id="nlvlsSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="nlvlsField" text="" prefWidth="60"
+                                        <TextField fx:id="nlvlsField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="5"
                                         />
                                     </children>
@@ -99,7 +99,7 @@
                                         <Slider fx:id="lvlSlider1D" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="lvlField1D" text="" prefWidth="60"
+                                        <TextField fx:id="lvlField1D" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="3"
                                         />
                                         <Label text="Vertical Offset"
@@ -108,7 +108,7 @@
                                         <Slider fx:id="offsetSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="offsetField" text="" prefWidth="60"
+                                        <TextField fx:id="offsetField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="5"
                                         />
                                         <Label text="Stack X Value"
@@ -117,7 +117,7 @@
                                         <Slider fx:id="stackXSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="stackXField" text="" prefWidth="50"
+                                        <TextField fx:id="stackXField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="7"
                                         />
                                         <Label text="Stack Y Value"
@@ -126,7 +126,7 @@
                                         <Slider fx:id="stackYSlider" min="1" max="20" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="9" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="stackYField" text="" prefWidth="50"
+                                        <TextField fx:id="stackYField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="9"
                                         />
                                         <Label text="Line Width:"
@@ -165,7 +165,7 @@
                                         <Slider fx:id="posWidthSlider" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="posWidthField" text="" prefWidth="35"
+                                        <TextField fx:id="posWidthField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="3"
                                         />
 
@@ -190,7 +190,7 @@
                                         <Slider fx:id="negWidthSlider" prefWidth="200"
                                                 GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2"
                                         />
-                                        <TextField fx:id="negWidthField" text="" prefWidth="35"
+                                        <TextField fx:id="negWidthField" text="" prefWidth="80"
                                                    GridPane.columnIndex="2" GridPane.rowIndex="3"
                                         />
 
@@ -308,18 +308,17 @@
                         </VBox>
                     </TitledPane>
                     <TitledPane text="Slices" VBox.vgrow="ALWAYS">
-                        <VBox>
+                        <VBox spacing="5">
                             <children>
                                 <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false"
                                           onAction="#sliceAction" text="Center slices at crosshair"/>
                                 <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false"
                                           onAction="#sliceAction" text="Use dataset color for slices" selected="true"/>
                                 <GridPane BorderPane.alignment="CENTER" GridPane.rowIndex="0"
-                                          GridPane.columnIndex="0" GridPane.columnSpan="1">
+                                          GridPane.columnIndex="0" GridPane.columnSpan="1" vgap="5" hgap="5">
                                     <rowConstraints>
-                                        <RowConstraints minHeight="25.0" prefHeight="25.0"/>
-                                        <RowConstraints minHeight="25.0" prefHeight="25.0"/>
-                                        <RowConstraints minHeight="25.0" prefHeight="25.0"/>
+                                        <RowConstraints minHeight="25.0" prefHeight="30.0"/>
+                                        <RowConstraints minHeight="25.0" prefHeight="30.0"/>
                                     </rowConstraints>
                                     <children>
                                         <Label text="Slice 1"
