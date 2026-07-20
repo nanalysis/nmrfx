@@ -4,7 +4,10 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.utilities.WebConnect;
+
+import java.io.IOException;
 
 public class HelpMenuActions extends MenuActions {
 
@@ -35,7 +38,10 @@ public class HelpMenuActions extends MenuActions {
         MenuItem openSourceItem = new MenuItem("Open Source Libraries");
         openSourceItem.setOnAction(this::showOpenSourceAction);
 
-        menu.getItems().addAll(docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
+        MenuItem slackChannelItem = new MenuItem("Join Slack Channel");
+        slackChannelItem.setOnAction(this::joinSlackChannelAction);
+
+        menu.getItems().addAll(slackChannelItem, docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
     }
 
     private void showWebSiteAction(ActionEvent event) {
@@ -45,6 +51,7 @@ public class HelpMenuActions extends MenuActions {
     private void showPublicationAction() {
         app.getHostServices().showDocument("https://rdcu.be/eVnKQ");
     }
+
     private void showDocAction(ActionEvent event) {
         app.getHostServices().showDocument("http://docs.nmrfx.org");
     }
@@ -79,4 +86,15 @@ public class HelpMenuActions extends MenuActions {
     private void showOpenSourceAction(ActionEvent event) {
         app.getHostServices().showDocument("https://nmrfx.org/downloads/oss/dependencies.html");
     }
+
+    private void joinSlackChannelAction(ActionEvent event) {
+        String url = "https://join.slack.com/t/nmrfx/shared_invite/zt-42tyhwuo4-0Rp2vZezUL_HEPR9fxGJyA";
+        try {
+            new ProcessBuilder("open", url).start();
+        } catch (IOException e) {
+            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+            exceptionDialog.showAndWait();
+        }
+    }
+
 }
