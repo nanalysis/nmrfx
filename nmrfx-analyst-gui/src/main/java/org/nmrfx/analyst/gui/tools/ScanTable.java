@@ -36,13 +36,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.table.ColumnFilter;
 import org.controlsfx.control.table.TableFilter;
-import org.controlsfx.dialog.ExceptionDialog;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.material2.Material2MZ;
 import org.nmrfx.analyst.gui.AnalystApp;
@@ -93,7 +89,7 @@ public class ScanTable {
     static final String NLVL_COLUMN_NAME = "NLvl";
     static final String OFFSET_COLUMN_NAME = "Offset";
     static final String SCANNER_ERROR = "Scanner Error";
-    public static final Pattern VPAT = Pattern.compile("^(V[0-9]+):.*");
+    public static final Pattern VPAT = Pattern.compile("^(V\\d+):.*");
 
     static final List<String> standardHeaders = List.of(PATH_COLUMN_NAME, SEQUENCE_COLUMN_NAME, ROW_COLUMN_NAME, ETIME_COLUMN_NAME, NDIM_COLUMN_NAME, ACTIVE_COLUMN_NAME);
     static final Color[] COLORS = new Color[17];
@@ -192,7 +188,7 @@ public class ScanTable {
     }
 
     public void ensureDatasetAttributes() {
-        if (getItems().stream().filter(item -> item.getDatasetAttributes() == null).findAny().isPresent()) {
+        if (getItems().stream().anyMatch(item -> item.getDatasetAttributes() == null)) {
             setDatasetAttributes();
         }
     }
@@ -1064,7 +1060,7 @@ public class ScanTable {
     }
 
     public List<String> getDataColumns() {
-        return getHeaders().stream().filter(header -> isNumeric(header)).toList();
+        return getHeaders().stream().filter(this::isNumeric).toList();
     }
 
     private void hitDataDelete(TableColumn<FileTableItem, ?> column) {

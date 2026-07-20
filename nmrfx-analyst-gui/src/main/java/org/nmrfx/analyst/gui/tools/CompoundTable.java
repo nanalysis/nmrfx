@@ -294,6 +294,7 @@ public class CompoundTable {
             try {
                 DBData.loadData(Path.of(dbPath));
             } catch (IOException e) {
+                log.error("Error loading segment library", e);
             }
 
             return DBData.getNames(pattern);
@@ -474,7 +475,9 @@ public class CompoundTable {
     }
 
     public static List<ShiftGroup> clusterGroups(List<ShiftGroup> peaks, double maxCouplingHz, double fieldMHz) {
-        if (peaks.isEmpty()) return List.of();
+        if (peaks.isEmpty()) {
+            return List.of();
+        }
 
         double gapPpm = maxCouplingHz / fieldMHz;
 
