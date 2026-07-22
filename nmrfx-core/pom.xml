@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.nmrfx</groupId>
         <artifactId>nmrfx</artifactId>
-        <version>12.0.1-SNAPSHOT</version>
+        <version>12.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
             <dependency>
                 <groupId>org.nmrfx</groupId>
                 <artifactId>nmrfx-bom</artifactId>
-                <version>12.0.1-SNAPSHOT</version>
+                <version>12.0.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -126,7 +126,7 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-utils</artifactId>
-            <version>12.0.1-SNAPSHOT</version>
+            <version>12.0.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
