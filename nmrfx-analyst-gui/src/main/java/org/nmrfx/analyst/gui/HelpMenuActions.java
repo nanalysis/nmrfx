@@ -1,5 +1,6 @@
 package org.nmrfx.analyst.gui;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
@@ -89,12 +90,7 @@ public class HelpMenuActions extends MenuActions {
 
     private void joinSlackChannelAction(ActionEvent event) {
         String url = "https://join.slack.com/t/nmrfx/shared_invite/zt-42tyhwuo4-0Rp2vZezUL_HEPR9fxGJyA";
-        try {
-            new ProcessBuilder("open", url).start();
-        } catch (IOException e) {
-            ExceptionDialog exceptionDialog = new ExceptionDialog(e);
-            exceptionDialog.showAndWait();
-        }
+        AnalystApp.getAnalystApp().getHostServices().showDocument(url);
     }
 
 }
