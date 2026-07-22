@@ -27,10 +27,5 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 </project>

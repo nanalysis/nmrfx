@@ -68,20 +68,6 @@
             <version>12.4.0</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-              <groupId>org.openjfx</groupId>
-              <artifactId>javafx-controls</artifactId>
-          </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>jfx-incubator-richtext</artifactId>
-            <version>25</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>jfx-incubator-input</artifactId>
-            <version>25</version>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -240,7 +226,7 @@
                         <configuration>
                             <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
                             <excludeClassifiers>ios-arm64,ios-x86_64,android-arm64,android-arm,android-x86,android-x86_64,windows-x86,linux-x86,linux-ppc64le,linux-arm64,linux-armhf</excludeClassifiers>
-                            <excludeArtifactIds>*ios-x86_64*,*android*,*ios-arm64*</excludeArtifactIds>
+                            <excludeGroupIds>org.openjfx</excludeGroupIds> 
                         </configuration>
                     </execution>
                 </executions>
