@@ -33,11 +33,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfx-plugin-api</artifactId>
             <version>12.0.2-SNAPSHOT</version>
