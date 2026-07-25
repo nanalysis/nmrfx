@@ -30,10 +30,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.checkerframework.checker.units.qual.C;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
@@ -45,11 +43,6 @@ import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -270,22 +263,6 @@ public class PathPlotTool {
     }
 
     public void savePathTable() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save Table File");
-        File file = fileChooser.showSaveDialog(null);
-        if (file != null) {
-            savePathTable(file);
-        }
+        TableUtils.saveTableToFile(tableView);
     }
-
-    private void savePathTable(File file) {
-        Charset charset = Charset.forName("US-ASCII");
-        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
-            String text = TableUtils.getTableAsString(tableView, true);
-            writer.write(text);
-        } catch (IOException x) {
-            log.warn(x.getMessage(), x);
-        }
-    }
-
 }

@@ -7,14 +7,24 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.util.converter.DoubleStringConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 public class TableUtils {
+    private static final Logger log = LoggerFactory.getLogger(TableUtils.class);
 
     private TableUtils() {
     }
@@ -160,6 +170,25 @@ public class TableUtils {
 
     public static DoubleColumnFormatter getDoubleColumnFormatter(int decimalPlaces) {
         return new DoubleColumnFormatter(decimalPlaces);
+    }
+
+    public static void saveTableToFile(TableView tableView) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Table File");
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            saveTableToFile(tableView, file);
+        }
+    }
+
+    private static void saveTableToFile(TableView tableView, File file) {
+        Charset charset = StandardCharsets.US_ASCII;
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
+            String text = TableUtils.getTableAsString(tableView, true);
+            writer.write(text);
+        } catch (IOException x) {
+            log.warn(x.getMessage(), x);
+        }
     }
 
 }
