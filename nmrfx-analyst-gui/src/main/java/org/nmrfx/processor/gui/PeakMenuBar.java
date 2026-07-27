@@ -19,6 +19,7 @@ import org.nmrfx.processor.gui.undo.GroupUndo;
 import org.nmrfx.processor.gui.undo.PeakListUndo;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableUtils;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -41,12 +42,17 @@ public class PeakMenuBar {
 
     private final PeakMenuTarget menuTarget;
     private MenuButton peakListMenu = null;
+    private TableView tableView = null;
 
     public PeakMenuBar(PeakMenuTarget menuTarget) {
         this.menuTarget = menuTarget;
     }
 
     public void initMenuBar(ToolBar menuBar, boolean initPeakListMenu) {
+        initMenuBar(menuBar, initPeakListMenu,null);
+    }
+
+    public void initMenuBar(ToolBar menuBar, boolean initPeakListMenu, TableView tableView) {
         if (initPeakListMenu) {
             peakListMenu = new MenuButton("List");
             menuBar.getItems().add(peakListMenu);
@@ -64,6 +70,11 @@ public class PeakMenuBar {
 
         MenuItem saveNMRPipe = new MenuItem("Save nmrPipe...");
         saveNMRPipe.setOnAction(e -> savePeaks("nmrpipe", "txt"));
+
+        if (tableView != null) {
+            MenuItem saveTableItem = new MenuItem("Save table...");
+            saveTableItem.setOnAction(e -> saveTable());
+        }
 
         fileMenu.getItems().addAll(saveXPK2, saveXPK, saveSparky, saveNMRPipe);
 
@@ -663,4 +674,9 @@ public class PeakMenuBar {
         menuTarget.setPeakList(peakList);
     }
 
+    private  void saveTable() {
+        if (tableView != null) {
+            TableUtils.saveTableToFile(tableView);
+        }
+    }
 }

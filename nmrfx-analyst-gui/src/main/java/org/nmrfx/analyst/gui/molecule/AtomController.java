@@ -35,7 +35,7 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.KeyCode;
+import javafx.scene.input.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -65,6 +65,7 @@ import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import org.nmrfx.structure.chemistry.predict.PredictWithHomolog;
 import org.nmrfx.structure.chemistry.predict.ProteinPredictor;
 import org.nmrfx.utils.GUIUtils;
+import org.nmrfx.utils.TableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,6 +85,7 @@ import java.util.stream.Collectors;
 public class AtomController implements Initializable, StageBasedController, FreezeListener, MoleculeListener, PropertyChangeListener {
     static final Map<String, String> filterMap = new HashMap<>();
     private static final Logger log = LoggerFactory.getLogger(AtomController.class);
+    private final KeyCodeCombination copyKeyCodeCombination = new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN);
 
     static {
         filterMap.put("Backbone", "*.H,N,HN,C,CA,CB");
@@ -208,6 +210,10 @@ public class AtomController implements Initializable, StageBasedController, Free
         MenuItem readPPMItem = new MenuItem("Read PPM...");
         readPPMItem.setOnAction(e -> readPPM());
         fileMenu.getItems().add(readPPMItem);
+
+        MenuItem saveTableItem = new MenuItem("Save Table...");
+        saveTableItem.setOnAction(e -> saveTable());
+        fileMenu.getItems().add(saveTableItem);
 
         menuBar.getItems().add(fileMenu);
 
@@ -411,7 +417,8 @@ public class AtomController implements Initializable, StageBasedController, Free
     }
 
     void initTable() {
-        atomTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        atomTableView.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> atomTableView.requestFocus());
+        atomTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         atomTableView.setEditable(true);
 
         TableColumn<Atom, String> atomNameCol = new TableColumn<>("Atom");
@@ -439,6 +446,22 @@ public class AtomController implements Initializable, StageBasedController, Free
 
         atomTableView.getColumns().setAll(indexColumn, entityNameColumn,
                 residueNameColumn, residueNumberColumn, atomNameCol);
+        atomTableView.setOnKeyPressed(this::keyPressed);
+
+    }
+
+    public void keyPressed(KeyEvent keyEvent) {
+        KeyCode code = keyEvent.getCode();
+        if (code == null) {
+            return;
+        }
+        if (code == KeyCode.C) {
+            // Paste command is shortcut + V, so make sure the KeyEvent matches that combination
+            if (copyKeyCodeCombination.match(keyEvent)) {
+                TableUtils.copyTableToClipboard(atomTableView, false);
+            }
+            keyEvent.consume();
+        }
     }
 
     private int getPPMSetNum(String set) {
@@ -793,5 +816,9 @@ public class AtomController implements Initializable, StageBasedController, Free
         });
 
         return dialog.showAndWait();
+    }
+
+    private void saveTable() {
+        TableUtils.saveTableToFile(atomTableView);
     }
 }

@@ -122,7 +122,7 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
         toolBar.getItems().add(peakListMenuButton);
         updatePeakListMenu();
         peakMenuBar = new PeakMenuBar(this);
-        peakMenuBar.initMenuBar(toolBar, false);
+        peakMenuBar.initMenuBar(toolBar, false, tableView);
         GUIProject.getActive().addPeakListSubscription(this::updatePeakListMenu);
         PluginLoader.getInstance().registerPluginsOnEntryPoint(EntryPoint.PEAK_MENU, this);
     }

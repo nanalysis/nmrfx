@@ -205,6 +205,12 @@
                 <!-- license: GPLv2 license, includes the CLASSPATH exception -->
             </dependency>
             <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>jfx-incubator-richtext</artifactId>
+                <version>${javafx.version}</version>
+                <!-- license: GPLv2 license, includes the CLASSPATH exception -->
+            </dependency>
+            <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>2.5</version>
