@@ -369,9 +369,9 @@ public class ViewController {
                 int last = 0;
                 int delta = 0;
                 if ((drawList != null) && !drawList.isEmpty()) {
-                     first = drawList.getFirst();
-                     last = drawList.getLast();
-                     delta = last -first;
+                    first = drawList.getFirst();
+                    last = drawList.getLast();
+                    delta = last - first;
                 }
                 if (iSpin == 0) {
                     if (delta == 0) {
@@ -380,7 +380,7 @@ public class ViewController {
                         first = plane;
                         last = first + delta;
                         drawList = new ArrayList<>();
-                        for (int i=first;i<=last;i++) {
+                        for (int i = first; i <= last; i++) {
                             drawList.add(i);
                             chart.setDrawlist(drawList);
                         }
@@ -388,7 +388,7 @@ public class ViewController {
                 } else {
                     last = plane;
                     drawList = new ArrayList<>();
-                    for (int i=first;i<=last;i++) {
+                    for (int i = first; i <= last; i++) {
                         drawList.add(i);
                         chart.setDrawlist(drawList);
                     }
@@ -574,6 +574,7 @@ public class ViewController {
     private void updateRowMenu(PolyChart chart, MenuButton mButton, int iAxis) {
         MenuItem fullItem = new MenuItem("Full");
         fullItem.setOnAction(e -> {
+            chart.full(iAxis);
             chart.clearDrawlist();
             chart.refresh();
         });
@@ -582,12 +583,14 @@ public class ViewController {
         MenuItem firstItem = new MenuItem("First");
         firstItem.setOnAction(e -> {
             chart.setDrawlist(0);
+            chart.full(iAxis);
             chart.refresh();
         });
         mButton.getItems().add(firstItem);
 
         MenuItem lastItem = new MenuItem("Last");
         lastItem.setOnAction(e -> {
+            chart.full(iAxis);
             chart.setDrawlist(1000);
             chart.refresh();
         });
@@ -690,6 +693,21 @@ public class ViewController {
         if ((viewLimitProps != null) && !chart.getDatasetAttributes().isEmpty()) {
             DisplayMode displayMode = displayModeComboBox.getValue();
             DatasetAttributes dataAttr = chart.getDatasetAttributes().getFirst();
+            if (displayMode == null) {
+                if (dataAttr.getDataset().getNDim() == 1) {
+                    displayMode = DisplayMode.TRACES;
+                } else if (chart.is1D()) {
+                    if (isStacked()) {
+                        displayMode = DisplayMode.STACKPLOT;
+                    } else {
+                        displayMode = DisplayMode.TRACES;
+                    }
+                } else {
+                    displayMode = DisplayMode.CONTOURS;
+                }
+
+                displayModeComboBox.setValue(displayMode);
+            }
             int nFreqDim = displayMode == DisplayMode.TRACES ? 1 : dataAttr.getDataset().getNFreqDims();
             int nDim = dataAttr.getDataset().getNDim();
             var axes = chart.getAxes();
