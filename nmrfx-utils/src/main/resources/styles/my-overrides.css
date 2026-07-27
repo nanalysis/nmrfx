@@ -1,19 +1,41 @@
 .root {
-    -fx-background-color: -color-bg-default;
-    -fx-control-inner-background: -color-bg-default;
-    -fx-text-box-border:          -color-border-default;
-    -fx-text-inner-color:         -color-fg-default;
-    -fx-accent:                   -color-accent-emphasis;
-    -fx-focus-color:              -color-accent-emphasis;
-    -fx-faint-focus-color:        -color-accent-muted;
+    -fx-control-inner-background:  -color-bg-default;
+    -fx-text-box-border:            -color-border-default;
+    -fx-text-inner-color:           -color-fg-default;
+    -fx-accent:                     -color-accent-emphasis;
+    -fx-focus-color:                -color-accent-emphasis;
+    -fx-faint-focus-color:          -color-accent-muted;
+    -fx-inner-border:               -color-border-muted;
+    -fx-inner-border-horizontal:    -color-border-muted;
+    -fx-outer-border:               -color-border-default;
+    -fx-box-border:                 -color-border-default;
+    -fx-table-cell-border-color:    -color-border-default;
+    -fx-body-color:                 -color-bg-default;
+    -fx-body-color-to-right:        -color-bg-default;
+    -fx-background:                 -color-bg-default;
+    -fx-base:                       -color-bg-default;
+    -fx-color:                      -color-bg-default;
+    -fx-hover-base:                 -color-base-2;
+    -fx-pressed-base:               -color-base-3;
+    -fx-shadow-highlight-color:     -color-bg-subtle;
+    -fx-mark-highlight-color:       -color-bg-subtle;
+    -fx-cell-focus-inner-border:    -color-accent-emphasis;
+    -fx-default-button:             -color-accent-emphasis;
+    -fx-selection-bar:              -color-accent-emphasis;
+    -fx-selection-bar-non-focused:  -color-base-2;
+    -fx-selection-bar-text:         -color-fg-emphasis;
+    -fx-light-text-color:           -color-fg-emphasis;
+    -fx-text-base-color:            -color-fg-default;
+    -fx-text-background-color:      -color-fg-default;
+    -fx-mark-color:                 -color-fg-default;
+}
 
-    -fx-inner-border:             -color-border-muted;
-    -fx-body-color:               -color-bg-default;
-    -fx-color:                    -color-bg-default;
-    -fx-hover-base:                -color-base-2;
-    -fx-pressed-base:             -color-base-3;
-    -fx-shadow-highlight-color:   -color-bg-subtle;
-    -fx-text-background-color:    -color-fg-default;
+.table-view2 > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected > .tableview2-cell {
+    -fx-background-color: -color-accent-muted;
+}
+
+.table-view2:focused:row-selection > .virtual-flow > .clipped-container > .sheet > .table-row-cell:focused > .tableview2-cell {
+    -fx-background-color: -color-accent-muted, -color-accent-emphasis, -color-accent-muted;
 }
 
 /* 
