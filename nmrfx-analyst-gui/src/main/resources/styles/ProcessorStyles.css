@@ -98,3 +98,10 @@
 .property-sheet .property-pane {
     -fx-padding: 5 5 5 5;   /* shrink just the left inset */
 }
+
+.section-title-label {
+    -fx-text-fill: -color-fg-muted;
+}
+.section-title-label:selected {
+    -fx-text-fill: -color-accent-fg;
+}

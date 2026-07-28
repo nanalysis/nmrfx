@@ -3,6 +3,7 @@ package org.nmrfx.processor.gui.utils;
 import atlantafx.base.theme.Styles;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.css.PseudoClass;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -162,11 +163,12 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             titleBox.setAlignment(Pos.CENTER);
             HBox.setHgrow(titleBox, Priority.ALWAYS);
             // Create Title
+
             Label label = new Label(titledPane.getText());
             label.textProperty().bind(titledPane.textProperty());
-            label.textFillProperty().bind(titledPane.textFillProperty());
-
+            label.getStyleClass().add("section-title-label");
             titleBox.getChildren().add(label);
+
             // Create spacer to separate label and buttons
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -177,11 +179,16 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             checkBox.setOnAction(e -> updateTitle());
             Color fillColor = processingOperation.isDisabled() ? Color.BLUE : Color.GRAY;
             titledPane.setTextFill(fillColor);
-            Label moveIcon = GUIUtils.createIconLabel(Material2AL.ARROW_UPWARD);
+            Label moveIcon = GUIUtils.createIconLabel(Material2AL.DRAG_INDICATOR);
             moveIcon.setOnMouseReleased(Event::consume);
             titleBox.getChildren().addAll(checkBox, moveIcon);
-            titledPane.textFillProperty().bind(Bindings.when(checkBox.selectedProperty()).then(Color.BLUE).otherwise(Color.GRAY));
             setupDragHandling(titledPane, moveIcon);
+            PseudoClass SELECTED = PseudoClass.getPseudoClass("selected");
+
+            label.pseudoClassStateChanged(SELECTED, checkBox.isSelected());
+
+            checkBox.selectedProperty().addListener((obs, wasSelected, isSelected) ->
+                    label.pseudoClassStateChanged(SELECTED, isSelected));
             return titleBox;
         }
 
