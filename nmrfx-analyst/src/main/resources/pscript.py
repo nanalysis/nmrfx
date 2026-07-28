@@ -4,6 +4,8 @@ from org.nmrfx.peaks import Peak
 from org.nmrfx.peaks.io import PeakReader
 from org.nmrfx.peaks.io import PeakWriter
 from org.nmrfx.processor.datasets.peaks import NUSConScore
+from org.nmrfx.structure.chemistry import IdPeak
+
 
 class NMRFxPeakScripting:
 
@@ -47,6 +49,14 @@ class NMRFxPeakScripting:
         score = NUSConScore.valleyToPeak(dataset, peak1,peak2, iDim)
         return score
     
-        
+    def idShifts(self, patterns, printMode=False):
+        idPeak = IdPeak()
+        matches = idPeak.idShifts(patterns)
+        if printMode:
+            for match in matches:
+                print(match)
+        else:
+            return matches
+    
 npk = NMRFxPeakScripting()
 

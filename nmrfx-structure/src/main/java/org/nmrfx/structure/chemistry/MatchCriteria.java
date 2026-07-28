@@ -43,6 +43,18 @@ public class MatchCriteria {
         this.foldCount = foldCount;
     }
 
+    public MatchCriteria(int dim, IdPeak.MatchPattern matchPattern,  final String relation, final double folding, final int foldCount) {
+        super();
+        this.dim = dim;
+        this.ppm = matchPattern.target();
+        this.tol = matchPattern.tolerance();
+        this.atomPats = matchPattern.atoms().toArray(new String[0]);
+        this.resPats = matchPattern.residues().toArray(new String[0]);
+        this.relation = relation;
+        this.folding = folding;
+        this.foldCount = foldCount;
+    }
+
     public void setPPM(double value) {
         ppm = value;
     }
@@ -94,16 +106,10 @@ public class MatchCriteria {
     /**
      * @return the ppm
      */
-    public double getPpm() {
+    public double getPPM() {
         return ppm;
     }
 
-    /**
-     * @param ppm the ppm to set
-     */
-    public void setPpm(double ppm) {
-        this.ppm = ppm;
-    }
 
     /**
      * @return the tol
