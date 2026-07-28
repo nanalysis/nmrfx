@@ -91,8 +91,8 @@
 }
 
 .property-sheet .property-pane > .label {
-    -fx-min-width: 130px;
-    -fx-pref-width: 130px;
+    -fx-min-width: 60px;
+    -fx-pref-width: 60px;
 }
 
 .property-sheet .property-pane {

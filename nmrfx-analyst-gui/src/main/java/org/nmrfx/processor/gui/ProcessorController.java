@@ -139,7 +139,11 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     @FXML
     private MenuItem saveOperations;
     @FXML
+    private Accordion paramAccordion;
+    @FXML
     private Accordion dimAccordion;
+    @FXML
+    private Accordion postProcessAccordion;
     @FXML
     private ModifiableAccordionScrollPane accordion;
     @FXML
@@ -177,6 +181,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     ObservableMap<ProcessingSection, List<ProcessingOperationInterface>> mapOpLists;
     ProcessingSection currentSection = null;
     TitledPane referencePane;
+    TitledPane dimReferencePane;
     NavigatorGUI navigatorGUI;
     private final Button datasetFileButton = new Button("File...");
 
@@ -381,7 +386,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setGraphic(titleBox);
     }
 
-    private TitledPane addTitlePane(ProcessingSection section, String title) {
+    private TitledPane addTitlePane(ProcessingSection section, String title, boolean post) {
         TitledPane titledPane = new TitledPane();
         titledPane.getStyleClass().add(Styles.DENSE);
         titledPane.setMaxWidth(400);
@@ -392,17 +397,22 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         titledPane.setContent(accordion1);
         titledPane.setPadding(new Insets(5,5,5,5));
         dimensionPanes.put(section, titledPane);
-        dimAccordion.getPanes().add(titledPane);
+        if (post) {
+            postProcessAccordion.getPanes().add(titledPane);
+        } else {
+            dimAccordion.getPanes().add(titledPane);
+        }
         return titledPane;
-
     }
 
     protected void createSimulatorAccordion() {
         dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
+        paramAccordion.getPanes().clear();
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
+        postProcessAccordion.getPanes().clear();
         currentSection = chartProcessor.getProcessingSection(1, new int[1], "SIMULATION");
-        var titledPane = addTitlePane(currentSection, "SIMULATION");
+        var titledPane = addTitlePane(currentSection, "SIMULATION", false);
         accordion = (ModifiableAccordionScrollPane) dimensionPanes.get(currentSection).getContent();
         chartProcessor.setVecDim(currentSection);
         titledPane.setExpanded(true);
@@ -415,8 +425,9 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
     protected void updateDimChoice(boolean[] complex) {
         dimensionPanes.clear();
         dimAccordion.getPanes().clear();
+        paramAccordion.getPanes().clear();
         int nDim = complex.length;
-        dimAccordion.getPanes().add(referencePane);
+        paramAccordion.getPanes().addAll(referencePane, dimReferencePane);
         ProcessingSection referenceSection = chartProcessor.getProcessingSection(0, null, "D1-REF");
         referencePane.expandedProperty().addListener(c -> setActivePane(referenceSection, referencePane));
 
@@ -431,7 +442,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
             } else {
                 section = chartProcessor.getProcessingSection(1, dims, "D");
             }
-            addTitlePane(section, "DIMENSION " + i);
+            addTitlePane(section, "DIMENSION " + i, false);
             dimList.add(section);
             if (add2DIndirect) {
                 if ((i == 1) && (nDim == 2)) {
@@ -440,7 +451,7 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                         adims[j - 1] = j - 1;
                     }
                     ProcessingSection sectionI = chartProcessor.getProcessingSection(1, adims, "I");
-                    addTitlePane(sectionI, "INDIRECT MATRIX");
+                    addTitlePane(sectionI, "INDIRECT MATRIX", false);
                     dimList.add(sectionI);
                 }
             }
@@ -452,19 +463,19 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
                     adims[j - 2] = j - 1;
                 }
                 ProcessingSection sectionI = chartProcessor.getProcessingSection(1, adims, "I");
-                addTitlePane(sectionI, "INDIRECT MATRIX");
+                addTitlePane(sectionI, "INDIRECT MATRIX", false);
                 dimList.add(sectionI);
             }
         }
         if (nDim > 1) {
             ProcessingSection section = chartProcessor.getProcessingSection(1, new int[0], "D");
 
-            addTitlePane(section, "FULL DATASET");
+            addTitlePane(section, "FULL DATASET", true);
 
             for (int i = 1; i <= nDim; i++) {
                 int[] dims = {i - 1};
                 ProcessingSection sectionP = chartProcessor.getProcessingSection(2, dims, "D");
-                addTitlePane(sectionP, "DIMENSION " + i + " (post processing)");
+                addTitlePane(sectionP, "DIMENSION " + i, true);
             }
         }
         currentSection = processingSection1;
@@ -1732,11 +1743,15 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         propertyManager = new PropertyManager(this, opTextField, popOver);
         referencePane = new TitledPane();
         referencePane.getStyleClass().add(Styles.DENSE);
+        dimReferencePane = new TitledPane();
+        dimReferencePane.getStyleClass().add(Styles.DENSE);
 
-        referencePane.setText("PARAMETERS");
-        addTitleBar(referencePane, "PARAMETERS", false);
+        referencePane.setText("DATASET PARAMETERS");
+        dimReferencePane.setText("DIM PARAMETERS");
+        addTitleBar(referencePane, "DATASETPARAMETERS", false);
+        addTitleBar(dimReferencePane, "DIM PARAMETERS", false);
 
-        refManager = new RefManager(this, referencePane);
+        refManager = new RefManager(this, referencePane, dimReferencePane);
         statusBar.setProgress(0.0);
 
         statusBar.getLeftItems().add(statusCircle);

@@ -7,7 +7,7 @@
 <?import org.controlsfx.control.PropertySheet?>
 <?import java.net.URL?>
 <VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="400.0"
-      prefWidth="500.0" styleClass="mainFxmlClass" fx:controller="org.nmrfx.processor.gui.PreferencesController">
+      prefWidth="600.0" styleClass="mainFxmlClass" fx:controller="org.nmrfx.processor.gui.PreferencesController">
     <stylesheets>
         <URL value="@/styles/Styles.css"/>
     </stylesheets>
