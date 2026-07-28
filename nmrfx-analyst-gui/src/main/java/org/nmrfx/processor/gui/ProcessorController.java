@@ -1746,10 +1746,10 @@ public class ProcessorController implements Initializable, ProgressUpdater, NmrC
         dimReferencePane = new TitledPane();
         dimReferencePane.getStyleClass().add(Styles.DENSE);
 
-        referencePane.setText("DATASET PARAMETERS");
-        dimReferencePane.setText("DIM PARAMETERS");
-        addTitleBar(referencePane, "DATASETPARAMETERS", false);
-        addTitleBar(dimReferencePane, "DIM PARAMETERS", false);
+        referencePane.setText("DATASET");
+        dimReferencePane.setText("DIMENSIONS");
+        addTitleBar(referencePane, "DATASET", false);
+        addTitleBar(dimReferencePane, "DIMENSIONS", false);
 
         refManager = new RefManager(this, referencePane, dimReferencePane);
         statusBar.setProgress(0.0);

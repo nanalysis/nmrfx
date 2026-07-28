@@ -115,6 +115,7 @@ public class ModifiableAccordionScrollPane extends ScrollPane {
             MenuItem deleteItem = new MenuItem("Delete");
             deleteItem.setOnAction(e -> deleteItem());
             contextMenu.getItems().add(deleteItem);
+            getStyleClass().add(Styles.DENSE);
         }
 
         public void setProcessingOperation(ProcessingOperation op) {
