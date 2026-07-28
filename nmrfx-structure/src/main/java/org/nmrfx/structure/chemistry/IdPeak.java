@@ -806,7 +806,7 @@ public class IdPeak {
     public List<IdResult> idShifts(List<String> searchCriteria) {
         List<MatchPattern> matchPatterns = new ArrayList<>();
         for (String string : searchCriteria) {
-            MatchPattern matchPattern = parse(string);
+            MatchPattern matchPattern = parse(string.toLowerCase());
             matchPatterns.add(matchPattern);
         }
         return idShiftsFromPatterns(matchPatterns);
