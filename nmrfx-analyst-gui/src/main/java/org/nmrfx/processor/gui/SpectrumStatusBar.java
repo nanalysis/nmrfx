@@ -35,6 +35,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.analyst.gui.tools.ScannerTool;
 import org.nmrfx.analyst.gui.tools.SliderLayout;
 import org.nmrfx.annotations.PluginAPI;
 import org.nmrfx.chart.Axis;
@@ -72,7 +73,6 @@ public class SpectrumStatusBar {
     private final MenuButton[] rowMenus = new MenuButton[MAX_SPINNERS];
     private final ChangeListener<PolyChart.DISDIM> displayedDimensionsListener = this::chartDisplayDimensionChanged;
     private final ChoiceBox<CanvasCursor> cursorChoice = new ChoiceBox();
-    private final ToggleButton tableButton = new RadioButton("Table");
 
     // tools & additional buttons
     private final ToolBar secondaryToolbar = new ToolBar();
@@ -82,6 +82,7 @@ public class SpectrumStatusBar {
 
     private DataMode currentMode = DataMode.FID;
     private int currentModeDimensions = 0;
+    ToggleGroup tableMode = new ToggleGroup();
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -93,8 +94,8 @@ public class SpectrumStatusBar {
 
     // can't be called from constructor: relies on controller.getActiveChart(), which returns null at construction
     public void init() {
-        tableButton.setOnAction(e -> controller.updateScannerTool(tableButton));
         initCursorButtonGroup();
+        addTableMenu();
         setupTools();
         initCrossText();
 
@@ -128,6 +129,38 @@ public class SpectrumStatusBar {
         controller.getActiveChart().getDisDimProperty().addListener(displayedDimensionsListener);
         PolyChartManager.getInstance().activeChartProperty().addListener(new WeakChangeListener<PolyChart>(this::setChart));
     }
+
+    private void addTableMenu() {
+        Menu tableMenu = new Menu("Table");
+        addToToolMenu(tableMenu);
+        CheckMenuItem tableStateItem = new CheckMenuItem("Show");
+        tableStateItem.setOnAction(e -> controller.updateScannerTool(tableStateItem));
+        tableMenu.getItems().add(tableStateItem);
+        MenuItem reloadItem = new MenuItem("Reload");
+        reloadItem.setOnAction(e -> controller.scannerTool.loadFromDataset());
+        tableMenu.getItems().add(reloadItem);
+
+
+        for (var mode : ScannerTool.TableSelectionMode.values()) {
+            RadioMenuItem modeItem = new RadioMenuItem(mode.name());
+            tableMenu.getItems().add(modeItem);
+            modeItem.setToggleGroup(tableMode);
+            modeItem.setUserData(mode);
+            if (mode.name().equals(ScannerTool.TableSelectionMode.HIGHLIGHT.name())) {
+                tableMode.selectToggle(modeItem);
+            }
+        }
+        tableMode.selectedToggleProperty().addListener(e -> updateScanTable());
+    }
+
+    private void updateScanTable() {
+        controller.getScannerTable().ifPresent(scanTable -> scanTable.selectionChanged());
+    }
+
+    public ScannerTool.TableSelectionMode getTableMode() {
+        return (ScannerTool.TableSelectionMode) tableMode.getSelectedToggle().getUserData();
+    }
+
 
     private void initCrossText() {
         for (int index = 0; index < 2; index++) {
@@ -444,7 +477,7 @@ public class SpectrumStatusBar {
 
     private void updatePrimaryToolbarFor1DArray(int nDim) {
         List<Node> nodes = new ArrayList<>();
-        nodes.add(tableButton);
+        //nodes.add(toolButton);
         if (isStacked()) {
             getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.STACKPLOT);
         } else {
@@ -470,7 +503,7 @@ public class SpectrumStatusBar {
 
     private void updateSecondaryToolbarFor1DArray() {
         secondaryToolbar.getItems().clear();
-        secondaryToolbar.getItems().add(toolButton);
+       // secondaryToolbar.getItems().add(toolButton);
     }
 
     public DataMode getMode() {
@@ -497,7 +530,7 @@ public class SpectrumStatusBar {
 
     private void setupPrimaryToolbarForSelectedMode() {
        List<Node> nodes = new ArrayList<>();
-        nodes.add(tableButton);
+        nodes.add(toolButton);
 
         if (currentMode == DataMode.DATASET_2D) {
             getDisplayModeComboBox().getSelectionModel().select(ViewController.DisplayMode.CONTOURS);
@@ -529,7 +562,7 @@ public class SpectrumStatusBar {
     private void setupSecondaryToolbarForSelectedMode() {
         List<Node> nodes = new ArrayList<>();
         if (currentMode != DataMode.FID) {
-            nodes.add(toolButton);
+          //  nodes.add(toolButton);
             nodes.add(ToolBarUtils.makeFiller(10));
         }
         if (currentMode == DataMode.DATASET_1D) {

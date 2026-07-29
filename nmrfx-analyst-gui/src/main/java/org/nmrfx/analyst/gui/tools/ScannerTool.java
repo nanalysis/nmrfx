@@ -94,7 +94,6 @@ public class ScannerTool implements ControllerTool {
     TablePlotGUI plotGUI = null;
     TablePlotGUI diffusionGUI = null;
     MinerController miner;
-    ChoiceBox<TableSelectionMode> tableSelectionChoice = new ChoiceBox<>();
     TableMath tableMath = null;
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9.\\-]+)_([0-9.\\-]+)(_[VMmE][NR])?$");
@@ -121,12 +120,6 @@ public class ScannerTool implements ControllerTool {
         Button closeButton = GUIUtils.closeButton(ContentDisplay.LEFT);
         closeButton.setOnAction(e -> controller.hideScannerMenus());
 
-        Button reloadButton = new Button("Reload");
-        reloadButton.setOnAction(e -> loadFromDataset());
-
-        Label label = new Label("Sel. Mode:");
-
-        scannerBar.getItems().addAll(reloadButton, label, tableSelectionChoice);
         scannerBar.getItems().add(closeButton);
         scannerBar.getItems().add(makeFileMenu());
         scannerBar.getItems().add(makeProcessMenu());
@@ -140,9 +133,6 @@ public class ScannerTool implements ControllerTool {
         scanTable = new ScanTable(this, tableView);
         scannerLoader = new ScannerLoader(scanTable);
 
-        tableSelectionChoice.getItems().addAll(TableSelectionMode.values());
-        tableSelectionChoice.setValue(TableSelectionMode.HIGHLIGHT);
-        tableSelectionChoice.valueProperty().addListener(e -> scanTable.selectionChanged());
         loadFromDataset();
     }
 
@@ -158,10 +148,6 @@ public class ScannerTool implements ControllerTool {
             }
         }
         compoundTable.showCompoundTab();
-    }
-
-    public TableSelectionMode tableSelectionMode() {
-        return tableSelectionChoice.getValue();
     }
 
     public void showMenus() {
@@ -345,7 +331,7 @@ public class ScannerTool implements ControllerTool {
         scanTable.getItems().setAll(tempItems);
     }
 
-    private void loadFromDataset() {
+    public void loadFromDataset() {
         chart = controller.getActiveChart();
         scannerLoader.loadFromDataset(scanTable);
         scanTable.setChart();
