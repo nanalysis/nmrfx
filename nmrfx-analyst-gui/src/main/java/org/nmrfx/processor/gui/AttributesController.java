@@ -146,11 +146,13 @@ public class AttributesController implements Initializable, NmrControlRightSideC
     private ComboBox<Number> topBorderSizeComboBox;
     @FXML
     private ComboBox<Number> bottomBorderSizeComboBox;
+
     @FXML
     private CheckBox titlesCheckBox;
     @FXML
     private CheckBox parametersCheckBox;
-
+    @FXML
+    public CheckBox planesCheckBox;
     @FXML
     Slider lvlSlider;
     @FXML
@@ -313,6 +315,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         ticFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
         labelFontSizeComboBox.valueProperty().addListener(e -> updateCharts());
         titlesCheckBox.selectedProperty().addListener(e -> updateCharts());
+        planesCheckBox.selectedProperty().addListener(e -> updateCharts());
         parametersCheckBox.selectedProperty().addListener(e -> updateCharts());
         intensityAxisCheckBox.selectedProperty().addListener(e -> updateCharts());
         leftBorderSizeComboBox.valueProperty().addListener(e -> updateCharts());
@@ -507,6 +510,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         integralPosSlider.highValueProperty().unbindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
 
         titlesCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().titlesProperty());
+        planesCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().planesProperty());
         parametersCheckBox.selectedProperty().unbindBidirectional(polyChart.getChartProperties().parametersProperty());
 
         stackXSlider.valueProperty().unbindBidirectional(polyChart.getChartProperties().stackXProperty());
@@ -581,6 +585,7 @@ public class AttributesController implements Initializable, NmrControlRightSideC
         integralPosSlider.highValueProperty().bindBidirectional(polyChart.getChartProperties().integralHighPosProperty());
 
         titlesCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().titlesProperty());
+        planesCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().planesProperty());
         parametersCheckBox.selectedProperty().bindBidirectional(polyChart.getChartProperties().parametersProperty());
 
         stackXSlider.valueProperty().bindBidirectional(polyChart.getChartProperties().stackXProperty());

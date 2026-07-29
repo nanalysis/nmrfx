@@ -206,10 +206,13 @@
                                 <CheckBox fx:id="titlesCheckBox" mnemonicParsing="false" text="Display dataset titles"
                                           selected="false"
                                           GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                <CheckBox fx:id="planesCheckBox" mnemonicParsing="false" text="Display plane position"
+                                          selected="false"
+                                          GridPane.columnIndex="1" GridPane.rowIndex="3"/>
                                 <CheckBox fx:id="parametersCheckBox"
                                           mnemonicParsing="false"
                                           text="Display dataset parameters" selected="false"
-                                          GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                          GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                             </children>
                         </GridPane>
 

@@ -60,6 +60,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
     private static IntegerProperty labelFontSizeProp = null;
     private static IntegerProperty peakFontSizeProp = null;
     private static BooleanProperty displayTitlesProp = null;
+    private static BooleanProperty displayPlanesProp = null;
     private static BooleanProperty fitPeakShapeProp = null;
     private static BooleanProperty constrainPeakShapeProp = null;
     private static DoubleProperty peakShapeDirectFactorProp = null;
@@ -141,6 +142,13 @@ public class PreferencesController implements Initializable, StageBasedControlle
                     setBoolean("DISPLAY_TITLES", (Boolean) c);
                 },
                 getDisplayTitles(), "Spectra", "Display Titles", "Display dataset titles on spectra");
+
+        BooleanOperationItem displayPlanesItem = new BooleanOperationItem(prefSheet,
+                (a, b, c) -> {
+                    displayPlanesProp.setValue((Boolean) c);
+                    setBoolean("PLANES_POS", (Boolean) c);
+                },
+                getDisplayPlanes(), "Spectra", "Display Plane Position", "Display plane position on spectra");
 
         BooleanOperationItem useImmediateModeItem = new BooleanOperationItem(prefSheet,
                 (a, b, c) -> {
@@ -259,7 +267,7 @@ public class PreferencesController implements Initializable, StageBasedControlle
 
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem, useImmediateModeItem, useNvJMouseItem,
-                autoAddPeaksItem, displayTitlesItem,
+                autoAddPeaksItem, displayTitlesItem, displayPlanesItem,
                 fitPeakShapeItem, constrainPeakShapeItem, peakShapeDirectItem, peakShapeInirectItem, rnaSSModelItem,
                 projectSaveItem, projectSaveIntervalItem,
                 autoProcessDataItem, useFIDParApodizationItem, useFIDParPhasesItem, doAutoPhaseItem, doAutoPhase1Item,
@@ -546,6 +554,10 @@ public class PreferencesController implements Initializable, StageBasedControlle
     public static Boolean getDisplayTitles() {
         displayTitlesProp = getBoolean(displayTitlesProp, "DISPLAY_TITLES", true);
         return displayTitlesProp.getValue();
+    }
+    public static Boolean getDisplayPlanes() {
+        displayPlanesProp = getBoolean(displayPlanesProp, "PLANES_POS", true);
+        return displayPlanesProp.getValue();
     }
 
     public static Boolean getUseImmediateMode() {

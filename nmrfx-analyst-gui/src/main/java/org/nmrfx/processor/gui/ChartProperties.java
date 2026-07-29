@@ -58,6 +58,7 @@ public class ChartProperties implements PublicPropertyContainer {
     private final DoubleProperty stackX;
     private final DoubleProperty stackY;
     private final BooleanProperty titles;
+    private final BooleanProperty planes;
     private final BooleanProperty parameters;
 
     private final Set<Property<?>> properties = new HashSet<>();
@@ -84,6 +85,7 @@ public class ChartProperties implements PublicPropertyContainer {
         integralHighPos = add(new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95));
         integralFontSize = add(new SimpleIntegerProperty(polyChart, "integralFontSize", PreferencesController.getLabelFontSize()));
         titles = add(new SimpleBooleanProperty(polyChart, "titles", PreferencesController.getDisplayTitles()));
+        planes = add(new SimpleBooleanProperty(polyChart, "planes", PreferencesController.getDisplayPlanes()));
         parameters = add(new SimpleBooleanProperty(polyChart, "parameters", false));
         aspectRatio = add(new SimpleDoubleProperty(polyChart, "aspectRatio", 1.0));
         aspect = add(new SimpleBooleanProperty(polyChart, "aspect", false));
@@ -134,6 +136,7 @@ public class ChartProperties implements PublicPropertyContainer {
         destProps.setIntegralFontSize(getIntegralFontSize());
 
         destProps.setTitles(getTitles());
+        destProps.setPlanes(getPlanes());
         destProps.setParameters(getParameters());
         destProps.setAspectRatio(getAspectRatio());
         destProps.setAspect(getAspect());
@@ -366,6 +369,18 @@ public class ChartProperties implements PublicPropertyContainer {
 
     public void setTitles(boolean value) {
         titlesProperty().set(value);
+    }
+
+    public BooleanProperty planesProperty() {
+        return planes;
+    }
+
+    public void setPlanes(boolean value) {
+        planesProperty().set(value);
+    }
+
+    public boolean getPlanes() {
+        return planesProperty().get();
     }
 
     public BooleanProperty parametersProperty() {
