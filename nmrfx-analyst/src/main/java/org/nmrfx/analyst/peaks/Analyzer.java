@@ -42,10 +42,8 @@ public class Analyzer {
     boolean analyzed = false;
 
     private double trimRatio = 2.0;
-    boolean scaleToLargest = true;
-    int nWin = 32;
-    double maxRatio = 20.0;
-    double sdRatio = 30.0;
+
+    ThresholdPars thresholdPars = new ThresholdPars(true, 20.0, 30.0, 32);
 
     int regionWindow = 20;
     double regionRatio = 50.0;
@@ -59,6 +57,9 @@ public class Analyzer {
     Optional<Double> manThreshold = Optional.empty();
     Solvents solvents;
 
+    public record ThresholdPars(boolean scaleToLargest, double maxRatio, double sdRatio, int nWin) {
+
+    }
     public Analyzer(Dataset dataset) {
         this.dataset = dataset;
         solvents = new Solvents();
@@ -122,11 +123,14 @@ public class Analyzer {
         } else {
             calculateThreshold();
         }
-
     }
 
     public void calculateThreshold() {
-        threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+        threshold = PeakPicker.calculateThreshold(dataset, thresholdPars);
+    }
+
+    public void calculateThreshold(ThresholdPars thresholdPars) {
+        threshold = PeakPicker.calculateThreshold(dataset, thresholdPars);
     }
 
     public PeakList peakPick() {

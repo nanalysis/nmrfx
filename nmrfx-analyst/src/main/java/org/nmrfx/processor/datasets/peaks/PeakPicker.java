@@ -25,6 +25,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.annotations.PythonAPI;
 import org.nmrfx.datasets.Nuclei;
 import org.nmrfx.math.VecBase;
@@ -804,13 +805,11 @@ public class PeakPicker {
     }
 
     public static double calculateThreshold(Dataset dataset, boolean scaleToLargest) {
-        int nWin = 32;
-        double maxRatio = 50.0;
-        double sdRatio = 5.0;
-        return calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+        Analyzer.ThresholdPars thresholdPars = new Analyzer.ThresholdPars(scaleToLargest, 50.0, 5.0, 32);
+        return calculateThreshold(dataset, thresholdPars);
     }
 
-    public static double calculateThreshold(Dataset dataset, boolean scaleToLargest, int nWin, double maxRatio, double sdRatio) {
+    public static double calculateThreshold(Dataset dataset, Analyzer.ThresholdPars thresholdPars) {
         Vec vec;
         double threshold;
         try {
@@ -823,8 +822,8 @@ public class PeakPicker {
         int sdevWin = Math.max(16, size / 64);
         double sDev = vec.sdev(sdevWin);
         threshold = 0.0;
-        if (scaleToLargest) {
-            int nIncr = size / nWin;
+        if (thresholdPars.scaleToLargest()) {
+            int nIncr = size / thresholdPars.nWin();
             List<Double> maxs = new ArrayList<>();
             for (int i = 0; i < size; i += nIncr) {
                 int j = i + nIncr - 1;
@@ -839,13 +838,13 @@ public class PeakPicker {
             int nMax = maxs.size();
             double max = maxs.get(nMax - 3);
 
-            threshold = max / maxRatio;
+            threshold = max / thresholdPars.maxRatio();
         }
-        if (threshold < sdRatio * sDev) {
+        if (threshold < thresholdPars.sdRatio() * sDev) {
             if (dataset.getNucleus(0) == H1) {
-                threshold = sdRatio * sDev;
+                threshold = thresholdPars.sdRatio() * sDev;
             } else {
-                threshold = sdRatio / 3.0 * sDev;
+                threshold = thresholdPars.sdRatio() / 3.0 * sDev;
             }
         }
         return threshold;

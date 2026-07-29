@@ -227,12 +227,9 @@ public class MatrixAnalysisTool {
         }
         double threshold;
         if (chart.is1D()) {
-            boolean scaleToLargest = true;
-            int nWin = 32;
-            double maxRatio = 20.0;
-            double sdRatio = 30.0;
             Dataset dataset = chart.getDatasetAttributes().getFirst().getDataset();
-            threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+            Analyzer.ThresholdPars thresholdPars = new Analyzer.ThresholdPars(true, 20.0, 30.0, 32);
+            threshold = PeakPicker.calculateThreshold(dataset, thresholdPars);
             Analyzer analyzer = new Analyzer(chart.getDatasetAttributes().getFirst().getDataset());
             analyzer.calculateThreshold();
         } else {
