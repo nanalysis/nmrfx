@@ -276,33 +276,33 @@ public class NOEAssign {
                     continue;
                 }
                 matchCriteria[0].setPPM(ppm);
-                ArrayList res1s = new ArrayList();
+                List<AtomResonance> res1s = new ArrayList<>();
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
-                if (Math.abs(ppm - matchCriteria[0].getPpm()) < 0.01) {
+                if (Math.abs(ppm - matchCriteria[0].getPPM()) < 0.01) {
                     continue; // diagonal fixme
                 }
                 matchCriteria[1].setPPM(ppm);
-                ArrayList res2s = new ArrayList();
+                List<AtomResonance> res2s = new ArrayList<>();
                 int nRes1 = res1s.size();
                 int nRes2 = res2s.size();
                 if ((nRes1 > 0) && (nRes2 > 0)) {
                     if ((nRes1 != 1) && (nRes2 != 1) && (nRes1 != nRes2)) {
                         throw new IllegalArgumentException("Peak \"" + peak.getName() + "\" has unbalanced assignments");
                     }
-                    int maxN = nRes1 > nRes2 ? nRes1 : nRes2;
+                    int maxN = Math.max(nRes1, nRes2);
                     for (int iRes = 0; iRes < maxN; iRes++) {
-                        AtomResonance r1 = null;
+                        AtomResonance r1;
                         if (iRes < nRes1) {
-                            r1 = (AtomResonance) res1s.get(iRes);
+                            r1 = res1s.get(iRes);
                         } else {
-                            r1 = (AtomResonance) res1s.get(0);
+                            r1 = res1s.getFirst();
                         }
-                        AtomResonance r2 = null;
+                        AtomResonance r2;
                         if (iRes < nRes2) {
-                            r2 = (AtomResonance) res2s.get(iRes);
+                            r2 = res2s.get(iRes);
                         } else {
-                            r2 = (AtomResonance) res2s.get(0);
+                            r2 = res2s.get(0);
                         }
                         Atom r1Atom = r1.getAtom();
                         SpatialSet sp1 = null;

@@ -20,11 +20,11 @@ package org.nmrfx.structure.chemistry;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.structure.noe.NOEAssign;
+import org.nmrfx.utils.GUIUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class IdPeak {
     private MoleculeBase molecule;
@@ -34,6 +34,15 @@ public class IdPeak {
     double disThresh = 10.0;
     int refSet = -1;
     int ppmSet = 0;
+    private static final Pattern PATTERN = Pattern.compile(
+            "^(?<residues>[ij](?:-1)?(?:,[ij](?:-1)?)*)" +
+                    "\\.(?<atoms>[A-Za-z][A-Za-z0-9]*(?:,[A-Za-z][A-Za-z0-9]*)*)" +
+                    "@(?<target>-?\\d+(?:\\.\\d+)?)" +
+                    "~(?<tolerance>-?\\d+(?:\\.\\d+)?)$"
+    );
+
+    public record MatchPattern(List<String> residues, List<String> atoms, double target, double tolerance) {
+    }
 
     public void clearAtomList() {
         atomList.clear();
@@ -88,7 +97,7 @@ public class IdPeak {
                             continue;
                         }
 
-                        if (Math.abs(ppmv.getValue() - matchCriteria[j].getPpm()) < tol) {
+                        if (Math.abs(ppmv.getValue() - matchCriteria[j].getPPM()) < tol) {
                             matchList[j].add(spatialSet);
                             break;
                         }
@@ -110,7 +119,7 @@ public class IdPeak {
         }
         double deltaMin = Double.MAX_VALUE;
         for (int iFold = -iFoldCount; iFold <= iFoldCount; iFold++) {
-            double ppm = mC.getPpm() + iFold * mC.getFolding();
+            double ppm = mC.getPPM() + iFold * mC.getFolding();
             double delta = testPPM - ppm;
             if (Math.abs(delta) < Math.abs(deltaMin)) {
                 deltaMin = delta;
@@ -132,7 +141,7 @@ public class IdPeak {
         if (ppmv != null) {
 // fixme need to to alias (if iFoldCount < 0)
             int iFoldCount = mC.getFoldCount();
-            double ppm = mC.getPpm() + iFold * mC.getFolding();
+            double ppm = mC.getPPM() + iFold * mC.getFolding();
             if (Math.abs(ppmv.getValue() - ppm) < tol) {
                 value = true;
             }
@@ -160,7 +169,7 @@ public class IdPeak {
                     }
                 }
                 for (int jFold = -jFoldCount; jFold <= jFoldCount; jFold++) {
-                    Double sPPM = matchCriteria[iDim].getPpm() + iFold * matchCriteria[iDim].getFolding();
+                    Double sPPM = matchCriteria[iDim].getPPM() + iFold * matchCriteria[iDim].getFolding();
                     SpatialSetPPMComparator ssPC = new SpatialSetPPMComparator();
                     int index1 = Collections.binarySearch(protonList[iDim], sPPM, ssPC);
                     if (index1 < 0) {
@@ -351,10 +360,8 @@ public class IdPeak {
                                     ppmv = spatialSet.getRefPPM(refSet);
                                 }
 
-                                if (ppmv != null) {
-                                    if (ppmv.getValue() > Atom.NULL_PPM) {
-                                        protonList[iDim].add(spatialSet);
-                                    }
+                                if ((ppmv != null) && (ppmv.getValue() > Atom.NULL_PPM)) {
+                                    protonList[iDim].add(spatialSet);
                                 }
                             }
                         }
@@ -476,8 +483,7 @@ public class IdPeak {
                 if (isInt) {
                     try {
                         ares = Integer.parseInt(mC.getResPat(k));
-                        isInt = true;
-                    } catch (NumberFormatException nE) {
+                    } catch (NumberFormatException _) {
                         isInt = false;
                     }
                 }
@@ -554,13 +560,13 @@ public class IdPeak {
 
                     for (int k = 0; k < nPats; k++) {
                         int delta = 0;
-                        int res = 0;
+                        int res;
 
                         if (mC.getResPat(k).isEmpty()) {
                             res = ires;
                         } else if (mC.getResPat(k).charAt(0) == 'i') {
                             res = ires;
-                        } else if (mC.getResPat(k).charAt(0) == 'i') {
+                        } else if (mC.getResPat(k).charAt(0) == 'j') {
                             res = jres;
                         } else {
                             throw new IllegalArgumentException("Bad format, should start with i or j");
@@ -577,7 +583,7 @@ public class IdPeak {
                                     mul = -1;
                                 }
                                 delta = mul * Integer.parseInt(mC.getResPat(k).substring(2));
-                            } catch (NumberFormatException nE1) {
+                            } catch (NumberFormatException _) {
                                 throw new IllegalArgumentException("Bad format " + mC.getResPat(k));
                             }
                         }
@@ -646,7 +652,6 @@ public class IdPeak {
                 idResult.dp[j] = dp[j];
             } else {
                 idResult.dp[j] = 1.0e30;
-                System.out.println("no ppm");
             }
         }
 
@@ -782,5 +787,51 @@ public class IdPeak {
         }
 
         return result;
+    }
+
+
+    static MatchPattern parse(String s) {
+        Matcher m = PATTERN.matcher(s);
+        if (!m.matches()) {
+            throw new IllegalArgumentException("Invalid pattern string: " + s);
+        }
+        List<String> residues = Arrays.asList(m.group("residues").split(","));
+        List<String> atoms = Arrays.asList(m.group("atoms").split(","));
+        double target = Double.parseDouble(m.group("target"));
+        double tolerance = Double.parseDouble(m.group("tolerance"));
+        return new MatchPattern(residues, atoms, target, tolerance);
+    }
+
+
+    public List<IdResult> idShifts(List<String> searchCriteria) {
+        List<MatchPattern> matchPatterns = new ArrayList<>();
+        for (String string : searchCriteria) {
+            MatchPattern matchPattern = parse(string.toLowerCase());
+            matchPatterns.add(matchPattern);
+        }
+        return idShiftsFromPatterns(matchPatterns);
+    }
+
+    public List<IdResult> idShiftsFromPatterns(List<MatchPattern> matchPatterns) {
+        molecule = Molecule.getActive();
+        clearAtomList();
+        getAtomsWithPPMs();
+        MatchCriteria[] matchCriteria = new MatchCriteria[matchPatterns.size()];
+
+        for (int i = 0; i < matchPatterns.size(); i++) {
+            matchCriteria[i] = new MatchCriteria(i, matchPatterns.get(i), "", 0.0, 0);
+        }
+        List<SpatialSet>[] matchList = null;
+        try {
+            matchList = scan(matchCriteria);
+        } catch (IllegalArgumentException _) {
+            GUIUtils.warn("Peak ID", "No atoms with chemical shifts match pattern");
+        }
+        List<IdResult> results = Collections.emptyList();
+        if (matchList != null) {
+            results = getIdResults(matchList, matchCriteria);
+            results.sort(Comparator.comparingDouble(IdResult::getDPAvg));
+        }
+        return results;
     }
 }
