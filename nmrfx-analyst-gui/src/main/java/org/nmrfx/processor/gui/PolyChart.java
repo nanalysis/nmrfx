@@ -2414,6 +2414,12 @@ public class PolyChart extends Region {
                 double yPos = getLayoutY();
                 drawTitles(gC, draw2DList, xPos, yPos);
             }
+            if (chartProps.getPlanes()) {
+                double xPos = getLayoutX();
+                double yPos = getLayoutY();
+                drawPlanePositions(gC, draw2DList, xPos, yPos);
+
+            }
             if (gC instanceof GraphicsContextProxy) {
                 if (useImmediateMode) {
                     finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList);
@@ -2448,6 +2454,34 @@ public class PolyChart extends Region {
                 gC.fillText(title, textX, textY);
                 textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
             }
+        }
+    }
+
+    void drawPlanePositions(GraphicsContextInterface gC, ArrayList<DatasetAttributes> draw2DList, double xPos, double yPos) {
+        double fontSize = chartProps.getTicFontSize();
+        gC.setFont(Font.font(fontSize));
+        gC.setTextAlign(TextAlignment.LEFT);
+        double textX = xPos + axes.getX().getWidth() + borders.getLeft() ;
+        double textY;
+        if (fontSize > (borders.getTop() - 2)) {
+            gC.setTextBaseline(VPos.TOP);
+            textY = yPos + borders.getTop() + 2;
+        } else {
+            gC.setTextBaseline(VPos.BOTTOM);
+            textY = yPos + borders.getTop() - 2;
+        }
+        String[] labels = {"X", "Y", "Z", "A", "B", "C"};
+
+        for (int i=2;i<getAxes().count();i++) {
+            Axis axis = getAxes().get(i);
+            double lower = axis.getLowerBound();
+            String lowerStr = String.format("%.3f", lower);
+            double upper = axis.getUpperBound();
+            String upperStr = String.format("%.3f", upper);
+            String label = labels[i] + "=" + (lowerStr.equals(upperStr) ? lowerStr : lowerStr + " " + upperStr);
+            gC.setFill(draw2DList.getFirst().getPosColor());
+            textX -= GUIUtils.getTextWidth(label, gC.getFont()) + 10;
+            gC.fillText(label, textX, textY);
         }
     }
 
