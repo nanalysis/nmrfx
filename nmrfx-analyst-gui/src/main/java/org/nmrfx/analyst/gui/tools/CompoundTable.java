@@ -24,6 +24,7 @@ import org.nmrfx.analyst.dataops.DBData;
 import org.nmrfx.analyst.dataops.SimData;
 import org.nmrfx.analyst.dataops.SimDataVecPars;
 import org.nmrfx.analyst.gui.AnalystPrefs;
+import org.nmrfx.analyst.peaks.Analyzer;
 import org.nmrfx.peaks.Peak;
 import org.nmrfx.peaks.PeakList;
 import org.nmrfx.processor.datasets.Dataset;
@@ -435,12 +436,8 @@ public class CompoundTable {
         double[] ppms = getLimits();
         String listName = "TEMP";
         try {
-            boolean scaleToLargest = true;
-            int nWin = 32;
-            double maxRatio = 100.0;
-            double sdRatio = 30.0;
-
-            double threshold = PeakPicker.calculateThreshold(dataset, scaleToLargest, nWin, maxRatio, sdRatio);
+            Analyzer.ThresholdPars thresholdPars = new Analyzer.ThresholdPars(true, 100.0, 30.0, 32);
+            double threshold = PeakPicker.calculateThreshold(dataset, thresholdPars);
 
             PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode(PeakPickParameters.PickMode.REPLACEIF);
             peakPickPar.limit(0, ppms[0], ppms[1]);
