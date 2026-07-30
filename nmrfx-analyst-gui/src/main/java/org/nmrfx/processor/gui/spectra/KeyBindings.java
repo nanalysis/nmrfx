@@ -29,6 +29,7 @@ import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.events.DataFormatEventHandler;
 import org.nmrfx.processor.gui.spectra.mousehandlers.CrossHairMouseHandler;
+import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 
 import java.util.HashMap;
 import java.util.List;
@@ -133,7 +134,7 @@ public class KeyBindings {
     }
 
     public void keyTyped(KeyEvent keyEvent) {
-        Pattern pattern = Pattern.compile("jz([0-9]+)");
+        Pattern floatPattern = Pattern.compile("j[a-z](-?\\d+\\.?\\d*)");
         String keyChar = keyEvent.getCharacter();
         if (keyChar.equals(" ")) {
             String keyString = keyMonitor.getKeyString();
@@ -338,9 +339,9 @@ public class KeyBindings {
             }
             case "j" -> {
             }
-            case "jx", "jy", "jz" -> {
-                // fixme what about a,b,c..
-                int iDim = keyString.charAt(1) - 'x';
+            case "jx", "jy", "jz", "ja", "jb", "jc" -> {
+                String dimNames = "xyzabc";
+                int iDim = dimNames.indexOf(keyString.charAt(1));
                 switch (keyString.substring(2)) {
                     case "f" -> {
                         chart.full(iDim);
@@ -377,11 +378,16 @@ public class KeyBindings {
                         if (keyString.length() > 2) {
                             if (keyMonitor.isComplete()) {
                                 if (iDim > 1) {
-                                    Matcher matcher = pattern.matcher(keyString);
+                                    Matcher matcher = floatPattern.matcher(keyString);
                                     if (matcher.matches()) {
                                         String group = matcher.group(1);
-                                        int plane = Integer.parseInt(group);
-                                        chart.getAxes().setMinMax(2, plane, plane);
+                                        if (group.contains(".") || group.contains("-")) {
+                                            double pos = Double.parseDouble(group);
+                                            chart.getAxes().setMinMax(iDim, pos, pos);
+                                        } else {
+                                            int plane = Integer.parseInt(group) - 1;
+                                            chart.gotoPlane(iDim, plane);
+                                        }
                                         chart.refresh();
                                     }
                                 }
