@@ -11,14 +11,23 @@
             xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.nmrfx.processor.gui.ProcessorController">
     <stylesheets>
-        <URL value="@/styles/Styles.css"/>
+        <URL value="@/styles/ProcessorStyles.css"/>
     </stylesheets>
     <top>
         <ToolBar fx:id="datasetToolBar"/>
-
     </top>
     <center>
-        <Accordion fx:id="dimAccordion" maxWidth="400"/>
+        <TabPane>
+            <Tab text="Parameters">
+                <Accordion fx:id="paramAccordion" maxWidth="400"/>
+            </Tab>
+            <Tab text="Process">
+                <Accordion fx:id="dimAccordion" maxWidth="400"/>
+            </Tab>
+            <Tab text="Post-Process">
+                <Accordion fx:id="postProcessAccordion" maxWidth="400"/>
+            </Tab>
+        </TabPane>
     </center>
     <bottom>
         <VBox maxWidth="400.0">

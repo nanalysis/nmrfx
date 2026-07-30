@@ -57,6 +57,7 @@ public class RefManager {
 
     private static final Logger log = LoggerFactory.getLogger(RefManager.class);
     TitledPane referencePane;
+    TitledPane dimParametersPane;
     ProcessorController processorController;
     Map<DataProps, ToggleButton> toggleButtons = new HashMap<>();
     Map<String, SimpleObjectProperty> objectPropertyMap = new HashMap<>();
@@ -326,9 +327,10 @@ public class RefManager {
     static final String[] bSFNames = {"SFO1,1", "SFO1,2", "SFO1,3", "SFO1,4", "SFO1,5"};
     static final String[] bSWNames = {"SW_h,1", "SW_h,2", "SW_h,3", "SW_h,4", "SW_h,5"};
 
-    RefManager(ProcessorController processorController, TitledPane referencePane) {
+    RefManager(ProcessorController processorController, TitledPane referencePane, TitledPane dimParametersPane) {
         this.processorController = processorController;
         this.referencePane = referencePane;
+        this.dimParametersPane = dimParametersPane;
     }
 
     public static AcquisitionType getMode(NMRData nmrData, int iDim) {
@@ -535,6 +537,8 @@ public class RefManager {
     public void updateReferencePane(NMRData nmrData, int nDim) {
         VBox vBox = new VBox();
         vBox.setSpacing(4);
+        VBox dimVBox = new VBox();
+        dimVBox.setSpacing(4);
         String[] infoFields = {"Sequence", "Solvent", "Temperature", "Date"};
         for (String infoField : infoFields) {
             vBox.getChildren().add(getParDisplay(nmrData, infoField));
@@ -613,8 +617,9 @@ public class RefManager {
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
         GridPane gridPane = new GridPane();
         scrollPane.setContent(gridPane);
-        vBox.getChildren().add(scrollPane);
+        dimVBox.getChildren().add(scrollPane);
         referencePane.setContent(vBox);
+        dimParametersPane.setContent(dimVBox);
         int start = 2;
         for (int i = 0; i < nDim; i++) {
             Label label = new Label("Dim: " + String.valueOf(i + 1));
