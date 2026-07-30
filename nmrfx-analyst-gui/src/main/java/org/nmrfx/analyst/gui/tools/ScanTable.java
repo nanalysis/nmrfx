@@ -294,7 +294,7 @@ public class ScanTable {
         chart.refresh();
     }
 
-    protected final void selectionChanged() {
+    public final void selectionChanged() {
         if (processingTable) {
             return;
         }
@@ -308,7 +308,8 @@ public class ScanTable {
             for (var item : getItems()) {
                 item.setSelected(false);
             }
-            ScannerTool.TableSelectionMode tableSelectionMode = scannerTool.tableSelectionMode();
+
+            ScannerTool.TableSelectionMode tableSelectionMode = scannerTool.controller.getStatusBar().getTableMode();
             if (tableSelectionMode == ScannerTool.TableSelectionMode.HIGHLIGHT) {
                 for (var item : selected) {
                     item.setSelected(true);

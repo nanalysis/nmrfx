@@ -2069,8 +2069,8 @@ public class FXMLController implements Initializable, StageBasedController, Publ
         return docString;
     }
 
-    public void updateScannerTool(ToggleButton button) {
-        if (button.isSelected()) {
+    public void updateScannerTool(CheckMenuItem checkMenuItem) {
+        if (checkMenuItem.isSelected()) {
             showScannerTool();
         } else {
             hideScannerTool();

@@ -505,7 +505,7 @@ public class ScannerLoader {
         List<Integer> rows = new ArrayList<>();
         rows.add(0);
         // Load from Dataset assumes an arrayed dataset
-        if ((dataset.getNFreqDims() > 2) || (dataset.getNFreqDims() == 0) && (dataset.getNDim() > 1)) {
+        if ((dataset.getNFreqDims() >= 2) || (dataset.getNFreqDims() == 0) && (dataset.getNDim() > 1)) {
             chart.getDisDimProperty().set(PolyChart.DISDIM.TwoD);
         } else {
             chart.getDisDimProperty().set(PolyChart.DISDIM.OneDX);
