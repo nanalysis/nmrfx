@@ -4358,6 +4358,18 @@ public class PolyChart extends Region {
         }
     }
 
+    public void gotoPlane(int iDim, int plane) {
+        DatasetAttributes dataAttr = getFirstDatasetAttributes().orElse(null);
+        DatasetBase dataset = getDataset();
+        if (dataAttr != null && dataset != null) {
+            double ppm1 = getAxes().getMode(iDim).indexToValue(dataAttr, iDim, plane);
+            double ppm2 = getAxes().getMode(iDim).indexToValue(dataAttr, iDim, plane);
+            getAxes().setMinMax(iDim, ppm1, ppm2);
+        }
+    }
+
+
+
     public CrossHairs getCrossHairs() {
         return crossHairs;
     }
