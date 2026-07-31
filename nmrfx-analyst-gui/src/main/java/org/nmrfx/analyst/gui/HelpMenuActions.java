@@ -1,14 +1,18 @@
 package org.nmrfx.analyst.gui;
 
+import dev.hydraulic.conveyor.control.SoftwareUpdateController;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.utils.GUIUtils;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class HelpMenuActions extends MenuActions {
 
@@ -28,7 +32,7 @@ public class HelpMenuActions extends MenuActions {
         tutorialsMenuItem.setOnAction(this::showTutorialsAction);
 
         MenuItem versionMenuItem = new MenuItem("Check Version");
-        versionMenuItem.setOnAction(this::showVersionAction);
+        versionMenuItem.setOnAction(e -> checkVersionConveyor(e, false));
 
         MenuItem mailingListItem = new MenuItem("Mailing List Site");
         mailingListItem.setOnAction(this::showMailingListAction);
@@ -42,7 +46,8 @@ public class HelpMenuActions extends MenuActions {
         MenuItem slackChannelItem = new MenuItem("Join Slack Channel");
         slackChannelItem.setOnAction(this::joinSlackChannelAction);
 
-        menu.getItems().addAll(slackChannelItem, docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
+        menu.getItems().addAll(slackChannelItem, docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem,
+                refMenuItem, openSourceItem);
     }
 
     private void showWebSiteAction(ActionEvent event) {
@@ -91,6 +96,71 @@ public class HelpMenuActions extends MenuActions {
     private void joinSlackChannelAction(ActionEvent event) {
         String url = "https://join.slack.com/t/nmrfx/shared_invite/zt-42tyhwuo4-0Rp2vZezUL_HEPR9fxGJyA";
         AnalystApp.getAnalystApp().getHostServices().showDocument(url);
+    }
+
+    private void checkVersionConveyor(ActionEvent event, boolean silent) {
+        SoftwareUpdateController controller = SoftwareUpdateController.getInstance();
+        if (controller == null) {
+            String currentVersion = AnalystApp.getVersion();
+            GUIUtils.warn("Version Check", "Current version: " + currentVersion
+                    + "\nCan't get software update controller\nso can't check for latest");
+            return;
+        }
+
+        Task<Optional<SoftwareVersions>> task = new Task<>() {
+            @Override
+            protected Optional<SoftwareVersions> call() {
+                return checkVersionConveyor(controller);
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            Optional<SoftwareVersions> newVersionOpt = task.getValue();
+            if (newVersionOpt.isPresent()) {
+                SoftwareVersions softwareVersions = newVersionOpt.get();
+                if (softwareVersions.isNewer()) {
+                    if (GUIUtils.affirm("Update to version " + newVersionOpt.get().latest.getVersion())) {
+                        controller.triggerUpdateCheckUI();
+                    }
+                } else {
+                    if (!silent) {
+                        GUIUtils.acknowledge("You're running current version " + softwareVersions.current.getVersion());
+                    }
+                }
+            }
+        });
+
+        task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            ExceptionDialog exceptionDialog = new ExceptionDialog(ex);
+            exceptionDialog.showAndWait();
+        });
+
+        Thread thread = new Thread(task, "version-check");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    record SoftwareVersions(SoftwareUpdateController.Version current, SoftwareUpdateController.Version latest) {
+        boolean isNewer() {
+            return latest != null && latest.compareTo(current) > 0;
+        }
+    }
+
+    private Optional<SoftwareVersions> checkVersionConveyor(SoftwareUpdateController controller) {
+        SoftwareUpdateController.Version currentVersion = controller.getCurrentVersion();
+        if (currentVersion == null) {
+            return Optional.empty();
+        }
+
+        try {
+            SoftwareUpdateController.Version latestVersion = controller.getCurrentVersionFromRepository();
+            SoftwareVersions softwareVersions = new SoftwareVersions(currentVersion, latestVersion);
+            return Optional.of(softwareVersions);
+
+        } catch (SoftwareUpdateController.UpdateCheckException e) {
+            return Optional.empty();
+        }
     }
 
 }
