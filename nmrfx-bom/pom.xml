@@ -370,6 +370,11 @@
                 <artifactId>atlantafx-base</artifactId>
                 <version>2.1.0</version>
             </dependency>
+            <dependency>
+                <groupId>dev.hydraulic.conveyor</groupId>
+                <artifactId>conveyor-control</artifactId>
+                <version>1.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

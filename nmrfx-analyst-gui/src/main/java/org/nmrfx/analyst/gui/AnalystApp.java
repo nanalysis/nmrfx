@@ -148,6 +148,8 @@ public class AnalystApp extends Application {
         moleculeMap = FXCollections.observableHashMap();
         MoleculeFactory.setMoleculeMap(moleculeMap);
         ProjectBase.getActive().projectChanged(false);
+        String lastVersionChecked = AnalystPrefs.getLastVersion();
+        VersionManager.checkVersionWithConveyor(lastVersionChecked);
     }
 
     @Override

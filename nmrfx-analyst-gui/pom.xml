@@ -73,6 +73,10 @@
             <artifactId>jfx-incubator-richtext</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>dev.hydraulic.conveyor</groupId>
+            <artifactId>conveyor-control</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

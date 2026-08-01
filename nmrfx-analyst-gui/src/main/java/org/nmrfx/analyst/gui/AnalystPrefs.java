@@ -28,6 +28,7 @@ import java.util.List;
  * @author brucejohnson
  */
 public class AnalystPrefs {
+    private static final String VERSION_LAST = "VERSION_LAST";
     private static final String GUI_THEME = "GUI_THEME";
     private static final String GUI_LIGHTDARK = "GUI_LIGHTDARK";
     private static final String REMOTE_HOST_STR = "REMOTE_HOST";
@@ -38,6 +39,7 @@ public class AnalystPrefs {
     private static DoubleProperty libraryVectorLB = null;
     private static DoubleProperty libraryVectorREF = null;
 
+    private static StringProperty lastVersionProp = null;
     private static StringProperty themeProp = null;
     private static StringProperty lightDarkModeProp = null;
     private static StringProperty segmentLibraryFile = null;
@@ -108,6 +110,16 @@ public class AnalystPrefs {
     public static String getTheme() {
         themeProp = PreferencesController.getString(themeProp, GUI_THEME, "Primer");
         return themeProp.getValue();
+    }
+
+    public static void setLastVersion(String name) {
+        lastVersionProp.setValue(name);
+        PreferencesController.setString(VERSION_LAST, name);
+    }
+
+    public static String getLastVersion() {
+        lastVersionProp = PreferencesController.getString(lastVersionProp, VERSION_LAST, "");
+        return lastVersionProp.getValue();
     }
 
     public static void setLightDarkMode(String lightDarkModeStr) {

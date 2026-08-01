@@ -1,14 +1,10 @@
 package org.nmrfx.analyst.gui;
 
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.utilities.WebConnect;
-
-import java.io.IOException;
 
 public class HelpMenuActions extends MenuActions {
 
@@ -28,7 +24,7 @@ public class HelpMenuActions extends MenuActions {
         tutorialsMenuItem.setOnAction(this::showTutorialsAction);
 
         MenuItem versionMenuItem = new MenuItem("Check Version");
-        versionMenuItem.setOnAction(this::showVersionAction);
+        versionMenuItem.setOnAction(e -> VersionManager.checkVersionWithConveyor(""));
 
         MenuItem mailingListItem = new MenuItem("Mailing List Site");
         mailingListItem.setOnAction(this::showMailingListAction);
@@ -42,7 +38,8 @@ public class HelpMenuActions extends MenuActions {
         MenuItem slackChannelItem = new MenuItem("Join Slack Channel");
         slackChannelItem.setOnAction(this::joinSlackChannelAction);
 
-        menu.getItems().addAll(slackChannelItem, docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem, openSourceItem);
+        menu.getItems().addAll(slackChannelItem, docsMenuItem, tutorialsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem,
+                refMenuItem, openSourceItem);
     }
 
     private void showWebSiteAction(ActionEvent event) {
