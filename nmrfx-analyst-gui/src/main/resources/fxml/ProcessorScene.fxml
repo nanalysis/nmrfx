@@ -18,13 +18,13 @@
     </top>
     <center>
         <TabPane>
-            <Tab text="Parameters">
+            <Tab text="Parameters" closable="false">
                 <Accordion fx:id="paramAccordion" maxWidth="400"/>
             </Tab>
-            <Tab text="Process">
+            <Tab text="Process" closable="false">
                 <Accordion fx:id="dimAccordion" maxWidth="400"/>
             </Tab>
-            <Tab text="Post-Process">
+            <Tab text="Post-Process" closable="false">
                 <Accordion fx:id="postProcessAccordion" maxWidth="400"/>
             </Tab>
         </TabPane>
