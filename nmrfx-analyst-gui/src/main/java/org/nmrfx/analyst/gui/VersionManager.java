@@ -3,6 +3,7 @@ package org.nmrfx.analyst.gui;
 import dev.hydraulic.conveyor.control.SoftwareUpdateController;
 import javafx.concurrent.Task;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utils.GUIUtils;
 
 import java.util.Optional;
@@ -31,10 +32,12 @@ public class VersionManager {
                 AnalystPrefs.setLastVersion(version.latest.getVersion());
                 if (version.isNewer() && (lastChecked.isEmpty() || !lastChecked.equals(version.latest.getVersion()))) {
                     if (GUIUtils.affirm("Update to version " + version.latest.getVersion())) {
-                        controller.triggerUpdateCheckUI();
+                        if (!ProjectBase.getActive().projectChanged() || GUIUtils.affirm("Project changed, really quite and update?")) {
+                            controller.triggerUpdateCheckUI();
+                        }
                     }
                 } else {
-                    if (lastChecked.isEmpty() ) {
+                    if (lastChecked.isEmpty()) {
                         GUIUtils.acknowledge("You're running current version " + version.current.getVersion());
                     }
                 }
