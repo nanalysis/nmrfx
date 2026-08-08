@@ -12,9 +12,9 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
-import org.nmrfx.structure.chemistry.miner.AtomPaths;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
@@ -596,7 +596,9 @@ public class Predictor {
     void predictWithGATv2(Molecule molecule, int iRef) {
 
         Map<Entity, List<Entity>> compoundListMap = ResidueAtomDistances.generateCompoundListMap(molecule, 0);
-
+        for (Entity entity: molecule.getEntities()) {
+            ConstraintCreator.setupAtomProperties(entity);
+        }
         GATV2Predictor gatv2Predictor = null;
         try {
             gatv2Predictor = new GATV2Predictor();
@@ -611,6 +613,7 @@ public class Predictor {
 
     public void predictWithGATv2(Entity entity, int iRef) {
         GATV2Predictor gatv2Predictor = null;
+        ConstraintCreator.setupAtomProperties(entity);
         try {
             gatv2Predictor = new GATV2Predictor();
             gatv2Predictor.predict(entity, iRef, GATV2Predictor.SolventCorr.D2O);

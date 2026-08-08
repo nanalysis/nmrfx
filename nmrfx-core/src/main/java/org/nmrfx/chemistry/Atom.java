@@ -2433,7 +2433,11 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
 
     @Override
     public String getHybridization() {
-        return (String) getProperty("hyb");
+        int iHyb =  (Integer) getProperty("hyb");
+        return String.valueOf(iHyb);
+    }
+    public int getHybridizationNumber() {
+       return (Integer) getProperty("hyb");
     }
 
     @Override

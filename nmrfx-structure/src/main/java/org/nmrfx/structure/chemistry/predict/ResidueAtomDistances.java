@@ -5,6 +5,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
 
 import java.io.FileWriter;
@@ -16,7 +17,10 @@ public class ResidueAtomDistances {
 
     public record AtomNode(Atom atom, int index, int property, double ppm, int mask) {
         public String getCSV(int iGraph) {
-            return String.format("%d,%d,%d,%.3f,%d", iGraph, index, property, ppm, mask);
+            int aromatic = atom.getFlag(Atom.AROMATIC) ? 1 : 0;
+            int hyb = atom.getHybridizationNumber();
+            int nNeighbors = atom.getConnected().size();
+            return String.format("%d,%d,%d,%d,%d,%d,%.3f,%d", iGraph, index, property, aromatic, hyb, nNeighbors, ppm, mask);
         }
     }
 
@@ -160,6 +164,9 @@ public class ResidueAtomDistances {
     }
 
     public void generate(Molecule molecule, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
+        for (Entity entity: molecule.getEntities()) {
+            ConstraintCreator.setupAtomProperties(entity);
+        }
         List<Compound> residueList = new ArrayList<>();
         residueList.addAll(molecule.getPolymers().stream()
                 .flatMap(polymer -> polymer.getResidues()
@@ -183,6 +190,7 @@ public class ResidueAtomDistances {
 
 
     public void generate(Entity compound, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
+        ConstraintCreator.setupAtomProperties(compound);
         List<Entity> compounds = List.of(compound);
         atomGraphs.add(getAtomGraph(compounds, paths, iStruct, limit));
     }
@@ -207,7 +215,7 @@ public class ResidueAtomDistances {
         }
 
         void dumpHeader(FileWriter nodeWriter, FileWriter edgeWriter) throws IOException {
-            String nodeHeader = "graph_id,node_id,node_type,label,mask\n";
+            String nodeHeader = "graph_id,node_id,node_type,aromatic,hyb,neighbors,label,mask\n";
             String edgeHeader = "graph_id,source,target,node1,node2,node3,weight,nbonds,jvalue, cname\n";
             nodeWriter.write(nodeHeader);
             edgeWriter.write(edgeHeader);
@@ -225,6 +233,9 @@ public class ResidueAtomDistances {
     }
 
     public static void generateMoleculeGraphs(Molecule molecule, List<Integer> istructs, String nodeFileName, String edgeFileName) throws IOException {
+        for (Entity entity: molecule.getEntities()) {
+            ConstraintCreator.setupAtomProperties(entity);
+        }
         try (FileWriter nodeWriter = new FileWriter(nodeFileName); FileWriter edgeWriter = new FileWriter(edgeFileName)) {
             RADWriter radWriter = new RADWriter(nodeWriter, edgeWriter);
             for (int iStruct : istructs) {
