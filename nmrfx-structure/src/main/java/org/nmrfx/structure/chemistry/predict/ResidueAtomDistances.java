@@ -5,8 +5,8 @@ import org.jgrapht.graph.DefaultEdge;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
+import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,17 +15,31 @@ import java.util.*;
 public class ResidueAtomDistances {
     List<AtomGraph> atomGraphs = new ArrayList<>();
 
-    public record AtomNode(Atom atom, int index, int property, double ppm, int mask) {
+    public record AtomNode(Atom atom, int index, int property, double ppm, int mask, int iStruct) {
         public String getCSV(int iGraph) {
+            String molName = MoleculeFactory.getActive().getName().split("\\.")[0];
+            String atomId = molName + "."
+                    + atom.getResidueName() + "."
+                    + atom.getFullName() + "."
+                    + iStruct;
             int aromatic = atom.getFlag(Atom.AROMATIC) ? 1 : 0;
             int hyb = atom.getHybridizationNumber();
             int nNeighbors = atom.getConnected().size();
-            return String.format("%d,%d,%d,%d,%d,%d,%.3f,%d", iGraph, index, property, aromatic, hyb, nNeighbors, ppm, mask);
+            Object obj = atom.getProperty("elec");
+            double elec = obj == null ? 0.5 : Double.parseDouble(obj.toString());
+            elec = (elec - 20) / (60.0 - 20.0);
+            obj = atom.getProperty("hard");
+            double hard = obj == null ? 0.5 : Double.parseDouble(obj.toString());
+            hard = hard / 200.0;
+
+            obj = atom.getProperty("charge");
+            double charge = obj == null ? 0.0 : Double.parseDouble(obj.toString());
+            return String.format("%d,%d,%d,%d,%d,%d,%.3f,%.3f,%.1f,%.3f,%d,%s", iGraph, index, property, aromatic, hyb, nNeighbors, elec, hard, charge, ppm, mask, atomId);
         }
     }
 
     public record AtomEdge(List<Integer> iAtomList, double distance, int pathLen, double couplingValue,
-                           String couplingName) {
+                           String couplingName, Atom atomA, Atom atomB, int iStruct, int isBonded) {
         public String getCSV(int iGraph) {
             StringBuilder stringBuilder = new StringBuilder();
             for (Integer i : iAtomList) {
@@ -34,7 +48,7 @@ public class ResidueAtomDistances {
                 }
                 stringBuilder.append(i);
             }
-            return String.format("%d,%s,%.3f,%d,%.2f,%s", iGraph, stringBuilder, distance, pathLen, couplingValue, couplingName);
+            return String.format("%d,%s,%.3f,%d,%.2f,%s,%d", iGraph, stringBuilder, distance, pathLen, couplingValue, couplingName, isBonded);
         }
 
         public int indexA() {
@@ -98,6 +112,7 @@ public class ResidueAtomDistances {
         }
         return coupling;
     }
+
     void addEdge(AtomGraph atomGraph, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths,
                  List<Atom> atoms, Atom atomA, Atom atomB, double limit, int iStruct) {
         Point3 pointA = atomA.getPoint(iStruct);
@@ -107,7 +122,7 @@ public class ResidueAtomDistances {
             CouplingPath couplingPath = getPath(paths, atomA, atomB);
             org.jgrapht.GraphPath<Atom, DefaultEdge> path = couplingPath.path;
 
-            int pathLen = Math.min(6, path != null ? path.getLength() : 6);
+            int pathLen = Math.min(7, path != null ? path.getLength() : 8);
             double coupling = 0.0;
             List<Atom> vertexList = new ArrayList<>();
             vertexList.add(atomA);
@@ -127,8 +142,10 @@ public class ResidueAtomDistances {
                 }
                 iAtomList.add(index);
             }
+            distance = (distance - 0.8) / 5.2;
+            int isBonded = atomA.isBonded(atomB) ? 1 : 0;
 
-            AtomEdge atomEdge = new AtomEdge(iAtomList, distance, pathLen, coupling, couplingPath.couplingName);
+            AtomEdge atomEdge = new AtomEdge(iAtomList, distance, pathLen, coupling, couplingPath.couplingName, atomA, atomB, iStruct, isBonded);
             atomGraph.edges.add(atomEdge);
         }
     }
@@ -153,18 +170,20 @@ public class ResidueAtomDistances {
                 ppm = GATV2Predictor.normalize(atomicNumber, ppm);
             }
 
-            AtomNode atomNode = new AtomNode(atomA, iAtomA, atomicNumber, ppm, useNode);
+            AtomNode atomNode = new AtomNode(atomA, iAtomA, atomicNumber, ppm, useNode, iStruct);
             atomGraph.nodes.add(atomNode);
             for (int iAtomB = 0; iAtomB < atoms.size(); iAtomB++) {
                 Atom atomB = atoms.get(iAtomB);
-                addEdge(atomGraph, paths, atoms, atomA, atomB, limit, iStruct);
+                if (atomA != atomB) {
+                    addEdge(atomGraph, paths, atoms, atomA, atomB, limit, iStruct);
+                }
             }
         }
         return atomGraph;
     }
 
     public void generate(Molecule molecule, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
-        for (Entity entity: molecule.getEntities()) {
+        for (Entity entity : molecule.getEntities()) {
             ConstraintCreator.setupAtomProperties(entity);
         }
         List<Compound> residueList = new ArrayList<>();
@@ -185,6 +204,9 @@ public class ResidueAtomDistances {
     }
 
     public void generate(List<Entity> compoundList, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
+        for (Entity entity : compoundList) {
+            ConstraintCreator.setupAtomProperties(entity);
+        }
         atomGraphs.add(getAtomGraph(compoundList, paths, iStruct, limit));
     }
 
@@ -215,8 +237,8 @@ public class ResidueAtomDistances {
         }
 
         void dumpHeader(FileWriter nodeWriter, FileWriter edgeWriter) throws IOException {
-            String nodeHeader = "graph_id,node_id,node_type,aromatic,hyb,neighbors,label,mask\n";
-            String edgeHeader = "graph_id,source,target,node1,node2,node3,weight,nbonds,jvalue, cname\n";
+            String nodeHeader = "graph_id,node_id,node_type,aromatic,hybridization,nNeighbors,elec,hard,charge,label,mask,node_name\n";
+            String edgeHeader = "graph_id,source,target,node1,node2,node3,weight,nbonds,jvalue,cname,bond\n";
             nodeWriter.write(nodeHeader);
             edgeWriter.write(edgeHeader);
         }
@@ -233,7 +255,7 @@ public class ResidueAtomDistances {
     }
 
     public static void generateMoleculeGraphs(Molecule molecule, List<Integer> istructs, String nodeFileName, String edgeFileName) throws IOException {
-        for (Entity entity: molecule.getEntities()) {
+        for (Entity entity : molecule.getEntities()) {
             ConstraintCreator.setupAtomProperties(entity);
         }
         try (FileWriter nodeWriter = new FileWriter(nodeFileName); FileWriter edgeWriter = new FileWriter(edgeFileName)) {
