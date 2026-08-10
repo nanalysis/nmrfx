@@ -1,9 +1,6 @@
 package org.nmrfx.structure.chemistry.predict;
 
-import ai.onnxruntime.OnnxTensor;
-import ai.onnxruntime.OrtEnvironment;
-import ai.onnxruntime.OrtException;
-import ai.onnxruntime.OrtSession;
+import ai.onnxruntime.*;
 import org.jgrapht.alg.shortestpath.DefaultManyToManyShortestPaths;
 import org.jgrapht.graph.DefaultEdge;
 import org.nmrfx.chemistry.*;
@@ -15,9 +12,7 @@ import java.io.ByteArrayOutputStream;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GATV2Predictor {
     static OrtSession session = null;
@@ -83,7 +78,7 @@ public class GATV2Predictor {
     }
 
 
-    public ResidueAtomDistances getRAD(Entity compound) throws IOException {
+    public ResidueAtomDistances getRAD(Entity compound) {
         compound.molecule.updateAtomArray();
         MoleculeFactory.setActive(compound.molecule);
         DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths = AtomPaths.getPathAlgorithm(compound, 6, -1, -1);
@@ -105,30 +100,32 @@ public class GATV2Predictor {
 
     public static void getOnnxSession() throws OrtException {
         env = OrtEnvironment.getEnvironment();
-        String homeDirPath = System.getProperty("user.home");
-        Path path = Path.of(homeDirPath, "nmrfx_models", "jshift_v1.onnx");
-        File file = path.toFile();
-        if (file.exists()) {
-            session = env.createSession(file.toString(), new OrtSession.SessionOptions());
-        } else {
-            InputStream modelStream = ClassLoader.getSystemResourceAsStream("data/jshift_v1.onnx");
-            if (modelStream == null) {
-                throw new IllegalArgumentException("Model file not found in classpath");
-            }
-
-            byte[] modelBytes;
-            try (InputStream in = modelStream; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
+        try (OrtSession.SessionOptions opts = new OrtSession.SessionOptions()) {
+            opts.setSessionLogLevel(OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR); // ignore shape warnings
+            String homeDirPath = System.getProperty("user.home");
+            Path path = Path.of(homeDirPath, "nmrfx_models", "rna_gat.onnx");
+            File file = path.toFile();
+            if (file.exists()) {
+                session = env.createSession(file.toString(), opts);
+            } else {
+                InputStream modelStream = ClassLoader.getSystemResourceAsStream("data/jshift_v1.onnx");
+                if (modelStream == null) {
+                    throw new IllegalArgumentException("Model file not found in classpath");
                 }
-                modelBytes = out.toByteArray();
-                session = env.createSession(modelBytes);
-            } catch (IOException ioException) {
 
+                byte[] modelBytes;
+                try (InputStream in = modelStream; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, bytesRead);
+                    }
+                    modelBytes = out.toByteArray();
+                    session = env.createSession(modelBytes, opts);
+                } catch (IOException ignored) {
+
+                }
             }
-
         }
     }
 
@@ -237,8 +234,7 @@ public class GATV2Predictor {
             if ((edge.indexA() >= nodes.length) && (edge.indexA() >= nodes.length)) {
                 System.out.println("Edge out of range " + edge.indexA() + " " + edge.indexB() + " " + nodes.length);
             }
-            double scaledDistance = (edge.distance() - 3.3) / 1.8;
-            edgeAttr[j][0] = (float) scaledDistance;
+            edgeAttr[j][0] = (float) edge.distance();
             edgeAttr[j][1] = edge.pathLen();
         }
 
@@ -248,17 +244,17 @@ public class GATV2Predictor {
             var inputs = Map.of("x", input1, "edge_index", input2, "edge_attr", input3);
             try (OrtSession.Result result = session.run(inputs)) {
                 Object nodeOut = result.get(0);
-
                 OnnxTensor nodeTensor = (OnnxTensor) nodeOut;
                 float[][] nodeOutputs = (float[][]) nodeTensor.getValue();
 
                 for (int i = 0; i < nNodes; i++) {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
-                    if (atomNode.atom().getEntity() == entityToPredict) {
+                    // fixme: atom entity is A:G1 whereas entity to predict is A
+                   // if (atomNode.atom().getEntity() == entityToPredict) {
                         int nodeType = atomNode.property();
                         if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
                             setShift(atomNode, nodeOutputs[i][0], iRef, solventCorr);
-                        }
+                    //    }
                     }
                 }
                 if (result.size() > 1) {
