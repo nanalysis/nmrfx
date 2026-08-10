@@ -2425,6 +2425,9 @@ public class Atom implements IAtom, Comparable<Atom>, TableItem {
         }
         return propValue;
     }
+    public Set<String> getProperties() {
+        return properties.isPresent() ? properties.get().keySet() : Collections.emptySet();
+    }
 
     @Override
     public String getSymbol() {
