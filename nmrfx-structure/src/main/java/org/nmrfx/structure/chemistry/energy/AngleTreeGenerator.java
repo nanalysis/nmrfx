@@ -422,10 +422,10 @@ public class AngleTreeGenerator {
                             mode = 11;
                         }
                         if (a3.getProperty("rings") != null && a2.getProperty("rings") != null) {
-                            ArrayList<Ring> a3Rings = (ArrayList) a3.getProperty("rings");
-                            ArrayList<Ring> a2Rings = (ArrayList) a2.getProperty("rings");
+                            ArrayList<HanserRing> a3Rings = (ArrayList) a3.getProperty("rings");
+                            ArrayList<HanserRing> a2Rings = (ArrayList) a2.getProperty("rings");
                             boolean isRot = true;
-                            for (Ring ring : a3Rings) {
+                            for (HanserRing ring : a3Rings) {
                                 if (a2Rings.contains(ring)) {
                                     isRot = false;
                                     break;

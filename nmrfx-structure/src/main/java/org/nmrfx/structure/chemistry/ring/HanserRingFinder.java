@@ -28,7 +28,7 @@ package org.nmrfx.structure.chemistry.ring;
 import org.nmrfx.chemistry.Atom;
 import org.nmrfx.chemistry.Bond;
 import org.nmrfx.chemistry.ITree;
-import org.nmrfx.chemistry.Ring;
+import org.nmrfx.chemistry.HanserRing;
 
 import java.util.*;
 
@@ -39,11 +39,11 @@ import java.util.*;
 
 public class HanserRingFinder implements RingFinder {
 
-    private List<Ring> rings;
+    private List<HanserRing> rings;
     private int maxRingSize;
 
     public HanserRingFinder() {
-        rings = new ArrayList<Ring>();
+        rings = new ArrayList<HanserRing>();
         maxRingSize = -1;
     }
 
@@ -55,9 +55,9 @@ public class HanserRingFinder implements RingFinder {
         return this.maxRingSize;
     }
 
-    public List<Bond> getAllEdges(List<Ring> rings) {
+    public List<Bond> getAllEdges(List<HanserRing> rings) {
         List<Bond> edges = new ArrayList<>();
-        for (Ring ring : rings) {
+        for (HanserRing ring : rings) {
             int ringSize = ring.size();
             for (int i = 0; i < ringSize; i++) {
                 Atom atom1 = ring.getAtom(i);
@@ -79,7 +79,7 @@ public class HanserRingFinder implements RingFinder {
         return edges;
     }
 
-    public List<List<Boolean>> generateEdgeMap(List<Ring> rings, List<Bond> edges) {
+    public List<List<Boolean>> generateEdgeMap(List<HanserRing> rings, List<Bond> edges) {
         List<List<Boolean>> edgeMap = new ArrayList<>();
 
         for (int i = 0; i < rings.size(); i++) {
@@ -87,7 +87,7 @@ public class HanserRingFinder implements RingFinder {
             for (int u = 0; u < edges.size(); u++) {  // Initialize all values to false
                 ringEdgeMap.add(Boolean.FALSE);
             }
-            Ring ring = rings.get(i);
+            HanserRing ring = rings.get(i);
             int ringSize = ring.size();
             for (int j = 0; j < ringSize; j++) {
                 Atom atom1 = ring.getAtom(j);
@@ -108,24 +108,24 @@ public class HanserRingFinder implements RingFinder {
         return edgeMap;
     }
 
-    public List<Ring> removeLargeRings(List<List<Boolean>> edgeMap) {
+    public List<HanserRing> removeLargeRings(List<List<Boolean>> edgeMap) {
         List<Boolean> removeRing = new ArrayList();
         for (int i = rings.size() - 1; i > 1; i--) { // No need to look at first two rings
             List<Boolean> largeRow = edgeMap.get(i);
-            Ring largeRing = rings.get(i);
+            HanserRing largeRing = rings.get(i);
             boolean isLargerRing = false;
             for (int j = 0; j < i - 1; j++) {
                 if (isLargerRing) {
                     break;
                 }
                 List<Boolean> smallRow1 = edgeMap.get(j);
-                Ring smallRing1 = rings.get(j);
+                HanserRing smallRing1 = rings.get(j);
                 for (int k = j + 1; k < i; k++) {
                     if (isLargerRing) {
                         break;
                     }
                     List<Boolean> smallRow2 = edgeMap.get(k);
-                    Ring smallRing2 = rings.get(k);
+                    HanserRing smallRing2 = rings.get(k);
                     int difference = smallRing1.size() + smallRing2.size() - largeRing.size();
                     // The - 1 at the end accounts that each ring has the same atom represented twice. Each size should reflect this with minus 1
                     // -2 - (-1) = -1 
@@ -144,7 +144,7 @@ public class HanserRingFinder implements RingFinder {
             }
             removeRing.add(isLargerRing);
         }
-        List<Ring> ringSubset = new ArrayList<>();
+        List<HanserRing> ringSubset = new ArrayList<>();
         for (int i = 0; i < rings.size(); i++) {
             if (i <= 1) {
                 ringSubset.add(rings.get(i));
@@ -160,12 +160,12 @@ public class HanserRingFinder implements RingFinder {
 
     public void setAtomRings(List<Atom> atoms) {
         int ringNumber = 0;
-        for (Ring ring : rings) {
+        for (HanserRing ring : rings) {
             ring.setRingNumber(ringNumber);
             List<Atom> ringAtoms = ring.getAtoms();
             for (int i = 0; i < ringAtoms.size() - 1; i++) {
                 Atom atom = ringAtoms.get(i);
-                List<Ring> rings;
+                List<HanserRing> rings;
                 if (atom.getProperty("rings") == null) {
                     rings = new ArrayList<>();
                 } else {
@@ -178,11 +178,11 @@ public class HanserRingFinder implements RingFinder {
         }
     }
 
-    public Collection<Ring> findSmallestRings(ITree itree) {
+    public Collection<HanserRing> findSmallestRings(ITree itree) {
         findRings(itree);
 
-        Collections.sort(rings, new Comparator<Ring>() {
-            public int compare(Ring ring1, Ring ring2) {
+        Collections.sort(rings, new Comparator<HanserRing>() {
+            public int compare(HanserRing ring1, HanserRing ring2) {
                 return ring1.size() - ring2.size();
             }
         });
@@ -195,7 +195,7 @@ public class HanserRingFinder implements RingFinder {
         return rings;
     }
 
-    public Collection<Ring> findRings(ITree itree) {
+    public Collection<HanserRing> findRings(ITree itree) {
         rings.clear();
 
         PathGraph graph = new PathGraph(itree);
@@ -205,7 +205,7 @@ public class HanserRingFinder implements RingFinder {
         for (Atom atom : atoms) {
             List<PathEdge> edges = graph.remove(atom);
             for (PathEdge edge : edges) {
-                Ring ring = new Ring(edge.getAtoms());
+                HanserRing ring = new HanserRing(edge.getAtoms());
                 rings.add(ring);
             }
         }

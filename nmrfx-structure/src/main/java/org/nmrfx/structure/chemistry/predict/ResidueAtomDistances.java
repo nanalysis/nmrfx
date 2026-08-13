@@ -5,8 +5,10 @@ import org.jgrapht.graph.DefaultEdge;
 import org.nmrfx.chemistry.*;
 import org.nmrfx.structure.chemistry.JCoupling;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.AtomPaths;
 import org.nmrfx.structure.chemistry.energy.ConstraintCreator;
+import org.nmrfx.structure.chemistry.ring.HanserRingFinder;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,7 +17,8 @@ import java.util.*;
 public class ResidueAtomDistances {
     List<AtomGraph> atomGraphs = new ArrayList<>();
 
-    public record AtomNode(Atom atom, int index, int property, double ppm, int mask, int iStruct) {
+    public record AtomNode(Atom atom, int index, int atomicNumber, double[] rcContributions, double ppm, int mask,
+                           int iStruct) {
         public String getCSV(int iGraph) {
             String molName = MoleculeFactory.getActive().getName().split("\\.")[0];
             String atomId = molName + "."
@@ -34,12 +37,21 @@ public class ResidueAtomDistances {
 
             obj = atom.getProperty("charge");
             double charge = obj == null ? 0.0 : Double.parseDouble(obj.toString());
-            return String.format("%d,%d,%d,%d,%d,%d,%.3f,%.3f,%.1f,%.3f,%d,%s", iGraph, index, property, aromatic, hyb, nNeighbors, elec, hard, charge, ppm, mask, atomId);
+            StringBuilder stringBuilder = new StringBuilder();
+            int i = 0;
+            for (double rc : rcContributions) {
+                if (stringBuilder.length() > 0) {
+                    stringBuilder.append(",");
+                }
+                rc = GATV2Predictor.normalizeRC(atomicNumber, rc);
+                stringBuilder.append(String.format("%.4f", rc));
+            }
+            return String.format("%d,%d,%d,%d,%d,%d,%.3f,%.3f,%.1f,%s,%.3f,%d,%s", iGraph, index, atomicNumber, aromatic, hyb, nNeighbors, elec, hard, charge, stringBuilder.toString(), ppm, mask, atomId);
         }
     }
 
     public record AtomEdge(List<Integer> iAtomList, double distance, int pathLen, double couplingValue,
-                           String couplingName, Atom atomA, Atom atomB, int iStruct, int isBonded) {
+                           String couplingName, Atom atomA, Atom atomB, int iStruct, int isBonded, int mask) {
         public String getCSV(int iGraph) {
             StringBuilder stringBuilder = new StringBuilder();
             for (Integer i : iAtomList) {
@@ -48,7 +60,7 @@ public class ResidueAtomDistances {
                 }
                 stringBuilder.append(i);
             }
-            return String.format("%d,%s,%.3f,%d,%.2f,%s,%d", iGraph, stringBuilder, distance, pathLen, couplingValue, couplingName, isBonded);
+            return String.format("%d,%s,%.3f,%d,%.2f,%s,%d,%d", iGraph, stringBuilder, distance, pathLen, couplingValue, couplingName, isBonded, mask);
         }
 
         public int indexA() {
@@ -59,6 +71,7 @@ public class ResidueAtomDistances {
             return iAtomList.get(1);
         }
     }
+
 
     public record AtomGraph(List<AtomNode> nodes, List<AtomEdge> edges) {
         public String getNodesCSV(int iGraph) {
@@ -144,8 +157,10 @@ public class ResidueAtomDistances {
             }
             distance = (distance - 0.8) / 5.2;
             int isBonded = atomA.isBonded(atomB) ? 1 : 0;
+            int mask = atomA.getAtomCouplingPair(atomB).isPresent() ? 1 : 0;
 
-            AtomEdge atomEdge = new AtomEdge(iAtomList, distance, pathLen, coupling, couplingPath.couplingName, atomA, atomB, iStruct, isBonded);
+            AtomEdge atomEdge = new AtomEdge(iAtomList, distance, pathLen, coupling, couplingPath.couplingName, atomA, atomB, iStruct, isBonded, mask);
+
             atomGraph.edges.add(atomEdge);
         }
     }
@@ -156,6 +171,8 @@ public class ResidueAtomDistances {
         List<Atom> atoms = compounds.stream().flatMap(compound -> compound.atoms.stream())
                 .filter(atom -> atom.getAtomicNumber() > 0).toList();
         AtomGraph atomGraph = new AtomGraph(new ArrayList<>(), new ArrayList<>());
+        RingCurrentShift ringCurrentShift = new RingCurrentShift();
+        ringCurrentShift.makeHanserRingList(compounds);
         for (int iAtomA = 0; iAtomA < atoms.size(); iAtomA++) {
             Atom atomA = atoms.get(iAtomA);
             int atomicNumber = atomA.getAtomicNumber();
@@ -169,9 +186,16 @@ public class ResidueAtomDistances {
                 ppm = ppmV.getValue();
                 ppm = GATV2Predictor.normalize(atomicNumber, ppm);
             }
+            double[] rCContributions = ringCurrentShift.calcRingContributionsByType(atomA.getSpatialSet(), 0, 1.0);
 
-            AtomNode atomNode = new AtomNode(atomA, iAtomA, atomicNumber, ppm, useNode, iStruct);
-            atomGraph.nodes.add(atomNode);
+            try {
+                AtomNode
+                        atomNode = new AtomNode(atomA, iAtomA, atomicNumber, rCContributions, ppm, useNode, iStruct);
+                atomGraph.nodes.add(atomNode);
+            } catch (Exception eee) {
+                eee.printStackTrace();
+
+            }
             for (int iAtomB = 0; iAtomB < atoms.size(); iAtomB++) {
                 Atom atomB = atoms.get(iAtomB);
                 if (atomA != atomB) {
@@ -212,9 +236,15 @@ public class ResidueAtomDistances {
 
 
     public void generate(Entity compound, DefaultManyToManyShortestPaths<Atom, DefaultEdge> paths, double limit, int iStruct) {
-        ConstraintCreator.setupAtomProperties(compound);
-        List<Entity> compounds = List.of(compound);
-        atomGraphs.add(getAtomGraph(compounds, paths, iStruct, limit));
+        try {
+            ConstraintCreator.setupAtomProperties(compound);
+            List<Entity> compounds = List.of(compound);
+            atomGraphs.add(getAtomGraph(compounds, paths, iStruct, limit));
+        } catch (Exception eee) {
+            eee.printStackTrace();
+
+        }
+
     }
 
     static class RADWriter {
@@ -237,8 +267,10 @@ public class ResidueAtomDistances {
         }
 
         void dumpHeader(FileWriter nodeWriter, FileWriter edgeWriter) throws IOException {
-            String nodeHeader = "graph_id,node_id,node_type,aromatic,hybridization,nNeighbors,elec,hard,charge,label,mask,node_name\n";
-            String edgeHeader = "graph_id,source,target,node1,node2,node3,weight,nbonds,jvalue,cname,bond\n";
+            StringBuilder stringBuilder = new StringBuilder();
+            String rcString = String.join(",", RingCurrentShift.ringTypeNames);
+            String nodeHeader = "graph_id,node_id,node_type,aromatic,hybridization,nNeighbors,elec,hard,charge," + rcString + ",label,mask,node_name\n";
+            String edgeHeader = "graph_id,source,target,node1,node2,node3,weight,nbonds,jvalue,cname,bond,mask\n";
             nodeWriter.write(nodeHeader);
             edgeWriter.write(edgeHeader);
         }
@@ -252,6 +284,13 @@ public class ResidueAtomDistances {
         ResidueAtomDistances rad = new ResidueAtomDistances();
         rad.generate(entities, paths, 5.0, iStruct);
         return rad;
+    }
+
+    public void findRings(Compound compound) {
+        HanserRingFinder hanserRingFinder = new HanserRingFinder();
+        hanserRingFinder.findRings(compound);
+
+
     }
 
     public static void generateMoleculeGraphs(Molecule molecule, List<Integer> istructs, String nodeFileName, String edgeFileName) throws IOException {

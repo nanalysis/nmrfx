@@ -77,6 +77,16 @@ public class GATV2Predictor {
         }
     }
 
+    public static double normalizeRC(int atomType, double input) {
+        Double[] values = normValues.get(atomType);
+        if (values != null) {
+            return 1.5 * input / values[1];
+        } else {
+            return input;
+        }
+
+    }
+
 
     public ResidueAtomDistances getRAD(Entity compound) {
         compound.molecule.updateAtomArray();
@@ -172,7 +182,7 @@ public class GATV2Predictor {
     }
 
     private void setShift(ResidueAtomDistances.AtomNode atomNode, double value, int iRef, SolventCorr solventCorr) {
-        int nodeType = atomNode.property();
+        int nodeType = atomNode.atomicNumber();
         double shift = denormalize(nodeType, value);
         if (nodeType == 1) {
             shift = solventCorr.toSolvent(shift);
@@ -224,7 +234,7 @@ public class GATV2Predictor {
         int nNodes = graph.nodes().size();
         int nEdges = graph.edges().size();
 
-        long[] nodes = graph.nodes().stream().mapToLong(node -> tokens.indexOf(node.property())).toArray();
+        long[] nodes = graph.nodes().stream().mapToLong(node -> tokens.indexOf(node.atomicNumber())).toArray();
         long[][] edgeIndex = new long[2][nEdges];
         float[][] edgeAttr = new float[nEdges][2];
         for (int j = 0; j < graph.edges().size(); j++) {
@@ -251,7 +261,7 @@ public class GATV2Predictor {
                     ResidueAtomDistances.AtomNode atomNode = graphNodes.get(i);
                     // fixme: atom entity is A:G1 whereas entity to predict is A
                    // if (atomNode.atom().getEntity() == entityToPredict) {
-                        int nodeType = atomNode.property();
+                        int nodeType = atomNode.atomicNumber();
                         if ((nodeType == 1) || (nodeType == 6) || (nodeType == 7) || (nodeType == 9) || (nodeType == 15)) {
                             setShift(atomNode, nodeOutputs[i][0], iRef, solventCorr);
                     //    }

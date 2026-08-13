@@ -30,12 +30,12 @@ import java.util.List;
 /**
  * @author Bruce A. Johnson <bruce at onemoonscientific.com>
  */
-public class Ring {
+public class HanserRing {
 
     private List<Atom> atoms;
     private int ringNumber;
 
-    public Ring(List<Atom> atoms) {
+    public HanserRing(List<Atom> atoms) {
         this.atoms = atoms;
     }
 
@@ -57,5 +57,33 @@ public class Ring {
 
     public int getRingNumber() {
         return this.ringNumber;
+    }
+
+    public boolean isAromatic() {
+        return !atoms.stream().filter(atom -> !atom.getFlag(Atom.AROMATIC)).findAny().isPresent();
+    }
+
+    public boolean fused(HanserRing ring) {
+        int nShared = 0;
+        for (Atom atom : atoms) {
+            for (Atom atom2 : ring.getAtoms()) {
+                if (atom == atom2) {
+                    nShared++;
+                }
+            }
+        }
+        return nShared > 1;
+    }
+
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (Atom atom : atoms) {
+            if (stringBuilder.length() > 0) {
+                stringBuilder.append(" ");
+            }
+            stringBuilder.append(atom.getName());
+        }
+        return stringBuilder.toString();
     }
 }

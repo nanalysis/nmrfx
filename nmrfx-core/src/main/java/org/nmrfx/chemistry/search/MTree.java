@@ -17,7 +17,7 @@
  */
 package org.nmrfx.chemistry.search;
 
-import org.nmrfx.chemistry.Ring;
+import org.nmrfx.chemistry.HanserRing;
 
 import java.util.*;
 
@@ -147,23 +147,23 @@ public class MTree {
         cNode.shell = 0;
         path[0] = iStart;
         pathNodes.add(cNode);
-        Map<Ring, Integer> openRings = new HashMap<>();
+        Map<HanserRing, Integer> openRings = new HashMap<>();
         for (int j = 0; j < nNodes; j++) {
             if (j >= nodesAdded) {
                 return (path);
             }
             m = (path[j] & 0xFF);
             cNode = (MNode) nodes.elementAt(m);
-            List<Ring> cNodeRings = (List) cNode.getAtom().getProperty("rings");
+            List<HanserRing> cNodeRings = (List) cNode.getAtom().getProperty("rings");
             for (int i = 0; i < cNode.nodes.size(); i++) {
                 boolean branchingRing = false;
 
                 next = ((MNode) cNode.nodes.get(i)).getID();
                 nNode = (MNode) nodes.elementAt(next);
                 if (nNode.shell == -1) {
-                    List<Ring> nNodeRings = (List) nNode.getAtom().getProperty("rings");
+                    List<HanserRing> nNodeRings = (List) nNode.getAtom().getProperty("rings");
                     if (nNodeRings != null) {
-                        for (Ring ring : nNodeRings) {
+                        for (HanserRing ring : nNodeRings) {
                             if (openRings.containsKey(ring)) {
                                 if (cNodeRings != null) {
                                     if (cNodeRings.contains(ring)) {
@@ -186,7 +186,7 @@ public class MTree {
                     }
                     if (!branchingRing) {
                         if (nNodeRings != null) {
-                            for (Ring ring : nNodeRings) {
+                            for (HanserRing ring : nNodeRings) {
                                 if (!openRings.containsKey(ring)) {
                                     openRings.put(ring, 1);
                                 } else {
@@ -204,10 +204,10 @@ public class MTree {
 
                 } else {
                     if ((nNode.parent != cNode) && (cNode.parent != nNode)) {
-                        List<Ring> nAtomRings = (List) nNode.getAtom().getProperty("rings");
-                        List<Ring> cAtomRings = (List) cNode.getAtom().getProperty("rings");
+                        List<HanserRing> nAtomRings = (List) nNode.getAtom().getProperty("rings");
+                        List<HanserRing> cAtomRings = (List) cNode.getAtom().getProperty("rings");
                         if (nAtomRings != null && cAtomRings != null) {
-                            for (Ring ring : openRings.keySet()) {
+                            for (HanserRing ring : openRings.keySet()) {
                                 if (openRings.get(ring) == ring.size()) {
                                     if (nAtomRings.contains(ring) && cAtomRings.contains(ring)) {
                                         MNode newNode = new MNode(nNodes);

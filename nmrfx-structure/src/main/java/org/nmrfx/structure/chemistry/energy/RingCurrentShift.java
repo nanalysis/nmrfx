@@ -21,18 +21,28 @@ import org.apache.commons.math3.geometry.euclidean.threed.Line;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.chemistry.*;
+import org.nmrfx.structure.chemistry.ring.HanserRingFinder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class RingCurrentShift {
 
+    private static Map<String, Integer> ringTypes = new HashMap<>();
     private ArrayList<FusedRing> fusedRingList = new ArrayList<FusedRing>();
     private static HashMap<String, Ring> stdRings = new HashMap<String, Ring>();
     private static final HashMap<String, PPMv> refShifts = new HashMap<String, PPMv>();
+    public static final String[] ringTypeNames ={"RC_Other","RC_C5", "RC_C6", "RC_N5", "RC_N6", "RC_O5", "RC_O6", "RC_S5"};
+
 
     static {
+        ringTypes.put(ringTypeNames[1], 1);
+        ringTypes.put(ringTypeNames[2], 2);
+        ringTypes.put(ringTypeNames[3], 3);
+        ringTypes.put(ringTypeNames[4], 4);
+        ringTypes.put(ringTypeNames[5], 5);
+        ringTypes.put(ringTypeNames[6], 6);
+        ringTypes.put(ringTypeNames[7], 7);
+
         refShifts.put("U.H6", new PPMv(8.00));
         refShifts.put("U.H3'", new PPMv(4.56));
         refShifts.put("U.H5", new PPMv(5.80));
@@ -78,6 +88,12 @@ public class RingCurrentShift {
             this.ringFactor = ringFactor;
         }
 
+        RingType(final String name) {
+            this.name = name;
+            this.atomNames = null;
+            this.ringFactor = 1.0;
+        }
+
         void setRingFactor(final double ringFactor) {
             this.ringFactor = ringFactor;
         }
@@ -108,8 +124,43 @@ public class RingCurrentShift {
         final RingType type;
         ArrayList<SpatialSet> spatialSets = new ArrayList<SpatialSet>();
         ArrayList<Vector3D> points = new ArrayList<Vector3D>();
+        int iStruct = -1;
         Plane plane = null;
         Vector3D normal = null;
+
+        Ring(HanserRing hanserRing) {
+            boolean hasNitrogen = false;
+            boolean hasOxygen = false;
+            boolean hasSulfur = false;
+            for (Atom atom : hanserRing.getAtoms()) {
+                SpatialSet spatialSet = atom.getSpatialSet();
+                spatialSets.add(spatialSet);
+                if (atom.getAtomicNumber() == 8) {
+                    hasOxygen = true;
+                } else if (atom.getAtomicNumber() == 7) {
+                    hasNitrogen = true;
+                } else if (atom.getAtomicNumber() == 16) {
+                    hasSulfur = true;
+                }
+
+            }
+
+            String name;
+            if (hasNitrogen) {
+                name = "RC_N" + (spatialSets.size() - 1);
+            } else if (hasOxygen) {
+                name = "RC_O" + (spatialSets.size() - 1);
+            } else if (hasSulfur) {
+                name = "RC_S" + (spatialSets.size() - 1);
+            } else {
+                name = "RC_C" + (spatialSets.size() - 1);
+            }
+            if (ringTypes.containsKey(name)) {
+                type = new RingType(name);
+            } else {
+                type = new RingType("RC_Other");
+            }
+        }
 
         Ring(final RingType type, final ArrayList<SpatialSet> spatialSets) {
             this.type = type;
@@ -120,19 +171,31 @@ public class RingCurrentShift {
             this.points = points;
         }
 
-        void setPlane(final Plane plane, final Vector3D normal) {
+        void setPlane(final Plane plane, final Vector3D normal, int iStruct) {
             this.plane = plane;
             this.normal = normal;
+            this.iStruct = iStruct;
         }
 
-        boolean isPlaneSet() {
-            return !(plane == null);
+        boolean isPlaneSet(int iStruct) {
+            return !(plane == null) && (this.iStruct == iStruct);
         }
 
         boolean hasSpatialSet(final SpatialSet targetParent) {
             boolean sameRing = false;
             for (SpatialSet spatialSet : spatialSets) {
                 if (spatialSet == targetParent) {
+                    sameRing = true;
+                    break;
+                }
+            }
+            return sameRing;
+        }
+
+        boolean hasBondToRing(final Atom target) {
+            boolean sameRing = false;
+            for (Atom atom : target.getConnected()) {
+                if (hasSpatialSet(atom.spatialSet)) {
                     sameRing = true;
                     break;
                 }
@@ -195,7 +258,7 @@ public class RingCurrentShift {
         points.add(pt1);
         Ring ring = new Ring(benzeneType, null);
         ring.setPoints(points);
-        setRingConformationFromPoints(ring);
+        setRingConformationFromPoints(ring, 0);
         stdRings.put("benzene", ring);
     }
 
@@ -219,16 +282,25 @@ public class RingCurrentShift {
             }
             ring.points.add(pt);
         }
-        setRingConformationFromPoints(ring);
+        setRingConformationFromPoints(ring, iStruct);
     }
 
-    static void setRingConformationFromPoints(Ring ring) {
-        Vector3D pt0 = ring.points.get(0);
-        Vector3D pt1 = ring.points.get(1);
-        Vector3D pt2 = ring.points.get(ring.points.size() - 2);
-        Plane plane = new Plane(pt0, pt1, pt2);
-        Vector3D normal = plane.getNormal();
-        ring.setPlane(plane, normal);
+    static void setRingConformationFromPoints(Ring ring, int iStruct) {
+        int n = ring.points.size() - 1;              // last point duplicates the first
+        Vector3D centroid = Vector3D.ZERO;
+        for (int i = 0; i < n; i++) {
+            centroid = centroid.add(ring.points.get(i));
+        }
+        centroid = centroid.scalarMultiply(1.0 / n);
+
+        Vector3D normal = Vector3D.ZERO;             // Newell: averages over all bonds,
+        for (int i = 1; i < ring.points.size(); i++) {   // so it is independent of which
+            normal = normal.add(Vector3D.crossProduct(   // atom starts the list and of
+                    ring.points.get(i - 1).subtract(centroid),   // traversal direction
+                    ring.points.get(i).subtract(centroid)));
+        }
+        normal = normal.normalize();
+        ring.setPlane(new Plane(centroid, normal), normal, iStruct);
     }
 
     public double test(double x, double y, double z, double targetFactor) {
@@ -306,8 +378,8 @@ public class RingCurrentShift {
      * @param iStruct          The structure set to get coordinates from
      * @param ringRatio        An empirically calibrated ratio from our fitting
      *                         algorithm
-     * @return
-     * @see makeRingList
+     * @return sum of contributions
+     *
      */
     public double calcRingContributions(SpatialSet targetSpatialSet, int iStruct, final double ringRatio) {
         double targetFactor = 5.45 * ringRatio;  // 5.45 from Osapay & Case JACS 1991
@@ -330,7 +402,7 @@ public class RingCurrentShift {
     }
 
     private double calcRingContributions(Ring ring, Vector3D targetPoint, final double targetFactor, final int iStruct) {
-        if (!ring.isPlaneSet()) {
+        if (!ring.isPlaneSet(iStruct)) {
             setRingConformation(ring, iStruct);
         }
         Line line = new Line(targetPoint, targetPoint.add(ring.normal));
@@ -351,6 +423,43 @@ public class RingCurrentShift {
             ringCurrentSum += ringCurrent;
         }
         return ringCurrentSum;
+    }
+
+    /**
+     * Calculate the chemical shift contribution to this atom from ring current
+     * shifts of surrounding aromatic rings. The output of this method should be
+     * added to the calibrated reference shift for the atoms type. Before
+     * calling this method the list of aromatic rings in the molecule needs to
+     * me set up.
+     *
+     * @param targetSpatialSet The spatial set for the target atom
+     * @param iStruct          The structure set to get coordinates from
+     * @param ringRatio        An empirically calibrated ratio from our fitting
+     *                         algorithm
+     * @return sum of contributions
+     *
+     */
+    public double[] calcRingContributionsByType(SpatialSet targetSpatialSet, int iStruct, final double ringRatio) {
+        double targetFactor = 5.45 * ringRatio;  // 5.45 from Osapay & Case JACS 1991
+        Vector3D targetPoint = targetSpatialSet.getPoint(iStruct);
+        double[] ringTypeContributions = new double[ringTypes.size() + 1];
+        if (targetPoint != null) {
+            Atom parent = targetSpatialSet.atom.getParent();
+            if (parent != null) {
+                SpatialSet targetParent = parent.getSpatialSet();
+                for (FusedRing fusedRing : fusedRingList) {
+                    if (!fusedRing.hasSpatialSet(targetParent) && !fusedRing.hasSpatialSet(targetSpatialSet) ) {
+                        for (Ring ring : fusedRing.rings) {
+                            if (!ring.spatialSets.contains(targetSpatialSet) && !ring.hasBondToRing(targetSpatialSet.atom)) {
+                                int iType = ringTypes.containsKey(ring.type.name) ? ringTypes.get(ring.type.name) : 0;
+                                ringTypeContributions[iType] += calcRingContributions(ring, targetPoint, targetFactor, iStruct);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ringTypeContributions;
     }
 
     public HashMap<String, Double> calcRingGeometricFactors(SpatialSet targetSpatialSet, int iStruct) {
@@ -374,7 +483,7 @@ public class RingCurrentShift {
     }
 
     public double calcRingGeometricFactor(Ring ring, Vector3D targetPoint, final int iStruct) {
-        if (!ring.isPlaneSet()) {
+        if (!ring.isPlaneSet(iStruct)) {
             setRingConformation(ring, iStruct);
         }
         Line line = new Line(targetPoint, targetPoint.add(ring.normal));
@@ -450,6 +559,33 @@ public class RingCurrentShift {
                     }
                 }
             }
+        }
+    }
+
+    public void addHanserRingsToList(Entity entity) {
+        HanserRingFinder hanserRingFinder = new HanserRingFinder();
+        Collection<HanserRing> hanserRings = hanserRingFinder.findSmallestRings(entity);
+        Set<HanserRing> used = new HashSet<>();
+        hanserRings.stream().filter(r -> r.isAromatic()).filter( r -> r.getAtoms().size() < 8).forEach(hanserRing -> {
+            if (!used.contains(hanserRing)) {
+                FusedRing fusedRing = new FusedRing();
+                fusedRingList.add(fusedRing);
+                fusedRing.add(new Ring(hanserRing));
+                used.add(hanserRing);
+                for (HanserRing hanserRing2 : hanserRings) {
+                    if (!used.contains(hanserRing2) && hanserRing.fused(hanserRing2) && (hanserRing2.getAtoms().size() < 8)) {
+                        fusedRing.add(new Ring(hanserRing2));
+                        used.add(hanserRing2);
+                    }
+                }
+            }
+        });
+    }
+
+    public void makeHanserRingList(List<Entity> entities) {
+        fusedRingList.clear();
+        for (Entity entity : entities) {
+            addHanserRingsToList(entity);
         }
     }
 }
