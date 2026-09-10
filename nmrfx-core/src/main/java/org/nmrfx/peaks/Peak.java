@@ -514,6 +514,12 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    public void peakStatusChanged(Peak peak) {
+        if (peakList != null) {
+            peakList.peakStatusUpdated(this);
+        }
+    }
+
     @Override
     public boolean isValid() {
         return valid;
@@ -1001,8 +1007,11 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public void setStatus(int status) {
+        int oldStatus = this.status;
         this.status = status;
-        peakUpdated(this);
+        if (oldStatus != status) {
+            peakStatusChanged(this);
+        }
     }
 
     public String getColorName() {

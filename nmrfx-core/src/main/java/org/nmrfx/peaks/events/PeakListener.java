@@ -22,5 +22,5 @@ import java.util.EventListener;
 
 @FunctionalInterface
 public interface PeakListener extends EventListener {
-    void peakListChanged(PeakEvent peakEvent);
+     void peakListChanged(PeakEvent peakEvent);
 }

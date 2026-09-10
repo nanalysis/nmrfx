@@ -24,9 +24,7 @@ import org.nmrfx.peaks.events.PeakListener;
 import org.nmrfx.project.ProjectBase;
 import org.nmrfx.utilities.Updater;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -58,8 +56,10 @@ public class PeakListUpdater implements Updater {
 
     @Override
     public void update(Object object) {
-        if (object instanceof Peak) {
-            setPeakUpdatedFlag(true);
+        if (object instanceof Peak peak) {
+            setPeakUpdatedFlag(peak);
+        } else if (object instanceof PeakList.PeakStatusChange peakStatus) {
+            setPeakStatusUpdatedFlag(peakStatus);
         } else if (object instanceof PeakList) {
             setPeakListUpdatedFlag(true);
         } else if (object instanceof List) {
@@ -102,9 +102,16 @@ public class PeakListUpdater implements Updater {
         while (iter.hasNext()) {
             PeakList peakList = (PeakList) iter.next();
             if (peakList != null) {
-                if (peakList.peakUpdated.get()) {
-                    peakList.peakUpdated.set(false);
-                    peakList.notifyPeakChangeListeners();
+                if (!peakList.peakStatusChanges.isEmpty()) {
+                    Set<PeakList.PeakStatusChange> changedPeakStatus = Set.copyOf(peakList.peakStatusChanges);
+                    peakList.peakStatusChanges.clear();
+                    peakList.notifyPeakStatusChangeListeners(changedPeakStatus);
+                    anyUpdated = true;
+                }
+                if (!peakList.peaksChanged.isEmpty()) {
+                    Set<Peak> changedPeaks = Set.copyOf(peakList.peaksChanged);
+                    peakList.peaksChanged.clear();
+                    peakList.notifyPeakChangeListeners(changedPeaks);
                     anyUpdated = true;
                 }
                 if (peakList.peakListUpdated.get()) {
@@ -124,10 +131,17 @@ public class PeakListUpdater implements Updater {
         }
     }
 
-    void setPeakUpdatedFlag(boolean value) {
-        peakList.peakUpdated.set(value);
-        if (value) {
-            aListUpdated.set(value);
+    void setPeakUpdatedFlag(Peak peak) {
+        peakList.peaksChanged.add(peak);
+        if (peak != null) {
+            aListUpdated.set(true);
+        }
+    }
+
+    void setPeakStatusUpdatedFlag(PeakList.PeakStatusChange peakStatusChange) {
+        peakList.peakStatusChanges.add(peakStatusChange);
+        if (peakStatusChange != null) {
+            aListUpdated.set(true);
         }
     }
 

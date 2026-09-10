@@ -1,5 +1,6 @@
 package org.nmrfx.peaks;
 
+import javafx.application.Platform;
 import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.annotations.PluginAPI;
@@ -58,8 +59,10 @@ public class PeakList {
     List<PeakListener> peakChangeListeners = new ArrayList<>();
     List<PeakListener> peakListChangeListeners = new ArrayList<>();
     List<PeakListener> peakCountChangeListeners = new ArrayList<>();
+    List<PeakListener> peakStatusChangeListeners = new ArrayList<>();
     protected boolean changed = false;
-    public AtomicBoolean peakUpdated = new AtomicBoolean(false);
+    public Set<Peak> peaksChanged = new HashSet();
+    public Set<PeakStatusChange> peakStatusChanges = new HashSet();
     public AtomicBoolean peakListUpdated = new AtomicBoolean(false);
     public AtomicBoolean peakCountUpdated = new AtomicBoolean(false);
     public AtomicBoolean assignmentStatusValid = new AtomicBoolean(false);
@@ -189,18 +192,18 @@ public class PeakList {
      * @return
      */
     public static List<Peak> getLinks(Peak peak) {
-        List<Peak> peaks = new ArrayList<>();
+        List<Peak> linkedPeaks = new ArrayList<>();
         for (int iDim = 0; iDim < peak.getNDim(); iDim++) {
             List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
             for (int i = 0; i < peakDims.size(); i++) {
                 PeakDim peakDim = peakDims.get(i);
                 Peak lPeak = peakDim.getPeak();
-                if (!peaks.contains(lPeak)) {
-                    peaks.add(lPeak);
+                if (!linkedPeaks.contains(lPeak)) {
+                    linkedPeaks.add(lPeak);
                 }
             }
         }
-        return peaks;
+        return linkedPeaks;
     }
 
     /**
@@ -210,12 +213,12 @@ public class PeakList {
      */
     public static List<Peak> getLinks(final Peak peak, final int iDim) {
         final List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
-        final List<Peak> peaks = new ArrayList<>(peakDims.size());
+        final List<Peak> linkedPeaks = new ArrayList<>(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
             PeakDim peakDim = (PeakDim) peakDims.get(i);
-            peaks.add((Peak) peakDim.getPeak());
+            linkedPeaks.add((Peak) peakDim.getPeak());
         }
-        return peaks;
+        return linkedPeaks;
     }
 
     /**
@@ -539,6 +542,10 @@ public class PeakList {
         peakChangeListeners.remove(oldListener);
     }
 
+    public void removePeakStatusChangeListener(PeakListener oldListener) {
+        peakStatusChangeListeners.remove(oldListener);
+    }
+
     /**
      * @param newListener
      */
@@ -548,10 +555,28 @@ public class PeakList {
         }
     }
 
-    public void notifyPeakChangeListeners() {
-        for (PeakListener listener : peakChangeListeners) {
-            listener.peakListChanged(new PeakEvent(this));
+    public void registerPeakStatusChangeListener(PeakListener newListener) {
+        if (!peakStatusChangeListeners.contains(newListener)) {
+            peakStatusChangeListeners.add(newListener);
         }
+    }
+
+    public void notifyPeakChangeListeners(Set<Peak> changedPeaks) {
+        for (PeakListener listener : peakChangeListeners) {
+            for (Peak peak : changedPeaks) {
+                listener.peakListChanged(new PeakEvent(peak));
+            }
+        }
+    }
+
+    public void notifyPeakStatusChangeListeners(Set<PeakStatusChange> changedPeaks) {
+        Platform.runLater(() -> {
+            for (PeakListener listener : peakStatusChangeListeners) {
+                for (PeakStatusChange peakStatusChange : changedPeaks) {
+                    listener.peakListChanged(new PeakEvent(peakStatusChange));
+                }
+            }
+        });
     }
 
     public void registerUpdater(Updater updater) {
@@ -682,6 +707,16 @@ public class PeakList {
         assignmentStatusValid.set(false);
         if (updater != null) {
             updater.update(object);
+        }
+    }
+
+    public record PeakStatusChange(Peak peak) {}
+
+    public void peakStatusUpdated(Peak peak) {
+        changed = true;
+        assignmentStatusValid.set(false);
+        if (updater != null) {
+            updater.update(new PeakStatusChange(peak));
         }
     }
 
@@ -1846,13 +1881,13 @@ public class PeakList {
      */
     public static List<Peak> getLinks(Peak peak, boolean requireSameList) {
         List<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
-        ArrayList<Peak> peaks = new ArrayList(peakDims.size());
+        List<Peak> linkedPeaks = new ArrayList(peakDims.size());
         for (PeakDim peakDim : peakDims) {
             if (!requireSameList || (peakDim.getPeak().peakList == peak.peakList)) {
-                peaks.add((Peak) peakDim.getPeak());
+                linkedPeaks.add((Peak) peakDim.getPeak());
             }
         }
-        return peaks;
+        return linkedPeaks;
     }
 
     /**

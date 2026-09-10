@@ -247,6 +247,7 @@ public class PeakNavigator implements PeakListener {
     public void removePeakList() {
         if (peakList != null) {
             peakList.removePeakChangeListener(this);
+            peakList.removePeakStatusChangeListener(this);
         }
         peakList = null;
         currentPeak = null;
@@ -264,6 +265,7 @@ public class PeakNavigator implements PeakListener {
             firstPeak(null);
             setPeakIdField();
             peakList.registerPeakChangeListener(this);
+            peakList.registerPeakStatusChangeListener(this);
         }
         peakNavigable.refreshPeakView(currentPeak);
         peakNavigable.refreshPeakListView(peakList);
@@ -291,6 +293,7 @@ public class PeakNavigator implements PeakListener {
             if (peakList != peak.getPeakList()) {
                 peakList = peak.getPeakList();
                 peakList.registerPeakChangeListener(this);
+                peakList.registerPeakStatusChangeListener(this);
                 peakNavigable.refreshPeakListView(peakList);
             }
             updateDeleteStatus();

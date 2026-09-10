@@ -1836,6 +1836,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     public void removePeakList() {
         if (navigationPeakList != null) {
             navigationPeakList.removePeakChangeListener(this);
+            navigationPeakList.removePeakStatusChangeListener(this);
         }
         navigationPeakList = null;
         currentPeak = null;
@@ -1853,6 +1854,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
             currentPeak = navigationPeakList.getPeak(0);
             setPeakIdField();
             navigationPeakList.registerPeakChangeListener(this);
+            navigationPeakList.registerPeakStatusChangeListener(this);
         }
     }
 
@@ -2205,10 +2207,17 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
-        if (peakEvent.getSource() instanceof PeakList) {
+        if (peakEvent.getSource() instanceof PeakList peakList) {
             if ((peakEvent instanceof PeakListEvent) || (peakEvent instanceof PeakCountEvent)) {
                 peakTableView.refresh();
             }
+        } else if (peakEvent.getSource() instanceof Peak peak) {
+        } else if (peakEvent.getSource() instanceof PeakList.PeakStatusChange peakStatusChange) {
+            Peak peak = peakStatusChange.peak();
+            if (peak.isDeleted()) {
+                deletePeaks(List.of(peak));
+            }
+        } else {
         }
     }
 
@@ -2433,6 +2442,9 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         for (var peakList : PeakList.peakLists()) {
             peakList.registerPeakListChangeListener(this);
             peakList.registerPeakCountChangeListener(this);
+            peakList.registerPeakChangeListener(this);
+            peakList.registerPeakStatusChangeListener(this);
+
         }
     }
 
@@ -2440,6 +2452,8 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
         for (var peakList : PeakList.peakLists()) {
             peakList.removePeakListChangeListener(this);
             peakList.removePeakCountChangeListener(this);
+            peakList.removePeakChangeListener(this);
+            peakList.removePeakStatusChangeListener(this);
         }
     }
 
@@ -2820,12 +2834,28 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
     }
 
     void peakDeleteAction(PeakDeleteEvent event) {
+        deletePeaks(event.getPeaks());
+    }
+
+    void deletePeaks(Collection<Peak> peaks1) {
         var modifiedSpinSystems = new HashSet<SpinSystem>();
-        for (Peak peak : event.getPeaks()) {
-            runAbout.getSpinSystems().findSpinSystem(peak).ifPresent(spinSys -> {
-                spinSys.removePeak(peak);
-                modifiedSpinSystems.add(spinSys);
-            });
+        List<Peak> peaks = new ArrayList<>();
+        peaks.addAll(peaks1);
+        System.out.println("dele " + peaks);
+        for (int i=0;i<peaks.size();i++) {
+            Peak peak = peaks.get(i);
+            var spinSysOpt = runAbout.getSpinSystems().findSpinSystem(peak);
+            if (spinSysOpt.isPresent()) {
+                var spinSys = spinSysOpt.get();
+                boolean refListPeak = peak.getPeakList() == refListObj.get();
+
+                if (refListPeak && GUIUtils.affirm("Reference Peak - Remove whole spin system")) {
+                    spinSys.delete();
+                } else {
+                    spinSys.removePeak(peak);
+                    modifiedSpinSystems.add(spinSys);
+                }
+            }
         }
         for (var spinSys : modifiedSpinSystems) {
             if (spinSys.userFieldsSet()) {
@@ -2835,6 +2865,7 @@ public class RunAboutGUI implements PeakListener, ControllerTool {
                 }
             }
         }
+        gotoSpinSystems();
     }
 
     private void pickedPeakAction(Peak peak) {

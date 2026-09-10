@@ -141,6 +141,7 @@ public class PeakPaths implements PeakListener {
         this.nDim = weights.length;
         for (PeakList peakList : peakLists) {
             peakList.registerPeakChangeListener(this);
+            peakList.registerPeakStatusChangeListener(this);
             this.peakLists.add(peakList);
             this.datasetNames.add(peakList.getDatasetName());
         }
