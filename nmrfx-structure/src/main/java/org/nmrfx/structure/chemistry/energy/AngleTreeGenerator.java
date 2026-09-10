@@ -272,7 +272,7 @@ public class AngleTreeGenerator {
         }
         ringClosures = new HashMap<>();
         if (log.isDebugEnabled()) {
-            log.debug(dumpAtomTree(atomTree));
+         //   log.debug(dumpAtomTree(atomTree));
         }
         return atomTree;
     }
