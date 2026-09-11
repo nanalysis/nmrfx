@@ -555,6 +555,7 @@ public class GUIUtils {
             button.setTooltip(tooltip);
         }
         fontIcon.setIconSize(16);
+        fontIcon.setStyle("-fx-icon-color: -fx-text-fill;");
         button.setContentDisplay(contentDisplay);
         button.setGraphic(fontIcon);
         button.getStyleClass().addAll(Styles.BUTTON_ICON, Styles.SMALL);
@@ -582,6 +583,7 @@ public class GUIUtils {
             button = new ToggleButton(text);
 
         }
+        fontIcon.setStyle("-fx-icon-color: -fx-text-fill;");
         button.setContentDisplay(contentDisplay);
         button.setGraphic(fontIcon);
         button.setGraphicTextGap(4);
@@ -596,12 +598,14 @@ public class GUIUtils {
         fontIcon.setIconSize(12);
         label.setGraphic(fontIcon);
         fontIcon.setIconCode(ikon);
+        fontIcon.setStyle("-fx-icon-color: -fx-text-fill;");
         return label;
     }
     public static FontIcon createIcon(Ikon ikon) {
         final FontIcon fontIcon = new FontIcon();
         fontIcon.setIconSize(12);
         fontIcon.setIconCode(ikon);
+        fontIcon.setStyle("-fx-icon-color: -fx-text-fill;");
         return fontIcon;
     }
 
