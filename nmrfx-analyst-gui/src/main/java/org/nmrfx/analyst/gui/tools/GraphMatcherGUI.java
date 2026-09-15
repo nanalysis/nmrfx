@@ -159,6 +159,13 @@ public class GraphMatcherGUI {
 
     void resetMatcher() {
         resSeqMatcher = new ResSeqMatcher();
+        best = 0.0;
+        statusLabel.setText("");
+        tryLabel.setText("");
+        genLabel.setText("");
+        currentLabel.setText("");
+        bestLabel.setText(String.format("%8.1f", best));
+
         resSeqMatcher.setUpdater((d,i) -> updateProgress(d, i));
     }
     void dumpResSeqMatcher() {
@@ -193,6 +200,7 @@ public class GraphMatcherGUI {
 
     }
     void bipartiteAnalyze() {
+        resetMatcher();
         best = 0.0;
         assignButton.setDisable(true);
         stopButton.setDisable(false);
