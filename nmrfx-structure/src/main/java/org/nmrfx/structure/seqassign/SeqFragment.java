@@ -383,13 +383,15 @@ public class SeqFragment {
 
     public List<List<AtomShiftValue>> getShifts() {
         List<List<AtomShiftValue>> result = new ArrayList<>();
-        result.add(getInitialValues(spinSystemMatches.getFirst()));
-        for (SpinSystemMatch spinMatch : spinSystemMatches) {
-            result.add(getOverlapShiftValues(spinMatch));
-        }
-        List<AtomShiftValue> values = getFinalValues(spinSystemMatches.getLast());
-        if (!values.isEmpty()) {
-            result.add(values);
+        if (!spinSystemMatches.isEmpty()) {
+            result.add(getInitialValues(spinSystemMatches.getFirst()));
+            for (SpinSystemMatch spinMatch : spinSystemMatches) {
+                result.add(getOverlapShiftValues(spinMatch));
+            }
+            List<AtomShiftValue> values = getFinalValues(spinSystemMatches.getLast());
+            if (!values.isEmpty()) {
+                result.add(values);
+            }
         }
         return result;
     }

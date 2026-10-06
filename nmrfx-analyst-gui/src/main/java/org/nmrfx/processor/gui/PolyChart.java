@@ -2993,6 +2993,7 @@ public class PolyChart extends Region {
             PeakListAttributes peakListAttr = new PeakListAttributes(this, matchData, peakList);
             peakListAttributesList.add(peakListAttr);
             peakList.registerPeakChangeListener(peakListener);
+            peakList.registerPeakStatusChangeListener(peakListener);
             return peakListAttr;
         }
 
@@ -3015,6 +3016,7 @@ public class PolyChart extends Region {
             }
             if (!found) {
                 peakAttr.getPeakList().removePeakChangeListener(peakListener);
+                peakAttr.getPeakList().removePeakStatusChangeListener(peakListener);
             }
             removeSome = !found;
         }
@@ -3422,6 +3424,7 @@ public class PolyChart extends Region {
                 PeakListAttributes peakListAttr = peakListIterator.next();
                 if (peakListAttr.getPeakList().peaks() == null) {
                     peakListAttr.getPeakList().removePeakChangeListener(peakListener);
+                    peakListAttr.getPeakList().removePeakStatusChangeListener(peakListener);
                     peakListIterator.remove();
                 }
             }

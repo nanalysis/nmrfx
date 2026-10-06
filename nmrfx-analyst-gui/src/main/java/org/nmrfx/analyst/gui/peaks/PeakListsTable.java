@@ -92,6 +92,7 @@ public class PeakListsTable extends TableView<PeakList> implements PeakListener 
         ObservableList<PeakList> peakArrayList = FXCollections.observableArrayList();
         ProjectBase.getActive().getPeakLists().stream().sorted(Comparator.comparing(PeakList::getName)).forEach(peakList -> {
             peakList.registerPeakChangeListener(this);
+            peakList.registerPeakStatusChangeListener(this);
             peakArrayList.add(peakList);
         });
         var currentLists = getItems();

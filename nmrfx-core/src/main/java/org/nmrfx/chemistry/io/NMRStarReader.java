@@ -86,6 +86,7 @@ public class NMRStarReader {
         }
         return star3;
     }
+
     public static STAR3 read(Reader reader, File starFile) throws ParseException {
         return read(reader, starFile, 0);
     }
@@ -137,6 +138,7 @@ public class NMRStarReader {
         NMRStarReader reader = new NMRStarReader(starFile, star);
         return Optional.of(reader);
     }
+
     public static void readChemicalShifts(File starFile, int ppmSet) throws ParseException {
         var readerOpt = getNMRStarReader(starFile);
         if (readerOpt.isPresent()) {
@@ -359,7 +361,7 @@ public class NMRStarReader {
                 log.debug("process chem shifts {}", saveframe.getName());
                 if (fromSet < 0) {
                     processChemicalShifts(saveframe, iSet);
-                } else if ((fromSet == iSet) || (fromSet == (-iSet -1))) {
+                } else if ((fromSet == iSet) || (fromSet == (-iSet - 1))) {
                     processChemicalShifts(saveframe, toSet);
                     break;
                 }
@@ -632,6 +634,9 @@ public class NMRStarReader {
     }
 
     public void buildResonanceLists() throws ParseException {
+        if (molecule == null) {
+            return;
+        }
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("resonance_linker")) {
                 hasResonances = true;
@@ -700,6 +705,7 @@ public class NMRStarReader {
         Loop peakLoop = saveframe.getLoop("_Peak");
         if (peakLoop != null) {
             processPeakLoop(peakLoop, peakList, nDim);
+            peakList.peakStatusChanges.clear();
 
             Loop peakGeneralCharLoop = saveframe.getLoop("_Peak_general_char");
             processPeakGeneralChar(peakGeneralCharLoop, peakList);

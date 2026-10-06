@@ -422,6 +422,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
                 removeJournalFormatOnChart();
             } else {
                 peakList.registerPeakChangeListener(this);
+                peakList.registerPeakStatusChangeListener(this);
                 AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 300,
                         CanvasAnnotation.POSTYPE.FRACTION,
                         CanvasAnnotation.POSTYPE.PIXEL,
@@ -442,6 +443,7 @@ public class SimplePeakRegionTool implements ControllerTool, PeakListener {
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 peakList.removePeakChangeListener(this);
+                peakList.removePeakStatusChangeListener(this);
             }
 
             PolyChart chart = getChart();
