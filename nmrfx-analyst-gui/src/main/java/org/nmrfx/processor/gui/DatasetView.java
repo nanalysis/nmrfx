@@ -67,6 +67,16 @@ public class DatasetView {
             @Override
             public ListCell<String> call(ListView<String> p) {
                 return new DatasetListCell<>(datasetSelectionView) {
+                    {
+                        getStyleClass().add(atlantafx.base.theme.Styles.DENSE);
+                        setGraphicTextGap(4);
+
+                        listViewProperty().addListener((obs, oldListView, newListView) -> {
+                            if (newListView != null && !newListView.getStyleClass().contains(atlantafx.base.theme.Styles.DENSE)) {
+                                newListView.getStyleClass().add(atlantafx.base.theme.Styles.DENSE);
+                            }
+                        });
+                    }
                     @Override
                     public void updateItem(String s, boolean empty) {
                         super.updateItem(s, empty);

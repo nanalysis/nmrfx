@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Subscription;
 import org.controlsfx.control.ListSelectionView;
@@ -23,15 +24,17 @@ import java.util.List;
 public class ContentController implements NmrControlRightSideContent {
     private static final Logger log = LoggerFactory.getLogger(ContentController.class);
     @FXML
+    public Tab datasetTab;
+    @FXML
+    public Tab peakTab;
+    @FXML
+    public TabPane contentTabPane;
+    @FXML
     VBox contentVBox;
     @FXML
     ScrollPane contentScrollPane;
     @FXML
     Accordion contentAccordion;
-    @FXML
-    TitledPane datasetTitledPane;
-    @FXML
-    TitledPane peakTitledPane;
     @FXML
     ListSelectionView<String> datasetSelectionView;
     @FXML
@@ -68,8 +71,12 @@ public class ContentController implements NmrControlRightSideContent {
         peakView.getTargetItems().addListener(peakTargetListener);
         datasetSub = GUIProject.getActive().addDatasetListSubscription(this::update);
         peakSub = GUIProject.getActive().addPeakListSubscription(this::update);
-        peakTitledPane.expandedProperty().addListener(e -> update());
-        datasetTitledPane.expandedProperty().addListener(e -> update());
+        datasetTab.selectedProperty().addListener(e -> update());
+        peakTab.selectedProperty().addListener(e -> update());
+        VBox.setVgrow(contentTabPane, Priority.ALWAYS);
+        VBox.setVgrow(datasetSelectionView, Priority.ALWAYS);
+        VBox.setVgrow(peakView, Priority.ALWAYS);
+
 
         datasetSelectionView.skinProperty().addListener((obs, oldSkin, newSkin) -> {
             if (newSkin != null) {
