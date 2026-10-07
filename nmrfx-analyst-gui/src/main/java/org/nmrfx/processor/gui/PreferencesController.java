@@ -463,9 +463,11 @@ public class PreferencesController implements Initializable, StageBasedControlle
         Map<String, Long> datasetMap = new HashMap<>();
         for (String recentDatasetEntry : recentDatasets) {
             String[] entry = recentDatasetEntry.split(";");
-            File file = new File(entry[0]);
-            if (file.exists()) {
-                datasetMap.put(entry[0], Long.valueOf(entry[1]));
+            if (entry.length == 2) {
+                File file = new File(entry[0]);
+                if (file.exists()) {
+                    datasetMap.put(entry[0], Long.valueOf(entry[1]));
+                }
             }
         }
         datasetMap.put(fileName, System.currentTimeMillis());
