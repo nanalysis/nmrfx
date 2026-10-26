@@ -544,7 +544,7 @@ public class ProjectBase {
         Pattern pattern = Pattern.compile("\\.(nv|ucsf|nvlnk)$");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
-            try (Stream<Path> files = Files.list(directory)) {
+            try (Stream<Path> files = Files.walk(directory,FileVisitOption.FOLLOW_LINKS)) {
                 files.sequential().filter(path -> predicate.test(path.getFileName().toString())).
                         forEach(path -> {
                             String pathName = path.toString();
