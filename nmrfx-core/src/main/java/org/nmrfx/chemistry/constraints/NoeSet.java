@@ -70,6 +70,7 @@ public class NoeSet implements ConstraintSet, Iterable {
             "_Gen_dist_constraint.Distance_val",
             "_Gen_dist_constraint.Distance_lower_bound_val",
             "_Gen_dist_constraint.Distance_upper_bound_val",
+            "_Gen_dist_constraint.Weight",
             "_Gen_dist_constraint.Contribution_fractional_val",
             "_Gen_dist_constraint.Spectral_peak_ID",
             "_Gen_dist_constraint.Spectral_peak_list_ID",

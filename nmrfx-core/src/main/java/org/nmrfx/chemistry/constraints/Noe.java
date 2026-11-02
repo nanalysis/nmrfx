@@ -367,6 +367,9 @@ public class Noe extends DistanceConstraint {
         //_Gen_dist_constraint.Contribution_fractional_val
         result.append('.');
         result.append(sep);
+        //_Gen_dist_contraint.Weight
+        result.append(getScale());
+        result.append(sep);
         //_Gen_dist_constraint.Spectral_peak_ID
         if (peak == null) {
             result.append('.');

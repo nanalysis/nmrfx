@@ -1788,6 +1788,7 @@ public class NMRStarReader {
         List<String> constraintIDColumn = loop.getColumnAsList("ID");
         List<String> lowerColumn = loop.getColumnAsList("Distance_lower_bound_val");
         List<String> upperColumn = loop.getColumnAsList("Distance_upper_bound_val");
+        List<String> weightColumn = loop.getColumnAsList("Weight",".");
         List<String> peakListIDColumn = loop.getColumnAsList("Spectral_peak_list_ID", ".");
         List<String> peakIDColumn = loop.getColumnAsList("Spectral_peak_ID", ".");
         Atom[] atoms = new Atom[2];
