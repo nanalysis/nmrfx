@@ -225,8 +225,10 @@ public class NoeSet implements ConstraintSet, Iterable {
         Noe noe = (Noe) constraint;
         noe.setID(constraints.size());
         constraints.add(noe);
-        List<Noe> noeList = getConstraintsForPeak(noe.getPeak());
-        noeList.add(noe);
+        if (noe.getPeak() != null) {
+            List<Noe> noeList = getConstraintsForPeak(noe.getPeak());
+            noeList.add(noe);
+        }
         dirty = true;
     }
 
