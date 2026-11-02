@@ -72,7 +72,7 @@ public class ConstraintSTARWriter {
                 throw new InvalidPeakException("writeConstraints: constraint null at ");
             }
             Peak peak = constraint.getPeak();
-            if ((peak == null) && (peak != lastPeak)) {
+            if ((peak == null) || (peak != lastPeak)) {
                 memberId = 1;
             } else {
                 memberId++;
