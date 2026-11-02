@@ -1326,18 +1326,16 @@ public class NMRStarWriter {
                 CoordinateSTARWriter.writeToSTAR3(chan, molecule, 1);
             }
 
-            int setNum = 1;
             if (starTypesMap == null || starTypesMap.get(StarTypes.CONSTRAINTS).get()) {
                 for (ConstraintSet cSet : molecule.getMolecularConstraints().noeSets()) {
                     if (cSet.getSize() > 0) {
-                        ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+                        ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet);
                     }
                 }
 
-                setNum = 1;
                 for (ConstraintSet cSet : molecule.getMolecularConstraints().angleSets()) {
                     if (cSet.getSize() > 0) {
-                        ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+                        ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet);
                     }
                 }
             }

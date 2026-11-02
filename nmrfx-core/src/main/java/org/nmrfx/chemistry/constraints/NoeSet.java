@@ -70,6 +70,7 @@ public class NoeSet implements ConstraintSet, Iterable {
             "_Gen_dist_constraint.Distance_val",
             "_Gen_dist_constraint.Distance_lower_bound_val",
             "_Gen_dist_constraint.Distance_upper_bound_val",
+            "_Gen_dist_constraint.Weight",
             "_Gen_dist_constraint.Contribution_fractional_val",
             "_Gen_dist_constraint.Spectral_peak_ID",
             "_Gen_dist_constraint.Spectral_peak_list_ID",
@@ -79,7 +80,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     boolean containsBonds = false;
     private final MolecularConstraints molecularConstraints;
 
-    private final List<Noe> constraints = new ArrayList<>(64);
+    private final List<Noe> constraints;
     private final Map<Peak, List<Noe>> peakMap = new TreeMap<>();
     private final String name;
     private boolean calibratable = true;
@@ -90,6 +91,14 @@ public class NoeSet implements ConstraintSet, Iterable {
                    String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
+        constraints = new ArrayList<>(64);
+    }
+
+    protected NoeSet(MolecularConstraints molecularConstraints,
+                  String name, List<Noe> constraintList) {
+        this.name = name;
+        this.molecularConstraints = molecularConstraints;
+        constraints = constraintList;
     }
 
     public static NoeSet newSet(MolecularConstraints molecularConstraints,
@@ -216,8 +225,10 @@ public class NoeSet implements ConstraintSet, Iterable {
         Noe noe = (Noe) constraint;
         noe.setID(constraints.size());
         constraints.add(noe);
-        List<Noe> noeList = getConstraintsForPeak(noe.getPeak());
-        noeList.add(noe);
+        if (noe.getPeak() != null) {
+            List<Noe> noeList = getConstraintsForPeak(noe.getPeak());
+            noeList.add(noe);
+        }
         dirty = true;
     }
 

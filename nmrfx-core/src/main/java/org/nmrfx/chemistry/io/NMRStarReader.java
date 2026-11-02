@@ -1764,6 +1764,22 @@ public class NMRStarReader {
         return peakList;
     }
 
+    public static PeakList getPeakListFromID(String peakListIDStr) throws ParseException {
+        PeakList peakList = null;
+        if (!peakListIDStr.equals(".")) {
+            try {
+                int peakListID = Integer.parseInt(peakListIDStr);
+                Optional<PeakList> peakListOpt = PeakList.get(peakListID);
+                if (peakListOpt.isPresent()) {
+                    peakList = peakListOpt.get();
+                }
+            } catch (NumberFormatException nFE) {
+                throw new ParseException("Invalid peak list id (not int) \"" + peakListIDStr + "\"");
+            }
+        }
+        return peakList;
+    }
+
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Gen_dist_constraint");
         if (loop == null) {
@@ -1788,6 +1804,7 @@ public class NMRStarReader {
         List<String> constraintIDColumn = loop.getColumnAsList("ID");
         List<String> lowerColumn = loop.getColumnAsList("Distance_lower_bound_val");
         List<String> upperColumn = loop.getColumnAsList("Distance_upper_bound_val");
+        List<String> weightColumn = loop.getColumnAsList("Weight",".");
         List<String> peakListIDColumn = loop.getColumnAsList("Spectral_peak_list_ID", ".");
         List<String> peakIDColumn = loop.getColumnAsList("Spectral_peak_ID", ".");
         Atom[] atoms = new Atom[2];
@@ -1844,39 +1861,36 @@ public class NMRStarReader {
             String peakID = peakIDColumn.get(i);
             String constraintID = constraintIDColumn.get(i);
             if (!peakListIDStr.equals(lastPeakListIDStr)) {
-                peakList = getPeakList(saveframe.getName(), peakListIDStr, peakList);
+                peakList = getPeakListFromID(peakListIDStr);
             }
             lastPeakListIDStr = peakListIDStr;
-            Peak peak;
+            Peak peak = null;
             if (peakList != null) {
-                if (peakID.equals(".")) {
-                    peakID = constraintID;
-                    int idNum = Integer.parseInt(peakID);
-                    while ((peak = peakList.getPeak(idNum)) == null) {
-                        peakList.addPeak();
-                    }
-                } else {
+                if (!peakID.equals(".")) {
                     int idNum = Integer.parseInt(peakID);
                     peak = peakList.getPeakByID(idNum);
                 }
-                Noe noe = new Noe(peak, spSets[0], spSets[1], 1.0);
-                double upper = 1000000.0;
-                if (upperValue.equals(".")) {
-                    log.warn("Upper value is a \".\" at line {}", i);
-                } else {
-                    upper = Double.parseDouble(upperValue);
-                }
-                noe.setUpper(upper);
-                double lower = 1.8;
-                if (!lowerValue.equals(".")) {
-                    lower = Double.parseDouble(lowerValue);
-                }
-                noe.setLower(lower);
-                noe.setPpmError(1.0);
-                noe.setIntensity(Math.pow(upper, -6.0) * 10000.0);
-                noe.setVolume(Math.pow(upper, -6.0) * 10000.0);
-                noeSet.add(noe);
             }
+            Noe noe = new Noe(peak, spSets[0], spSets[1], 1.0);
+            double upper = 1000000.0;
+            if (upperValue.equals(".")) {
+                log.warn("Upper value is a \".\" at line {}", i);
+            } else {
+                upper = Double.parseDouble(upperValue);
+            }
+            noe.setUpper(upper);
+            double lower = 1.8;
+            if (!lowerValue.equals(".")) {
+                lower = Double.parseDouble(lowerValue);
+            }
+            noe.setLower(lower);
+            noe.setPpmError(1.0);
+            noe.setIntensity(Math.pow(upper, -6.0) * 10000.0);
+            noe.setVolume(Math.pow(upper, -6.0) * 10000.0);
+            noeSet.add(noe);
+            try {
+                noe.setID(Integer.parseInt(constraintID));
+            } catch (Exception ignored) {}
         }
         noeSet.updateNPossible(peakList);
         noeSet.setCalibratable(false);
