@@ -80,7 +80,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     boolean containsBonds = false;
     private final MolecularConstraints molecularConstraints;
 
-    private final List<Noe> constraints = new ArrayList<>(64);
+    private final List<Noe> constraints;
     private final Map<Peak, List<Noe>> peakMap = new TreeMap<>();
     private final String name;
     private boolean calibratable = true;
@@ -91,6 +91,14 @@ public class NoeSet implements ConstraintSet, Iterable {
                    String name) {
         this.name = name;
         this.molecularConstraints = molecularConstraints;
+        constraints = new ArrayList<>(64);
+    }
+
+    protected NoeSet(MolecularConstraints molecularConstraints,
+                  String name, List<Noe> constraintList) {
+        this.name = name;
+        this.molecularConstraints = molecularConstraints;
+        constraints = constraintList;
     }
 
     public static NoeSet newSet(MolecularConstraints molecularConstraints,
