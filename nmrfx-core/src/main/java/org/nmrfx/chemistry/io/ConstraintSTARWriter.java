@@ -33,9 +33,9 @@ import java.util.Iterator;
  */
 public class ConstraintSTARWriter {
 
-    public static void writeConstraintsSTAR3(Writer chan, ConstraintSet cSet, int setNum)
+    public static void writeConstraintsSTAR3(Writer chan, ConstraintSet cSet)
             throws IOException, InvalidPeakException {
-        String saveFrameName = cSet.getCategory() + setNum;
+        String saveFrameName = cSet.getName();
         String saveFrameCategory = cSet.getCategory();
         String thisCategory = cSet.getListType();
         String constraintType = cSet.getType();
